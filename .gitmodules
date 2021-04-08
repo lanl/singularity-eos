@@ -1,0 +1,18 @@
+[submodule "utils/eigen"]
+	path = utils/eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "utils/json"]
+	path = utils/json
+	url = https://github.com/nlohmann/json.git
+[submodule "utils/spiner"]
+	path = utils/spiner
+	url = https://github.com/lanl/spiner.git
+[submodule "utils/variant"]
+	path = utils/variant
+	url = https://github.com/mpark/variant.git
+[submodule "utils/herumi-fmath"]
+	path = utils/herumi-fmath
+	url = https://github.com/herumi/fmath.git
+[submodule "utils/kokkos"]
+	path = utils/kokkos
+	url = https://github.com/kokkos/kokkos.git
