@@ -1,8 +1,6 @@
 Singularity EOS
 ===
 
-[![pipeline status](https://gitlab.lanl.gov/singularity/singularity-eos/badges/develop/pipeline.svg)](https://gitlab.lanl.gov/singularity/singularity-eos/commits/develop)
-
 A collection of closure models and tools useful for multiphysics codes
 
 ## Components
