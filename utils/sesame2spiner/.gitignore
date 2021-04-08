@@ -1,0 +1,4 @@
+*.o
+*.sp5
+sesame2spiner
+test.bin

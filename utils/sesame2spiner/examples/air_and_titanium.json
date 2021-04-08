@@ -1,0 +1,41 @@
+//======================================================================
+// Example input deck for sesame2spiner,
+// a tool for converting eospac to spiner
+// Author: Jonah Miller (jonahm@lanl.gov)
+// © 2021. Triad National Security, LLC. All rights reserved.  This
+// program was produced under U.S. Government contract 89233218CNA000001
+// for Los Alamos National Laboratory (LANL), which is operated by Triad
+// National Security, LLC for the U.S.  Department of Energy/National
+// Nuclear Security Administration. All rights in the program are
+// reserved by Triad National Security, LLC, and the U.S. Department of
+// Energy/National Nuclear Security Administration. The Government is
+// granted for itself and others acting on its behalf a nonexclusive,
+// paid-up, irrevocable worldwide license in this material to reproduce,
+// prepare derivative works, distribute copies to the public, perform
+// publicly and display publicly, and to permit others to do so.
+//======================================================================
+{
+    "savename"  : "air_and_titanium.sp5",//"materials.sp5",
+    "materials" : [
+	{ // only matid is required. All others override defaults.
+	    "matid"  : 2961,
+	    "name"   : "titanium",
+	    "rhomin" : 1e-4, // g/cm^3
+	    "rhomax" : 1e3,
+	    "numrho" : 1024,
+	    "Tmin"   : 1e1, // kelvin
+	    "Tmax"   : 1e8,
+	    "numT"   : 1024
+	},
+	{ // only matid is required. All others override defaults.
+	    "matid"  : 5030,
+	    "name"   : "air",
+	    "rhomin" : 1e-8, // g/cm^3
+	    "rhomax" : 1e2,
+	    "numrho" : 1024,
+	    "Tmin"   : 1e1, // kelvin
+	    "Tmax"   : 1e8,
+	    "numT"   : 1024
+	}
+    ]
+}

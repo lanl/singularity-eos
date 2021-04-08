@@ -1,0 +1,63 @@
+//======================================================================
+// sesame2spiner tool for converting eospac to spiner
+// Author: Jonah Miller (jonahm@lanl.gov)
+// © 2021. Triad National Security, LLC. All rights reserved.  This
+// program was produced under U.S. Government contract 89233218CNA000001
+// for Los Alamos National Laboratory (LANL), which is operated by Triad
+// National Security, LLC for the U.S.  Department of Energy/National
+// Nuclear Security Administration. All rights in the program are
+// reserved by Triad National Security, LLC, and the U.S. Department of
+// Energy/National Nuclear Security Administration. The Government is
+// granted for itself and others acting on its behalf a nonexclusive,
+// paid-up, irrevocable worldwide license in this material to reproduce,
+// prepare derivative works, distribute copies to the public, perform
+// publicly and display publicly, and to permit others to do so.
+//======================================================================
+
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <cstring>
+#include <cstdlib>
+#include <algorithm>
+
+#include "hdf5.h"
+#include "hdf5_hl.h"
+
+#include "nlohmann/json.hpp"
+
+#ifndef SPINER_USE_HDF
+#define SPINER_USE_HDF (1)
+#endif
+
+#include "../sp5/singularity_eos_sp5.hpp"
+#include "../spiner/ports-of-call/portability.hpp"
+#include "../spiner/sp5.hpp"
+
+#include "io_eospac.hpp"
+#include "generate_files.hpp"
+#include "parser.hpp"
+
+using nlohmann::json;
+
+int main(int argc, char* argv[]) {
+  std::string filename, helpMessage;
+  Verbosity eospacWarn = Verbosity::Quiet;
+  bool printMetadata = false;
+  herr_t status = H5_SUCCESS;
+
+  parseCLI(argc, argv, filename, printMetadata, eospacWarn, helpMessage);
+  json params = fileToJson(filename);
+
+  std::cout << "sesame2spiner                            \n"
+	    << "-----------------------------------------\n"
+    	    << "Author: Jonah Miller (jonahm@lanl.gov)   \n"
+	    << "-----------------------------------------\n"
+	    << std::endl;
+
+  status = saveAllMaterials(params, printMetadata, eospacWarn);
+
+  std::cout << "Done." << std::endl;
+
+  return (status == H5_SUCCESS) ? 0 : 1;
+}

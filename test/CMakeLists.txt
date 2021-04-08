@@ -1,0 +1,51 @@
+#------------------------------------------------------------------------------
+# © 2021. Triad National Security, LLC. All rights reserved.  This
+# program was produced under U.S. Government contract 89233218CNA000001
+# for Los Alamos National Laboratory (LANL), which is operated by Triad
+# National Security, LLC for the U.S.  Department of Energy/National
+# Nuclear Security Administration. All rights in the program are
+# reserved by Triad National Security, LLC, and the U.S. Department of
+# Energy/National Nuclear Security Administration. The Government is
+# granted for itself and others acting on its behalf a nonexclusive,
+# paid-up, irrevocable worldwide license in this material to reproduce,
+# prepare derivative works, distribute copies to the public, perform
+# publicly and display publicly, and to permit others to do so.
+#------------------------------------------------------------------------------
+
+add_executable(test_eos_spiner
+                 test_eos_spiner.cpp)
+
+if(SINGULARITY_USE_EOSPAC)
+  
+  add_executable(compare_to_eospac
+                 ${CMAKE_SOURCE_DIR}/utils/sesame2spiner/io_eospac.cpp
+                 compare_to_eospac.cpp)
+endif()
+
+add_executable(test_pte
+               test_pte.cpp)
+
+target_link_libraries(test_eos_spiner Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
+
+if(SINGULARITY_USE_EOSPAC)
+  target_link_libraries(compare_to_eospac Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
+  target_include_directories(compare_to_eospac PUBLIC
+                             ${CMAKE_SOURCE_DIR}/utils/spiner
+                             ${CMAKE_SOURCE_DIR}/utils/ports-of-call
+                             ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
+endif()
+target_link_libraries(test_pte PRIVATE
+                      Catch2::Catch2
+                      eos
+                      singularity-eos::libs
+                      singularity-eos::flags)
+
+catch_discover_tests(test_eos_spiner)
+if (SINGULARITY_USE_HDF5)
+  add_custom_command(TARGET test_eos_spiner PRE_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_directory
+                     ${CMAKE_SOURCE_DIR}/singularity-eos-data
+                     ${PROJECT_BINARY_DIR}/singularity-eos-data)
+endif()
+
+add_test(pte test_pte)
