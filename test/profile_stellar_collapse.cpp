@@ -40,7 +40,8 @@
 using namespace singularity;
 
 using duration = std::chrono::microseconds;
-constexpr char diffFileName[] = "diffs.sp5";
+constexpr char DIFFS_NAME[] = "diffs.sp5";
+constexpr Real MP = 1.67262171e-24; // proton mass
 
 int main(int argc, char* argv[]) {
 
@@ -50,7 +51,28 @@ int main(int argc, char* argv[]) {
   Kokkos::initialize();
   #endif
   {
+    if (argc < 4) {
+      std::cerr << "Usage: " << argv[0] << "filename gamma nfine" << std::endl;
+      std::exit(1);
+    }
+    std::string filename = argv[1];
+    Real gamma = std::atof(argv[2]);
+    int nfine = std::atoi(argv[3]);
 
+    if (nfine < 1) {
+      std::cerr << "We need at least one interpolation point" << std::endl;
+      std::exit(1);
+    }
+    if (gamma <= 1) {
+      std::cerr <"gamma - 1 must be a positive number" << std::endl;
+      std::exit(1);
+    }
+
+    std::cout << "Profiling a stellar collapse table" << std::endl;
+    std::cout << "\t...Creating an ideal gas equation of state with gamma = "
+              << gamma << " to compare to."
+              << std::endl;
+    
   }
   return 0;
 }
