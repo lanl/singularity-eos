@@ -15,7 +15,7 @@ A collection of closure models and tools useful for multiphysics codes
 
 At its most basic:
 ```bash
-git clone --recursive git@gitlab.lanl.gov:singularity/singularity-eos.git
+git clone --recursive git@github.com:lanl/singularity-eos.git
 cd singularity-eos
 mkdir bin
 cd bin
