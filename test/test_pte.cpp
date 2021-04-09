@@ -26,7 +26,7 @@
 #include "../utils/spiner/databox.hpp"
 
 constexpr int NMAT = 3;
-constexpr int NTRIAL = 1000000;
+constexpr int NTRIAL = 100;
 constexpr int NPTS = NTRIAL * NMAT;
 constexpr int HIST_SIZE = 10;
 
