@@ -1,6 +1,8 @@
 Singularity EOS
 ===
 
+[![Tests](https://github.com/lanl/singularity-eos/actions/workflows/tests.yml/badge.svg)](https://github.com/lanl/singularity-eos/actions/workflows/tests.yml)
+
 A collection of closure models and tools useful for multiphysics codes
 
 ## Components
@@ -17,7 +19,7 @@ git clone --recursive git@gitlab.lanl.gov:singularity/singularity-eos.git
 cd singularity-eos
 mkdir bin
 cd bin
-cmake ..
+cmake ..g
 make
 ```
 
