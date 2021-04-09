@@ -1,0 +1,142 @@
+diff --git a/include/mpark/variant.hpp b/include/mpark/variant.hpp
+index 2fb2ac549..aeef9dcdd 100644
+--- a/include/mpark/variant.hpp
++++ b/include/mpark/variant.hpp
+@@ -1021,9 +1021,15 @@ namespace mpark {
+     friend struct access::recursive_union;                                 \
+   }
+ 
++#ifdef __CUDACC__
++#define V_GPU_FUNCTION __host__ __device__
++#else
++#define V_GPU_FUNCTION
++#endif
++
+     MPARK_VARIANT_RECURSIVE_UNION(Trait::TriviallyAvailable,
+                                   ~recursive_union() = default;);
+-    MPARK_VARIANT_RECURSIVE_UNION(Trait::Available,
++    MPARK_VARIANT_RECURSIVE_UNION(Trait::Available,V_GPU_FUNCTION
+                                   ~recursive_union() {});
+     MPARK_VARIANT_RECURSIVE_UNION(Trait::Unavailable,
+                                   ~recursive_union() = delete;);
+@@ -1133,9 +1139,9 @@ namespace mpark {
+         });
+ 
+     MPARK_VARIANT_DESTRUCTOR(
+-        Trait::Available,
++        Trait::Available,V_GPU_FUNCTION
+         ~destructor() { destroy(); },
+-        inline void destroy() noexcept {
++        inline constexpr void destroy() noexcept {
+           if (!this->valueless_by_exception()) {
+             visitation::alt::visit_alt(dtor{}, *this);
+           }
+@@ -1169,14 +1175,14 @@ namespace mpark {
+ #endif
+ 
+       template <std::size_t I, typename T, typename... Args>
+-      inline static T &construct_alt(alt<I, T> &a, Args &&... args) {
++      inline constexpr static T &construct_alt(alt<I, T> &a, Args &&... args) {
+         auto *result = ::new (static_cast<void *>(lib::addressof(a)))
+             alt<I, T>(in_place_t{}, lib::forward<Args>(args)...);
+         return result->value;
+       }
+ 
+       template <typename Rhs>
+-      inline static void generic_construct(constructor &lhs, Rhs &&rhs) {
++      inline constexpr static void generic_construct(constructor &lhs, Rhs &&rhs) {
+         lhs.destroy();
+         if (!rhs.valueless_by_exception()) {
+           visitation::alt::visit_alt_at(
+@@ -1223,7 +1229,7 @@ namespace mpark {
+ 
+     MPARK_VARIANT_MOVE_CONSTRUCTOR(
+         Trait::Available,
+-        move_constructor(move_constructor &&that) noexcept(
++        constexpr move_constructor(move_constructor &&that) noexcept(
+             lib::all<std::is_nothrow_move_constructible<Ts>::value...>::value)
+             : move_constructor(valueless_t{}) {
+           this->generic_construct(*this, lib::move(that));
+@@ -1256,11 +1262,11 @@ namespace mpark {
+   }
+ 
+     MPARK_VARIANT_COPY_CONSTRUCTOR(
+-        Trait::TriviallyAvailable,
++        Trait::TriviallyAvailable,V_GPU_FUNCTION
+         copy_constructor(const copy_constructor &that) = default;);
+ 
+     MPARK_VARIANT_COPY_CONSTRUCTOR(
+-        Trait::Available,
++        Trait::Available,V_GPU_FUNCTION
+         copy_constructor(const copy_constructor &that)
+             : copy_constructor(valueless_t{}) {
+           this->generic_construct(*this, that);
+@@ -1281,7 +1287,7 @@ namespace mpark {
+       using super::operator=;
+ 
+       template <std::size_t I, typename... Args>
+-      inline /* auto & */ auto emplace(Args &&... args)
++      inline constexpr /* auto & */ auto emplace(Args &&... args)
+           -> decltype(this->construct_alt(access::base::get_alt<I>(*this),
+                                           lib::forward<Args>(args)...)) {
+         this->destroy();
+@@ -1304,7 +1310,7 @@ namespace mpark {
+ #endif
+ 
+       template <std::size_t I, typename T, typename Arg>
+-      inline void assign_alt(alt<I, T> &a, Arg &&arg) {
++      inline constexpr void assign_alt(alt<I, T> &a, Arg &&arg) {
+         if (this->index() == I) {
+ #ifdef _MSC_VER
+ #pragma warning(push)
+@@ -1332,7 +1338,7 @@ namespace mpark {
+       }
+ 
+       template <typename That>
+-      inline void generic_assign(That &&that) {
++      inline constexpr void generic_assign(That &&that) {
+         if (this->valueless_by_exception() && that.valueless_by_exception()) {
+           // do nothing.
+         } else if (that.valueless_by_exception()) {
+@@ -1376,11 +1382,11 @@ namespace mpark {
+   }
+ 
+     MPARK_VARIANT_MOVE_ASSIGNMENT(
+-        Trait::TriviallyAvailable,
++        Trait::TriviallyAvailable,V_GPU_FUNCTION
+         move_assignment &operator=(move_assignment &&that) = default;);
+ 
+     MPARK_VARIANT_MOVE_ASSIGNMENT(
+-        Trait::Available,
++        Trait::Available,V_GPU_FUNCTION
+         move_assignment &
+         operator=(move_assignment &&that) noexcept(
+             lib::all<(std::is_nothrow_move_constructible<Ts>::value &&
+@@ -1394,6 +1400,7 @@ namespace mpark {
+         move_assignment &operator=(move_assignment &&) = delete;);
+ 
+ #undef MPARK_VARIANT_MOVE_ASSIGNMENT
++#undef V_GPU_FUNCTION
+ 
+     template <typename Traits, Trait = Traits::copy_assignable_trait>
+     class copy_assignment;
+@@ -1421,7 +1428,7 @@ namespace mpark {
+ 
+     MPARK_VARIANT_COPY_ASSIGNMENT(
+         Trait::Available,
+-        copy_assignment &operator=(const copy_assignment &that) {
++        constexpr copy_assignment &operator=(const copy_assignment &that) {
+           this->generic_assign(that);
+           return *this;
+         });
+@@ -1694,8 +1701,8 @@ namespace mpark {
+ 
+     ~variant() = default;
+ 
+-    variant &operator=(const variant &) = default;
+-    variant &operator=(variant &&) = default;
++    /*V_GPU_FUNCTION*/constexpr variant &operator=(const variant &) = default;
++    /*V_GPU_FUNCTION*/constexpr variant &operator=(variant &&) = default;
+ 
+     template <typename Arg,
+               lib::enable_if_t<!std::is_same<lib::decay_t<Arg>, variant>::value,

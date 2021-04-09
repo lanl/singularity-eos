@@ -71,6 +71,13 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Patches variant to be compatible with cuda
+# Assumes "patch" is present on system
+message(STATUS "Patching mpark::variant to support GPUs")
+execute_process(COMMAND patch -N -s -V never
+                ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch)
+
 add_library (singularity-eos::flags INTERFACE IMPORTED GLOBAL)
 add_library (singularity-eos::libs INTERFACE IMPORTED)
 
