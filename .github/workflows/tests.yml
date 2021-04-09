@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+    tests:
+      name: Run Unit and Regression Tests
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v2
+          with:
+            submodules: true
+        - name: Set system to non-interactive mode
+          run: export DEBIAN_FRONTEND=noninteractive
+        - name: install dependencies
+          run: sudo apt-get install -y --force-yes -qq build-essential gfortran
+        - name: build and run tests
+          run: |
+            mkdir -p bin
+            cd bin
+            mkdir -p ${HOME}/install
+            cmake -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_USE_HDF5=OFF ..
+            make -j
+            make install
+            make test
