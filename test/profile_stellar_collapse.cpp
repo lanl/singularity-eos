@@ -43,7 +43,7 @@ using namespace Spiner;
 using namespace singularity;
 
 using duration = std::chrono::microseconds;
-//constexpr char DIFFS_NAME[] = "diffs.sp5";
+// constexpr char DIFFS_NAME[] = "diffs.sp5";
 constexpr Real MP = 1.67262171e-24; // proton mass
 constexpr int NTRIALS = 10;
 
@@ -80,7 +80,7 @@ struct Bounds {
 
 int main(int argc, char *argv[]) {
 
-  //herr_t status = H5_SUCCESS;
+  // herr_t status = H5_SUCCESS;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::initialize();
@@ -123,16 +123,16 @@ int main(int argc, char *argv[]) {
               << "\t\tlog(T)   in [" << std::log10(sc.TMin()) << ", "
               << std::log10(sc.TMax()) << "]\n"
               << "\t\tYe       in [" << sc.YeMin() << ", " << sc.YeMax()
-              << "]\n\n"
+              << "]\n"
               << "\t\tsie      in [" << sc.sieMin() << ", " << sc.sieMax()
               << "]" << std::endl;
 
     std::cout << "\t...Ofsets are:\n"
               << "\t\tlRho = " << sc.lRhoOffset() << "\n"
               << "\t\tlT   = " << sc.lTOffset() << "\n"
-              << "\t\t;E   = " << sc.lEOffset() << std::endl;
+              << "\t\tlE   = " << sc.lEOffset() << std::endl;
 
-    std::cout << "\t...Allocating databoxes for diff\n" << std::endl;
+    std::cout << "\t...Allocating databoxes for diff" << std::endl;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<Real *> diffs_press_dv("press", nfine * nfine * nfine);
     Kokkos::View<Real *> diffs_t_dv("T", nfine * nfine * nfine);
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
     DataBox lambdas_d(AllocationTarget::Device, nfine, nfine, nfine, 2);
 
     std::cout
-        << "\t...Setting loop bounds. "
+        << "\t...Setting loop bounds.\n"
         << "\t\tBounds set to force extrapolation and no exact grid points."
         << std::endl;
     Bounds lTBounds(sc.TMin() - 0.1 * std::abs(sc.TMin()),
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     diffs_t_h.setRange(1, lEBounds.grid);
     diffs_t_h.setRange(2, YeBounds.grid);
 
-    std::cout << "\t...Profiling interpolation P(rho, T, Ye)...\n" << std::endl;
+    std::cout << "\t...Profiling interpolation P(rho, T, Ye)..." << std::endl;
     duration durationInterp = duration::zero();
     for (int trial = 0; trial < NTRIALS; ++trial) { // includes launch latency
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
       durationInterp += std::chrono::duration_cast<duration>(stop - start);
     }
 
-    std::cout << "\t...Computing difference from ideal gas...\n" << std::endl;
+    std::cout << "\t...Computing difference from ideal gas..." << std::endl;
     portableFor(
         "ideal gas pressure from rho, T, Ye", 0, nfine, 0, nfine, 0, nfine,
         PORTABLE_LAMBDA(const int iYe, const int iT, const int irho) {
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(diffs_press_hv, diffs_press_dv);
 #endif
 
-    std::cout << "\t...Profiling root find T(rho, e, Ye)...\n" << std::endl;
+    std::cout << "\t...Profiling root find T(rho, e, Ye)..." << std::endl;
     duration durationRoot = duration::zero();
     for (int trial = 0; trial < NTRIALS; ++trial) { // includes launch latency
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
       durationRoot += std::chrono::duration_cast<duration>(stop - start);
     }
 
-    std::cout << "\t...Computing difference from ideal gas...\n" << std::endl;
+    std::cout << "\t...Computing difference from ideal gas..." << std::endl;
     portableFor(
         "ideal gas T(rho, sie, Ye)", 0, nfine, 0, nfine, 0, nfine,
         PORTABLE_LAMBDA(const int iYe, const int iE, const int irho) {
@@ -251,26 +251,32 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(diffs_t_hv, diffs_t_dv);
 #endif
 
-    std::cout << "\nRESULTS:\n"
-              << "\tP(rho, T, Ye) time/point (microseconds)   = "
-              << durationInterp.count() /
-                     static_cast<Real>(nfine * nfine * nfine * NTRIALS)
-              << "\n"
-              << "\tT(rho, sie, Ye) time/point (microseconds) = "
-              << durationRoot.count() /
-                     static_cast<Real>(nfine * nfine * nfine * NTRIALS)
-              << "\n"
-              << "\t Delta P bounded by                       = "
-              << std::max(std::abs(diffs_press_h.min()),
-                          std::abs(diffs_press_h.max()))
-              << "\n"
-              << "\t Delta T bounded by                       = "
-              << std::max(std::abs(diffs_t_h.min()), std::abs(diffs_t_h.max()))
-              << std::endl;
+    std::cout
+        << "\nRESULTS:\n"
+        << "Don't worry if errors are large. These are absolute, and include "
+        << "extrapolation.\n"
+        << "\tP(rho, T, Ye) time/point (microseconds)   = "
+        << durationInterp.count() /
+               static_cast<Real>(nfine * nfine * nfine * NTRIALS)
+        << "\n"
+        << "\tT(rho, sie, Ye) time/point (microseconds) = "
+        << durationRoot.count() /
+               static_cast<Real>(nfine * nfine * nfine * NTRIALS)
+        << "\n"
+        << "\tDelta P bounded by                        = "
+        << std::max(std::abs(diffs_press_h.min()),
+                    std::abs(diffs_press_h.max()))
+        << "\n"
+        << "\tDelta T bounded by                        = "
+        << std::max(std::abs(diffs_t_h.min()), std::abs(diffs_t_h.max()))
+        << std::endl;
 
     sc_d.Finalize();
     ig_d.Finalize();
   }
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  Kokkos::finalize();
+#endif
   return 0;
 }
 
