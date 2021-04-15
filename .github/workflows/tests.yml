@@ -19,13 +19,16 @@ jobs:
         - name: Set system to non-interactive mode
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
-          run: sudo apt-get install -y --force-yes -qq build-essential gfortran
+          run: |
+            sudo apt-get install -y --force-yes -qq build-essential gfortran libhdf5-serial-dev
+            pip install numpy
+            pip install h5py
         - name: build and run tests
           run: |
             mkdir -p bin
             cd bin
             mkdir -p ${HOME}/install
-            cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_USE_HDF5=OFF ..
+            cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_USE_HDF5=ON -DSINGULARITY_TEST_SESAME=OFF -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON ..
             make -j
             make install
             make test

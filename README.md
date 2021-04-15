@@ -19,7 +19,7 @@ git clone --recursive git@github.com:lanl/singularity-eos.git
 cd singularity-eos
 mkdir bin
 cd bin
-cmake ..g
+cmake ..
 make
 ```
 
@@ -48,15 +48,23 @@ make test
 
 A number of options are avaialable for compiling:
 
-| Option                          | Default | Comment                                                                              |
-| ------------------------------- | ------- | ------------------------------------------------------------------------------------ |
-| SINGULARITY_USE_HDF5            | ON      | Enables HDF5. Required for SpinerEOS and sesame2spiner                               |
-| SINGULARITY_USE_KOKKOS          | OFF     | Uses Kokkos as the portability backend. Currently only Kokkos is supported for GPUs. |
-| SINGULARITY_USE_EOSPAC          | OFF     | Link against EOSPAC. Needed for sesame2spiner and some tests.                        |
-| SINGULARITY_USE_CUDA            | OFF     | Target nvidia GPUs via cuda. Currently requires Kokkos.                              |
-| SINGULARITY_INVERT_AT_SETUP     | OFF     | For tests, pre-invert eospac tables.                                                 |
-| SINGULARITY_BUILD_TESTS         | OFF     | Build test infrastructure.                                                           |
-| SINGULARITY_BUILD_SESAME2SPINER | OFF     | Builds the conversion tool sesame2spiner which makes files readable by SpinerEOS     |
+| Option                            | Default | Comment                                                                              |
+| --------------------------------- | ------- | ------------------------------------------------------------------------------------ |
+| SINGULARITY_USE_HDF5              | ON      | Enables HDF5. Required for SpinerEOS, StellarCollapseEOS, and sesame2spiner          |
+| SINGULARITY_USE_FORTRAN           | ON      | Enable Fortran API for equation of state                                             |
+| SINGULARITY_USE_KOKKOS            | OFF     | Uses Kokkos as the portability backend. Currently only Kokkos is supported for GPUs. |
+| SINGULARITY_USE_EOSPAC            | OFF     | Link against EOSPAC. Needed for sesame2spiner and some tests.                        |
+| SINGULARITY_USE_CUDA              | OFF     | Target nvidia GPUs via cuda. Currently requires Kokkos.                              |
+| SINGULARITY_USE_KOKKOSKERNELS     | OFF     | Use Kokkos Kernels for linear algebra. Needed for mixed cell closure models on GPU   |
+| SINGULARITY_BUILD_MIX             | ON      | Builds mixed cell closure machinery for multi-material problems                      |
+| SINGULARITY_BUILD_TESTS           | OFF     | Build test infrastructure.                                                           |
+| SINGULARITY_TEST_SESAME           | OFF     | Test the Sesame table readers                                                        |
+| SINGULARITY_TEST_STELLAR_COLLAPSE | OFF     | Test the Stellar Collapse table readers                                              |
+| SINGULARITY_BUILD_SESAME2SPINER   | OFF     | Builds the conversion tool sesame2spiner which makes files readable by SpinerEOS     |
+| SINGULARITY_INVERT_AT_SETUP       | OFF     | For tests, pre-invert eospac tables.                                                 |
+| SINGULARITY_BETTER_DEBUG_FLAGS    | ON      | Enables nicer GPU debug flags. May interfere with in-tree builds as a submodule      |
+| SINGULARITY_HIDE_MORE_WARNINGS    | OFF     | Makes warnings less verbose. May interfere with in-tree builds as a submodule        |
+| SINGULARITY_SUBMODULE_MODE        | OFF     | Sets cmake flags for in-tree builds                                                  |
 
 ### Building on Darwin power9 nodes with the IBM xl compiler
 

@@ -1257,6 +1257,7 @@ public:
   std::string filename() const { return std::string(filename_); }
   Real lRhoOffset() const { return lRhoOffset_; }
   Real lTOffset() const { return lTOffset_; }
+  Real lEOffset() const { return lEOffset_; }
   Real lRhoMin() const { return lRhoMin_; }
   Real lRhoMax() const { return lRhoMax_; }
   Real rhoMin() const { return rho_(lRhoMin_); }
@@ -1267,6 +1268,8 @@ public:
   Real TMax() const { return T_(lTMax_); }
   Real YeMin() const { return YeMin_; }
   Real YeMax() const { return YeMax_; }
+  Real sieMin() const { return sieMin_; }
+  Real sieMax() const { return sieMax_; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("StellarCollapse parameters:\n"
            "depends on log10(rho), log10(T), Ye\n"
@@ -1417,6 +1420,7 @@ private:
   Real lRhoMin_, lRhoMax_;
   Real lTMin_, lTMax_;
   Real YeMin_, YeMax_;
+  Real sieMin_, sieMax_;
   
   static constexpr Real MeV2GK_ = 11.604525006;
   static constexpr Real GK2MeV_ = 1./MeV2GK_;
