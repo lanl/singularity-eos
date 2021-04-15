@@ -31,6 +31,8 @@ option (SINGULARITY_BETTER_DEBUG_FLAGS
 option (SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
 option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
 option (SINGULARITY_BUILD_MIX "Mixed cell closure" ON)
+option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
+option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
 
 if (SINGULARITY_SUBMODULE_MODE)
   set(SINGULARITY_BETTER_DEBUG_FLAGS OFF CACHE BOOL "" FORCE)

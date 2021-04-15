@@ -14,16 +14,18 @@
 
 add_executable(test_eos_spiner
                  test_eos_spiner.cpp)
+if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
+  target_compile_definitions(test_eos_spiner PRIVATE SINGULARITY_TEST_SESAME)
+endif()
+if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
+  target_compile_definitions(test_eos_spiner PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
+endif()
+target_link_libraries(test_eos_spiner Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
 
 if(SINGULARITY_USE_EOSPAC)
   add_executable(compare_to_eospac
                  ${CMAKE_SOURCE_DIR}/utils/sesame2spiner/io_eospac.cpp
                  compare_to_eospac.cpp)
-endif()
-
-target_link_libraries(test_eos_spiner Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
-
-if(SINGULARITY_USE_EOSPAC)
   target_link_libraries(compare_to_eospac Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
   target_include_directories(compare_to_eospac PUBLIC
                              ${CMAKE_SOURCE_DIR}/utils/spiner
@@ -32,7 +34,7 @@ if(SINGULARITY_USE_EOSPAC)
 endif()
 
 catch_discover_tests(test_eos_spiner)
-if (SINGULARITY_USE_HDF5)
+if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_custom_command(TARGET test_eos_spiner PRE_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
                      ${CMAKE_SOURCE_DIR}/singularity-eos-data
@@ -50,9 +52,16 @@ if (SINGULARITY_BUILD_MIX)
   add_test(pte test_pte)
 endif()
 
-if (SINGULARITY_USE_HDF5)
+if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   add_executable(profile_stellar_collapse
                  profile_stellar_collapse.cpp)
   target_link_libraries(profile_stellar_collapse eos singularity-eos::libs singularity-eos::flags)
+
+  message(STATUS "Generating stellar collapse table for tests using Python script")
+  include(FindPythonInterp)
+  execute_process(COMMAND ${PYTHON_EXECUTABLE}
+                          ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_gamma.py
+                          -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
+
 endif()
 

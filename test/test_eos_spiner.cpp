@@ -179,6 +179,7 @@ SCENARIO("Relativistic EOS", "[EOSBuilder][RelativisticEOS]") {
 }
 
 #ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_TEST_SESAME
 SCENARIO( "SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT]" ) {
 
   GIVEN( "SpinerEOS for steel can be initialized with matid" ) {
@@ -443,14 +444,16 @@ SCENARIO("EOS Builder and SpinerEOS",
     }
   }
 }
+#endif // SINGULARITY_TEST_SESAME
 
+#ifdef SINGULARITY_TEST_STELLAR_COLLAPSE
 SCENARIO("Stellar Collapse EOS",
          "[StellarCollapse][EOSBuilder]") {
   using singularity::StellarCollapse;
   using singularity::IdealGas;
   const std::string savename = "stellar_collapse_ideal.sp5";
   GIVEN("A stellar collapse EOS") {
-    const std::string filename = "../singularity-eos-data/stellar_collapse_ideal.h5";
+    const std::string filename = "../stellar_collapse_ideal.h5";
     THEN("We can load the file") { // don't bother filtering bmod here.
       StellarCollapse sc(filename, false, false);
       AND_THEN("Some properties we expect for ideal gas hold") {
@@ -615,7 +618,7 @@ SCENARIO("Stellar Collapse EOS",
     }
   }
 }
-
+#endif // SINGULARITY_TEST_STELLAR_COLLAPSE
 #endif // USE_HDF5
 
 int main(int argc, char* argv[]) {
