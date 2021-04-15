@@ -589,6 +589,8 @@ void StellarCollapse::computeColdAndHotCurves_() {
       eHot_(iY, irho) = le2e_(lEHot);
     }
   }
+  sieMin_ = eCold_.min();
+  sieMax_ = eHot_.max();
 }
 
 void StellarCollapse::setNormalValues_() {

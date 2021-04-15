@@ -16,14 +16,10 @@ add_executable(test_eos_spiner
                  test_eos_spiner.cpp)
 
 if(SINGULARITY_USE_EOSPAC)
-  
   add_executable(compare_to_eospac
                  ${CMAKE_SOURCE_DIR}/utils/sesame2spiner/io_eospac.cpp
                  compare_to_eospac.cpp)
 endif()
-
-add_executable(test_pte
-               test_pte.cpp)
 
 target_link_libraries(test_eos_spiner Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
 
@@ -34,11 +30,6 @@ if(SINGULARITY_USE_EOSPAC)
                              ${CMAKE_SOURCE_DIR}/utils/ports-of-call
                              ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
 endif()
-target_link_libraries(test_pte PRIVATE
-                      Catch2::Catch2
-                      eos
-                      singularity-eos::libs
-                      singularity-eos::flags)
 
 catch_discover_tests(test_eos_spiner)
 if (SINGULARITY_USE_HDF5)
@@ -48,4 +39,20 @@ if (SINGULARITY_USE_HDF5)
                      ${PROJECT_BINARY_DIR}/singularity-eos-data)
 endif()
 
-add_test(pte test_pte)
+if (SINGULARITY_BUILD_MIX)
+  add_executable(test_pte
+                 test_pte.cpp)
+  target_link_libraries(test_pte PRIVATE
+                        Catch2::Catch2
+                        eos
+                        singularity-eos::libs
+                        singularity-eos::flags)
+  add_test(pte test_pte)
+endif()
+
+if (SINGULARITY_USE_HDF5)
+  add_executable(profile_stellar_collapse
+                 profile_stellar_collapse.cpp)
+  target_link_libraries(profile_stellar_collapse eos singularity-eos::libs singularity-eos::flags)
+endif()
+
