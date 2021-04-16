@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "../eos/eos.hpp"
-#include "../mix/mixed_cell_models.hpp"
+#include "../closure/mixed_cell_models.hpp"
 #include "../utils/ports-of-call/portability.hpp"
 #include "../utils/ports-of-call/portable_arrays.hpp"
 #include "../utils/spiner/databox.hpp"

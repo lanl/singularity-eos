@@ -22,7 +22,7 @@
 #include "../utils/ports-of-call/portability.hpp"
 #include "../eos/eos.hpp"
 #include "../eos/bedroom_door.hpp"
-#include "../mix/mixed_cell_models.hpp"
+#include "../closure/mixed_cell_models.hpp"
 
 static constexpr const int NMAT {3};
 static constexpr const int NTRIAL {3};

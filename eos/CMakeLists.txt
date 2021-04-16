@@ -12,7 +12,7 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
-if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_MIX)
+if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_CLOSURE)
   add_library(eos_f OBJECT singularity_eos.f90)
 endif()
 
@@ -24,8 +24,9 @@ set(EOS_SRCS
     eos_gruneisen.cpp
     eos_davis.cpp
     eos_stellar_collapse.cpp
+    eos_eospac.cpp
     )
-if (SINGULARITY_BUILD_MIX)
+if (SINGULARITY_BUILD_CLOSURE)
   list(APPEND EOS_SRCS singularity_eos.cpp)
 endif()
 
@@ -38,7 +39,7 @@ target_include_directories(eos_objs PUBLIC
 
 target_link_libraries(eos_objs singularity-eos::libs singularity-eos::flags)
 
-if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_MIX)
+if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_CLOSURE)
   add_library(eos $<TARGET_OBJECTS:eos_objs> $<TARGET_OBJECTS:eos_f>)
 else()
   add_library(eos $<TARGET_OBJECTS:eos_objs>)
