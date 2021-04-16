@@ -56,7 +56,7 @@ A number of options are avaialable for compiling:
 | SINGULARITY_USE_EOSPAC            | OFF     | Link against EOSPAC. Needed for sesame2spiner and some tests.                        |
 | SINGULARITY_USE_CUDA              | OFF     | Target nvidia GPUs via cuda. Currently requires Kokkos.                              |
 | SINGULARITY_USE_KOKKOSKERNELS     | OFF     | Use Kokkos Kernels for linear algebra. Needed for mixed cell closure models on GPU   |
-| SINGULARITY_BUILD_MIX             | ON      | Builds mixed cell closure machinery for multi-material problems                      |
+| SINGULARITY_BUILD_CLOSURE         | ON      | Builds mixed cell closure machinery for multi-material problems                      |
 | SINGULARITY_BUILD_TESTS           | OFF     | Build test infrastructure.                                                           |
 | SINGULARITY_TEST_SESAME           | OFF     | Test the Sesame table readers                                                        |
 | SINGULARITY_TEST_STELLAR_COLLAPSE | OFF     | Test the Stellar Collapse table readers                                              |
