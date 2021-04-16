@@ -12,15 +12,15 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
-add_executable(test_eos_spiner
-                 test_eos_spiner.cpp)
+add_executable(eos_unit_tests
+                 eos_unit_tests.cpp)
 if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
-  target_compile_definitions(test_eos_spiner PRIVATE SINGULARITY_TEST_SESAME)
+  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
-  target_compile_definitions(test_eos_spiner PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
+  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
-target_link_libraries(test_eos_spiner Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
+target_link_libraries(eos_unit_tests Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
@@ -33,9 +33,9 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
                              ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
 endif()
 
-catch_discover_tests(test_eos_spiner)
+catch_discover_tests(eos_unit_tests)
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
-  add_custom_command(TARGET test_eos_spiner PRE_BUILD
+  add_custom_command(TARGET eos_unit_tests PRE_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
                      ${CMAKE_SOURCE_DIR}/singularity-eos-data
                      ${PROJECT_BINARY_DIR}/singularity-eos-data)
