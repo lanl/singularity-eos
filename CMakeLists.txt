@@ -30,7 +30,7 @@ option (SINGULARITY_BETTER_DEBUG_FLAGS
   "Better debug flags for singularity" ON)
 option (SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
 option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
-option (SINGULARITY_BUILD_MIX "Mixed cell closure" ON)
+option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
 option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
 option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
 
@@ -198,7 +198,7 @@ if(SINGULARITY_KOKKOSKERNELS_INSTALL_DIR)
   set(SINGULARITY_USE_KOKKOSKERNELS ON CACHE BOOL "" FORCE)
 endif()
 if(SINGULARITY_USE_CUDA AND NOT SINGULARITY_USE_KOKKOSKERNELS)
-  message(WARNING "Kokkos Kernels is required if you want to use mix on GPU.")
+  message(WARNING "Kokkos Kernels is required if you want to use closures on GPU.")
 endif()
 if(SINGULARITY_USE_KOKKOSKERNELS)
   if(NOT DEFINED SINGULARITY_USE_KOKKOS)
@@ -319,10 +319,10 @@ endif()
 set(INSTALL_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/eos/eos.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/utils/sp5/singularity_eos_sp5.hpp)
-if(SINGULARITY_BUILD_MIX)
+if(SINGULARITY_BUILD_CLOSURE)
   list(APPEND INSTALL_FILES
        ${CMAKE_CURRENT_SOURCE_DIR}/eos/singularity_eos.hpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/mix/mixed_cell_models.hpp)
+       ${CMAKE_CURRENT_SOURCE_DIR}/closure/mixed_cell_models.hpp)
   if(SINGULARITY_USE_FORTRAN)
     list(APPEND INSTALL_FILES
          ${CMAKE_BINARY_DIR}/eos/singularity_eos.mod

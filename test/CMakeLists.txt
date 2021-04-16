@@ -41,7 +41,7 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
                      ${PROJECT_BINARY_DIR}/singularity-eos-data)
 endif()
 
-if (SINGULARITY_BUILD_MIX)
+if (SINGULARITY_BUILD_CLOSURE)
   add_executable(test_pte
                  test_pte.cpp)
   target_link_libraries(test_pte PRIVATE
