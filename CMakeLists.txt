@@ -99,9 +99,15 @@ endif()
 
 if (SINGULARITY_USE_EOSPAC)
   if (NOT SINGULARITY_USE_HDF5)
-    message(SEND_ERROR "ERROR: EOSPAC enabled without hdf5.")
+    message(WARNING "EOSPAC enabled without hdf5.")
   endif()
-  target_compile_definitions(singularity-eos::flags INTERFACE SINGULARITY_USE_EOSPAC)
+  if (SINGULARITY_USE_CUDA)
+    message(FATAL_ERROR "EOSPAC not supported with cuda")
+  endif()
+endif()
+
+if (SINGULARITY_TEST_SESAME)
+   target_compile_definitions(singularity-eos::flags INTERFACE SINGULARITY_TEST_SESAME)
 endif()
 
 if (SINGULARITY_USE_HDF5)

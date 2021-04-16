@@ -22,10 +22,10 @@ if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
 target_link_libraries(test_eos_spiner Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
 
-if(SINGULARITY_USE_EOSPAC)
+if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
-                 ${CMAKE_SOURCE_DIR}/utils/sesame2spiner/io_eospac.cpp
-                 compare_to_eospac.cpp)
+                 compare_to_eospac.cpp
+                 ${CMAKE_SOURCE_DIR}/utils/sesame2spiner/io_eospac.cpp)
   target_link_libraries(compare_to_eospac Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
   target_include_directories(compare_to_eospac PUBLIC
                              ${CMAKE_SOURCE_DIR}/utils/spiner

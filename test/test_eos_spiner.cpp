@@ -36,6 +36,10 @@ using singularity::SpinerEOSDependsRhoT;
 using singularity::SpinerEOSDependsRhoSie;
 #endif
 
+#ifdef SINGULARITY_USE_EOSPAC
+using singularity::EOSPAC;
+#endif
+
 namespace EOSBuilder = singularity::EOSBuilder;
 namespace thermalqs = singularity::thermalqs;
 
@@ -620,6 +624,28 @@ SCENARIO("Stellar Collapse EOS",
 }
 #endif // SINGULARITY_TEST_STELLAR_COLLAPSE
 #endif // USE_HDF5
+
+#ifdef SINGULARITY_USE_EOSPAC
+#ifdef SINGULARITY_TEST_SESAME
+SCENARIO( "EOSPAC API", "[EOSPAC]") {
+  GIVEN( "An EOSPAC EOS initialized with steel" ) {
+    EOS eos = EOSPAC(steelID);
+    THEN("We can get a reference density and temperature") {
+      Real rho, T, sie, P, cv, bmod, dpde, dvdt;
+      eos.ValuesAtReferenceState(rho, T, sie, P, cv, bmod, dpde, dvdt);
+      REQUIRE( isClose(rho, 7.91) );
+      REQUIRE( isClose(T, 293) );
+    }
+    THEN("Quantities can be read from density and temperature") {
+      Real ie = eos.InternalEnergyFromDensityTemperature(1e0,1e6);
+      REQUIRE( isClose(ie, 4.96416e13) );
+      Real bm = eos.BulkModulusFromDensityTemperature(1e0, 1e6);
+      REQUIRE( isClose(bm, 2.27214e+13) );
+    }
+  }
+}
+#endif // SINGULARITY_TEST_SESAME
+#endif // SINGULARITY_USE_EOSPAC
 
 int main(int argc, char* argv[]) {
 

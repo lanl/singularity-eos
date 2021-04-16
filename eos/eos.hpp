@@ -39,7 +39,7 @@
 #endif // SPINER_USE_HDF
 
 #ifdef SINGULARITY_USE_EOSPAC
-#include "eos_eospac.hpp"
+#include <eos_Interface.h>
 #endif
 
 #ifdef SINGULARITY_ENABLE_EXCEPTIONS
@@ -1501,48 +1501,40 @@ public:
                                  Real *lambda = nullptr) const;
   PORTABLE_FUNCTION void PTofRE(const Real rho, const Real sie, Real *lambda,
                                 Real &press, Real &temp, Real &dpdr, Real &dpde,
-                                Real &dtdr, Real &dtde);
+                                Real &dtdr, Real &dtde) const;
   PORTABLE_FUNCTION void ValuesAtReferenceState(Real &rho, Real &temp,
                                                 Real &sie, Real &press,
                                                 Real &cv, Real &bmod,
                                                 Real &dpde, Real &dvdt,
-                                                Real *lambda = nullptr) const {
-    rho = rho_ref_;
-    temp = temp_ref_;
-    sie = sie_ref_;
-    press = press_ref_;
-    cv = cv_ref_;
-    bmod = bmod_ref_;
-    dpde = dpde_ref_;
-    dvdt = dvdt_ref_;
-  }
+                                                Real *lambda = nullptr) const;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   int nlambda() const noexcept { return 0; }
   inline void Finalize() {}
   static std::string EosType() { return std::string("EOSPAC"); }
-  PORTABLE_FUNCTION void PrintParams() const {
-    printf("EOSPAC parameters:\nname = %s\n", name_);
+  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+    printf("EOSPAC parameters:\nmatid = %s\n", matid_);
   }
 
 private:
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   int matid_;
+  static constexpr int NT = 5;
+  EOS_INTEGER tablehandle[NT];
   EOS_INTEGER PofRT_table_;
   EOS_INTEGER TofRE_table_;
   EOS_INTEGER EofRT_table_;
   EOS_INTEGER RofPT_table_;
   EOS_INTEGER EOS_Info_table_;
-  constexpr Real temp_ref_ = 273;
+  static constexpr Real temp_ref_ = 293;
   Real rho_ref_ = 1;
   Real sie_ref_ = 1;
   Real press_ref_ = 1;
   Real cv_ref_ = 1;
   Real bmod_ref_ = 1;
   Real dpde_ref_ = 1;
-  Real dpde_ref_ = 1;
   Real dvdt_ref_ = 1;
-}
+};
 #endif // SINGULARITY_USE_EOSPAC
 
 using EOS = Variant<
@@ -1564,7 +1556,11 @@ using EOS = Variant<
     // enthalpy weirdly.
     StellarCollapse, ScaledEOS<StellarCollapse>, ShiftedEOS<StellarCollapse>,
     ShiftedEOS<ScaledEOS<StellarCollapse>>, RelativisticEOS<StellarCollapse>
-#endif
+#endif // SPINER_USE_HDF
+#ifdef SINGULARITY_USE_EOSPAC
+    ,
+    EOSPAC, ScaledEOS<EOSPAC>, ShiftedEOS<EOSPAC>, ShiftedEOS<ScaledEOS<EOSPAC>>
+#endif // SINGULARITY_USE_EOSPAC
     >;
 
 } // namespace singularity

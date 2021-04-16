@@ -24,6 +24,7 @@ set(EOS_SRCS
     eos_gruneisen.cpp
     eos_davis.cpp
     eos_stellar_collapse.cpp
+    eos_eospac.cpp
     )
 if (SINGULARITY_BUILD_MIX)
   list(APPEND EOS_SRCS singularity_eos.cpp)
