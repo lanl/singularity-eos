@@ -101,6 +101,7 @@ if (SINGULARITY_USE_EOSPAC)
   if (NOT SINGULARITY_USE_HDF5)
     message(SEND_ERROR "ERROR: EOSPAC enabled without hdf5.")
   endif()
+  target_compile_definitions(singularity-eos::flags INTERFACE SINGULARITY_USE_EOSPAC)
 endif()
 
 if (SINGULARITY_USE_HDF5)
