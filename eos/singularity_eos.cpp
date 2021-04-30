@@ -35,7 +35,7 @@ int init_sg_eos(const int nmat, EOS* &eos) {
 }
 
 int init_sg_IdealGas(const int matindex, EOS* eos, const double gm1,
-                    const double Cv) {
+                     const double Cv) {
   assert(matindex >= 0);
   EOS eos_ = IdealGas(gm1, Cv);
   eos[matindex] = eos_.GetOnDevice();
@@ -99,6 +99,14 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS* eos,
   return 0;
 }
 #endif
+
+#ifdef SINGULARITY_USE_EOSPAC
+int init_sg_eospac(const int matindex, EOS* eos, const int id) {
+  assert(matindex >= 0);
+  EOS eos_ = EOSPAC(id);
+  eos[matindex] = eos_.GetOnDevice();
+}
+#endif // SINGULARITY_USE_EOSPAC
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using Lrgt = Kokkos::LayoutRight;

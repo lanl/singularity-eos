@@ -26,36 +26,41 @@ extern "C" {
 
 int init_sg_eos(const int nmat, EOS* &eos);
 
-int init_sg_IdealGas(const int matid, EOS* eos, const double gm1,
+int init_sg_IdealGas(const int matindex, EOS* eos, const double gm1,
                      const double Cv);
 
 int init_sg_JWL(const int matindex, EOS* eos, const double A,
                 const double B, const double R1, const double R2,
                 const double w, const double rho0, const double Cv);
 
-int init_sg_Gruneisen(const int matid, EOS* eos, const double C0,
+int init_sg_Gruneisen(const int matindex, EOS* eos, const double C0,
                       const double s1, const double s2, const double s3,
                       const double G0, const double b, const double rho0,
                       const double T0, const double P0, const double Cv);
 
-int init_sg_DavisProducts(const int matid, EOS* eos, const double a,
+int init_sg_DavisProducts(const int matindex, EOS* eos, const double a,
                           const double b, const double k, const double n,
                           const double vc, const double pc, const double Cv,
                           const double E0);
 
-int init_sg_DavisReactants(const int matid, EOS* eos, const double rho0,
+int init_sg_DavisReactants(const int matindex, EOS* eos, const double rho0,
                            const double e0, const double P0, const double T0,
                            const double A, const double B, const double C,
                            const double G0, const double Z, const double alpha,
                            const double Cv0);
 
 #ifdef SPINER_USE_HDF
-int init_sg_SpinerDependsRhoT(const int matid, EOS* eos,
+int init_sg_SpinerDependsRhoT(const int matindex, EOS* eos,
                               const char* filename, const int id);
 
-int init_sg_SpinerDependsRhoSie(const int matid, EOS* eos,
+int init_sg_SpinerDependsRhoSie(const int matindex, EOS* eos,
                                 const char* filename, const int id);
 #endif
+
+#ifdef SINGULARITY_USE_EOSPAC
+ // capitalize? eospaceos Eospac Eospaceos EOSPAC EOSPACeos? 
+int init_sg_eospac(const int matindex, EOS* eos, const int id);
+#endif // SINGULARITY_USE_EOSPAC
 
 int get_sg_eos(// sizing information
                int nmat, int ncell, int cell_dim,
