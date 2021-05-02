@@ -8,7 +8,7 @@ A collection of closure models and tools useful for multiphysics codes
 ## Components
 
 - `eos` contains the analytic and tabular equation of state infrastructure
-- `mix` contains mixed cell closure models. Currently pressure-temperature equilibrium is supported. Requires `eos`.
+- `closure` contains mixed cell closure models. Currently pressure-temperature equilibrium is supported. Requires `eos`.
 - `utils/sesame2spiner` converts sesame tables to 
 
 ## To Build
