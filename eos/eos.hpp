@@ -77,9 +77,6 @@ public:
   ScaledEOS(T &&t, const Real scale)
       : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {}
   ScaledEOS() = default;
-  ScaledEOS &operator=(ScaledEOS &&) = default;
-  ScaledEOS &operator=(const ScaledEOS &) = default;
-  ScaledEOS(const ScaledEOS &) = default;
 
   auto GetOnDevice() { return ScaledEOS<T>(t_.GetOnDevice(), scale_); }
   inline void Finalize() { t_.Finalize(); }
@@ -221,9 +218,6 @@ public:
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
   ShiftedEOS() = default;
-  ShiftedEOS &operator=(ShiftedEOS &&) = default;
-  ShiftedEOS &operator=(const ShiftedEOS &) = default;
-  ShiftedEOS(const ShiftedEOS &) = default;
 
   auto GetOnDevice() { return ShiftedEOS<T>(t_.GetOnDevice(), shift_); }
   inline void Finalize() { t_.Finalize(); }
@@ -350,9 +344,6 @@ public:
         cl2_(cl * cl) // speed of light squared
   {}
   RelativisticEOS() = default;
-  RelativisticEOS &operator=(RelativisticEOS &&) = default;
-  RelativisticEOS &operator=(const RelativisticEOS &) = default;
-  RelativisticEOS(const RelativisticEOS &) = default;
 
   auto GetOnDevice() { return RelativisticEOS<T>(t_.GetOnDevice(), cl_); }
   inline void Finalize() { t_.Finalize(); }
@@ -460,9 +451,6 @@ private:
 class IdealGas {
 public:
   IdealGas() = default;
-  IdealGas &operator=(IdealGas &&) = default;
-  IdealGas &operator=(const IdealGas &) = default;
-  IdealGas(const IdealGas &) = default;
   PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv)
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
@@ -529,10 +517,6 @@ private:
 class Gruneisen {
 public:
   Gruneisen() = default;
-  Gruneisen &operator=(Gruneisen &&) = default;
-  Gruneisen &operator=(const Gruneisen &) = default;
-  Gruneisen(const Gruneisen &) = default;
-  // PORTABLE_INLINE_FUNCTION ~Gruneisen() = default;
   PORTABLE_INLINE_FUNCTION
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3,
             const Real G0, const Real b, const Real rho0, const Real T0,
@@ -602,9 +586,6 @@ private:
 class JWL {
 public:
   JWL() = default;
-  JWL &operator=(JWL &&) = default;
-  JWL &operator=(const JWL &) = default;
-  JWL(const JWL &) = default;
   PORTABLE_INLINE_FUNCTION JWL(const Real A, const Real B, const Real R1,
                                const Real R2, const Real w, const Real rho0,
                                const Real Cv)
@@ -667,9 +648,6 @@ private:
 class DavisReactants {
 public:
   DavisReactants() = default;
-  DavisReactants &operator=(DavisReactants &&) = default;
-  DavisReactants &operator=(const DavisReactants &) = default;
-  DavisReactants(const DavisReactants &) = default;
   PORTABLE_INLINE_FUNCTION
   DavisReactants(const Real rho0, const Real e0, const Real P0, const Real T0,
                  const Real A, const Real B, const Real C, const Real G0,
@@ -736,9 +714,6 @@ private:
 class DavisProducts {
 public:
   DavisProducts() = default;
-  DavisProducts &operator=(DavisProducts &&) = default;
-  DavisProducts &operator=(const DavisProducts &) = default;
-  DavisProducts(const DavisProducts &) = default;
   PORTABLE_INLINE_FUNCTION
   DavisProducts(const Real a, const Real b, const Real k, const Real n,
                 const Real vc, const Real pc, const Real Cv, const Real E0)
@@ -829,9 +804,6 @@ public:
                        bool reproducibility_mode = false);
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT() : memoryStatus_(DataStatus::Deallocated) {}
-  SpinerEOSDependsRhoT &operator=(SpinerEOSDependsRhoT &&) = default;
-  SpinerEOSDependsRhoT &operator=(const SpinerEOSDependsRhoT &) = default;
-  SpinerEOSDependsRhoT(const SpinerEOSDependsRhoT &) = default;
 
   SpinerEOSDependsRhoT GetOnDevice();
 
@@ -1034,9 +1006,6 @@ public:
   };
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
-  SpinerEOSDependsRhoSie &operator=(SpinerEOSDependsRhoSie &&) = default;
-  SpinerEOSDependsRhoSie &operator=(const SpinerEOSDependsRhoSie &) = default;
-  SpinerEOSDependsRhoSie(const SpinerEOSDependsRhoSie &) = default;
   SpinerEOSDependsRhoSie(const std::string &filename, int matid,
                          bool reproducibility_mode = false);
   SpinerEOSDependsRhoSie(const std::string &filename,
@@ -1194,9 +1163,6 @@ public:
 
   PORTABLE_INLINE_FUNCTION
   StellarCollapse() : memoryStatus_(DataStatus::Deallocated) {}
-  StellarCollapse &operator=(StellarCollapse &&) = default;
-  StellarCollapse &operator=(const StellarCollapse &) = default;
-  StellarCollapse(const StellarCollapse &) = default;
 
   StellarCollapse GetOnDevice();
 
