@@ -76,11 +76,10 @@ public:
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
       : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {}
-  PORTABLE_FUNCTION ScaledEOS() = default;
-  PORTABLE_FUNCTION ScaledEOS &operator=(ScaledEOS &&) = default;
-  PORTABLE_FUNCTION ScaledEOS &operator=(const ScaledEOS &) = default;
-  PORTABLE_FUNCTION ScaledEOS(const ScaledEOS &) = default;
-  // PORTABLE_FUNCTION ~ScaledEOS() = default;
+  ScaledEOS() = default;
+  ScaledEOS &operator=(ScaledEOS &&) = default;
+  ScaledEOS &operator=(const ScaledEOS &) = default;
+  ScaledEOS(const ScaledEOS &) = default;
 
   auto GetOnDevice() { return ScaledEOS<T>(t_.GetOnDevice(), scale_); }
   inline void Finalize() { t_.Finalize(); }
@@ -167,7 +166,6 @@ public:
       break;
     default:
       EOS_ERROR("Didn't find a valid input for ScaledEOS::FillEOS\n");
-      exit(1);
     }
   }
 
@@ -222,11 +220,10 @@ template <typename T> class ShiftedEOS {
 public:
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
-  PORTABLE_FUNCTION ShiftedEOS() = default;
-  PORTABLE_FUNCTION ShiftedEOS &operator=(ShiftedEOS &&) = default;
-  PORTABLE_FUNCTION ShiftedEOS &operator=(const ShiftedEOS &) = default;
-  PORTABLE_FUNCTION ShiftedEOS(const ShiftedEOS &) = default;
-  // PORTABLE_FUNCTION ~ShiftedEOS() = default;
+  ShiftedEOS() = default;
+  ShiftedEOS &operator=(ShiftedEOS &&) = default;
+  ShiftedEOS &operator=(const ShiftedEOS &) = default;
+  ShiftedEOS(const ShiftedEOS &) = default;
 
   auto GetOnDevice() { return ShiftedEOS<T>(t_.GetOnDevice(), shift_); }
   inline void Finalize() { t_.Finalize(); }
@@ -303,7 +300,6 @@ public:
       break;
     default:
       EOS_ERROR("Didn't find a valid input for ShiftedEOS::FillEOS\n");
-      exit(1);
     }
   }
 
@@ -353,11 +349,10 @@ public:
         ,
         cl2_(cl * cl) // speed of light squared
   {}
-  PORTABLE_FUNCTION RelativisticEOS() = default;
-  PORTABLE_FUNCTION RelativisticEOS &operator=(RelativisticEOS &&) = default;
-  PORTABLE_FUNCTION RelativisticEOS &
-  operator=(const RelativisticEOS &) = default;
-  PORTABLE_FUNCTION RelativisticEOS(const RelativisticEOS &) = default;
+  RelativisticEOS() = default;
+  RelativisticEOS &operator=(RelativisticEOS &&) = default;
+  RelativisticEOS &operator=(const RelativisticEOS &) = default;
+  RelativisticEOS(const RelativisticEOS &) = default;
 
   auto GetOnDevice() { return RelativisticEOS<T>(t_.GetOnDevice(), cl_); }
   inline void Finalize() { t_.Finalize(); }
@@ -464,11 +459,11 @@ private:
 
 class IdealGas {
 public:
-  PORTABLE_FUNCTION IdealGas() = default;
-  PORTABLE_FUNCTION IdealGas &operator=(IdealGas &&) = default;
-  PORTABLE_FUNCTION IdealGas &operator=(const IdealGas &) = default;
-  PORTABLE_FUNCTION IdealGas(const IdealGas &) = default;
-  PORTABLE_FUNCTION IdealGas(Real gm1, Real Cv)
+  IdealGas() = default;
+  IdealGas &operator=(IdealGas &&) = default;
+  IdealGas &operator=(const IdealGas &) = default;
+  IdealGas(const IdealGas &) = default;
+  PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv)
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
         _dvdt0(1. / (_rho0 * _T0)) {}
@@ -533,15 +528,15 @@ private:
 // /[...]/eos/gruneisen in FLAG
 class Gruneisen {
 public:
-  PORTABLE_FUNCTION Gruneisen() = default;
-  PORTABLE_FUNCTION Gruneisen &operator=(Gruneisen &&) = default;
-  PORTABLE_FUNCTION Gruneisen &operator=(const Gruneisen &) = default;
-  PORTABLE_FUNCTION Gruneisen(const Gruneisen &) = default;
+  Gruneisen() = default;
+  Gruneisen &operator=(Gruneisen &&) = default;
+  Gruneisen &operator=(const Gruneisen &) = default;
+  Gruneisen(const Gruneisen &) = default;
   // PORTABLE_INLINE_FUNCTION ~Gruneisen() = default;
-  PORTABLE_FUNCTION Gruneisen(const Real C0, const Real s1, const Real s2,
-                              const Real s3, const Real G0, const Real b,
-                              const Real rho0, const Real T0, const Real P0,
-                              const Real Cv)
+  PORTABLE_INLINE_FUNCTION
+  Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3,
+            const Real G0, const Real b, const Real rho0, const Real T0,
+            const Real P0, const Real Cv)
       : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0),
         _T0(T0), _P0(P0), _Cv(Cv) {}
   Gruneisen GetOnDevice() { return *this; }
@@ -606,14 +601,13 @@ private:
 // implemented in xRAGE for eostype(1).  It does not include any energy shifting
 class JWL {
 public:
-  PORTABLE_FUNCTION JWL() = default;
-  PORTABLE_FUNCTION JWL &operator=(JWL &&) = default;
-  PORTABLE_FUNCTION JWL &operator=(const JWL &) = default;
-  PORTABLE_FUNCTION JWL(const JWL &) = default;
-  // PORTABLE_INLINE_FUNCTION ~JWL() = default;
-  PORTABLE_FUNCTION JWL(const Real A, const Real B, const Real R1,
-                        const Real R2, const Real w, const Real rho0,
-                        const Real Cv)
+  JWL() = default;
+  JWL &operator=(JWL &&) = default;
+  JWL &operator=(const JWL &) = default;
+  JWL(const JWL &) = default;
+  PORTABLE_INLINE_FUNCTION JWL(const Real A, const Real B, const Real R1,
+                               const Real R2, const Real w, const Real rho0,
+                               const Real Cv)
       : _A(A), _B(B), _R1(R1), _R2(R2), _w(w), _rho0(rho0), _Cv(Cv) {}
   JWL GetOnDevice() { return *this; }
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -672,12 +666,11 @@ private:
 
 class DavisReactants {
 public:
-  PORTABLE_FUNCTION DavisReactants() = default;
-  // PORTABLE_INLINE_FUNCTION ~DavisReactants() = default;
-  PORTABLE_FUNCTION DavisReactants &operator=(DavisReactants &&) = default;
-  PORTABLE_FUNCTION DavisReactants &operator=(const DavisReactants &) = default;
-  PORTABLE_FUNCTION DavisReactants(const DavisReactants &) = default;
-  PORTABLE_FUNCTION
+  DavisReactants() = default;
+  DavisReactants &operator=(DavisReactants &&) = default;
+  DavisReactants &operator=(const DavisReactants &) = default;
+  DavisReactants(const DavisReactants &) = default;
+  PORTABLE_INLINE_FUNCTION
   DavisReactants(const Real rho0, const Real e0, const Real P0, const Real T0,
                  const Real A, const Real B, const Real C, const Real G0,
                  const Real Z, const Real alpha, const Real Cv0)
@@ -742,12 +735,11 @@ private:
 
 class DavisProducts {
 public:
-  PORTABLE_FUNCTION DavisProducts() = default;
-  PORTABLE_FUNCTION DavisProducts &operator=(DavisProducts &&) = default;
-  PORTABLE_FUNCTION DavisProducts &operator=(const DavisProducts &) = default;
-  PORTABLE_FUNCTION DavisProducts(const DavisProducts &) = default;
-  // PORTABLE_INLINE_FUNCTION ~DavisProducts() = default;
-  PORTABLE_FUNCTION
+  DavisProducts() = default;
+  DavisProducts &operator=(DavisProducts &&) = default;
+  DavisProducts &operator=(const DavisProducts &) = default;
+  DavisProducts(const DavisProducts &) = default;
+  PORTABLE_INLINE_FUNCTION
   DavisProducts(const Real a, const Real b, const Real k, const Real n,
                 const Real vc, const Real pc, const Real Cv, const Real E0)
       : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv), _E0(E0) {}
@@ -837,11 +829,8 @@ public:
                        bool reproducibility_mode = false);
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT() : memoryStatus_(DataStatus::Deallocated) {}
-  PORTABLE_FUNCTION SpinerEOSDependsRhoT &
-  operator=(SpinerEOSDependsRhoT &&) = default;
-  PORTABLE_FUNCTION SpinerEOSDependsRhoT &
-  operator=(const SpinerEOSDependsRhoT &) = default;
-  PORTABLE_FUNCTION
+  SpinerEOSDependsRhoT &operator=(SpinerEOSDependsRhoT &&) = default;
+  SpinerEOSDependsRhoT &operator=(const SpinerEOSDependsRhoT &) = default;
   SpinerEOSDependsRhoT(const SpinerEOSDependsRhoT &) = default;
 
   SpinerEOSDependsRhoT GetOnDevice();
@@ -1045,11 +1034,8 @@ public:
   };
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
-  PORTABLE_FUNCTION SpinerEOSDependsRhoSie &
-  operator=(SpinerEOSDependsRhoSie &&) = default;
-  PORTABLE_FUNCTION SpinerEOSDependsRhoSie &
-  operator=(const SpinerEOSDependsRhoSie &) = default;
-  PORTABLE_FUNCTION
+  SpinerEOSDependsRhoSie &operator=(SpinerEOSDependsRhoSie &&) = default;
+  SpinerEOSDependsRhoSie &operator=(const SpinerEOSDependsRhoSie &) = default;
   SpinerEOSDependsRhoSie(const SpinerEOSDependsRhoSie &) = default;
   SpinerEOSDependsRhoSie(const std::string &filename, int matid,
                          bool reproducibility_mode = false);
@@ -1208,10 +1194,9 @@ public:
 
   PORTABLE_INLINE_FUNCTION
   StellarCollapse() : memoryStatus_(DataStatus::Deallocated) {}
-  PORTABLE_FUNCTION StellarCollapse &operator=(StellarCollapse &&) = default;
-  PORTABLE_FUNCTION StellarCollapse &
-  operator=(const StellarCollapse &) = default;
-  PORTABLE_FUNCTION StellarCollapse(const StellarCollapse &) = default;
+  StellarCollapse &operator=(StellarCollapse &&) = default;
+  StellarCollapse &operator=(const StellarCollapse &) = default;
+  StellarCollapse(const StellarCollapse &) = default;
 
   StellarCollapse GetOnDevice();
 
@@ -1323,16 +1308,15 @@ private:
   void computeColdAndHotCurves_();
   void setNormalValues_();
 
-  PORTABLE_INLINE_FUNCTION void __attribute__((always_inline))
+  PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
   checkLambda_(Real *lambda) const noexcept {
     if (lambda == nullptr) {
       EOS_ERROR(
           "StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
-      exit(1);
     }
   }
 
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
+  PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) Real
   toLog_(const Real x, const Real offset) const noexcept {
     // return std::log10(x + offset + EPS);
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
@@ -1390,7 +1374,7 @@ private:
 
   PORTABLE_FUNCTION Real lTFromlRhoSie_(const Real lRho, const Real sie,
                                         Real *lambda) const noexcept;
-  PORTABLE_INLINE_FUNCTION void __attribute__((always_inline))
+  PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
   getLogsFromRhoT_(const Real rho, const Real temp, Real *lambda, Real &lRho,
                    Real &lT, Real &Ye) const noexcept {
     checkLambda_(lambda);
@@ -1398,7 +1382,6 @@ private:
     lT = lT_(temp);
     Ye = lambda[Lambda::Ye];
     lambda[Lambda::lT] = lT;
-    return;
   }
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
   getLogsFromRhoSie_(const Real rho, const Real sie, Real *lambda, Real &lRho,

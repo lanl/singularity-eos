@@ -44,7 +44,6 @@ public:
     eos_( std::move(std::forward<EOSChoice>(choice)) )
   {}
 
-  PORTABLE_FUNCTION
   Variant() noexcept = default;
   
   template<typename EOSChoice,

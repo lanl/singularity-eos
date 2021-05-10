@@ -62,7 +62,7 @@ index 2fb2ac549..aeef9dcdd 100644
  
      MPARK_VARIANT_COPY_CONSTRUCTOR(
 -        Trait::TriviallyAvailable,
-+        Trait::TriviallyAvailable,V_GPU_FUNCTION
++        Trait::TriviallyAvailable,
          copy_constructor(const copy_constructor &that) = default;);
  
      MPARK_VARIANT_COPY_CONSTRUCTOR(
@@ -103,7 +103,7 @@ index 2fb2ac549..aeef9dcdd 100644
  
      MPARK_VARIANT_MOVE_ASSIGNMENT(
 -        Trait::TriviallyAvailable,
-+        Trait::TriviallyAvailable,V_GPU_FUNCTION
++        Trait::TriviallyAvailable,
          move_assignment &operator=(move_assignment &&that) = default;);
  
      MPARK_VARIANT_MOVE_ASSIGNMENT(
