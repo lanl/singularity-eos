@@ -292,11 +292,9 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
   const unsigned long input = ~output;
   if (output == thermalqs::none) {
     UNDEFINED_ERROR;
-    exit(1);
   }
   if (output & thermalqs::density) {
     EOS_ERROR("StellarCollapse cannot output density at this time");
-    exit(1);
   }
   if (input & thermalqs::temperature) {
     getLogsFromRhoT_(rho, temp, lambda, lRho, lT, Ye);
@@ -304,7 +302,6 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
     getLogsFromRhoSie_(rho, energy, lambda, lRho, lT, Ye);
   } else {
     UNDEFINED_ERROR;
-    exit(1);
   }
   if (output & thermalqs::specific_internal_energy) {
     const Real lE = lE_.interpToReal(Ye, lT, lRho);
@@ -404,7 +401,6 @@ void StellarCollapse::LoadFromStellarCollapseFile_(
   status = H5LTread_dataset_double(file_id, "energy_shift", &lEOffset_);
   if (status < 0) {
     EOS_ERROR("An HDF5 error ocurred while reading energy_shift\n");
-    exit(1);
   }
 
   // Bounds
@@ -456,7 +452,6 @@ int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &name) {
   if (status < 0) {
     std::string msg = "Failed to read dataset " + name + "\n";
     EOS_ERROR(msg.c_str());
-    exit(1);
   }
   return data;
 }
@@ -648,7 +643,7 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
     status = findRoot(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH,
                       ROOT_THRESH, lT, counts);
     if (status != RootFinding1D::Status::SUCCESS) {
-#ifdef STELLAR_COLLAPSE_EOS_VERBOSE
+#if STELLAR_COLLAPSE_EOS_VERBOSE
       std::stringstream errorMessage;
       errorMessage << "Inverting log(sie) table for log(T) failed\n"
                    << "Ye      = " << Ye << "\n"

@@ -46,11 +46,16 @@ namespace thermalqs = singularity::thermalqs;
 const std::string eosName = "../singularity-eos-data/materials.sp5";
 const std::string airName = "air";
 const std::string steelName = "stainless steel 347";
-const int steelID = 4272;
-const int airID = 5030;
-const int DTID = 5267;
-const int goldID = 2700;
+
+#ifdef SPINER_USE_HDF
+#ifdef SPINER_TEST_SESAME
+constexpr int steelID = 4272;
+constexpr int airID = 5030;
+constexpr int DTID = 5267;
+constexpr int goldID = 2700;
 constexpr Real ev2k = 1.160451812e4;
+#endif // SPINER_TEST_SESAME
+#endif // SPINER_USE_HDF
 
 constexpr Real EPS = 1e-2; // within a percent
 PORTABLE_INLINE_FUNCTION bool isClose(Real a, Real b) {
