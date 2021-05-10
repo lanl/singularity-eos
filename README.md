@@ -61,6 +61,7 @@ A number of options are avaialable for compiling:
 | SINGULARITY_TEST_SESAME           | OFF     | Test the Sesame table readers                                                        |
 | SINGULARITY_TEST_STELLAR_COLLAPSE | OFF     | Test the Stellar Collapse table readers                                              |
 | SINGULARITY_BUILD_SESAME2SPINER   | OFF     | Builds the conversion tool sesame2spiner which makes files readable by SpinerEOS     |
+| SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER | OFF     | Builds the conversion tool stellarcollapse2spiner which optionally makes stellar collapse files faster to read |
 | SINGULARITY_INVERT_AT_SETUP       | OFF     | For tests, pre-invert eospac tables.                                                 |
 | SINGULARITY_BETTER_DEBUG_FLAGS    | ON      | Enables nicer GPU debug flags. May interfere with in-tree builds as a submodule      |
 | SINGULARITY_HIDE_MORE_WARNINGS    | OFF     | Makes warnings less verbose. May interfere with in-tree builds as a submodule        |

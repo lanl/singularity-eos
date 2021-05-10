@@ -26,6 +26,7 @@ option (SINGULARITY_USE_KOKKOSKERNELS
 option (SINGULARITY_INVERT_AT_SETUP "Use eospacs preinverted tables" OFF)
 option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
 option (SINGULARITY_BUILD_SESAME2SPINER "Compile sesame2spiner" OFF)
+option (SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" OFF)
 option (SINGULARITY_BETTER_DEBUG_FLAGS
   "Better debug flags for singularity" ON)
 option (SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
@@ -82,6 +83,10 @@ execute_process(COMMAND patch -N -s -V never
 
 add_library (singularity-eos::flags INTERFACE IMPORTED GLOBAL)
 add_library (singularity-eos::libs INTERFACE IMPORTED)
+
+target_include_directories(singularity-eos::flags
+                           INTERFACE
+                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>)
 
 # xl fix
 target_compile_options(singularity-eos::flags INTERFACE
@@ -301,7 +306,7 @@ else()
               $<TARGET_OBJECTS:eos_objs>)
 endif()
 
-if (SINGULARITY_USE_HDF5)
+if (SINGULARITY_USE_HDF5 AND SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
    add_subdirectory(${PROJECT_SOURCE_DIR}/utils/stellarcollapse2spiner)
    install(TARGETS stellarcollapse2spiner DESTINATION bin)
 endif()
