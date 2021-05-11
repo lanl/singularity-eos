@@ -94,13 +94,13 @@ public:
       min += 0.5*shrinkRange*delta;
       max -= 0.5*shrinkRange*delta;
       
-      if (!(isnan(anchor_point))) {
+      if (!(std::isnan(anchor_point))) {
         anchor_point += offset;
         anchor_point = BDMath::log10(std::abs(anchor_point));
       }
     }
 
-    if (!(isnan(anchor_point))) {
+    if (!(std::isnan(anchor_point))) {
       if (min < anchor_point && anchor_point < max) {
         Real dxguess = (max-min)/((Real)N-1);
         int Nmax = static_cast<int>((max - min)/dxguess);

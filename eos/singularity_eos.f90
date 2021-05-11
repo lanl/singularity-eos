@@ -39,6 +39,7 @@ module singularity_eos
     init_sg_DavisReactants_f,&
     init_sg_SpinerDependsRhoT_f,&
     init_sg_SpinerDependsRhoSie_f,&
+    init_sg_eospac_f,&
     get_sg_eos_f,&
     finalize_sg_eos_f
 
@@ -55,10 +56,10 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_IdealGas(matid, eos, gm1, Cv) &
+      init_sg_IdealGas(matindex, eos, gm1, Cv) &
       bind(C, name='init_sg_IdealGas')
       import
-      integer(c_int), value, intent(in)      :: matid
+      integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: gm1, Cv
     end function init_sg_IdealGas
@@ -66,10 +67,11 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_Gruneisen(matid, eos, C0, s1, s2, s3, G0, b, rho0, T0, P0, Cv) &
+      init_sg_Gruneisen(matindex, eos, C0, s1, s2, s3, G0, b, rho0, T0, P0,&
+                        Cv) &
       bind(C, name='init_sg_Gruneisen')
       import
-      integer(c_int), value, intent(in)      :: matid
+      integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: C0, s1, s2, s3, G0, b, rho0
       real(kind=c_double), value, intent(in) :: T0, P0, Cv
@@ -78,10 +80,10 @@ module singularity_eos
   
   interface
     integer(kind=c_int) function &
-      init_sg_JWL(matid, eos, A, B, R1, R2, w, rho0, Cv) &
+      init_sg_JWL(matindex, eos, A, B, R1, R2, w, rho0, Cv) &
       bind(C, name='init_sg_JWL')
       import
-      integer(c_int), value, intent(in)      :: matid
+      integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: A, B, R1, R2, w, rho0, Cv
     end function init_sg_JWL
@@ -89,10 +91,10 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_DavisProducts(matid, eos, a, b, k, n, vc, pc, Cv, E0) &
+      init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, E0) &
       bind(C, name='init_sg_DavisProducts')
       import
-      integer(c_int), value, intent(in)      :: matid
+      integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: a, b, k, n, vc, pc, Cv, E0
     end function init_sg_DavisProducts
@@ -100,11 +102,11 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_DavisReactants(matid, eos, rho0, e0, P0, T0, A, B, C, G0, Z,&
+      init_sg_DavisReactants(matindex, eos, rho0, e0, P0, T0, A, B, C, G0, Z,&
                           alpha, Cv0) &
       bind(C, name='init_sg_DavisReactants')
       import
-      integer(c_int), value, intent(in)      :: matid
+      integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: rho0, e0, P0, T0, A, B, C, G0,&
                                                 Z, alpha, Cv0
@@ -113,10 +115,10 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_SpinerDependsRhoT(matid, eos, filename, id) &
+      init_sg_SpinerDependsRhoT(matindex, eos, filename, id) &
       bind(C, name='init_sg_SpinerDependsRhoT')
       import
-      integer(c_int), value, intent(in)      :: matid, id
+      integer(c_int), value, intent(in)      :: matindex, id
       type(c_ptr), value, intent(in)         :: eos
       character(kind=c_char), intent(in)     :: filename(*)
     end function init_sg_SpinerDependsRhoT
@@ -124,13 +126,23 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_SpinerDependsRhoSie(matid, eos, filename, id) &
+      init_sg_SpinerDependsRhoSie(matindex, eos, filename, id) &
       bind(C, name='init_sg_SpinerDependsRhoSie')
       import
-      integer(c_int), value, intent(in)      :: matid, id
+      integer(c_int), value, intent(in)      :: matindex, id
       type(c_ptr), value, intent(in)         :: eos
       character(kind=c_char), intent(in)     :: filename(*)
     end function init_sg_SpinerDependsRhoSie
+  end interface
+
+  interface
+    integer(kind=c_int) function &
+      init_sg_eospac(matindex, eos, id) &
+      bind(C, name='init_sg_eospac')
+      import
+      integer(c_int), value, intent(in) :: matindex, id
+      type(c_ptr), value, intent(in)    :: eos
+    end function init_sg_eospac
   end interface
 
   interface
@@ -251,71 +263,78 @@ contains
     err = init_sg_eos(nmat, eos%ptr)
   end function init_sg_eos_f
 
-  integer function init_sg_IdealGas_f(matid, eos, gm1, Cv) &
+  integer function init_sg_IdealGas_f(matindex, eos, gm1, Cv) &
     result(err)
-    integer(c_int), value, intent(in) :: matid
+    integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: gm1, Cv
-    err = init_sg_IdealGas(matid-1, eos%ptr, gm1, Cv)
+    err = init_sg_IdealGas(matindex-1, eos%ptr, gm1, Cv)
   end function init_sg_IdealGas_f
 
-  integer function init_sg_Gruneisen_f(matid, eos, C0, s1, s2, s3, G0, b,&
+  integer function init_sg_Gruneisen_f(matindex, eos, C0, s1, s2, s3, G0, b,&
                                        rho0, T0, P0, Cv) &
     result(err)
-    integer(c_int), value, intent(in) :: matid
+    integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: C0, s1, s2, s3, G0, b, rho0
     real(kind=8), value, intent(in)   :: T0, P0, Cv
-    err = init_sg_Gruneisen(matid-1, eos%ptr, C0, s1, s2, s3, G0, b, rho0,&
+    err = init_sg_Gruneisen(matindex-1, eos%ptr, C0, s1, s2, s3, G0, b, rho0,&
                             T0, P0, Cv)
   end function init_sg_Gruneisen_f
 
-  integer function init_sg_JWL_f(matid, eos, A, B, R1, R2, w, rho0, Cv) &
+  integer function init_sg_JWL_f(matindex, eos, A, B, R1, R2, w, rho0, Cv) &
     result(err)
-    integer(c_int), value, intent(in) :: matid
+    integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: A, B, R1, R2, w, rho0, Cv
-    err = init_sg_JWL(matid-1, eos%ptr, A, B, R1, R2, w, rho0, Cv)
+    err = init_sg_JWL(matindex-1, eos%ptr, A, B, R1, R2, w, rho0, Cv)
   end function init_sg_JWL_f
   
-  integer function init_sg_DavisProducts_f(matid, eos, a, b, k, n, vc, pc,&
+  integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc,&
                                            Cv, E0) &
     result(err)
-    integer(c_int), value, intent(in) :: matid
+    integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: a, b, k, n, vc, pc, Cv, E0
-    err = init_sg_DavisProducts(matid-1, eos%ptr, a, b, k, n, vc, pc, Cv, E0)
+    err = init_sg_DavisProducts(matindex-1, eos%ptr, a, b, k, n, vc, pc, Cv, E0)
   end function init_sg_DavisProducts_f
 
-  integer function init_sg_DavisReactants_f(matid, eos, rho0, e0, P0, T0,&
+  integer function init_sg_DavisReactants_f(matindex, eos, rho0, e0, P0, T0,&
                                             A, B, C, G0, Z, alpha, Cv0) &
     result(err)
-    integer(c_int), value, intent(in) :: matid
+    integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: rho0, e0, P0, T0, A, B, C, G0, Z
     real(kind=8), value, intent(in)   :: alpha, Cv0
-    err = init_sg_DavisReactants(matid-1, eos%ptr, rho0, e0, P0, T0, A, B,&
+    err = init_sg_DavisReactants(matindex-1, eos%ptr, rho0, e0, P0, T0, A, B,&
                                  C, G0, Z, alpha, Cv0)
   end function init_sg_DavisReactants_f
 
-  integer function init_sg_SpinerDependsRhoT_f(matid, eos, filename, id) &
+  integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id) &
     result(err)
-    integer(c_int), value, intent(in)         :: matid
+    integer(c_int), value, intent(in)         :: matindex
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
     integer(c_int), intent(inout)             :: id
-    err = init_sg_SpinerDependsRhoT(matid-1, eos%ptr,&
+    err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
                                     trim(filename)//C_NULL_CHAR, id)
   end function init_sg_SpinerDependsRhoT_f
 
-  integer function init_sg_SpinerDependsRhoSie_f(matid, eos, filename, id) &
+  integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id) &
     result(err)
-    integer(c_int), value, intent(in)         :: matid, id
+    integer(c_int), value, intent(in)         :: matindex, id
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
-    err = init_sg_SpinerDependsRhoSie(matid-1, eos%ptr,&
+    err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
                                       trim(filename)//C_NULL_CHAR, id)
   end function init_sg_SpinerDependsRhoSie_f
+
+  integer function init_sg_eospac_f(matindex, eos, id) &
+    result(err)
+    integer(c_int), value, intent(in) :: matindex, id
+    type(sg_eos_ary_t), intent(in)    :: eos
+    err = init_sg_eospac(matindex-1, eos%ptr, id)
+  end function init_sg_eospac_f
 
   integer function finalize_sg_eos_f(nmat, eos) &
     result(err)
