@@ -1,0 +1,12 @@
+#
+# spack config for environment [singularity_eos-env]
+#
+spack:
+  specs:
+  - hdf5~mpi+cxx+hl
+  - cmake
+  - ninja
+  concretization: together
+  view: true
+  mirrors:
+    lanl_spack_mirror: https://pe-serve.lanl.gov/spack-mirror/
