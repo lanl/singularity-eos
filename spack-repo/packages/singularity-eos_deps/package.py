@@ -3,7 +3,7 @@
 import os
 from spack import *
 
-class SingularityDeps(BundlePackage):
+class SingularityEosDeps(BundlePackage):
     homepage    = "https://github.com/lanl/singularity-eos"
     url         = "https://github.com/lanl/singularity-eos/archive/refs/heads/main.zip"
     git         = "git@github.com:lanl/singularity-eos.git"
@@ -23,7 +23,8 @@ class SingularityDeps(BundlePackage):
 
     def setup_run_environment(self, env):
         env.set('HDF5_ROOT', self.spec['hdf5'].prefix)
-        env.set('SINGULARITY_HELP', os.path.join(self.spec.prefix, f"load_env-{self.spec.full_hash(length=4)}.sh"))
+        # this is still WIP
+        env.set('SINGULARITY_EOS_LOADER', os.path.join(self.spec.prefix, f"load_env-{self.spec.full_hash(length=4)}.sh"))
 
     def install(self, spec, prefix):
         mod_script = os.path.join(spec.prefix, f"load_env-{spec.full_hash(length=4)}.sh")
