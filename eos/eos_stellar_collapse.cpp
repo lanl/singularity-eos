@@ -630,8 +630,10 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
   // TODO(JMM): Rethink this as needed.
   if (sie <= eCold_.interpToReal(Ye, lRho)) {
     lT = lTGuess = lTMin_;
+    counts.increment(0);
   } else if (sie >= eHot_.interpToReal(Ye, lRho)) {
     lT = lTGuess = lTMax_;
+    counts.increment(0);
   } else {
     // if the guess isn't in the bounds, bound it
     if (!(lTMin_ <= lTGuess && lTGuess <= lTMax_)) {
