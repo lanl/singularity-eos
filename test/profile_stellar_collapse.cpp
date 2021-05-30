@@ -290,7 +290,7 @@ int main(int argc, char *argv[]) {
         << std::max(std::abs(diffs_t_h.min()), std::abs(diffs_t_h.max()))
         << "\n"
         << "Root finding:\n"
-        << "its\tcount:\n";
+        << "its\tpercent taken:\n";
     Real tot = sc.counts.total();
     for (int i = 0; i < sc.counts.nBins(); ++i) {
       std::cout << i << "\t" << 100.0*sc.counts[i]/tot << "\n";
