@@ -56,92 +56,105 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_IdealGas(matindex, eos, gm1, Cv) &
+      init_sg_IdealGas(matindex, eos, gm1, Cv, sg_mods_enabled, &
+                       sg_mods_values) &
       bind(C, name='init_sg_IdealGas')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: gm1, Cv
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_IdealGas
   end interface
 
   interface
     integer(kind=c_int) function &
       init_sg_Gruneisen(matindex, eos, C0, s1, s2, s3, G0, b, rho0, T0, P0,&
-                        Cv) &
+                        Cv, sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_Gruneisen')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: C0, s1, s2, s3, G0, b, rho0
       real(kind=c_double), value, intent(in) :: T0, P0, Cv
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_Gruneisen
   end interface
   
   interface
     integer(kind=c_int) function &
-      init_sg_JWL(matindex, eos, A, B, R1, R2, w, rho0, Cv) &
+      init_sg_JWL(matindex, eos, A, B, R1, R2, w, rho0, Cv, sg_mods_enabled, &
+                  sg_mods_values) &
       bind(C, name='init_sg_JWL')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: A, B, R1, R2, w, rho0, Cv
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_JWL
   end interface
 
   interface
     integer(kind=c_int) function &
-      init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, E0) &
+      init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, E0, &
+                            sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_DavisProducts')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: a, b, k, n, vc, pc, Cv, E0
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_DavisProducts
   end interface
 
   interface
     integer(kind=c_int) function &
       init_sg_DavisReactants(matindex, eos, rho0, e0, P0, T0, A, B, C, G0, Z,&
-                          alpha, Cv0) &
+                             alpha, Cv0, sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_DavisReactants')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: rho0, e0, P0, T0, A, B, C, G0,&
                                                 Z, alpha, Cv0
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_DavisReactants
   end interface
 
   interface
     integer(kind=c_int) function &
-      init_sg_SpinerDependsRhoT(matindex, eos, filename, id) &
+      init_sg_SpinerDependsRhoT(matindex, eos, filename, id, sg_mods_enabled, &
+                                sg_mods_values) &
       bind(C, name='init_sg_SpinerDependsRhoT')
       import
       integer(c_int), value, intent(in)      :: matindex, id
       type(c_ptr), value, intent(in)         :: eos
       character(kind=c_char), intent(in)     :: filename(*)
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_SpinerDependsRhoT
   end interface
 
   interface
     integer(kind=c_int) function &
-      init_sg_SpinerDependsRhoSie(matindex, eos, filename, id) &
+      init_sg_SpinerDependsRhoSie(matindex, eos, filename, id, &
+                                  sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_SpinerDependsRhoSie')
       import
       integer(c_int), value, intent(in)      :: matindex, id
       type(c_ptr), value, intent(in)         :: eos
       character(kind=c_char), intent(in)     :: filename(*)
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_SpinerDependsRhoSie
   end interface
 
   interface
     integer(kind=c_int) function &
-      init_sg_eospac(matindex, eos, id) &
+      init_sg_eospac(matindex, eos, id, sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_eospac')
       import
       integer(c_int), value, intent(in) :: matindex, id
       type(c_ptr), value, intent(in)    :: eos
+      type(c_ptr), value, intent(in)    :: sg_mods_enabled, sg_mods_values
     end function init_sg_eospac
   end interface
 
@@ -263,77 +276,114 @@ contains
     err = init_sg_eos(nmat, eos%ptr)
   end function init_sg_eos_f
 
-  integer function init_sg_IdealGas_f(matindex, eos, gm1, Cv) &
+  integer function init_sg_IdealGas_f(matindex, eos, gm1, Cv, &
+                                      sg_mods_enabled, sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: gm1, Cv
-    err = init_sg_IdealGas(matindex-1, eos%ptr, gm1, Cv)
+    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    err = init_sg_IdealGas(matindex-1, eos%ptr, gm1, Cv, &
+                           c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_IdealGas_f
 
   integer function init_sg_Gruneisen_f(matindex, eos, C0, s1, s2, s3, G0, b,&
-                                       rho0, T0, P0, Cv) &
+                                       rho0, T0, P0, Cv, sg_mods_enabled, &
+                                       sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: C0, s1, s2, s3, G0, b, rho0
     real(kind=8), value, intent(in)   :: T0, P0, Cv
+    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
     err = init_sg_Gruneisen(matindex-1, eos%ptr, C0, s1, s2, s3, G0, b, rho0,&
-                            T0, P0, Cv)
+                            T0, P0, Cv, c_loc(sg_mods_enabled), &
+                            c_loc(sg_mods_values))
   end function init_sg_Gruneisen_f
 
-  integer function init_sg_JWL_f(matindex, eos, A, B, R1, R2, w, rho0, Cv) &
+  integer function init_sg_JWL_f(matindex, eos, A, B, R1, R2, w, rho0, Cv, &
+                                 sg_mods_enabled, sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: A, B, R1, R2, w, rho0, Cv
-    err = init_sg_JWL(matindex-1, eos%ptr, A, B, R1, R2, w, rho0, Cv)
+    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    err = init_sg_JWL(matindex-1, eos%ptr, A, B, R1, R2, w, rho0, Cv, &
+                      c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_JWL_f
   
-  integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc,&
-                                           Cv, E0) &
+  integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc, &
+                                           Cv, E0, sg_mods_enabled, &
+                                           sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: a, b, k, n, vc, pc, Cv, E0
-    err = init_sg_DavisProducts(matindex-1, eos%ptr, a, b, k, n, vc, pc, Cv, E0)
+    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    err = init_sg_DavisProducts(matindex-1, eos%ptr, a, b, k, n, vc, pc, Cv, &
+                                E0, c_loc(sg_mods_enabled), &
+                                c_loc(sg_mods_values))
   end function init_sg_DavisProducts_f
 
-  integer function init_sg_DavisReactants_f(matindex, eos, rho0, e0, P0, T0,&
-                                            A, B, C, G0, Z, alpha, Cv0) &
+  integer function init_sg_DavisReactants_f(matindex, eos, rho0, e0, P0, T0, &
+                                            A, B, C, G0, Z, alpha, Cv0, &
+                                            sg_mods_enabled, sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: rho0, e0, P0, T0, A, B, C, G0, Z
     real(kind=8), value, intent(in)   :: alpha, Cv0
-    err = init_sg_DavisReactants(matindex-1, eos%ptr, rho0, e0, P0, T0, A, B,&
-                                 C, G0, Z, alpha, Cv0)
+    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    err = init_sg_DavisReactants(matindex-1, eos%ptr, rho0, e0, P0, T0, A, B, &
+                                 C, G0, Z, alpha, Cv0, c_loc(sg_mods_enabled), &
+                                 c_loc(sg_mods_values))
   end function init_sg_DavisReactants_f
 
-  integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id) &
+  integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
+                                               sg_mods_enabled, &
+                                               sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in)         :: matindex
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
     integer(c_int), intent(inout)             :: id
+    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
     err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
-                                    trim(filename)//C_NULL_CHAR, id)
+                                    trim(filename)//C_NULL_CHAR, id, &
+                                    c_loc(sg_mods_enabled), &
+                                    c_loc(sg_mods_values))
   end function init_sg_SpinerDependsRhoT_f
 
-  integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id) &
+  integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, &
+                                                 sg_mods_enabled, &
+                                                 sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in)         :: matindex, id
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
+    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
     err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
-                                      trim(filename)//C_NULL_CHAR, id)
+                                      trim(filename)//C_NULL_CHAR, id, &
+                                      c_loc(sg_mods_enabled), &
+                                      c_loc(sg_mods_values))
   end function init_sg_SpinerDependsRhoSie_f
 
-  integer function init_sg_eospac_f(matindex, eos, id) &
+  integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
+                                    sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex, id
     type(sg_eos_ary_t), intent(in)    :: eos
-    err = init_sg_eospac(matindex-1, eos%ptr, id)
+    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled), &
+                         c_loc(sg_mods_values))
   end function init_sg_eospac_f
 
   integer function finalize_sg_eos_f(nmat, eos) &

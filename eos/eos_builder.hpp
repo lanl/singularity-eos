@@ -92,8 +92,8 @@ namespace EOSBuilder {
 
   template<typename T>
   EOS applyShiftAndScale(T&& eos,
-			 bool scaled, bool shifted,
-			 Real scale, Real shift) {
+                         bool scaled, bool shifted,
+                         Real scale, Real shift) {
     if (shifted && scaled) {
       ShiftedEOS<T> a(std::forward<T>(eos),shift);
       ScaledEOS<ShiftedEOS<T>> b(std::move(a),scale);
