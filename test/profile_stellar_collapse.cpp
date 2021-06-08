@@ -251,6 +251,25 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(diffs_t_hv, diffs_t_dv);
 #endif
 
+    std::cout << "\t...Running once on host to histogram accesses..."
+              << std::endl;
+    std::vector<Real> lambdas_v(nfine*nfine*nfine*2);
+    DataBox lambdas_h(lambdas_v.data(), nfine, nfine, nfine, 2);
+    for (int trial = 0; trial < NTRIALS; ++trial) {
+      for (int iYe = 0; iYe < nfine; ++iYe) {
+        for (int iE = 0; iE < nfine; ++iE) {
+          for (int irho = 0; irho < nfine; ++irho) {
+            const Real rho = lRhoBounds.i2lin(irho);
+            const Real sie = lEBounds.i2lin(iE);
+            const Real Ye = YeBounds.i2lin(iYe);
+            Real *lambda = &lambdas_h(iYe, iE, irho, 0);
+            lambdas_h(iYe, iE, irho, 0) = Ye;
+            sc.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
+          }
+        }
+      }
+    }
+
     std::cout
         << "\nRESULTS:\n"
         << "Don't worry if errors are large. These are absolute, and include "
@@ -269,8 +288,14 @@ int main(int argc, char *argv[]) {
         << "\n"
         << "\tDelta T bounded by                        = "
         << std::max(std::abs(diffs_t_h.min()), std::abs(diffs_t_h.max()))
-        << std::endl;
-
+        << "\n"
+        << "Root finding:\n"
+        << "its\tpercent taken:\n";
+    Real tot = sc.counts.total();
+    for (int i = 0; i < sc.counts.nBins(); ++i) {
+      std::cout << i << "\t" << 100.0*sc.counts[i]/tot << "\n";
+    }
+    std::cout << std::endl;
     sc_d.Finalize();
     ig_d.Finalize();
   }
