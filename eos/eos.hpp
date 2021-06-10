@@ -1489,7 +1489,14 @@ private:
 using EOS = Variant<
     IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts,
     ScaledEOS<IdealGas>, ShiftedEOS<IdealGas>, ShiftedEOS<ScaledEOS<IdealGas>>,
-    RelativisticEOS<IdealGas>
+    ScaledEOS<ShiftedEOS<IdealGas>>, RelativisticEOS<IdealGas>,
+    ScaledEOS<Gruneisen>, ShiftedEOS<Gruneisen>,
+    ScaledEOS<ShiftedEOS<Gruneisen>>,
+    ScaledEOS<JWL>, ShiftedEOS<JWL>, ScaledEOS<ShiftedEOS<JWL>>,
+    ScaledEOS<DavisReactants>, ShiftedEOS<DavisReactants>,
+    ScaledEOS<ShiftedEOS<DavisReactants>>,
+    ScaledEOS<DavisProducts>, ShiftedEOS<DavisProducts>,
+    ScaledEOS<ShiftedEOS<DavisProducts>>
 #ifdef SPINER_USE_HDF
     ,
     SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie,
@@ -1497,6 +1504,8 @@ using EOS = Variant<
     ShiftedEOS<SpinerEOSDependsRhoT>, ShiftedEOS<SpinerEOSDependsRhoSie>,
     ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoT>>,
     ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoSie>>,
+    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoT>>,
+    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoSie>>,
     RelativisticEOS<SpinerEOSDependsRhoT>,
     RelativisticEOS<SpinerEOSDependsRhoSie>,
     // TODO(JMM): Might need shifted + relativistic
@@ -1508,7 +1517,8 @@ using EOS = Variant<
 #endif // SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
     ,
-    EOSPAC, ScaledEOS<EOSPAC>, ShiftedEOS<EOSPAC>, ShiftedEOS<ScaledEOS<EOSPAC>>
+    EOSPAC, ScaledEOS<EOSPAC>, ShiftedEOS<EOSPAC>,
+    ShiftedEOS<ScaledEOS<EOSPAC>>, ScaledEOS<ShiftedEOS<EOSPAC>>
 #endif // SINGULARITY_USE_EOSPAC
     >;
 

@@ -13,6 +13,7 @@
 //------------------------------------------------------------------------------
 
 #include "singularity_eos.hpp"
+#include "eos_builder.hpp"
 #include <map>
 #include <algorithm>
 #include <cassert>
@@ -34,10 +35,34 @@ int init_sg_eos(const int nmat, EOS* &eos) {
   return 0;
 }
 
+#define SGAPPLYMOD(A) \
+  EOSBuilder::applyShiftAndScale(A, enabled[0] == 1, enabled[1] == 1,\
+                                 vals[0], vals[1])
+
+constexpr const int def_en[2] = {0, 0};
+constexpr const double def_v[2] = {0.0, 0.0};
+
+int init_sg_IdealGas(const int matindex, EOS* eos, const double gm1,
+                     const double Cv,
+                     int const * const enabled, double const * const vals) {
+  assert(matindex >= 0);
+  EOS eos_ = SGAPPLYMOD(IdealGas(gm1, Cv));
+  eos[matindex] = eos_.GetOnDevice();
+  return 0;
+}
+
 int init_sg_IdealGas(const int matindex, EOS* eos, const double gm1,
                      const double Cv) {
+  return init_sg_IdealGas(matindex, eos, gm1, Cv, def_en, def_v);
+}
+
+int init_sg_Gruneisen(const int matindex, EOS* eos, const double C0,
+                      const double s1, const double s2, const double s3,
+                      const double G0, const double b, const double rho0,
+                      const double T0, const double P0, const double Cv,
+                      int const * const enabled, double const * const vals) {
   assert(matindex >= 0);
-  EOS eos_ = IdealGas(gm1, Cv);
+  EOS eos_ = SGAPPLYMOD(Gruneisen(C0, s1, s2, s3, G0, b, rho0, T0, P0, Cv));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
@@ -46,8 +71,16 @@ int init_sg_Gruneisen(const int matindex, EOS* eos, const double C0,
                       const double s1, const double s2, const double s3,
                       const double G0, const double b, const double rho0,
                       const double T0, const double P0, const double Cv) {
+  return init_sg_Gruneisen(matindex, eos, C0, s1, s2, s3, G0, b, rho0, T0, P0,
+                           Cv, def_en, def_v);
+}
+
+int init_sg_JWL(const int matindex, EOS* eos, const double A,
+                const double B, const double R1, const double R2,
+                const double w, const double rho0, const double Cv,
+                int const * const enabled, double const * const vals) {
   assert(matindex >= 0);
-  EOS eos_ = Gruneisen(C0, s1, s2, s3, G0, b, rho0, T0, P0, Cv);
+  EOS eos_ = SGAPPLYMOD(JWL(A, B, R1, R2, w, rho0, Cv));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
@@ -55,8 +88,18 @@ int init_sg_Gruneisen(const int matindex, EOS* eos, const double C0,
 int init_sg_JWL(const int matindex, EOS* eos, const double A,
                 const double B, const double R1, const double R2,
                 const double w, const double rho0, const double Cv) {
+  return init_sg_JWL(matindex, eos, A, B, R1, R2, w, rho0, Cv, def_en,
+                     def_v);
+}
+
+int init_sg_DavisProducts(const int matindex, EOS* eos, const double a,
+                          const double b, const double k, const double n,
+                          const double vc, const double pc, const double Cv,
+                          const double E0,
+                          int const * const enabled,
+                          double const * const vals) {
   assert(matindex >= 0);
-  EOS eos_ = JWL(A, B, R1, R2, w, rho0, Cv);
+  EOS eos_ = SGAPPLYMOD(DavisProducts(a, b, k, n, vc, pc, Cv, E0));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
@@ -65,8 +108,20 @@ int init_sg_DavisProducts(const int matindex, EOS* eos, const double a,
                           const double b, const double k, const double n,
                           const double vc, const double pc, const double Cv,
                           const double E0) {
+  return init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, E0,
+                               def_en, def_v);
+}
+
+int init_sg_DavisReactants(const int matindex, EOS* eos,
+                           const double rho0, const double e0, const double P0,
+                           const double T0, const double A, const double B,
+                           const double C, const double G0, const double Z,
+                           const double alpha, const double Cv0,
+                           int const * const enabled,
+                           double const * const vals) {
   assert(matindex >= 0);
-  EOS eos_ = DavisProducts(a, b, k, n, vc, pc, Cv, E0);
+  EOS eos_ =
+  SGAPPLYMOD(DavisReactants(rho0, e0, P0, T0, A, B, C, G0, Z, alpha, Cv0));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
@@ -76,37 +131,57 @@ int init_sg_DavisReactants(const int matindex, EOS* eos,
                            const double T0, const double A, const double B,
                            const double C, const double G0, const double Z,
                            const double alpha, const double Cv0) {
-  assert(matindex >= 0);
-  EOS eos_ = DavisReactants(rho0, e0, P0, T0, A, B, C, G0, Z, alpha, Cv0);
-  eos[matindex] = eos_.GetOnDevice();
-  return 0;
+  return init_sg_DavisReactants(matindex, eos, rho0, e0, P0, T0, A, B, C, G0, Z,
+                                alpha, Cv0, def_en, def_v);
 }
 
 #ifdef SPINER_USE_HDF
 int init_sg_SpinerDependsRhoT(const int matindex, EOS* eos,
-                              const char* filename, const int matid) {
+                              const char* filename, const int matid,
+                              int const * const enabled,
+                              double const * const vals) {
   assert(matindex >= 0);
-  EOS eos_ = SpinerEOSDependsRhoT(std::string(filename), matid);
+  EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoT(std::string(filename), matid));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
 
+int init_sg_SpinerDependsRhoT(const int matindex, EOS* eos,
+                              const char* filename, const int matid) {
+  return init_sg_SpinerDependsRhoT(matindex, eos, filename, matid, def_en,
+                                   def_v);
+}
+
 int init_sg_SpinerDependsRhoSie(const int matindex, EOS* eos,
-                                const char* filename, const int matid) {
+                                const char* filename, const int matid,
+                                int const * const enabled,
+                                double const * const vals) {
   assert(matindex >= 0);
-  EOS eos_ = SpinerEOSDependsRhoSie(std::string(filename), matid);
+  EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoSie(std::string(filename), matid));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
+}
+int init_sg_SpinerDependsRhoSie(const int matindex, EOS* eos,
+                                const char* filename, const int matid) {
+  return init_sg_SpinerDependsRhoSie(matindex, eos, filename, matid, def_en,
+                                     def_v);
 }
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
-int init_sg_eospac(const int matindex, EOS* eos, const int id) {
+int init_sg_eospac(const int matindex, EOS* eos, const int id,
+                   int const * const enabled, double const * const vals) {
   assert(matindex >= 0);
-  EOS eos_ = EOSPAC(id);
+  EOS eos_ = SGAPPLYMOD(EOSPAC(id));
   eos[matindex] = eos_.GetOnDevice();
+  return 0;
+}
+int init_sg_eospac(const int matindex, EOS* eos, const int id) {
+  return init_sg_eospac(matindex, eos, id, def_en, def_v); 
 }
 #endif // SINGULARITY_USE_EOSPAC
+
+#undef SGAPPLYMOD
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using Lrgt = Kokkos::LayoutRight;
