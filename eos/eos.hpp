@@ -448,6 +448,137 @@ private:
   Real cl_, cl2_;
 };
 
+template <typename T> class EAPRampEOS {
+  
+  // calculate alpha given a particular pressure
+  PORTABLE_FUNCTION
+  Real alpha_p(const Real P) const {
+    if (P < Pe_) {
+      return alpha0_;
+    } else if (P > Pc_) {
+      return 1.0;
+    } else {
+      return alpha0_ + (P - Pe_) / (Pc_ - Pe_) * (1.0 - alpha0_);
+    }
+  }
+  
+  template<typename F, typename ... ARGS>
+  PORTABLE_FUNCTION
+  auto alpha_impl(F func, const Real rho, ARGS... args) const {
+    constexpr const Real a_eps {1.e-12};
+    Real a {0.0};
+    Real a_old {alpha0_};
+    Real diff {0.0};
+    Real P {0.0};
+    for (int i {0}; i < 10; ++i) {
+      P = *func(a_old*rho, args...) / a_old;
+      a = this->alpha_p(P);
+      diff = fabs(a - a_old) / fabs(a + a_old) * 2.0;
+      if (diff < a_eps) break;
+      a_old = a;
+    }
+    return std::tie(a, P);
+  }
+
+  // calculate alpha given a rho-sie
+  PORTABLE_FUNCTION
+  Real
+  alpha_rho_sie(const Real rho, const Real sie, Real* lambda = nullptr) const {
+    return std::get<0>(this->alpha_impl(&t_.PressureFromDensityInternalEnergy,
+					rho, sie, lambda));
+  }
+
+  // calculate alpha given a rho-T
+  PORTABLE_FUNCTION
+  Real
+  alpha_rho_temperature(const Real rho,
+		        const Real temperature, Real* lambda = nullptr) const {
+    return std::get<0>(this->alpha_impl(&t_.PressureFromDensityTemperature,
+					rho, temperature, lambda));
+  }
+
+  PORTABLE_FUNCTION
+  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                            Real *lambda = nullptr) const {
+    const Real alpha {this->alpha_rho_sie(rho, sie, lambda)};
+    return t_.TemperatureFromDensityInternalEnergy(alpha*rho, sie, lambda);
+  }
+
+  PORTABLE_FUNCTION
+  Real InternalEnergyFromDensityTemperature(const Real rho,
+                                            const Real temperature,
+                                            Real *lambda = nullptr) const {
+    const Real alpha {this->alpha_rho_temperature(rho, temperature, lambda)};
+    return
+      t_.InternalEnergyFromDensityTemperature(alpha*rho, temperature, lambda);
+  }
+
+  PORTABLE_FUNCTION
+  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Real *lambda = nullptr) const {
+    return std::get<1>(this->alpha_impl(&t_.PressureFromDensityInternalEnergy,
+					rho, sie, lambda));
+  }
+
+  PORTABLE_FUNCTION
+  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
+                                             Real *lambda = nullptr) const {
+    const Real alpha {this->alpha_rho_sie(rho, sie, lambda)};
+    return t_.SpecificHeatFromDensityInternalEnergy(alpha*rho, sie, lambda);
+  }
+
+  PORTABLE_FUNCTION
+  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
+                                            Real *lambda = nullptr) const {
+    const Real alpha {this->alpha_rho_sie(rho, sie, lambda)};
+    return t_.BulkModulusFromDensityInternalEnergy(alpha*rho, sie, lambda);
+  }
+
+  PORTABLE_FUNCTION
+  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
+                                               Real *lambda = nullptr) const {
+    const Real alpha {this->alpha_rho_sie(rho, sie, lambda)};
+    return t_.GruneisenParamFromDensityInternalEnergy(alpha*rho, sie, lambda);
+  }
+
+  PORTABLE_FUNCTION
+  Real PressureFromDensityTemperature(const Real rho, const Real temperature,
+                                      Real *lambda = nullptr) const {
+    return std::get<1>(this->alpha_impl(&t_.PressureFromDensityTemperature,
+					rho, temperature, lambda));
+  }
+
+  PORTABLE_FUNCTION
+  Real SpecificHeatFromDensityTemperature(const Real rho,
+                                          const Real temperature,
+                                          Real *lambda = nullptr) const {
+    const Real alpha {this->alpha_rho_temperature(rho, temperature, lambda)};
+    return
+      t_.SpecificHeatFromDensityTemperature(alpha*rho, temperature, lambda);
+  }
+
+  PORTABLE_FUNCTION
+  Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
+                                         Real *lambda = nullptr) const {
+    const Real alpha {this->alpha_rho_temperature(rho, temperature, lambda)};
+    return t_.BulkModulusFromDensityTemperature(alpha*rho, temperature, lambda);
+  }
+
+  PORTABLE_FUNCTION
+  Real GruneisenParamFromDensityTemperature(const Real rho,
+                                            const Real temperature,
+                                            Real *lambda = nullptr) const {
+    const Real alpha {this->alpha_rho_temperature(rho, temperature, lambda)};
+    return
+      t_.GruneisenParamFromDensityTemperature(alpha*rho, temperature, lambda);
+  }
+
+private:
+  T t_;
+  Real Pe_, Pc_, de_pc_, de_pe_, P0_, T0_, r0_, alpha0_;
+  bool reversible;
+};
+
 class IdealGas {
 public:
   IdealGas() = default;
