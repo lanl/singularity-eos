@@ -462,16 +462,17 @@ template <typename T> class EAPRampEOS {
     }
   }
   
-  template<typename F, typename ... ARGS>
+  template<typename F>
   PORTABLE_FUNCTION
-  auto alpha_impl(F func, const Real rho, ARGS... args) const {
+  auto alpha_impl(F&& func, const Real rho, const Real arg2,
+		  Real* lambda = nullptr) const {
     constexpr const Real a_eps {1.e-12};
     Real a {0.0};
     Real a_old {alpha0_};
     Real diff {0.0};
     Real P {0.0};
     for (int i {0}; i < 10; ++i) {
-      P = *func(a_old*rho, args...) / a_old;
+      P = func(a_old*rho, arg2, lambda) / a_old;
       a = this->alpha_p(P);
       diff = fabs(a - a_old) / fabs(a + a_old) * 2.0;
       if (diff < a_eps) break;
@@ -484,8 +485,10 @@ template <typename T> class EAPRampEOS {
   PORTABLE_FUNCTION
   Real
   alpha_rho_sie(const Real rho, const Real sie, Real* lambda = nullptr) const {
-    return std::get<0>(this->alpha_impl(&t_.PressureFromDensityInternalEnergy,
-					rho, sie, lambda));
+    const auto func = [&] (const Real rhol, const Real siel, Real* lambdal) {
+      t_.PressureFromDensityInternalEnergy(rhol, siel, lambdal);
+    };
+    return std::get<0>(this->alpha_impl(func, rho, sie, lambda));
   }
 
   // calculate alpha given a rho-T
@@ -493,8 +496,10 @@ template <typename T> class EAPRampEOS {
   Real
   alpha_rho_temperature(const Real rho,
 		        const Real temperature, Real* lambda = nullptr) const {
-    return std::get<0>(this->alpha_impl(&t_.PressureFromDensityTemperature,
-					rho, temperature, lambda));
+    const auto func = [&] (const Real rhol, const Real templ, Real* lambdal) {
+      t_.PressureFromDensityTemperature(rhol, templ, lambdal);
+    };
+    return std::get<0>(this->alpha_impl(func, rho, temperature, lambda));
   }
 
   PORTABLE_FUNCTION
