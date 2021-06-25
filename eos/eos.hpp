@@ -467,17 +467,15 @@ template <typename T> class EAPRampEOS {
   auto alpha_impl(F&& func, const Real rho, const Real arg2,
 		  Real* lambda = nullptr) const {
     constexpr const Real a_eps {1.e-12};
+    const auto f = [&] (const Real Pl) {
+      const Real a {this->alpha_p(Pl)};
+      return Pl - func(a*rho, arg2, lambda) / a;
+    };
     Real a {0.0};
-    Real a_old {alpha0_};
-    Real diff {0.0};
-    Real P {0.0};
-    for (int i {0}; i < 10; ++i) {
-      P = func(a_old*rho, arg2, lambda) / a_old;
-      a = this->alpha_p(P);
-      diff = fabs(a - a_old) / fabs(a + a_old) * 2.0;
-      if (diff < a_eps) break;
-      a_old = a;
-    }
+    RootFinding1D::RootCounts rc {};
+    RootFinding1D::findRoot(f, 0.0, alpha0_, alpha0_/100.0, alpha0_*100.0,
+			    a_eps, a_eps, a, rc);
+    const Real P {func(a*rho, arg2, lambda) / a};
     return std::tie(a, P);
   }
 
