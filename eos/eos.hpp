@@ -464,7 +464,7 @@ template <typename T> class EAPRampEOS {
   
   template<typename F>
   PORTABLE_FUNCTION
-  auto alpha_impl(F&& func, const Real rho, const Real arg2,
+  Real alpha_impl(F&& func, const Real rho, const Real arg2,
 		  Real* lambda = nullptr) const {
     constexpr const Real a_eps {1.e-12};
     const auto f = [&] (const Real Pl) {
@@ -472,11 +472,13 @@ template <typename T> class EAPRampEOS {
       return Pl - func(a*rho, arg2, lambda) / a;
     };
     Real a {0.0};
+    // using the new solver doesn't allow us to extract the pressure
+    // at the correct alpha. This will result in an extra eos call when
+    // the pressure is needed.
     RootFinding1D::RootCounts rc {};
     RootFinding1D::findRoot(f, 0.0, alpha0_, alpha0_/100.0, alpha0_*100.0,
 			    a_eps, a_eps, a, rc);
-    const Real P {func(a*rho, arg2, lambda) / a};
-    return std::tie(a, P);
+    return a;
   }
 
   // calculate alpha given a rho-sie
@@ -519,8 +521,8 @@ template <typename T> class EAPRampEOS {
   PORTABLE_FUNCTION
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const {
-    return std::get<1>(this->alpha_impl(&t_.PressureFromDensityInternalEnergy,
-					rho, sie, lambda));
+    const Real alpha {this->alpha_rho_sie(rho, sie, lambda)};
+    return t_.PressureFromDensityInternalEnergy(alpha*rho, sie, lambda) / alpha;
   }
 
   PORTABLE_FUNCTION
@@ -547,8 +549,9 @@ template <typename T> class EAPRampEOS {
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
-    return std::get<1>(this->alpha_impl(&t_.PressureFromDensityTemperature,
-					rho, temperature, lambda));
+    const Real alpha {this->alpha_rho_temperature(rho, temperature, lambda)};
+    return
+      t_.PressureFromDensityTemperature(alpha*rho, temperature, lambda) / alpha;
   }
 
   PORTABLE_FUNCTION
