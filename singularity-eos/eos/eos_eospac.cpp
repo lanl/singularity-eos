@@ -14,7 +14,7 @@
 
 #ifdef SINGULARITY_USE_EOSPAC
 
-#include "eos.hpp"
+#include <singularity-eos/eos/eos.hpp>
 #include <eos_Interface.h>
 
 PORTABLE_INLINE_FUNCTION Real TemperatureToSesame(const Real CodeTemp) {

@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_EOS_HPP_
-#define SINGULARITY_EOS_EOS_HPP_
+#ifndef SINGULARITY_EOS_EOS_EOS_HPP_
+#define SINGULARITY_EOS_EOS_EOS_HPP_
 
 #include <iostream>
 //#include <sstream>
@@ -26,50 +26,26 @@
 #include <limits>
 #include <utility>
 
-#include "../eos/eos_variant.hpp"
-#include "../utils/ports-of-call/portability.hpp"
+#include <singularity-eos/eos/eos_variant.hpp>
+#include <ports-of-call/portability.hpp>
 
 #ifdef SPINER_USE_HDF
-#include "../utils/fast-math/logs.hpp"
-#include "../utils/root-finding-1d/root_finding.hpp"
-#include "../utils/spiner/databox.hpp"
-#include "../utils/spiner/spiner_types.hpp"
-#include "hdf5.h"
-#include "hdf5_hl.h"
+#include <fast-math/logs.hpp>
+#include <root-finding-1d/root_finding.hpp>
+#include <spiner/databox.hpp>
+#include <spiner/spiner_types.hpp>
+#include <hdf5.h>
+#include <hdf5_hl.h>
 #endif // SPINER_USE_HDF
+
+#include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
 
 #ifdef SINGULARITY_USE_EOSPAC
 #include <eos_Interface.h>
 #endif
 
-#ifdef SINGULARITY_ENABLE_EXCEPTIONS
-#include <stdexcept>
-#define EOS_ERROR(x) (throw std::runtime_error(x))
-#else
-#define EOS_ERROR(x) printf("%s", x)
-#endif
-#define UNDEFINED_ERROR EOS_ERROR("DEFINE ME\n")
-
 namespace singularity {
-
-namespace thermalqs {
-
-constexpr unsigned long none = 0;
-constexpr unsigned long density = (1 << 0);
-constexpr unsigned long specific_internal_energy = (1 << 1);
-constexpr unsigned long pressure = (1 << 2);
-constexpr unsigned long temperature = (1 << 3);
-constexpr unsigned long specific_heat = (1 << 4);
-constexpr unsigned long bulk_modulus = (1 << 5);
-constexpr unsigned long all_values = (1 << 6) - 1;
-} // namespace thermalqs
-
-constexpr size_t MAX_NUM_LAMBDAS = 3;
-enum class DataStatus { Deallocated, OnDevice, OnHost };
-enum class TableStatus { OnTable, OffBottom, OffTop };
-constexpr Real ROOM_TEMPERATURE = 293; // K
-constexpr Real ATMOSPHERIC_PRESSURE = 1e6;
-constexpr Real EPS = 10.0 * std::numeric_limits<Real>::epsilon();
 
 template <typename T> class ScaledEOS {
 public:
@@ -1524,4 +1500,4 @@ using EOS = Variant<
 
 } // namespace singularity
 
-#endif // SINGULARITY_EOS_EOS_HPP_
+#endif // SINGULARITY_EOS_EOS_EOS_HPP_

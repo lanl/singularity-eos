@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include "eos.hpp"
-#include<cmath>
+#include <singularity-eos/eos/eos.hpp>
+#include <cmath>
 
 namespace singularity {
 

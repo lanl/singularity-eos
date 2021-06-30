@@ -21,9 +21,10 @@ add_executable(sesame2spiner
               )
 
 target_include_directories(sesame2spiner PUBLIC  
-                           ${CMAKE_CURRENT_SOURCE_DIR}/../spiner
                            ${CMAKE_CURRENT_BINARY_DIR}
                            ${CMAKE_CURRENT_SOURCE_DIR}
                           )
 
 target_link_libraries(sesame2spiner nlohmann_json::nlohmann_json singularity-eos::libs singularity-eos::flags)
+
+# TODO: Add tests for sesame2spiner here.

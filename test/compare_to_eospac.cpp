@@ -30,25 +30,25 @@
 #include <algorithm>
 #include <chrono>
 
-#include "hdf5.h"
-#include "hdf5_hl.h"
+#include <hdf5.h>
+#include <hdf5_hl.h>
 
 // #include "json.hpp"
 
-#include "eos_Interface.h" // eospac API
+#include <eos_Interface.h> // eospac API
 
-#include "../utils/ports-of-call/portability.hpp"
-#include "../utils/sp5/singularity_eos_sp5.hpp"
-#include "../utils/spiner/spiner_types.hpp"
-#include "../utils/spiner/sp5.hpp"
-#include "../utils/spiner/databox.hpp"
-#include "../utils/spiner/interpolation.hpp"
+#include <ports-of-call/portability.hpp>
+#include <sp5/singularity_eos_sp5.hpp>
+#include <spiner/spiner_types.hpp>
+#include <spiner/sp5.hpp>
+#include <spiner/databox.hpp>
+#include <spiner/interpolation.hpp>
 
-#include "../utils/sesame2spiner/io_eospac.hpp"
+#include <sesame2spiner/io_eospac.hpp>
 
-#include "portability.hpp"
+#include <ports-of-call/portability.hpp>
 
-#include "../eos/eos.hpp"
+#include <singularity-eos/eos/eos.hpp>
 
 using namespace singularity;
 

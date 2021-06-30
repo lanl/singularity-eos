@@ -22,7 +22,7 @@
 #include <cstdlib>
 #include <fstream>
 
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include "parser.hpp"
 #include "io_eospac.hpp"
 

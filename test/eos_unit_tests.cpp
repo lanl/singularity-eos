@@ -17,11 +17,11 @@
 #include <cstdlib>
 #include <cstdio>
 
-#include "../utils/root-finding-1d/root_finding.hpp"
-#include "../utils/ports-of-call/portability.hpp"
-#include "../utils/ports-of-call/portable_arrays.hpp"
-#include "../eos/eos.hpp"
-#include "../eos/eos_builder.hpp"
+#include <root-finding-1d/root_finding.hpp>
+#include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_arrays.hpp>
+#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_builder.hpp>
 
 #define CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"

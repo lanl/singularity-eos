@@ -26,14 +26,14 @@
 #include <hdf5_hl.h>
 
 // singularity includes
-#include "eos.hpp"
+#include <singularity-eos/eos/eos.hpp>
 
-#include "../utils/ports-of-call/portability.hpp"
-#include "../utils/root-finding-1d/root_finding.hpp"
-#include "../utils/sp5/singularity_eos_sp5.hpp"
-#include "../utils/spiner/databox.hpp"
-#include "../utils/spiner/interpolation.hpp"
-#include "../utils/spiner/sp5.hpp"
+#include <ports-of-call/portability.hpp>
+#include <root-finding-1d/root_finding.hpp>
+#include <sp5/singularity_eos_sp5.hpp>
+#include <spiner/databox.hpp>
+#include <spiner/interpolation.hpp>
+#include <spiner/sp5.hpp>
 
 #define STELLAR_COLLAPSE_EOS_VERBOSE (0)
 

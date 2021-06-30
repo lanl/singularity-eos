@@ -30,14 +30,14 @@
 // #include "hdf5.h"
 // #include "hdf5_hl.h"
 
-#include "../utils/fast-math/logs.hpp"
-#include "../utils/ports-of-call/portability.hpp"
-#include "../utils/spiner/databox.hpp"
-#include "../utils/spiner/interpolation.hpp"
-#include "../utils/spiner/sp5.hpp"
-#include "../utils/spiner/spiner_types.hpp"
+#include <fast-math/logs.hpp>
+#include <ports-of-call/portability.hpp>
+#include <spiner/databox.hpp>
+#include <spiner/interpolation.hpp>
+#include <spiner/sp5.hpp>
+#include <spiner/spiner_types.hpp>
 
-#include "../eos/eos.hpp"
+#include <singularity-eos/eos/eos.hpp>
 
 using namespace Spiner;
 using namespace singularity;

@@ -32,20 +32,20 @@
 #include <string>
 #include <vector>
 
-#include "hdf5.h"
-#include "hdf5_hl.h"
+#include <hdf5.h>
+#include <hdf5_hl.h>
 
-#include "eos_Interface.h" // eospac API
+#include <eos_Interface.h> // eospac API
 
-#include "../utils/ports-of-call/portability.hpp"
-#include "../utils/ports-of-call/portable_arrays.hpp"
+#include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_arrays.hpp>
 
-#include "../utils/spiner/databox.hpp"
-#include "../utils/spiner/interpolation.hpp"
+#include <spiner/databox.hpp>
+#include <spiner/interpolation.hpp>
 
-#include "../eos/eos.hpp"
+#include <singularity-eos/eos/eos.hpp>
 
-#include "../utils/sesame2spiner/io_eospac.hpp"
+#include <singularity-eos/sesame2spiner/io_eospac.hpp>
 
 using namespace singularity;
 

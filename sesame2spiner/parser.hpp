@@ -18,7 +18,7 @@
 #define _PARSER_HPP_
 
 #include <string>
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include "io_eospac.hpp"
 
 const std::string EXAMPLESTRING = R"(

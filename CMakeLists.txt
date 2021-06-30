@@ -84,9 +84,11 @@ execute_process(COMMAND patch -N -s -V never
 add_library (singularity-eos::flags INTERFACE IMPORTED GLOBAL)
 add_library (singularity-eos::libs INTERFACE IMPORTED)
 
+# TODO: Is this generator expression correct/needed?
 target_include_directories(singularity-eos::flags
                            INTERFACE
-                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>)
+                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>)
 
 # xl fix
 target_compile_options(singularity-eos::flags INTERFACE
@@ -190,9 +192,6 @@ if (SINGULARITY_USE_KOKKOS)
     endif()
   endif()
   target_link_libraries(singularity-eos::libs INTERFACE Kokkos::kokkos)
-else()
-  target_include_directories(singularity-eos::libs INTERFACE
-                             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils/herumi-fmath>)
 endif ()
 
 # linear algebra library
@@ -289,12 +288,9 @@ if(SINGULARITY_BUILD_TESTS)
   include(${PROJECT_SOURCE_DIR}/utils/spiner/Catch2/contrib/Catch.cmake)
 endif()
 
-add_subdirectory(eos)
+add_subdirectory(${PROJECT_SOURCE_DIR}/singularity-eos/eos)
 if (SINGULARITY_BUILD_TESTS)
   add_subdirectory(test)
-endif()
-if(SINGULARITY_BUILD_SESAME2SPINER)
-  add_subdirectory(utils)
 endif()
 # create the libbedroom_door.a library
 if(SINGULARITY_USE_FORTRAN)
@@ -307,15 +303,15 @@ else()
 endif()
 
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
-   add_subdirectory(${PROJECT_SOURCE_DIR}/utils/stellarcollapse2spiner)
+   add_subdirectory(${PROJECT_SOURCE_DIR}/stellarcollapse2spiner)
    install(TARGETS stellarcollapse2spiner DESTINATION bin)
 endif()
 
-# install
 install(TARGETS eos singularity-eos DESTINATION lib)
 if(SINGULARITY_BUILD_SESAME2SPINER)
   if(SINGULARITY_USE_EOSPAC)
     if(SINGULARITY_USE_HDF5)
+      add_subdirectory(${PROJECT_SOURCE_DIR}/sesame2spiner)
       install(TARGETS sesame2spiner DESTINATION bin)
    endif()
   endif()

@@ -15,16 +15,15 @@
 #ifndef SINGULARITY_MIX_MIXED_CELL_MODELS_HPP_
 #define SINGULARITY_MIX_MIXED_CELL_MODELS_HPP_
 
-#include "../eos/eos.hpp"
-#include "../utils/ports-of-call/portability.hpp"
+#include <singularity-eos/eos/eos.hpp>
+#include <ports-of-call/portability.hpp>
 
-#include "math.h"
 #include <cmath>
 
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
-#include "KokkosBatched_ApplyQ_Decl.hpp"
-#include "KokkosBatched_QR_Decl.hpp"
-#include "KokkosBatched_Trsv_Decl.hpp"
+#include <KokkosBatched_ApplyQ_Decl.hpp>
+#include <KokkosBatched_QR_Decl.hpp>
+#include <KokkosBatched_Trsv_Decl.hpp>
 #else
 #include <Eigen/Dense>
 #endif // SINGULARITY_USE_KOKKOSKERNELS

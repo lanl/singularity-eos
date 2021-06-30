@@ -18,9 +18,9 @@
 #include <map>
 #include <string>
 #include <unordered_set>
-#include "../utils/variant/include/mpark/variant.hpp"
-#include "../utils/ports-of-call/portability.hpp"
-#include "../eos/eos.hpp"
+#include <variant/include/mpark/variant.hpp>
+#include <ports-of-call/portability.hpp>
+#include <singularity-eos/eos/eos.hpp>
 
 namespace singularity {
 
