@@ -1424,6 +1424,10 @@ public:
                                  Real &press, Real &cv, Real &bmod,
                                  const unsigned long output,
                                  Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION
+  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                            Real *lambda, Real &rho,
+                                            Real &sie) const;
   PORTABLE_FUNCTION void PTofRE(const Real rho, const Real sie, Real *lambda,
                                 Real &press, Real &temp, Real &dpdr, Real &dpde,
                                 Real &dtdr, Real &dtde) const;
