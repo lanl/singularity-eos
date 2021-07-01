@@ -317,17 +317,16 @@ if(SINGULARITY_BUILD_SESAME2SPINER)
   endif()
 endif()
 
-set(INSTALL_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/eos/eos.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils/sp5/singularity_eos_sp5.hpp)
-if(SINGULARITY_BUILD_CLOSURE)
-  list(APPEND INSTALL_FILES
-       ${CMAKE_CURRENT_SOURCE_DIR}/eos/singularity_eos.hpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/closure/mixed_cell_models.hpp)
-  if(SINGULARITY_USE_FORTRAN)
-    list(APPEND INSTALL_FILES
-         ${CMAKE_BINARY_DIR}/eos/singularity_eos.mod
-         ${CMAKE_BINARY_DIR}/eos/singularity_eos_types.mod)
-  endif()
-endif()
-install(FILES ${INSTALL_FILES} DESTINATION include)
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/singularity-eos"
+  DESTINATION "include"
+  FILES_MATCHING PATTERN "*.hpp"
+  )
+
+# TODO(JMM): Too aggressive? This will install Eigen, json and kokkos
+# headers into the destination.
+# I'm leaving this for now, but we should have a longer discussion
+# about this.
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/"
+  DESTINATION "include"
+  FILES_MATCHING PATTERN "*.hpp"
+  )
