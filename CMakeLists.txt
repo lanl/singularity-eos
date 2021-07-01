@@ -162,7 +162,10 @@ if (SINGULARITY_USE_KOKKOS)
         set(Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE ON CACHE BOOL "" FORCE)
       endif()
       add_subdirectory(${PROJECT_SOURCE_DIR}/utils/kokkos)
-      #set(Kokkos_ROOT ${PROJECT_BINARY_DIR}/utils/kokkos)
+      install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/kokkos"
+	DESTINATION "include"
+	FILES_MATCHING PATTERN "*.hpp"
+	)
     endif()
   endif()
   # cuda specific flags
@@ -247,8 +250,14 @@ if(SINGULARITY_USE_KOKKOSKERNELS)
                              SINGULARITY_USE_KOKKOSKERNELS)
 else()
   # Eigen
-  find_package(Eigen3 REQUIRED)
-  target_link_libraries(singularity-eos::flags INTERFACE Eigen3::Eigen)
+  if (NOT TARGET Eigen3::Eigen)
+    find_package(Eigen3 REQUIRED)
+    target_link_libraries(singularity-eos::flags INTERFACE Eigen3::Eigen)
+    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/eigen"
+      DESTINATION "include"
+      FILES_MATCHING PATTERN "*.hpp"
+      )
+  endif()
 endif()
 
 if (SINGULARITY_USE_EOSPAC)
@@ -317,16 +326,45 @@ if(SINGULARITY_BUILD_SESAME2SPINER)
   endif()
 endif()
 
+# These are always needed.
+# TODO(JMM): Should always-needed utils be moved into a separate
+# directory? Or the optional ones be moved to something like
+# "external"?
+# TODO(JMM): Should I write a function so I'm not repeating all these
+# install calls?  More cmake wizardry than I have is required for
+# that, I think.
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/singularity-eos"
   DESTINATION "include"
   FILES_MATCHING PATTERN "*.hpp"
   )
-
-# TODO(JMM): Too aggressive? This will install Eigen, json and kokkos
-# headers into the destination.
-# I'm leaving this for now, but we should have a longer discussion
-# about this.
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/"
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/fast-math"
   DESTINATION "include"
   FILES_MATCHING PATTERN "*.hpp"
+  )
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/herumi-fmath"
+  DESTINATION "include"
+  FILES_MATCHING PATTERN "*.hpp"
+  )
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/root-finding-1d"
+  DESTINATION "include"
+  FILES_MATCHING PATTERN "*.hpp"
+  )
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/sp5"
+  DESTINATION "include"
+  FILES_MATCHING PATTERN "*.hpp"
+  )
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/spiner"
+  DESTINATION "include"
+  FILES_MATCHING PATTERN "*.hpp"
+  )
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/variant"
+  DESTINATION "include"
+  FILES_MATCHING PATTERN "*.hpp"
+  )
+install(CODE
+  "execute_process( \
+    COMMAND ${CMAKE_COMMAND} -E create_symlink \
+    ${CMAKE_INSTALL_PREFIX}/include/spiner/ports-of-call \
+    ${CMAKE_INSTALL_PREFIX}/include/ports-of-call \
+  )"
   )
