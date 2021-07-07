@@ -292,11 +292,14 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/singularity-eos/eos)
 if (SINGULARITY_BUILD_TESTS)
   add_subdirectory(test)
 endif()
-# create the libbedroom_door.a library
+# create the libsingularity-eos.a library
 if(SINGULARITY_USE_FORTRAN)
   add_library(singularity-eos
               $<TARGET_OBJECTS:eos_f>
               $<TARGET_OBJECTS:eos_objs>)
+  install(DIRECTORY "${CMAKE_BINARY_DIR}/singularity-eos"
+    DESTINATION "include"
+    FILES_MATCHING PATTERN "*.mod")
 else()
   add_library(singularity-eos
               $<TARGET_OBJECTS:eos_objs>)
