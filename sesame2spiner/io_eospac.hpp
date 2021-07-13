@@ -14,8 +14,8 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#ifndef _IO_EOSPAC_HPP_
-#define _IO_EOSPAC_HPP_
+#ifndef _SESAME2SPINER_IO_EOSPAC_HPP_
+#define _SESAME2SPINER_IO_EOSPAC_HPP_
 
 #include <cmath>
 #include <string>
@@ -263,4 +263,4 @@ void eosSafeDestroy(int ntables, EOS_INTEGER tableHandles[],
 void makeInterpPoints(std::vector<EOS_REAL>& v, const Bounds& b);
 std::string getName(std::string comment);
 
-#endif // _IO_EOSPAC_HPP_
+#endif // _SESAME2SPINER_IO_EOSPAC_HPP_

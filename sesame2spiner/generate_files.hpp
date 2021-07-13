@@ -14,8 +14,8 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#ifndef _GENERATE_FILES_HPP_
-#define _GENERATE_FILES_HPP_
+#ifndef _SESAME2SPINER_GENERATE_FILES_HPP_
+#define _SESAME2SPINER_GENERATE_FILES_HPP_
 
 #include <string>
 
@@ -54,4 +54,4 @@ bool checkValInMatBounds(int matid,
 
 int getNumPointsFromPPD(Real min, Real max, int ppd);
 
-#endif // _GENERATE_FILES_HPP_
+#endif // _SESAME2SPINER_GENERATE_FILES_HPP_

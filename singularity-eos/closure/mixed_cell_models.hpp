@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_MIX_MIXED_CELL_MODELS_HPP_
-#define SINGULARITY_MIX_MIXED_CELL_MODELS_HPP_
+#ifndef _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
+#define _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 
 #include <singularity-eos/eos/eos.hpp>
 #include <ports-of-call/portability.hpp>
@@ -1228,4 +1228,4 @@ pte_closure_ideal(int nmat, EOSIndexer &&eoss, const Real Volume, const Real Tot
 }
 } // namespace singularity
 
-#endif // SINGULARITY_MIX_MIXED_CELL_MODELS_HPP_
+#endif // _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_

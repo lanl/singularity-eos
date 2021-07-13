@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_EOS_EOS_HPP_
-#define SINGULARITY_EOS_EOS_EOS_HPP_
+#ifndef _SINGULARITY_EOS_EOS_EOS_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_HPP_
 
 #include <iostream>
 //#include <sstream>
@@ -1504,4 +1504,4 @@ using EOS = Variant<
 
 } // namespace singularity
 
-#endif // SINGULARITY_EOS_EOS_EOS_HPP_
+#endif // _SINGULARITY_EOS_EOS_EOS_HPP_
