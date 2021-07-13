@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef EOS_BUILDER_HPP_
-#define EOS_BUILDER_HPP_
+#ifndef _SINGULARITY_EOS_EOS_EOS_BUILDER_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_BUILDER_HPP_
 
 #include <map>
 #include <string>
@@ -111,4 +111,4 @@ namespace EOSBuilder {
 
 } // namespace singularity
 
-#endif // EOS_BUILDER_HPP_
+#endif // _SINGULARITY_EOS_EOS_EOS_BUILDER_HPP_
