@@ -28,8 +28,6 @@
 #ifndef SPINER_USE_HDF
 #define SPINER_USE_HDF (1) // Enable HDF5
 #endif
-#include "databox.hpp"
-#include "interpolation.hpp"
 #include "../spiner/ports-of-call/portability.hpp"
 #include "../spiner/databox.hpp"
 #include "../spiner/interpolation.hpp"
