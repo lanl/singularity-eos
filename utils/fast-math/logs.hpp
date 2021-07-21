@@ -14,8 +14,8 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#ifndef _FAST_MATH_LOGS_
-#define _FAST_MATH_LOGS_
+#ifndef _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
+#define _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
 #include <cmath>
 #include <ports-of-call/portability.hpp>
 
@@ -45,4 +45,4 @@ namespace BDMath {
 } // BDMath
 
 #undef BD_USE_FMATH
-#endif //  _FAST_MATH_LOGS_
+#endif //  _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_

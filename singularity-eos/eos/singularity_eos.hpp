@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef EOS_SINGULARITY_EOS_HPP_
-#define EOS_SINGULARITY_EOS_HPP_
+#ifndef _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
+#define _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
