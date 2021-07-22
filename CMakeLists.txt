@@ -61,7 +61,7 @@ if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_CUDA)
   set(CMAKE_CXX_COMPILER ${NVCC_WRAPPER_DIR}/nvcc_wrapper CACHE STRING "")
 endif()
 
-project(singularity-eos VERSION 1.4.0)
+project(singularity-eos VERSION 1.5.0)
 
 if(SINGULARITY_USE_FORTRAN)
   enable_language(CXX Fortran)
