@@ -14,7 +14,7 @@
 
 #ifdef SINGULARITY_USE_EOSPAC
 
-#include "eos.hpp"
+#include <singularity-eos/eos/eos.hpp>
 #include <eos_Interface.h>
 
 PORTABLE_INLINE_FUNCTION Real TemperatureToSesame(const Real CodeTemp) {
@@ -225,6 +225,26 @@ PORTABLE_FUNCTION Real EOSPAC::GruneisenParamFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   Real temperature = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return GruneisenParamFromDensityTemperature(rho, temperature, lambda);
+}
+
+PORTABLE_FUNCTION
+void EOSPAC::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+						  Real *lambda, Real &rho,
+						  Real &sie) const {
+  EOS_REAL P[1] = {PressureToSesame(press)};
+  EOS_REAL T[1] = {TemperatureToSesame(temp)};
+  EOS_REAL dx[1], dy[1], R[1], E[1];
+  EOS_INTEGER nxypairs = 1;
+  EOS_INTEGER errorCode;
+  EOS_INTEGER table;
+
+  table = RofPT_table_;
+  eos_Interpolate(&table, &nxypairs, P, T, R, dx, dy, &errorCode);
+  rho = R[0];
+  
+  table = EofRT_table_;
+  eos_Interpolate(&table, &nxypairs, R, T, E, dx, dy, &errorCode);
+  sie = SieFromSesame(E[0]);
 }
 
 PORTABLE_FUNCTION void EOSPAC::PTofRE(const Real rho, const Real sie,

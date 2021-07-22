@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _ROOT_FINDING_HPP_
-#define _ROOT_FINDING_HPP_
+#ifndef _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_
+#define _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_
 
 // Implementation based on gsl root finder API
 // Code originally taken from nubhlight, LA-UR-19-20336
@@ -434,4 +434,4 @@ namespace RootFinding1D {
 #undef ROOT_VERBOSE
 #undef MY_SIGN
 
-#endif // _ROOT_FINDING_HPP_
+#endif // _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_

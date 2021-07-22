@@ -27,14 +27,13 @@
 #include <random>
 #include <string>
 
-#include "../utils/ports-of-call/portability.hpp"
-#include "../utils/ports-of-call/portable_arrays.hpp"
+#include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_arrays.hpp>
+#include <spiner/databox.hpp>
+#include <spiner/interpolation.hpp>
 
-#include "../utils/spiner/databox.hpp"
-#include "../utils/spiner/interpolation.hpp"
-
-#include "../eos/eos.hpp"
-#include "../eos/eos_builder.hpp"
+#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_builder.hpp>
 
 using namespace singularity;
 

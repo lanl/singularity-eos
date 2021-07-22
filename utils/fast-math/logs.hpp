@@ -14,10 +14,10 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#ifndef _FAST_MATH_LOGS_
-#define _FAST_MATH_LOGS_
+#ifndef _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
+#define _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
 #include <cmath>
-#include <portability.hpp>
+#include <ports-of-call/portability.hpp>
 
 // herumi-fmath does not work on device
 // On CPUS it provides another 10% or so speedup
@@ -25,7 +25,7 @@
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 #define BD_USE_FMATH 0
 #else
-#include <fmath.hpp>
+#include <herumi-fmath/fmath.hpp>
 #define BD_USE_FMATH 1
 #endif
 
@@ -45,4 +45,4 @@ namespace BDMath {
 } // BDMath
 
 #undef BD_USE_FMATH
-#endif //  _FAST_MATH_LOGS_
+#endif //  _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_

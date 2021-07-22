@@ -19,11 +19,11 @@
 #include <time.h>
 #include <vector>
 
-#include "../eos/eos.hpp"
-#include "../closure/mixed_cell_models.hpp"
-#include "../utils/ports-of-call/portability.hpp"
-#include "../utils/ports-of-call/portable_arrays.hpp"
-#include "../utils/spiner/databox.hpp"
+#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/closure/mixed_cell_models.hpp>
+#include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_arrays.hpp>
+#include <spiner/databox.hpp>
 
 constexpr int NMAT = 3;
 constexpr int NTRIAL = 100;

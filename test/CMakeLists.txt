@@ -25,7 +25,7 @@ target_link_libraries(eos_unit_tests Catch2::Catch2 eos singularity-eos::libs si
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
                  compare_to_eospac.cpp
-                 ${CMAKE_SOURCE_DIR}/utils/sesame2spiner/io_eospac.cpp)
+                 ${CMAKE_SOURCE_DIR}/sesame2spiner/io_eospac.cpp)
   target_link_libraries(compare_to_eospac Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
   target_include_directories(compare_to_eospac PUBLIC
                              ${CMAKE_SOURCE_DIR}/utils/spiner

@@ -21,18 +21,18 @@
 #include <cstdlib>
 #include <algorithm>
 
-#include "hdf5.h"
-#include "hdf5_hl.h"
+#include <hdf5.h>
+#include <hdf5_hl.h>
 
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 
 #ifndef SPINER_USE_HDF
-#define SPINER_USE_HDF (1)
+#error "HDF5 must be enabled"
 #endif
 
-#include "../sp5/singularity_eos_sp5.hpp"
-#include "../spiner/ports-of-call/portability.hpp"
-#include "../spiner/sp5.hpp"
+#include <sp5/singularity_eos_sp5.hpp>
+#include <spiner/ports-of-call/portability.hpp>
+#include <spiner/sp5.hpp>
 
 #include "io_eospac.hpp"
 #include "generate_files.hpp"

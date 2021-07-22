@@ -18,9 +18,3 @@ target_link_libraries(stellarcollapse2spiner
   eos
   singularity-eos::libs
   singularity-eos::flags)
-
-target_include_directories(stellarcollapse2spiner PUBLIC
-  ${CMAKE_SOURCE_DIR}/eos
-  ${CMAKE_SOURCE_DIR}/utils/spiner
-  ${CMAKE_SOURCE_DIR}/utils/ports-of-call
-  ${CMAKE_SOURCE_DIR}/utils/stellarcollapse2spiner)
