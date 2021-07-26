@@ -11,34 +11,14 @@
 # prepare derivative works, distribute copies to the public, perform
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
+project(singularity-eos VERSION 1.4.0)
+
 
 cmake_minimum_required(VERSION 3.14)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-# options
-option (SINGULARITY_USE_HDF5 "Pull in hdf5" ON)
-option (SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
-option (SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
-option (SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
-option (SINGULARITY_USE_CUDA "Enable cuda support" OFF)
-option (SINGULARITY_USE_KOKKOSKERNELS
-  "Use kokkos-kernels for linear algebra" OFF)
-option (SINGULARITY_INVERT_AT_SETUP "Use eospacs preinverted tables" OFF)
-option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
-option (SINGULARITY_BUILD_SESAME2SPINER "Compile sesame2spiner" OFF)
-option (SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" OFF)
-option (SINGULARITY_BETTER_DEBUG_FLAGS
-  "Better debug flags for singularity" ON)
-option (SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
-option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
-option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
-option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
-option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
-
-if (SINGULARITY_SUBMODULE_MODE)
-  set(SINGULARITY_BETTER_DEBUG_FLAGS OFF CACHE BOOL "" FORCE)
-  set(SINGULARITY_HIDE_MORE_WARNINGS ON CACHE BOOL "" FORCE)
-endif()
+include(SetupOptions)
 
 # if cuda, need to set cxx compiler to nvcc_wrapper before compilers
 # are checked
@@ -61,18 +41,7 @@ if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_CUDA)
   set(CMAKE_CXX_COMPILER ${NVCC_WRAPPER_DIR}/nvcc_wrapper CACHE STRING "")
 endif()
 
-project(singularity-eos VERSION 1.4.0)
 
-if(SINGULARITY_USE_FORTRAN)
-  enable_language(CXX Fortran)
-else()
-  enable_language(CXX)
-endif()
-include(CMakeDetermineCXXCompiler)
-
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
