@@ -15,8 +15,8 @@
 #ifndef EOS_VARIANT_HPP
 #define EOS_VARIANT_HPP
 
-#include "../utils/variant/include/mpark/variant.hpp"
-#include "../utils/ports-of-call/portability.hpp"
+#include <variant/include/mpark/variant.hpp>
+#include <ports-of-call/portability.hpp>
 
 using Real = double;
 

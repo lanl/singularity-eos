@@ -14,8 +14,8 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#ifndef _IO_EOSPAC_HPP_
-#define _IO_EOSPAC_HPP_
+#ifndef _SESAME2SPINER_IO_EOSPAC_HPP_
+#define _SESAME2SPINER_IO_EOSPAC_HPP_
 
 #include <cmath>
 #include <string>
@@ -26,14 +26,13 @@
 #include <eos_Interface.h> // eospac API
 
 #ifndef SPINER_USE_HDF
-#define SPINER_USE_HDF (1) // Enable HDF5
+#error "HDF5 must be enabled"
 #endif
-#include "databox.hpp"
-#include "interpolation.hpp"
-#include "../spiner/ports-of-call/portability.hpp"
-#include "../spiner/databox.hpp"
-#include "../spiner/interpolation.hpp"
-#include "../fast-math/logs.hpp"
+
+#include <spiner/ports-of-call/portability.hpp>
+#include <spiner/databox.hpp>
+#include <spiner/interpolation.hpp>
+#include <fast-math/logs.hpp>
 
 using Spiner::DataBox;
 using Spiner::RegularGrid1D;
@@ -264,4 +263,4 @@ void eosSafeDestroy(int ntables, EOS_INTEGER tableHandles[],
 void makeInterpPoints(std::vector<EOS_REAL>& v, const Bounds& b);
 std::string getName(std::string comment);
 
-#endif // _IO_EOSPAC_HPP_
+#endif // _SESAME2SPINER_IO_EOSPAC_HPP_

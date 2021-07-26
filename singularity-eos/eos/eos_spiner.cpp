@@ -22,17 +22,17 @@
 // #include <iostream> // debug
 // #include <stdio.h> // debug
 
-#include "hdf5.h"
-#include "hdf5_hl.h"
+#include <hdf5.h>
+#include <hdf5_hl.h>
 
-#include "eos.hpp"
-#include "../utils/sp5/singularity_eos_sp5.hpp"
-#include "../utils/spiner/databox.hpp"
-#include "../utils/spiner/interpolation.hpp"
-#include "../utils/spiner/sp5.hpp"
-#include "../utils/sp5/singularity_eos_sp5.hpp"
-#include "../utils/root-finding-1d/root_finding.hpp"
-#include "../utils/ports-of-call/portability.hpp"
+#include <singularity-eos/eos/eos.hpp>
+#include <sp5/singularity_eos_sp5.hpp>
+#include <spiner/databox.hpp>
+#include <spiner/interpolation.hpp>
+#include <spiner/sp5.hpp>
+#include <sp5/singularity_eos_sp5.hpp>
+#include <root-finding-1d/root_finding.hpp>
+#include <ports-of-call/portability.hpp>
 
 #define SPINER_EOS_VERBOSE (0)
 

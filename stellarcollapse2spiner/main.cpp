@@ -18,7 +18,7 @@
 #include <iostream>
 #include <string>
 
-#include <eos/eos.hpp>
+#include <singularity-eos/eos/eos.hpp>
 
 using singularity::StellarCollapse;
 

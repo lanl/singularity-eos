@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include "singularity_eos.hpp"
-#include "eos_builder.hpp"
+#include <singularity-eos/eos/singularity_eos.hpp>
+#include <singularity-eos/eos/eos_builder.hpp>
 #include <map>
 #include <algorithm>
 #include <cassert>

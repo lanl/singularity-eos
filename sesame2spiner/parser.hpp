@@ -14,11 +14,11 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#ifndef _PARSER_HPP_
-#define _PARSER_HPP_
+#ifndef _SESAME2SPINER_PARSER_HPP_
+#define _SESAME2SPINER_PARSER_HPP_
 
 #include <string>
-#include "nlohmann/json.hpp"
+#include <nlohmann/json.hpp>
 #include "io_eospac.hpp"
 
 const std::string EXAMPLESTRING = R"(
@@ -72,4 +72,4 @@ void parseCLI(int argc, char* argv[],
 	      Verbosity& eospacWarn,
 	      std::string& helpMessage);
 
-#endif // _PARSER_HPP_
+#endif // _SESAME2SPINER_PARSER_HPP_

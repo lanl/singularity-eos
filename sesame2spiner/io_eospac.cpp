@@ -478,6 +478,11 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid,
   }
   #endif
 
+  #ifdef SINGULARITY_EOS_SKIP_EXTRAP
+  for (int i = 0; i < ntables; i++) {
+    eos_SetOption(&(tableHandle[i]),&EOS_SKIP_EXTRAP_CHECK,NULL,&errorCode);
+  }
+  #endif
 
   eos_LoadTables(&ntables, tableHandle, &errorCode);
   if ( errorCode != EOS_OK && eospacWarn != Verbosity::Quiet ) {
@@ -516,7 +521,8 @@ bool eosSafeInterpolate(EOS_INTEGER *table,
   eos_Interpolate(table, &nxypairs,
                   xVals, yVals, var, dx, dy,
                   &errorCode);
-  if (errorCode != EOS_OK && eospacWarn == Verbosity::Debug) {
+  #ifndef SINGULARITY_EOS_SKIP_EXTRAP
+  if (errorCode != EOS_OK && eospacWarn == Verbosity::Debug) {   
     eos_GetErrorMessage(&errorCode, errorMessage);
     std::cerr << "Table " << tablename << ":" << std::endl;
     std::cerr << "eos_Interpolate ERROR "
@@ -535,6 +541,7 @@ bool eosSafeInterpolate(EOS_INTEGER *table,
       std::cerr << "y = " << yVals[i] << std::endl;
     }
   }
+  #endif
   return (errorCode == EOS_OK); // 1 for no erros. 0 for errors.
 }
 
