@@ -87,15 +87,15 @@ public:
       //                min);
       // if (min <= 0) min = std::abs(10*Spiner::EPS);
       // if (min <= 0) min = std::abs(Spiner::EPS);
-      min = BDMath::log10(std::abs(min)); // fast, floating-point log
-      max = BDMath::log10(std::abs(max));
+      min = std::log10(std::abs(min)); // fast, floating-point log
+      max = std::log10(std::abs(max));
       Real delta = max - min;
       min += 0.5*shrinkRange*delta;
       max -= 0.5*shrinkRange*delta;
       
       if (!(std::isnan(anchor_point))) {
         anchor_point += offset;
-        anchor_point = BDMath::log10(std::abs(anchor_point));
+        anchor_point = std::log10(std::abs(anchor_point));
       }
     }
 

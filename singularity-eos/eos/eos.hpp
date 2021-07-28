@@ -869,7 +869,7 @@ private:
   toLog_(const Real x, const Real offset) const noexcept {
     // return std::log10(x + offset + EPS);
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return BDMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   fromLog_(const Real lx, const Real offset) const noexcept {
@@ -1076,7 +1076,7 @@ private:
 
   PORTABLE_INLINE_FUNCTION Real toLog_(const Real x, const Real offset) const {
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return BDMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   PORTABLE_INLINE_FUNCTION Real fromLog_(const Real lx,
                                          const Real offset) const {
@@ -1262,7 +1262,7 @@ private:
   toLog_(const Real x, const Real offset) const noexcept {
     // return std::log10(x + offset + EPS);
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return BDMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   fromLog_(const Real lx, const Real offset) const noexcept {
