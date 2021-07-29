@@ -75,9 +75,8 @@ public:
       // should be single-precision epsilon b/c that's whats used for the logs
       constexpr Real epsilon = std::numeric_limits<float>::epsilon();
       const Real min_offset = 10*std::abs(epsilon);
-      if (min <= 0) {
-	offset = 1.1*std::abs(min) + min_offset;
-      }
+      if (min <= 0) offset = 1.1*std::abs(min) + min_offset;
+
       min += offset;
       max += offset;
 
