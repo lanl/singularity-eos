@@ -23,17 +23,20 @@
 
 namespace singularity {
 namespace Math {
-
+  
   PORTABLE_FORCEINLINE_FUNCTION
   double log10(const double x) {
-
-#ifndef SINGULARITY_USE_ACCURATE_LOGS
+    
     // const double ILOG10 = 1./std::log(10.0);
     constexpr double ILOG10 = 0.43429448190325176;
 
     int n{};
     constexpr const double LOG2OLOG10 = 0.301029995663981195;
-    const double y = frexp(x, &n);
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+    const double y = frexp(x, &n); // default is double precision
+#else
+    const float y = frexpf((float)x, &n); // faster but less accurate
+#endif
 #ifdef SINGULARITY_FMATH_USE_ORDER_4
     // 4th order approximation to log(x) x in [0.5, 1.0)
     const double expr = -2.36697629372863 + y*(
@@ -59,9 +62,6 @@ namespace Math {
 #endif // SINGULARITY_FMATH_USE_ORDER
     // log10 x using frexp
     return ILOG10*expr + n*LOG2OLOG10;
-#else
-    return std::log10(x); // SINGULARITY_USE_ACCURATE_LOGS
-#endif
   }
 
 } // Math
