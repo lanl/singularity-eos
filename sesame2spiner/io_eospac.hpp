@@ -72,9 +72,13 @@ public:
          Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
     : offset(0) {    
     if (convertToLog) {
-      // should be single-precision epsilon b/c that's whats used for the logs
+      // Log scales can't handle negative numbers or exactly zero. To
+      // deal with that, we offset.
       constexpr Real epsilon = std::numeric_limits<float>::epsilon();
       const Real min_offset = 10*std::abs(epsilon);
+      // 1.1 so that the y-intercept isn't identically zero
+      // when min < 0.
+      // min_offset to handle the case where min=0
       if (min <= 0) offset = 1.1*std::abs(min) + min_offset;
 
       min += offset;
