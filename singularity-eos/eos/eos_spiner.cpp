@@ -840,9 +840,9 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho,
 
   whereAmI = getLocDependsRhoSie_(lRho,sie);
   if ( whereAmI == TableStatus::OffBottom ) {
-    // on the cold curve. No unique temperature.
-    // return the temperature at the cold curve crossing.
-    lT = lTColdCrit_.interpToReal(lRho);
+    // On the cold curve. No unique temperature.
+    // return the minimum temperature in the table.
+    lT = lTMin_; 
     counts.increment(0);
   } else if ( whereAmI == TableStatus::OffTop ) { // Assume ideal gas
     const Real Cv = dEdTMax_.interpToReal(lRho);

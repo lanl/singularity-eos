@@ -113,7 +113,7 @@ if (SINGULARITY_USE_EOSPAC)
     message(WARNING "EOSPAC enabled without hdf5.")
   endif()
   if (SINGULARITY_USE_CUDA)
-    message(FATAL_ERROR "EOSPAC not supported with cuda")
+    message(WARNING "EOSPAC not supported with cuda. You may encounter errors.")
   endif()
 endif()
 
@@ -290,7 +290,7 @@ if (SINGULARITY_USE_SINGLE_LOGS)
       SINGULARITY_USE_SINGLE_LOGS)
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_4 AND SINGULARITY_FMATH_USE_ORDER_5)
-  message(ERROR "Order 4 and order 5 interpolation both specified. Please specify only one or zero. If no specification is made, order 7 will be used.")
+  message(FATAL_ERROR "Order 4 and order 5 interpolation both specified. Please specify only one or zero. If no specification is made, order 7 will be used.")
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_4)
   target_compile_definitions(singularity-eos::flags INTERFACE
@@ -328,6 +328,11 @@ if (SINGULARITY_BUILD_TESTS)
 endif()
 # create the libsingularity-eos.a library
 if(SINGULARITY_USE_FORTRAN)
+  if (NOT SINGULARITY_BUILD_CLOSURE)
+    message(FATAL_ERROR "The fortran library relies on closures. "
+      "Please either enable closures with -DSINGULARITY_BUILD_CLOSURE=ON "
+      "or disable fortran with -DSINGULARITY_USE_FORTRAN=OFF")
+  endif()
   add_library(singularity-eos
               $<TARGET_OBJECTS:eos_f>
               $<TARGET_OBJECTS:eos_objs>)
