@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
     matids.push_back(matParams["matid"]);
   }
   */
-  std::vector<int> matids{7152};
+  std::vector<int> matids{5030};
 
   constexpr int NT = 3;
   EOS_INTEGER nXYPairs = (nFineRho)*(nFineT);
@@ -188,8 +188,8 @@ int main(int argc, char* argv[]) {
     std::cout << "\t\t\tdepends rho sie" << std::endl;
     SpinerEOSDependsRhoSie eosE_host(sp5name, matid);
     std::cout << "\t\tmoving to device" << std::endl;
-    auto eos_device = eos_host.GetOnDevice();
-    auto eosE_device = eosE_host.GetOnDevice();
+    EOS eos_device = eos_host.GetOnDevice();
+    EOS eosE_device = eosE_host.GetOnDevice();
 
     Real* lambda_dp =
       (Real*)PORTABLE_MALLOC(sizeof(Real)*nFineRho*nFineT*eos_host.nlambda());
