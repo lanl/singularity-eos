@@ -42,7 +42,7 @@ const std::string EXAMPLESTRING = R"(
       "matid" : 2961,
       "name"  : "titanium",
       /* These set the number of grid points per decade
-         for each variable. The default is 20 points
+         for each variable. The default is 50 points
          per decade.
       */
       "numrho/decade" : 30,

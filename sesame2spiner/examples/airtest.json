@@ -17,40 +17,16 @@
 {
     "savename"  : "materials.sp5",
     "materials" : [
-	{ // only matid is required. All others override defaults.
-	    "matid"  : 5030,
-	    "name"   : "air",
-	    "rhomin" : 1e-2, // g/cm^3
-	    "rhomax" : 10,
-	    "numrho" : 64,
-	    "Tmin"   : 252, // kelvin
-	    "Tmax"   : 1e4,
-	    "numT"   : 32,
-	    "siemin" : 1e12, // erg/g
-	    "siemax" : 1e16, // erg/g
-	    "numsie" : 32	    
-	},
   {
-      "matid" : 2961,
-      "name"  : "titanium",
+      "matid" : 5030,
+      "name"  : "air",
       /* These set the number of grid points per decade
          for each variable. The default is 50 points
          per decade.
       */
-      "numrho/decade" : 30,
-      "numT/decade"   : 25,
-      "numSie/decade" : 15
-  },
-	{
-	    "matid" : 4272, // steel
-	    "rhomin" : 1e-2, // g/cm^3
-	    "Tmin"   : 1,    // kelvin
-      /* These shrink logarithm of bounds
-         by a fraction of the total interval <= 1
-      */
-	    "shrinklRhoBounds" : 0.15,
-	    "shrinklTBounds"   : 0.15,
-	    "shrinkleBounds"   : 0.5
-	}
+      "numrho/decade" : 40,
+      "numT/decade"   : 40,
+      "numSie/decade" : 40
+  }
     ]
 }

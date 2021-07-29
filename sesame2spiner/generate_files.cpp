@@ -302,6 +302,15 @@ void getMatBounds(int i,
   Real rhoAnchor = metadata.normalDensity;
   Real TAnchor = 298.15;
 
+  // Forces density and temperature to be in a region where an offset
+  // is not needed. This improves resolution at low densities and
+  // temperatures.
+
+  // Extrapolation and other resolution tricks will be explored in the
+  // future.
+  if (rhoMin < STRICTLY_POS_MIN) rhoMin = STRICTLY_POS_MIN;
+  if (TMin < STRICTLY_POS_MIN) TMin = STRICTLY_POS_MIN;
+
   lRhoBounds = Bounds(rhoMin,rhoMax,numRho,true,shrinklRhoBounds,rhoAnchor);
   lTBounds   = Bounds(TMin,TMax,numT,true,shrinklTBounds,TAnchor);
   leBounds   = Bounds(sieMin,sieMax,numSie,true,shrinkleBounds);

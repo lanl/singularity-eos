@@ -74,28 +74,23 @@ public:
     if (convertToLog) {
       // should be single-precision epsilon b/c that's whats used for the logs
       constexpr Real epsilon = std::numeric_limits<float>::epsilon();
-      const Real min_offset = std::max(10*std::abs(epsilon),
-                                       std::abs(epsilon*max));
+      const Real min_offset = 10*std::abs(epsilon);
       if (min < 0) offset = std::abs(min) + min_offset;
       else if ( min == 0 ) {
         offset = min_offset;
       }
       min += offset;
       max += offset;
-      // min = std::max(std::max(10*std::abs(Spiner::EPS),
-      //                         std::abs(Spiner::EPS*max)),
-      //                min);
-      // if (min <= 0) min = std::abs(10*Spiner::EPS);
-      // if (min <= 0) min = std::abs(Spiner::EPS);
-      min = BDMath::log10(std::abs(min)); // fast, floating-point log
-      max = BDMath::log10(std::abs(max));
+
+      min = std::log10(std::abs(min));
+      max = std::log10(std::abs(max));
       Real delta = max - min;
       min += 0.5*shrinkRange*delta;
       max -= 0.5*shrinkRange*delta;
       
       if (!(std::isnan(anchor_point))) {
         anchor_point += offset;
-        anchor_point = BDMath::log10(std::abs(anchor_point));
+        anchor_point = std::log10(std::abs(anchor_point));
       }
     }
 

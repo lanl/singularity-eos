@@ -27,6 +27,7 @@
 
 using nlohmann::json;
 constexpr int PPD_DEFAULT = 50;
+constexpr Real STRICTLY_POS_MIN = 1e-9;
 
 herr_t saveMaterial(hid_t loc,
                     const SesameMetadata& metadata,
