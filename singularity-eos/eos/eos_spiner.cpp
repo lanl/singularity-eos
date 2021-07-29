@@ -456,10 +456,10 @@ void SpinerEOSDependsRhoT::setlTColdCrit_() {
     // which results in the least code. But this may be wrong.
     if (last_pos_crossing < 0) { // off the grid
       lTColdCrit_(j) = lTMin_;
-    } else { // at least one pos crossing. Use last one
+    } else { // at least one pos crossing. Use last one.
       const callable_interp::r_interp sieFunc(sie_, lRho);
       Real lT;
-      int  ilast = crossings[last_pos_crossing];
+      int ilast = crossings[last_pos_crossing];
       Real lTlower = bMod_.range(0).x(ilast);
       Real lTupper = bMod_.range(0).x(ilast + 1);
       Real lTGuess = 0.5*(lTlower + lTupper);
