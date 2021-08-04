@@ -20,25 +20,25 @@ endif()
 if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
-target_link_libraries(eos_unit_tests Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
+target_link_libraries(eos_unit_tests Catch2::Catch2 ${PROJECT_NAME})
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
                  compare_to_eospac.cpp
                  ${CMAKE_SOURCE_DIR}/sesame2spiner/io_eospac.cpp)
-  target_link_libraries(compare_to_eospac Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
+  target_link_libraries(compare_to_eospac Catch2::Catch2 ${PROJECT_NAME})
   target_include_directories(compare_to_eospac PUBLIC
                              ${CMAKE_SOURCE_DIR}/utils/spiner
                              ${CMAKE_SOURCE_DIR}/utils/ports-of-call
                              ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
 endif()
-
+include(Catch)
 catch_discover_tests(eos_unit_tests)
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_custom_command(TARGET eos_unit_tests PRE_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
-                     ${CMAKE_SOURCE_DIR}/singularity-eos-data
-                     ${PROJECT_BINARY_DIR}/singularity-eos-data)
+                     ${CMAKE_SOURCE_DIR}/${PROJECT_NAME}-data
+                     ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-data)
 endif()
 
 if (SINGULARITY_BUILD_CLOSURE)
@@ -47,15 +47,14 @@ if (SINGULARITY_BUILD_CLOSURE)
   target_link_libraries(test_pte PRIVATE
                         Catch2::Catch2
                         eos
-                        singularity-eos::libs
-                        singularity-eos::flags)
+                        ${PROJECT_NAME})
   add_test(pte test_pte)
 endif()
 
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   add_executable(profile_stellar_collapse
                  profile_stellar_collapse.cpp)
-  target_link_libraries(profile_stellar_collapse eos singularity-eos::libs singularity-eos::flags)
+  target_link_libraries(profile_stellar_collapse ${PROJECT_NAME})
 
   message(STATUS "Generating stellar collapse table for tests using Python script")
   include(FindPythonInterp)
