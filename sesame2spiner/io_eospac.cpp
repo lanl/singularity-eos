@@ -474,7 +474,8 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid,
   EOS_INTEGER options[] = {EOS_INVERT_AT_SETUP, EOS_INSERT_DATA};
   EOS_REAL values[] = {1., 4.};
   for (int i = 0; i < ntables; i++) {
-    eos_SetOption(&(tableHandle[i]),options,values,&errorCode);
+    eos_SetOption(&(tableHandle[i]),&(options[0]),&(values[0]),&errorCode);
+    eos_SetOption(&(tableHandle[i]),&(options[1]),&(values[1]),&errorCode);
   }
   #endif
 
