@@ -63,8 +63,8 @@ struct Bounds {
       }
       min += offset;
       max += offset;
-      min = BDMath::log10(std::abs(min)); // fast, floating-point log
-      max = BDMath::log10(std::abs(max));
+      min = std::log10(std::abs(min)); // fast, floating-point log
+      max = std::log10(std::abs(max));
     }
     grid = RegularGrid1D(min, max, N);
   }

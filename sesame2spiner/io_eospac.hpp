@@ -72,30 +72,27 @@ public:
          Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
     : offset(0) {    
     if (convertToLog) {
-      // should be single-precision epsilon b/c that's whats used for the logs
+      // Log scales can't handle negative numbers or exactly zero. To
+      // deal with that, we offset.
       constexpr Real epsilon = std::numeric_limits<float>::epsilon();
-      const Real min_offset = std::max(10*std::abs(epsilon),
-                                       std::abs(epsilon*max));
-      if (min < 0) offset = std::abs(min) + min_offset;
-      else if ( min == 0 ) {
-        offset = min_offset;
-      }
+      const Real min_offset = 10*std::abs(epsilon);
+      // 1.1 so that the y-intercept isn't identically zero
+      // when min < 0.
+      // min_offset to handle the case where min=0
+      if (min <= 0) offset = 1.1*std::abs(min) + min_offset;
+
       min += offset;
       max += offset;
-      // min = std::max(std::max(10*std::abs(Spiner::EPS),
-      //                         std::abs(Spiner::EPS*max)),
-      //                min);
-      // if (min <= 0) min = std::abs(10*Spiner::EPS);
-      // if (min <= 0) min = std::abs(Spiner::EPS);
-      min = BDMath::log10(std::abs(min)); // fast, floating-point log
-      max = BDMath::log10(std::abs(max));
+
+      min = std::log10(std::abs(min));
+      max = std::log10(std::abs(max));
       Real delta = max - min;
       min += 0.5*shrinkRange*delta;
       max -= 0.5*shrinkRange*delta;
       
       if (!(std::isnan(anchor_point))) {
         anchor_point += offset;
-        anchor_point = BDMath::log10(std::abs(anchor_point));
+        anchor_point = std::log10(std::abs(anchor_point));
       }
     }
 

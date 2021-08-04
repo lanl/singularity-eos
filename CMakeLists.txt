@@ -17,9 +17,11 @@ project(singularity-eos VERSION 1.5.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+
 add_library(${PROJECT_NAME} INTERFACE IMPORTED GLOBAL)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 # add_library(${PROJECT_NAME}::flags ALIAS ${PROJECT_NAME})
+
 
 include(ProcessConfiguration)
 include(SetupCompilers)

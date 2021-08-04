@@ -851,8 +851,8 @@ public:
            matid_, s5, materialName_);
     return;
   }
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return _n_lambda; }
+  static PORTABLE_FORCEINLINE_FUNCTION
+  int nlambda() { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }
   inline TableStatus tableStatus() const { return whereAmI_; }
   RootFinding1D::RootCounts counts;
@@ -865,14 +865,14 @@ private:
   void fixBulkModulus_();
   void setlTColdCrit_();
 
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  toLog_(const Real x, const Real offset) const noexcept {
+  static PORTABLE_FORCEINLINE_FUNCTION Real
+  toLog_(const Real x, const Real offset) {
     // return std::log10(x + offset + EPS);
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return BDMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  fromLog_(const Real lx, const Real offset) const noexcept {
+  static PORTABLE_FORCEINLINE_FUNCTION Real
+  fromLog_(const Real lx, const Real offset) {
     return std::pow(10., lx) - offset;
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
@@ -1052,8 +1052,8 @@ public:
   Real sieMin() const { return fromLog_(T_.range(0).min(), lEOffset_); }
   Real sieMax() const { return fromLog_(T_.range(0).max(), lEOffset_); }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return _n_lambda; }
+  static PORTABLE_FORCEINLINE_FUNCTION
+  int nlambda() { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
     static constexpr char s2[]{"depends on log_10(rho) and log_10(sie)"};
@@ -1074,12 +1074,13 @@ private:
                         hid_t lEGroup);
   void calcBMod_(SP5Tables &tables);
 
-  PORTABLE_INLINE_FUNCTION Real toLog_(const Real x, const Real offset) const {
+  static PORTABLE_FORCEINLINE_FUNCTION
+  Real toLog_(const Real x, const Real offset) {
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return BDMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
-  PORTABLE_INLINE_FUNCTION Real fromLog_(const Real lx,
-                                         const Real offset) const {
+  static PORTABLE_FORCEINLINE_FUNCTION
+  Real fromLog_(const Real lx, const Real offset) {
     return std::pow(10., lx) - offset;
   }
   PORTABLE_FUNCTION
@@ -1262,7 +1263,7 @@ private:
   toLog_(const Real x, const Real offset) const noexcept {
     // return std::log10(x + offset + EPS);
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return BDMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   fromLog_(const Real lx, const Real offset) const noexcept {
