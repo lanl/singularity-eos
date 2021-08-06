@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
   constexpr const bool is_host = SpaceAccessibility<HS, KDMS>::accessible;
   constexpr const int def_fine = is_host ? 512 : 2048;
 #else
-  constexpr const int def_fin = 512;
+  constexpr const int def_fine = 512;
 #endif // PORTABILITY_STRATEGY_KOKKOS
   int nFine = argc >= 3 ? std::atoi(argv[2]) : def_fine;
   int nFineRho = nFine + 1;
