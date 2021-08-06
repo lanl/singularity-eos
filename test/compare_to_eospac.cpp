@@ -74,7 +74,16 @@ int main(int argc, char* argv[]) {
     std::exit(1);
   }
   std::string filename = argv[1];
-  int nFine = argc >= 3 ? std::atoi(argv[2]) : 512;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  using Kokkos::SpaceAccessibility;
+  using KDMS = Kokkos::DefaultExecutionSpace::memory_space;
+  using HS = Kokkos::HostSpace;
+  constexpr const bool is_host = SpaceAccessibility<HS, KDMS>::accessible;
+  constexpr const int def_fine = is_host ? 512 : 2048;
+#else
+  constexpr const int def_fin = 512;
+#endif // PORTABILITY_STRATEGY_KOKKOS
+  int nFine = argc >= 3 ? std::atoi(argv[2]) : def_fine;
   int nFineRho = nFine + 1;
   int nFineT = nFine - 1;
   std::string sp5name = filename;
@@ -291,33 +300,37 @@ int main(int argc, char* argv[]) {
       Kokkos::fence();
       #endif
       start = std::chrono::high_resolution_clock::now();
-      portableFor("pressure from density and temperature",
-                  0,NTIMES,0,nFineRho,0,nFineT,
-                  PORTABLE_LAMBDA(const int& n, const int& j, const int& i) {
-                    Real rho = rhos(j);
-                    Real T = Ts(i);
-                    pressSpiner_d(j,i)
-                      = eos_device.PressureFromDensityTemperature(rho,T);
-                  });
+      for(int n = 0; n < NTIMES; ++n) {
+	portableFor("pressure from density and temperature",
+		    0,nFineRho,0,nFineT,
+		    PORTABLE_LAMBDA(const int& j, const int& i) {
+		      Real rho = rhos(j);
+		      Real T = Ts(i);
+		      pressSpiner_d(j,i)
+			= eos_device.PressureFromDensityTemperature(rho,T);
+		    });
+      }
       #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::fence();
       #endif
       stop = std::chrono::high_resolution_clock::now();
       durationSpinerDev += std::chrono::duration_cast<duration>(stop-start);
 
-      Real diffL2;
+      Real diffL2 {0.0}, L2 {0.0};
       std::cout << "\t\t...comparing on host..." << std::endl;
-      diffL2 = 0;
       for (int j = 0; j < nFineRho; j++) {
         for (int i = 0; i < nFineT; i++) {
-          pressEOSPAC(j,i) = pressureFromSesame(vars(j,i));
-          pressDiff_h(j,i) = pressSpiner_h(j,i) - pressEOSPAC(j,i);
-          Real denom = std::max(std::abs(pressEOSPAC(j,i)),
-                                std::abs(pressSpiner_h(j,i)));
-          diffL2 += pressDiff_h(j,i)*pressDiff_h(j,i)/(denom*denom + 1e-5);
+	  const Real p_true = pressureFromSesame(vars(j,i));
+          pressEOSPAC(j,i) = p_true;
+	  const Real diff = pressSpiner_h(j,i) - p_true;
+          pressDiff_h(j,i) = diff;
+          diffL2 += diff*diff;
+	  const Real mean_p = 0.5*diff + p_true;
+	  L2 += mean_p*mean_p;
         }
       }
-      diffL2 /= (nFineRho*nFineT);
+      diffL2 /= L2;
+      diffL2 = std::sqrt(diffL2);
       std::cout << "\t\t...L2 difference = " << diffL2 << std::endl;
 
       hid_t pressGroup = H5Gcreate(idGroup, "pressuresRhoT",
@@ -330,17 +343,20 @@ int main(int argc, char* argv[]) {
       Kokkos::deep_copy(pressSpinerHView,pressSpinerDView);
       #endif
       std::cout << "\t\t...comparing device results..." << std::endl;
-      diffL2 = 0;
+      diffL2 = 0; L2 = 0;
       for (int j = 0; j < nFineRho; j++) {
         for (int i = 0; i < nFineT; i++) {
           // pressSpiner_d has been copied into pressSpiner_h
-          pressDiff_d(j,i) = pressSpiner_hm(j,i) - pressEOSPAC(j,i);
-          Real denom = std::max(std::abs(pressSpiner_hm(j,i)),
-                                std::abs(pressEOSPAC(j,i)));
-          diffL2 += pressDiff_d(j,i)*pressDiff_d(j,i)/(denom*denom + 1e-5);
+	  const Real p_true = pressEOSPAC(j,i);
+	  const Real diff = pressSpiner_hm(j,i) - p_true;
+          pressDiff_d(j,i) = diff;
+	  const Real mean_p = 0.5*diff + p_true;
+          diffL2 += diff*diff;
+	  L2 += mean_p*mean_p;
         }
       }
-      diffL2 /= (nFineRho*nFineT);
+      diffL2 /= L2;
+      diffL2 = std::sqrt(diffL2);
       std::cout << "\t\t...L2 difference = " << diffL2 << std::endl;
 
       status += pressSpiner_hm.saveHDF(pressGroup,"spiner_d");
@@ -432,16 +448,19 @@ int main(int argc, char* argv[]) {
       Kokkos::fence();
       #endif
       start = std::chrono::high_resolution_clock::now();
-      portableFor("T(rho,e)",
-                  0,NTIMES,0,nFineRho,0,nFineT,
-                  PORTABLE_LAMBDA(const int& n, const int& j, const int& i) {
-                    Real rho = rhos(j);
-                    Real sie = sies(i);
-                    DataBox lambda = lambda_d.slice(j).slice(i);
-                    tempSpiner_d(j,i)
-                      = eos_device.TemperatureFromDensityInternalEnergy(rho,sie,
-                                                                        lambda.data());
-                  });
+      for (int n = 0; n < NTIMES; ++n) {
+	portableFor("T(rho,e)",
+		    0,nFineRho,0,nFineT,
+		    PORTABLE_LAMBDA(const int& j, const int& i) {
+		      Real rho = rhos(j);
+		      Real sie = sies(i);
+		      DataBox lambda = lambda_d.slice(j).slice(i);
+		      tempSpiner_d(j,i)
+			= eos_device.\
+                          TemperatureFromDensityInternalEnergy(rho,sie,
+                                                               lambda.data());
+		    });
+      }
       #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::fence();
       #endif
@@ -468,15 +487,17 @@ int main(int argc, char* argv[]) {
       Kokkos::fence();
       #endif
       start = std::chrono::high_resolution_clock::now();
+      for (int n = 0; n < NTIMES; ++n) {
         portableFor("T(rho,e)",
-                    0,NTIMES,0,nFineRho,0,nFineT,
-                    PORTABLE_LAMBDA(const int& n, const int& j, const int& i) {
+                    0,nFineRho,0,nFineT,
+                    PORTABLE_LAMBDA(const int& j, const int& i) {
                       Real rho = rhos(j);
                       Real sie = sies(i);
                       tempSpinerE_d(j,i)
-                        = eosE_device.TemperatureFromDensityInternalEnergy(rho,
-                                                                           sie);
+                        = eosE_device.\
+                          TemperatureFromDensityInternalEnergy(rho, sie);
                     });
+      }
       #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::fence();
       #endif
@@ -486,19 +507,20 @@ int main(int argc, char* argv[]) {
       std::cout << "\t\t...comparing host data..." << std::endl;
       Real diffL1, diffL1E, diffL1_d, diffL1E_d;
       Real diffL2, diffL2E, diffL2_d, diffL2E_d;
+      Real L2 {0.0};
       diffL2 = 0;
       for (int j = 0; j < nFineRho; j++) {
         for (int i = 0; i < nFineT; i++) {
-          tempEOSPAC(j,i) = temperatureFromSesame(vars(j,i));
-          tempDiff_h(j,i) = tempSpiner_h(j,i) - tempEOSPAC(j,i);
-          Real denom = std::max(std::abs(tempSpiner_h(j,i)),
-                                std::abs(tempEOSPAC(j,i)));
-          Real diff = tempDiff_h(j,i)*tempDiff_h(j,i)/(denom*denom + 1e-5);
+	  const Real t_true = temperatureFromSesame(vars(j,i));
+          tempEOSPAC(j,i) = t_true;
+	  Real diff = tempSpiner_h(j,i) - t_true;
+          tempDiff_h(j,i) = diff;
+	  const Real mean_t = 0.5*diff + t_true;
           if (isnan(diff)) {
             std:: cout << "NAN! " << j << ", " << i << ", "
                        << tempSpiner_h(j,i) << ", "
                        << tempEOSPAC(j,i) << ", "
-                       << denom << ", "
+                       << mean_t << ", "
                        << diff
                        << std::endl;
             exit(1);
@@ -510,19 +532,25 @@ int main(int argc, char* argv[]) {
             diff = 0;
           }
           #endif
-          diffL2 += diff;
+          diffL2 += diff*diff;
+	  L2 += mean_t*mean_t;
         }
       }
-      diffL2 /= (nFineRho*nFineT);
+      diffL2 /= L2;
+      diffL2 = std::sqrt(diffL2);
+      diffL2E = 0; L2 = 0;
       for (int j = 0; j < nFineRho; j++) {
         for (int i = 0; i < nFineT; i++) {
-          tempDiffE_h(j,i) = tempSpinerE_h(j,i) - tempEOSPAC(j,i);
-          Real denom = std::max(std::abs(tempSpinerE_h(j,i)),
-                                std::abs(tempEOSPAC(j,i)));
-          diffL2E += tempDiffE_h(j,i)*tempDiffE_h(j,i)/(denom*denom + 1e-5);
+          const Real t_true = tempEOSPAC(j,i);
+	  const Real diff = tempSpinerE_h(j,i) - t_true;
+	  tempDiffE_h(j,i) = diff;
+	  const Real mean_t = 0.5*diff + t_true;
+          diffL2E += diff*diff;
+	  L2 += mean_t*mean_t;
         }
       }
-      diffL2E /= (nFineRho*nFineT);
+      diffL2E /= L2;
+      diffL2E = std::sqrt(diffL2E);
       std::cout << "\t\tRoot finding:\n"
                 << "\t\tits: counts\n";
       for (int i = 0; i < eos_host.counts.nBins(); i++) {
@@ -544,13 +572,13 @@ int main(int argc, char* argv[]) {
       Kokkos::deep_copy(tempSpinerHViewE,tempSpinerDViewE);
       #endif
       // tempSpiner_hm now contains copy of device data
-      diffL2_d = 0;
+      diffL2_d = 0; L2 = 0;
       for (int j = 0; j < nFineRho; j++) {
         for (int i = 0; i < nFineT; i++) {
-          tempDiff_d(j,i) = tempSpiner_hm(j,i) - tempEOSPAC(j,i);
-          Real denom = std::max(std::abs(tempSpiner_hm(j,i)),
-                                std::abs(tempEOSPAC(j,i)));
-          Real diff = tempDiff_d(j,i)*tempDiff_d(j,i)/(denom*denom+1e-5);
+	  const Real t_true = tempEOSPAC(j,i);
+	  Real diff = tempSpiner_hm(j,i) - t_true;
+          tempDiff_d(j,i) = diff;
+	  const Real mean_t = 0.5*diff + t_true;
           #ifdef singularity_normalize_cold_point
           if (tempSpiner_hm(j,i) < 2*TMin && tempEOSPAC(j,i) < TMin) {
             tempSpiner_hm(j,i) = 0;
@@ -558,20 +586,25 @@ int main(int argc, char* argv[]) {
             diff = 0;
           }
           #endif
-          diffL2_d += diff;
+          diffL2_d += diff*diff;
+	  L2 += mean_t*mean_t;
         }
       }
-      diffL2_d /= (nFineRho*nFineT);
-      diffL2E_d = 0;
+      diffL2_d /= L2;
+      diffL2_d = std::sqrt(diffL2_d);
+      diffL2E_d = 0; L2 = 0;
       for (int j = 0; j < nFineRho; j++) {
         for (int i = 0; i < nFineT; i++) {
-          tempDiffE_d(j,i) = tempSpinerE_hm(j,i) - tempEOSPAC(j,i);
-          Real denom = std::max(std::abs(tempSpinerE_hm(j,i)),
-                                std::abs(tempEOSPAC(j,i)));
-          diffL2E_d += tempDiffE_d(j,i)*tempDiffE_d(j,i)/(denom*denom + 1e-5);
+	  const Real t_true = tempEOSPAC(j,i);
+	  const Real diff = tempSpinerE_hm(j,i) - t_true;
+          tempDiffE_d(j,i) = diff;
+	  const Real mean_t = 0.5*diff + t_true;
+          diffL2E_d += diff*diff;
+	  L2 += mean_t*mean_t;
         }
       }
-      diffL2E_d /= (nFineRho*nFineT);
+      diffL2E_d /= L2;
+      diffL2E_d = std::sqrt(diffL2E_d);
       status += tempSpiner_hm.saveHDF(pressGroup,"spiner_d");
       status += tempDiff_d.saveHDF(pressGroup,"diff_d");
       status += tempSpinerE_hm.saveHDF(pressGroup,"spinerE_d");

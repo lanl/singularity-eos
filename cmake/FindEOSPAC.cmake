@@ -24,7 +24,7 @@
 FIND_PATH(EOSPAC_INCLUDE_DIR NAMES eos_Interface.h)
 
 # Look for the library.
-FIND_LIBRARY(EOSPAC_LIBRARY NAMES eospac6 libeospac6)
+FIND_LIBRARY(EOSPAC_LIBRARY NAMES eospac6 libeospac6 libeospac6gpu.a)
 
 # handle the QUIETLY and REQUIRED arguments and set EOSPAC_FOUND to TRUE if
 # all listed variables are TRUE
