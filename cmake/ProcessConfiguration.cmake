@@ -62,7 +62,19 @@ if(SINGULARITY_USE_EOSPAC)
 endif()
 
 find_package(PortsofCall REQUIRED)
-find_package(Catch2 REQUIRED)
+
+find_package(Catch2 QUIET)
+if(NOT Catch2_FOUND)
+    message(STATUS "Catch2 not located, using FetchContent to retrieve")
+    include(FetchContent)
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        origin/devel
+    )
+    FetchContent_MakeAvailable(Catch2)
+    message(STATUS "Catch2 has been configured in ${catch2_SOURCE_DIR}")
+endif()
 
 # Setup HDF5
 find_package(HDF5 COMPONENTS C HL QUIET)

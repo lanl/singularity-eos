@@ -32,8 +32,12 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
                              ${CMAKE_SOURCE_DIR}/utils/ports-of-call
                              ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
 endif()
+#NOTE: FetchContent does not appropriately populate this catch directory
+# fixed in a later cmake version
+list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)
 catch_discover_tests(eos_unit_tests)
+
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_custom_command(TARGET eos_unit_tests PRE_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
