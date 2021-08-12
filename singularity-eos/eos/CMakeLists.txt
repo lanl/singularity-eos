@@ -37,7 +37,8 @@ target_include_directories(eos_objs PUBLIC
             ${CMAKE_CURRENT_SOURCE_DIR}
             )
 
-target_link_libraries(eos_objs singularity-eos::libs singularity-eos::flags)
+#target_link_libraries(eos_objs singularity-eos::libs singularity-eos::flags)
+target_link_libraries(eos_objs ${PROJECT_NAME})
 
 if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_CLOSURE)
   add_library(eos $<TARGET_OBJECTS:eos_objs> $<TARGET_OBJECTS:eos_f>)

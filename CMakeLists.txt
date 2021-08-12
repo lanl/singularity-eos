@@ -20,7 +20,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 add_library(${PROJECT_NAME} INTERFACE IMPORTED GLOBAL)
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
-# add_library(${PROJECT_NAME}::flags ALIAS ${PROJECT_NAME})
+add_library(${PROJECT_NAME}::flags ALIAS ${PROJECT_NAME})
 
 
 include(ProcessConfiguration)
@@ -38,7 +38,7 @@ execute_process(COMMAND patch -N -s -V never
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch)
 
-
+add_subdirectory(${PROJECT_SOURCE_DIR}/singularity-eos/eos)
 if(SINGULARITY_BUILD_TESTS)
   add_subdirectory(test)
 endif()
@@ -47,8 +47,8 @@ set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE")
 
 include(CPack)
 
-feature_summary(WHAT ALL
-                INCLUDE_QUIET_PACKAGES
-                DESCRIPTION "Enabled Features:"
-                VAR enabledFeaturesText)
-message(STATUS "${enabledFeaturesText}")
+# feature_summary(WHAT ALL
+#                 INCLUDE_QUIET_PACKAGES
+#                 DESCRIPTION "Enabled Features:"
+#                 VAR enabledFeaturesText)
+# message(STATUS "${enabledFeaturesText}")

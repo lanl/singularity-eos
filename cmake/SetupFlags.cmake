@@ -16,10 +16,11 @@ set(without_kokkos "$<NOT:${with_kokkos}>")
 set(with_cuda "$<BOOL:${SINGULARITY_USE_CUDA}>")
 set(without_cuda "$<NOT:${with_cuda}>")
 set(with_eospac "$<BOOL:${SINGULARITY_USE_EOSPAC}>")
+set(with_single_log "$<BOOL:${SINGULARITY_USE_SINGLE_LOGS}>")
 
 
-set(def_eospac_invert "$<AND:$<{with_eospac},$<BOOL:${SINGULARITY_INVERT_AT_SETUP}>>")
-set(def_eospac_skip "$<AND:$<{with_eospac},$<BOOL:${SINGULARITY_EOS_SKIP_AT_SETUP}>>")
+set(def_eospac_invert "$<AND:$<{with_eospac},$<BOOL:${SINGULARITY_INVERT_AT_SETUP}>>>")
+set(def_eospac_skip "$<AND:$<{with_eospac},$<BOOL:${SINGULARITY_EOS_SKIP_EXTRAP}>>>")
 
 set(eospac_lib "$<${with_eospac}:EOSPAC::eospac")
 set(kokkos_lib "$<${with_kokkos}:Kokkos::kokkos>")
@@ -27,6 +28,10 @@ set(linalg_lib "$<IF:${with_kokkoskernels},Kokkos::kokkoskernels,Eigen3::Eigen>"
 
 set(hide_more_warn "$<BOOL:${SINGULARITY_HIDE_MORE_WARNINGS}>")
 set(better_debug "$<BOOL:${SINGULARITY_BETTER_DEBUG_FLAGS}>")
+
+set(test_sesame "$<BOOL:${SINGULARITY_TEST_SESAME}>")
+set(fmath_order_4 "$<BOOL:${SINGULARITY_FMATH_USE_ORDER_4}>")
+set(fmath_order_5 "$<BOOL:${SINGULARITY_FMATH_USE_ORDER_5}>")
 
 # xl fix
 target_compile_options(${PROJECT_NAME} INTERFACE
@@ -79,11 +84,39 @@ target_compile_definitions(${PROJECT_NAME}
 INTERFACE
   $<${with_kokkos}:
     PORTABILITY_STRATEGY_KOKKOS
+    $<${with_kokkoskernels}:
+      SINGULARITY_USE_KOKKOSKERNELS
+    >
   >
   $<${without_kokkos}:
     $<${with_fmath}:
       SINGULARITY_USE_FMATH
     >
+  >
+  $<${test_sesame}:
+    SINGULARITY_TEST_SESAME
+  >
+  $<${with_hdf5}:
+    SPINER_USE_HDF5
+  >
+  $<${with_eospac}:
+    SINGULARITY_USE_EOSPAC
+    EOSPAC_WARN
+    $<${def_eospac_invert}:
+      SINGULARITY_INVERT_AT_SETUP
+    >
+    $<${def_eospac_skip}:
+      SINGULARITY_EOS_SKIP_EXTRAP
+    >
+  >
+  $<${with_single_log}:
+    SINGULARITY_USE_SINGLE_LOGS
+  >
+  $<${fmath_order_4}:
+    SINGULARITY_FMATH_USE_ORDER_4
+  >
+  $<${fmath_order_5}:
+    SINGULARITY_FMATH_USE_ORDER_5
   >
 )
 
@@ -98,5 +131,9 @@ INTERFACE
             MPI::MPI_CXX
         >
     >
+    $<${with_eospac}:
+      EOSPAC::eospac
+    >
     PortsofCall::PortsofCall
+
 )
