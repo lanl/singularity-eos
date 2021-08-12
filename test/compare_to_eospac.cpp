@@ -22,6 +22,8 @@
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
 
+//#define DO_OFFLOAD
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -50,6 +52,8 @@
 
 #include <singularity-eos/eos/eos.hpp>
 
+#include <omp.h>
+
 using namespace singularity;
 
 // using nlohmann::json;
@@ -58,6 +62,11 @@ constexpr char diffFileName[] = "diffs.sp5";
 constexpr int NTIMES = 10;
 
 // #define singularity_normalize_cold_point
+
+template<class D, class ... P>
+  using KV = Kokkos::View<D, P...>;
+template<class D, class ... P>
+  using KHV = typename Kokkos::View<D, P ...>::HostMirror;
 
 int main(int argc, char* argv[]) {
 
@@ -104,18 +113,36 @@ int main(int argc, char* argv[]) {
     matids.push_back(matParams["matid"]);
   }
   */
-  std::vector<int> matids{5030};
+  std::vector<int> matids{5031};
 
+  using KRV = KV<Real*>;
+  using HRV = KHV<Real*>;
   constexpr int NT = 3;
   EOS_INTEGER nXYPairs = (nFineRho)*(nFineT);
-  DataBox xVals(nFineRho,nFineT);
-  DataBox yVals(nFineRho,nFineT);
-  DataBox vars(nFineRho,nFineT);
-  DataBox dx(nFineRho,nFineT);
-  DataBox dy(nFineRho,nFineT);
+  KRV xvp("xvals", nXYPairs);
+  HRV xvp_h = create_mirror_view(xvp);
+  KRV yvp("yvals", nXYPairs);
+  HRV yvp_h = create_mirror_view(yvp);
+  KRV vvp("vals", nXYPairs);
+  HRV vvp_h = create_mirror_view(vvp);
+  KRV dxp("dx", nXYPairs);
+  HRV dxp_h = create_mirror_view(dxp);
+  KRV dyp("dy", nXYPairs);
+  HRV dyp_h = create_mirror_view(dyp);
+  DataBox xVals(xvp_h.data(),nFineRho,nFineT);
+  DataBox yVals(yvp_h.data(),nFineRho,nFineT);
+  DataBox vars(vvp_h.data(),nFineRho,nFineT);
+  DataBox dx(dxp_h.data(),nFineRho,nFineT);
+  DataBox dy(dyp_h.data(),nFineRho,nFineT);
   DataBox pressEOSPAC(nFineRho,nFineT);
   DataBox pressDiff_h(nFineRho, nFineT);
   DataBox pressDiff_d(nFineRho, nFineT);
+
+  DataBox xVals_d(xvp.data(),nFineRho,nFineT);
+  DataBox yVals_d(yvp.data(),nFineRho,nFineT);
+  DataBox vars_d(vvp.data(),nFineRho,nFineT);
+  DataBox dx_d(dxp.data(),nFineRho,nFineT);
+  DataBox dy_d(dyp.data(),nFineRho,nFineT);
 
   #ifdef PORTABILITY_STRATEGY_KOKKOS
   using RView = Kokkos::View<Real*>;
@@ -256,6 +283,16 @@ int main(int argc, char* argv[]) {
       });
 
     std::cout << "\t\tInterpolate pressure of rho T" << std::endl;
+    EOS_INTEGER eosgputest{};
+    eos_GpuOffloadData(&eosgputest);
+    int h = omp_get_initial_device();
+    int t = omp_get_default_device();
+
+    if(omp_get_num_devices()<1 || t <0){
+      printf("ARGH, no dev found.\n");
+      exit(1);
+    }
+
     {
       pressSpiner_h.setRange(0,lTBounds.grid);
       pressSpiner_h.setRange(1,lRhoBounds.grid);
@@ -269,16 +306,24 @@ int main(int argc, char* argv[]) {
 
       std::cout << "\t\t...eospac..." << std::endl;
       start = std::chrono::high_resolution_clock::now();
+      Kokkos::deep_copy(xvp, xvp_h);
+      Kokkos::deep_copy(yvp, yvp_h);
+      Kokkos::deep_copy(vvp, 0.0);
+      Kokkos::deep_copy(dxp, 0.0);
+      Kokkos::deep_copy(dyp, 0.0);
+      Kokkos::fence();
       for (int n = 0; n < NTIMES; n++) {
-        for (int i = 0; i < nXYPairs; i++) vars(i) = dx(i) = dy(i) = 0;
+        //for (int i = 0; i < nXYPairs; i++) vars(i) = dx(i) = dy(i) = 0;
         eosSafeInterpolate(&eospacPofRT, nXYPairs,
-                           xVals.data(), yVals.data(), vars.data(),
-                           dx.data(), dy.data(),
+                           xVals_d.data(), yVals_d.data(), vars_d.data(),
+                           dx_d.data(), dy_d.data(),
                            "PofRT", Verbosity::Quiet);
       }
       stop = std::chrono::high_resolution_clock::now();
       durationEospac += std::chrono::duration_cast<duration>(stop-start);
       
+      Kokkos::deep_copy(vvp_h, vvp);
+
       std::cout << "\t\t...spiner on host..." << std::endl;
       start = std::chrono::high_resolution_clock::now();
       for (int n = 0; n < NTIMES; n++) {

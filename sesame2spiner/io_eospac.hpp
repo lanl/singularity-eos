@@ -110,10 +110,12 @@ public:
     grid = RegularGrid1D(min,max,N);
   }
 
-  inline Real log2lin(Real xl) const {
+  PORTABLE_INLINE_FUNCTION
+  Real log2lin(Real xl) const {
     return pow(10.,xl) - offset;
   }
-  inline Real i2lin(int i) const {
+  PORTABLE_INLINE_FUNCTION
+  Real i2lin(int i) const {
     return log2lin(grid.x(i));
   }
 
