@@ -1,46 +1,90 @@
+#######################################
+# ProcessConfiguration.cmake
+# 
+# use provided configuration options
+# to setup the build, including
+# processing how dependencies are 
+# brought into the build.
+#######################################
+
+#######################################
+## includes ###########################
+#######################################
+
 # Feature Summary used to present the user
 # with an easy-to-read summary of options
 # and features of the build configuration
 #include(FeatureSummary)
+
+# only present user options if preconditions are met
 include(CMakeDependentOption)
+
+# ${PROJECT_SOURCE_DIR}/cmake/ExternalConfig.cmake
+# macros used to define the build configurations of 
+# submodules when selected
 include(ExternalConfig)
 
+#######################################
+## options ############################
+#######################################
+
+# where available, use the internal source packages
+# in ${PROJECT_SOURCE_DIR}/utils
 option (SINGULARITY_USE_INTERNAL_DEPS "Use submodules when available" OFF)
 
+# Options to build using Kokkos components
 option (SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
-cmake_dependent_option (SINGULARITY_USE_CUDA "Enable cuda support" ON "SINGULARITY_USE_KOKKOS" OFF)
+cmake_dependent_option (SINGULARITY_USE_CUDA "Enable cuda support" OFF "SINGULARITY_USE_KOKKOS" OFF)
 cmake_dependent_option (SINGULARITY_USE_KOKKOSKERNELS "Use kokkos-kernels for linear algebra" ON "SINGULARITY_USE_KOKKOS" OFF)
 
+# Options to build with EOSPAC
 option (SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
 cmake_dependent_option (SINGULARITY_INVERT_AT_SETUP "Use eospacs preinverted tables" OFF "SINGULARITY_USE_EOSPAC" OFF)
 
+# Use HDF5 if available
 option (SINGULARITY_USE_HDF5 "Pull in hdf5" ON)
+
+# Build Fortran interface
 option (SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 
+# Build spiner components
 option (SINGULARITY_BUILD_SESAME2SPINER "Compile sesame2spiner" OFF)
 option (SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" OFF)
 
+# Options to control compiler output
 option (SINGULARITY_BETTER_DEBUG_FLAGS
   "Better debug flags for singularity" ON)
 option (SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
 option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
 
+# Options for testing
 option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
+# TODO [mauneyc] Does sesame,stellar collapse require EOSPAC/spiner?
 option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
 option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
 
+# Misc and/or options I can't categorize
 option (SINGULARITY_EOS_SKIP_EXTRAP "Turn off eospac extrap checks" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_FMATH_USE_ORDER_4 "4th order interpolant for fast logs. Default is 7th order." OFF)
 option (SINGULARITY_FMATH_USE_ORDER_5 "5th order interpolant for fast logs. Default is 7th order." OFF)
 
+#######################################
+## configuration logic ################
+#######################################
+
+# Locate CUDA if requested
 if(SINGULARITY_USE_CUDA)
     if(NOT TARGET CUDA::toolkit)
         find_package(CUDAToolkit REQUIRED)
     endif()
 endif()
 
+#TODO [mauneyc] these sections could be abstracted further, but 
+# have to figure out how to include edge-cases (e.g. internal setups)
+# into abstraction
 
+# Kokkos configuration.
 if(SINGULARITY_USE_KOKKOS)
     if(NOT TARGET Kokkos::kokkos)
         find_package(Kokkos QUIET)
@@ -130,10 +174,6 @@ if(SINGULARITY_BUILD_TESTS)
         endif()
     endif()
     message(STATUS "[Catch2] Setup complete")
-    # other
-    #include(CTest)
-    #include(${PROJECT_SOURCE_DIR}/utils/spiner/Catch2/contrib/Catch.cmake)
-    #add_subdirectory(test)
 endif()
 
 if(SINGULARITY_USE_HDF5)
