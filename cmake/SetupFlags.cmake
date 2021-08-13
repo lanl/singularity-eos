@@ -19,10 +19,10 @@ set(with_eospac "$<BOOL:${SINGULARITY_USE_EOSPAC}>")
 set(with_single_log "$<BOOL:${SINGULARITY_USE_SINGLE_LOGS}>")
 
 
-set(def_eospac_invert "$<AND:$<{with_eospac},$<BOOL:${SINGULARITY_INVERT_AT_SETUP}>>>")
-set(def_eospac_skip "$<AND:$<{with_eospac},$<BOOL:${SINGULARITY_EOS_SKIP_EXTRAP}>>>")
+set(def_eospac_invert "$<AND:${with_eospac},$<BOOL:${SINGULARITY_INVERT_AT_SETUP}>>")
+set(def_eospac_skip "$<AND:${with_eospac},$<BOOL:${SINGULARITY_EOS_SKIP_EXTRAP}>>")
 
-set(eospac_lib "$<${with_eospac}:EOSPAC::eospac")
+set(eospac_lib "$<${with_eospac}:EOSPAC::eospac>")
 set(kokkos_lib "$<${with_kokkos}:Kokkos::kokkos>")
 set(linalg_lib "$<IF:${with_kokkoskernels},Kokkos::kokkoskernels,Eigen3::Eigen>")
 
