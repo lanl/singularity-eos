@@ -48,11 +48,9 @@ INTERFACE
 )
 
 # Base Include directories
+# TODO [mauneyc] rework
 target_include_directories(${PROJECT_NAME}::flags
 INTERFACE
-  $<${without_kokkos}:
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils/herumi-fmath>
-  >
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
 )
