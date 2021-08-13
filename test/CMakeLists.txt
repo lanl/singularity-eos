@@ -58,7 +58,7 @@ endif()
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   add_executable(profile_stellar_collapse
                  profile_stellar_collapse.cpp)
-  target_link_libraries(profile_stellar_collapse ${PROJECT_NAME})
+  target_link_libraries(profile_stellar_collapse singularity-eos::eos)
 
   message(STATUS "Generating stellar collapse table for tests using Python script")
   include(FindPythonInterp)
