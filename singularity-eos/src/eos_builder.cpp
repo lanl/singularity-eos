@@ -14,7 +14,7 @@
 
 
 #include <iostream> // debug
-#include <singularity-eos/eos/eos_builder.hpp>
+#include <eos/eos_builder.hpp>
 
 #define GETBASE(T,N) T N = mpark::get<T>(base_params[#N])
 

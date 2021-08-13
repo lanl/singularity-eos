@@ -1,40 +1,50 @@
-
- # install
- install(TARGETS ${PROJECT_NAME}
-    EXPORT ${PROJECT_NAME}_Targets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
-
+include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
-write_basic_package_version_file("${PROJECT_NAME}ConfigVersion.cmake"
-                         VERSION ${PROJECT_VERSION}
-                         COMPATIBILITY SameMajorVersion
+
+set(INSTALL_CONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos)
+
+install(TARGETS eos
+  EXPORT singularity-eos_targets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-#if(NOT INCLUDE_INSTALL_DIR)
-#    set(INCLUDE_INSTALL_DIR include/${PROJECT_NAME})
-#endif()
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/singularity-eos/include DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+install(EXPORT singularity-eos_targets
+  FILE
+    singularity-eosTargets.cmake
+  NAMESPACE
+    singularity-eos::
+  DESTINATION
+    ${INSTALL_CONFIG_DIR}
+)
+
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/singularity-eosConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
 
 configure_package_config_file(
-    "${PROJECT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
-    "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-    INSTALL_DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
-#    PATH_VARS INCLUDE_INSTALL_DIR
+  ${CMAKE_CURRENT_LIST_DIR}/singularity-eosConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/singularity-eosConfig.cmake
+  INSTALL_DESTINATION ${INSTALL_CONFIG_DIR}
 )
 
-install(EXPORT ${PROJECT_NAME}_Targets
- FILE ${PROJECT_NAME}Targets.cmake
- NAMESPACE ${PROJECT_NAME}::
- DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
+#Install the config, configversion and custom find modules
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/singularity-eosConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/singularity-eosConfigVersion.cmake
+  DESTINATION ${INSTALL_CONFIG_DIR}
 )
 
-install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}/Config.cmake"
-     "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
- DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
+
+export(
+  EXPORT singularity-eos_targets
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eosTargets.cmake
+  NAMESPACE singularity-eos::
 )
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/
- DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
-)
+#Register package in the User Package Registry
+export(PACKAGE singularity-eos)

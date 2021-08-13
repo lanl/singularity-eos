@@ -19,8 +19,8 @@
 #include <time.h>
 #include <vector>
 
-#include <singularity-eos/eos/eos.hpp>
-#include <singularity-eos/closure/mixed_cell_models.hpp>
+#include <eos/eos.hpp>
+#include <eos/closure/mixed_cell_models.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <spiner/databox.hpp>

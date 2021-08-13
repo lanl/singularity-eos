@@ -12,36 +12,39 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
-if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_CLOSURE)
-  add_library(eos_f OBJECT singularity_eos.f90)
-endif()
 
-set(EOS_SRCS
-    eos_spiner.cpp
-    eos_jwl.cpp
-    eos_builder.cpp
-    eos_ideal.cpp
-    eos_gruneisen.cpp
-    eos_davis.cpp
-    eos_stellar_collapse.cpp
-    eos_eospac.cpp
-    )
-if (SINGULARITY_BUILD_CLOSURE)
-  list(APPEND EOS_SRCS singularity_eos.cpp)
-endif()
 
-add_library(eos_objs OBJECT ${EOS_SRCS})
+add_library(eos)
+add_library(singularity-eos::eos ALIAS eos)
 
-target_include_directories(eos_objs PUBLIC
-            ${CMAKE_CURRENT_BINARY_DIR}
-            ${CMAKE_CURRENT_SOURCE_DIR}
-            )
+target_sources(eos
+PRIVATE
+    src/eos_spiner.cpp
+    src/eos_jwl.cpp
+    src/eos_builder.cpp
+    src/eos_ideal.cpp
+    src/eos_gruneisen.cpp
+    src/eos_davis.cpp
+    src/eos_stellar_collapse.cpp
+    src/eos_eospac.cpp
+    $<$<BOOL:${SINGULARITY_BUILD_CLOSURE}>:src/singularity_eos.cpp>
+    $<$<BOOL:${SINGULARITY_USE_FORTRAN}>:src/singularity_eos.f90>
+#PUBLIC
+#    include/eos/eos.hpp
+#    include/eos/eos_builder.hpp
+#    include/eos/eos_variant.hpp
+#    include/eos/singularity_eos.hpp
+#    include/eos/base/constants.hpp
+#    include/eos/base/eos_error.hpp
+#    include/eos/closure/mixed_cell_models.hpp
+)
 
-#target_link_libraries(eos_objs singularity-eos::libs singularity-eos::flags)
-target_link_libraries(eos_objs ${PROJECT_NAME})
+target_include_directories(eos
+PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 
-if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_CLOSURE)
-  add_library(eos $<TARGET_OBJECTS:eos_objs> $<TARGET_OBJECTS:eos_f>)
-else()
-  add_library(eos $<TARGET_OBJECTS:eos_objs>)
-endif()
+target_link_libraries(eos ${PROJECT_NAME}::flags)
+
+set_target_properties(eos PROPERTIES EXPORT_NAME singularity-eos) 

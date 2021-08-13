@@ -15,7 +15,7 @@
 #ifndef _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 #define _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 
-#include <singularity-eos/eos/eos.hpp>
+#include <eos/eos.hpp>
 #include <ports-of-call/portability.hpp>
 
 #include <cmath>

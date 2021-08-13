@@ -34,53 +34,54 @@ set(fmath_order_4 "$<BOOL:${SINGULARITY_FMATH_USE_ORDER_4}>")
 set(fmath_order_5 "$<BOOL:${SINGULARITY_FMATH_USE_ORDER_5}>")
 
 # xl fix
-target_compile_options(${PROJECT_NAME} INTERFACE
-                        $<${cxx_xl}:
-                            "-std=c++1y;-qxflag=disable__cplusplusOverride"
-                        >
+target_compile_options(${PROJECT_NAME}::flags
+INTERFACE
+  $<${cxx_xl}:
+    "-std=c++1y;-qxflag=disable__cplusplusOverride"
+  >
 )
-target_link_options(${PROJECT_NAME} INTERFACE
-                        $<${cxx_xl}:
-                            "-std=c++1y;-qxflag=disable__cplusplusOverride"
-                        >
+target_link_options(${PROJECT_NAME}::flags 
+INTERFACE
+  $<${cxx_xl}:
+    "-std=c++1y;-qxflag=disable__cplusplusOverride"
+  >
 )
 
 # Base Include directories
-target_include_directories(${PROJECT_NAME}
-  INTERFACE
-    $<${without_kokkos}:
-      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils/herumi-fmath>
-    >
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-
-)
-
-target_compile_options(${PROJECT_NAME}
+target_include_directories(${PROJECT_NAME}::flags
 INTERFACE
-    $<${with_kokkos}:
-        $<${with_cuda}:
-            $<${cxx_lang}:
-                "--expt-relaxed-constexpr"
-                $<${hide_more_warn}:
-                    "-Xcudafe;--diag_suppress=esa_on_defaulted_function_ignored"
-                > #hide_more_warn
-            > # cxx_lang
-            $<${build_release}:
-                "-use_fast_math"
-            > # build_release
-            $<${build_debug}:
-                $<${better_debug}:
-                    $<${cxx_lang}:
-                        "-G;-lineinfo"
-                    > # cxx_lang
-                > # better_debug
-            > # build_debug
-        > # with_cuda
-    > # with_kokkos
+  $<${without_kokkos}:
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils/herumi-fmath>
+  >
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
 )
 
-target_compile_definitions(${PROJECT_NAME}
+target_compile_options(${PROJECT_NAME}::flags
+INTERFACE
+  $<${with_kokkos}:
+    $<${with_cuda}:
+      $<${cxx_lang}:
+        "--expt-relaxed-constexpr"
+        $<${hide_more_warn}:
+          "-Xcudafe;--diag_suppress=esa_on_defaulted_function_ignored"
+        > #hide_more_warn
+      > # cxx_lang
+      $<${build_release}:
+        "-use_fast_math"
+      > # build_release
+      $<${build_debug}:
+        $<${better_debug}:
+          $<${cxx_lang}:
+            "-G;-lineinfo"
+          > # cxx_lang
+        > # better_debug
+      > # build_debug
+    > # with_cuda
+  > # with_kokkos
+)
+
+target_compile_definitions(${PROJECT_NAME}::flags
 INTERFACE
   $<${with_kokkos}:
     PORTABILITY_STRATEGY_KOKKOS
@@ -121,18 +122,16 @@ INTERFACE
 )
 
 # target_link_libraries brings in compile flags, compile defs, link flags.
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME}::flags
 INTERFACE
     ${kokkos_lib}
     ${linalg_lib}
+    ${eospac_lib}
     $<${with_hdf5}:
         ${PROJECT_NAME}::hdf5
         $<${with_mpi}:
             MPI::MPI_CXX
         >
-    >
-    $<${with_eospac}:
-      EOSPAC::eospac
     >
     PortsofCall::PortsofCall
 

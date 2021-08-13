@@ -25,7 +25,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include <singularity-eos/eos/eos.hpp>
+#include <eos/eos.hpp>
 #include <sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>

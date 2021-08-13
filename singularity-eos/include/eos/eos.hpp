@@ -26,7 +26,7 @@
 #include <limits>
 #include <utility>
 
-#include <singularity-eos/eos/eos_variant.hpp>
+#include <eos/eos_variant.hpp>
 #include <ports-of-call/portability.hpp>
 
 #ifdef SPINER_USE_HDF
@@ -38,8 +38,8 @@
 #include <hdf5_hl.h>
 #endif // SPINER_USE_HDF
 
-#include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/eos_error.hpp>
+#include <eos/base/constants.hpp>
+#include <eos/base/eos_error.hpp>
 
 #ifdef SINGULARITY_USE_EOSPAC
 #include <eos_Interface.h>

@@ -26,7 +26,7 @@
 #include <hdf5_hl.h>
 
 // singularity includes
-#include <singularity-eos/eos/eos.hpp>
+#include <eos/eos.hpp>
 
 #include <ports-of-call/portability.hpp>
 #include <root-finding-1d/root_finding.hpp>

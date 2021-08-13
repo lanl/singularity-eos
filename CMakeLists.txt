@@ -17,20 +17,7 @@ project(singularity-eos VERSION 1.5.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-
-add_library(${PROJECT_NAME} INTERFACE IMPORTED GLOBAL)
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
-add_library(${PROJECT_NAME}::flags ALIAS ${PROJECT_NAME})
-
-
-include(ProcessConfiguration)
-include(SetupCompilers)
-include(SetupFlags)
-#include(SetupInstall)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS On)
-
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
 message(STATUS "Patching mpark::variant to support GPUs")
@@ -38,8 +25,20 @@ execute_process(COMMAND patch -N -s -V never
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch)
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/singularity-eos/eos)
+
+add_library(${PROJECT_NAME}::flags INTERFACE IMPORTED GLOBAL)
+
+include(ProcessConfiguration)
+include(SetupCompilers)
+include(SetupFlags)
+#include(SetupInstall)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/singularity-eos)
+
+include(SetupInstall)
+
 if(SINGULARITY_BUILD_TESTS)
+  enable_testing()
   add_subdirectory(test)
 endif()
 

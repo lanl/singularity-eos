@@ -20,13 +20,13 @@ endif()
 if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
-target_link_libraries(eos_unit_tests Catch2::Catch2 ${PROJECT_NAME})
+target_link_libraries(eos_unit_tests Catch2::Catch2 singularity-eos::eos)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
                  compare_to_eospac.cpp
                  ${CMAKE_SOURCE_DIR}/sesame2spiner/io_eospac.cpp)
-  target_link_libraries(compare_to_eospac Catch2::Catch2 ${PROJECT_NAME})
+  target_link_libraries(compare_to_eospac Catch2::Catch2 singularity-eos::eos)
   target_include_directories(compare_to_eospac PUBLIC
                              ${CMAKE_SOURCE_DIR}/utils/spiner
                              ${CMAKE_SOURCE_DIR}/utils/ports-of-call
@@ -50,8 +50,8 @@ if (SINGULARITY_BUILD_CLOSURE)
                  test_pte.cpp)
   target_link_libraries(test_pte PRIVATE
                         Catch2::Catch2
-                        eos
-                        ${PROJECT_NAME})
+                        singularity-eos::eos
+                        )
   add_test(pte test_pte)
 endif()
 
