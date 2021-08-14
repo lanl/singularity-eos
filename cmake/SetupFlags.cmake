@@ -96,7 +96,7 @@ INTERFACE
     SINGULARITY_TEST_SESAME
   >
   $<${with_hdf5}:
-    SPINER_USE_HDF5
+    SPINER_USE_HDF
   >
   $<${with_eospac}:
     SINGULARITY_USE_EOSPAC
