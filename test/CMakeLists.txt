@@ -31,7 +31,10 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
                              ${CMAKE_SOURCE_DIR}/utils/spiner
                              ${CMAKE_SOURCE_DIR}/utils/ports-of-call
                              ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
-  target_compile_options(compare_to_eospac PUBLIC -fopenmp)
+  #target_compile_options(compare_to_eospac PUBLIC -fopenmp -Mcuda -gpu=cc70 -mp=gpu)
+  #target_link_options(compare_to_eospac PUBLIC -fopenmp -Mcuda -gpu=cc70 -mp=gpu)
+  target_compile_options(compare_to_eospac PUBLIC -qoffload -qsmp=omp)
+  target_link_options(compare_to_eospac PUBLIC -qoffload -qsmp=omp)
 endif()
 
 catch_discover_tests(eos_unit_tests)
