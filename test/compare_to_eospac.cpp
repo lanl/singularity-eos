@@ -24,6 +24,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <vector>
 #include <cstdlib>
 #include <limits>
@@ -32,8 +33,6 @@
 
 #include <hdf5.h>
 #include <hdf5_hl.h>
-
-// #include "json.hpp"
 
 #include <eos_Interface.h> // eospac API
 
@@ -52,16 +51,15 @@
 
 using namespace singularity;
 
-// using nlohmann::json;
 using duration = std::chrono::microseconds;
 constexpr char diffFileName[] = "diffs.sp5";
 constexpr int NTIMES = 10;
 
-// #define singularity_normalize_cold_point
-
 int main(int argc, char* argv[]) {
 
   herr_t status = H5_SUCCESS;
+
+  std::vector<int> matids;
 
   #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::initialize();
@@ -69,11 +67,11 @@ int main(int argc, char* argv[]) {
   {
 
   if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " filename [nFine]"
+    std::cerr << "Usage: " << argv[0] << " [-n nFine] [-f filename] matid1 matid2 ... matidN"
               << std::endl;
     std::exit(1);
   }
-  std::string filename = argv[1];
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   using Kokkos::SpaceAccessibility;
   using KDMS = Kokkos::DefaultExecutionSpace::memory_space;
@@ -83,7 +81,21 @@ int main(int argc, char* argv[]) {
 #else
   constexpr const int def_fine = 512;
 #endif // PORTABILITY_STRATEGY_KOKKOS
-  int nFine = argc >= 3 ? std::atoi(argv[2]) : def_fine;
+
+  int nFine = def_fine;
+  std::string filename = "materials.sp5";
+  for (int i = 1; i < argc; ++i) {
+    if (std::strcmp(argv[i], "-f") == 0 && i < argc-1) {
+      filename = argv[i+1];
+      i++;
+    } else if (std::strcmp(argv[i], "-n") == 0 && i < argc-1) {
+      nFine = std::atoi(argv[i+1]);
+      i++;
+    } else {
+      matids.push_back(std::atoi(argv[i]));
+    }
+  }
+
   int nFineRho = nFine + 1;
   int nFineT = nFine - 1;
   std::string sp5name = filename;
@@ -95,16 +107,7 @@ int main(int argc, char* argv[]) {
     std::exit(1);
   }
 
-  // params = fileToJson(filename); // reset to avoid horrible json magic
   hid_t file = H5Fcreate(diffFileName,H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
-
-  /*
-  std::vector<int> matids;
-  for (auto & matParams : params["materials"]) {
-    matids.push_back(matParams["matid"]);
-  }
-  */
-  std::vector<int> matids{5030};
 
   constexpr int NT = 3;
   EOS_INTEGER nXYPairs = (nFineRho)*(nFineT);
