@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef BURROWS2SPINER_SRC_PARSER_HPP_
-#define BURROWS2SPINER_SRC_PARSER_HPP_
+#ifndef SESAME2SPINER_PARSER_HPP_
+#define SESAME2SPINER_PARSER_HPP_
 
 #include <istream>
 #include <sstream>
@@ -38,4 +38,4 @@ private:
   std::unordered_map<std::string, std::string> params_;
 };
 
-#endif // BURROWS2SPINER_SRC_PARSER_HPP_
+#endif // SESAME2SPINER_PARSER_HPP_
