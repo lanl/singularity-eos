@@ -1,3 +1,18 @@
+
+#------------------------------------------------------------------------------#
+# © 2021. Triad National Security, LLC. All rights reserved.  This
+# program was produced under U.S. Government contract 89233218CNA000001
+# for Los Alamos National Laboratory (LANL), which is operated by Triad
+# National Security, LLC for the U.S.  Department of Energy/National
+# Nuclear Security Administration. All rights in the program are
+# reserved by Triad National Security, LLC, and the U.S. Department of
+# Energy/National Nuclear Security Administration. The Government is
+# granted for itself and others acting on its behalf a nonexclusive,
+# paid-up, irrevocable worldwide license in this material to reproduce,
+# prepare derivative works, distribute copies to the public, perform
+# publicly and display publicly, and to permit others to do so.
+#------------------------------------------------------------------------------#
+
 #######################################
 # ProcessConfiguration.cmake
 #
@@ -73,6 +88,7 @@ option (SINGULARITY_FMATH_USE_ORDER_5 "5th order interpolant for fast logs. Defa
 ## configuration logic ################
 #######################################
 
+singularity_message(STATUS "${ColorBold}Dependency setup${ColorReset}")
 # Locate CUDA if requested
 if(SINGULARITY_USE_CUDA)
     if(NOT TARGET CUDA::toolkit)
@@ -87,13 +103,18 @@ find_package(PortsofCall REQUIRED)
 # The following dependencies may be taken from
 # submodules (i.e. {top_dir}/utils/{dep}).
 # see cmake/ExternalConfig.cmake for
-# macro
+# macro definition/use
+
+#######################################
+## Kokkos #############################
+## and, if specified, KokkosKernels ###
+#######################################
 if(SINGULARITY_USE_KOKKOS)
     singularity_config_internal_kokkos(SINGULARITY_USE_CUDA)
     singularity_select_dep(
         DEP Kokkos
         GITURL https://github.com/kokkos/kokkos.git
-        GITBRANCH master
+        GITTAG origin/master
         SUBDIR kokkos
     )
 
@@ -102,37 +123,46 @@ if(SINGULARITY_USE_KOKKOS)
         singularity_select_dep(
             DEP KokkosKernels
             GITURL https://github.com/kokkos/kokkos-kernels.git
-            GITBRANCH master
+            GITTAG origin/master
             SUBDIR ""
         )
 
     endif()
 else()
     if(SINGULARITY_USE_CUDA)
-        message(FATAL_ERROR "CUDA must be used with Kokkos")
+        singularity_message(FATAL_ERROR "CUDA must be used with Kokkos")
     endif()
 endif()
 
+#######################################
+## Eigen3 #############################
+#######################################
 if(NOT SINGULARITY_USE_KOKKOSKERNELS)
     singularity_select_dep(
         DEP Eigen3
         GITURL https://gitlab.com/libeigen/eigen.git
-        GITBRANCH  master
+        GITTAG  origin/master
         SUBDIR "eigen"
     )
 endif()
 
-
-
+#######################################
+## Catch2 #############################
+#######################################
 if(SINGULARITY_BUILD_TESTS)
     singularity_select_dep(
         DEP Catch2
         GITURL https://github.com/catchorg/Catch2.git
-        GITBRANCH v2.13.4 # devel was broken
+        GITTAG v2.13.4 # devel was broken
         SUBDIR "catch2"
     )
 endif()
 
+#######################################
+## HDF5 ###############################
+## NB:  CMake v3.21+ can correctly ####
+##      handle `find_package(HDF5) ####
+#######################################
 if(SINGULARITY_USE_HDF5)
     find_package(HDF5 COMPONENTS C HL QUIET)
 
@@ -157,6 +187,7 @@ if(SINGULARITY_USE_HDF5)
     endif()
 endif()
 
+# mauneyc: is this only for tests?
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
    add_subdirectory(${PROJECT_SOURCE_DIR}/stellarcollapse2spiner)
    install(TARGETS stellarcollapse2spiner DESTINATION bin)

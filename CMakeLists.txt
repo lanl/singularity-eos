@@ -28,6 +28,7 @@ execute_process(COMMAND patch -N -s -V never
 
 add_library(${PROJECT_NAME}::flags INTERFACE IMPORTED GLOBAL)
 
+include(SetupCustomMessage)
 include(ProcessConfiguration)
 include(SetupCompilers)
 include(SetupFlags)
