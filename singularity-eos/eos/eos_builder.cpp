@@ -14,7 +14,7 @@
 
 
 #include <iostream> // debug
-#include <eos/eos_builder.hpp>
+#include <singularity-eos/eos/eos_builder.hpp>
 
 #define GETBASE(T,N) T N = mpark::get<T>(base_params[#N])
 
@@ -70,7 +70,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type,
         }
         return applyScaleAndShift(std::move(s),
                                   scaled,shifted,scale,shift);
-      } 
+      }
       else {
         SpinerEOSDependsRhoSie s(filename,matid,reproducibility_mode);
         if (relativistic) {

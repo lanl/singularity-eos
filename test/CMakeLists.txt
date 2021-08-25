@@ -20,7 +20,7 @@ endif()
 if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
-target_link_libraries(eos_unit_tests Catch2::Catch2 singularity-eos::eos)
+target_link_libraries(eos_unit_tests PRIVATE Catch2::Catch2 singularity-eos::eos)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
@@ -34,7 +34,9 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
 endif()
 #NOTE: FetchContent does not appropriately populate this catch directory
 # fixed in a later cmake version
-list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+if (Catch2_IS_REMOTE)
+  list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/contrib)
+endif()
 include(Catch)
 catch_discover_tests(eos_unit_tests)
 

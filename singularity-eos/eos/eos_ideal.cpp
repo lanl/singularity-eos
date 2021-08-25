@@ -12,7 +12,7 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <eos/eos.hpp>
+#include <singularity-eos/eos/eos.hpp>
 
 #define MYMAX(a,b) a > b ? a : b
 

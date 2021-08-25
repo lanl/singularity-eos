@@ -2,23 +2,41 @@
 include(FetchContent)
 
 macro(singularity_select_dep)
-    set(options FIRST)
-    set(oneValueArgs USE_INTERNAL DEP GITURL GITBRANCH SUBDIR)
+    set(options USE_INTERNAL)
+    set(oneValueArgs DEP TARGET GITURL GITBRANCH SUBDIR)
     set(multiValueArgs OTHERS)
     cmake_parse_arguments(SD "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-    if(SD_USE_INTERNAL)
-        message(STATUS "[${SD_DEP}] Using ${SD_DEP} submodule")
-        add_subdirectory(${PROJECT_SOURCE_DIR}/utils/${SD_SUBDIR})
+    if(NOT SD_TARGET)
+        message(STATUS "[${SD_DEP}] Target not defined, attempting to find in environment")
+        find_package(${SD_DEP} QUIET)
+        if(NOT ${SD_DEP}_FOUND)
+            message(STATUS "[${SD_DEP}] find_package couldn't locate")
+            if(SD_USE_INTERNAL)
+                set(UTIL_PKG "${PROJECT_SOURCE_DIR}/utils/${SD_SUBDIR}")
+                message(STATUS "[${SD_DEP}] USE_INTERNAL flag set, using ${UTIL_PKG} ")
+                FetchContent_Declare(
+                    ${SD_DEP}
+                    FETCHCONTENT_SOURCE_DIR ${UTIL_PKG}
+                )
+                set(${SD_DEP}_IS_INTERNAL "1")
+            else()
+                message(STATUS "[${SD_DEP}] fetching source from ${SD_GITURL}")
+                FetchContent_Declare(
+                    ${SD_DEP}
+                    GIT_REPOSITORY ${SD_GITURL}
+                    GIT_TAG        ${SD_GITBRANCH}
+                )
+                set(${SD_DEP}_IS_REMOTE "1")
+            endif()
+            FetchContent_MakeAvailable(${SD_DEP})
+        else()
+            message(STATUS "[${SD_DEP}] found with find_package")
+            set(${SD_DEP}_IS_EXTERNAL "1")
+        endif()
     else()
-        message(STATUS "[${SD_DEP}] Fetching source from remote")
-
-        FetchContent_Declare(
-            ${SD_DEP}
-            GIT_REPOSITORY ${SD_GITURL}
-            GIT_TAG        origin/${SD_GITBRANCH}
-        )
-        FetchContent_MakeAvailable(${SD_DEP})
+        message(STATUS "[${SD_DEP}] Target already defined, skipping package search")
     endif()
+
 endmacro()
 
 macro(singularity_config_internal_kokkos WITH_CUDA)

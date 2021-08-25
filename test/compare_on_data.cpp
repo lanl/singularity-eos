@@ -319,7 +319,7 @@ void profile_eospac(int ncycles,
 
     auto throughput = 1./time;
     throughputs.push_back(throughput);
-    
+
     Real L2_error = 0;
     int npoints = 0;
     for (int m = 0; m < nmats; m++) {
@@ -391,10 +391,10 @@ void profile_spiner_host(int ncycles,
       });
     time /= (ncells*ncycles);
     timings.push_back(time);
-    
+
     auto throughput = 1./time;
     throughputs.push_back(throughput);
-    
+
     // debug
     Real L2_error = 0;
     int npoints = 0;
@@ -512,7 +512,7 @@ void make_table_sim_data(std::ostream& out,
                               const std::vector<double>& timings_eospac,
                               const std::vector<double>& timings_spiner,
                               const std::vector<double>& throughputs_eospac,
-                              const std::vector<double>& throughputs_spiner) { 
+                              const std::vector<double>& throughputs_spiner) {
   out << "# input file = " << dumpname << "\n"
       << "# ncyles = " << ncycles << "\n"
       << "# Setup: 1 dump, 1 CPU. Compare EOSPAC to Spiner performance\n"
@@ -560,7 +560,7 @@ void compare_on_sim_data(int ncycles, const std::vector<int>& chunk_sizes) {
   load_eospac_tables(matids, table_handles);
   load_eos_spiner(spiner_fname,matids,eos_h,eos_d);
   Data data_d = data_h.GetOnDevice();
- 
+
   std::cout << "\t...We have " << data_h.rhos.dim(2) << " materials\n"
             << "\t\t...but we only operate on " << eos_h.size() << " of them.\n"
             << "\t...We have " << data_h.rhos.dim(1) << " cells."
@@ -632,7 +632,7 @@ int main() {
   // compare_on_sim_data(100, {1, 8, 64, 512, 4096, 32768, 262144, 75449});
   compare_on_sim_data(20, {1, 8, 64, 512, 4096, 32768, 262144, 755449});
   // compare_on_sim_data(1, {4096});
-  
+
   return 0;
 }
 

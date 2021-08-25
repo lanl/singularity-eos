@@ -25,7 +25,7 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include <eos/eos.hpp>
+#include <singularity-eos/eos/eos.hpp>
 #include <sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
@@ -46,7 +46,7 @@ namespace singularity {
 
 // replace lambdas with callable
 namespace callable_interp {
-  
+
   class l_interp {
   private:
     const Spiner::DataBox& field;
@@ -57,12 +57,12 @@ namespace callable_interp {
       : field{field_},
         fixed{fixed_}
     { }
-    
+
     PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
       return field.interpToReal(x, fixed);
     }
   };
-  
+
   class r_interp {
   private:
     const Spiner::DataBox& field;
@@ -73,7 +73,7 @@ namespace callable_interp {
       : field{field_},
         fixed{fixed_}
     { }
-    
+
     PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
       return field.interpToReal(fixed, x);
     }
@@ -350,7 +350,7 @@ herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string& matid_str,
     dTdECold_(j)   = dTdE_.interpToReal(lRho,lT);
     dEdTCold_(j)   = dEdT_.interpToReal(lRho,lT);
   }
-  
+
   // major vs. minor axes change, so this must be done by hand
   PMax_.resize(numRho_);
   PMax_.setRange(0, bMod_.range(1));
@@ -386,7 +386,7 @@ herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string& matid_str,
   dPdENormal_ = dPdE_.interpToReal(lRhoNormal,lTNormal);
   Real dPdR = dPdRho_.interpToReal(lRhoNormal,lTNormal);
   dVdTNormal_ = dPdENormal_*CvNormal_/(rhoNormal_*rhoNormal_*dPdR);
-  
+
   return status;
 }
 
@@ -559,7 +559,7 @@ Real SpinerEOSDependsRhoT::SpecificHeatFromDensityInternalEnergy(const Real rho,
 PORTABLE_FUNCTION
 Real SpinerEOSDependsRhoT::BulkModulusFromDensityTemperature(const Real rho,
                                                              const Real temperature,
-                                                             Real *lambda) const 
+                                                             Real *lambda) const
 {
   Real lRho, lT;
   getLogsRhoT_(rho, temperature, lRho, lT, lambda);
@@ -571,7 +571,7 @@ PORTABLE_FUNCTION
 Real
 SpinerEOSDependsRhoT::GruneisenParamFromDensityTemperature(const Real rho,
                                                            const Real temp,
-                                                           Real *lambda) const 
+                                                           Real *lambda) const
 {
   Real lRho, lT, gm1;
   getLogsRhoT_(rho, temp, lRho, lT, lambda);
@@ -842,7 +842,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho,
   if ( whereAmI == TableStatus::OffBottom ) {
     // On the cold curve. No unique temperature.
     // return the minimum temperature in the table.
-    lT = lTMin_; 
+    lT = lTMin_;
     counts.increment(0);
   } else if ( whereAmI == TableStatus::OffTop ) { // Assume ideal gas
     const Real Cv = dEdTMax_.interpToReal(lRho);
@@ -1079,7 +1079,7 @@ SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string& filename,
   status += H5Gclose(lEGroup);
   status += H5Gclose(matGroup);
   status += H5Fclose(file);
-  
+
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsTHoSIE: HDF5 error\n");
   }
@@ -1115,7 +1115,7 @@ SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string& filename,
   status += H5Gclose(lEGroup);
   status += H5Gclose(matGroup);
   status += H5Fclose(file);
-  
+
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsRhoSie: HDF5 error\n");
   }
@@ -1168,7 +1168,7 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string& matid_str,
   status += dependsRhoSie_.dTdRho.loadHDF(lEGroup,  SP5::Fields::dTdRho);
   status += dependsRhoSie_.dTdE.loadHDF(lEGroup,    SP5::Fields::dTdE);
   status += dependsRhoSie_.dEdRho.loadHDF(lEGroup,  SP5::Fields::dEdRho);
-  
+
 
   // Fix up bulk modulus
   calcBMod_(dependsRhoT_);
@@ -1361,7 +1361,7 @@ PORTABLE_FUNCTION
 Real
 SpinerEOSDependsRhoSie::GruneisenParamFromDensityTemperature(const Real rho,
                                                              const Real T,
-                                                             Real *lambda) 
+                                                             Real *lambda)
                                                              const {
   const Real dpde = interpRhoT_(rho, T, dependsRhoT_.dPdE, lambda);
   return dpde/rho;
@@ -1426,7 +1426,7 @@ void SpinerEOSDependsRhoSie::FillEos(Real& rho, Real& temp,
       rho = fromLog_(lRho,lRhoOffset_);
     } else {
       UNDEFINED_ERROR;
-    } 
+    }
   } else {
     lRho = toLog_(rho,lRhoOffset_);
     if (lambda != nullptr) *lambda = lRho;

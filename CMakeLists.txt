@@ -31,14 +31,13 @@ add_library(${PROJECT_NAME}::flags INTERFACE IMPORTED GLOBAL)
 include(ProcessConfiguration)
 include(SetupCompilers)
 include(SetupFlags)
-#include(SetupInstall)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/singularity-eos)
 
 include(SetupInstall)
 
 if(SINGULARITY_BUILD_TESTS)
-  enable_testing()
+  include(CTest)
   add_subdirectory(test)
 endif()
 

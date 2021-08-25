@@ -12,7 +12,7 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <eos/eos.hpp>
+#include <singularity-eos/eos/eos.hpp>
 #include <cmath>
 
 namespace singularity {
@@ -30,7 +30,7 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const
     const Real phat = 0.25*_A*_A/_B*_rho0;
     const Real b4y = 4.0*_B*y;
 
-    if(rho>=_rho0) 
+    if(rho>=_rho0)
     {
         return phat*(b4y+0.5*(square(b4y)+onethird*(cube(b4y)+_C*fourth(b4y)*0.25))+square(y)/fourth(1-y));
     }
@@ -55,7 +55,7 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ts(const Real rho) const
 {
-    if(rho>=_rho0) 
+    if(rho>=_rho0)
     {
         const Real y = 1-_rho0/rho;
         return _T0*std::exp(-_Z*y)*std::pow(_rho0/rho,-_G0-_Z);
@@ -67,7 +67,7 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Ts(const Real rho) const
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Gamma(const Real rho) const
 {
-    if(rho>=_rho0) 
+    if(rho>=_rho0)
     {
         const Real y = 1-_rho0/rho;
         return _G0+_Z*y;
@@ -201,7 +201,7 @@ PORTABLE_FUNCTION void DavisReactants::PTofRE(const Real rho, const Real sie, Re
     const Real tmp = (1.0+_alpha)/(_Cv0*Ts(rho))*(sie-Es(rho)) + 1.0;
     const Real Tsv = -Ts(rho)*rho*(_G0+(rho>=_rho0)?_Z*y:0.0);
     const Real Tv = std::pow(tmp,1.0/(1.0+_alpha))*(Tsv+Tsv/Ts(rho)*(Es(rho)-sie)-esv)/tmp/_Cv0;
-    
+
     dtdr = -Tv/square(rho);
     dtde = 1.0/SpecificHeatFromDensityInternalEnergy(rho,sie);
 }
@@ -318,9 +318,9 @@ void DavisProducts::FillEos(Real& rho, Real& temp, Real& sie,
     if(output&thermalqs::pressure) press=PressureFromDensityInternalEnergy(rho,sie);
     if(output&thermalqs::temperature) temp = TemperatureFromDensityInternalEnergy(rho,sie);
     if(output&thermalqs::bulk_modulus) bmod = BulkModulusFromDensityInternalEnergy(rho,sie);
-    if(output&thermalqs::specific_heat) cv=SpecificHeatFromDensityInternalEnergy(rho,sie);    
+    if(output&thermalqs::specific_heat) cv=SpecificHeatFromDensityInternalEnergy(rho,sie);
 }
-// TODO: pre-cache values instead of computing them 
+// TODO: pre-cache values instead of computing them
 // TODO: chad please decide if these choices are sane
 PORTABLE_FUNCTION
 void DavisProducts::ValuesAtReferenceState(Real& rho, Real& temp, Real& sie, Real& press,

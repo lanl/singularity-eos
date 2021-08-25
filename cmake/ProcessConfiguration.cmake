@@ -1,9 +1,9 @@
 #######################################
 # ProcessConfiguration.cmake
-# 
+#
 # use provided configuration options
 # to setup the build, including
-# processing how dependencies are 
+# processing how dependencies are
 # brought into the build.
 #######################################
 
@@ -20,7 +20,7 @@
 include(CMakeDependentOption)
 
 # ${PROJECT_SOURCE_DIR}/cmake/ExternalConfig.cmake
-# macros used to define the build configurations of 
+# macros used to define the build configurations of
 # submodules when selected
 include(ExternalConfig)
 
@@ -79,43 +79,33 @@ if(SINGULARITY_USE_CUDA)
         find_package(CUDAToolkit REQUIRED)
     endif()
 endif()
+if(SINGULARITY_USE_EOSPAC)
+    find_package(EOSPAC REQUIRED)
+endif()
+find_package(PortsofCall REQUIRED)
 
-#TODO [mauneyc] these sections could be abstracted further, but 
-# have to figure out how to include edge-cases (e.g. internal setups)
-# into abstraction
-
-# Kokkos configuration.
+# The following dependencies may be taken from
+# submodules (i.e. {top_dir}/utils/{dep}).
+# see cmake/ExternalConfig.cmake for
+# macro
 if(SINGULARITY_USE_KOKKOS)
-    if(NOT TARGET Kokkos::kokkos)
-        find_package(Kokkos QUIET)
-        # build from
-        if(NOT Kokkos_FOUND)
-            singularity_config_internal_kokkos(SINGULARITY_USE_CUDA)
-            singularity_select_dep(
-                USE_INTERNAL ${SINGULARITY_USE_INTERNAL_DEPS}
-                DEP Kokkos
-                GITURL https://github.com/kokkos/kokkos.git
-                GITBRANCH master
-                SUBDIR kokkos
-            )
-        endif()
-        message(STATUS "[Kokkos] Kokkos setup complete")
-    endif()
+    singularity_config_internal_kokkos(SINGULARITY_USE_CUDA)
+    singularity_select_dep(
+        DEP Kokkos
+        GITURL https://github.com/kokkos/kokkos.git
+        GITBRANCH master
+        SUBDIR kokkos
+    )
+
     if(SINGULARITY_USE_KOKKOSKERNELS)
-        if(NOT TARGET Kokkos::kokkoskernels)
-            find_package(KokkosKernels QUIET)
-            if(NOT KokkosKernels_FOUND)
-                singularity_config_internal_kokkoskernels()
-                singularity_select_dep(
-                    USE_INTERNAL OFF
-                    DEP KokkosKernels
-                    GITURL https://github.com/kokkos/kokkos-kernels.git
-                    GITBRANCH master
-                    SUBDIR ""
-                )
-            endif()
-            message(STATUS "[KokkosKernels] KokkosKernels setup complete")
-        endif()
+        singularity_config_internal_kokkoskernels()
+        singularity_select_dep(
+            DEP KokkosKernels
+            GITURL https://github.com/kokkos/kokkos-kernels.git
+            GITBRANCH master
+            SUBDIR ""
+        )
+
     endif()
 else()
     if(SINGULARITY_USE_CUDA)
@@ -124,56 +114,23 @@ else()
 endif()
 
 if(NOT SINGULARITY_USE_KOKKOSKERNELS)
-    if(NOT TARGET Eigen3::Eigen)
-        find_package(Eigen3 QUIET)
-        if(NOT Eigen3_FOUND)
-            singularity_select_dep(
-                USE_INTERNAL ${SINGULARITY_USE_INTERNAL_DEPS}
-                DEP Eigen3
-                GITURL https://gitlab.com/libeigen/eigen.git
-                GITBRANCH  master
-                SUBDIR "eigen"
-            )
-        endif()
-    endif()
-    message(STATUS "[Eigen3] Setup complete")
+    singularity_select_dep(
+        DEP Eigen3
+        GITURL https://gitlab.com/libeigen/eigen.git
+        GITBRANCH  master
+        SUBDIR "eigen"
+    )
 endif()
 
-if(SINGULARITY_USE_EOSPAC)
-    find_package(EOSPAC REQUIRED)
-endif()
 
-if(SINGULARITY_BUILD_SESAME2SPINER)
-    find_package(json QUIET)
-    if(NOT json_FOUND)
-        singularity_config_internal_json()
-        singularity_select_dep(
-            USE_INTERNAL ${SINGULARITY_USE_INTERNAL_DEPS}
-            DEP json
-            GITURL https://github.com/nlohmann/json.git
-            GITBRANCH  develop
-            SUBDIR "json"
-        )
-    endif()
-    message(STATUS "[json] Setup complete")
-endif()
-
-find_package(PortsofCall REQUIRED)
 
 if(SINGULARITY_BUILD_TESTS)
-    if(NOT TARGET Catch2::Catch2)
-        find_package(Catch2 QUIET)
-        if(NOT Catch2_FOUND)
-            singularity_select_dep(
-                USE_INTERNAL ${SINGULARITY_USE_INTERNAL_DEPS}
-                DEP Catch2
-                GITURL https://github.com/catchorg/Catch2.git
-                GITBRANCH devel
-                SUBDIR "catch2"
-            )
-        endif()
-    endif()
-    message(STATUS "[Catch2] Setup complete")
+    singularity_select_dep(
+        DEP Catch2
+        GITURL https://github.com/catchorg/Catch2.git
+        GITBRANCH v2.13.4 # devel was broken
+        SUBDIR "catch2"
+    )
 endif()
 
 if(SINGULARITY_USE_HDF5)

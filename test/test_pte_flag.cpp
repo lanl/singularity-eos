@@ -20,9 +20,9 @@
 #include <chrono>
 
 #include <ports-of-call/portability.hpp>
-#include <eos/eos.hpp>
-#include <eos/bedroom_door.hpp>
-#include <eos/closure/mixed_cell_models.hpp>
+#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/bedroom_door.hpp>
+#include <singularity-eos/eos/closure/mixed_cell_models.hpp>
 
 static constexpr const int NMAT {3};
 static constexpr const int NTRIAL {3};

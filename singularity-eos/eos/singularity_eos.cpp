@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <eos/singularity_eos.hpp>
-#include <eos/eos_builder.hpp>
+#include <singularity-eos/eos/singularity_eos.hpp>
+#include <singularity-eos/eos/eos_builder.hpp>
 #include <map>
 #include <algorithm>
 #include <cassert>
@@ -177,7 +177,7 @@ int init_sg_eospac(const int matindex, EOS* eos, const int id,
   return 0;
 }
 int init_sg_eospac(const int matindex, EOS* eos, const int id) {
-  return init_sg_eospac(matindex, eos, id, def_en, def_v); 
+  return init_sg_eospac(matindex, eos, id, def_en, def_v);
 }
 #endif // SINGULARITY_USE_EOSPAC
 
@@ -189,7 +189,7 @@ template< typename T>
 using ScratchV = Kokkos::View<T**, Lrgt>;
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
-// mapping from EAP integer to 
+// mapping from EAP integer to
 static const std::map<const int, const unsigned long>
   EAPInputToBD = {
                    {-3, thermalqs::temperature | thermalqs::density},
@@ -275,7 +275,7 @@ int get_sg_eos(// sizing information
   if (do_frac_bmod) frac_bmod_hv = host_frac_v(frac_bmod, cell_dim, nmat);
   if (do_frac_dpde) frac_dpde_hv = host_frac_v(frac_dpde, cell_dim, nmat);
   if (do_frac_cv) frac_cv_hv = host_frac_v(frac_cv, cell_dim, nmat);
-  
+
   // get device views if necessary
   Kokkos::View<const int*, Llft, MemoryTraits<ra> >
     offsets_v {create_mirror_view_and_copy(DMS(), offsets_hv)};
@@ -519,7 +519,7 @@ int get_sg_eos(// sizing information
       //                                    ref_cv, ref_bmod, ref_dpde, ref_dvdt);
       //  //const Real delta_T {temp_est_pos ? temp_est - ref_T : 0.0};
       //  //sie_pte(tid, m) = ref_sie;//temp_est_pos ? ref_cv*delta_T + ref_sie : mu*sie_v(i);
-      //  //const Real guess_rho = (1.0 - ref_rho*ref_dvdt*delta_T) <= 0.0 
+      //  //const Real guess_rho = (1.0 - ref_rho*ref_dvdt*delta_T) <= 0.0
       //  //                     ? ref_rho
       //  //                     : ref_rho*(1.0 - ref_rho*ref_dvdt*delta_T);
       //  vfrac_pte(tid, m) = frac_mass_v(i, midx) / ref_rho;

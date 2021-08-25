@@ -37,7 +37,7 @@
 #include <spiner/sp5.hpp>
 #include <spiner/spiner_types.hpp>
 
-#include <eos/eos.hpp>
+#include <singularity-eos/eos/eos.hpp>
 
 using namespace Spiner;
 using namespace singularity;

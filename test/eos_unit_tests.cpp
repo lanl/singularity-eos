@@ -20,8 +20,8 @@
 #include <root-finding-1d/root_finding.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <eos/eos.hpp>
-#include <eos/eos_builder.hpp>
+#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_builder.hpp>
 
 #define CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
@@ -102,7 +102,7 @@ SCENARIO( "Rudimentary test of the root finder", "[RootFinding1D]" ) {
                     RootCounts per_thread_counts;
                     statuses(i) = findRoot(f, 0, guess,
                                            -1, 3,
-                                           1e-10, 1e-10, roots(i), 
+                                           1e-10, 1e-10, roots(i),
                                            per_thread_counts);
                   });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -207,7 +207,7 @@ SCENARIO( "SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT]" ) {
         REQUIRE( isClose(rho,7.91) );
         REQUIRE( isClose(T,293) );
       }
-      
+
       // TODO: this needs to be a much more rigorous test
       AND_THEN( "Quantities can be read from density and temperature" ) {
         int nw_ie{0}, nw_bm{0};
@@ -369,7 +369,7 @@ SCENARIO( "SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]" ) {
       // REQUIRE( steelEOS_host.lTOffset() == 0 );
       // REQUIRE( isClose(steelEOS_host.lEOffset(), 0) );
 
-      int nw_ie2{0}, nw_te2{0};      
+      int nw_ie2{0}, nw_te2{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
       Kokkos::View<int, atomic_view > n_wrong_ie("wrong_ie");
@@ -443,7 +443,7 @@ SCENARIO("EOS Builder and SpinerEOS",
                           n_wrong_bm() += 1;
                       });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-          Kokkos::deep_copy(nw_bm, n_wrong_bm);        
+          Kokkos::deep_copy(nw_bm, n_wrong_bm);
 #endif
           REQUIRE( nw_bm == 0 );
         }
@@ -502,7 +502,7 @@ SCENARIO("Stellar Collapse EOS",
           Real lrhomin = sc.lRhoMin();
           Real lrhomax = sc.lRhoMax();
           auto sc_d = sc.GetOnDevice();
-          
+
           int nwrong_h = 0;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
           using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
@@ -510,7 +510,7 @@ SCENARIO("Stellar Collapse EOS",
 #else
           PortableMDArray<int> nwrong_d(&nwrong_h, 1);
 #endif
-          
+
           const int N = 123;
           const Real dY = (yemax - yemin)/(N+1);
           const Real dlT = (ltmax - ltmin)/(N+1);
@@ -529,7 +529,7 @@ SCENARIO("Stellar Collapse EOS",
                                                 |singularity::thermalqs::specific_heat
                                                 |singularity::thermalqs::bulk_modulus);
                         lambda[0] = Ye;
-                        
+
                         sc_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
                         ig_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);
                         if (!isClose(e1,e2)) {
@@ -654,14 +654,14 @@ SCENARIO( "EOSPAC API", "[EOSPAC]") {
 
 int main(int argc, char* argv[]) {
 
-#ifdef PORTABILITY_STRATEGY_KOKKOS  
+#ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::initialize();
 #endif
   int result;
   {
     result = Catch::Session().run( argc, argv );
   }
-#ifdef PORTABILITY_STRATEGY_KOKKOS  
+#ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::finalize();
 #endif
   return result;
