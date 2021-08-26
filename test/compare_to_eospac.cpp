@@ -52,7 +52,13 @@
 
 #include <singularity-eos/eos/eos.hpp>
 
+#ifdef DO_OFFLOAD
+#define EOSPAC_DO_OFFLOAD
+#endif
+
+#ifdef EOSPAC_DO_OFFLOAD
 #include <omp.h>
+#endif
 
 using namespace singularity;
 
@@ -62,6 +68,14 @@ constexpr char diffFileName[] = "diffs.sp5";
 constexpr int NTIMES = 10;
 
 // #define singularity_normalize_cold_point
+
+EOS_REAL* eospac_allocate(size_t n, int d) {
+#ifdef EOSPAC_DO_OFFLOAD
+  return (EOS_REAL*) omp_target_alloc(n, d);
+#else
+  return (EOS_REAL*) malloc(n);
+#endif // EOSPAC_DO_OFFLOAD
+}
 
 template<class D, class ... P>
   using KV = Kokkos::View<D, P...>;
@@ -119,30 +133,14 @@ int main(int argc, char* argv[]) {
   using HRV = KHV<Real*>;
   constexpr int NT = 3;
   EOS_INTEGER nXYPairs = (nFineRho)*(nFineT);
-  KRV xvp("xvals", nXYPairs);
-  HRV xvp_h = create_mirror_view(xvp);
-  KRV yvp("yvals", nXYPairs);
-  HRV yvp_h = create_mirror_view(yvp);
-  KRV vvp("vals", nXYPairs);
-  HRV vvp_h = create_mirror_view(vvp);
-  KRV dxp("dx", nXYPairs);
-  HRV dxp_h = create_mirror_view(dxp);
-  KRV dyp("dy", nXYPairs);
-  HRV dyp_h = create_mirror_view(dyp);
-  DataBox xVals(xvp_h.data(),nFineRho,nFineT);
-  DataBox yVals(yvp_h.data(),nFineRho,nFineT);
-  DataBox vars(vvp_h.data(),nFineRho,nFineT);
-  DataBox dx(dxp_h.data(),nFineRho,nFineT);
-  DataBox dy(dyp_h.data(),nFineRho,nFineT);
+  DataBox xVals(nFineRho,nFineT);
+  DataBox yVals(nFineRho,nFineT);
+  DataBox vars(nFineRho,nFineT);
+  DataBox dx(nFineRho,nFineT);
+  DataBox dy(nFineRho,nFineT);
   DataBox pressEOSPAC(nFineRho,nFineT);
   DataBox pressDiff_h(nFineRho, nFineT);
   DataBox pressDiff_d(nFineRho, nFineT);
-
-  DataBox xVals_d(xvp.data(),nFineRho,nFineT);
-  DataBox yVals_d(yvp.data(),nFineRho,nFineT);
-  DataBox vars_d(vvp.data(),nFineRho,nFineT);
-  DataBox dx_d(dxp.data(),nFineRho,nFineT);
-  DataBox dy_d(dyp.data(),nFineRho,nFineT);
 
   #ifdef PORTABILITY_STRATEGY_KOKKOS
   using RView = Kokkos::View<Real*>;
@@ -283,15 +281,28 @@ int main(int argc, char* argv[]) {
       });
 
     std::cout << "\t\tInterpolate pressure of rho T" << std::endl;
+#ifdef EOSPAC_DO_OFFLOAD
     EOS_INTEGER eosgputest{};
     eos_GpuOffloadData(&eosgputest);
     int h = omp_get_initial_device();
     int t = omp_get_default_device();
+#else
+    int t = 0;
+#endif // EOSPAC_DO_OFFLOAD
 
-    if(omp_get_num_devices()<1 || t <0){
-      printf("ARGH, no dev found.\n");
-      exit(1);
-    }
+    const auto s_xy = sizeof(EOS_REAL) * nXYPairs;
+    // allocate 
+    EOS_REAL* xvpd = eospac_allocate(s_xy, t);
+    EOS_REAL* yvpd = eospac_allocate(s_xy, t);
+    EOS_REAL* vvpd = eospac_allocate(s_xy, t);
+    EOS_REAL* dxpd = eospac_allocate(s_xy, t);
+    EOS_REAL* dypd = eospac_allocate(s_xy, t);
+
+    DataBox xVals_d(xvpd,nFineRho,nFineT);
+    DataBox yVals_d(yvpd,nFineRho,nFineT);
+    DataBox vars_d(vvpd,nFineRho,nFineT);
+    DataBox dx_d(dxpd,nFineRho,nFineT);
+    DataBox dy_d(dypd,nFineRho,nFineT);
 
     {
       pressSpiner_h.setRange(0,lTBounds.grid);
@@ -305,13 +316,15 @@ int main(int argc, char* argv[]) {
       pressDiff_d.copyMetadata(pressSpiner_h);
 
       std::cout << "\t\t...eospac..." << std::endl;
+#ifdef EOSPAC_DO_OFFLOAD
+      omp_target_memcpy(xVals_d.data(), xVals.data(), s_xy, 0, 0, t, h);
+      omp_target_memcpy(yVals_d.data(), yVals.data(), s_xy, 0, 0, t, h);
+#else
+      memcpy(xVals_d.data(), xVals.data(), s_xy);
+      memcpy(yVals_d.data(), yVals.data(), s_xy);
+#endif // EOSPAC_DO_OFFLOAD
+      //omp_target_memcpy(xVals_d.data(), xVals.data(), s_xy, 0, 0, t, h);
       start = std::chrono::high_resolution_clock::now();
-      Kokkos::deep_copy(xvp, xvp_h);
-      Kokkos::deep_copy(yvp, yvp_h);
-      Kokkos::deep_copy(vvp, 0.0);
-      Kokkos::deep_copy(dxp, 0.0);
-      Kokkos::deep_copy(dyp, 0.0);
-      Kokkos::fence();
       for (int n = 0; n < NTIMES; n++) {
         //for (int i = 0; i < nXYPairs; i++) vars(i) = dx(i) = dy(i) = 0;
         eosSafeInterpolate(&eospacPofRT, nXYPairs,
@@ -322,12 +335,17 @@ int main(int argc, char* argv[]) {
       stop = std::chrono::high_resolution_clock::now();
       durationEospac += std::chrono::duration_cast<duration>(stop-start);
       
-      Kokkos::deep_copy(vvp_h, vvp);
+      // put regular memcpy in ifdef
+#ifdef EOSPAC_DO_OFFLOAD
+      omp_target_memcpy(vars.data(), vars_d.data(), s_xy, 0, 0, h, t);
+#else
+      memcpy(vars.data(), vars_d.data(), s_xy);
+#endif // EOSPAC_DO_OFFLOAD
 
       std::cout << "\t\t...spiner on host..." << std::endl;
       start = std::chrono::high_resolution_clock::now();
       for (int n = 0; n < NTIMES; n++) {
-        #pragma omp simd
+        //#pragma omp simd
         for (int j = 0; j < nFineRho; j++) {
           const Real rho = xVals(j,0);
           for (int i = 0; i < nFineT; i++) {
@@ -460,15 +478,28 @@ int main(int argc, char* argv[]) {
       tempDiffE_d.copyMetadata(tempSpiner_d);
 
       std::cout << "\t\t...eospac..." << std::endl;
+#ifdef EOSPAC_DO_OFFLOAD
+      omp_target_memcpy(xVals_d.data(), xVals.data(), s_xy, 0, 0, t, h);
+      omp_target_memcpy(yVals_d.data(), yVals.data(), s_xy, 0, 0, t, h);
+#else
+      memcpy(xVals_d.data(), xVals.data(), s_xy);
+      memcpy(yVals_d.data(), yVals.data(), s_xy);
+#endif // EOSPAC_DO_OFFLOAD
       start = std::chrono::high_resolution_clock::now();
       for (int n = 0; n < NTIMES; n++) {
         eosSafeInterpolate(&eospacTofRE, nXYPairs,
-                           xVals.data(), yVals.data(), vars.data(),
-                           dx.data(), dy.data(),
+                           xVals_d.data(), yVals_d.data(), vars_d.data(),
+                           dx_d.data(), dy_d.data(),
                            "TofRE", Verbosity::Quiet);
       }
       stop = std::chrono::high_resolution_clock::now();
       durationEospac += std::chrono::duration_cast<duration>(stop-start);
+
+#ifdef EOSPAC_DO_OFFLOAD
+      omp_target_memcpy(vars.data(), vars_d.data(), s_xy, 0, 0, h, t);
+#else
+      memcpy(vars.data(), vars_d.data(), s_xy);
+#endif // EOSPAC_DO_OFFLOAD
 
       std::cout << "\t\t...spiner(rho,T) on host..." << std::endl;
       start = std::chrono::high_resolution_clock::now();
