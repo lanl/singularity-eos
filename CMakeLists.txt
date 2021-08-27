@@ -47,10 +47,6 @@ endif()
 # if cuda, need to set cxx compiler to nvcc_wrapper before compilers
 # are checked
 if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_CUDA)
-  # json stuff won't compile with nvcc wrapper
-  if(SINGULARITY_BUILD_SESAME2SPINER)
-    message(FATAL_ERROR "sesame2spiner cannot be built with nvcc. If you wish to buld it, disable CUDA with -DSINGULARITY_USE_CUDA=OFF. Otherwise disable sesame2spiner with -DSINGULARITY_BUILD_SESAME2SPINER=OFF.")
-  endif()
   # set nvcc wrapper default compiler
   if(NOT "$ENV{CXX}x" STREQUAL "x" AND
      "$ENV{NVCC_WRAPPER_DEFAULT_COMPILER}x" STREQUAL "x")
@@ -308,13 +304,6 @@ target_link_libraries(singularity-eos::flags INTERFACE PortsofCall::PortsofCall)
 # catch2
 if(SINGULARITY_BUILD_TESTS)
   add_subdirectory(${PROJECT_SOURCE_DIR}/utils/spiner/Catch2)
-endif()
-
-# JSON
-if(SINGULARITY_BUILD_SESAME2SPINER)
-  set(JSON_BuildTests OFF CACHE INTERNAL "")
-  set(JSON_Install OFF CACHE INTERNAL "")
-  add_subdirectory(${PROJECT_SOURCE_DIR}/utils/json)
 endif()
 
 if(SINGULARITY_BUILD_TESTS)

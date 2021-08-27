@@ -20,11 +20,10 @@
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>
+#include <vector>
 
 #include <hdf5.h>
 #include <hdf5_hl.h>
-
-#include <nlohmann/json.hpp>
 
 #ifndef SPINER_USE_HDF
 #error "HDF5 must be enabled"
@@ -36,18 +35,16 @@
 
 #include "io_eospac.hpp"
 #include "generate_files.hpp"
-#include "parser.hpp"
-
-using nlohmann::json;
+#include "parse_cli.hpp"
 
 int main(int argc, char* argv[]) {
-  std::string filename, helpMessage;
+  std::vector<std::string> filenames;
+  std::string savename, helpMessage;
   Verbosity eospacWarn = Verbosity::Quiet;
   bool printMetadata = false;
   herr_t status = H5_SUCCESS;
 
-  parseCLI(argc, argv, filename, printMetadata, eospacWarn, helpMessage);
-  json params = fileToJson(filename);
+  parseCLI(argc, argv, savename, filenames, printMetadata, eospacWarn, helpMessage);
 
   std::cout << "sesame2spiner                            \n"
 	    << "-----------------------------------------\n"
@@ -55,7 +52,7 @@ int main(int argc, char* argv[]) {
 	    << "-----------------------------------------\n"
 	    << std::endl;
 
-  status = saveAllMaterials(params, printMetadata, eospacWarn);
+  status = saveAllMaterials(savename, filenames, printMetadata, eospacWarn);
 
   std::cout << "Done." << std::endl;
 

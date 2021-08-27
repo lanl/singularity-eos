@@ -24,8 +24,6 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include <nlohmann/json.hpp>
-
 #ifndef SPINER_USE_HDF
 #error "HDF5 must be enabled"
 #endif
@@ -284,87 +282,3 @@ SCENARIO( "Converting air to file using saveMaterial",
   }
 }
 
-TEST_CASE( "Removing C-style comments from JSON",
-	   "[parser],[removeComments],[stringToJson]") {
-  
-  SECTION( "Comments in a C-style program can be removed" ) {
-    std::string program
-      = "   /* Test program */ \n"
-        "   int main()  \n"
-        "   {           \n"
-        "      // variable declaration \n"
-        "      int a, b, c;    \n"
-        "      /* This is a test  \n"
-        "          multiline     \n"
-        "          comment for   \n"
-        "          testing */      \n"
-        "      a = b + c;       \n"
-        "   }           \n";
-    std::string programNoComments
-      = "    \n"
-        "   int main()  \n"
-        "   {           \n"
-        "      \n"
-        "      int a, b, c;    \n"
-        "            \n"
-        "      a = b + c;       \n"
-        "   }           \n";
-
-    std::string programParsed = removeComments(program);
-    REQUIRE( programParsed == programNoComments );
-  }
-
-  SECTION( "Removing comments from a JSON string preserves meaning" ) {
-    using nlohmann::json;
-    const std::string testJson
-      = R"(
-{
-"happy": true, // set happy to true
-/*
-This is a multiline comment
-"pi": -3,
-"something": [0,1,2,3],
-*/
-"pi": 3.141 /* set pi to 3.141 */
-}
-)";
-    GIVEN( "A JSON string with comments can be parsed" ) {
-      json j = stringToJson(testJson);
-      THEN( "The parsing preserves meaning" ) {
-	REQUIRE( j["happy"] == true );
-	REQUIRE( j["pi"] == 3.141 );
-	REQUIRE( j["something"].is_null() );
-      }
-    }
-  }
-}
-
-SCENARIO( "Parsing the data format chosen" ) {
-  using nlohmann::json;
-  GIVEN( "A json object representing our chosen format" ) {
-
-    std::string paramString = EXAMPLESTRING;
-    json params = stringToJson(paramString);
-
-    THEN( "This can be parsed in a meaningful way" ) {
-      REQUIRE( params["savename"] == "materials.sp5" );
-      std::vector<int> matids;
-      for (auto& matParams : params["materials"]) {
-	matids.push_back(matParams["matid"]);
-      }
-      REQUIRE( matids.size() == 2 );
-      REQUIRE( matids[0] == 5030 );
-      REQUIRE( matids[1] == 4272 );
-      REQUIRE( params["materials"][0]["name"]   == "air" );
-      REQUIRE( params["materials"][0]["rhomin"] == 1e-2  );
-      REQUIRE( params["materials"][0]["rhomax"] == 10    );
-      REQUIRE( params["materials"][0]["Tmin"]   == 252   );
-      REQUIRE( params["materials"][0]["Tmax"]   == 1e4   );
-      REQUIRE( params["materials"][0]["siemin"] == 1e12  );
-      REQUIRE( params["materials"][0]["siemax"] == 1e16  );
-      REQUIRE( params["materials"][1]["shrinklRhoBounds"] == 0.15  );
-      REQUIRE( params["materials"][1]["shrinklTBounds"]   == 0.15  );
-      REQUIRE( params["materials"][1]["shrinkleBounds"]   == 0.5  );
-    }
-  }
-}
