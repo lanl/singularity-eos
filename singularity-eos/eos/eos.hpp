@@ -1399,7 +1399,7 @@ private:
 class EOSPAC {
 public:
   EOSPAC() = default;
-  EOSPAC(int matid);
+  EOSPAC(int matid, bool invert_at_setup=false);
   EOSPAC GetOnDevice() { return *this; }
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;

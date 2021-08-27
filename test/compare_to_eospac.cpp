@@ -43,13 +43,14 @@
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 
-#include <sesame2spiner/io_eospac.hpp>
+#include <eospac-wrapper/eospac_wrapper.hpp>
 
 #include <ports-of-call/portability.hpp>
 
 #include <singularity-eos/eos/eos.hpp>
 
 using namespace singularity;
+using namespace EospacWrapper;
 
 using duration = std::chrono::microseconds;
 constexpr char diffFileName[] = "diffs.sp5";

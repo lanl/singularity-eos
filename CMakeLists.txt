@@ -23,7 +23,6 @@ option (SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
 option (SINGULARITY_USE_CUDA "Enable cuda support" OFF)
 option (SINGULARITY_USE_KOKKOSKERNELS
   "Use kokkos-kernels for linear algebra" OFF)
-option (SINGULARITY_INVERT_AT_SETUP "Use eospacs preinverted tables" OFF)
 option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
 option (SINGULARITY_BUILD_SESAME2SPINER "Compile sesame2spiner" OFF)
 option (SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" OFF)
@@ -34,7 +33,6 @@ option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
 option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
 option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
 option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
-option (SINGULARITY_EOS_SKIP_EXTRAP "Turn off eospac extrap checks" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_FMATH_USE_ORDER_4 "4th order interpolant for fast logs. Default is 7th order." OFF)
 option (SINGULARITY_FMATH_USE_ORDER_5 "5th order interpolant for fast logs. Default is 7th order." OFF)
@@ -261,23 +259,10 @@ else()
 endif()
 
 if (SINGULARITY_USE_EOSPAC)
-  target_compile_definitions(singularity-eos::flags INTERFACE
-                             SINGULARITY_USE_EOSPAC
-                             EOSPAC_WARN)
-  if (SINGULARITY_INVERT_AT_SETUP)
-    target_compile_definitions(singularity-eos::flags INTERFACE
-                               SINGULARITY_INVERT_AT_SETUP)
-  endif ()
-  if (SINGULARITY_EOS_SKIP_EXTRAP)
-    target_compile_definitions(singularity-eos::flags INTERFACE
-                               SINGULARITY_EOS_SKIP_EXTRAP)
-  endif ()
-  if (SINGULARITY_EOSPAC_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_EOSPAC_INSTALL_DIR}")
-    set(EOSPAC_INCLUDE_DIR "${SINGULARITY_EOSPAC_INSTALL_DIR}/include")
-  endif()
-  find_package(EOSPAC)
-  target_link_libraries(singularity-eos::libs INTERFACE EOSPAC::eospac)
+  add_subdirectory(eospac-wrapper)
+  target_link_libraries(singularity-eos::libs
+    INTERFACE
+    singularity-eos::eospac_wrapper)
 endif ()
 
 # fast math
@@ -379,6 +364,12 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/variant"
   DESTINATION "include"
   FILES_MATCHING PATTERN "*.hpp"
   )
+if (SINGULARITY_USE_EOSPAC)
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/eospac-wrapper"
+    DESTINATION "include"
+    FILES_MATCHING PATTERN "*.hpp"
+    )
+endif()
 install(CODE
   "execute_process( \
     COMMAND ${CMAKE_COMMAND} -E create_symlink \
