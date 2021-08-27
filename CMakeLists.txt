@@ -262,7 +262,10 @@ if (SINGULARITY_USE_EOSPAC)
   add_subdirectory(eospac-wrapper)
   target_link_libraries(singularity-eos::libs
     INTERFACE
-    singularity-eos::eospac_wrapper)
+    eospac-wrapper)
+  target_compile_definitions(singularity-eos::flags
+    INTERFACE
+    SINGULARITY_USE_EOSPAC)
 endif ()
 
 # fast math
@@ -275,7 +278,7 @@ if (SINGULARITY_FMATH_USE_ORDER_4 AND SINGULARITY_FMATH_USE_ORDER_5)
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_4)
   target_compile_definitions(singularity-eos::flags INTERFACE
-    SINGULAIRTY_FMATH_USE_ORDER_4)
+    SINGULARITY_FMATH_USE_ORDER_4)
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_5)
   target_compile_definitions(singularity-eos::flags INTERFACE

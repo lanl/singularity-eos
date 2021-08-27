@@ -24,19 +24,19 @@
 
 namespace EospacWrapper {
 
-inline Real densityToSesame(const Real CodeTemp) { return CodeTemp;}
-inline Real densityFromSesame(const Real sesTemp) { return sesTemp;}
-inline Real temperatureToSesame(const Real CodeTemp) { return CodeTemp;}
-inline Real temperatureFromSesame(const Real SesTemp) { return SesTemp;}
-inline Real pressureFromSesame(const Real SesPress) { return 1e10*SesPress;}
-inline Real pressureToSesame(const Real CodePress) { return 1e-10*CodePress;}
-inline Real sieToSesame(const Real CodeSie) { return 1e-10*CodeSie;}
-inline Real sieFromSesame(const Real SesSie) { return 1e10*SesSie;}
-inline Real cvFromSesame(const Real SesCv) { return 1e10*SesCv;}
-inline Real bulkModulusFromSesame(const Real SesBmod) { return 1e10*SesBmod;}
-inline Real getBulkModulus(const Real rho, const Real P,
-                           const Real DPDR_T, const Real DPDE_R,
-                           const Real DEDR_T) {
+inline double densityToSesame(const double CodeTemp) { return CodeTemp;}
+inline double densityFromSesame(const double sesTemp) { return sesTemp;}
+inline double temperatureToSesame(const double CodeTemp) { return CodeTemp;}
+inline double temperatureFromSesame(const double SesTemp) { return SesTemp;}
+inline double pressureFromSesame(const double SesPress) { return 1e10*SesPress;}
+inline double pressureToSesame(const double CodePress) { return 1e-10*CodePress;}
+inline double sieToSesame(const double CodeSie) { return 1e-10*CodeSie;}
+inline double sieFromSesame(const double SesSie) { return 1e10*SesSie;}
+inline double cvFromSesame(const double SesCv) { return 1e10*SesCv;}
+inline double bulkModulusFromSesame(const double SesBmod) { return 1e10*SesBmod;}
+inline double getBulkModulus(const double rho, const double P,
+                           const double DPDR_T, const double DPDE_R,
+                           const double DEDR_T) {
   return rho*DPDR_T + DPDE_R*((P/rho) - rho*DEDR_T);
 }
 
@@ -45,17 +45,17 @@ enum class Verbosity { Quiet, Verbose, Debug };
 class SesameMetadata {
 public:
   int matid;
-  Real exchangeCoefficient;
-  Real meanAtomicMass;
-  Real meanAtomicNumber;
-  Real solidBulkModulus;
-  Real normalDensity;
-  Real rhoMin, rhoMax;
-  Real TMin, TMax;
-  Real sieMin, sieMax;
-  Real rhoConversionFactor;
-  Real TConversionFactor;
-  Real sieConversionFactor;
+  double exchangeCoefficient;
+  double meanAtomicMass;
+  double meanAtomicNumber;
+  double solidBulkModulus;
+  double normalDensity;
+  double rhoMin, rhoMax;
+  double TMin, TMax;
+  double sieMin, sieMax;
+  double rhoConversionFactor;
+  double TConversionFactor;
+  double sieConversionFactor;
   int numRho, numT;
   std::string comments;
   std::string name;

@@ -26,6 +26,8 @@
 #error "HDF5 must be enabled"
 #endif // SPINER_USE_HDF
 
+#include <eospac-wrapper/eospac_wrapper.hpp>
+
 #include <spiner/ports-of-call/portability.hpp>
 #include <sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
@@ -36,6 +38,8 @@
 #include "generate_files.hpp"
 #include "parse_cli.hpp"
 #include "parser.hpp"
+
+using namespace EospacWrapper;
 
 herr_t saveMaterial(hid_t loc,
 		    const SesameMetadata& metadata,

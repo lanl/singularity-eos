@@ -352,3 +352,11 @@ void eosColdCurveMask(int matid,
   }
   eosSafeDestroy(NT, tableHandle, eospacWarn);
 }
+
+
+void makeInterpPoints(std::vector<EOS_REAL>& v, const Bounds& b) {
+  v.resize(b.grid.nPoints());
+  for (size_t i = 0; i < v.size(); i++) {
+    v[i] = b.i2lin(i);
+  }
+}

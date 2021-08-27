@@ -34,8 +34,6 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include <eos_Interface.h> // eospac API
-
 #include <ports-of-call/portability.hpp>
 #include <sp5/singularity_eos_sp5.hpp>
 #include <spiner/spiner_types.hpp>
@@ -49,6 +47,9 @@
 
 #include <singularity-eos/eos/eos.hpp>
 
+#include <sesame2spiner/io_eospac.hpp>
+
+using namespace Spiner;
 using namespace singularity;
 using namespace EospacWrapper;
 

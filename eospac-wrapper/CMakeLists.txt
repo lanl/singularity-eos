@@ -20,19 +20,15 @@ if (SINGULARITY_EOSPAC_INSTALL_DIR)
 endif()
 find_package(EOSPAC)
 
-add_library(singularity-eos::eospac_wrapper
+add_library(eospac-wrapper
   eospac_wrapper.hpp
   eospac_wrapper.cpp
   )
 
-target_compile_definitions(singularity-eos::eospac_wrapper
-  EOSPAC_WARN
-  )
-
 if (SINGULARITY_EOSPAC_SKIP_EXTRAP)
-  target_compile_definitions(singularity-eos::eospac_wrapper
+  target_compile_definitions(eospac-wrapper
     SINGULARITY_EOSPAC_SKIP_EXTRAP
     )
 endif()
 
-target_link_libraries(singularity-eos::eospac_wrapper EOSPAC::eospac)
+target_link_libraries(eospac-wrapper EOSPAC::eospac)

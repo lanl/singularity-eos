@@ -14,8 +14,10 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
+#include <array>
 #include <iostream>
 #include <string>
+#include <regex>
 #include <vector>
 
 #include <eos_Interface.h>
@@ -318,13 +320,6 @@ void eosSafeDestroy(int ntables, EOS_INTEGER tableHandles[],
   EOS_INTEGER NTABLES[] = {ntables};
   eos_DestroyTables(NTABLES, tableHandles, &errorCode);
   eosCheckError(errorCode, "eos_DestroyTables", eospacWarn);
-}
-
-void makeInterpPoints(std::vector<EOS_REAL>& v, const Bounds& b) {
-  v.resize(b.grid.nPoints());
-  for (size_t i = 0; i < v.size(); i++) {
-    v[i] = b.i2lin(i);
-  }
 }
 
 std::string getName(std::string comment) {
