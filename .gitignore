@@ -3,3 +3,4 @@ bin
 spack.lock
 utils/variant
 *__pycache__*
+.env
