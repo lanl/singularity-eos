@@ -17,10 +17,10 @@
 #include <string>
 #include <cmath>
 #include <cstdlib>
+#include <vector>
 
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include <nlohmann/json.hpp>
 
 #ifndef SPINER_USE_HDF
 #error "HDF5 must be enabled"
@@ -34,6 +34,7 @@
 
 #include "io_eospac.hpp"
 #include "generate_files.hpp"
+#include "parse_cli.hpp"
 #include "parser.hpp"
 
 herr_t saveMaterial(hid_t loc,
@@ -165,33 +166,27 @@ herr_t saveMaterial(hid_t loc,
   return status;
 }
 
-herr_t saveAllMaterials(json& params,
+herr_t saveAllMaterials(const std::string& savename,
+			const std::vector<std::string>& filenames,
 			bool printMetadata,
 			Verbosity eospacWarn) {
+  std::vector<Params> params;
   std::vector<int> matids;
   SesameMetadata metadata;
   hid_t file;
   herr_t status = H5_SUCCESS;
-
-  std::string savename = params.value("savename", SP5::defaultSesFileName);
-  
-  if ( params["materials"].is_null() ) {
-    std::cerr << "Input file must have materials field.\n"
-	      << "Example input file:\n"
-	      << EXAMPLESTRING
-	      << std::endl;
-    std::exit(1);
-  }
-  
-  for (auto & matParams : params["materials"]) {
-    matids.push_back(matParams["matid"]);
-  }
-  if (matids.size() < 1) {
-    std::cerr << "No materials in input file.\n"
-	      << "Example input file:\n"
-	      << EXAMPLESTRING
-	      << std::endl;
-    std::exit(1);
+    
+  for (auto const &filename : filenames) {
+    Params p(filename);
+    if (!p.Contains("matid")) {
+      std::cerr << "Material file " << filename << "is missing matid.\n"
+		<< "Example input files:\n"
+		<< EXAMPLESTRING
+		<< std::endl;
+      std::exit(1);
+    }
+    matids.push_back(p.Get<int>("matid"));
+    params.push_back(p);
   }
   
   std::cout << "Saving to file " << savename << std::endl;
@@ -206,10 +201,10 @@ herr_t saveAllMaterials(json& params,
     
     eosGetMetadata(matid, metadata, Verbosity::Debug);
     if (printMetadata) std::cout << metadata << std::endl;
-    std::string name = params["materials"][i].value("name",metadata.name); 
+    std::string name = params[i].Get("name",metadata.name); 
 
     Bounds lRhoBounds, lTBounds, leBounds;
-    getMatBounds(i,matid,metadata,params,lRhoBounds,lTBounds,leBounds);
+    getMatBounds(i,matid,metadata,params[i],lRhoBounds,lTBounds,leBounds);
 
     if (eospacWarn == Verbosity::Debug) {
       std::cout << "bounds for log(rho), log(T), log(sie) are:\n"
@@ -238,16 +233,16 @@ herr_t saveAllMaterials(json& params,
 void getMatBounds(int i,
 		  int matid,
 		  const SesameMetadata& metadata,
-		  json& params,
+		  const Params& params,
 		  Bounds& lRhoBounds,
 		  Bounds& lTBounds,
 		  Bounds& leBounds) {
-  Real rhoMin   = params["materials"][i].value("rhomin",metadata.rhoMin);
-  Real rhoMax   = params["materials"][i].value("rhomax",metadata.rhoMax);
-  Real TMin     = params["materials"][i].value("Tmin",metadata.TMin);
-  Real TMax     = params["materials"][i].value("Tmax",metadata.TMax);
-  Real sieMin   = params["materials"][i].value("siemin",metadata.sieMin);
-  Real sieMax   = params["materials"][i].value("siemax",metadata.sieMax);
+  Real rhoMin   = params.Get("rhomin",metadata.rhoMin);
+  Real rhoMax   = params.Get("rhomax",metadata.rhoMax);
+  Real TMin     = params.Get("Tmin",metadata.TMin);
+  Real TMax     = params.Get("Tmax",metadata.TMax);
+  Real sieMin   = params.Get("siemin",metadata.sieMin);
+  Real sieMax   = params.Get("siemax",metadata.sieMax);
 
   checkValInMatBounds(matid, "rhoMin", rhoMin, metadata.rhoMin, metadata.rhoMax);
   checkValInMatBounds(matid, "rhoMax", rhoMax, metadata.rhoMin, metadata.rhoMax);
@@ -256,48 +251,45 @@ void getMatBounds(int i,
   checkValInMatBounds(matid, "sieMin", sieMin, metadata.sieMin, metadata.sieMax);
   checkValInMatBounds(matid, "sieMax", sieMax, metadata.sieMin, metadata.sieMax);
 
-  Real shrinklRhoBounds = params["materials"][i].value("shrinklRhoBounds", 0.0);
-  Real shrinklTBounds   = params["materials"][i].value("shrinklTBounds",   0.0);
-  Real shrinkleBounds   = params["materials"][i].value("shrinkleBounds",   0.0);
+  Real shrinklRhoBounds = params.Get("shrinklRhoBounds", 0.0);
+  Real shrinklTBounds   = params.Get("shrinklTBounds",   0.0);
+  Real shrinkleBounds   = params.Get("shrinkleBounds",   0.0);
 
   shrinklRhoBounds = std::min(1., std::max(shrinklRhoBounds, 0.));
   shrinklTBounds   = std::min(1., std::max(shrinklTBounds,   0.));
   shrinkleBounds   = std::min(1., std::max(shrinkleBounds,   0.));
   
   if (shrinklRhoBounds > 0
-      && !(params["materials"][i]["rhomin"].is_null()
-	   && params["materials"][i]["rhomax"].is_null())) {
+      && (params.Contains("rhomin") || params.Contains("rhomax"))) {
     std::cerr << "WARNING [" << matid << "]: "
 	      << "shrinklRhoBounds > 0 and rhomin or rhomax set"
 	      << std::endl;
   }
   if (shrinklTBounds > 0
-	&& !(params["materials"][i]["Tmin"].is_null()
-	     && params["materials"][i]["Tmax"].is_null())) {
+      && (params.Contains("Tmin") || params.Contains("Tmax"))) {
     std::cerr << "WARNING [" << matid << "]: "
 	      << "shrinklTBounds > 0 and Tmin or Tmax set"
 	      << std::endl;
   }
   if (shrinkleBounds > 0
-      && !(params["materials"][i]["siemin"].is_null()
-	   && params["materials"][i]["siemax"].is_null())) {
+      && (params.Contains("siemin") || params.Contains("siemax"))) {
     std::cerr << "WARNING [" << matid << "]: "
 	      << "shrinkleBounds > 0 and siemin or siemax set"
 		<< std::endl;
   }
 
-  int ppdRho = params["materials"][i].value("numrho/decade", PPD_DEFAULT);
+  int ppdRho = params.Get("numrho/decade", PPD_DEFAULT);
   int numRhoDefault = getNumPointsFromPPD(rhoMin,rhoMax,ppdRho);
 
-  int ppdT = params["materials"][i].value("numT/decade",   PPD_DEFAULT);
+  int ppdT = params.Get("numT/decade",   PPD_DEFAULT);
   int numTDefault = getNumPointsFromPPD(TMin,TMax,ppdT);
 
-  int ppdSie = params["materials"][i].value("numSie/decade", PPD_DEFAULT);
+  int ppdSie = params.Get("numSie/decade", PPD_DEFAULT);
   int numSieDefault = getNumPointsFromPPD(sieMin,sieMax,ppdSie);
 
-  int numRho = params["materials"][i].value("numrho", numRhoDefault);
-  int numT   = params["materials"][i].value("numT",     numTDefault);
-  int numSie = params["materials"][i].value("numsie", numSieDefault);
+  int numRho = params.Get("numrho", numRhoDefault);
+  int numT   = params.Get("numT",     numTDefault);
+  int numSie = params.Get("numsie", numSieDefault);
 
   Real rhoAnchor = metadata.normalDensity;
   Real TAnchor = 298.15;

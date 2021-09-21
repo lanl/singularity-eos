@@ -14,9 +14,17 @@
 
 add_executable(sesame2spiner
                io_eospac.cpp
-               #test.cpp
+	       io_eospac.hpp
+
                generate_files.cpp
+	       generate_files.hpp
+
+	       parse_cli.cpp
+	       parse_cli.hpp
+
                parser.cpp
+	       parser.hpp
+
                main.cpp
               )
 
@@ -25,6 +33,6 @@ target_include_directories(sesame2spiner PUBLIC
                            ${CMAKE_CURRENT_SOURCE_DIR}
                           )
 
-target_link_libraries(sesame2spiner nlohmann_json::nlohmann_json singularity-eos::libs singularity-eos::flags)
+target_link_libraries(sesame2spiner singularity-eos::libs singularity-eos::flags)
 
 # TODO: Add tests for sesame2spiner here.

@@ -25,7 +25,6 @@ HDRS=io_eospac.hpp parser.hpp generate_files.hpp ${SPINER}
 OBJ=io_eospac.o generate_files.o parser.o
 #
 CATCH_INCLUDE=-I../catch2
-JSON_INCLUDE=-I../
 FMATH_INCLUDE=-I../herumi-fmath -I../fast-math
 SPINER_INCLUDE=-I../spiner -I../spiner/ports-of-call
 #
@@ -48,7 +47,7 @@ EOSPAC_LIB=-L${EOSPAC_LIB_LOC}
 EOSPAC_LINK=-leospac6 -Wl,-rpath=${EOSPAC_LIB_LOC}
 
 BASE_FLAGS=-std=c++14 -Wall -g -DEOSPAC_WARN
-INCLUDE_FLAGS=${CATCH_INCLUDE} ${EOSPAC_INCLUDE} ${JSON_INCLUDE} ${FMATH_INCLUDE}
+INCLUDE_FLAGS=${CATCH_INCLUDE} ${EOSPAC_INCLUDE} ${FMATH_INCLUDE}
 INCLUDE_FLAGS+=${SPINER_INCLUDE}
 INCLUDE_FLAGS+=-I${HDF_INCLUDE}
 
@@ -60,8 +59,8 @@ default: sesame2spiner
 
 all: test example
 
-example: sesame2spiner examples/air_and_steel.json
-	./sesame2spiner -p examples/air_and_steel.json
+example: sesame2spiner examples/air.dat examples/steel.dat
+	./sesame2spiner -p materials.sp5 examples/air.dat examples/steel.dat
 
 test: test.bin
 	./test.bin

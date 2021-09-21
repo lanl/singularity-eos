@@ -1,6 +1,4 @@
-//======================================================================
-// sesame2spiner tool for converting eospac to spiner
-// Author: Jonah Miller (jonahm@lanl.gov)
+//------------------------------------------------------------------------------
 // © 2021. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
@@ -12,64 +10,32 @@
 // paid-up, irrevocable worldwide license in this material to reproduce,
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
-//======================================================================
+//------------------------------------------------------------------------------
 
-#ifndef _SESAME2SPINER_PARSER_HPP_
-#define _SESAME2SPINER_PARSER_HPP_
+#ifndef SESAME2SPINER_PARSER_HPP_
+#define SESAME2SPINER_PARSER_HPP_
 
+#include <istream>
+#include <sstream>
 #include <string>
-#include <nlohmann/json.hpp>
-#include "io_eospac.hpp"
+#include <unordered_map>
 
-const std::string EXAMPLESTRING = R"(
-{
-    "savename"  : "materials.sp5",
-    "materials" : [
-  { // only matid is required. All others override defaults.
-      "matid"  : 5030,
-      "name"   : "air",
-      "rhomin" : 1e-2, // g/cm^3
-      "rhomax" : 10,
-      "numrho" : 64,
-      "Tmin"   : 252, // kelvin
-      "Tmax"   : 1e4,
-      "numT"   : 32,
-      "siemin" : 1e12, // erg/g
-      "siemax" : 1e16, // erg/g
-      "numsie" : 32
-  },
-  {
-      "matid" : 2961,
-      "name"  : "titanium",
-      /* These set the number of grid points per decade
-         for each variable. The default is 50 points
-         per decade.
-      */
-      "numrho/decade" : 30,
-      "numT/decade"   : 25,
-      "numSie/decade" : 15
-  },
-  {
-      "matid" : 4272, // steel
-      "rhomin" : 1e-2, // g/cm^3
-      "Tmin"   : 1,    // kelvin
-      /* These shrink logarithm of bounds
-         by a fraction of the total interval <= 1
-      */
-      "shrinklRhoBounds" : 0.15,
-      "shrinklTBounds"   : 0.15,
-      "shrinkleBounds"   : 0.5
+// Parse a simple parameter file with
+// "#" denoting comments.
+class Params {
+public:
+  Params(const std::string &input_file);
+  Params(std::stringstream &input) { Parse(input); }
+
+  bool Contains(const std::string &key) const { return params_.count(key); }
+  template <typename T> T Get(const std::string &key) const;
+  template <typename T> T Get(const std::string &key, T default_value) const {
+    return Contains(key) ? Get<T>(key) : default_value;
   }
-    ]
-}
-)";
 
-std::string removeComments(const std::string& in);
-nlohmann::json stringToJson(const std::string& in);
-nlohmann::json fileToJson(const std::string& filename);
-void parseCLI(int argc, char* argv[],
-	      std::string& filename, bool& printMetadata,
-	      Verbosity& eospacWarn,
-	      std::string& helpMessage);
+private:
+  void Parse(std::istream &s);
+  std::unordered_map<std::string, std::string> params_;
+};
 
-#endif // _SESAME2SPINER_PARSER_HPP_
+#endif // SESAME2SPINER_PARSER_HPP_

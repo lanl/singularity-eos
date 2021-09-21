@@ -18,14 +18,14 @@
 #define _SESAME2SPINER_GENERATE_FILES_HPP_
 
 #include <string>
+#include <vector>
 
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include <nlohmann/json.hpp>
 
+#include "parser.hpp"
 #include "io_eospac.hpp"
 
-using nlohmann::json;
 constexpr int PPD_DEFAULT = 50;
 constexpr Real STRICTLY_POS_MIN = 1e-9;
 
@@ -37,14 +37,15 @@ herr_t saveMaterial(hid_t loc,
                     const std::string& name,
                     Verbosity eospacWarn = Verbosity::Quiet);
 
-herr_t saveAllMaterials(json& params,
+herr_t saveAllMaterials(const std::string& savename,
+			const std::vector<std::string>& filenames,
                         bool printMetadata,
                         Verbosity eospacWarn);
 
 void getMatBounds(int i,
                   int matid,
                   const SesameMetadata& metadata,
-                  json& params,
+		  const Params& params,
                   Bounds& lRhoBounds,
                   Bounds& lTBounds,
                   Bounds& leBounds);
