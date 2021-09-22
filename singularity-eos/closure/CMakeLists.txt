@@ -12,13 +12,26 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
-project(closure)
+set(closure_HEADERS
+  mixed_cell_models.hpp
+)
 
-# basic setup for header-only library
-add_library(${PROJECT_NAME} INTERFACE)
-add_library(singularity-eos::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
+set(closure_SOURCES)
 
-target_include_directories(
-  ${PROJECT_NAME}
-  INTERFACE $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+#------------------------------------------------------------------------------#
+# Export header list to parent scope.
+#------------------------------------------------------------------------------#
+
+set(closure_HEADERS
+  ${closure_HEADERS}
+  PARENT_SCOPE
+)
+
+#------------------------------------------------------------------------------#
+# Export source list to parent scope.
+#------------------------------------------------------------------------------#
+
+set(closure_SOURCES
+  ${closure_SOURCES}
+  PARENT_SCOPE
+)

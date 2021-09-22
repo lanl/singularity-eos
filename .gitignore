@@ -4,3 +4,6 @@ spack.lock
 utils/variant
 *__pycache__*
 .env
+env
+build
+.cache

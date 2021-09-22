@@ -11,59 +11,7 @@
 # prepare derivative works, distribute copies to the public, perform
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
-<<<<<<< HEAD
 cmake_minimum_required(VERSION 3.19)
-=======
-
-cmake_minimum_required(VERSION 3.14)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-
-# options
-option (SINGULARITY_USE_HDF5 "Pull in hdf5" ON)
-option (SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
-option (SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
-option (SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
-option (SINGULARITY_USE_CUDA "Enable cuda support" OFF)
-option (SINGULARITY_USE_KOKKOSKERNELS
-  "Use kokkos-kernels for linear algebra" OFF)
-option (SINGULARITY_INVERT_AT_SETUP "Use eospacs preinverted tables" OFF)
-option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
-option (SINGULARITY_BUILD_SESAME2SPINER "Compile sesame2spiner" OFF)
-option (SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" OFF)
-option (SINGULARITY_BETTER_DEBUG_FLAGS
-  "Better debug flags for singularity" ON)
-option (SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
-option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
-option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
-option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
-option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
-option (SINGULARITY_EOS_SKIP_EXTRAP "Turn off eospac extrap checks" OFF)
-option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
-option (SINGULARITY_FMATH_USE_ORDER_4 "4th order interpolant for fast logs. Default is 7th order." OFF)
-option (SINGULARITY_FMATH_USE_ORDER_5 "5th order interpolant for fast logs. Default is 7th order." OFF)
-
-if (SINGULARITY_SUBMODULE_MODE)
-  set(SINGULARITY_BETTER_DEBUG_FLAGS OFF CACHE BOOL "" FORCE)
-  set(SINGULARITY_HIDE_MORE_WARNINGS ON CACHE BOOL "" FORCE)
-endif()
-
-# if cuda, need to set cxx compiler to nvcc_wrapper before compilers
-# are checked
-if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_CUDA)
-  # set nvcc wrapper default compiler
-  if(NOT "$ENV{CXX}x" STREQUAL "x" AND
-     "$ENV{NVCC_WRAPPER_DEFAULT_COMPILER}x" STREQUAL "x")
-    set(ENV{NVCC_WRAPPER_DEFAULT_COMPILER} "$ENV{CXX}")
-  endif()
-  # set necessary kokkos build options if building inline
-  if(NOT SINGULARITY_KOKKOS_INSTALL_DIR)
-    set(NVCC_WRAPPER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/utils/kokkos/bin CACHE STRING "")
-  else()
-    set(NVCC_WRAPPER_DIR ${SINGULARITY_KOKKOS_INSTALL_DIR}/bin CACHE STRING "")
-  endif()
-  set(CMAKE_CXX_COMPILER ${NVCC_WRAPPER_DIR}/nvcc_wrapper CACHE STRING "")
-endif()
->>>>>>> main
 
 project(singularity-eos VERSION 1.5.0)
 
@@ -78,16 +26,107 @@ execute_process(COMMAND patch -N -s -V never
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch)
 
 
-add_library(${PROJECT_NAME}::flags INTERFACE IMPORTED GLOBAL)
+include(cuda)
+include(hdf5)
+include(kokkos)
+include(kokkoskernels)
+include(eigen3)
+include(eospac)
+include(portsofcall)
 
-include(SetupCustomMessage)
-include(ProcessConfiguration)
-include(SetupCompilers)
-include(SetupFlags)
+#----------------------------------------------------------------------------#
+# Capture use settings.
+#----------------------------------------------------------------------------#
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/singularity-eos)
+# get_cmake_property(_variableNames VARIABLES)
+# string (REGEX MATCHALL "(^|;)USE_[A-Za-z0-9_]*"
+#   _matchedVars "${_variableNames}")
 
-include(SetupInstall)
+# foreach(_variableName ${_matchedVars})
+#   set(SINGULARITY_${_variableName} ${${_variableName}})
+# endforeach()
+
+#----------------------------------------------------------------------------#
+# Configure header.
+#----------------------------------------------------------------------------#
+
+configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}-config.h.in
+  ${CMAKE_BINARY_DIR}/flecsi-config.h @ONLY)
+
+install(
+  FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.h
+  DESTINATION include
+)
+
+include(library)
+
+add_library_target(${PROJECT_NAME} singularity-eos
+  EXPORT_TARGET
+    ${PROJECT_NAME}Targets
+  VERSION
+    ${PROJECT_VERSION}
+  NAMESPACE
+    ${PROJECT_NAME}
+  DEFINE_PRIVATE
+    ${TPL_DEFINES}
+  INCLUDE_PUBLIC
+    ${TPL_INCLUDES}
+  INCLUDE_PRIVATE
+    ${CMAKE_BINARY_DIR}
+  LINK_PUBLIC
+    ${TPL_LIBRARIES}
+)
+
+#----------------------------------------------------------------------------#
+# Extract all project options so they can be exported to the
+# FleCSIConfig.cmake file.
+#----------------------------------------------------------------------------#
+
+get_cmake_property(_variableNames VARIABLES)
+string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
+  _matchedVars "${_variableNames}")
+
+foreach(_variableName ${_matchedVars})
+  string(REGEX REPLACE "SINGULARITY" "singularity-eos" _tmpvariableName ${_variableName})
+  set(SINGULARITY_CONFIG_CODE
+    "${SINGULARITY_CONFIG_CODE}\nset(${_tmpvariableName} \"${${_variableName}}\")")
+endforeach()
+
+configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}Config.cmake.in
+${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.cmake @ONLY)
+
+install(
+FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.cmake
+DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBDIR}/cmake/${PROJECT_NAME}
+)
+
+# cmakes
+configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}CMakeConfig.cmake.in
+${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}CMakeConfig.cmake @ONLY)
+
+install(
+FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}CMakeConfig.cmake
+DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBDIR}/cmake/${PROJECT_NAME}CMake
+)
+
+install(
+FILES ${PROJECT_SOURCE_DIR}/cmake/cuda.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/eigen3.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/eospac.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/FindEigen3.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/FindHwloc.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/FindPortsofCall.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/hdf5.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/kokkos.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/kokkoskernels.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/library.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/portsofcall.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/subdirlist.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/variant.cmake
+DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/cmake
+)
+
 
 if(SINGULARITY_BUILD_TESTS)
   include(CTest)

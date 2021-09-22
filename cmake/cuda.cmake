@@ -1,0 +1,10 @@
+include(CMakeDependentOption)
+option(SINGULARITY_USE_CUDA "Enable CUDA" OFF)
+mark_as_advanced(SINGULARITY_USE_CUDA)
+
+if(SINGULARITY_USE_CUDA)
+    find_package(CUDAToolkit REQUIRED)
+    if(NOT CUDAToolkit_FOUND)
+        message(FATAL_ERROR "CUDA requested, but not found")
+    endif()
+endif()

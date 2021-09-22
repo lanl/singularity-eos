@@ -45,7 +45,7 @@ include(ExternalConfig)
 
 # where available, use the internal source packages
 # in ${PROJECT_SOURCE_DIR}/utils
-option (SINGULARITY_USE_INTERNAL_DEPS "Use submodules when available" OFF)
+#option (SINGULARITY_USE_INTERNAL_DEPS "Use submodules when available" OFF)
 
 # Options to build using Kokkos components
 option (SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)

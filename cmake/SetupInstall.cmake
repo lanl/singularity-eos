@@ -1,7 +1,10 @@
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+# helper var for brevity
+# this is where cmake config files for singularity-eos go
 set(INSTALL_CONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos)
+
 
 install(TARGETS eos
   EXPORT singularity-eos_targets
@@ -38,7 +41,6 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/singularity-eosConfigVersion.cmake
   DESTINATION ${INSTALL_CONFIG_DIR}
 )
-
 
 export(
   EXPORT singularity-eos_targets
