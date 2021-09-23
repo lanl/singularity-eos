@@ -83,6 +83,15 @@ make -j
 make test
 ```
 
+## Formatting
+
+This project is formatted with `clang-format` using `clang-format`
+version 10.0.0. If contributing, please run clang-format on the files
+you modify.
+
+For now, we will periodically run clang-format on the repo to
+synchronize it. An automated solution will be forth coming.
+
 ## Copyright
 
 © 2021. Triad National Security, LLC. All rights reserved.  This
