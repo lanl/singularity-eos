@@ -14,9 +14,9 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#include <string>
 #include <cmath>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 #include <hdf5.h>
@@ -26,24 +26,20 @@
 #error "HDF5 must be enabled"
 #endif // SPINER_USE_HDF
 
-#include <spiner/ports-of-call/portability.hpp>
 #include <sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
+#include <spiner/ports-of-call/portability.hpp>
 #include <spiner/sp5.hpp>
 
-#include "io_eospac.hpp"
 #include "generate_files.hpp"
+#include "io_eospac.hpp"
 #include "parse_cli.hpp"
 #include "parser.hpp"
 
-herr_t saveMaterial(hid_t loc,
-		    const SesameMetadata& metadata,
-		    const Bounds& lRhoBounds,
-		    const Bounds& lTBounds,
-		    const Bounds& leBounds,
-		    const std::string& name,
-		    Verbosity eospacWarn) {
+herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
+                    const Bounds &lTBounds, const Bounds &leBounds,
+                    const std::string &name, Verbosity eospacWarn) {
 
   const int matid = metadata.matid;
   std::string sMatid = std::to_string(matid);
@@ -51,110 +47,88 @@ herr_t saveMaterial(hid_t loc,
   herr_t status = 0;
   hid_t matGroup, lTGroup, leGroup, coldGroup;
 
-  matGroup = H5Gcreate(loc, sMatid.c_str(),
-		       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  status += H5Lcreate_soft(sMatid.c_str(),
-			   loc,
-			   name.c_str(),
-			   H5P_DEFAULT, H5P_DEFAULT);
-  
+  matGroup = H5Gcreate(loc, sMatid.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  status += H5Lcreate_soft(sMatid.c_str(), loc, name.c_str(), H5P_DEFAULT, H5P_DEFAULT);
+
   // Dependent variables metadata
-  status += H5LTset_attribute_string(loc, sMatid.c_str(),
-				     SP5::Offsets::messageName,
-				     SP5::Offsets::message);
-  status += H5LTset_attribute_double(loc, sMatid.c_str(),
-				     SP5::Offsets::rho,
-				     &lRhoBounds.offset,1);
-  status += H5LTset_attribute_double(loc, sMatid.c_str(),
-				     SP5::Offsets::T,
-				     &lTBounds.offset,1);
-  status += H5LTset_attribute_double(loc, sMatid.c_str(),
-				     SP5::Offsets::sie,
-				     &leBounds.offset,1);
+  status += H5LTset_attribute_string(loc, sMatid.c_str(), SP5::Offsets::messageName,
+                                     SP5::Offsets::message);
+  status += H5LTset_attribute_double(loc, sMatid.c_str(), SP5::Offsets::rho,
+                                     &lRhoBounds.offset, 1);
+  status +=
+      H5LTset_attribute_double(loc, sMatid.c_str(), SP5::Offsets::T, &lTBounds.offset, 1);
+  status += H5LTset_attribute_double(loc, sMatid.c_str(), SP5::Offsets::sie,
+                                     &leBounds.offset, 1);
 
   // Material metadata
-  status += H5LTset_attribute_double(loc, sMatid.c_str(),
-				     SP5::Material::exchangeCoefficient,
-				     &metadata.exchangeCoefficient, 1);
-  status += H5LTset_attribute_double(loc, sMatid.c_str(),
-				     SP5::Material::meanAtomicMass,
-				     &metadata.meanAtomicMass, 1);
-  status += H5LTset_attribute_double(loc, sMatid.c_str(),
-				     SP5::Material::meanAtomicNumber,
-				     &metadata.meanAtomicNumber, 1);
-  status += H5LTset_attribute_double(loc, sMatid.c_str(),
-				     SP5::Material::solidBulkModulus,
-				     &metadata.solidBulkModulus, 1);
-  status += H5LTset_attribute_double(loc, sMatid.c_str(),
-				     SP5::Material::normalDensity,
-				     &metadata.normalDensity, 1);
-  status += H5LTset_attribute_string(loc, sMatid.c_str(),
-				     SP5::Material::comments,
-				     metadata.comments.c_str());
-  status += H5LTset_attribute_int(loc, sMatid.c_str(),
-				  SP5::Material::matid,
-				  &metadata.matid, 1);
-  status += H5LTset_attribute_string(loc, sMatid.c_str(),
-				     SP5::Material::name,
-				     metadata.name.c_str());
+  status +=
+      H5LTset_attribute_double(loc, sMatid.c_str(), SP5::Material::exchangeCoefficient,
+                               &metadata.exchangeCoefficient, 1);
+  status += H5LTset_attribute_double(loc, sMatid.c_str(), SP5::Material::meanAtomicMass,
+                                     &metadata.meanAtomicMass, 1);
+  status += H5LTset_attribute_double(loc, sMatid.c_str(), SP5::Material::meanAtomicNumber,
+                                     &metadata.meanAtomicNumber, 1);
+  status += H5LTset_attribute_double(loc, sMatid.c_str(), SP5::Material::solidBulkModulus,
+                                     &metadata.solidBulkModulus, 1);
+  status += H5LTset_attribute_double(loc, sMatid.c_str(), SP5::Material::normalDensity,
+                                     &metadata.normalDensity, 1);
+  status += H5LTset_attribute_string(loc, sMatid.c_str(), SP5::Material::comments,
+                                     metadata.comments.c_str());
+  status += H5LTset_attribute_int(loc, sMatid.c_str(), SP5::Material::matid,
+                                  &metadata.matid, 1);
+  status += H5LTset_attribute_string(loc, sMatid.c_str(), SP5::Material::name,
+                                     metadata.name.c_str());
 
-  lTGroup = H5Gcreate(matGroup, SP5::Depends::logRhoLogT,
-		      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  lTGroup = H5Gcreate(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT, H5P_DEFAULT,
+                      H5P_DEFAULT);
 
-  leGroup = H5Gcreate(matGroup, SP5::Depends::logRhoLogSie,
-		      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  coldGroup = H5Gcreate(matGroup, SP5::Depends::coldCurve,
-                        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  leGroup = H5Gcreate(matGroup, SP5::Depends::logRhoLogSie, H5P_DEFAULT, H5P_DEFAULT,
+                      H5P_DEFAULT);
+  coldGroup =
+      H5Gcreate(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   {
     DataBox P, sie, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, mask;
-    eosDataOfRhoSie(matid, lRhoBounds, leBounds,
-                    P, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho,
-                    mask,
-                    eospacWarn);
-    status += P.saveHDF(leGroup,      SP5::Fields::P);
-    status += T.saveHDF(leGroup,      SP5::Fields::T);
-    status += bMod.saveHDF(leGroup,   SP5::Fields::bMod);
+    eosDataOfRhoSie(matid, lRhoBounds, leBounds, P, T, bMod, dPdRho, dPdE, dTdRho, dTdE,
+                    dEdRho, mask, eospacWarn);
+    status += P.saveHDF(leGroup, SP5::Fields::P);
+    status += T.saveHDF(leGroup, SP5::Fields::T);
+    status += bMod.saveHDF(leGroup, SP5::Fields::bMod);
     status += dPdRho.saveHDF(leGroup, SP5::Fields::dPdRho);
-    status += dPdE.saveHDF(leGroup,   SP5::Fields::dPdE);
+    status += dPdE.saveHDF(leGroup, SP5::Fields::dPdE);
     status += dTdRho.saveHDF(leGroup, SP5::Fields::dTdRho);
-    status += dTdE.saveHDF(leGroup,   SP5::Fields::dTdE);
+    status += dTdE.saveHDF(leGroup, SP5::Fields::dTdE);
     status += dEdRho.saveHDF(leGroup, SP5::Fields::dEdRho);
-    status += mask.saveHDF(leGroup,   SP5::Fields::mask);
+    status += mask.saveHDF(leGroup, SP5::Fields::mask);
   }
 
   {
     DataBox P, sie, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, dEdT, mask;
-    eosDataOfRhoT(matid, lRhoBounds, lTBounds,
-                  P, sie, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, dEdT,
-                  mask,
-                  eospacWarn);
-    status += P.saveHDF(lTGroup,      SP5::Fields::P);
-    status += sie.saveHDF(lTGroup,    SP5::Fields::sie);
-    status += bMod.saveHDF(lTGroup,   SP5::Fields::bMod);
+    eosDataOfRhoT(matid, lRhoBounds, lTBounds, P, sie, bMod, dPdRho, dPdE, dTdRho, dTdE,
+                  dEdRho, dEdT, mask, eospacWarn);
+    status += P.saveHDF(lTGroup, SP5::Fields::P);
+    status += sie.saveHDF(lTGroup, SP5::Fields::sie);
+    status += bMod.saveHDF(lTGroup, SP5::Fields::bMod);
     status += dPdRho.saveHDF(lTGroup, SP5::Fields::dPdRho);
-    status += dPdE.saveHDF(lTGroup,   SP5::Fields::dPdE);
+    status += dPdE.saveHDF(lTGroup, SP5::Fields::dPdE);
     status += dTdRho.saveHDF(lTGroup, SP5::Fields::dTdRho);
-    status += dTdE.saveHDF(lTGroup,   SP5::Fields::dTdE);
+    status += dTdE.saveHDF(lTGroup, SP5::Fields::dTdE);
     status += dEdRho.saveHDF(lTGroup, SP5::Fields::dEdRho);
-    status += dEdT.saveHDF(lTGroup,   SP5::Fields::dEdT);
-    status += mask.saveHDF(lTGroup,   SP5::Fields::mask);
+    status += dEdT.saveHDF(lTGroup, SP5::Fields::dEdT);
+    status += mask.saveHDF(lTGroup, SP5::Fields::mask);
   }
   {
     DataBox P, sie, dPdRho, dEdRho, bMod, mask, transitionMask;
-    eosColdCurves(matid, lRhoBounds,
-                  P, sie, dPdRho, dEdRho, bMod, mask,
-                  eospacWarn);
-    eosColdCurveMask(matid, lRhoBounds, leBounds.grid.nPoints(),
-                     sie, transitionMask,
+    eosColdCurves(matid, lRhoBounds, P, sie, dPdRho, dEdRho, bMod, mask, eospacWarn);
+    eosColdCurveMask(matid, lRhoBounds, leBounds.grid.nPoints(), sie, transitionMask,
                      eospacWarn);
 
-    status += P.saveHDF(coldGroup,              SP5::Fields::P);
-    status += sie.saveHDF(coldGroup,            SP5::Fields::sie);
-    status += bMod.saveHDF(coldGroup,           SP5::Fields::bMod);
-    status += dPdRho.saveHDF(coldGroup,         SP5::Fields::dPdRho);
-    status += dEdRho.saveHDF(coldGroup,         SP5::Fields::dEdRho);
-    status += mask.saveHDF(coldGroup,           SP5::Fields::mask);
+    status += P.saveHDF(coldGroup, SP5::Fields::P);
+    status += sie.saveHDF(coldGroup, SP5::Fields::sie);
+    status += bMod.saveHDF(coldGroup, SP5::Fields::bMod);
+    status += dPdRho.saveHDF(coldGroup, SP5::Fields::dPdRho);
+    status += dEdRho.saveHDF(coldGroup, SP5::Fields::dEdRho);
+    status += mask.saveHDF(coldGroup, SP5::Fields::mask);
     status += transitionMask.saveHDF(coldGroup, SP5::Fields::transitionMask);
   }
 
@@ -166,62 +140,56 @@ herr_t saveMaterial(hid_t loc,
   return status;
 }
 
-herr_t saveAllMaterials(const std::string& savename,
-			const std::vector<std::string>& filenames,
-			bool printMetadata,
-			Verbosity eospacWarn) {
+herr_t saveAllMaterials(const std::string &savename,
+                        const std::vector<std::string> &filenames, bool printMetadata,
+                        Verbosity eospacWarn) {
   std::vector<Params> params;
   std::vector<int> matids;
   SesameMetadata metadata;
   hid_t file;
   herr_t status = H5_SUCCESS;
-    
+
   for (auto const &filename : filenames) {
     Params p(filename);
     if (!p.Contains("matid")) {
       std::cerr << "Material file " << filename << "is missing matid.\n"
-		<< "Example input files:\n"
-		<< EXAMPLESTRING
-		<< std::endl;
+                << "Example input files:\n"
+                << EXAMPLESTRING << std::endl;
       std::exit(1);
     }
     matids.push_back(p.Get<int>("matid"));
     params.push_back(p);
   }
-  
+
   std::cout << "Saving to file " << savename << std::endl;
   file = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-  
+
   std::cout << "Processing " << matids.size() << " materials..." << std::endl;
-  
+
   for (size_t i = 0; i < matids.size(); i++) {
     int matid = matids[i];
-    
+
     std::cout << "..." << matid << std::endl;
-    
+
     eosGetMetadata(matid, metadata, Verbosity::Debug);
     if (printMetadata) std::cout << metadata << std::endl;
-    std::string name = params[i].Get("name",metadata.name); 
+    std::string name = params[i].Get("name", metadata.name);
 
     Bounds lRhoBounds, lTBounds, leBounds;
-    getMatBounds(i,matid,metadata,params[i],lRhoBounds,lTBounds,leBounds);
+    getMatBounds(i, matid, metadata, params[i], lRhoBounds, lTBounds, leBounds);
 
     if (eospacWarn == Verbosity::Debug) {
       std::cout << "bounds for log(rho), log(T), log(sie) are:\n"
-		<< lRhoBounds
-		<< lTBounds
-		<< leBounds
-		<< std::endl;
+                << lRhoBounds << lTBounds << leBounds << std::endl;
     }
-    
-    status += saveMaterial(file, metadata,
-			   lRhoBounds, lTBounds, leBounds,
-			   name, eospacWarn);
+
+    status +=
+        saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name, eospacWarn);
     if (status != H5_SUCCESS) {
       std::cerr << "WARNING: problem with HDf5" << std::endl;
     }
   }
-  
+
   std::cout << "Cleaning up." << std::endl;
   status += H5Fclose(file);
   if (status != H5_SUCCESS) {
@@ -230,65 +198,54 @@ herr_t saveAllMaterials(const std::string& savename,
   return status;
 }
 
-void getMatBounds(int i,
-		  int matid,
-		  const SesameMetadata& metadata,
-		  const Params& params,
-		  Bounds& lRhoBounds,
-		  Bounds& lTBounds,
-		  Bounds& leBounds) {
-  Real rhoMin   = params.Get("rhomin",metadata.rhoMin);
-  Real rhoMax   = params.Get("rhomax",metadata.rhoMax);
-  Real TMin     = params.Get("Tmin",metadata.TMin);
-  Real TMax     = params.Get("Tmax",metadata.TMax);
-  Real sieMin   = params.Get("siemin",metadata.sieMin);
-  Real sieMax   = params.Get("siemax",metadata.sieMax);
+void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
+                  Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds) {
+  Real rhoMin = params.Get("rhomin", metadata.rhoMin);
+  Real rhoMax = params.Get("rhomax", metadata.rhoMax);
+  Real TMin = params.Get("Tmin", metadata.TMin);
+  Real TMax = params.Get("Tmax", metadata.TMax);
+  Real sieMin = params.Get("siemin", metadata.sieMin);
+  Real sieMax = params.Get("siemax", metadata.sieMax);
 
   checkValInMatBounds(matid, "rhoMin", rhoMin, metadata.rhoMin, metadata.rhoMax);
   checkValInMatBounds(matid, "rhoMax", rhoMax, metadata.rhoMin, metadata.rhoMax);
-  checkValInMatBounds(matid, "TMin",   TMin,   metadata.TMin,   metadata.TMax);
-  checkValInMatBounds(matid, "TMax",   TMax,   metadata.TMin,   metadata.TMax);
+  checkValInMatBounds(matid, "TMin", TMin, metadata.TMin, metadata.TMax);
+  checkValInMatBounds(matid, "TMax", TMax, metadata.TMin, metadata.TMax);
   checkValInMatBounds(matid, "sieMin", sieMin, metadata.sieMin, metadata.sieMax);
   checkValInMatBounds(matid, "sieMax", sieMax, metadata.sieMin, metadata.sieMax);
 
   Real shrinklRhoBounds = params.Get("shrinklRhoBounds", 0.0);
-  Real shrinklTBounds   = params.Get("shrinklTBounds",   0.0);
-  Real shrinkleBounds   = params.Get("shrinkleBounds",   0.0);
+  Real shrinklTBounds = params.Get("shrinklTBounds", 0.0);
+  Real shrinkleBounds = params.Get("shrinkleBounds", 0.0);
 
   shrinklRhoBounds = std::min(1., std::max(shrinklRhoBounds, 0.));
-  shrinklTBounds   = std::min(1., std::max(shrinklTBounds,   0.));
-  shrinkleBounds   = std::min(1., std::max(shrinkleBounds,   0.));
-  
-  if (shrinklRhoBounds > 0
-      && (params.Contains("rhomin") || params.Contains("rhomax"))) {
+  shrinklTBounds = std::min(1., std::max(shrinklTBounds, 0.));
+  shrinkleBounds = std::min(1., std::max(shrinkleBounds, 0.));
+
+  if (shrinklRhoBounds > 0 && (params.Contains("rhomin") || params.Contains("rhomax"))) {
     std::cerr << "WARNING [" << matid << "]: "
-	      << "shrinklRhoBounds > 0 and rhomin or rhomax set"
-	      << std::endl;
+              << "shrinklRhoBounds > 0 and rhomin or rhomax set" << std::endl;
   }
-  if (shrinklTBounds > 0
-      && (params.Contains("Tmin") || params.Contains("Tmax"))) {
+  if (shrinklTBounds > 0 && (params.Contains("Tmin") || params.Contains("Tmax"))) {
     std::cerr << "WARNING [" << matid << "]: "
-	      << "shrinklTBounds > 0 and Tmin or Tmax set"
-	      << std::endl;
+              << "shrinklTBounds > 0 and Tmin or Tmax set" << std::endl;
   }
-  if (shrinkleBounds > 0
-      && (params.Contains("siemin") || params.Contains("siemax"))) {
+  if (shrinkleBounds > 0 && (params.Contains("siemin") || params.Contains("siemax"))) {
     std::cerr << "WARNING [" << matid << "]: "
-	      << "shrinkleBounds > 0 and siemin or siemax set"
-		<< std::endl;
+              << "shrinkleBounds > 0 and siemin or siemax set" << std::endl;
   }
 
   int ppdRho = params.Get("numrho/decade", PPD_DEFAULT);
-  int numRhoDefault = getNumPointsFromPPD(rhoMin,rhoMax,ppdRho);
+  int numRhoDefault = getNumPointsFromPPD(rhoMin, rhoMax, ppdRho);
 
-  int ppdT = params.Get("numT/decade",   PPD_DEFAULT);
-  int numTDefault = getNumPointsFromPPD(TMin,TMax,ppdT);
+  int ppdT = params.Get("numT/decade", PPD_DEFAULT);
+  int numTDefault = getNumPointsFromPPD(TMin, TMax, ppdT);
 
   int ppdSie = params.Get("numSie/decade", PPD_DEFAULT);
-  int numSieDefault = getNumPointsFromPPD(sieMin,sieMax,ppdSie);
+  int numSieDefault = getNumPointsFromPPD(sieMin, sieMax, ppdSie);
 
   int numRho = params.Get("numrho", numRhoDefault);
-  int numT   = params.Get("numT",     numTDefault);
+  int numT = params.Get("numT", numTDefault);
   int numSie = params.Get("numsie", numSieDefault);
 
   Real rhoAnchor = metadata.normalDensity;
@@ -303,29 +260,27 @@ void getMatBounds(int i,
   if (rhoMin < STRICTLY_POS_MIN) rhoMin = STRICTLY_POS_MIN;
   if (TMin < STRICTLY_POS_MIN) TMin = STRICTLY_POS_MIN;
 
-  lRhoBounds = Bounds(rhoMin,rhoMax,numRho,true,shrinklRhoBounds,rhoAnchor);
-  lTBounds   = Bounds(TMin,TMax,numT,true,shrinklTBounds,TAnchor);
-  leBounds   = Bounds(sieMin,sieMax,numSie,true,shrinkleBounds);
-  
+  lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
+  lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
+  leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
+
   return;
 }
 
-bool checkValInMatBounds(int matid,
-                         const std::string& name,
-                         Real val, Real vmin, Real vmax) {
-  if ( val < vmin || val > vmax ) {
-    std::cerr << "WARNING [" << matid << "]: "
-              << name << " out of sesame table bounds. Consider changing this.\n"
-              << "\t" << name << ", [bounds] = " << val
-              << ", [" << vmin << ", " << vmax << "]"
-              << std::endl;
+bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin,
+                         Real vmax) {
+  if (val < vmin || val > vmax) {
+    std::cerr << "WARNING [" << matid << "]: " << name
+              << " out of sesame table bounds. Consider changing this.\n"
+              << "\t" << name << ", [bounds] = " << val << ", [" << vmin << ", " << vmax
+              << "]" << std::endl;
     return false;
   }
   return true;
 }
 
 int getNumPointsFromPPD(Real min, Real max, int ppd) {
-  Bounds b(min,max,3,true);
+  Bounds b(min, max, 3, true);
   Real ndecades = b.grid.max() - b.grid.min();
-  return static_cast<int>(std::ceil(ppd*ndecades));
+  return static_cast<int>(std::ceil(ppd * ndecades));
 }

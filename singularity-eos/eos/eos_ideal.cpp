@@ -14,78 +14,78 @@
 
 #include <singularity-eos/eos/eos.hpp>
 
-#define MYMAX(a,b) a > b ? a : b
+#define MYMAX(a, b) a > b ? a : b
 
 namespace singularity {
 
 //---------------------
 // Ideal Gas EOS
 //---------------------
-PORTABLE_FUNCTION Real IdealGas::InternalEnergyFromDensityTemperature(const Real rho, const Real temp, Real *lambda) const
-{
-  return MYMAX(0.0,_Cv*temp);
+PORTABLE_FUNCTION Real IdealGas::InternalEnergyFromDensityTemperature(
+    const Real rho, const Real temp, Real *lambda) const {
+  return MYMAX(0.0, _Cv * temp);
 }
-PORTABLE_FUNCTION Real IdealGas::TemperatureFromDensityInternalEnergy(const Real rho, const Real sie, Real *lambda) const
-{
-  return MYMAX(0.0,sie/_Cv);
+PORTABLE_FUNCTION Real IdealGas::TemperatureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *lambda) const {
+  return MYMAX(0.0, sie / _Cv);
 }
-PORTABLE_FUNCTION Real IdealGas::PressureFromDensityInternalEnergy(const Real rho, const Real sie, Real *lambda) const
-{
-  return MYMAX(0.0,_gm1*rho*sie);
+PORTABLE_FUNCTION Real IdealGas::PressureFromDensityInternalEnergy(const Real rho,
+                                                                   const Real sie,
+                                                                   Real *lambda) const {
+  return MYMAX(0.0, _gm1 * rho * sie);
 }
-PORTABLE_FUNCTION Real IdealGas::SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie, Real *lambda) const
-{
-    return _Cv;
+PORTABLE_FUNCTION Real IdealGas::SpecificHeatFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *lambda) const {
+  return _Cv;
 }
-PORTABLE_FUNCTION Real IdealGas::BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie, Real *lambda) const
-{
-  return MYMAX(0.0,(_gm1+1)*_gm1*rho*sie);
+PORTABLE_FUNCTION Real IdealGas::BulkModulusFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *lambda) const {
+  return MYMAX(0.0, (_gm1 + 1) * _gm1 * rho * sie);
 }
 
 PORTABLE_FUNCTION
-Real IdealGas::GruneisenParamFromDensityInternalEnergy(const Real rho,
-                                                       const Real sie,
-                                                       Real *lambda) const
-{
+Real IdealGas::GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                       Real *lambda) const {
   return _gm1;
 }
 
-PORTABLE_FUNCTION void IdealGas::DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real * lambda, Real & rho, Real & sie) const
-{
-  sie = MYMAX(0.0,_Cv*temp);
-  rho = MYMAX(0.0,press/(_gm1*sie));
+PORTABLE_FUNCTION void
+IdealGas::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                               Real *lambda, Real &rho, Real &sie) const {
+  sie = MYMAX(0.0, _Cv * temp);
+  rho = MYMAX(0.0, press / (_gm1 * sie));
 }
 
 PORTABLE_FUNCTION
-void IdealGas::FillEos(Real & rho, Real & temp,
-                       Real & sie, Real & press,
-                       Real & cv, Real & bmod,
-                       const unsigned long output, Real * lambda) const
-{
-  if (output&thermalqs::density && output&thermalqs::specific_internal_energy) {
-    if (output&thermalqs::pressure || output&thermalqs::temperature) {
+void IdealGas::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                       Real &bmod, const unsigned long output, Real *lambda) const {
+  if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
+    if (output & thermalqs::pressure || output & thermalqs::temperature) {
       UNDEFINED_ERROR;
     }
     DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
   }
-  if (output&thermalqs::pressure && output&thermalqs::specific_internal_energy) {
-    if (output&thermalqs::density || output&thermalqs::temperature) {
+  if (output & thermalqs::pressure && output & thermalqs::specific_internal_energy) {
+    if (output & thermalqs::density || output & thermalqs::temperature) {
       UNDEFINED_ERROR;
     }
     sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
   }
-  if (output&thermalqs::temperature && output&thermalqs::specific_internal_energy) {
-    sie = press / ( _gm1 * rho );
+  if (output & thermalqs::temperature && output & thermalqs::specific_internal_energy) {
+    sie = press / (_gm1 * rho);
   }
-  if (output&thermalqs::pressure) press=PressureFromDensityInternalEnergy(rho,sie);
-  if (output&thermalqs::temperature) temp = TemperatureFromDensityInternalEnergy(rho,sie);
-  if (output&thermalqs::bulk_modulus) bmod = BulkModulusFromDensityInternalEnergy(rho,sie);
-  if (output&thermalqs::specific_heat) cv=SpecificHeatFromDensityInternalEnergy(rho,sie);
+  if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
+  if (output & thermalqs::temperature)
+    temp = TemperatureFromDensityInternalEnergy(rho, sie);
+  if (output & thermalqs::bulk_modulus)
+    bmod = BulkModulusFromDensityInternalEnergy(rho, sie);
+  if (output & thermalqs::specific_heat)
+    cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
 }
 
 PORTABLE_FUNCTION
-void IdealGas::ValuesAtReferenceState(Real& rho, Real& temp, Real& sie, Real& press,
-                                      Real& cv, Real& bmod, Real& dpde, Real& dvdt,
+void IdealGas::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
+                                      Real &cv, Real &bmod, Real &dpde, Real &dvdt,
                                       Real *lambda) const {
   // use STP: 1 atmosphere, room temperature
   rho = _rho0;
@@ -100,31 +100,24 @@ void IdealGas::ValuesAtReferenceState(Real& rho, Real& temp, Real& sie, Real& pr
 
 PORTABLE_FUNCTION
 Real IdealGas::PressureFromDensityTemperature(const Real rho, const Real temp,
-                                              Real* lambda) const
-{
-  return MYMAX(0.0,_gm1*rho*_Cv*temp);
+                                              Real *lambda) const {
+  return MYMAX(0.0, _gm1 * rho * _Cv * temp);
 }
 
 PORTABLE_FUNCTION
-Real IdealGas::SpecificHeatFromDensityTemperature(const Real rho,
-                                                  const Real temp,
-                                                  Real* lambda) const
-{
+Real IdealGas::SpecificHeatFromDensityTemperature(const Real rho, const Real temp,
+                                                  Real *lambda) const {
   return _Cv;
 }
 PORTABLE_FUNCTION
-Real IdealGas::BulkModulusFromDensityTemperature(const Real rho,
-                                                 const Real temp,
-                                                 Real* lambda) const
-{
-  return MYMAX(0.0,(_gm1+1)*_gm1*rho*_Cv*temp);
+Real IdealGas::BulkModulusFromDensityTemperature(const Real rho, const Real temp,
+                                                 Real *lambda) const {
+  return MYMAX(0.0, (_gm1 + 1) * _gm1 * rho * _Cv * temp);
 }
 
 PORTABLE_FUNCTION
-Real IdealGas::GruneisenParamFromDensityTemperature(const Real rho,
-                                                    const Real temp,
-                                                    Real* lambda) const
-{
+Real IdealGas::GruneisenParamFromDensityTemperature(const Real rho, const Real temp,
+                                                    Real *lambda) const {
   return _gm1;
 }
 

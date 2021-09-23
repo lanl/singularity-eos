@@ -26,16 +26,16 @@
 #include <limits>
 #include <utility>
 
-#include <singularity-eos/eos/eos_variant.hpp>
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
 
 #ifdef SPINER_USE_HDF
 #include <fast-math/logs.hpp>
+#include <hdf5.h>
+#include <hdf5_hl.h>
 #include <root-finding-1d/root_finding.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/spiner_types.hpp>
-#include <hdf5.h>
-#include <hdf5_hl.h>
 #endif // SPINER_USE_HDF
 
 #include <singularity-eos/base/constants.hpp>
@@ -47,8 +47,9 @@
 
 namespace singularity {
 
-template <typename T> class ScaledEOS {
-public:
+template <typename T>
+class ScaledEOS {
+ public:
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
       : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {}
@@ -60,71 +61,61 @@ public:
   PORTABLE_FUNCTION
   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {
-    return t_.TemperatureFromDensityInternalEnergy(scale_ * rho,
-                                                   inv_scale_ * sie, lambda);
+    return t_.TemperatureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
+                                                   lambda);
   }
   PORTABLE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
-    Real energy =
-        t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
+    Real energy = t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
     return scale_ * energy;
   }
   PORTABLE_FUNCTION
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const {
-    return t_.PressureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
-                                                lambda);
+    return t_.PressureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda = nullptr) const {
-    return t_.SpecificHeatFromDensityInternalEnergy(scale_ * rho,
-                                                    inv_scale_ * sie, lambda);
+    return t_.SpecificHeatFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
+                                                    lambda);
   }
   PORTABLE_FUNCTION
   Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {
-    return t_.BulkModulusFromDensityInternalEnergy(scale_ * rho,
-                                                   inv_scale_ * sie, lambda);
+    return t_.BulkModulusFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
+                                                   lambda);
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
                                                Real *lambda = nullptr) const {
-    return t_.GruneisenParamFromDensityInternalEnergy(scale_ * rho,
-                                                      inv_scale_ * sie, lambda);
+    return t_.GruneisenParamFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
+                                                      lambda);
   }
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
-    return t_.PressureFromDensityInternalEnergy(scale_ * rho, temperature,
-                                                lambda);
+    return t_.PressureFromDensityInternalEnergy(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho,
-                                          const Real temperature,
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const {
-    return t_.SpecificHeatFromDensityTemperature(scale_ * rho, temperature,
-                                                 lambda);
+    return t_.SpecificHeatFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
                                          Real *lambda = nullptr) const {
-    return t_.BulkModulusFromDensityTemperature(scale_ * rho, temperature,
-                                                lambda);
+    return t_.BulkModulusFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
-    return t_.GruneisenParamFromDensityTemperature(scale_ * rho, temperature,
-                                                   lambda);
+    return t_.GruneisenParamFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-               Real &bmod, const unsigned long output,
-               Real *lambda = nullptr) const {
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const {
     Real srho, senergy;
     switch (t_.PreferredInput()) {
     case thermalqs::density | thermalqs::temperature:
@@ -143,11 +134,10 @@ public:
   }
 
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const {
-    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt,
-                              lambda);
+    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
     rho *= inv_scale_;
     sie *= scale_;
   }
@@ -164,33 +154,32 @@ public:
   }
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho,
-                                            Real &sie) const {
+                                            Real *lambda, Real &rho, Real &sie) const {
     t_.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
     rho = rho * inv_scale_;
     sie = sie * scale_;
   }
 
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press,
-              Real &temp, Real &dpdr, Real &dpde, Real &dtdr,
-              Real &dtde) const {
-    t_.PTofRE(scale_ * rho, inv_scale_ * sie, lambda, press, temp, dpdr, dpde,
-              dtdr, dtde);
+  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
+    t_.PTofRE(scale_ * rho, inv_scale_ * sie, lambda, press, temp, dpdr, dpde, dtdr,
+              dtde);
     dpdr = dpdr * scale_;
     dtdr = dtdr * scale_;
     dpde = dpde * inv_scale_;
     dtde = dtde * inv_scale_;
   }
 
-private:
+ private:
   T t_;
   double scale_;
   double inv_scale_;
 };
 
-template <typename T> class ShiftedEOS {
-public:
+template <typename T>
+class ShiftedEOS {
+ public:
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
   ShiftedEOS() = default;
@@ -204,11 +193,9 @@ public:
     return t_.TemperatureFromDensityInternalEnergy(rho, sie - shift_, lambda);
   }
   PORTABLE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
-    Real energy =
-        t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
+    Real energy = t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
     return energy + shift_;
   }
   PORTABLE_FUNCTION
@@ -229,8 +216,7 @@ public:
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
                                                Real *lambda = nullptr) const {
-    return t_.GruneisenParamFromDensityInternalEnergy(rho, sie - shift_,
-                                                      lambda);
+    return t_.GruneisenParamFromDensityInternalEnergy(rho, sie - shift_, lambda);
   }
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
@@ -238,8 +224,7 @@ public:
     return t_.PressureFromDensityInternalEnergy(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho,
-                                          const Real temperature,
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const {
     return t_.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
   }
@@ -249,15 +234,13 @@ public:
     return t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
     return t_.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-               Real &bmod, const unsigned long output,
-               Real *lambda = nullptr) const {
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const {
     Real senergy;
     switch (t_.PreferredInput()) {
     case thermalqs::density | thermalqs::temperature:
@@ -285,34 +268,32 @@ public:
   }
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho,
-                                            Real &sie) const {
+                                            Real *lambda, Real &rho, Real &sie) const {
     t_.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
     sie = sie + shift_;
   }
 
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press,
-              Real &temp, Real &dpdr, Real &dpde, Real &dtdr,
-              Real &dtde) const {
+  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
     t_.PTofRE(rho, sie - shift_, lambda, press, temp, dpdr, dpde, dtdr, dtde);
   }
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const {
-    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt,
-                              lambda);
+    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
     sie += shift_;
   }
 
-private:
+ private:
   T t_;
   double shift_;
 };
 
-template <typename T> class RelativisticEOS {
-public:
+template <typename T>
+class RelativisticEOS {
+ public:
   // move semantics ensures dynamic memory comes along for the ride
   RelativisticEOS(T &&t, const Real cl)
       : t_(std::forward<T>(t)), cl_(cl) // speed of light, units arbitrary
@@ -330,8 +311,7 @@ public:
     return t_.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   }
   PORTABLE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
     return t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
   }
@@ -364,8 +344,7 @@ public:
     return t_.PressureFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho,
-                                          const Real temperature,
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const {
     return t_.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
   }
@@ -379,15 +358,13 @@ public:
     return std::max(0.0, bmod / (std::abs(h) + EPS));
   }
   PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
     return t_.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-               Real &bmod, const unsigned long output,
-               Real *lambda = nullptr) const {
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const {
     t_.FillEos(rho, temp, energy, press, cv, bmod, output, lambda);
   }
 
@@ -400,32 +377,29 @@ public:
   PORTABLE_FUNCTION void PrintParams() const { t_.PrintParams(); }
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho,
-                                            Real &sie) const {
+                                            Real *lambda, Real &rho, Real &sie) const {
     t_.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
   }
 
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press,
-              Real &temp, Real &dpdr, Real &dpde, Real &dtdr,
-              Real &dtde) const {
+  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
     t_.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr, dtde);
   }
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const {
-    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt,
-                              lambda);
+    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 
-private:
+ private:
   T t_;
   Real cl_, cl2_;
 };
 
 class IdealGas {
-public:
+ public:
   IdealGas() = default;
   PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv)
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
@@ -437,29 +411,31 @@ public:
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(const Real rho,
+                                                        const Real temperature,
+                                                        Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                           Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(const Real rho,
+                                                            const Real temperature,
+                                                            Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(const Real rho,
+                                                           const Real temperature,
+                                                           Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy,
-                                 Real &press, Real &cv, Real &bmod,
-                                 const unsigned long output,
+  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                 Real &cv, Real &bmod, const unsigned long output,
                                  Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
 
   PORTABLE_INLINE_FUNCTION
@@ -470,13 +446,12 @@ public:
   }
   PORTABLE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
                                                               const Real temp,
-                                                              Real *lambda,
-                                                              Real &rho,
+                                                              Real *lambda, Real &rho,
                                                               Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("IdealGas"); }
 
-private:
+ private:
   Real _Cv, _gm1;
   // reference values
   Real _rho0, _sie0, _bmod0, _dpde0, _dvdt0;
@@ -491,62 +466,60 @@ private:
 // the Gruneisen EOS which should correspond to eostype(3) in xRAGE and
 // /[...]/eos/gruneisen in FLAG
 class Gruneisen {
-public:
+ public:
   Gruneisen() = default;
   PORTABLE_INLINE_FUNCTION
-  Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3,
-            const Real G0, const Real b, const Real rho0, const Real T0,
-            const Real P0, const Real Cv)
-      : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0),
-        _T0(T0), _P0(P0), _Cv(Cv) {}
+  Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
+            const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
+      : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
+        _Cv(Cv) {}
   Gruneisen GetOnDevice() { return *this; }
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperatummmmmmre,
-      Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(const Real rho,
+                                                        const Real temperature,
+                                                        Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                           Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(const Real rho,
+                                                            const Real temperatummmmmmre,
+                                                            Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(const Real rho,
+                                                           const Real temperature,
+                                                           Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy,
-                                 Real &press, Real &cv, Real &bmod,
-                                 const unsigned long output,
+  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                 Real &cv, Real &bmod, const unsigned long output,
                                  Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"Gruneisen Params: "};
-    printf(
-        "%sC0:%e s1:%e s2:%e\ns3:%e G0:%e b:%e\nrho0:%e T0:%e P0:%e\nCv:%E\n",
-        s1, _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv);
+    printf("%sC0:%e s1:%e s2:%e\ns3:%e G0:%e b:%e\nrho0:%e T0:%e P0:%e\nCv:%E\n", s1, _C0,
+           _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv);
   }
   PORTABLE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
                                                               const Real temp,
-                                                              Real *lambda,
-                                                              Real &rho,
+                                                              Real *lambda, Real &rho,
                                                               Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("Gruneisen"); }
 
-private:
+ private:
   Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv;
   // static constexpr const char _eos_type[] = {"Gruneisen"};
   PORTABLE_INLINE_FUNCTION
@@ -560,59 +533,59 @@ private:
 // COMMENT: This is meant to be an implementation of the "standard" JWL as
 // implemented in xRAGE for eostype(1).  It does not include any energy shifting
 class JWL {
-public:
+ public:
   JWL() = default;
-  PORTABLE_INLINE_FUNCTION JWL(const Real A, const Real B, const Real R1,
-                               const Real R2, const Real w, const Real rho0,
-                               const Real Cv)
+  PORTABLE_INLINE_FUNCTION JWL(const Real A, const Real B, const Real R1, const Real R2,
+                               const Real w, const Real rho0, const Real Cv)
       : _A(A), _B(B), _R1(R1), _R2(R2), _w(w), _rho0(rho0), _Cv(Cv) {}
   JWL GetOnDevice() { return *this; }
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(const Real rho,
+                                                        const Real temperature,
+                                                        Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                           Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(const Real rho,
+                                                            const Real temperature,
+                                                            Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(const Real rho,
+                                                           const Real temperature,
+                                                           Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy,
-                                 Real &press, Real &cv, Real &bmod,
-                                 const unsigned long output,
+  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                 Real &cv, Real &bmod, const unsigned long output,
                                  Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"JWL Params: "};
-    printf("%sA:%e B:%e R1: %e\nR2:%e w:%e rho0:%e\nCv:%e\n", s1, _A, _B, _R1,
-           _R2, _w, _rho0, _Cv);
+    printf("%sA:%e B:%e R1: %e\nR2:%e w:%e rho0:%e\nCv:%e\n", s1, _A, _B, _R1, _R2, _w,
+           _rho0, _Cv);
   }
   PORTABLE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
                                                               const Real temp,
-                                                              Real *lambda,
-                                                              Real &rho,
+                                                              Real *lambda, Real &rho,
                                                               Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("JWL"); }
 
-private:
+ private:
   Real _A, _B, _R1, _R2, _w, _rho0, _Cv;
   PORTABLE_INLINE_FUNCTION Real ReferenceEnergy(const Real rho) const;
   PORTABLE_INLINE_FUNCTION Real ReferencePressure(const Real rho) const;
@@ -622,47 +595,48 @@ private:
 };
 
 class DavisReactants {
-public:
+ public:
   DavisReactants() = default;
   PORTABLE_INLINE_FUNCTION
   DavisReactants(const Real rho0, const Real e0, const Real P0, const Real T0,
-                 const Real A, const Real B, const Real C, const Real G0,
-                 const Real Z, const Real alpha, const Real Cv0)
-      : _rho0(rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C), _G0(G0),
-        _Z(Z), _alpha(alpha), _Cv0(Cv0) {}
+                 const Real A, const Real B, const Real C, const Real G0, const Real Z,
+                 const Real alpha, const Real Cv0)
+      : _rho0(rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C), _G0(G0), _Z(Z),
+        _alpha(alpha), _Cv0(Cv0) {}
   DavisReactants GetOnDevice() { return *this; }
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(const Real rho,
+                                                        const Real temperature,
+                                                        Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                           Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(const Real rho,
+                                                            const Real temperature,
+                                                            Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(const Real rho,
+                                                           const Real temperature,
+                                                           Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy,
-                                 Real &press, Real &cv, Real &bmod,
-                                 const unsigned long output,
+  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                 Real &cv, Real &bmod, const unsigned long output,
                                  Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
   PORTABLE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
                                                               const Real temp,
-                                                              Real *lambda,
-                                                              Real &rho,
+                                                              Real *lambda, Real &rho,
                                                               Real &sie) const;
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -676,7 +650,7 @@ public:
   void inline Finalize() {}
   static std::string EosType() { return std::string("DavisReactants"); }
 
-private:
+ private:
   Real _rho0, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _Cv0;
   // static constexpr const char _eos_type[] = "DavisReactants";
   static constexpr unsigned long _preferred_input =
@@ -688,27 +662,30 @@ private:
 };
 
 class DavisProducts {
-public:
+ public:
   DavisProducts() = default;
   PORTABLE_INLINE_FUNCTION
-  DavisProducts(const Real a, const Real b, const Real k, const Real n,
-                const Real vc, const Real pc, const Real Cv, const Real E0)
+  DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
+                const Real pc, const Real Cv, const Real E0)
       : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv), _E0(E0) {}
   DavisProducts GetOnDevice() { return *this; }
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(const Real rho,
+                                                        const Real temperature,
+                                                        Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                           Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(const Real rho,
+                                                            const Real temperature,
+                                                            Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(const Real rho,
+                                                           const Real temperature,
+                                                           Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
@@ -717,16 +694,14 @@ public:
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
                                                               const Real temp,
-                                                              Real *lambda,
-                                                              Real &rho,
+                                                              Real *lambda, Real &rho,
                                                               Real &sie) const;
-  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy,
-                                 Real &press, Real &cv, Real &bmod,
-                                 const unsigned long output,
+  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                 Real &cv, Real &bmod, const unsigned long output,
                                  Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
   // PORTABLE_FUNCTION void PTofRE(const Real rho, const Real sie, Real *
   // lambda, Real& press, Real& temp, Real & dpdr, Real & dpde, Real & dtdr,
@@ -736,13 +711,13 @@ public:
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisProducts Params: "};
-    printf("%sa:%e b:%e k:%e\nn:%e vc:%e pc:%e\nCv:%e E0:%e\n", s1, _a, _b, _k,
-           _n, _vc, _pc, _Cv, _E0);
+    printf("%sa:%e b:%e k:%e\nn:%e vc:%e pc:%e\nCv:%e E0:%e\n", s1, _a, _b, _k, _n, _vc,
+           _pc, _Cv, _E0);
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("DavisProducts"); }
 
-private:
+ private:
   Real _a, _b, _k, _n, _vc, _pc, _Cv, _E0;
   // static constexpr const char _eos_type[] = "DavisProducts";
   static constexpr const unsigned long _preferred_input =
@@ -767,7 +742,7 @@ private:
   we use log-linear extrapolation.
 */
 class SpinerEOSDependsRhoT {
-public:
+ public:
   // A weakly typed index map for lambdas
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };
@@ -775,8 +750,7 @@ public:
 
   SpinerEOSDependsRhoT(const std::string &filename, int matid,
                        bool reproduciblity_mode = false);
-  SpinerEOSDependsRhoT(const std::string &filename,
-                       const std::string &materialName,
+  SpinerEOSDependsRhoT(const std::string &filename, const std::string &materialName,
                        bool reproducibility_mode = false);
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT() : memoryStatus_(DataStatus::Deallocated) {}
@@ -787,8 +761,7 @@ public:
   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
@@ -797,8 +770,7 @@ public:
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho,
-                                          const Real temperature,
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -810,27 +782,24 @@ public:
   Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
                                                Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho,
-                                            Real &sie) const;
+                                            Real *lambda, Real &rho, Real &sie) const;
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press,
-              Real &temp, Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const;
+  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const;
   PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-               Real &bmod, const unsigned long output,
-               Real *lambda = nullptr) const;
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const;
 
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -847,32 +816,29 @@ public:
     static constexpr char s3[]{"EOS file   = "};
     static constexpr char s4[]{"EOS mat ID = "};
     static constexpr char s5[]{"EOS name   = "};
-    printf("%s\n\t%s\n\t%s%s\n\t%s%i\n\t%s%s\n", s1, s2, s3, filename_, s4,
-           matid_, s5, materialName_);
+    printf("%s\n\t%s\n\t%s%s\n\t%s%i\n\t%s%s\n", s1, s2, s3, filename_, s4, matid_, s5,
+           materialName_);
     return;
   }
-  static PORTABLE_FORCEINLINE_FUNCTION
-  int nlambda() { return _n_lambda; }
+  static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }
   inline TableStatus tableStatus() const { return whereAmI_; }
   RootFinding1D::RootCounts counts;
   void Finalize();
   static std::string EosType() { return std::string("SpinerEOSDependsRhoT"); }
 
-private:
+ private:
   herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
                         hid_t coldGroup);
   void fixBulkModulus_();
   void setlTColdCrit_();
 
-  static PORTABLE_FORCEINLINE_FUNCTION Real
-  toLog_(const Real x, const Real offset) {
+  static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
     // return std::log10(x + offset + EPS);
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
     return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
-  static PORTABLE_FORCEINLINE_FUNCTION Real
-  fromLog_(const Real lx, const Real offset) {
+  static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
     return std::pow(10., lx) - offset;
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
@@ -905,20 +871,19 @@ private:
   Real lRhoFromPlT_(const Real P, const Real lT, TableStatus &whereAmI,
                     Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  void getLogsRhoT_(const Real rho, const Real temperature, Real &lRho,
-                    Real &lT, Real *lambda = nullptr) const;
+  void getLogsRhoT_(const Real rho, const Real temperature, Real &lRho, Real &lT,
+                    Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   Real sieFromlRhoTlT_(const Real lRho, const Real T, const Real lT,
                        const TableStatus &whereAmI) const;
   PORTABLE_FUNCTION
-  Real PFromRholRhoTlT_(const Real rho, const Real lRho, const Real T,
-                        const Real lT, const TableStatus &whereAmI) const;
+  Real PFromRholRhoTlT_(const Real rho, const Real lRho, const Real T, const Real lT,
+                        const TableStatus &whereAmI) const;
   PORTABLE_FUNCTION
-  Real CvFromlRholT_(const Real lRho, const Real lT,
-                     const TableStatus &whereAmI) const;
+  Real CvFromlRholT_(const Real lRho, const Real lT, const TableStatus &whereAmI) const;
   PORTABLE_FUNCTION
-  Real bModFromRholRhoTlT_(const Real rho, const Real lRho, const Real T,
-                           const Real lT, const TableStatus &whereAmI) const;
+  Real bModFromRholRhoTlT_(const Real rho, const Real lRho, const Real T, const Real lT,
+                           const TableStatus &whereAmI) const;
   PORTABLE_FUNCTION
   TableStatus getLocDependsRhoSie_(const Real lRho, const Real sie) const;
   PORTABLE_FUNCTION
@@ -930,8 +895,7 @@ private:
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] {"SpinerEOSDependsRhoT"};
   static constexpr const int numDataBoxes_ = 12;
-  Spiner::DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_,
-      dEdT_;
+  Spiner::DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
   Spiner::DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
   Spiner::DataBox lTColdCrit_;
   Spiner::DataBox PCold_, sieCold_, bModCold_;
@@ -976,7 +940,7 @@ private:
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
 class SpinerEOSDependsRhoSie {
-public:
+ public:
   struct SP5Tables {
     Spiner::DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
   };
@@ -984,8 +948,7 @@ public:
       : memoryStatus_(DataStatus::Deallocated) {}
   SpinerEOSDependsRhoSie(const std::string &filename, int matid,
                          bool reproducibility_mode = false);
-  SpinerEOSDependsRhoSie(const std::string &filename,
-                         const std::string &materialName,
+  SpinerEOSDependsRhoSie(const std::string &filename, const std::string &materialName,
                          bool reproducibility_mode = false);
   SpinerEOSDependsRhoSie GetOnDevice();
 
@@ -1023,18 +986,16 @@ public:
                                                Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho,
-                                            Real &sie) const;
+                                            Real *lambda, Real &rho, Real &sie) const;
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press,
-              Real &temp, Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const;
+  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const;
   PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-               Real &bmod, const unsigned long output,
-               Real *lambda = nullptr) const;
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
 
   PORTABLE_FUNCTION
@@ -1052,16 +1013,15 @@ public:
   Real sieMin() const { return fromLog_(T_.range(0).min(), lEOffset_); }
   Real sieMax() const { return fromLog_(T_.range(0).max(), lEOffset_); }
 
-  static PORTABLE_FORCEINLINE_FUNCTION
-  int nlambda() { return _n_lambda; }
+  static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
     static constexpr char s2[]{"depends on log_10(rho) and log_10(sie)"};
     static constexpr char s3[]{"EOS file   = "};
     static constexpr char s4[]{"EOS mat ID = "};
     static constexpr char s5[]{"EOS name   = "};
-    printf("%s\n\t%s\n\t%s%s\n\t%s%i\n\t%s%s\n", s1, s2, s3, filename_, s4,
-           matid_, s5, materialName_);
+    printf("%s\n\t%s\n\t%s%s\n\t%s%i\n\t%s%s\n", s1, s2, s3, filename_, s4, matid_, s5,
+           materialName_);
     return;
   }
   RootFinding1D::Status rootStatus() const { return status_; }
@@ -1069,18 +1029,16 @@ public:
   static std::string EosType() { return std::string("SpinerEOSDependsRhoSie"); }
   void Finalize();
 
-private:
+ private:
   herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
                         hid_t lEGroup);
   void calcBMod_(SP5Tables &tables);
 
-  static PORTABLE_FORCEINLINE_FUNCTION
-  Real toLog_(const Real x, const Real offset) {
+  static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
     return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
-  static PORTABLE_FORCEINLINE_FUNCTION
-  Real fromLog_(const Real lx, const Real offset) {
+  static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
     return std::pow(10., lx) - offset;
   }
   PORTABLE_FUNCTION
@@ -1126,7 +1084,7 @@ private:
 // is linear extrapolation in log-log space. We should reconsider this
 // and introduce extrapolation as needed.
 class StellarCollapse {
-public:
+ public:
   // A weakly typed index map for lambdas
   struct Lambda {
     enum Index { Ye = 0, lT = 1 };
@@ -1147,8 +1105,7 @@ public:
   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
@@ -1157,8 +1114,7 @@ public:
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho,
-                                          const Real temperature,
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -1170,16 +1126,14 @@ public:
   Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
                                                Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho,
-                                            Real &sie) const;
+                                            Real *lambda, Real &rho, Real &sie) const;
   /*
   // Provided by eos_variant
   PORTABLE_FUNCTION
@@ -1190,13 +1144,12 @@ public:
   */
   // TODO(JMM): Should this function fill in the mass fractions too?
   PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-               Real &bmod, const unsigned long output,
-               Real *lambda = nullptr) const;
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const;
 
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -1233,14 +1186,13 @@ public:
   void Finalize();
   static std::string EosType() { return std::string("StellarCollapse"); }
 
-private:
+ private:
   void LoadFromSP5File_(const std::string &filename);
   void LoadFromStellarCollapseFile_(const std::string &filename);
   int readSCInt_(const hid_t &file_id, const std::string &name);
-  void readBounds_(const hid_t &file_id, const std::string &name, int size,
-                   Real &lo, Real &hi);
-  void readSCDset_(const hid_t &file_id, const std::string &name,
-                   Spiner::DataBox &db);
+  void readBounds_(const hid_t &file_id, const std::string &name, int size, Real &lo,
+                   Real &hi);
+  void readSCDset_(const hid_t &file_id, const std::string &name, Spiner::DataBox &db);
 
   void medianFilter_(Spiner::DataBox &db);
   void medianFilter_(const Spiner::DataBox &in, Spiner::DataBox &out);
@@ -1254,8 +1206,7 @@ private:
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
   checkLambda_(Real *lambda) const noexcept {
     if (lambda == nullptr) {
-      EOS_ERROR(
-          "StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
+      EOS_ERROR("StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
     }
   }
 
@@ -1318,8 +1269,8 @@ private:
   PORTABLE_FUNCTION Real lTFromlRhoSie_(const Real lRho, const Real sie,
                                         Real *lambda) const noexcept;
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
-  getLogsFromRhoT_(const Real rho, const Real temp, Real *lambda, Real &lRho,
-                   Real &lT, Real &Ye) const noexcept {
+  getLogsFromRhoT_(const Real rho, const Real temp, Real *lambda, Real &lRho, Real &lT,
+                   Real &Ye) const noexcept {
     checkLambda_(lambda);
     lRho = lRho_(rho);
     lT = lT_(temp);
@@ -1327,8 +1278,8 @@ private:
     lambda[Lambda::lT] = lT;
   }
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
-  getLogsFromRhoSie_(const Real rho, const Real sie, Real *lambda, Real &lRho,
-                     Real &lT, Real &Ye) const noexcept {
+  getLogsFromRhoSie_(const Real rho, const Real sie, Real *lambda, Real &lRho, Real &lT,
+                     Real &Ye) const noexcept {
     lRho = lRho_(rho);
     lT = lTFromlRhoSie_(lRho, sie, lambda);
     Ye = lambda[Lambda::Ye];
@@ -1372,8 +1323,7 @@ private:
 
   // offsets must be non-negative
   Real lEOffset_;
-  static constexpr Real lRhoOffset_ =
-      0.0; // TODO(JMM): Address if this ever changes
+  static constexpr Real lRhoOffset_ = 0.0; // TODO(JMM): Address if this ever changes
   static constexpr Real lTOffset_ = 0.0;
   static constexpr Real lPOffset_ = 0.0;
   static constexpr Real lBOffset_ = 0.0;
@@ -1397,7 +1347,7 @@ private:
 // Only really works in serial
 // Not really supported on device
 class EOSPAC {
-public:
+ public:
   EOSPAC() = default;
   EOSPAC(int matid);
   EOSPAC GetOnDevice() { return *this; }
@@ -1405,36 +1355,36 @@ public:
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(const Real rho,
+                                                        const Real temperature,
+                                                        Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                           Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(const Real rho,
+                                                            const Real temperature,
+                                                            Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(const Real rho,
+                                                           const Real temperature,
+                                                           Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy,
-                                 Real &press, Real &cv, Real &bmod,
-                                 const unsigned long output,
+  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                 Real &cv, Real &bmod, const unsigned long output,
                                  Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho,
-                                            Real &sie) const;
-  PORTABLE_FUNCTION void PTofRE(const Real rho, const Real sie, Real *lambda,
-                                Real &press, Real &temp, Real &dpdr, Real &dpde,
-                                Real &dtdr, Real &dtde) const;
-  PORTABLE_FUNCTION void ValuesAtReferenceState(Real &rho, Real &temp,
-                                                Real &sie, Real &press,
-                                                Real &cv, Real &bmod,
+                                            Real *lambda, Real &rho, Real &sie) const;
+  PORTABLE_FUNCTION void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press,
+                                Real &temp, Real &dpdr, Real &dpde, Real &dtdr,
+                                Real &dtde) const;
+  PORTABLE_FUNCTION void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
+                                                Real &press, Real &cv, Real &bmod,
                                                 Real &dpde, Real &dvdt,
                                                 Real *lambda = nullptr) const;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -1445,7 +1395,7 @@ public:
     printf("EOSPAC parameters:\nmatid = %s\n", matid_);
   }
 
-private:
+ private:
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   int matid_;
@@ -1468,26 +1418,22 @@ private:
 #endif // SINGULARITY_USE_EOSPAC
 
 using EOS = Variant<
-    IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts,
-    ScaledEOS<IdealGas>, ShiftedEOS<IdealGas>, ShiftedEOS<ScaledEOS<IdealGas>>,
-    ScaledEOS<ShiftedEOS<IdealGas>>, RelativisticEOS<IdealGas>,
-    ScaledEOS<Gruneisen>, ShiftedEOS<Gruneisen>,
-    ScaledEOS<ShiftedEOS<Gruneisen>>,
-    ScaledEOS<JWL>, ShiftedEOS<JWL>, ScaledEOS<ShiftedEOS<JWL>>,
-    ScaledEOS<DavisReactants>, ShiftedEOS<DavisReactants>,
-    ScaledEOS<ShiftedEOS<DavisReactants>>,
+    IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts, ScaledEOS<IdealGas>,
+    ShiftedEOS<IdealGas>, ShiftedEOS<ScaledEOS<IdealGas>>,
+    ScaledEOS<ShiftedEOS<IdealGas>>, RelativisticEOS<IdealGas>, ScaledEOS<Gruneisen>,
+    ShiftedEOS<Gruneisen>, ScaledEOS<ShiftedEOS<Gruneisen>>, ScaledEOS<JWL>,
+    ShiftedEOS<JWL>, ScaledEOS<ShiftedEOS<JWL>>, ScaledEOS<DavisReactants>,
+    ShiftedEOS<DavisReactants>, ScaledEOS<ShiftedEOS<DavisReactants>>,
     ScaledEOS<DavisProducts>, ShiftedEOS<DavisProducts>,
     ScaledEOS<ShiftedEOS<DavisProducts>>
 #ifdef SPINER_USE_HDF
     ,
-    SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie,
-    ScaledEOS<SpinerEOSDependsRhoT>, ScaledEOS<SpinerEOSDependsRhoSie>,
-    ShiftedEOS<SpinerEOSDependsRhoT>, ShiftedEOS<SpinerEOSDependsRhoSie>,
-    ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoT>>,
+    SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, ScaledEOS<SpinerEOSDependsRhoT>,
+    ScaledEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<SpinerEOSDependsRhoT>,
+    ShiftedEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoT>>,
     ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoSie>>,
     ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoT>>,
-    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoSie>>,
-    RelativisticEOS<SpinerEOSDependsRhoT>,
+    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoSie>>, RelativisticEOS<SpinerEOSDependsRhoT>,
     RelativisticEOS<SpinerEOSDependsRhoSie>,
     // TODO(JMM): Might need shifted + relativistic
     // for StellarCollapse. Might not. Negative
@@ -1498,8 +1444,8 @@ using EOS = Variant<
 #endif // SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
     ,
-    EOSPAC, ScaledEOS<EOSPAC>, ShiftedEOS<EOSPAC>,
-    ShiftedEOS<ScaledEOS<EOSPAC>>, ScaledEOS<ShiftedEOS<EOSPAC>>
+    EOSPAC, ScaledEOS<EOSPAC>, ShiftedEOS<EOSPAC>, ShiftedEOS<ScaledEOS<EOSPAC>>,
+    ScaledEOS<ShiftedEOS<EOSPAC>>
 #endif // SINGULARITY_USE_EOSPAC
     >;
 

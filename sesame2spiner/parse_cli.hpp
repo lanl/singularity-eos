@@ -17,9 +17,9 @@
 #ifndef _SESAME2SPINER_PARSER_HPP_
 #define _SESAME2SPINER_PARSER_HPP_
 
+#include "io_eospac.hpp"
 #include <string>
 #include <vector>
-#include "io_eospac.hpp"
 
 const std::string EXAMPLESTRING = R"(
 # air.dat
@@ -63,11 +63,8 @@ shrinklTBounds = 0.15
 shrinkleBounds = 0.5
 )";
 
-void parseCLI(int argc, char* argv[],
-	      std::string& savename,
-	      std::vector<std::string>& filenames,
-	      bool& printMetadata,
-	      Verbosity& eospacWarn,
-	      std::string& helpMessage);
+void parseCLI(int argc, char *argv[], std::string &savename,
+              std::vector<std::string> &filenames, bool &printMetadata,
+              Verbosity &eospacWarn, std::string &helpMessage);
 
 #endif // _SESAME2SPINER_PARSER_HPP_
