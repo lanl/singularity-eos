@@ -145,10 +145,10 @@ function(add_library_target target directory)
     add_library(${target} INTERFACE)
   endif()
 
+
   #----------------------------------------------------------------------------#
   # Create an alias for local builds
   #----------------------------------------------------------------------------#
-
   add_library(${lib_NAMESPACE}::${target} ALIAS ${target})
 
   #----------------------------------------------------------------------------#

@@ -12,6 +12,7 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 project(sesame2spiner)
+find_package(singularity-eos REQUIRED)
 
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME}
@@ -33,6 +34,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
                             "$<INSTALL_INTERFACE:${CMAKE_INSTALL_BINDIR}>"
                           )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE singularity-eos::singularity-eos)
+target_link_libraries(${PROJECT_NAME} PUBLIC singularity-eos::singularity-eos)
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 # TODO: Add tests for sesame2spiner here.

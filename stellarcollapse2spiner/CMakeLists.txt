@@ -13,9 +13,12 @@
 #------------------------------------------------------------------------------
 
 project(stellarcollapse2spiner)
+
+find_package(singularity-eos REQUIRED)
+
 add_executable(${PROJECT_NAME} main.cpp)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE
+target_link_libraries(${PROJECT_NAME} PUBLIC
   singularity-eos::singularity-eos)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)

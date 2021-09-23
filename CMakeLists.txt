@@ -59,7 +59,7 @@ install(
   FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.h
   DESTINATION include
 )
-
+set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
 include(library)
 
 add_library_target(${PROJECT_NAME} singularity-eos
@@ -69,7 +69,7 @@ add_library_target(${PROJECT_NAME} singularity-eos
     ${PROJECT_VERSION}
   NAMESPACE
     ${PROJECT_NAME}
-  DEFINE_PRIVATE
+  DEFINE_PUBLIC
     ${TPL_DEFINES}
   INCLUDE_PUBLIC
     ${TPL_INCLUDES}
@@ -95,6 +95,8 @@ foreach(_variableName ${_matchedVars})
   set(SINGULARITY_CONFIG_CODE
     "${SINGULARITY_CONFIG_CODE}\nset(${_tmpvariableName} \"${${_variableName}}\")")
 endforeach()
+#need to export this, maybe a better way?
+set(SINGULARITY_CONFIG_CODE "${SINGULARITY_CONFIG_CODE}\nset(SPINER_USE_HDF \"${SPINER_USE_HDF}\")")
 
 configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}Config.cmake.in
 ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.cmake @ONLY)
