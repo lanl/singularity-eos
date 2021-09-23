@@ -19,10 +19,10 @@
 #include <time.h>
 #include <vector>
 
-#include <singularity-eos/eos/eos.hpp>
-#include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
+#include <singularity-eos/closure/mixed_cell_models.hpp>
+#include <singularity-eos/eos/eos.hpp>
 #include <spiner/databox.hpp>
 
 constexpr int NMAT = 3;
@@ -33,37 +33,39 @@ constexpr int HIST_SIZE = 10;
 using namespace singularity;
 using Spiner::DataBox;
 
-template <typename T> class LinearIndexer {
-public:
+template <typename T>
+class LinearIndexer {
+ public:
   PORTABLE_FUNCTION LinearIndexer() = default;
   LinearIndexer(const T &t) : data_(t) {}
   PORTABLE_INLINE_FUNCTION
   auto &operator[](const int i) const { return data_(i); }
 
-private:
+ private:
   T data_;
 };
 
-template <typename T> class Indexer2D {
-public:
+template <typename T>
+class Indexer2D {
+ public:
   PORTABLE_FUNCTION Indexer2D() = default;
   PORTABLE_FUNCTION Indexer2D(const int j, const T &t) : j_(j), data_(t) {}
   Indexer2D(const int j, const T &&t) = delete; // prevents r-value binding
   PORTABLE_INLINE_FUNCTION
   auto &operator[](const int i) const { return data_(j_, i); }
 
-private:
+ private:
   const int j_;
   const T &data_;
 };
 
-template <typename EOSIndexer> void set_eos(EOSIndexer &&eos) {
-  eos[0] = Gruneisen(394000.0, 1.489, 0.0, 0.0, 2.02, 0.47, 8.93, 297.0, 1.0e6,
-                     0.383e7);
-  eos[1] = DavisReactants(1.890, 4.115e10, 1.0e6, 297.0, 1.8, 4.6, 0.34, 0.56,
-                          0.0, 0.4265, 0.001074e10);
-  eos[2] = DavisProducts(0.798311, 0.58, 1.35, 2.66182, 0.75419, 3.2e10,
-                         0.001072e10, 0.0);
+template <typename EOSIndexer>
+void set_eos(EOSIndexer &&eos) {
+  eos[0] = Gruneisen(394000.0, 1.489, 0.0, 0.0, 2.02, 0.47, 8.93, 297.0, 1.0e6, 0.383e7);
+  eos[1] = DavisReactants(1.890, 4.115e10, 1.0e6, 297.0, 1.8, 4.6, 0.34, 0.56, 0.0,
+                          0.4265, 0.001074e10);
+  eos[2] =
+      DavisProducts(0.798311, 0.58, 1.35, 2.66182, 0.75419, 3.2e10, 0.001072e10, 0.0);
 }
 
 template <typename RealIndexer, typename EOSIndexer>
@@ -121,7 +123,7 @@ int main(int argc, char *argv[]) {
     RView sie_v("sie", NPTS);
     RView temp_v("temp", NPTS);
     RView press_v("press", NPTS);
-    Kokkos::View<int*,atomic_view> hist_d("histogram", HIST_SIZE);
+    Kokkos::View<int *, atomic_view> hist_d("histogram", HIST_SIZE);
     auto rho_vh = Kokkos::create_mirror_view(rho_v);
     auto vfrac_vh = Kokkos::create_mirror_view(vfrac_v);
     auto sie_vh = Kokkos::create_mirror_view(sie_v);
@@ -206,8 +208,8 @@ int main(int argc, char *argv[]) {
           sie_tot /= rho_tot;
 
           int niter = 0;
-          bool success = pte_closure_josh(NMAT, eos, 1.0, sie_tot, rho, vfrac,
-                                          sie, temp, press, lambda, niter);
+          bool success = pte_closure_josh(NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp,
+                                          press, lambda, niter);
           if (success) {
             nsuccess_d() += 1;
           }
@@ -217,8 +219,7 @@ int main(int argc, char *argv[]) {
     Kokkos::fence();
 #endif
     auto stop = std::chrono::high_resolution_clock::now();
-    auto sum_time =
-        std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    auto sum_time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(nsuccess, nsuccess_d);
@@ -227,8 +228,8 @@ int main(int argc, char *argv[]) {
 
     Real milliseconds = sum_time.count() / 1e3;
 
-    std::cout << "Finished " << NTRIAL << " solves in " << milliseconds
-              << " milliseconds" << std::endl;
+    std::cout << "Finished " << NTRIAL << " solves in " << milliseconds << " milliseconds"
+              << std::endl;
     std::cout << "Solves/ms = " << NTRIAL / milliseconds << std::endl;
     std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess
               << std::endl;
@@ -237,7 +238,7 @@ int main(int argc, char *argv[]) {
               << "----------------------\n";
     for (int i = 0; i < HIST_SIZE; ++i) {
       std::cout << i << "\t" << hist_vh[i] << "\n";
-        }
+    }
     std::cout << std::endl;
   }
 #ifdef PORTABILITY_STRATEGY_KOKKOS

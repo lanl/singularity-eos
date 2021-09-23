@@ -15,11 +15,11 @@
 #ifndef _SINGULARITY_EOS_EOS_SCALED_EOS_
 #define _SINGULARITY_EOS_EOS_SCALED_EOS_
 
-#include <iostream>
 #include "stdio.h"
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <utility>
 
@@ -29,8 +29,9 @@
 
 namespace singularity {
 
-template <typename T> class ScaledEOS {
-public:
+template <typename T>
+class ScaledEOS {
+ public:
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
       : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {}
@@ -42,71 +43,61 @@ public:
   PORTABLE_FUNCTION
   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {
-    return t_.TemperatureFromDensityInternalEnergy(scale_ * rho,
-                                                   inv_scale_ * sie, lambda);
+    return t_.TemperatureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
+                                                   lambda);
   }
   PORTABLE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
-    Real energy =
-        t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
+    Real energy = t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
     return scale_ * energy;
   }
   PORTABLE_FUNCTION
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const {
-    return t_.PressureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
-                                                lambda);
+    return t_.PressureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda = nullptr) const {
-    return t_.SpecificHeatFromDensityInternalEnergy(scale_ * rho,
-                                                    inv_scale_ * sie, lambda);
+    return t_.SpecificHeatFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
+                                                    lambda);
   }
   PORTABLE_FUNCTION
   Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {
-    return t_.BulkModulusFromDensityInternalEnergy(scale_ * rho,
-                                                   inv_scale_ * sie, lambda);
+    return t_.BulkModulusFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
+                                                   lambda);
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
                                                Real *lambda = nullptr) const {
-    return t_.GruneisenParamFromDensityInternalEnergy(scale_ * rho,
-                                                      inv_scale_ * sie, lambda);
+    return t_.GruneisenParamFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie,
+                                                      lambda);
   }
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
-    return t_.PressureFromDensityTemperature(scale_ * rho, temperature,
-					     lambda);
+    return t_.PressureFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho,
-                                          const Real temperature,
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const {
-    return t_.SpecificHeatFromDensityTemperature(scale_ * rho, temperature,
-                                                 lambda);
+    return t_.SpecificHeatFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
                                          Real *lambda = nullptr) const {
-    return t_.BulkModulusFromDensityTemperature(scale_ * rho, temperature,
-                                                lambda);
+    return t_.BulkModulusFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
-    return t_.GruneisenParamFromDensityTemperature(scale_ * rho, temperature,
-                                                   lambda);
+    return t_.GruneisenParamFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-               Real &bmod, const unsigned long output,
-               Real *lambda = nullptr) const {
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const {
     Real srho, senergy;
     switch (t_.PreferredInput()) {
     case thermalqs::density | thermalqs::temperature:
@@ -125,11 +116,10 @@ public:
   }
 
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const {
-    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt,
-                              lambda);
+    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
     rho *= inv_scale_;
     sie *= scale_;
   }
@@ -146,26 +136,24 @@ public:
   }
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho,
-                                            Real &sie) const {
+                                            Real *lambda, Real &rho, Real &sie) const {
     t_.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
     rho = rho * inv_scale_;
     sie = sie * scale_;
   }
 
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press,
-              Real &temp, Real &dpdr, Real &dpde, Real &dtdr,
-              Real &dtde) const {
-    t_.PTofRE(scale_ * rho, inv_scale_ * sie, lambda, press, temp, dpdr, dpde,
-              dtdr, dtde);
+  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
+    t_.PTofRE(scale_ * rho, inv_scale_ * sie, lambda, press, temp, dpdr, dpde, dtdr,
+              dtde);
     dpdr = dpdr * scale_;
     dtdr = dtdr * scale_;
     dpde = dpde * inv_scale_;
     dtde = dtde * inv_scale_;
   }
 
-private:
+ private:
   T t_;
   double scale_;
   double inv_scale_;

@@ -54,8 +54,7 @@ struct Bounds {
   Bounds(Real min, Real max, int N, bool convertToLog = false) : offset(0) {
     if (convertToLog) {
       constexpr Real epsilon = std::numeric_limits<float>::epsilon();
-      const Real min_offset =
-          std::max(10 * std::abs(epsilon), std::abs(epsilon * max));
+      const Real min_offset = std::max(10 * std::abs(epsilon), std::abs(epsilon * max));
       if (min < 0)
         offset = std::abs(min) + min_offset;
       else if (min == 0) {
@@ -68,12 +67,8 @@ struct Bounds {
     }
     grid = RegularGrid1D(min, max, N);
   }
-  PORTABLE_INLINE_FUNCTION Real log2lin(Real xl) const {
-    return pow(10., xl) - offset;
-  }
-  PORTABLE_INLINE_FUNCTION Real i2lin(int i) const {
-    return log2lin(grid.x(i));
-  }
+  PORTABLE_INLINE_FUNCTION Real log2lin(Real xl) const { return pow(10., xl) - offset; }
+  PORTABLE_INLINE_FUNCTION Real i2lin(int i) const { return log2lin(grid.x(i)); }
   RegularGrid1D grid;
   Real offset;
 };
@@ -104,8 +99,8 @@ int main(int argc, char *argv[]) {
     }
 
     std::cout << "Profiling a stellar collapse table" << std::endl;
-    std::cout << "\t...Creating an ideal gas equation of state with gamma = "
-              << gamma << " to compare to." << std::endl;
+    std::cout << "\t...Creating an ideal gas equation of state with gamma = " << gamma
+              << " to compare to." << std::endl;
 
     const Real Cv = 1. / (MP * (gamma - 1));
     IdealGas ig(gamma - 1, Cv);
@@ -118,14 +113,12 @@ int main(int argc, char *argv[]) {
     auto sc_d = sc.GetOnDevice();
 
     std::cout << "\t...Table bounds are:\n"
-              << "\t\tlog(rho) in [" << sc.lRhoMin() << ", " << sc.lRhoMax()
-              << "]\n"
+              << "\t\tlog(rho) in [" << sc.lRhoMin() << ", " << sc.lRhoMax() << "]\n"
               << "\t\tlog(T)   in [" << std::log10(sc.TMin()) << ", "
               << std::log10(sc.TMax()) << "]\n"
-              << "\t\tYe       in [" << sc.YeMin() << ", " << sc.YeMax()
-              << "]\n"
-              << "\t\tsie      in [" << sc.sieMin() << ", " << sc.sieMax()
-              << "]" << std::endl;
+              << "\t\tYe       in [" << sc.YeMin() << ", " << sc.YeMax() << "]\n"
+              << "\t\tsie      in [" << sc.sieMin() << ", " << sc.sieMax() << "]"
+              << std::endl;
 
     std::cout << "\t...Ofsets are:\n"
               << "\t\tlRho = " << sc.lRhoOffset() << "\n"
@@ -150,12 +143,11 @@ int main(int argc, char *argv[]) {
 #endif // PORTABILITY_STRATEGY
     DataBox lambdas_d(AllocationTarget::Device, nfine, nfine, nfine, 2);
 
-    std::cout
-        << "\t...Setting loop bounds.\n"
-        << "\t\tBounds set to force extrapolation and no exact grid points."
-        << std::endl;
-    Bounds lTBounds(sc.TMin() - 0.1 * std::abs(sc.TMin()),
-                    sc.TMax() + 0.1 * sc.TMax(), nfine, true);
+    std::cout << "\t...Setting loop bounds.\n"
+              << "\t\tBounds set to force extrapolation and no exact grid points."
+              << std::endl;
+    Bounds lTBounds(sc.TMin() - 0.1 * std::abs(sc.TMin()), sc.TMax() + 0.1 * sc.TMax(),
+                    nfine, true);
     Bounds lRhoBounds(sc.rhoMin() - 0.1 * std::abs(sc.rhoMin()),
                       sc.rhoMax() + 0.1 * sc.rhoMax(), nfine, true);
     Bounds YeBounds(sc.YeMin() - 0.1 * std::abs(sc.YeMin()),
@@ -206,8 +198,7 @@ int main(int argc, char *argv[]) {
         PORTABLE_LAMBDA(const int iYe, const int iT, const int irho) {
           const Real rho = lRhoBounds.i2lin(irho);
           const Real T = lTBounds.i2lin(iT);
-          diffs_press_d(iYe, iT, irho) -=
-              ig_d.PressureFromDensityTemperature(rho, T);
+          diffs_press_d(iYe, iT, irho) -= ig_d.PressureFromDensityTemperature(rho, T);
         });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(diffs_press_hv, diffs_press_dv);
@@ -227,9 +218,8 @@ int main(int argc, char *argv[]) {
             const Real sie = lEBounds.i2lin(iE);
             const Real Ye = YeBounds.i2lin(iYe);
             lambdas_d(iYe, iE, irho, 0) = Ye;
-            diffs_t_d(iYe, iE, irho) =
-                sc_d.TemperatureFromDensityInternalEnergy(
-                    rho, sie, &(lambdas_d(iYe, iE, irho, 0)));
+            diffs_t_d(iYe, iE, irho) = sc_d.TemperatureFromDensityInternalEnergy(
+                rho, sie, &(lambdas_d(iYe, iE, irho, 0)));
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::fence();
@@ -244,16 +234,14 @@ int main(int argc, char *argv[]) {
         PORTABLE_LAMBDA(const int iYe, const int iE, const int irho) {
           const Real rho = lRhoBounds.i2lin(irho);
           const Real sie = lEBounds.i2lin(iE);
-          diffs_t_d(iYe, iE, irho) -=
-              ig_d.TemperatureFromDensityInternalEnergy(rho, sie);
+          diffs_t_d(iYe, iE, irho) -= ig_d.TemperatureFromDensityInternalEnergy(rho, sie);
         });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(diffs_t_hv, diffs_t_dv);
 #endif
 
-    std::cout << "\t...Running once on host to histogram accesses..."
-              << std::endl;
-    std::vector<Real> lambdas_v(nfine*nfine*nfine*2);
+    std::cout << "\t...Running once on host to histogram accesses..." << std::endl;
+    std::vector<Real> lambdas_v(nfine * nfine * nfine * 2);
     DataBox lambdas_h(lambdas_v.data(), nfine, nfine, nfine, 2);
     for (int trial = 0; trial < NTRIALS; ++trial) {
       for (int iYe = 0; iYe < nfine; ++iYe) {
@@ -270,30 +258,26 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    std::cout
-        << "\nRESULTS:\n"
-        << "Don't worry if errors are large. These are absolute, and include "
-        << "extrapolation.\n"
-        << "\tP(rho, T, Ye) time/point (microseconds)   = "
-        << durationInterp.count() /
-               static_cast<Real>(nfine * nfine * nfine * NTRIALS)
-        << "\n"
-        << "\tT(rho, sie, Ye) time/point (microseconds) = "
-        << durationRoot.count() /
-               static_cast<Real>(nfine * nfine * nfine * NTRIALS)
-        << "\n"
-        << "\tDelta P bounded by                        = "
-        << std::max(std::abs(diffs_press_h.min()),
-                    std::abs(diffs_press_h.max()))
-        << "\n"
-        << "\tDelta T bounded by                        = "
-        << std::max(std::abs(diffs_t_h.min()), std::abs(diffs_t_h.max()))
-        << "\n"
-        << "Root finding:\n"
-        << "its\tpercent taken:\n";
+    std::cout << "\nRESULTS:\n"
+              << "Don't worry if errors are large. These are absolute, and include "
+              << "extrapolation.\n"
+              << "\tP(rho, T, Ye) time/point (microseconds)   = "
+              << durationInterp.count() /
+                     static_cast<Real>(nfine * nfine * nfine * NTRIALS)
+              << "\n"
+              << "\tT(rho, sie, Ye) time/point (microseconds) = "
+              << durationRoot.count() / static_cast<Real>(nfine * nfine * nfine * NTRIALS)
+              << "\n"
+              << "\tDelta P bounded by                        = "
+              << std::max(std::abs(diffs_press_h.min()), std::abs(diffs_press_h.max()))
+              << "\n"
+              << "\tDelta T bounded by                        = "
+              << std::max(std::abs(diffs_t_h.min()), std::abs(diffs_t_h.max())) << "\n"
+              << "Root finding:\n"
+              << "its\tpercent taken:\n";
     Real tot = sc.counts.total();
     for (int i = 0; i < sc.counts.nBins(); ++i) {
-      std::cout << i << "\t" << 100.0*sc.counts[i]/tot << "\n";
+      std::cout << i << "\t" << 100.0 * sc.counts[i] / tot << "\n";
     }
     std::cout << std::endl;
     sc_d.Finalize();

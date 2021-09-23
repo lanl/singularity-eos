@@ -22,13 +22,12 @@
 
 using singularity::StellarCollapse;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   if (argc < 3) {
     std::cout << "Converts a Stellar Collapse EOS file into an SP5 file.\n"
               << "Performs relevant data cleanup for use in fluid codes.\n"
               << "Usage:\n"
-              << argv[0] << " input_filename ouutput_filename"
-              << std::endl;
+              << argv[0] << " input_filename ouutput_filename" << std::endl;
     return 1;
   }
 

@@ -15,11 +15,11 @@
 #ifndef _SINGULARITY_EOS_EOS_RELATIVISTIC_EOS_
 #define _SINGULARITY_EOS_EOS_RELATIVISTIC_EOS_
 
-#include <iostream>
 #include "stdio.h"
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <limits>
 #include <utility>
 
@@ -29,8 +29,9 @@
 
 namespace singularity {
 
-template <typename T> class RelativisticEOS {
-public:
+template <typename T>
+class RelativisticEOS {
+ public:
   // move semantics ensures dynamic memory comes along for the ride
   RelativisticEOS(T &&t, const Real cl)
       : t_(std::forward<T>(t)), cl_(cl) // speed of light, units arbitrary
@@ -48,8 +49,7 @@ public:
     return t_.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   }
   PORTABLE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
     return t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
   }
@@ -82,8 +82,7 @@ public:
     return t_.PressureFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho,
-                                          const Real temperature,
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const {
     return t_.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
   }
@@ -97,15 +96,13 @@ public:
     return std::max(0.0, bmod / (std::abs(h) + EPS));
   }
   PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho,
-                                            const Real temperature,
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
                                             Real *lambda = nullptr) const {
     return t_.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-               Real &bmod, const unsigned long output,
-               Real *lambda = nullptr) const {
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const {
     t_.FillEos(rho, temp, energy, press, cv, bmod, output, lambda);
   }
 
@@ -118,26 +115,23 @@ public:
   PORTABLE_FUNCTION void PrintParams() const { t_.PrintParams(); }
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho,
-                                            Real &sie) const {
+                                            Real *lambda, Real &rho, Real &sie) const {
     t_.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
   }
 
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press,
-              Real &temp, Real &dpdr, Real &dpde, Real &dtdr,
-              Real &dtde) const {
+  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
     t_.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr, dtde);
   }
   PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                              Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const {
-    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt,
-                              lambda);
+    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 
-private:
+ private:
   T t_;
   Real cl_, cl2_;
 };
