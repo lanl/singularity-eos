@@ -1116,7 +1116,7 @@ using EOS = Variant<
     RelativisticEOS<SpinerEOSDependsRhoT>,
     RelativisticEOS<SpinerEOSDependsRhoSie>,
     UnitSystem<SpinerEOSDependsRhoT>,
-    UnitSystem<SpinerEOSDependsRhoT>,
+    UnitSystem<SpinerEOSDependsRhoSie>,
     // TODO(JMM): Might need shifted + relativistic
     // for StellarCollapse. Might not. Negative
     // energies can throw off normalization of cs2 by
