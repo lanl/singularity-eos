@@ -58,12 +58,11 @@ class UnitSystem {
         inv_dtde_unit_(sie_unit / temp_unit) // obviously this is also Cv
         ,
         inv_cv_unit_(temp_unit / sie_unit),
-        inv_gruneisen_unit_(rho_unit * sie_unit / press_unit_),
         inv_bmod_unit_(1 / press_unit_) {}
   UnitSystem(T &&t, eos_units_init::LengthTimeUnitsInit, const Real time_unit,
              const Real mass_unit, const Real length_unit, const Real temp_unit)
       : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag,
-                   mass_unit / length_unit * length_unit * length_unit,
+                   mass_unit / (length_unit * length_unit * length_unit),
                    length_unit * length_unit / (time_unit * time_unit), temp_unit) {}
   UnitSystem(T &&t, const Real rho_unit, const Real sie_unit, const Real temp_unit)
       : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag, rho_unit,
@@ -116,7 +115,7 @@ class UnitSystem {
                                                Real *lambda = nullptr) const {
     const Real gm1 = t_.GruneisenParamFromDensityInternalEnergy(rho * rho_unit_,
                                                                 sie * sie_unit_, lambda);
-    return inv_gruneisen_unit_ * gm1;
+    return gm1;
   }
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temp,
@@ -144,7 +143,7 @@ class UnitSystem {
                                             Real *lambda = nullptr) const {
     const Real gm1 = t_.GruneisenParamFromDensityTemperature(rho * rho_unit_,
                                                              temp * temp_unit_, lambda);
-    return inv_gruneisen_unit_ * gm1;
+    return gm1;
   }
 
   PORTABLE_FUNCTION
@@ -225,7 +224,7 @@ class UnitSystem {
   Real rho_unit_, sie_unit_, temp_unit_, press_unit_;
   Real inv_rho_unit_, inv_sie_unit_, inv_temp_unit_, inv_press_unit_;
   Real inv_dpde_unit_, inv_dvdt_unit_, inv_dpdr_unit_, inv_dtdr_unit_, inv_dtde_unit_;
-  Real inv_cv_unit_, inv_gruneisen_unit_, inv_bmod_unit_;
+  Real inv_cv_unit_, inv_bmod_unit_;
 };
 
 } // namespace singularity
