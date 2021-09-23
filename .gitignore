@@ -6,5 +6,5 @@ utils/variant
 .env
 env
 build
-.cache
 .vscode
+.cache

@@ -19,6 +19,10 @@ set(eos_HEADERS
   singularity_eos.hpp
   base/constants.hpp
   base/eos_error.hpp
+  modifiers/eos_unitsystem.hpp
+  modifiers/scaled_eos.hpp
+  modifiers/shifted_eos.hpp
+  modifiers/relativistic_eos.hpp
 )
 
 set(eos_SOURCES
@@ -42,6 +46,7 @@ if(SINGULARITY_USE_FORTRAN)
     ${eos_SOURCES}
     singularity_eos.f90
   )
+
 endif()
 
 #------------------------------------------------------------------------------#

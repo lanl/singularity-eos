@@ -26,11 +26,15 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
   bool scaled = (modifiers.count(EOSModifier::Scaled) > 0);
   bool shifted = (modifiers.count(EOSModifier::Shifted) > 0);
   bool relativistic = (modifiers.count(EOSModifier::Relativistic) > 0);
-  if ((shifted || scaled || relativistic) && !(isModifiable(type))) {
+  bool units = (modifiers.count(EOSModifier::UnitSystem) > 0);
+  if ((shifted || scaled || relativistic || units) && !(isModifiable(type))) {
     EOS_ERROR("Modifiers not supported for this EOS");
   }
-  if (relativistic && (shifted || scaled)) {
-    EOS_ERROR("Relativistic modifier cannot be combined with shift or scale");
+  if (relativistic && (shifted || scaled || units)) {
+    EOS_ERROR("Relativistic modifier currently must be applied alone");
+  }
+  if (units && (shifted || scaled || relativistic)) {
+    EOS_ERROR("Unit System modifier currently must be applied alone");
   }
   Real scale = 1;
   if (scaled) {
@@ -44,10 +48,48 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
   if (relativistic && (modifiers[EOSModifier::Relativistic].count("cl") > 0)) {
     cl = mpark::get<Real>(modifiers[EOSModifier::Relativistic]["cl"]);
   }
+  bool use_length_time = false;
+  if (units && (modifiers[EOSModifier::UnitSystem].count("use_length_time") > 0)) {
+    use_length_time =
+        mpark::get<bool>(modifiers[EOSModifier::UnitSystem]["use_length_time"]);
+  }
+  Real rho_unit = 1;
+  Real sie_unit = 1;
+  Real temp_unit = 1;
+  Real time_unit = 1;
+  Real mass_unit = 1;
+  Real length_unit = 1;
+  if (units) {
+    if (use_length_time) {
+      if (modifiers[EOSModifier::UnitSystem].count("time_unit") > 0) {
+        time_unit = mpark::get<Real>(modifiers[EOSModifier::UnitSystem]["time_unit"]);
+      }
+      if (modifiers[EOSModifier::UnitSystem].count("mass_unit") > 0) {
+        mass_unit = mpark::get<Real>(modifiers[EOSModifier::UnitSystem]["mass_unit"]);
+      }
+      if (modifiers[EOSModifier::UnitSystem].count("length_unit") > 0) {
+        length_unit = mpark::get<Real>(modifiers[EOSModifier::UnitSystem]["length_unit"]);
+      }
+    } else {
+      if (modifiers[EOSModifier::UnitSystem].count("rho_unit") > 0) {
+        rho_unit = mpark::get<Real>(modifiers[EOSModifier::UnitSystem]["rho_unit"]);
+      }
+      if (modifiers[EOSModifier::UnitSystem].count("sie_unit") > 0) {
+        sie_unit = mpark::get<Real>(modifiers[EOSModifier::UnitSystem]["sie_unit"]);
+      }
+    }
+    if (modifiers[EOSModifier::UnitSystem].count("temp_unit") > 0) {
+      temp_unit = mpark::get<Real>(modifiers[EOSModifier::UnitSystem]["temp_unit"]);
+    }
+  }
   if (type == EOSType::IdealGas) {
     Real gm1 = mpark::get<Real>(base_params["gm1"]);
     Real Cv = mpark::get<Real>(base_params["Cv"]);
     IdealGas g(gm1, Cv);
+    if (units) {
+      return makeUnitSystem(std::move(g), use_length_time, rho_unit, sie_unit, temp_unit,
+                            time_unit, mass_unit, length_unit);
+    }
     if (relativistic) {
       return makeRelativistic(std::move(g), cl);
     }
@@ -61,12 +103,20 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
       int matid = mpark::get<int>(base_params["matid"]);
       if (type == EOSType::SpinerEOSDependsRhoT) {
         SpinerEOSDependsRhoT s(filename, matid, reproducibility_mode);
+        if (units) {
+          return makeUnitSystem(std::move(s), use_length_time, rho_unit, sie_unit,
+                                temp_unit, time_unit, mass_unit, length_unit);
+        }
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
         return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
       } else {
         SpinerEOSDependsRhoSie s(filename, matid, reproducibility_mode);
+        if (units) {
+          return makeUnitSystem(std::move(s), use_length_time, rho_unit, sie_unit,
+                                temp_unit, time_unit, mass_unit, length_unit);
+        }
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
@@ -76,12 +126,20 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
       string materialName = mpark::get<string>(base_params["materialName"]);
       if (type == EOSType::SpinerEOSDependsRhoT) {
         SpinerEOSDependsRhoT s(filename, materialName, reproducibility_mode);
+        if (units) {
+          return makeUnitSystem(std::move(s), use_length_time, rho_unit, sie_unit,
+                                temp_unit, time_unit, mass_unit, length_unit);
+        }
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
         return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
       } else {
         SpinerEOSDependsRhoSie s(filename, materialName, reproducibility_mode);
+        if (units) {
+          return makeUnitSystem(std::move(s), use_length_time, rho_unit, sie_unit,
+                                temp_unit, time_unit, mass_unit, length_unit);
+        }
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
@@ -100,6 +158,10 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
       filter_bmod = mpark::get<bool>(base_params["filter_bmod"]);
     }
     StellarCollapse s(filename, use_sp5, filter_bmod);
+    if (units) {
+      return makeUnitSystem(std::move(s), use_length_time, rho_unit, sie_unit, temp_unit,
+                            time_unit, mass_unit, length_unit);
+    }
     if (relativistic) {
       return makeRelativistic(std::move(s), cl);
     }
