@@ -14,42 +14,39 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#include <string>
-#include <sstream>
-#include <cstring>
-#include <iostream>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
-#include "parse_cli.hpp"
 #include "io_eospac.hpp"
+#include "parse_cli.hpp"
 
-void parseCLI(int argc, char* argv[],
-	      std::string& savename,
-	      std::vector<std::string>& filenames,
-	      bool& printMetadata,
-	      Verbosity& eospacWarn,
-	      std::string& helpMessage) {
+void parseCLI(int argc, char *argv[], std::string &savename,
+              std::vector<std::string> &filenames, bool &printMetadata,
+              Verbosity &eospacWarn, std::string &helpMessage) {
 
   filenames.clear();
 
   std::stringstream helpStream;
-  helpStream << "Usage: " << argv[0] << "[-p] [-w] [-h] [-v] [-vv] [-d] <savename> <parameter files>\n\n"
-	     << "\t <savename>: filename to save to\n"
-	     << "\t <parameter files>: input files, one per material\n"
-	     << "\t-p:  print metadata associated with materials "
-	     << "in parameter files\n"
-	     << "\t-v:  print eospac warnings\n"
-	     << "\t-vv: print debug information\n"
-	     << "\t-w:  same as -v\n"
-	     << "\t-d:  same as -vv\n"
-	     << "\t-h:  print this message\n"
-	     << "\n"
-	     << "Several example input files:\n"
-	     << EXAMPLESTRING
-	     << "\n"
-	     << std::endl;
+  helpStream << "Usage: " << argv[0]
+             << "[-p] [-w] [-h] [-v] [-vv] [-d] <savename> <parameter files>\n\n"
+             << "\t <savename>: filename to save to\n"
+             << "\t <parameter files>: input files, one per material\n"
+             << "\t-p:  print metadata associated with materials "
+             << "in parameter files\n"
+             << "\t-v:  print eospac warnings\n"
+             << "\t-vv: print debug information\n"
+             << "\t-w:  same as -v\n"
+             << "\t-d:  same as -vv\n"
+             << "\t-h:  print this message\n"
+             << "\n"
+             << "Several example input files:\n"
+             << EXAMPLESTRING << "\n"
+             << std::endl;
   helpMessage = helpStream.str();
 
   bool savename_set = false;
@@ -58,31 +55,28 @@ void parseCLI(int argc, char* argv[],
     std::cerr << helpMessage << std::endl;
     std::exit(1);
   }
-  if ( argc == 2 && std::strcmp(argv[1],"-h") == 0 ) {
+  if (argc == 2 && std::strcmp(argv[1], "-h") == 0) {
     std::cout << helpMessage << std::endl;
     std::exit(0);
   }
   for (int i = 1; i < argc; i++) {
-    if ( std::strcmp(argv[i],"-h") == 0 ) {
+    if (std::strcmp(argv[i], "-h") == 0) {
       std::cout << helpMessage << std::endl;
       std::exit(0);
-    }
-    else if ( std::strcmp(argv[i],"-p") == 0 ) {
+    } else if (std::strcmp(argv[i], "-p") == 0) {
       printMetadata = true;
-    } else if ( (std::strcmp(argv[i],"-w") == 0 ||
-                 std::strcmp(argv[i],"-v") == 0 )
-                && eospacWarn == Verbosity::Quiet) {
+    } else if ((std::strcmp(argv[i], "-w") == 0 || std::strcmp(argv[i], "-v") == 0) &&
+               eospacWarn == Verbosity::Quiet) {
       eospacWarn = Verbosity::Verbose;
-    } else if ( (std::strcmp(argv[i],"-d") == 0 ||
-                 std::strcmp(argv[i],"-vv") == 0 )
-                && eospacWarn != Verbosity::Debug) {
+    } else if ((std::strcmp(argv[i], "-d") == 0 || std::strcmp(argv[i], "-vv") == 0) &&
+               eospacWarn != Verbosity::Debug) {
       eospacWarn = Verbosity::Debug;
     } else {
       if (!savename_set) {
-	savename = argv[i];
-	savename_set = true;
+        savename = argv[i];
+        savename_set = true;
       } else {
-	filenames.push_back(std::string(argv[i]));
+        filenames.push_back(std::string(argv[i]));
       }
     }
   }

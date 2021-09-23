@@ -40,7 +40,7 @@
 namespace callable_interp {
 
 class LogT {
-public:
+ public:
   PORTABLE_INLINE_FUNCTION
   LogT(const Spiner::DataBox &field, const Real Ye, const Real lRho)
       : field_(field), Ye_(Ye), lRho_(lRho) {}
@@ -48,7 +48,7 @@ public:
     return field_.interpToReal(Ye_, lT, lRho_);
   }
 
-private:
+ private:
   const Spiner::DataBox &field_;
   const Real Ye_, lRho_;
 };
@@ -83,16 +83,14 @@ StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp5,
 // Saves to an SP5 file
 void StellarCollapse::Save(const std::string &filename) {
   herr_t status = H5_SUCCESS;
-  hid_t file =
-      H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
   // Metadata
-  hid_t metadata =
-      H5Gcreate(file, METADATA_NAME, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  status += H5LTset_attribute_string(
-      file, METADATA_NAME, SP5::Offsets::messageName, SP5::Offsets::message);
-  status += H5LTset_attribute_double(file, METADATA_NAME, SP5::Offsets::sie,
-                                     &lEOffset_, 1);
+  hid_t metadata = H5Gcreate(file, METADATA_NAME, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  status += H5LTset_attribute_string(file, METADATA_NAME, SP5::Offsets::messageName,
+                                     SP5::Offsets::message);
+  status +=
+      H5LTset_attribute_double(file, METADATA_NAME, SP5::Offsets::sie, &lEOffset_, 1);
   H5Gclose(metadata);
 
   // Databoxes
@@ -174,8 +172,7 @@ void StellarCollapse::Finalize() {
 }
 
 PORTABLE_FUNCTION
-Real StellarCollapse::TemperatureFromDensityInternalEnergy(const Real rho,
-                                                           const Real sie,
+Real StellarCollapse::TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                                            Real *lambda) const {
   const Real lRho = lRho_(rho);
   const Real lT = lTFromlRhoSie_(lRho, sie, lambda);
@@ -203,8 +200,7 @@ Real StellarCollapse::PressureFromDensityTemperature(const Real rho,
 }
 
 PORTABLE_FUNCTION
-Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho,
-                                                        const Real sie,
+Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                                         Real *lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
@@ -223,8 +219,9 @@ Real StellarCollapse::SpecificHeatFromDensityTemperature(const Real rho,
 }
 
 PORTABLE_FUNCTION
-Real StellarCollapse::SpecificHeatFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+Real StellarCollapse::SpecificHeatFromDensityInternalEnergy(const Real rho,
+                                                            const Real sie,
+                                                            Real *lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real Cv = K2MeV_ * dEdT_.interpToReal(Ye, lT, lRho);
@@ -254,8 +251,7 @@ Real StellarCollapse::GruneisenParamFromDensityTemperature(const Real rho,
 }
 
 PORTABLE_FUNCTION
-Real StellarCollapse::BulkModulusFromDensityInternalEnergy(const Real rho,
-                                                           const Real sie,
+Real StellarCollapse::BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
                                                            Real *lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
@@ -265,8 +261,9 @@ Real StellarCollapse::BulkModulusFromDensityInternalEnergy(const Real rho,
 }
 
 PORTABLE_FUNCTION
-Real StellarCollapse::GruneisenParamFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+Real StellarCollapse::GruneisenParamFromDensityInternalEnergy(const Real rho,
+                                                              const Real sie,
+                                                              Real *lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real dpde = dPdE_.interpToReal(Ye, lT, lRho);
@@ -277,16 +274,14 @@ Real StellarCollapse::GruneisenParamFromDensityInternalEnergy(
 // TODO(JMM): Fill in this stub if we ever use this EOS in a PTE code.
 PORTABLE_FUNCTION
 void StellarCollapse::DensityEnergyFromPressureTemperature(const Real press,
-                                                           const Real temp,
-                                                           Real *lambda,
-                                                           Real &rho,
-                                                           Real &sie) const {
+                                                           const Real temp, Real *lambda,
+                                                           Real &rho, Real &sie) const {
   EOS_ERROR("StellarCollapse::DensityEnergyFromPRessureTemperature is a stub");
 }
 
 PORTABLE_FUNCTION
-void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
-                              Real &cv, Real &bmod, const unsigned long output,
+void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
+                              Real &bmod, const unsigned long output,
                               Real *lambda) const {
   Real lRho, lT, Ye;
   const unsigned long input = ~output;
@@ -324,8 +319,7 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
 PORTABLE_FUNCTION
 void StellarCollapse::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
                                              Real &press, Real &cv, Real &bmod,
-                                             Real &dpde, Real &dvdt,
-                                             Real *lambda) const {
+                                             Real &dpde, Real &dvdt, Real *lambda) const {
   rho = rhoNormal_;
   temp = TNormal_;
   sie = sieNormal_;
@@ -346,8 +340,7 @@ void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
 
   // Offsets
   hid_t metadata = H5Gopen(file, METADATA_NAME, H5P_DEFAULT);
-  status += H5LTget_attribute_double(file, METADATA_NAME, SP5::Offsets::sie,
-                                     &lEOffset_);
+  status += H5LTget_attribute_double(file, METADATA_NAME, SP5::Offsets::sie, &lEOffset_);
   status += H5Gclose(metadata);
 
   // Databoxes
@@ -388,8 +381,7 @@ void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
 }
 
 // Read data directly from a stellar collapse eos file
-void StellarCollapse::LoadFromStellarCollapseFile_(
-    const std::string &filename) {
+void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) {
   // Open the file.
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   herr_t status = H5_SUCCESS;
@@ -439,8 +431,7 @@ int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &name) {
   hsize_t file_start[] = {0};
   hsize_t file_count[] = {1};
   hid_t filespace = H5Screate_simple(1, file_grid_dims, NULL);
-  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, file_start, NULL, file_count,
-                      NULL);
+  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, file_start, NULL, file_count, NULL);
   hid_t memspace = H5Screate_simple(1, &one, NULL);
 
   hid_t dset_id = H5Dopen(file_id, name.c_str(), H5P_DEFAULT);
@@ -459,8 +450,8 @@ int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &name) {
 // Read (inclusive) bounds on the independent variables Assumes
 // uniform tables in log-space. The file requires we read in the
 // array, but we only need the bounds themselves.
-void StellarCollapse::readBounds_(const hid_t &file_id, const std::string &name,
-                                  int size, Real &lo, Real &hi) {
+void StellarCollapse::readBounds_(const hid_t &file_id, const std::string &name, int size,
+                                  Real &lo, Real &hi) {
   std::vector<Real> table(size);
   herr_t status = H5LTread_dataset_double(file_id, name.c_str(), table.data());
   if (status != H5_SUCCESS) {
@@ -479,15 +470,13 @@ void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
                                   Spiner::DataBox &db) {
   herr_t exists = H5LTfind_dataset(file_id, name.c_str());
   if (!exists) {
-    std::string msg =
-        "Tried to read dataset " + name + " but it doesn't exist\n";
+    std::string msg = "Tried to read dataset " + name + " but it doesn't exist\n";
     EOS_ERROR(msg.c_str());
   }
   db.resize(numYe_, numT_, numRho_);
   herr_t status = H5LTread_dataset(file_id, name.c_str(), H5T_REAL, db.data());
   if (status != H5_SUCCESS) {
-    std::string msg =
-        "Tried to read dataset " + name + " but it failed exist\n";
+    std::string msg = "Tried to read dataset " + name + " but it failed exist\n";
     EOS_ERROR(msg.c_str());
   }
 
@@ -503,8 +492,7 @@ void StellarCollapse::medianFilter_(Spiner::DataBox &db) {
   medianFilter_(tmp, db);
 }
 
-void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
-                                    Spiner::DataBox &out) {
+void StellarCollapse::medianFilter_(const Spiner::DataBox &in, Spiner::DataBox &out) {
   Real buffer[MF_S];
   // filter, overwriting as needed
   for (int iY = MF_W; iY < numYe_ - MF_W; ++iY) {
@@ -515,16 +503,14 @@ void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
         Real point = in(iY, iT, irho);
         Real avg = findMedian_(buffer, MF_S);
         int bad = std::abs(avg - point) / std::abs(avg) > EPSSMOOTH;
-        if (bad)
-          out(iY, iT, irho) = avg;
+        if (bad) out(iY, iT, irho) = avg;
       }
     }
   }
 }
 
-void StellarCollapse::fillMedianBuffer_(Real buffer[], int width, int iY,
-                                        int iT, int irho,
-                                        const Spiner::DataBox &tab) const {
+void StellarCollapse::fillMedianBuffer_(Real buffer[], int width, int iY, int iT,
+                                        int irho, const Spiner::DataBox &tab) const {
   int i = 0;
   for (int iWy = -width; iWy <= width; iWy++) {
     for (int iWt = -width; iWt <= width; iWt++) {
@@ -563,8 +549,7 @@ void StellarCollapse::computeBulkModulus_() {
         Real PoR = fromLog_(lPoR, 0.0);
         // assume table is hardened
         Real bMod = rho * dPdRho_(iY, iT, irho) + PoR * dPdE_(iY, iT, irho);
-        if (bMod < EPS)
-          bMod = EPS;
+        if (bMod < EPS) bMod = EPS;
         lBMod_(iY, iT, irho) = B2lB_(bMod);
       }
     }
@@ -642,8 +627,8 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
     // Get log(sie)
     Real lE = e2le_(sie);
     const callable_interp::LogT lEFunc(lE_, Ye, lRho);
-    status = findRoot(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH,
-                      ROOT_THRESH, lT, counts);
+    status = findRoot(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH, lT,
+                      counts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if STELLAR_COLLAPSE_EOS_VERBOSE
       std::stringstream errorMessage;
