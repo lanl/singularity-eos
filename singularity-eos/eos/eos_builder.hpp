@@ -43,7 +43,7 @@ enum class EOSType {
   StellarCollapse
 #endif
 };
-enum class EOSModifier { Scaled, Shifted, Relativistic };
+enum class EOSModifier { Scaled, Shifted, Relativistic, UnitSystem };
 
 // evil type erasure
 using param_t = mpark::variant<bool, int, Real, std::string>;
@@ -64,6 +64,18 @@ EOS buildEOS(EOSType type, params_t base_params, modifiers_t modifiers);
 inline auto buildEOS(EOSType type, params_t base_params) {
   modifiers_t modifiers;
   return buildEOS(type, base_params, modifiers);
+}
+
+template <typename T>
+EOS makeUnitSystem(T &&eos, bool use_length_time, Real rho_unit, Real sie_unit,
+                   Real temp_unit, Real time_unit, Real mass_unit, Real length_unit) {
+  if (use_length_time) {
+    return UnitSystem<T>(std::move(eos), eos_units_init::length_time_units_init_tag,
+                         time_unit, mass_unit, length_unit, temp_unit);
+  } else {
+    return UnitSystem<T>(std::move(eos), eos_units_init::thermal_units_init_tag, rho_unit,
+                         sie_unit, temp_unit);
+  }
 }
 
 template <typename T>
