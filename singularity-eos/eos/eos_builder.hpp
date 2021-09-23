@@ -18,7 +18,7 @@
 #include <map>
 #include <string>
 #include <unordered_set>
-#include <variant/include/mpark/variant.hpp>
+#include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos.hpp>
 

@@ -33,18 +33,20 @@ include(kokkoskernels)
 include(eigen3)
 include(eospac)
 include(portsofcall)
-
+include(variant)
+include(mathselect)
+include(compilers)
 #----------------------------------------------------------------------------#
 # Capture use settings.
 #----------------------------------------------------------------------------#
 
-# get_cmake_property(_variableNames VARIABLES)
-# string (REGEX MATCHALL "(^|;)USE_[A-Za-z0-9_]*"
-#   _matchedVars "${_variableNames}")
+get_cmake_property(_variableNames VARIABLES)
+string (REGEX MATCHALL "(^|;)USE_[A-Za-z0-9_]*"
+  _matchedVars "${_variableNames}")
 
-# foreach(_variableName ${_matchedVars})
-#   set(SINGULARITY_${_variableName} ${${_variableName}})
-# endforeach()
+foreach(_variableName ${_matchedVars})
+  set(SINGULARITY_${_variableName} ${${_variableName}})
+endforeach()
 
 #----------------------------------------------------------------------------#
 # Configure header.
@@ -77,9 +79,11 @@ add_library_target(${PROJECT_NAME} singularity-eos
     ${TPL_LIBRARIES}
 )
 
+
+
 #----------------------------------------------------------------------------#
 # Extract all project options so they can be exported to the
-# FleCSIConfig.cmake file.
+# cmake config file.
 #----------------------------------------------------------------------------#
 
 get_cmake_property(_variableNames VARIABLES)
@@ -87,7 +91,7 @@ string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
   _matchedVars "${_variableNames}")
 
 foreach(_variableName ${_matchedVars})
-  string(REGEX REPLACE "SINGULARITY" "singularity-eos" _tmpvariableName ${_variableName})
+  string(REGEX REPLACE "singularity-eos" "SINGULARITY" _tmpvariableName ${_variableName})
   set(SINGULARITY_CONFIG_CODE
     "${SINGULARITY_CONFIG_CODE}\nset(${_tmpvariableName} \"${${_variableName}}\")")
 endforeach()
@@ -110,22 +114,33 @@ DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBDIR}/cmake/${PROJECT_NAME}CMake
 )
 
 install(
+FILES ${PROJECT_SOURCE_DIR}/cmake/compilers.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/cuda.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/eigen3.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/eospac.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/FindEigen3.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/FindHwloc.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/FindPortsofCall.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/hdf5.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/kokkos.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/kokkoskernels.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/library.cmake
+FILES ${PROJECT_SOURCE_DIR}/cmake/mathselect.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/portsofcall.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/subdirlist.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/variant.cmake
 DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/cmake
 )
+
+if(SINGULARITY_USE_HDF5)
+  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
+    add_subdirectory(sesame2spiner)
+  endif()
+  if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+    add_subdirectory(stellarcollapse2spiner)
+  endif()
+endif()
+
 
 
 if(SINGULARITY_BUILD_TESTS)

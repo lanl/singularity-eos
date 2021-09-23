@@ -7,3 +7,4 @@
     #endif
 #endif
 
+#define fastmathorder 4

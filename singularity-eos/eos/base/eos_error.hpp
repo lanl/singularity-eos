@@ -19,6 +19,7 @@
 #include <stdexcept>
 #define EOS_ERROR(x) (throw std::runtime_error(x))
 #else
+#include<cassert>
 #define EOS_ERROR(x) printf("%s\n", x); assert(false);
 #endif
 #define UNDEFINED_ERROR EOS_ERROR("DEFINE ME\n")

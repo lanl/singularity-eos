@@ -12,9 +12,10 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
-add_executable(stellarcollapse2spiner main.cpp)
+project(stellarcollapse2spiner)
+add_executable(${PROJECT_NAME} main.cpp)
 
-target_link_libraries(stellarcollapse2spiner
-  eos
-  singularity-eos::libs
-  singularity-eos::flags)
+target_link_libraries(${PROJECT_NAME} PRIVATE
+  singularity-eos::singularity-eos)
+
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)

@@ -15,7 +15,7 @@
 #ifndef EOS_VARIANT_HPP
 #define EOS_VARIANT_HPP
 
-#include <variant/include/mpark/variant.hpp>
+#include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 
 using Real = double;
@@ -45,7 +45,7 @@ public:
   {}
 
   Variant() noexcept = default;
-  
+
   template<typename EOSChoice,
            typename
            std::enable_if< !std::is_same<Variant,
@@ -84,8 +84,8 @@ public:
   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos)
+    {
       return eos.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
     }, eos_);
   }
@@ -95,8 +95,8 @@ public:
                                             const Real temperature,
                                             Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos)
+    {
       return eos.InternalEnergyFromDensityTemperature(rho, temperature,
                                                       lambda);
     }, eos_);
@@ -106,8 +106,8 @@ public:
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos)
+    {
       return eos.PressureFromDensityTemperature(rho, temperature, lambda);
     }, eos_);
   }
@@ -116,8 +116,8 @@ public:
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos)
+    {
       return eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
     }, eos_);
   }
@@ -127,8 +127,8 @@ public:
                                           const Real temperature,
                                           Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos)
+    {
       return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
     }, eos_);
   }
@@ -137,8 +137,8 @@ public:
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos)
+    {
       return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
     }, eos_);
   }
@@ -148,8 +148,8 @@ public:
                                          const Real temperature,
                                          Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos)
+    {
       return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
     }, eos_);
   }
@@ -158,8 +158,8 @@ public:
   Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos)
+    {
       return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
     }, eos_);
   }
@@ -169,8 +169,8 @@ public:
                                             const Real temperature,
                                             Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &temperature, &lambda] (const auto & eos)
+    {
       return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
     }, eos_);
   }
@@ -179,8 +179,8 @@ public:
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
                                                Real *lambda=nullptr) const
   {
-    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos) 
-    { 
+    return mpark::visit( [&rho, &sie, &lambda] (const auto & eos)
+    {
       return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
     }, eos_);
   }
@@ -191,8 +191,8 @@ public:
                Real *lambda=nullptr) const
   {
     return mpark::visit( [&rho, &temp, &energy, &press, &cv, &bmod, &output,
-                          &lambda] (const auto & eos) 
-    { 
+                          &lambda] (const auto & eos)
+    {
       return eos.FillEos(rho, temp, energy, press, cv, bmod, output, lambda);
     }, eos_);
   }
@@ -226,7 +226,7 @@ public:
               Real& dpdr, Real& dpde, Real& dtdr, Real& dtde) const
   {
     return mpark::visit( [&rho, &sie, &lambda, &press, &temp, &dpdr, &dpde,
-                          &dtdr, &dtde] (const auto & eos) 
+                          &dtdr, &dtde] (const auto & eos)
     {
       press = eos.PressureFromDensityInternalEnergy(rho,sie,lambda);
       temp = eos.TemperatureFromDensityInternalEnergy(rho,sie,lambda);
@@ -250,7 +250,7 @@ public:
                                             Real& sie) const
   {
     return mpark::visit( [&press, &temp, &lambda, &rho, &sie]
-                         (const auto & eos) 
+                         (const auto & eos)
     {
       return eos.DensityEnergyFromPressureTemperature(press, temp, lambda,
                                                       rho, sie);

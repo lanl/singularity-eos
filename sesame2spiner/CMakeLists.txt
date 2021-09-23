@@ -11,28 +11,28 @@
 # prepare derivative works, distribute copies to the public, perform
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
+project(sesame2spiner)
 
-add_executable(sesame2spiner
-               io_eospac.cpp
-	       io_eospac.hpp
+add_executable(${PROJECT_NAME})
+target_sources(${PROJECT_NAME}
+PRIVATE
+    io_eospac.cpp
+	io_eospac.hpp
+    generate_files.cpp
+	generate_files.hpp
+    parse_cli.cpp
+    parse_cli.hpp
+    parser.cpp
+    parser.hpp
+PUBLIC
+    main.cpp
+)
 
-               generate_files.cpp
-	       generate_files.hpp
-
-	       parse_cli.cpp
-	       parse_cli.hpp
-
-               parser.cpp
-	       parser.hpp
-
-               main.cpp
-              )
-
-target_include_directories(sesame2spiner PUBLIC  
-                           ${CMAKE_CURRENT_BINARY_DIR}
-                           ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(${PROJECT_NAME} PUBLIC
+                            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+                            "$<INSTALL_INTERFACE:${CMAKE_INSTALL_BINDIR}>"
                           )
 
-target_link_libraries(sesame2spiner singularity-eos::libs singularity-eos::flags)
-
+target_link_libraries(${PROJECT_NAME} PRIVATE singularity-eos::singularity-eos)
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
 # TODO: Add tests for sesame2spiner here.
