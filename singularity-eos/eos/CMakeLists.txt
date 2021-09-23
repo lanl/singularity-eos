@@ -18,10 +18,10 @@ endif()
 
 set(EOS_SRCS
     eos.hpp
-    eos_unitsystem.hpp
-    scaled_eos.hpp
-    shifted_eos.hpp
-    relativistic_eos.hpp
+    modifiers/eos_unitsystem.hpp
+    modifiers/scaled_eos.hpp
+    modifiers/shifted_eos.hpp
+    modifiers/relativistic_eos.hpp
     eos_spiner.cpp
     eos_jwl.cpp
     eos_builder.cpp

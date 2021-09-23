@@ -38,10 +38,10 @@
 
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
-#include <singularity-eos/eos/eos_unitsystem.hpp>
-#include <singularity-eos/eos/scaled_eos.hpp>
-#include <singularity-eos/eos/shifted_eos.hpp>
-#include <singularity-eos/eos/relativistic_eos.hpp>
+#include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
+#include <singularity-eos/eos/modifiers/scaled_eos.hpp>
+#include <singularity-eos/eos/modifiers/shifted_eos.hpp>
+#include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
 
 #ifdef SINGULARITY_USE_EOSPAC
 #include <eos_Interface.h>

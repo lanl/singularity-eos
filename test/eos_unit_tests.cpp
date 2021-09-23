@@ -199,7 +199,7 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem]") {
     GIVEN("Units with a thermal unit system") {
       constexpr Real rho_unit = 1e1;
       constexpr Real sie_unit = 1e-1;
-      constexpr Real temp_unit = 1;
+      constexpr Real temp_unit = 123;
       WHEN("We construct an IdealGas with EOSBuilder") {
 	units_params["rho_unit"].emplace<Real>(rho_unit);
 	units_params["sie_unit"].emplace<Real>(sie_unit);
@@ -216,10 +216,10 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem]") {
       }
     }
     GIVEN("Units with length and time units") {
-      constexpr Real time_unit = 1;
+      constexpr Real time_unit = 456;
       constexpr Real length_unit = 1e2;
       constexpr Real mass_unit = 1e6;
-      constexpr Real temp_unit = 1;
+      constexpr Real temp_unit = 789;
       WHEN("We construct an IdealGas with EOSBuilder") {
 	units_params["use_length_time"].emplace<bool>(true);
 	units_params["time_unit"].emplace<Real>(time_unit);

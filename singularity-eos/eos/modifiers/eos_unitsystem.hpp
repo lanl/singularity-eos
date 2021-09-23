@@ -164,7 +164,7 @@ public:
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
 					    Real *lambda, Real &rho, Real &sie) const {
-    t_.DensityEnergyFromPRessureTemperature(press*press_unit_, temp*temp_unit_, lambda,
+    t_.DensityEnergyFromPressureTemperature(press*press_unit_, temp*temp_unit_, lambda,
 					    rho, sie);
     rho *= inv_rho_unit_;
     sie *= inv_sie_unit_;
