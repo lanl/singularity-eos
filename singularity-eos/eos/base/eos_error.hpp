@@ -19,8 +19,14 @@
 #include <stdexcept>
 #define EOS_ERROR(x) (throw std::runtime_error(x))
 #else
+<<<<<<< HEAD:singularity-eos/eos/base/eos_error.hpp
 #include<cassert>
 #define EOS_ERROR(x) printf("%s\n", x); assert(false);
+=======
+#define EOS_ERROR(x)                                                                     \
+  printf("%s\n", x);                                                                     \
+  assert(false);
+>>>>>>> main:singularity-eos/base/eos_error.hpp
 #endif
 #define UNDEFINED_ERROR EOS_ERROR("DEFINE ME\n")
 

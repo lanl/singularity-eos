@@ -23,17 +23,19 @@
 // Parse a simple parameter file with
 // "#" denoting comments.
 class Params {
-public:
+ public:
   Params(const std::string &input_file);
   Params(std::stringstream &input) { Parse(input); }
 
   bool Contains(const std::string &key) const { return params_.count(key); }
-  template <typename T> T Get(const std::string &key) const;
-  template <typename T> T Get(const std::string &key, T default_value) const {
+  template <typename T>
+  T Get(const std::string &key) const;
+  template <typename T>
+  T Get(const std::string &key, T default_value) const {
     return Contains(key) ? Get<T>(key) : default_value;
   }
 
-private:
+ private:
   void Parse(std::istream &s);
   std::unordered_map<std::string, std::string> params_;
 };

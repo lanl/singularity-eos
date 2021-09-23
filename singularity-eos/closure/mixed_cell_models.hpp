@@ -15,8 +15,8 @@
 #ifndef _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 #define _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 
-#include <singularity-eos/eos/eos.hpp>
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/eos/eos.hpp>
 
 #include <cmath>
 
@@ -47,58 +47,54 @@ namespace singularity {
 */
 // Version templated on nmat
 // niter version produces histogram
-template <int nmat, typename EOSIndexer, typename RealIndexer,
-          typename ConstRealIndexer, typename LambdaIndexer>
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
+          typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line(
     EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
     ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
     RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas, int &niter);
-template <int nmat, typename EOSIndexer, typename RealIndexer,
-          typename ConstRealIndexer, typename LambdaIndexer>
-PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line(
-    EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
-    ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
-    RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas) {
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
+          typename LambdaIndexer>
+PORTABLE_INLINE_FUNCTION bool
+pte_closure_flag_with_line(EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
+                           ConstRealIndexer &&ComponentMasses,
+                           RealIndexer &&ComponentVolumes,
+                           RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas) {
   int niter;
   return pte_closure_flag_with_line(eoss, Volume, TotalSIE, ComponentMasses,
-                                    ComponentVolumes, ComponentEnergies, lambdas,
-                                    niter);
+                                    ComponentVolumes, ComponentEnergies, lambdas, niter);
 }
 // Version with nmat available at runtime
 template <typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
           typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_flag(int nmat, EOSIndexer &&eoss, const Real Volume,
-                 const Real TotalSIE, ConstRealIndexer &&ComponentMasses,
-                 RealIndexer &&ComponentVolumes,
+pte_closure_flag(int nmat, EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
+                 ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
                  RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas, int &niter);
 template <typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
           typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_flag(int nmat, EOSIndexer &&eoss, const Real Volume,
-                 const Real TotalSIE, ConstRealIndexer &&ComponentMasses,
-                 RealIndexer &&ComponentVolumes,
+pte_closure_flag(int nmat, EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
+                 ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
                  RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas) {
   int niter;
-  return pte_closure_flag(nmat, eoss, Volume, TotalSIE, ComponentMasses,
-                          ComponentVolumes, ComponentEnergies, lambdas, niter);
+  return pte_closure_flag(nmat, eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
+                          ComponentEnergies, lambdas, niter);
 }
 // Pointer-only version with offset for EOS indexing
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_flag_offset(int nmat, EOS *eoss, const Real Volume,
-                        const Real TotalSIE, int const *const ComponentMats,
-                        const Real *ComponentMasses, Real *ComponentVolumes,
-                        Real *ComponentEnergies, Real **lambdas, int &niter);
+pte_closure_flag_offset(int nmat, EOS *eoss, const Real Volume, const Real TotalSIE,
+                        int const *const ComponentMats, const Real *ComponentMasses,
+                        Real *ComponentVolumes, Real *ComponentEnergies, Real **lambdas,
+                        int &niter);
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_flag_offset(int nmat, EOS *eoss, const Real Volume,
-                        const Real TotalSIE, int const *const ComponentMats,
-                        const Real *ComponentMasses, Real *ComponentVolumes,
-                        Real *ComponentEnergies, Real **lambdas) {
+pte_closure_flag_offset(int nmat, EOS *eoss, const Real Volume, const Real TotalSIE,
+                        int const *const ComponentMats, const Real *ComponentMasses,
+                        Real *ComponentVolumes, Real *ComponentEnergies, Real **lambdas) {
   int niter;
-  return pte_closure_flag_offset(nmat, eoss, Volume,
-                                 TotalSIE, ComponentMats,
-                                 ComponentMasses, ComponentVolumes,
-                                 ComponentEnergies, lambdas, niter);
+  return pte_closure_flag_offset(nmat, eoss, Volume, TotalSIE, ComponentMats,
+                                 ComponentMasses, ComponentVolumes, ComponentEnergies,
+                                 lambdas, niter);
 }
 /*
   This solver was developed by Josh Dolence, and is guaranteed to
@@ -110,55 +106,49 @@ pte_closure_flag_offset(int nmat, EOS *eoss, const Real Volume,
   LambdaIndexer must have an operator[](int) that returns a Real*. e.g., Real**
 */
 // Version templated on nmat.
-template <int nmat, typename EOSIndexer, typename RealIndexer,
-          typename LambdaIndexer>
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool pte_closure_josh(EOSIndexer &&eos, const Real vfrac_tot,
                                                const Real sie_tot, RealIndexer &&rho,
                                                RealIndexer &&vfrac, RealIndexer &&sie,
                                                RealIndexer &&temp, RealIndexer &&press,
                                                LambdaIndexer &&lambda, int &niter);
-template <int nmat, typename EOSIndexer, typename RealIndexer,
-          typename LambdaIndexer>
-PORTABLE_INLINE_FUNCTION bool pte_closure_josh(EOSIndexer &&eos, const Real vfrac_tot,
-                                               const Real sie_tot, RealIndexer &&rho,
-                                               RealIndexer &&vfrac, RealIndexer &&sie,
-                                               RealIndexer &&temp, RealIndexer &&press,
-                                               LambdaIndexer &&lambda) {
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
+PORTABLE_INLINE_FUNCTION bool
+pte_closure_josh(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot,
+                 RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                 RealIndexer &&temp, RealIndexer &&press, LambdaIndexer &&lambda) {
   int niter;
-  return pte_closure_josh(eos, vfrac_tot, sie_tot, rho,
-                          vfrac, sie, temp, press, lambda, niter);
+  return pte_closure_josh(eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+                          niter);
 }
 // Version with nmat available at runtime.
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_josh(int nmat, EOSIndexer &&eoss, const Real vfrac_tot,
-                 const Real sie_tot, RealIndexer &&rho, RealIndexer &&vfrac,
-                 RealIndexer &&sie, RealIndexer &&temp, RealIndexer &&press,
-                 LambdaIndexer &&lambdas, int &niter);
+pte_closure_josh(int nmat, EOSIndexer &&eoss, const Real vfrac_tot, const Real sie_tot,
+                 RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                 RealIndexer &&temp, RealIndexer &&press, LambdaIndexer &&lambdas,
+                 int &niter);
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_josh(int nmat, EOSIndexer &&eoss, const Real vfrac_tot,
-                 const Real sie_tot, RealIndexer &&rho, RealIndexer &&vfrac,
-                 RealIndexer &&sie, RealIndexer &&temp, RealIndexer &&press,
-                 LambdaIndexer &&lambdas) {
+pte_closure_josh(int nmat, EOSIndexer &&eoss, const Real vfrac_tot, const Real sie_tot,
+                 RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                 RealIndexer &&temp, RealIndexer &&press, LambdaIndexer &&lambdas) {
   int niter;
-  return pte_closure_josh(nmat, eoss, vfrac_tot, sie_tot, rho, vfrac,
-                          sie, temp, press, lambdas, niter);
+  return pte_closure_josh(nmat, eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                          lambdas, niter);
 }
 // Pointer-only version with offset for EOS indexing
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_josh_offset(int nmat, EOS *eoss, const Real vfrac_tot,
-                        const Real sie_tot, int const *const Mats, Real *rho,
-                        Real *vfrac, Real *sie, Real *temp, Real *press,
-                        Real **lambdas, int &niter);
+pte_closure_josh_offset(int nmat, EOS *eoss, const Real vfrac_tot, const Real sie_tot,
+                        int const *const Mats, Real *rho, Real *vfrac, Real *sie,
+                        Real *temp, Real *press, Real **lambdas, int &niter);
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_josh_offset(int nmat, EOS *eoss, const Real vfrac_tot,
-                        const Real sie_tot, int const *const Mats, Real *rho,
-                        Real *vfrac, Real *sie, Real *temp, Real *press,
-                        Real **lambdas) {
+pte_closure_josh_offset(int nmat, EOS *eoss, const Real vfrac_tot, const Real sie_tot,
+                        int const *const Mats, Real *rho, Real *vfrac, Real *sie,
+                        Real *temp, Real *press, Real **lambdas) {
   int niter;
-  return pte_closure_josh_offset(nmat, eoss, vfrac_tot, sie_tot, Mats, rho,
-                                 vfrac, sie, temp, press, lambdas, niter);
+  return pte_closure_josh_offset(nmat, eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                 temp, press, lambdas, niter);
 }
 
 /*
@@ -176,22 +166,21 @@ pte_closure_josh_offset(int nmat, EOS *eoss, const Real vfrac_tot,
     ConstRealIndexer is as RealIndexer, but assumed const type.
     LambdaIndexer must have an operator[](int) that returns a Real*. e.g., Real**
 */
-template <typename EOSIndexer, typename RealIndexer,
-          typename ConstRealIndexer, typename LambdaIndexer>
+template <typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
+          typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
 pte_closure_ideal(int nmat, EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
                   ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
                   RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas, int &niter);
-template <typename EOSIndexer, typename RealIndexer,
-          typename ConstRealIndexer, typename LambdaIndexer>
+template <typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
+          typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
 pte_closure_ideal(int nmat, EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
                   ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
                   RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas) {
   int niter;
-  return pte_closure_ideal(nmat, eoss, Volume, TotalSIE,
-                           ComponentMasses, ComponentVolumes,
-                           ComponentEnergies, lambdas, niter);
+  return pte_closure_ideal(nmat, eoss, Volume, TotalSIE, ComponentMasses,
+                           ComponentVolumes, ComponentEnergies, lambdas, niter);
 }
 
 // ======================================================================
@@ -211,8 +200,8 @@ constexpr Real line_search_fac = 0.05;
 } // namespace mix_params
 
 namespace mix_impl {
-template <typename T, typename = typename std::enable_if<
-                          std::is_floating_point<T>::value>::type>
+template <typename T,
+          typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
 constexpr bool isfinite(const T &a) {
   return (a == a) && ((a == 0) || (a != 2 * a));
 }
@@ -234,7 +223,8 @@ bool check_nans(Real const *const a, const int n, const bool verbose = false) {
   return retval;
 }
 
-template <int n> PORTABLE_INLINE_FUNCTION bool solve_Ax_b(Real *a, Real *b) {
+template <int n>
+PORTABLE_INLINE_FUNCTION bool solve_Ax_b(Real *a, Real *b) {
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
 #ifndef PORTABILITY_STRATEGY_KOKKOS
 #error "Kokkos Kernels requires Kokkos."
@@ -292,13 +282,14 @@ template <int n> PORTABLE_INLINE_FUNCTION bool solve_Ax_b(Real *a, Real *b) {
   return retval;
 }
 
-template <int nmat, typename EOSIndexer, typename RealIndexer,
-          typename ConstRealIndexer, typename LambdaIndexer, typename OFFSETTER>
-PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line_impl(
-    EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
-    ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
-    RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas,
-    const OFFSETTER ofst, int &iter) {
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
+          typename LambdaIndexer, typename OFFSETTER>
+PORTABLE_INLINE_FUNCTION bool
+pte_closure_flag_with_line_impl(EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
+                                ConstRealIndexer &&ComponentMasses,
+                                RealIndexer &&ComponentVolumes,
+                                RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas,
+                                const OFFSETTER ofst, int &iter) {
   using namespace mix_params;
 
   Real TotalMass = 0.0, Vsum = 0.0, Esum = 0.0;
@@ -337,9 +328,9 @@ PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line_impl(
     // Call the EOSs
     for (int mat = 0; mat < nmat; ++mat) {
       Densities[mat] = ComponentMasses[mat] / ComponentVolumes[mat];
-      eoss[ofst(mat)].PTofRE(Densities[mat], ComponentEnergies[mat],
-                             lambdas[mat], Pressures[mat], Temperatures[mat],
-                             dpdr[mat], dpde[mat], dtdr[mat], dtde[mat]);
+      eoss[ofst(mat)].PTofRE(Densities[mat], ComponentEnergies[mat], lambdas[mat],
+                             Pressures[mat], Temperatures[mat], dpdr[mat], dpde[mat],
+                             dtdr[mat], dtde[mat]);
     }
     // Now, zero the matrix and vector
     for (int i = 0; i < 2 * nmat * 2 * nmat; ++i)
@@ -367,16 +358,14 @@ PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line_impl(
       A[i * 2 * nmat + n + 1] = -dpde[n + 1];
       A[i * 2 * nmat + i] = dpdr[n];
       A[i * 2 * nmat + i + 1] = -dpdr[n + 1];
-      A[(2 * nmat - 1) * 2 * nmat + i] =
-          ComponentMasses[n] / square(Densities[n]);
+      A[(2 * nmat - 1) * 2 * nmat + i] = ComponentMasses[n] / square(Densities[n]);
       b[i] = Pressures[n + 1] - Pressures[n];
       vsum += ComponentMasses[n] / Densities[n];
     }
     A[(nmat - 1) * 2 * nmat + nmat - 1] = ComponentMasses[nmat - 1];
     esum += ComponentMasses[nmat - 1] * ComponentEnergies[nmat - 1];
     b[nmat - 1] = TotalSIE * TotalMass - esum; // esum - TotalSIE*TotalMass;
-    A[4 * nmat * nmat - 1] =
-        ComponentMasses[nmat - 1] / square(Densities[nmat - 1]);
+    A[4 * nmat * nmat - 1] = ComponentMasses[nmat - 1] / square(Densities[nmat - 1]);
     vsum += ComponentMasses[nmat - 1] / Densities[nmat - 1];
     b[2 * nmat - 1] = vsum - Volume;
     for (int i = 0; i < 2 * nmat; ++i)
@@ -400,8 +389,7 @@ PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line_impl(
       }
       const Real dt = (dtdr[m] * b[m + nmat] + dtde[m] * b[m]);
       const Real tt = Temperatures[m] + scale * dt;
-      if (tt < 0.0)
-        scale = -0.9 * Temperatures[m] / dt;
+      if (tt < 0.0) scale = -0.9 * Temperatures[m] / dt;
     }
     // Now apply the overall pre-scaling
     for (int i = 0; i < 2 * nmat; ++i)
@@ -460,10 +448,10 @@ PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line_impl(
     mean_t /= TotalMass;
     err_p = std::sqrt(err_p);
     err_t = std::sqrt(err_t);
-    bool converged_p = (err_p < pte_rel_tolerance_p * std::abs(mean_p) ||
-                        err_p < pte_abs_tolerance_p);
-    bool converged_t = (err_t < pte_rel_tolerance_t * std::abs(mean_t) ||
-                        err_t < pte_abs_tolerance_t);
+    bool converged_p =
+        (err_p < pte_rel_tolerance_p * std::abs(mean_p) || err_p < pte_abs_tolerance_p);
+    bool converged_t =
+        (err_t < pte_rel_tolerance_t * std::abs(mean_t) || err_t < pte_abs_tolerance_t);
     if (converged_p && converged_t) {
       return true; // FIXME
     }
@@ -474,9 +462,8 @@ PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line_impl(
 // RealIndexer types may be different because some might be arrays and
 // some might be pointers.
 template <int nmat, typename T1, typename T2, typename T3>
-PORTABLE_INLINE_FUNCTION static void pte_residual(const Real utot, T1 &&vfrac,
-                                                  Real *u, T2 &&temp,
-                                                  T3 &&press, Real *residual) {
+PORTABLE_INLINE_FUNCTION static void pte_residual(const Real utot, T1 &&vfrac, Real *u,
+                                                  T2 &&temp, T3 &&press, Real *residual) {
   Real vsum = 0.0;
   Real esum = 0.0;
   for (int m = 0; m < nmat; ++m) {
@@ -491,15 +478,13 @@ PORTABLE_INLINE_FUNCTION static void pte_residual(const Real utot, T1 &&vfrac,
   }
 }
 
-template <int nmat, typename EOSIndexer, typename RealIndexer,
-          typename LambdaIndexer, typename OFFSETTER>
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer,
+          typename OFFSETTER>
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot,
-                      const Real sie_tot, RealIndexer &&rho,
-                      RealIndexer &&vfrac, RealIndexer &&sie,
-                      RealIndexer &&temp, RealIndexer &&press,
-                      LambdaIndexer &&lambda, const OFFSETTER ofst,
-                      int &niter) {
+pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot,
+                      RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                      RealIndexer &&temp, RealIndexer &&press, LambdaIndexer &&lambda,
+                      const OFFSETTER ofst, int &niter) {
   using namespace mix_params;
   const Real ilog2 = 1.0 / std::log(2.0);
   Real vsum = 0.0;
@@ -536,21 +521,18 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot,
   Real dpde[nmat], dtde[nmat], dpdv[nmat], dtdv[nmat];
 
   // set some options and make the initial EOS calls
-  enum class EosPreference {RhoT, Rhoe};
+  enum class EosPreference { RhoT, Rhoe };
   EosPreference eos_choice[nmat];
   for (int m = 0; m < nmat; m++) {
-    temp[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(
-      rho[m], sie[m], Cache[m]);
+    temp[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]);
     if (eos[ofst(m)].PreferredInput() ==
         (thermalqs::density | thermalqs::specific_internal_energy)) {
       eos_choice[m] = EosPreference::Rhoe;
-      press[m] = eos[ofst(m)].PressureFromDensityInternalEnergy(
-                  rho[m], sie[m], Cache[m]);
+      press[m] = eos[ofst(m)].PressureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]);
     } else if (eos[ofst(m)].PreferredInput() ==
                (thermalqs::density | thermalqs::temperature)) {
       eos_choice[m] = EosPreference::RhoT;
-      press[m] = eos[ofst(m)].PressureFromDensityTemperature(
-                  rho[m], temp[m], Cache[m]);
+      press[m] = eos[ofst(m)].PressureFromDensityTemperature(rho[m], temp[m], Cache[m]);
     }
   }
 
@@ -572,17 +554,16 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot,
       const Real rho_pert = rhobar[m] / vf_pert;
 
       Real p_pert;
-      Real t_pert = eos[ofst(m)].TemperatureFromDensityInternalEnergy(
-          rho_pert, sie[m], Cache[m]);
+      Real t_pert =
+          eos[ofst(m)].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]);
       switch (eos_choice[m]) {
-        case EosPreference::Rhoe:
-          p_pert = eos[ofst(m)].PressureFromDensityInternalEnergy(
-              rho_pert, sie[m], Cache[m]);
-          break;
-        case EosPreference::RhoT:
-          p_pert = eos[ofst(m)].PressureFromDensityTemperature(
-              rho_pert, t_pert, Cache[m]);
-          break;
+      case EosPreference::Rhoe:
+        p_pert =
+            eos[ofst(m)].PressureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]);
+        break;
+      case EosPreference::RhoT:
+        p_pert = eos[ofst(m)].PressureFromDensityTemperature(rho_pert, t_pert, Cache[m]);
+        break;
       }
       dpdv[m] = (p_pert - press[m]) / dv;
       dtdv[m] = (t_pert - temp[m]) / dv;
@@ -593,22 +574,21 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot,
       const Real de = std::pow(2.0, std::round(lde));
       Real e_pert = (u[m] + de) / rhobar[m];
 
-      t_pert = eos[ofst(m)].TemperatureFromDensityInternalEnergy(
-          rho[m], e_pert, Cache[m]);
+      t_pert =
+          eos[ofst(m)].TemperatureFromDensityInternalEnergy(rho[m], e_pert, Cache[m]);
       switch (eos_choice[m]) {
-        case EosPreference::Rhoe:
-          p_pert = eos[ofst(m)].PressureFromDensityInternalEnergy(
-              rho[m], e_pert, Cache[m]);
-          break;
-        case EosPreference::RhoT:
-          p_pert = eos[ofst(m)].PressureFromDensityTemperature(
-              rho[m], t_pert, Cache[m]);
-          break;
+      case EosPreference::Rhoe:
+        p_pert = eos[ofst(m)].PressureFromDensityInternalEnergy(rho[m], e_pert, Cache[m]);
+        break;
+      case EosPreference::RhoT:
+        p_pert = eos[ofst(m)].PressureFromDensityTemperature(rho[m], t_pert, Cache[m]);
+        break;
       }
       dpde[m] = (p_pert - press[m]) / de;
       dtde[m] = (t_pert - temp[m]) / de;
       if (std::abs(dtde[m]) < 1.e-16) { // must be on the cold curve
-        dtde[m] = derivative_eps;;
+        dtde[m] = derivative_eps;
+        ;
       }
     }
     // Fill in the residual
@@ -663,9 +643,9 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot,
         scale = 0.1 * (1.0 - vfrac[m]) / dx[m];
       }
       // maybe the below is dangerous??
-      //const Real dt = (dtdv[m] * dx[m] + dtde[m] * dx[m + nmat]);
-      //const Real tt = temp[m] + scale * dt;
-      //if (tt < 0.0)
+      // const Real dt = (dtdv[m] * dx[m] + dtde[m] * dx[m + nmat]);
+      // const Real tt = temp[m] + scale * dt;
+      // if (tt < 0.0)
       //  scale = -0.1 * temp[m] / dt;
     }
     // Now apply the overall scaling
@@ -682,17 +662,17 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot,
         rtemp[m] = rhobar[m] / vtemp[m];
         utemp[m] = u[m] + scale * dx[nmat + m];
         sie[m] = utemp[m] / rhobar[m];
-        temp[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(
-            rtemp[m], sie[m], Cache[m]);
+        temp[m] =
+            eos[ofst(m)].TemperatureFromDensityInternalEnergy(rtemp[m], sie[m], Cache[m]);
         switch (eos_choice[m]) {
-          case EosPreference::Rhoe:
-            press[m] = eos[ofst(m)].PressureFromDensityInternalEnergy(
-                rtemp[m], sie[m], Cache[m]);
-            break;
-          case EosPreference::RhoT:
-            press[m] = eos[ofst(m)].PressureFromDensityTemperature(
-                rtemp[m], temp[m], Cache[m]);
-            break;
+        case EosPreference::Rhoe:
+          press[m] =
+              eos[ofst(m)].PressureFromDensityInternalEnergy(rtemp[m], sie[m], Cache[m]);
+          break;
+        case EosPreference::RhoT:
+          press[m] =
+              eos[ofst(m)].PressureFromDensityTemperature(rtemp[m], temp[m], Cache[m]);
+          break;
         }
       }
       pte_residual<nmat>(utot, vtemp, utemp, temp, press, residual);
@@ -731,11 +711,10 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot,
     // Check for convergence
     converged_p = (error_p < pte_rel_tolerance_p * std::abs(mean_p) ||
                    error_p < pte_abs_tolerance_p);
-    converged_t = (error_t < pte_rel_tolerance_t * mean_t ||
-                   error_t < pte_abs_tolerance_t);
+    converged_t =
+        (error_t < pte_rel_tolerance_t * mean_t || error_t < pte_abs_tolerance_t);
     converged = (converged_p && converged_t);
-    if (converged)
-      break;
+    if (converged) break;
     // niter++;
   } // while (niter < pte_max_iter && !converged);
   for (int m = 0; m < nmat; ++m)
@@ -749,83 +728,78 @@ struct NullPtrIndexer {
 
 } // namespace mix_impl
 
-template <int nmat, typename EOSIndexer, typename RealIndexer,
-          typename ConstRealIndexer, typename LambdaIndexer>
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
+          typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line(
     EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
     ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
-    RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas,
-    int &niter) {
+    RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas, int &niter) {
   using namespace mix_impl;
   return pte_closure_flag_with_line_impl<nmat>(
-      eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
-      ComponentEnergies, lambdas, [](const int m) { return m; }, niter);
+      eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes, ComponentEnergies,
+      lambdas, [](const int m) { return m; }, niter);
 }
 
 template <int nmat>
-PORTABLE_INLINE_FUNCTION bool pte_closure_flag_with_line_offset(
-    EOS *eoss, const Real Volume, const Real TotalSIE,
-    int const *const ComponentMats, const Real *ComponentMasses,
-    Real *ComponentVolumes, Real *ComponentEnergies, Real **lambdas,
-    int &niter) {
+PORTABLE_INLINE_FUNCTION bool
+pte_closure_flag_with_line_offset(EOS *eoss, const Real Volume, const Real TotalSIE,
+                                  int const *const ComponentMats,
+                                  const Real *ComponentMasses, Real *ComponentVolumes,
+                                  Real *ComponentEnergies, Real **lambdas, int &niter) {
   using namespace mix_impl;
   if (lambdas == nullptr) {
     NullPtrIndexer lambda_indexer;
     return pte_closure_flag_with_line_impl<nmat>(
-        eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
-        ComponentEnergies, lambda_indexer,
-        [&ComponentMats](const int m) { return ComponentMats[m]; }, niter);
+        eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes, ComponentEnergies,
+        lambda_indexer, [&ComponentMats](const int m) { return ComponentMats[m]; },
+        niter);
   }
   return pte_closure_flag_with_line_impl<nmat>(
-      eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
-      ComponentEnergies, lambdas,
-      [&ComponentMats](const int m) { return ComponentMats[m]; }, niter);
+      eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes, ComponentEnergies,
+      lambdas, [&ComponentMats](const int m) { return ComponentMats[m]; }, niter);
 }
 
-template <int nmat, typename EOSIndexer, typename RealIndexer,
-          typename LambdaIndexer>
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool pte_closure_josh(EOSIndexer &&eos, const Real vfrac_tot,
                                                const Real sie_tot, RealIndexer &&rho,
                                                RealIndexer &&vfrac, RealIndexer &&sie,
                                                RealIndexer &&temp, RealIndexer &&press,
                                                LambdaIndexer &&lambda, int &niter) {
   using namespace mix_impl;
-  return pte_closure_josh_impl<nmat>(eos, vfrac_tot, sie_tot, rho, vfrac, sie,
-                                     temp, press, lambda,
-                                     [&](const int m) { return m; }, niter);
+  return pte_closure_josh_impl<nmat>(
+      eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+      [&](const int m) { return m; }, niter);
 }
 
 template <int nmat>
 PORTABLE_INLINE_FUNCTION bool
 pte_closure_josh_offset(EOS *eos, const Real vfrac_tot, const Real sie_tot,
-                        int const *const Mats, Real *rho, Real *vfrac,
-                        Real *sie, Real *temp, Real *press, Real **lambda,
-                        int &niter) {
+                        int const *const Mats, Real *rho, Real *vfrac, Real *sie,
+                        Real *temp, Real *press, Real **lambda, int &niter) {
   using namespace mix_impl;
   if (lambda == nullptr) {
     NullPtrIndexer lambda_indexer;
-    return pte_closure_josh_impl<nmat>(eos, vfrac_tot, sie_tot, rho, vfrac, sie,
-                                       temp, press, lambda_indexer,
-                                       [&](const int m) { return m; }, niter);
+    return pte_closure_josh_impl<nmat>(
+        eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda_indexer,
+        [&](const int m) { return m; }, niter);
   }
-  return pte_closure_josh_impl<nmat>(eos, vfrac_tot, sie_tot, rho, vfrac, sie,
-                                     temp, press, lambda,
-                                     [&Mats](const int m) { return Mats[m]; }, niter);
+  return pte_closure_josh_impl<nmat>(
+      eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+      [&Mats](const int m) { return Mats[m]; }, niter);
 }
 
-template <int nmat, typename EOSIndexer, typename RealIndexer,
-          typename ConstRealIndexer, typename LambdaIndexer>
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
+          typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
 pte_closure_ideal(EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
                   ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
-                  RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas,
-                  int &iter) {
+                  RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas, int &iter) {
   using namespace mix_params;
   using namespace mix_impl;
   Real TotalMass = 0.0, Vsum = 0.0, Esum = 0.0;
-  Real Densities[nmat], Pressures[nmat], Temperatures[nmat], dpdr[nmat],
-      dpde[nmat], dtdr[nmat], dtde[nmat], dtpdv[nmat], dtpde[nmat], dtdv[nmat],
-      b[2 * nmat], A[4 * nmat * nmat], rtemp[nmat], sietemp[nmat];
+  Real Densities[nmat], Pressures[nmat], Temperatures[nmat], dpdr[nmat], dpde[nmat],
+      dtdr[nmat], dtde[nmat], dtpdv[nmat], dtpde[nmat], dtdv[nmat], b[2 * nmat],
+      A[4 * nmat * nmat], rtemp[nmat], sietemp[nmat];
   // First, normalize the energies and volumes.
   // This may or may not be close to reality since SIE isn't strictly positive.
   for (int i = 0; i < nmat; ++i)
@@ -859,17 +833,15 @@ pte_closure_ideal(EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
     for (int mat = 0; mat < nmat; ++mat) {
       Densities[mat] = ComponentMasses[mat] / ComponentVolumes[mat];
       eoss[mat].PTofRE(Densities[mat], ComponentEnergies[mat], lambdas[mat],
-                       Pressures[mat], Temperatures[mat], dpdr[mat], dpde[mat],
-                       dtdr[mat], dtde[mat]);
+                       Pressures[mat], Temperatures[mat], dpdr[mat], dpde[mat], dtdr[mat],
+                       dtde[mat]);
       // NOTE: here we are re-using this space for d(P/T)/dr and /de using the
       // chain rule If it is deemed useful, we can output this quantity from the
       // EOS call instead
-      dtpdv[mat] =
-          -(dtdr[mat] - Temperatures[mat] / Pressures[mat] * dpdr[mat]) /
-          Pressures[mat] * square(Densities[mat]);
+      dtpdv[mat] = -(dtdr[mat] - Temperatures[mat] / Pressures[mat] * dpdr[mat]) /
+                   Pressures[mat] * square(Densities[mat]);
       dtpde[mat] =
-          (dtde[mat] - Temperatures[mat] / Pressures[mat] * dpde[mat]) /
-          Pressures[mat];
+          (dtde[mat] - Temperatures[mat] / Pressures[mat] * dpde[mat]) / Pressures[mat];
       dtdv[mat] = -dtdr[mat] * square(Densities[mat]);
     }
     // Now, zero the matrix and vector
@@ -896,8 +868,7 @@ pte_closure_ideal(EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
       A[i * 2 * nmat + i] = dtpdv[n];
       A[i * 2 * nmat + i + 1] = -dtpdv[n + 1];
       A[(2 * nmat - 1) * 2 * nmat + i] = 1;
-      b[i] = Pressures[n + 1] / Temperatures[n + 1] -
-             Pressures[n] / Temperatures[n];
+      b[i] = Pressures[n + 1] / Temperatures[n + 1] - Pressures[n] / Temperatures[n];
       vsum += ComponentMasses[n] / Densities[n];
       esum += ComponentMasses[n] * ComponentEnergies[n];
     }
@@ -920,15 +891,13 @@ pte_closure_ideal(EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
     // Now, get overall scaling limit
     Real scale = 1.0;
     for (int m = 0; m < nmat; ++m) {
-      Real rt =
-          ComponentMasses[m] / (ComponentVolumes[m] + scale * b[m + nmat]);
+      Real rt = ComponentMasses[m] / (ComponentVolumes[m] + scale * b[m + nmat]);
       if (rt < 0.0) {
         scale = -0.9 * ComponentVolumes[m] / b[m + nmat];
       }
       const Real dt = (dtdv[m] * b[m + nmat] + dtde[m] * b[m]);
       const Real tt = Temperatures[m] + scale * dt;
-      if (tt < 0.0)
-        scale = -0.9 * Temperatures[m] / dt;
+      if (tt < 0.0) scale = -0.9 * Temperatures[m] / dt;
     }
     // Now apply the overall pre-scaling
     for (int i = 0; i < 2 * nmat; ++i)
@@ -941,19 +910,18 @@ pte_closure_ideal(EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
     Real err_p, err_t;
     do {
       for (int m = 0; m < nmat; ++m) {
-        rtemp[m] =
-            ComponentMasses[m] / (ComponentVolumes[m] + scale * b[m + nmat]);
+        rtemp[m] = ComponentMasses[m] / (ComponentVolumes[m] + scale * b[m + nmat]);
         sietemp[m] = ComponentEnergies[m] + scale * b[m];
         Temperatures[m] = eoss[m].TemperatureFromDensityInternalEnergy(
             rtemp[m], sietemp[m], lambdas[m]);
         if (eoss[m].PreferredInput() ==
             (thermalqs::density | thermalqs::specific_internal_energy)) {
-          Pressures[m] = eoss[m].PressureFromDensityInternalEnergy(
-              rtemp[m], sietemp[m], lambdas[m]);
+          Pressures[m] =
+              eoss[m].PressureFromDensityInternalEnergy(rtemp[m], sietemp[m], lambdas[m]);
         } else if (eoss[m].PreferredInput() ==
                    (thermalqs::density | thermalqs::temperature)) {
-          Pressures[m] = eoss[m].PressureFromDensityTemperature(
-              rtemp[m], Temperatures[m], lambdas[m]);
+          Pressures[m] = eoss[m].PressureFromDensityTemperature(rtemp[m], Temperatures[m],
+                                                                lambdas[m]);
         }
       }
       err_p = 0.0;
@@ -988,10 +956,10 @@ pte_closure_ideal(EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
     mean_t /= TotalMass;
     err_p = std::sqrt(err_p);
     err_t = std::sqrt(err_t);
-    bool converged_p = (err_p < pte_rel_tolerance_p * std::abs(mean_p) ||
-                        err_p < pte_abs_tolerance_p);
-    bool converged_t = (err_t < pte_rel_tolerance_t * std::abs(mean_t) ||
-                        err_t < pte_abs_tolerance_t);
+    bool converged_p =
+        (err_p < pte_rel_tolerance_p * std::abs(mean_p) || err_p < pte_abs_tolerance_p);
+    bool converged_t =
+        (err_t < pte_rel_tolerance_t * std::abs(mean_t) || err_t < pte_abs_tolerance_t);
     if (converged_p && converged_t) {
       return true; // FIXME
     }
@@ -1006,188 +974,176 @@ pte_closure_ideal(EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
 template <typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
           typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_flag(int nmat, EOSIndexer &&eoss, const Real Volume,
-                 const Real TotalSIE, ConstRealIndexer &&ComponentMasses,
-                 RealIndexer &&ComponentVolumes,
-                 RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas,
-                 int &niter) {
+pte_closure_flag(int nmat, EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
+                 ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
+                 RealIndexer &&ComponentEnergies, LambdaIndexer &&lambdas, int &niter) {
   switch (nmat) {
   case 1:
     return true; // (or should we call the EOS actually?)
   case 2:
-    return pte_closure_flag_with_line<2>(eoss, Volume, TotalSIE,
-                                         ComponentMasses, ComponentVolumes,
-                                         ComponentEnergies, lambdas,
+    return pte_closure_flag_with_line<2>(eoss, Volume, TotalSIE, ComponentMasses,
+                                         ComponentVolumes, ComponentEnergies, lambdas,
                                          niter);
     break;
   case 3:
-    return pte_closure_flag_with_line<3>(eoss, Volume, TotalSIE,
-                                         ComponentMasses, ComponentVolumes,
-                                         ComponentEnergies, lambdas,
+    return pte_closure_flag_with_line<3>(eoss, Volume, TotalSIE, ComponentMasses,
+                                         ComponentVolumes, ComponentEnergies, lambdas,
                                          niter);
     break;
   case 4:
-    return pte_closure_flag_with_line<4>(eoss, Volume, TotalSIE,
-                                         ComponentMasses, ComponentVolumes,
-                                         ComponentEnergies, lambdas,
+    return pte_closure_flag_with_line<4>(eoss, Volume, TotalSIE, ComponentMasses,
+                                         ComponentVolumes, ComponentEnergies, lambdas,
                                          niter);
     break;
   case 5:
-    return pte_closure_flag_with_line<5>(eoss, Volume, TotalSIE,
-                                         ComponentMasses, ComponentVolumes,
-                                         ComponentEnergies, lambdas,
+    return pte_closure_flag_with_line<5>(eoss, Volume, TotalSIE, ComponentMasses,
+                                         ComponentVolumes, ComponentEnergies, lambdas,
                                          niter);
     break;
   case 6:
-    return pte_closure_flag_with_line<6>(eoss, Volume, TotalSIE,
-                                         ComponentMasses, ComponentVolumes,
-                                         ComponentEnergies, lambdas,
+    return pte_closure_flag_with_line<6>(eoss, Volume, TotalSIE, ComponentMasses,
+                                         ComponentVolumes, ComponentEnergies, lambdas,
                                          niter);
     break;
   case 7:
-    return pte_closure_flag_with_line<7>(eoss, Volume, TotalSIE,
-                                         ComponentMasses, ComponentVolumes,
-                                         ComponentEnergies, lambdas,
+    return pte_closure_flag_with_line<7>(eoss, Volume, TotalSIE, ComponentMasses,
+                                         ComponentVolumes, ComponentEnergies, lambdas,
                                          niter);
     break;
   case 8:
-    return pte_closure_flag_with_line<8>(eoss, Volume, TotalSIE,
-                                         ComponentMasses, ComponentVolumes,
-                                         ComponentEnergies, lambdas,
+    return pte_closure_flag_with_line<8>(eoss, Volume, TotalSIE, ComponentMasses,
+                                         ComponentVolumes, ComponentEnergies, lambdas,
                                          niter);
     break;
   }
   return false;
 }
 PORTABLE_INLINE_FUNCTION
-bool pte_closure_flag_offset(int nmat, EOS *eoss, const Real Volume,
-                             const Real TotalSIE,
-                             int const *const ComponentMats,
-                             const Real *ComponentMasses,
+bool pte_closure_flag_offset(int nmat, EOS *eoss, const Real Volume, const Real TotalSIE,
+                             int const *const ComponentMats, const Real *ComponentMasses,
                              Real *ComponentVolumes, Real *ComponentEnergies,
                              Real **lambdas, int &niter) {
   switch (nmat) {
   case 1:
     return true; // (or should we call the EOS actually?)
   case 2:
-    return pte_closure_flag_with_line_offset<2>(
-        eoss, Volume, TotalSIE, ComponentMats, ComponentMasses,
-        ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_flag_with_line_offset<2>(eoss, Volume, TotalSIE, ComponentMats,
+                                                ComponentMasses, ComponentVolumes,
+                                                ComponentEnergies, lambdas, niter);
     break;
   case 3:
-    return pte_closure_flag_with_line_offset<3>(
-        eoss, Volume, TotalSIE, ComponentMats, ComponentMasses,
-        ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_flag_with_line_offset<3>(eoss, Volume, TotalSIE, ComponentMats,
+                                                ComponentMasses, ComponentVolumes,
+                                                ComponentEnergies, lambdas, niter);
     break;
   case 4:
-    return pte_closure_flag_with_line_offset<4>(
-        eoss, Volume, TotalSIE, ComponentMats, ComponentMasses,
-        ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_flag_with_line_offset<4>(eoss, Volume, TotalSIE, ComponentMats,
+                                                ComponentMasses, ComponentVolumes,
+                                                ComponentEnergies, lambdas, niter);
     break;
   case 5:
-    return pte_closure_flag_with_line_offset<5>(
-        eoss, Volume, TotalSIE, ComponentMats, ComponentMasses,
-        ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_flag_with_line_offset<5>(eoss, Volume, TotalSIE, ComponentMats,
+                                                ComponentMasses, ComponentVolumes,
+                                                ComponentEnergies, lambdas, niter);
     break;
   case 6:
-    return pte_closure_flag_with_line_offset<6>(
-        eoss, Volume, TotalSIE, ComponentMats, ComponentMasses,
-        ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_flag_with_line_offset<6>(eoss, Volume, TotalSIE, ComponentMats,
+                                                ComponentMasses, ComponentVolumes,
+                                                ComponentEnergies, lambdas, niter);
     break;
   case 7:
-    return pte_closure_flag_with_line_offset<7>(
-        eoss, Volume, TotalSIE, ComponentMats, ComponentMasses,
-        ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_flag_with_line_offset<7>(eoss, Volume, TotalSIE, ComponentMats,
+                                                ComponentMasses, ComponentVolumes,
+                                                ComponentEnergies, lambdas, niter);
     break;
   case 8:
-    return pte_closure_flag_with_line_offset<8>(
-        eoss, Volume, TotalSIE, ComponentMats, ComponentMasses,
-        ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_flag_with_line_offset<8>(eoss, Volume, TotalSIE, ComponentMats,
+                                                ComponentMasses, ComponentVolumes,
+                                                ComponentEnergies, lambdas, niter);
     break;
   }
   return false;
 }
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_josh(int nmat, EOSIndexer &&eoss, const Real vfrac_tot,
-                 const Real sie_tot, RealIndexer &&rho, RealIndexer &&vfrac,
-                 RealIndexer &&sie, RealIndexer &&temp, RealIndexer &&press,
-                 LambdaIndexer &&lambdas, int &niter) {
+pte_closure_josh(int nmat, EOSIndexer &&eoss, const Real vfrac_tot, const Real sie_tot,
+                 RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                 RealIndexer &&temp, RealIndexer &&press, LambdaIndexer &&lambdas,
+                 int &niter) {
   switch (nmat) {
   case 1:
     return true; // (or should we call the EOS actually?)
   case 2:
-    return pte_closure_josh<2>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp,
-                               press, lambdas, niter);
+    return pte_closure_josh<2>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
     break;
   case 3:
-    return pte_closure_josh<3>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp,
-                               press, lambdas, niter);
+    return pte_closure_josh<3>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
     break;
   case 4:
-    return pte_closure_josh<4>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp,
-                               press, lambdas, niter);
+    return pte_closure_josh<4>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
     break;
   case 5:
-    return pte_closure_josh<5>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp,
-                               press, lambdas, niter);
+    return pte_closure_josh<5>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
     break;
   case 6:
-    return pte_closure_josh<6>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp,
-                               press, lambdas, niter);
+    return pte_closure_josh<6>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
     break;
   case 7:
-    return pte_closure_josh<7>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp,
-                               press, lambdas, niter);
+    return pte_closure_josh<7>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
     break;
   case 8:
-    return pte_closure_josh<8>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp,
-                               press, lambdas, niter);
+    return pte_closure_josh<8>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
     break;
   }
   return false;
 }
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_josh_offset(int nmat, EOS *eoss, const Real vfrac_tot,
-                        const Real sie_tot, int const *const Mats, Real *rho,
-                        Real *vfrac, Real *sie, Real *temp, Real *press,
-                        Real **lambdas, int &niter) {
+pte_closure_josh_offset(int nmat, EOS *eoss, const Real vfrac_tot, const Real sie_tot,
+                        int const *const Mats, Real *rho, Real *vfrac, Real *sie,
+                        Real *temp, Real *press, Real **lambdas, int &niter) {
   switch (nmat) {
   case 1:
     return true; // (or should we call the EOS actually?)
   case 2:
-    return pte_closure_josh_offset<2>(eoss, vfrac_tot, sie_tot, Mats, rho,
-                                      vfrac, sie, temp, press, lambdas, niter);
+    return pte_closure_josh_offset<2>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
     break;
   case 3:
-    return pte_closure_josh_offset<3>(eoss, vfrac_tot, sie_tot, Mats, rho,
-                                      vfrac, sie, temp, press, lambdas, niter);
+    return pte_closure_josh_offset<3>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
     break;
   case 4:
-    return pte_closure_josh_offset<4>(eoss, vfrac_tot, sie_tot, Mats, rho,
-                                      vfrac, sie, temp, press, lambdas, niter);
+    return pte_closure_josh_offset<4>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
     break;
   case 5:
-    return pte_closure_josh_offset<5>(eoss, vfrac_tot, sie_tot, Mats, rho,
-                                      vfrac, sie, temp, press, lambdas, niter);
+    return pte_closure_josh_offset<5>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
     break;
   case 6:
-    return pte_closure_josh_offset<6>(eoss, vfrac_tot, sie_tot, Mats, rho,
-                                      vfrac, sie, temp, press, lambdas, niter);
+    return pte_closure_josh_offset<6>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
     break;
   case 7:
-    return pte_closure_josh_offset<7>(eoss, vfrac_tot, sie_tot, Mats, rho,
-                                      vfrac, sie, temp, press, lambdas, niter);
+    return pte_closure_josh_offset<7>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
     break;
   case 8:
-    return pte_closure_josh_offset<8>(eoss, vfrac_tot, sie_tot, Mats, rho,
-                                      vfrac, sie, temp, press, lambdas, niter);
+    return pte_closure_josh_offset<8>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
     break;
   }
   return false;
 }
-template <typename EOSIndexer, typename RealIndexer,
-          typename ConstRealIndexer, typename LambdaIndexer>
+template <typename EOSIndexer, typename RealIndexer, typename ConstRealIndexer,
+          typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool
 pte_closure_ideal(int nmat, EOSIndexer &&eoss, const Real Volume, const Real TotalSIE,
                   ConstRealIndexer &&ComponentMasses, RealIndexer &&ComponentVolumes,
@@ -1196,32 +1152,32 @@ pte_closure_ideal(int nmat, EOSIndexer &&eoss, const Real Volume, const Real Tot
   case 1:
     return true; // (or should we call the EOS actually?)
   case 2:
-    return pte_closure_ideal<2>(eoss, Volume, TotalSIE, ComponentMasses,
-                                ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_ideal<2>(eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
+                                ComponentEnergies, lambdas, niter);
     break;
   case 3:
-    return pte_closure_ideal<3>(eoss, Volume, TotalSIE, ComponentMasses,
-                                ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_ideal<3>(eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
+                                ComponentEnergies, lambdas, niter);
     break;
   case 4:
-    return pte_closure_ideal<4>(eoss, Volume, TotalSIE, ComponentMasses,
-                                ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_ideal<4>(eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
+                                ComponentEnergies, lambdas, niter);
     break;
   case 5:
-    return pte_closure_ideal<5>(eoss, Volume, TotalSIE, ComponentMasses,
-                                ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_ideal<5>(eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
+                                ComponentEnergies, lambdas, niter);
     break;
   case 6:
-    return pte_closure_ideal<6>(eoss, Volume, TotalSIE, ComponentMasses,
-                                ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_ideal<6>(eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
+                                ComponentEnergies, lambdas, niter);
     break;
   case 7:
-    return pte_closure_ideal<7>(eoss, Volume, TotalSIE, ComponentMasses,
-                                ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_ideal<7>(eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
+                                ComponentEnergies, lambdas, niter);
     break;
   case 8:
-    return pte_closure_ideal<8>(eoss, Volume, TotalSIE, ComponentMasses,
-                                ComponentVolumes, ComponentEnergies, lambdas, niter);
+    return pte_closure_ideal<8>(eoss, Volume, TotalSIE, ComponentMasses, ComponentVolumes,
+                                ComponentEnergies, lambdas, niter);
     break;
   }
   return false;

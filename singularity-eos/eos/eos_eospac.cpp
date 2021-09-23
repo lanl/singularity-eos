@@ -14,8 +14,8 @@
 
 #ifdef SINGULARITY_USE_EOSPAC
 
-#include <singularity-eos/eos/eos.hpp>
 #include <eos_Interface.h>
+#include <singularity-eos/eos/eos.hpp>
 
 PORTABLE_INLINE_FUNCTION Real TemperatureToSesame(const Real CodeTemp) {
   return CodeTemp;
@@ -29,15 +29,9 @@ PORTABLE_INLINE_FUNCTION Real PressureFromSesame(const Real SesPress) {
 PORTABLE_INLINE_FUNCTION Real PressureToSesame(const Real CodePress) {
   return 1e-10 * CodePress;
 }
-PORTABLE_INLINE_FUNCTION Real SieToSesame(const Real CodeSie) {
-  return 1e-10 * CodeSie;
-}
-PORTABLE_INLINE_FUNCTION Real SieFromSesame(const Real SesSie) {
-  return 1e10 * SesSie;
-}
-PORTABLE_INLINE_FUNCTION Real CvFromSesame(const Real SesCv) {
-  return 1e10 * SesCv;
-}
+PORTABLE_INLINE_FUNCTION Real SieToSesame(const Real CodeSie) { return 1e-10 * CodeSie; }
+PORTABLE_INLINE_FUNCTION Real SieFromSesame(const Real SesSie) { return 1e10 * SesSie; }
+PORTABLE_INLINE_FUNCTION Real CvFromSesame(const Real SesCv) { return 1e10 * SesCv; }
 PORTABLE_INLINE_FUNCTION Real BulkModulusFromSesame(const Real SesBmod) {
   return 1e10 * SesBmod;
 }
@@ -50,8 +44,7 @@ namespace singularity {
 
 EOSPAC::EOSPAC(const int matid) : matid_(matid) {
   EOS_INTEGER ntables = NT, errorCode = EOS_OK;
-  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT,
-                               EOS_Info};
+  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT, EOS_Info};
   EOS_INTEGER MATID[NT];
   for (int i = 0; i < NT; i++) {
     MATID[i] = matid;
@@ -91,33 +84,32 @@ EOSPAC::EOSPAC(const int matid) : matid_(matid) {
   BMOD = rho_ref_ * DPDR + DPDE * (PRESS / (rho_ref_ + EPS) - rho_ref_ * DEDR);
   bmod_ref_ = BulkModulusFromSesame(std::max(BMOD, 0.0));
   dpde_ref_ = PressureFromSesame(SieToSesame(DPDE));
-  dvdt_ref_ = dpde_ref_ * cv_ref_ /
-              (rho_ref_ * rho_ref_ * PressureFromSesame(DPDR) + EPS);
+  dvdt_ref_ =
+      dpde_ref_ * cv_ref_ / (rho_ref_ * rho_ref_ * PressureFromSesame(DPDR) + EPS);
 }
 
-PORTABLE_FUNCTION Real EOSPAC::TemperatureFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+PORTABLE_FUNCTION Real EOSPAC::TemperatureFromDensityInternalEnergy(const Real rho,
+                                                                    const Real sie,
+                                                                    Real *lambda) const {
   EOS_REAL R[1] = {rho}, E[1] = {SieToSesame(sie)}, T[1], dTdr[1], dTde[1];
   EOS_INTEGER nxypairs = 1, errorCode;
   EOS_INTEGER table = TofRE_table_;
   eos_Interpolate(&table, &nxypairs, R, E, T, dTdr, dTde, &errorCode);
   return Real(TemperatureFromSesame(T[0]));
 }
-PORTABLE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
-  EOS_REAL R[1] = {rho}, P[1], T[1] = {TemperatureToSesame(temp)}, dPdr[1],
-           dPdT[1];
+PORTABLE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(const Real rho,
+                                                              const Real temp,
+                                                              Real *lambda) const {
+  EOS_REAL R[1] = {rho}, P[1], T[1] = {TemperatureToSesame(temp)}, dPdr[1], dPdT[1];
   EOS_INTEGER nxypairs = 1, errorCode;
   EOS_INTEGER table = PofRT_table_;
   eos_Interpolate(&table, &nxypairs, R, T, P, dPdr, dPdT, &errorCode);
   return Real(PressureFromSesame(P[0]));
 }
-PORTABLE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie,
-                                       Real &press, Real &cv, Real &bmod,
-                                       const unsigned long output,
+PORTABLE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press,
+                                       Real &cv, Real &bmod, const unsigned long output,
                                        Real *lambda) const {
-  EOS_REAL R[1] = {rho}, T[1] = {TemperatureToSesame(temp)}, E[1], P[1], dx[1],
-           dy[1];
+  EOS_REAL R[1] = {rho}, T[1] = {TemperatureToSesame(temp)}, E[1], P[1], dx[1], dy[1];
   EOS_INTEGER nxypairs = 1, errorCode = EOS_OK;
   Real CV, BMOD_T, BMOD, SIE, PRESS, DPDE, DPDT, DPDR, DEDT, DEDR;
   if ((output & thermalqs::specific_internal_energy) ||
@@ -169,39 +161,45 @@ PORTABLE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie,
   }
 }
 
-PORTABLE_FUNCTION Real EOSPAC::InternalEnergyFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+PORTABLE_FUNCTION Real EOSPAC::InternalEnergyFromDensityTemperature(const Real rho,
+                                                                    const Real temp,
+                                                                    Real *lambda) const {
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
   const unsigned long output = thermalqs::specific_internal_energy;
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return sie;
 }
-PORTABLE_FUNCTION Real EOSPAC::BulkModulusFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+PORTABLE_FUNCTION Real EOSPAC::BulkModulusFromDensityTemperature(const Real rho,
+                                                                 const Real temp,
+                                                                 Real *lambda) const {
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
   const unsigned long output = thermalqs::bulk_modulus;
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return bmod;
 }
-PORTABLE_FUNCTION Real EOSPAC::SpecificHeatFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+PORTABLE_FUNCTION Real EOSPAC::SpecificHeatFromDensityTemperature(const Real rho,
+                                                                  const Real temp,
+                                                                  Real *lambda) const {
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
   const unsigned long output = thermalqs::specific_heat;
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return cv;
 }
-PORTABLE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+PORTABLE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(const Real rho,
+                                                                 const Real sie,
+                                                                 Real *lambda) const {
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return PressureFromDensityTemperature(rho, temp, lambda);
 }
-PORTABLE_FUNCTION Real EOSPAC::SpecificHeatFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+PORTABLE_FUNCTION Real EOSPAC::SpecificHeatFromDensityInternalEnergy(const Real rho,
+                                                                     const Real sie,
+                                                                     Real *lambda) const {
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return SpecificHeatFromDensityTemperature(rho, temp, lambda);
 }
-PORTABLE_FUNCTION Real EOSPAC::BulkModulusFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+PORTABLE_FUNCTION Real EOSPAC::BulkModulusFromDensityInternalEnergy(const Real rho,
+                                                                    const Real sie,
+                                                                    Real *lambda) const {
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return BulkModulusFromDensityTemperature(rho, temp, lambda);
 }
@@ -229,8 +227,8 @@ PORTABLE_FUNCTION Real EOSPAC::GruneisenParamFromDensityInternalEnergy(
 
 PORTABLE_FUNCTION
 void EOSPAC::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-						  Real *lambda, Real &rho,
-						  Real &sie) const {
+                                                  Real *lambda, Real &rho,
+                                                  Real &sie) const {
   EOS_REAL P[1] = {PressureToSesame(press)};
   EOS_REAL T[1] = {TemperatureToSesame(temp)};
   EOS_REAL dx[1], dy[1], R[1], E[1];
@@ -247,10 +245,9 @@ void EOSPAC::DensityEnergyFromPressureTemperature(const Real press, const Real t
   sie = SieFromSesame(E[0]);
 }
 
-PORTABLE_FUNCTION void EOSPAC::PTofRE(const Real rho, const Real sie,
-                                      Real *lambda, Real &press, Real &temp,
-                                      Real &dpdr, Real &dpde, Real &dtdr,
-                                      Real &dtde) const {
+PORTABLE_FUNCTION void EOSPAC::PTofRE(const Real rho, const Real sie, Real *lambda,
+                                      Real &press, Real &temp, Real &dpdr, Real &dpde,
+                                      Real &dtdr, Real &dtde) const {
   EOS_REAL R[1] = {rho}, T[1], E[1] = {SieToSesame(sie)}, P[1], dx[1], dy[1];
   EOS_INTEGER nxypairs = 1, errorCode = EOS_OK;
   Real DTDR_E, DTDE_R, DPDR_T, DPDT_R;
@@ -272,9 +269,8 @@ PORTABLE_FUNCTION void EOSPAC::PTofRE(const Real rho, const Real sie,
   dpdr = PressureFromSesame(DPDR_T + DTDR_E * DPDT_R);
 }
 
-PORTABLE_FUNCTION void EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp,
-                                                      Real &sie, Real &press,
-                                                      Real &cv, Real &bmod,
+PORTABLE_FUNCTION void EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
+                                                      Real &press, Real &cv, Real &bmod,
                                                       Real &dpde, Real &dvdt,
                                                       Real *lambda) const {
   rho = rho_ref_;
