@@ -17,10 +17,12 @@
 
 #include <iostream>
 #include "stdio.h"
+#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
 #include <utility>
+
 
 #include <singularity-eos/eos/eos_variant.hpp>
 #include <ports-of-call/portability.hpp>
@@ -1113,6 +1115,8 @@ using EOS = Variant<
     ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoSie>>,
     RelativisticEOS<SpinerEOSDependsRhoT>,
     RelativisticEOS<SpinerEOSDependsRhoSie>,
+    UnitSystem<SpinerEOSDependsRhoT>,
+    UnitSystem<SpinerEOSDependsRhoT>,
     // TODO(JMM): Might need shifted + relativistic
     // for StellarCollapse. Might not. Negative
     // energies can throw off normalization of cs2 by

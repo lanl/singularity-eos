@@ -167,7 +167,7 @@ SCENARIO("Relativistic EOS", "[EOSBuilder][RelativisticEOS]") {
   GIVEN("Parameters for an ideal gas") {
     constexpr Real Cv = 2.0;
     constexpr Real gm1 = 0.5;
-    WHEN("We construct a relativistic IdelaGas with EOSBuilder") {
+    WHEN("We construct a relativistic IdealGas with EOSBuilder") {
       EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
       EOSBuilder::modifiers_t modifiers;
       EOSBuilder::params_t base_params, relativity_params;
@@ -182,6 +182,59 @@ SCENARIO("Relativistic EOS", "[EOSBuilder][RelativisticEOS]") {
         Real bmod = eos.BulkModulusFromDensityInternalEnergy(rho, sie);
         Real cs2 = bmod / rho;
         REQUIRE( cs2 < 1 );
+      }
+    }
+  }
+}
+
+SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem]") {
+  GIVEN("Parameters for an ideal gas") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
+    EOSBuilder::modifiers_t modifiers;
+    EOSBuilder::params_t base_params, units_params;
+    base_params["Cv"].emplace<Real>(Cv);
+    base_params["gm1"].emplace<Real>(gm1);
+    GIVEN("Units with a thermal unit system") {
+      constexpr Real rho_unit = 1e1;
+      constexpr Real sie_unit = 1e-1;
+      constexpr Real temp_unit = 1;
+      WHEN("We construct an IdealGas with EOSBuilder") {
+	units_params["rho_unit"].emplace<Real>(rho_unit);
+	units_params["sie_unit"].emplace<Real>(sie_unit);
+	units_params["temp_unit"].emplace<Real>(temp_unit);
+	modifiers[EOSBuilder::EOSModifier::UnitSystem] = units_params;
+	EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+	THEN("Units cancel out for an ideal gas") {
+	  Real rho = 1e3;
+	  Real sie = 1e3;
+	  Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+	  Real Ptrue = gm1*rho*sie;
+	  REQUIRE( std::abs(P - Ptrue)/Ptrue < 1e-3 );
+	}
+      }
+    }
+    GIVEN("Units with length and time units") {
+      constexpr Real time_unit = 1;
+      constexpr Real length_unit = 1e2;
+      constexpr Real mass_unit = 1e6;
+      constexpr Real temp_unit = 1;
+      WHEN("We construct an IdealGas with EOSBuilder") {
+	units_params["use_length_time"].emplace<bool>(true);
+	units_params["time_unit"].emplace<Real>(time_unit);
+	units_params["length_unit"].emplace<Real>(length_unit);
+	units_params["mass_unit"].emplace<Real>(mass_unit);
+	units_params["temp_unit"].emplace<Real>(temp_unit);
+	modifiers[EOSBuilder::EOSModifier::UnitSystem] = units_params;
+	EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+	THEN("Units cancel out for an ideal gas") {
+	  Real rho = 1e3;
+	  Real sie = 1e3;
+	  Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+	  Real Ptrue = gm1*rho*sie;
+	  REQUIRE( std::abs(P - Ptrue)/Ptrue < 1e-3 );
+	}
       }
     }
   }

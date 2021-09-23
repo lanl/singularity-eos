@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include "stdio.h"
+#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <limits>

@@ -68,6 +68,24 @@ namespace EOSBuilder {
   }
 
   template<typename T>
+  EOS makeUnitSystem(T&& eos,
+		     bool use_length_time,
+		     Real rho_unit, Real sie_unit,
+		     Real temp_unit,
+		     Real time_unit, Real mass_unit,
+		     Real length_unit) {
+    if (use_length_time) {
+      return UnitSystem<T>(std::move(eos),
+			   eos_units_init::length_time_units_init_tag,
+			   time_unit, mass_unit, length_unit, temp_unit);
+    } else {
+      return UnitSystem<T>(std::move(eos),
+			   eos_units_init::thermal_units_init_tag,
+			   rho_unit, sie_unit, temp_unit);
+    }
+  }
+
+  template<typename T>
   EOS makeRelativistic(T&& eos, Real cl) {
     return RelativisticEOS<T>(std::move(eos), cl);
   }

@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include "stdio.h"
+#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
@@ -34,48 +35,48 @@ static struct ThermalUnitsInit { } thermal_units_init_tag;
 static struct LengthTimeUnitsInit { } length_time_units_init_tag;
 } // namespace eos_units
 
-template<typename T> class UnitSystem {
+template<typename T>
+class UnitSystem {
 public:
   // move semantics ensures dynamic memory comes along for the ride
+  // TODO(JMM): Entropy unit needed?
   UnitSystem(T &&t, eos_units_init::ThermalUnitsInit,
-	     const Real rho_unit, const Real sie_unit, const Real temp_unit,
-	     const Real press_unit)
+	     const Real rho_unit, const Real sie_unit, const Real temp_unit)
     : t_(std::forward<T>(t))
     , rho_unit_(rho_unit)
     , sie_unit_(sie_unit)
     , temp_unit_(temp_unit)
-    , press_unit_(press_unit)
+    , press_unit_(rho_unit*sie_unit)
     , inv_rho_unit_(1/rho_unit) // inverses computed to avoid division at runtime
     , inv_sie_unit_(1/sie_unit)
     , inv_temp_unit_(1/temp_unit)
-    , inv_press_unit_(1/press_unit)
-    , inv_dpde_unit_(sie_unit/press_unit) // thermo derivatives computed consistently
+    , inv_press_unit_(1/press_unit_)
+    , inv_dpde_unit_(sie_unit/press_unit_) // thermo derivatives computed consistently
     , inv_dvdt_unit_(rho_unit*temp_unit)  // TODO(JMM): Is this convention weird?
-    , inv_dpdr_unit_(rho_unit/press_unit)
+    , inv_dpdr_unit_(rho_unit/press_unit_)
     , inv_dtdr_unit_(rho_unit/temp_unit)
     , inv_dtde_unit_(sie_unit/temp_unit) // obviously this is also Cv
     , inv_cv_unit_(temp_unit/sie_unit)
-    , inv_gruneisen_unit_(rho_unit*sie_unit/press_unit)
-    , inv_bmod_unit_(1/press_unit)
+    , inv_gruneisen_unit_(rho_unit*sie_unit/press_unit_)
+    , inv_bmod_unit_(1/press_unit_)
   {}
   UnitSystem(T &&t, eos_units_init::LengthTimeUnitsInit,
 	     const Real time_unit, const Real mass_unit, const Real length_unit,
 	     const Real temp_unit)
-    : UnitSystem(t, eos_units_init::thermal_units_init_tag,
+    : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag,
 		 mass_unit / length_unit*length_unit*length_unit,
 		 length_unit*length_unit/(time_unit*time_unit),
-		 temp_unit,
-		 mass_unit/(length_unit*time_unit*time_unit)) {}
+		 temp_unit) {}
   UnitSystem(T &&t,
-	     const Real rho_unit, const Real sie_unit, const Real temp_unit,
-	     const Real press_unit)
-    : UnitSystem(t, eos_units_init::thermal_units_init_tag,
-		 rho_unit, sie_unit, temp_unit, press_unit) {}
+	     const Real rho_unit, const Real sie_unit, const Real temp_unit)
+    : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag,
+		 rho_unit, sie_unit, temp_unit) {}
   UnitSystem() = default;
 
   auto GetOnDevice() {
     return UnitSystem<T>(t_.GetOnDevice(),
-			 rho_unit_, sie_unit_, temp_unit_, press_unit_);
+			 eos_units_init::thermal_units_init_tag,
+			 rho_unit_, sie_unit_, temp_unit_);
   }
   inline void Finalize() { t_.Finalize(); }
 
@@ -237,10 +238,11 @@ public:
 private:
   T t_;
 
-  const Real rho_unit_, sie_unit_, temp_unit_, press_unit_;
-  const Real inv_rho_unit_, inv_sie_unit_, inv_temp_unit_, inv_press_unit_;
-  const Real inv_dpde_unit_, inv_dvdt_unit_, inv_dpdr_unit_, inv_dtdr_unit_, inv_dtde_unit_;
-  const Real inv_cv_unit_, inv_gruneisen_unit_, inv_bmod_unit_;
+  // JMM: The compiler deletes GetOnDevice if I make these const. So... they're not
+  Real rho_unit_, sie_unit_, temp_unit_, press_unit_;
+  Real inv_rho_unit_, inv_sie_unit_, inv_temp_unit_, inv_press_unit_;
+  Real inv_dpde_unit_, inv_dvdt_unit_, inv_dpdr_unit_, inv_dtdr_unit_, inv_dtde_unit_;
+  Real inv_cv_unit_, inv_gruneisen_unit_, inv_bmod_unit_;
 };
 
 } // namespace singularity
