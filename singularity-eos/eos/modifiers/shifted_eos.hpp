@@ -24,8 +24,8 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/base/constants.hpp>
+#include <singularity-eos/eos/base/eos_error.hpp>
 
 namespace singularity {
 
@@ -145,4 +145,4 @@ class ShiftedEOS {
 
 } // namespace singularity
 
-#endif _SINGULARITY_EOS_EOS_SHIFTED_EOS_
+#endif //_SINGULARITY_EOS_EOS_SHIFTED_EOS_
