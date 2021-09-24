@@ -11,7 +11,7 @@
 # prepare derivative works, distribute copies to the public, perform
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
-
+find_package(Catch2)
 add_executable(eos_unit_tests
                  eos_unit_tests.cpp)
 if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
@@ -20,13 +20,13 @@ endif()
 if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
-target_link_libraries(eos_unit_tests PRIVATE Catch2::Catch2 singularity-eos::eos)
+target_link_libraries(eos_unit_tests PRIVATE Catch2::Catch2 singularity-eos::singularity-eos)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
                  compare_to_eospac.cpp
                  ${CMAKE_SOURCE_DIR}/sesame2spiner/io_eospac.cpp)
-  target_link_libraries(compare_to_eospac Catch2::Catch2 singularity-eos::eos)
+  target_link_libraries(compare_to_eospac Catch2::Catch2 singularity-eos::singularity-eos)
   target_include_directories(compare_to_eospac PUBLIC
                              ${CMAKE_SOURCE_DIR}/utils/spiner
                              ${CMAKE_SOURCE_DIR}/utils/ports-of-call
@@ -52,7 +52,7 @@ if (SINGULARITY_BUILD_CLOSURE)
                  test_pte.cpp)
   target_link_libraries(test_pte PRIVATE
                         Catch2::Catch2
-                        singularity-eos::eos
+                        singularity-eos::singularity-eos
                         )
   add_test(pte test_pte)
 endif()
@@ -60,7 +60,7 @@ endif()
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   add_executable(profile_stellar_collapse
                  profile_stellar_collapse.cpp)
-  target_link_libraries(profile_stellar_collapse singularity-eos::eos)
+  target_link_libraries(profile_stellar_collapse singularity-eos::singularity-eos)
 
   message(STATUS "Generating stellar collapse table for tests using Python script")
   include(FindPythonInterp)

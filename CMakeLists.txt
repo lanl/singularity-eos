@@ -41,7 +41,7 @@ include(compilers)
 #----------------------------------------------------------------------------#
 
 get_cmake_property(_variableNames VARIABLES)
-string (REGEX MATCHALL "(^|;)USE_[A-Za-z0-9_]*"
+string (REGEX MATCHALL "(^|;)(USE_|BUILD_)[A-Za-z0-9_]*"
   _matchedVars "${_variableNames}")
 
 foreach(_variableName ${_matchedVars})
@@ -59,6 +59,7 @@ install(
   FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.h
   DESTINATION include
 )
+
 set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
 include(library)
 
@@ -78,8 +79,6 @@ add_library_target(${PROJECT_NAME} singularity-eos
   LINK_PUBLIC
     ${TPL_LIBRARIES}
 )
-
-
 
 #----------------------------------------------------------------------------#
 # Extract all project options so they can be exported to the

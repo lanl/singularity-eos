@@ -175,14 +175,13 @@ using ScratchV = Kokkos::View<T **, Lrgt>;
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
 // mapping from EAP integer to
-<<<<<<< HEAD
-static const std::map<const int, const unsigned long>
-  EAPInputToBD = {
-                   {-3, thermalqs::temperature | thermalqs::density},
+static const std::map<const int, const unsigned long> EAPInputToBD = {
+    {-3, thermalqs::temperature | thermalqs::density},
+    {-2, thermalqs::density | thermalqs::pressure},
+    {-1, thermalqs::pressure | thermalqs::temperature},
     {0, thermalqs::specific_internal_energy | thermalqs::density},
     {1, thermalqs::specific_internal_energy | thermalqs::density},
 };
->>>>>>> main
 
 // EAP centric arguments and function signature
 int get_sg_eos( // sizing information

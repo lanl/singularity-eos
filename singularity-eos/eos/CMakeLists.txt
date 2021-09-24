@@ -16,7 +16,6 @@ set(eos_HEADERS
   eos_builder.hpp
   eos_variant.hpp
   eos.hpp
-  singularity_eos.hpp
   base/constants.hpp
   base/eos_error.hpp
   modifiers/eos_unitsystem.hpp
@@ -39,6 +38,10 @@ if(SINGULARITY_BUILD_CLOSURE)
   set(eos_SOURCES
     ${eos_SOURCES}
     singularity_eos.cpp
+  )
+  set(eos_HEADERS
+    ${eos_HEADERS}
+    singularity_eos.hpp
   )
 endif()
 if(SINGULARITY_USE_FORTRAN)

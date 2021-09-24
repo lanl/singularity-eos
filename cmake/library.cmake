@@ -19,7 +19,7 @@ if(NOT DEFINED LIBDIR)
   set(LIBDIR "${CMAKE_INSTALL_LIBDIR}")
 endif(NOT DEFINED LIBDIR)
 
-option(BUILD_SHARED_LIBS "Build shared libs" ON)
+option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 mark_as_advanced(BUILD_SHARED_LIBS)
 
 function(add_library_target target directory)
@@ -135,6 +135,15 @@ function(add_library_target target directory)
 
   endforeach(_SUBDIR)
 
+  foreach(_SOURCE ${_SOURCES})
+    get_filename_component(_extn ${_SOURCE} LAST_EXT)
+    # can make it more robust here
+    if (_extn STREQUAL ".f90")
+      set(_HAS_FORTRAN_SOURCES)
+      set(_MODULE_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR})
+      #message(STATUS "found fortran [${_SOURCE}]; setting module path to ${_MODULE_BUILD_DIR}")
+    endif()
+  endforeach(_SOURCE)
   #----------------------------------------------------------------------------#
   # Add the actual build target
   #----------------------------------------------------------------------------#
@@ -145,6 +154,10 @@ function(add_library_target target directory)
     add_library(${target} INTERFACE)
   endif()
 
+  if(_HAS_FORTRAN_SOURCES)
+    set_target_properties(${target} PROPERTIES Fortran_MODULE_DIRECTORY ${_MODULE_BUILD_DIR})
+    target_include_directories(${target} INTERFACE ${_MODULE_BUILD_DIR})
+  endif()
 
   #----------------------------------------------------------------------------#
   # Create an alias for local builds
