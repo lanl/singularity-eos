@@ -7,8 +7,9 @@ if(SINGULARITY_USE_HDF5)
         message(FATAL_ERROR "HDF5 requested, but not found")
     endif()
     set(SPINER_USE_HDF ON CACHE BOOL "Spiner use hdf5" FORCE)
-    # TODO: check for cmake version, this behavior is very new
-    #list(APPEND TPL_INCLUDES ${HDF5_INCLUDE_DIRS})
+    set(SPINER_USE_HDF ON)
+
+
     list(APPEND TPL_LIBRARIES ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
     list(APPEND TPL_DEFINES SINGULARITY_USE_HDF5 SPINER_USE_HDF)
 

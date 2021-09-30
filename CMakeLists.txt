@@ -36,30 +36,36 @@ include(portsofcall)
 include(variant)
 include(mathselect)
 include(compilers)
+
 #----------------------------------------------------------------------------#
 # Capture use settings.
 #----------------------------------------------------------------------------#
 
-get_cmake_property(_variableNames VARIABLES)
-string (REGEX MATCHALL "(^|;)(USE_|BUILD_)[A-Za-z0-9_]*"
-  _matchedVars "${_variableNames}")
+# get_cmake_property(_variableNames VARIABLES)
+# string (REGEX MATCHALL "(^|;)(USE_|BUILD_)[A-Za-z0-9_]*"
+#   _matchedVars "${_variableNames}")
 
-foreach(_variableName ${_matchedVars})
-  set(SINGULARITY_${_variableName} ${${_variableName}})
-endforeach()
+# foreach(_variableName ${_matchedVars})
+#   set(SINGULARITY_${_variableName} ${${_variableName}})
+# endforeach()
 
 #----------------------------------------------------------------------------#
 # Configure header.
 #----------------------------------------------------------------------------#
 
-configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}-config.h.in
-  ${CMAKE_BINARY_DIR}/flecsi-config.h @ONLY)
+# configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}-config.h.in
+#   ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.h @ONLY)
 
-install(
-  FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.h
-  DESTINATION include
-)
+# install(
+#   FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.h
+#   DESTINATION include
+# )
 
+# 20210930.mauneyc
+# This allows the exported "package" (singularity-eos)
+# to be automatically found by other projects.
+# NOTE: This is disabled by default, may want to
+#       control at command line
 set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
 include(library)
 
@@ -85,34 +91,34 @@ add_library_target(${PROJECT_NAME} singularity-eos
 # cmake config file.
 #----------------------------------------------------------------------------#
 
-get_cmake_property(_variableNames VARIABLES)
-string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
-  _matchedVars "${_variableNames}")
+# get_cmake_property(_variableNames VARIABLES)
+# string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
+#   _matchedVars "${_variableNames}")
 
-foreach(_variableName ${_matchedVars})
-  string(REGEX REPLACE "singularity-eos" "SINGULARITY" _tmpvariableName ${_variableName})
-  set(SINGULARITY_CONFIG_CODE
-    "${SINGULARITY_CONFIG_CODE}\nset(${_tmpvariableName} \"${${_variableName}}\")")
-endforeach()
+# foreach(_variableName ${_matchedVars})
+#   string(REGEX REPLACE "singularity-eos" "SINGULARITY" _tmpvariableName ${_variableName})
+#   set(SINGULARITY_CONFIG_CODE
+#     "${SINGULARITY_CONFIG_CODE}\nset(${_tmpvariableName} \"${${_variableName}}\")")
+# endforeach()
 #need to export this, maybe a better way?
-set(SINGULARITY_CONFIG_CODE "${SINGULARITY_CONFIG_CODE}\nset(SPINER_USE_HDF \"${SPINER_USE_HDF}\")")
+#set(SINGULARITY_CONFIG_CODE "${SINGULARITY_CONFIG_CODE}\nset(SPINER_USE_HDF \"${SPINER_USE_HDF}\")")
 
-configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}Config.cmake.in
-${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.cmake @ONLY)
+# configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}Config.cmake.in
+# ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.cmake @ONLY)
 
-install(
-FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.cmake
-DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBDIR}/cmake/${PROJECT_NAME}
-)
+# install(
+# FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.cmake
+# DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBDIR}/cmake/${PROJECT_NAME}
+# )
 
-# cmakes
-configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}CMakeConfig.cmake.in
-${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}CMakeConfig.cmake @ONLY)
+# # cmakes
+# configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}CMakeConfig.cmake.in
+# ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}CMakeConfig.cmake @ONLY)
 
-install(
-FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}CMakeConfig.cmake
-DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBDIR}/cmake/${PROJECT_NAME}CMake
-)
+# install(
+# FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}CMakeConfig.cmake
+# DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBDIR}/cmake/${PROJECT_NAME}CMake
+# )
 
 install(
 FILES ${PROJECT_SOURCE_DIR}/cmake/compilers.cmake
@@ -130,7 +136,7 @@ FILES ${PROJECT_SOURCE_DIR}/cmake/mathselect.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/portsofcall.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/subdirlist.cmake
 FILES ${PROJECT_SOURCE_DIR}/cmake/variant.cmake
-DESTINATION ${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/cmake
+DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
 )
 
 if(SINGULARITY_USE_HDF5)

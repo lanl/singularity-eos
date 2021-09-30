@@ -1,16 +1,3 @@
-#------------------------------------------------------------------------------#
-#  @@@@@@@@  @@           @@@@@@   @@@@@@@@ @@
-# /@@/////  /@@          @@////@@ @@////// /@@
-# /@@       /@@  @@@@@  @@    // /@@       /@@
-# /@@@@@@@  /@@ @@///@@/@@       /@@@@@@@@@/@@
-# /@@////   /@@/@@@@@@@/@@       ////////@@/@@
-# /@@       /@@/@@//// //@@    @@       /@@/@@
-# /@@       @@@//@@@@@@ //@@@@@@  @@@@@@@@ /@@
-# //       ///  //////   //////  ////////  //
-#
-# Copyright (c) 2016, Triad National Security, LLC
-# All rights reserved
-#------------------------------------------------------------------------------#
 
 include(subdirlist)
 
@@ -205,24 +192,21 @@ function(add_library_target target directory)
   )
 
   #----------------------------------------------------------------------------#
-  # Install
+  # Export/Install
   #----------------------------------------------------------------------------#
 
   if(lib_EXPORT_TARGET)
-    install(TARGETS ${target}
-      EXPORT
-        ${lib_EXPORT_TARGET}
-      DESTINATION
-        ${LIBDIR}
+    install(
+      TARGETS ${target}
+      EXPORT  ${lib_EXPORT_TARGET}
+      DESTINATION ${LIBDIR}
     )
 
-    install(EXPORT ${lib_EXPORT_TARGET}
-      FILE
-        ${lib_EXPORT_TARGET}.cmake
-      NAMESPACE
-        "${lib_NAMESPACE}::"
-      DESTINATION
-        ${LIBDIR}/cmake/${target}
+    install(
+      EXPORT  ${lib_EXPORT_TARGET}
+      FILE    ${lib_EXPORT_TARGET}.cmake
+      NAMESPACE "${lib_NAMESPACE}::"
+      DESTINATION ${LIBDIR}/cmake/${target}
     )
   else()
     install(TARGETS ${target} DESTINATION ${LIBDIR})
@@ -239,6 +223,19 @@ function(add_library_target target directory)
   endforeach()
 
   #----------------------------------------------------------------------------#
+  # Packaging
+  #----------------------------------------------------------------------------#
+  include(CMakePackageConfigHelpers)
+  configure_package_config_file(${CMAKE_SOURCE_DIR}/config/${target}Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
+    INSTALL_DESTINATION ${LIBDIR}/cmake/${target}
+  )
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
+    DESTINATION ${LIBDIR}/cmake/${target}
+  )
+
+  #----------------------------------------------------------------------------#
   # Version
   #----------------------------------------------------------------------------#
 
@@ -249,7 +246,7 @@ function(add_library_target target directory)
         SOVERSION ${lib_SOVERSION}
     )
 
-    include(CMakePackageConfigHelpers)
+
     write_basic_package_version_file(
       ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
       VERSION ${lib_VERSION}
@@ -265,11 +262,10 @@ function(add_library_target target directory)
   # Local export
   #----------------------------------------------------------------------------#
 
-  export(EXPORT ${lib_EXPORT_TARGET}
-    FILE
-      ${CMAKE_CURRENT_BINARY_DIR}/${target}Targets.cmake
-    NAMESPACE
-      ${lib_NAMESPACE}::
+  export(
+    EXPORT    ${lib_EXPORT_TARGET}
+    FILE      ${CMAKE_CURRENT_BINARY_DIR}/cmake/${target}Targets.cmake
+    NAMESPACE ${lib_NAMESPACE}::
   )
 
   export(PACKAGE ${target})

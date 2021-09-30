@@ -1,10 +1,9 @@
 #pragma once
 
-#if defined (SINGULARITY_ENABLE_KOKKOS)
-    #define PORTABILITY_STATEGY_KOKKOS
-    #if defined(SINGULARITY_ENABLE_KOKKOSKERNELS)
-        #define(SINGULARITY_USE_KOKKOSKERNELS)
-    #endif
-#endif
+#cmakedefine PORTABILITY_STRATAGY_KOKKOS
 
-#define fastmathorder 4
+#cmakedefine SINGULARITY_INVERT_AT_SETUP
+#cmakedefine SINGULARITY_EOS_SKIP_EXTRAP
+
+#cmakedefine SINGULARITY_USE_FMATH_ORDER @SINGULARITY_USE_FMATH_ORDER@
+

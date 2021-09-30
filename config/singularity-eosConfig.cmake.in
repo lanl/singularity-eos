@@ -1,27 +1,5 @@
-# config options
+@PACKAGE_INIT@
 
-@SINGULARITY_CONFIG_CODE@
+include("${CMAKE_CURRENT_LIST_DIR}/singularity-eosTargets.cmake")
 
-if(NOT TARGET singularity-eos AND NOT singularity-eos_BINARY_DIR)
-  include(@CMAKE_INSTALL_PREFIX@/@LIBDIR@/cmake/singularity-eos/singularity-eosTargets.cmake)
-endif()
-
-# handle TPLs
-
-find_package(singularity-eosCMake REQUIRED)
-list(APPEND CMAKE_MODULE_PATH ${singularity-eos_PREFIX})
-
-set(SINGULARITY_USE_KOKKOS @SINGULARITY_USE_KOKKOS@)
-include(kokkos)
-
-set(SINGULARITY_USE_KOKKOSKERNELS @SINGULARITY_USE_KOKKOSKERNELS@)
-include(kokkoskernels)
-
-set(SINGULARITY_USE_CUDA @SINGULARITY_USE_CUDA@)
-include(cuda)
-
-set(SINGULARITY_USE_EOSPAC) @SINGULARITY_USE_EOSPAC@)
-include(eospac)
-
-set(SINGULARITY_USE_HDF5) @SINGULARITY_USE_HDF5@)
-include(hdf5)
+check_required_components(singularity-eos)
