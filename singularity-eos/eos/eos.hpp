@@ -35,8 +35,8 @@
 #include <spiner/spiner_types.hpp>
 #endif // SPINER_USE_HDF
 
-#include <singularity-eos/eos/base/constants.hpp>
-#include <singularity-eos/eos/base/eos_error.hpp>
+#include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/singularity_error.hpp>
 #include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
 #include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
 #include <singularity-eos/eos/modifiers/scaled_eos.hpp>

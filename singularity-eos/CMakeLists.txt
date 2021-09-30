@@ -12,5 +12,6 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
+add_subdirectory(base)
 add_subdirectory(closure)
 add_subdirectory(eos)

@@ -12,50 +12,19 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
-set(eos_HEADERS
-  eos_builder.hpp
-  eos_variant.hpp
-  eos.hpp
-  modifiers/eos_unitsystem.hpp
-  modifiers/scaled_eos.hpp
-  modifiers/shifted_eos.hpp
-  modifiers/relativistic_eos.hpp
+set(closure_HEADERS
+  constants.hpp
+  singularity_error.hpp
 )
 
-set(eos_SOURCES
-  eos_spiner.cpp
-  eos_jwl.cpp
-  eos_builder.cpp
-  eos_ideal.cpp
-  eos_gruneisen.cpp
-  eos_davis.cpp
-  eos_stellar_collapse.cpp
-  eos_eospac.cpp
-)
-if(SINGULARITY_BUILD_CLOSURE)
-  set(eos_SOURCES
-    ${eos_SOURCES}
-    singularity_eos.cpp
-  )
-  set(eos_HEADERS
-    ${eos_HEADERS}
-    singularity_eos.hpp
-  )
-endif()
-if(SINGULARITY_USE_FORTRAN)
-  set(eos_SOURCES
-    ${eos_SOURCES}
-    singularity_eos.f90
-  )
-
-endif()
+set(closure_SOURCES)
 
 #------------------------------------------------------------------------------#
 # Export header list to parent scope.
 #------------------------------------------------------------------------------#
 
-set(eos_HEADERS
-  ${eos_HEADERS}
+set(closure_HEADERS
+  ${closure_HEADERS}
   PARENT_SCOPE
 )
 
@@ -63,7 +32,7 @@ set(eos_HEADERS
 # Export source list to parent scope.
 #------------------------------------------------------------------------------#
 
-set(eos_SOURCES
-  ${eos_SOURCES}
+set(closure_SOURCES
+  ${closure_SOURCES}
   PARENT_SCOPE
 )
