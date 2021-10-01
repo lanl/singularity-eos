@@ -1,0 +1,56 @@
+image: ubuntu:20.04
+
+variables:
+  GIT_STRATEGY: clone
+  GIT_SUBMODULE_STRATEGY: recursive
+
+before_script:
+  - apt-get update -qq &> /dev/null
+  - apt-get install -qq -y git &> /dev/null
+  - apt-get install -qq -y openssh-client &> /dev/null
+  - apt-get install -qq -y git-lfs
+  - apt-get install -qq -y build-essential &> /dev/null
+  - apt-get install -qq -y libhdf5-dev &> /dev/null
+  - DEBIAN_FRONTEND=noninteractive apt-get install -qq -y cmake &> /dev/null
+  - apt-get install -qq -y gfortran &> /dev/null
+  - apt-get install -qq -y nvidia-cuda-dev &> /dev/null
+  - apt-get upgrade -qq -y &> /dev/null
+  - apt-get -f install -qq -y &> /dev/null
+  - eval $(ssh-agent -s)
+  - echo "$SSH_PRIVATE_KEY_PC" | tr -d '\r' | ssh-add -
+  - echo "$SSH_PRIVATE_KEY_SP" | tr -d '\r' | ssh-add -
+  - echo "$SSH_PRIVATE_KEY_DATA" | tr -d '\r' | ssh-add -
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  - ssh-keyscan gitlab.lanl.gov >> ~/.ssh/known_hosts
+  - chmod 644 ~/.ssh/known_hosts
+  - git config --global user.email "singularity-eos@lanl.gov"
+  - git config --global user.name "singularity-eos"
+  - git lfs install
+  - git clone git@gitlab.lanl.gov:singularity/singularity-eos-data.git
+
+install_singularity-eos_fort:
+  script:
+    - export TARGET_DIR=${HOME}/install/fort
+    - mkdir -p ${TARGET_DIR}
+    - mkdir -p build && cd build
+    - cmake -DSINGULARITY_BUILD_SESAME2SPINER=ON -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} ..
+    - make -j
+    - make install
+
+install_singularity-eos_nofort:
+  script:
+    - export TARGET_DIR=${HOME}/install/nofort
+    - mkdir -p ${TARGET_DIR}
+    - mkdir -p build && cd build
+    - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} -DSINGULARITY_USE_FORTRAN=OFF ..
+    - make -j
+    - make install
+
+test_singularity-eos:
+  script:
+    - mkdir -p build
+    - cd build
+    - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON ..
+    - make -j
+    - make test
