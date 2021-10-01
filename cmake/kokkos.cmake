@@ -4,6 +4,7 @@ option (SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 mark_as_advanced(ENABLE_KOKKSKERNELS)
 
 if(SINGULARITY_USE_KOKKOS)
+    set(PORTABILITY_STRATEGY_KOKKOS ON)
 
     find_package(Kokkos REQUIRED)
     if(NOT Kokkos_FOUND)
@@ -20,7 +21,6 @@ if(SINGULARITY_USE_KOKKOS)
 
     list(APPEND TPL_LIBRARIES Kokkos::kokkos)
     list(APPEND TPL_DEFINES PORTABILITY_STRATEGY_KOKKOS)
-    set(PORTABILITY_STRATEGY_KOKKOS ON)
 
 
 endif()

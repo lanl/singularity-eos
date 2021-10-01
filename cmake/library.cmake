@@ -29,6 +29,8 @@ function(add_library_target target directory)
     INCLUDE_PRIVATE
     LINK_PUBLIC
     LINK_PRIVATE
+    OPTION_PUBLIC
+    OPTION_PRIVATE
   )
 
   cmake_parse_arguments(lib "${options}" "${one_value_args}"
@@ -163,6 +165,17 @@ function(add_library_target target directory)
   )
 
   #----------------------------------------------------------------------------#
+  # Add compile options
+  #----------------------------------------------------------------------------#
+
+  target_compile_options(${target}
+    PUBLIC
+      ${lib_OPTION_PUBLIC}
+    PRIVATE
+      ${lib_OPTION_PRIVATE}
+  )
+
+  #----------------------------------------------------------------------------#
   # Add the correct includes
   #----------------------------------------------------------------------------#
 
@@ -225,6 +238,7 @@ function(add_library_target target directory)
   #----------------------------------------------------------------------------#
   # Packaging
   #----------------------------------------------------------------------------#
+
   include(CMakePackageConfigHelpers)
   configure_package_config_file(${CMAKE_SOURCE_DIR}/config/${target}Config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake

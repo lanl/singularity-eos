@@ -18,14 +18,16 @@ project(singularity-eos VERSION 1.5.0)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
 message(STATUS "Patching mpark::variant to support GPUs")
 execute_process(COMMAND patch -N -s -V never
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch)
+                ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
+)
 
-
+include(compilers)
 include(cuda)
 include(hdf5)
 include(kokkos)
@@ -35,31 +37,6 @@ include(eospac)
 include(portsofcall)
 include(variant)
 include(mathselect)
-include(compilers)
-
-#----------------------------------------------------------------------------#
-# Capture use settings.
-#----------------------------------------------------------------------------#
-
-# get_cmake_property(_variableNames VARIABLES)
-# string (REGEX MATCHALL "(^|;)(USE_|BUILD_)[A-Za-z0-9_]*"
-#   _matchedVars "${_variableNames}")
-
-# foreach(_variableName ${_matchedVars})
-#   set(SINGULARITY_${_variableName} ${${_variableName}})
-# endforeach()
-
-#----------------------------------------------------------------------------#
-# Configure header.
-#----------------------------------------------------------------------------#
-
-# configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}-config.h.in
-#   ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.h @ONLY)
-
-# install(
-#   FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.h
-#   DESTINATION include
-# )
 
 # 20210930.mauneyc
 # This allows the exported "package" (singularity-eos)
@@ -69,6 +46,7 @@ include(compilers)
 set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
 include(library)
 
+# all-in-on library configuration
 add_library_target(${PROJECT_NAME} singularity-eos
   EXPORT_TARGET
     ${PROJECT_NAME}Targets
@@ -84,59 +62,28 @@ add_library_target(${PROJECT_NAME} singularity-eos
     ${CMAKE_BINARY_DIR}
   LINK_PUBLIC
     ${TPL_LIBRARIES}
+  OPTION_PRIVATE
+    ${XTRA_BUILD_FLAGS}
 )
 
-#----------------------------------------------------------------------------#
-# Extract all project options so they can be exported to the
-# cmake config file.
-#----------------------------------------------------------------------------#
-
-# get_cmake_property(_variableNames VARIABLES)
-# string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
-#   _matchedVars "${_variableNames}")
-
-# foreach(_variableName ${_matchedVars})
-#   string(REGEX REPLACE "singularity-eos" "SINGULARITY" _tmpvariableName ${_variableName})
-#   set(SINGULARITY_CONFIG_CODE
-#     "${SINGULARITY_CONFIG_CODE}\nset(${_tmpvariableName} \"${${_variableName}}\")")
-# endforeach()
-#need to export this, maybe a better way?
-#set(SINGULARITY_CONFIG_CODE "${SINGULARITY_CONFIG_CODE}\nset(SPINER_USE_HDF \"${SPINER_USE_HDF}\")")
-
-# configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}Config.cmake.in
-# ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.cmake @ONLY)
-
-# install(
-# FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}.cmake
-# DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBDIR}/cmake/${PROJECT_NAME}
-# )
-
-# # cmakes
-# configure_file(${PROJECT_SOURCE_DIR}/config/${PROJECT_NAME}CMakeConfig.cmake.in
-# ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}CMakeConfig.cmake @ONLY)
-
-# install(
-# FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${PROJECT_NAME}CMakeConfig.cmake
-# DESTINATION ${CMAKE_INSTALL_PREFIX}/${LIBDIR}/cmake/${PROJECT_NAME}CMake
-# )
-
 install(
-FILES ${PROJECT_SOURCE_DIR}/cmake/compilers.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/cuda.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/eigen3.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/eospac.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/FindEigen3.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/FindHwloc.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/hdf5.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/kokkos.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/kokkoskernels.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/library.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/mathselect.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/portsofcall.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/subdirlist.cmake
-FILES ${PROJECT_SOURCE_DIR}/cmake/variant.cmake
-DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+  FILES
+    ${PROJECT_SOURCE_DIR}/cmake/compilers.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/cuda.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/eigen3.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/eospac.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/FindEigen3.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/FindHwloc.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/hdf5.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/kokkos.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/kokkoskernels.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/library.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/mathselect.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/portsofcall.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/subdirlist.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/variant.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
 )
 
 if(SINGULARITY_USE_HDF5)

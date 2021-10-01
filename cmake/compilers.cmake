@@ -23,3 +23,9 @@ if(SINGULARITY_USE_FORTRAN)
   enable_language(Fortran)
   include(CMakeDetermineFortranCompiler)
 endif()
+
+# prepare some generator snippets
+set(with_cxx "$<COMPILE_LANGUAGE:CXX>")
+set(build_release "$<CONFIG:Release>")
+set(build_debug "$<CONFIG:Debug>")
+set(on_xl "$<COMPILER_ID:XL>")
