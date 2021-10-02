@@ -5,17 +5,12 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 before_script:
-  - sudo apt-get update -qq 
-  - apt-get install -qq -y git &> /dev/null
-  - apt-get install -qq -y openssh-client &> /dev/null
-  - apt-get install -qq -y git-lfs
-  - apt-get install -qq -y build-essential &> /dev/null
-  - apt-get install -qq -y libhdf5-dev &> /dev/null
-  - DEBIAN_FRONTEND=noninteractive apt-get install -qq -y cmake &> /dev/null
-  - apt-get install -qq -y gfortran &> /dev/null
-  - apt-get install -qq -y nvidia-cuda-dev &> /dev/null
-  - apt-get upgrade -qq -y &> /dev/null
-  - apt-get -f install -qq -y &> /dev/null
+  - git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+  - . spack/share/spack/setup-env.sh
+  - spack install git-lfs
+  - spack install openssh
+  - spack install hdf5+fortran
+  - spack install cuda+dev
   - eval $(ssh-agent -s)
   - echo "$SSH_PRIVATE_KEY_PC" | tr -d '\r' | ssh-add -
   - echo "$SSH_PRIVATE_KEY_SP" | tr -d '\r' | ssh-add -
