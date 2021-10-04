@@ -9,7 +9,6 @@ before_script:
   - export HOME=${CI_PROJECT_DIR}
   - export TMPDIR=${CI_PROJECT_DIR}
   - cd ${CI_PROJECT_DIR}
-  - module load gcc
   - unset SPACK_ROOT
   - git clone https://github.com/spack/spack.git
   - cd spack && git checkout ${SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
