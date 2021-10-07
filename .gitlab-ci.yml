@@ -1,9 +1,20 @@
-image: ubuntu:20.04
-
 variables:
   GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: recursive
   SPACK_REF: "v0.16.3"
+  SINGULARITY_EOS_GCC_VERSION: "9.3.0"
+  SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
+
+.job:
+  tags:
+    - darwin-slurm-shared
+  only:
+    refs:
+      - master
+      - merge_requests
+  except:
+    refs:
+      - schedules
 
 before_script:
   - export HOME=${CI_PROJECT_DIR}
@@ -13,26 +24,42 @@ before_script:
   - git clone https://github.com/spack/spack.git
   - cd spack && git checkout ${SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
+  - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
   - spack compiler find
   - spack compiler list
-  - spack install git-lfs
-  - spack install openssh
-  - spack install hdf5+fortran
-  - spack install cuda+dev
-  - eval $(ssh-agent -s)
-  - echo "$SSH_PRIVATE_KEY_PC" | tr -d '\r' | ssh-add -
-  - echo "$SSH_PRIVATE_KEY_SP" | tr -d '\r' | ssh-add -
-  - echo "$SSH_PRIVATE_KEY_DATA" | tr -d '\r' | ssh-add -
-  - mkdir -p ~/.ssh
-  - chmod 700 ~/.ssh
-  - ssh-keyscan gitlab.lanl.gov >> ~/.ssh/known_hosts
-  - chmod 644 ~/.ssh/known_hosts
-  - git config --global user.email "singularity-eos@lanl.gov"
-  - git config --global user.name "singularity-eos"
-  - git lfs install
-  - git clone git@gitlab.lanl.gov:singularity/singularity-eos-data.git
+  - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
+  - spack repo list
+  - |
+    printf "modules:\n  tcl:\n    verbose: True\n    naming_scheme: '{name}/{version}-{compiler.name}-{compiler.version}'\n    all:\n      autoload: 'direct'\n      conflict:\n        - '{name}'" > ${CI_PROJECT_DIR}/spack/etc/spack/modules.yaml
+  - cat ${CI_PROJECT_DIR}/spack/etc/spack/modules.yaml
+  - mkdir -p ${CI_PROJECT_DIR}/spack_env
+  - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
+  - spack env activate -d ${CI_PROJECT_DIR}/spack_env
+  - spack install --show-log-on-error singularity-eos_deps%gcc@${SINGULARITY_EOS_GCC_VERSION}
+  - spack module tcl refresh -y
+  - spack env loads -r
+  - export modName="${CI_PROJECT_DIR}/spack_env/loads"
+  - sed -i "1s;^;module load gcc/${LIBRISTRA_GCC_VERSION}\n;" ${modName}
+  - sed -i "1s;^;#%Module\n;" ${modName}
+  - module use ${CI_PROJECT_DIR}/spack_env
+  - module load loads # module load compiler, deps, etc.
+  # singularity-eos-data is in /projects/xcap/ec/singularity-eos-data
+  #- eval $(ssh-agent -s)
+  #- echo "$SSH_PRIVATE_KEY_PC" | tr -d '\r' | ssh-add -
+  #- echo "$SSH_PRIVATE_KEY_SP" | tr -d '\r' | ssh-add -
+  #- echo "$SSH_PRIVATE_KEY_DATA" | tr -d '\r' | ssh-add -
+  #- mkdir -p ~/.ssh
+  #- chmod 700 ~/.ssh
+  #- ssh-keyscan gitlab.lanl.gov >> ~/.ssh/known_hosts
+  #- chmod 644 ~/.ssh/known_hosts
+  #- git config --global user.email "singularity-eos@lanl.gov"
+  #- git config --global user.name "singularity-eos"
+  #- git lfs install
+  #- git clone git@gitlab.lanl.gov:singularity/singularity-eos-data.git
 
 install_singularity-eos_fort:
+  extends:
+    - .job
   script:
     - export TARGET_DIR=${HOME}/install/fort
     - mkdir -p ${TARGET_DIR}
@@ -42,6 +69,8 @@ install_singularity-eos_fort:
     - make install
 
 install_singularity-eos_nofort:
+  extends:
+    - .job
   script:
     - export TARGET_DIR=${HOME}/install/nofort
     - mkdir -p ${TARGET_DIR}
@@ -51,6 +80,8 @@ install_singularity-eos_nofort:
     - make install
 
 test_singularity-eos:
+  extends:
+    - .job
   script:
     - mkdir -p build
     - cd build
