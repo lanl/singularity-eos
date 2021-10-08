@@ -31,11 +31,10 @@ before_script:
   - spack repo list
   - |
     printf "modules:\n  tcl:\n    verbose: True\n    naming_scheme: '{name}/{version}-{compiler.name}-{compiler.version}'\n    all:\n      autoload: 'direct'\n      conflict:\n        - '{name}'" > ${CI_PROJECT_DIR}/spack/etc/spack/modules.yaml
-  - cat ${CI_PROJECT_DIR}/spack/etc/spack/modules.yaml
   - mkdir -p ${CI_PROJECT_DIR}/spack_env
   - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
   - spack env activate -d ${CI_PROJECT_DIR}/spack_env
-  - spack install --show-log-on-error singularity-eos_deps%gcc@${SINGULARITY_EOS_GCC_VERSION}
+  - spack install --no-checksum --show-log-on-error singularity-eos_deps%gcc@${SINGULARITY_EOS_GCC_VERSION}
   - spack module tcl refresh -y
   - spack env loads -r
   - export modName="${CI_PROJECT_DIR}/spack_env/loads"
