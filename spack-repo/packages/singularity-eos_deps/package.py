@@ -53,19 +53,12 @@ class SingularityEosDeps(BundlePackage):
 
     depends_on("cmake@3.12:")
     depends_on("catch2@2.13.4:2.13.6")
-    depends_on(
-            "mpark-variant",
-#            patches=patch("cuda_compatibility.patch"),
-            when="+cuda"
-    )
 
     conflicts(
             "linalg=eigen",
             when="+cuda"
     )
     
-#    patch("cuda_compatibility.patch", when="+cuda")
-
 
     phases=["install"]
 
@@ -87,9 +80,6 @@ class SingularityEosDeps(BundlePackage):
             "SINGULARITY_TEST_STELLAR_COLLAPSE": "OFF",
             "SINGULARITY_BUILD_SESAME2SPINER": "OFF",	
             "SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER": "OFF",
-            "SINGULARITY_INVERT_AT_SETUP": "OFF",
-            "SINGULARITY_BETTER_DEBUG_FLAGS": "ON",
-            "SINGULARITY_HIDE_MORE_WARNINGS": "OFF",
         }
 
         if "+cuda" in spec:
@@ -98,7 +88,6 @@ class SingularityEosDeps(BundlePackage):
             cmake_args_map["SINGULARITY_USE_KOKKOS"] = "ON"
             if spec.variants["linalg"].value == "kokkos":
                 cmake_args_map["SINGULARITY_USE_KOKKOSKERNELS"] = "ON"
-
         
         if "sesame" in spec.variants["build_extra"]:
             cmake_args_map["SINGULARITY_BUILD_SESAME2SPINER"] = "ON"
