@@ -3,38 +3,34 @@
 import os
 from spack import *
 
-class SingularityEosDeps(BundlePackage):
+class SingularityEosDeps(BundlePackage, CudaPackage):
     homepage    = "https://github.com/lanl/singularity-eos"
     url         = "https://github.com/lanl/singularity-eos/archive/refs/heads/main.zip"
     git         = "git@github.com:lanl/singularity-eos.git"
 
     version("main", branch="main")
 
-    variant(
-            "cuda",
-            default=False,
-            description="Use cuda"
+    variant("kokkos",
+            description="Enable kokkos",
+            default=True
     )
 
-    variant(
-            "kokkos",
-            default=False,
-            description="Use kokkos"
+    variant("kokkos-kernels",
+            description="Enable kokkos-kernals for linear algebra",
+            default=False
     )
 
-    variant(
-            "linalg", 
-            default="eigen", 
-            description="Linear algebra library",
-            values=("eigen" ,"kokkos"),
-            multi=False
+    variant("openmp",
+            description="Enable openmp",
+            default=False
     )
+
     variant(
             "build_extra",
-            values=("sesame","stellarcollapse", "none"), 	
-            default="none",
             description="Build converters",
-            multi=True
+            values=any_combination_of(
+                'sesame','stellarcollapse'
+            ).with_default('none') 	
     )
 
     variant(
@@ -43,22 +39,30 @@ class SingularityEosDeps(BundlePackage):
             description="Build tests"
     )
 
-    depends_on("hdf5~mpi+cxx+hl")
-    depends_on("cuda@11:", when="+cuda")
-    depends_on("kokkos@3:", when="+kokkos")
-    depends_on("eigen@3.3.9", when="linalg=eigen")
-    depends_on("kokkos-kernels", when="linalg=kokkos")
     depends_on("mpark-variant")
+    depends_on("hdf5~mpi+cxx+hl")
     depends_on("eospac")
 
     depends_on("cmake@3.12:")
-    depends_on("catch2@2.13.4:2.13.6")
+    depends_on("eigen@3.3.9", when="~kokkos-kernels")
+    depends_on("catch2@2.13.4:2.13.6", when="+enable_tests")
 
-    conflicts(
-            "linalg=eigen",
-            when="+cuda"
-    )
-    
+    for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
+        depends_on("kokkos@3.3:" +_flag, when="+kokkos" + _flag)
+        depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
+
+    with when("~kokkos"):
+        conflicts("+cuda")
+        conflicts("+openmp")
+        conflicts("+kokkos-kernels")
+
+    with when("+cuda+kokkos"):
+        for _flag in list(CudaPackage.cuda_arch_values):
+            depends_on("kokkos@3.3: cuda_arch=" +_flag, when="cuda_arch=" + _flag)
+            depends_on("kokkos-kernels cuda_arch=" +_flag, when="cuda_arch" + _flag)
+
+    conflicts('cuda_arch=none', when='+cuda',
+          msg='CUDA architecture is required')
 
     phases=["install"]
 
@@ -86,7 +90,7 @@ class SingularityEosDeps(BundlePackage):
             cmake_args_map["SINGULARITY_USE_CUDA"] = "ON"
         if "+kokkos" in spec:
             cmake_args_map["SINGULARITY_USE_KOKKOS"] = "ON"
-            if spec.variants["linalg"].value == "kokkos":
+            if "+kokkos-kernels" in spec:
                 cmake_args_map["SINGULARITY_USE_KOKKOSKERNELS"] = "ON"
         
         if "sesame" in spec.variants["build_extra"]:
