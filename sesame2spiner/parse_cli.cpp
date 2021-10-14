@@ -33,9 +33,10 @@ void parseCLI(int argc, char *argv[], std::string &savename,
 
   std::stringstream helpStream;
   helpStream << "Usage: " << argv[0]
-             << "[-p] [-w] [-h] [-v] [-vv] [-d] <savename> <parameter files>\n\n"
-             << "\t <savename>: filename to save to\n"
+             << "[-p] [-w] [-h] [-v] [-vv] [-d] [-s <savename>] <parameter files>\n\n"
              << "\t <parameter files>: input files, one per material\n"
+             << "\t-s <savename>: filename to save to. Defaults to "
+	     << DEFAULT_SAVENAME << "\n"
              << "\t-p:  print metadata associated with materials "
              << "in parameter files\n"
              << "\t-v:  print eospac warnings\n"
@@ -49,7 +50,7 @@ void parseCLI(int argc, char *argv[], std::string &savename,
              << std::endl;
   helpMessage = helpStream.str();
 
-  bool savename_set = false;
+  savename = DEFAULT_SAVENAME;
 
   if (argc < 2) {
     std::cerr << helpMessage << std::endl;
@@ -71,13 +72,10 @@ void parseCLI(int argc, char *argv[], std::string &savename,
     } else if ((std::strcmp(argv[i], "-d") == 0 || std::strcmp(argv[i], "-vv") == 0) &&
                eospacWarn != Verbosity::Debug) {
       eospacWarn = Verbosity::Debug;
+    } else if (std::strcmp(argv[i], "-s") == 0) {
+      savename = argv[++i];
     } else {
-      if (!savename_set) {
-        savename = argv[i];
-        savename_set = true;
-      } else {
-        filenames.push_back(std::string(argv[i]));
-      }
+      filenames.push_back(std::string(argv[i]));
     }
   }
   if (filenames.size() < 1) {
