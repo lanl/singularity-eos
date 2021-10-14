@@ -1049,7 +1049,7 @@ class EOSPAC {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   int matid_;
-  static constexpr int NT = 5;
+  static constexpr int NT = 4;
   EOS_INTEGER tablehandle[NT];
   EOS_INTEGER PofRT_table_;
   EOS_INTEGER TofRE_table_;

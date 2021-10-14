@@ -33,6 +33,10 @@ EOSPAC::EOSPAC(const int matid, bool invert_at_setup) : matid_(matid) {
       NT, matid, tableType, tablehandle,
       std::vector<std::string>({"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT"}),
       Verbosity::Quiet, invert_at_setup);
+  PofRT_table_ = tablehandle[0];
+  TofRE_table_ = tablehandle[1];
+  EofRT_table_ = tablehandle[2];
+  RofPT_table_ = tablehandle[3];
 
   // Set reference states
   SesameMetadata m;
