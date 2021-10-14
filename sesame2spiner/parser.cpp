@@ -35,8 +35,7 @@ void Params::Parse(std::istream &s) {
   std::string line;
   while (getline(s, line)) {
     line.erase(std::remove_if(line.begin(), line.end(), isspace), line.end());
-    if (line[0] == '#' || line.empty())
-      continue;
+    if (line[0] == '#' || line.empty()) continue;
     auto delimiter_pos = line.find("=");
     auto name = line.substr(0, delimiter_pos);
     auto value = line.substr(delimiter_pos + 1);
@@ -44,23 +43,28 @@ void Params::Parse(std::istream &s) {
   }
 }
 
-template <> std::string Params::Get(const std::string &key) const {
+template <>
+std::string Params::Get(const std::string &key) const {
   return params_.at(key);
 }
 
-template <> int Params::Get(const std::string &key) const {
+template <>
+int Params::Get(const std::string &key) const {
   return std::stoi(params_.at(key));
 }
 
-template <> double Params::Get(const std::string &key) const {
+template <>
+double Params::Get(const std::string &key) const {
   return std::stod(params_.at(key));
 }
 
-template <> float Params::Get(const std::string &key) const {
+template <>
+float Params::Get(const std::string &key) const {
   return std::stof(params_.at(key));
 }
 
-template <> bool Params::Get(const std::string &key) const {
+template <>
+bool Params::Get(const std::string &key) const {
   std::string val = params_.at(key);
   if ((val == "true") || (val == "1")) {
     return true;

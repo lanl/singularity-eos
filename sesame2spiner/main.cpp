@@ -14,12 +14,12 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <cstring>
-#include <cstdlib>
 #include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <sstream>
+#include <string>
 #include <vector>
 
 #include <hdf5.h>
@@ -33,11 +33,11 @@
 #include <spiner/ports-of-call/portability.hpp>
 #include <spiner/sp5.hpp>
 
-#include "io_eospac.hpp"
 #include "generate_files.hpp"
+#include "io_eospac.hpp"
 #include "parse_cli.hpp"
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   std::vector<std::string> filenames;
   std::string savename, helpMessage;
   Verbosity eospacWarn = Verbosity::Quiet;
@@ -47,10 +47,10 @@ int main(int argc, char* argv[]) {
   parseCLI(argc, argv, savename, filenames, printMetadata, eospacWarn, helpMessage);
 
   std::cout << "sesame2spiner                            \n"
-	    << "-----------------------------------------\n"
-    	    << "Author: Jonah Miller (jonahm@lanl.gov)   \n"
-	    << "-----------------------------------------\n"
-	    << std::endl;
+            << "-----------------------------------------\n"
+            << "Author: Jonah Miller (jonahm@lanl.gov)   \n"
+            << "-----------------------------------------\n"
+            << std::endl;
 
   status = saveAllMaterials(savename, filenames, printMetadata, eospacWarn);
 

@@ -17,6 +17,11 @@ if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_CLOSURE)
 endif()
 
 set(EOS_SRCS
+    eos.hpp
+    modifiers/eos_unitsystem.hpp
+    modifiers/scaled_eos.hpp
+    modifiers/shifted_eos.hpp
+    modifiers/relativistic_eos.hpp
     eos_spiner.cpp
     eos_jwl.cpp
     eos_builder.cpp
