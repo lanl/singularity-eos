@@ -25,18 +25,21 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
             default=False
     )
 
-    variant(
-            "build_extra",
+    variant("build_extra",
             description="Build converters",
             values=any_combination_of(
                 'sesame','stellarcollapse'
             ).with_default('none') 	
     )
 
-    variant(
-            "enable_tests",
+    variant("enable_tests",
             default=False,
             description="Build tests"
+    )
+
+    variant("enable_fortran",
+            default=True,
+            description="Enable building fortran interface"
     )
 
     depends_on("mpark-variant")
@@ -61,8 +64,8 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
             depends_on("kokkos@3.3: cuda_arch=" +_flag, when="cuda_arch=" + _flag)
             depends_on("kokkos-kernels cuda_arch=" +_flag, when="cuda_arch=" + _flag)
 
-    conflicts('cuda_arch=none', when='+cuda',
-          msg='CUDA architecture is required')
+    conflicts("cuda_arch=none", when="+cuda",
+          msg="CUDA architecture is required")
 
     phases=["install"]
 
@@ -104,6 +107,9 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
 
         if "+enable_tests" in spec:
             cmake_args_map["SINGULARITY_BUILD_TESTS"] = "ON"
+
+        if "+enable_fortran" in spec:
+            cmake_args_map["SINGULARITY_USE_FORTRAN"] = "ON"
 
         with working_dir('spack-build', create=True):
             with open("singularity_tc.cmake", 'w') as cmtcf:
