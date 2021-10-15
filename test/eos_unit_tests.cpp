@@ -43,7 +43,7 @@ using singularity::EOSPAC;
 namespace EOSBuilder = singularity::EOSBuilder;
 namespace thermalqs = singularity::thermalqs;
 
-const std::string eosName = "singularity-eos-data/materials.sp5";
+const std::string eosName = "../singularity-eos-data/materials.sp5";
 const std::string airName = "air";
 const std::string steelName = "stainless steel 347";
 
@@ -487,7 +487,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
   using singularity::StellarCollapse;
   const std::string savename = "stellar_collapse_ideal_2.sp5";
   GIVEN("A stellar collapse EOS") {
-    const std::string filename = "stellar_collapse_ideal.h5";
+    const std::string filename = "../stellar_collapse_ideal.h5";
     THEN("We can load the file") { // don't bother filtering bmod here.
       StellarCollapse sc(filename, false, false);
       AND_THEN("Some properties we expect for ideal gas hold") {
