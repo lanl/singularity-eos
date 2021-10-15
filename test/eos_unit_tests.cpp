@@ -485,9 +485,9 @@ SCENARIO("EOS Builder and SpinerEOS",
 SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
   using singularity::IdealGas;
   using singularity::StellarCollapse;
-  const std::string savename = "stellar_collapse_ideal.sp5";
+  const std::string savename = "stellar_collapse_ideal_2.sp5";
   GIVEN("A stellar collapse EOS") {
-    const std::string filename = "../stellar_collapse_ideal.h5";
+    const std::string filename = "stellar_collapse_ideal.h5";
     THEN("We can load the file") { // don't bother filtering bmod here.
       StellarCollapse sc(filename, false, false);
       AND_THEN("Some properties we expect for ideal gas hold") {
