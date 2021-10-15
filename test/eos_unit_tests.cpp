@@ -43,7 +43,7 @@ using singularity::EOSPAC;
 namespace EOSBuilder = singularity::EOSBuilder;
 namespace thermalqs = singularity::thermalqs;
 
-const std::string eosName = "../singularity-eos-data/materials.sp5";
+const std::string eosName = "singularity-eos-data/materials.sp5";
 const std::string airName = "air";
 const std::string steelName = "stainless steel 347";
 
