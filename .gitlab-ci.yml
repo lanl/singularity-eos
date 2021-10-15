@@ -47,6 +47,7 @@ before_script:
   - sed -i "1s;^;#%Module\n;" ${modName}
   - module use ${CI_PROJECT_DIR}/spack_env
   - module load loads # module load compiler, deps, etc.
+  - pip install h5py
 
 # install_singularity-eos_fort:
 #   extends:
