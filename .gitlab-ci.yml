@@ -77,6 +77,7 @@ test_singularity-eos:
     - mkdir -p build
     - cd build
     - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON -DSINGULARITY_EOS_TEST_DATA_DIR=${DATADIR} ..
+    - pwd
     - ls
     - ls ../
     - ls ${DATADIR}
