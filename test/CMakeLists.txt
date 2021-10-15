@@ -38,6 +38,7 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   if (NOT SINGULARITY_EOS_TEST_DATA_DIR)
     message(FATAL_ERROR "Location of test data directory not found")
   endif()
+  message(status "Copying ${SINGULARITY_EOS_TEST_DATA_DIR} to ${PROJECT_BINARY_DIR}/singularity-eos-data")
   add_custom_command(TARGET eos_unit_tests PRE_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
                      ${SINGULARITY_EOS_TEST_DATA_DIR}
