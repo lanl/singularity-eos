@@ -44,7 +44,7 @@ before_script:
   - sed -i "1s;^;#%Module\n;" ${modName}
   - module use ${CI_PROJECT_DIR}/spack_env
   - module load loads # module load compiler, deps, etc.
-  # singularity-eos-data is in /projects/xcap/ec/singularity-eos-data
+  # singularity-eos-data is in 
   #- eval $(ssh-agent -s)
   #- echo "$SSH_PRIVATE_KEY_PC" | tr -d '\r' | ssh-add -
   #- echo "$SSH_PRIVATE_KEY_SP" | tr -d '\r' | ssh-add -
@@ -86,6 +86,6 @@ test_singularity-eos:
   script:
     - mkdir -p build
     - cd build
-    - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON -DSINGULARITY_TEST_DATA_DIR=${DATADIR} ..
+    - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON -DSINGULARITY_EOS_TEST_DATA_DIR=${DATADIR} ..
     - make -j
     - make test
