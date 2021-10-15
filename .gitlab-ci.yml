@@ -19,6 +19,7 @@ variables:
 before_script:
   - export HOME=${CI_PROJECT_DIR}
   - export TMPDIR=${CI_PROJECT_DIR}
+  - export DATADIR=${CI_DATA_DIR}
   - cd ${CI_PROJECT_DIR}
   - unset SPACK_ROOT
   - git clone https://github.com/spack/spack.git
@@ -85,6 +86,6 @@ test_singularity-eos:
   script:
     - mkdir -p build
     - cd build
-    - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON ..
+    - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON -DSINGULARITY_TEST_DATA_DIR=${DATADIR} ..
     - make -j
     - make test

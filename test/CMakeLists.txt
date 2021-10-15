@@ -35,9 +35,12 @@ endif()
 
 catch_discover_tests(eos_unit_tests)
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
+  if (NOT SINGULARITY_EOS_TEST_DATA_DIR)
+    message(FATAL_ERROR "Location of test data directory not found")
+  endif()
   add_custom_command(TARGET eos_unit_tests PRE_BUILD
                      COMMAND ${CMAKE_COMMAND} -E copy_directory
-                     ${CMAKE_SOURCE_DIR}/singularity-eos-data
+                     ${SINGULARITY_EOS_TEST_DATA_DIR}
                      ${PROJECT_BINARY_DIR}/singularity-eos-data)
 endif()
 
