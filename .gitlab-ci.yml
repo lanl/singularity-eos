@@ -3,6 +3,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   SPACK_REF: "v0.16.3"
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
+  SINGULARITY_CI_DATA_DIR: "/projects/xcap/ec/singularity-eos-data"
   SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
 
 .job:
@@ -19,7 +20,7 @@ variables:
 before_script:
   - export HOME=${CI_PROJECT_DIR}
   - export TMPDIR=${CI_PROJECT_DIR}
-  - export DATADIR=${CI_DATA_DIR}
+  - export DATADIR=${SINGULARITY_CI_DATA_DIR}
   - cd ${CI_PROJECT_DIR}
   - unset SPACK_ROOT
   - git clone https://github.com/spack/spack.git
