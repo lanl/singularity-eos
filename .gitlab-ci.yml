@@ -44,19 +44,6 @@ before_script:
   - sed -i "1s;^;#%Module\n;" ${modName}
   - module use ${CI_PROJECT_DIR}/spack_env
   - module load loads # module load compiler, deps, etc.
-  # singularity-eos-data is in 
-  #- eval $(ssh-agent -s)
-  #- echo "$SSH_PRIVATE_KEY_PC" | tr -d '\r' | ssh-add -
-  #- echo "$SSH_PRIVATE_KEY_SP" | tr -d '\r' | ssh-add -
-  #- echo "$SSH_PRIVATE_KEY_DATA" | tr -d '\r' | ssh-add -
-  #- mkdir -p ~/.ssh
-  #- chmod 700 ~/.ssh
-  #- ssh-keyscan gitlab.lanl.gov >> ~/.ssh/known_hosts
-  #- chmod 644 ~/.ssh/known_hosts
-  #- git config --global user.email "singularity-eos@lanl.gov"
-  #- git config --global user.name "singularity-eos"
-  #- git lfs install
-  #- git clone git@gitlab.lanl.gov:singularity/singularity-eos-data.git
 
 # install_singularity-eos_fort:
 #   extends:
@@ -87,5 +74,7 @@ test_singularity-eos:
     - mkdir -p build
     - cd build
     - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON -DSINGULARITY_EOS_TEST_DATA_DIR=${DATADIR} ..
+    - ls ../
+    - ls ../singularity-eos-data
     - make -j
     - ./test/eos_unit_tests -s
