@@ -79,6 +79,6 @@ test_singularity-eos:
     - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON -DSINGULARITY_EOS_TEST_DATA_DIR=${DATADIR} ..
     - ls
     - ls ../
-    - ls ../singularity-eos-data
+    - ls ${DATADIR}
     - make -j
     - ./test/eos_unit_tests -s
