@@ -153,8 +153,9 @@ if (SINGULARITY_USE_KOKKOS)
     if (SINGULARITY_KOKKOS_INSTALL_DIR)
       list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_KOKKOS_INSTALL_DIR}")
       set(Kokkos_ROOT "${SINGULARITY_KOKKOS_INSTALL_DIR}/lib64/cmake/Kokkos")
-      find_package(Kokkos REQUIRED)
-    else()
+    endif()
+    find_package(Kokkos REQUIRED)
+    if(NOT Kokkos_FOUND)
       if(SINGULARITY_USE_CUDA)
         set(Kokkos_ENABLE_CUDA ON CACHE BOOL "" FORCE)
         set(Kokkos_ENABLE_SERIAL ON CACHE BOOL "" FORCE)
@@ -163,9 +164,9 @@ if (SINGULARITY_USE_KOKKOS)
       endif()
       add_subdirectory(${PROJECT_SOURCE_DIR}/utils/kokkos)
       install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/kokkos"
-	DESTINATION "include"
-	FILES_MATCHING PATTERN "*.hpp"
-	)
+            DESTINATION "include"
+            FILES_MATCHING PATTERN "*.hpp"
+      )
     endif()
   endif()
   # cuda specific flags
