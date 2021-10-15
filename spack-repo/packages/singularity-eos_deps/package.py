@@ -51,7 +51,7 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
     depends_on("catch2@2.13.4:2.13.6", when="+enable_tests")
 
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
-        depends_on("kokkos@3.3:+cuda_lambda+cuda_relocatable_device_code" +_flag, when="+kokkos" + _flag)
+        depends_on("kokkos@3.3:" +_flag, when="+kokkos" + _flag)
         depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
 
     with when("~kokkos"):
@@ -60,6 +60,8 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
         conflicts("+kokkos-kernels")
 
     with when("+cuda+kokkos"):
+        depends_on("kokkos@3.3:~shared+wrapper+cuda_lambda+cuda_relocatable_device_code")
+        depends_on("kokkos-nvcc-wrapper~mpi")
         for _flag in list(CudaPackage.cuda_arch_values):
             depends_on("kokkos@3.3: cuda_arch=" +_flag, when="cuda_arch=" + _flag)
             depends_on("kokkos-kernels cuda_arch=" +_flag, when="cuda_arch=" + _flag)
