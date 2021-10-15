@@ -49,27 +49,27 @@ before_script:
   - module load loads # module load compiler, deps, etc.
   - module load anaconda/Anaconda3.2019.10
 
-# install_singularity-eos_fort:
-#   extends:
-#     - .job
-#   script:
-#     - export TARGET_DIR=${HOME}/install/fort
-#     - mkdir -p ${TARGET_DIR}
-#     - mkdir -p build && cd build
-#     - cmake -DSINGULARITY_BUILD_SESAME2SPINER=ON -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} ..
-#     - make -j
-#     - make install
-# 
-# install_singularity-eos_nofort:
-#   extends:
-#     - .job
-#   script:
-#     - export TARGET_DIR=${HOME}/install/nofort
-#     - mkdir -p ${TARGET_DIR}
-#     - mkdir -p build && cd build
-#     - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} -DSINGULARITY_USE_FORTRAN=OFF ..
-#     - make -j
-#     - make install
+install_singularity-eos_fort:
+  extends:
+    - .job
+  script:
+    - export TARGET_DIR=${HOME}/install/fort
+    - mkdir -p ${TARGET_DIR}
+    - mkdir -p build && cd build
+    - cmake -DSINGULARITY_BUILD_SESAME2SPINER=ON -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} ..
+    - make -j
+    - make install
+
+install_singularity-eos_nofort:
+  extends:
+    - .job
+  script:
+    - export TARGET_DIR=${HOME}/install/nofort
+    - mkdir -p ${TARGET_DIR}
+    - mkdir -p build && cd build
+    - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} -DSINGULARITY_USE_FORTRAN=OFF ..
+    - make -j
+    - make install
 
 test_singularity-eos:
   extends:
@@ -80,7 +80,4 @@ test_singularity-eos:
     - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON -DSINGULARITY_EOS_TEST_DATA_DIR=${DATADIR} ..
     - pwd
     - make -j
-    - ls
-    - ls ../
-    - ls ${DATADIR}
-    - ./test/eos_unit_tests -s
+    - make test
