@@ -18,6 +18,7 @@ class SingularityEosDeps(BundlePackage):
     depends_on("kokkos@3:", when="+use_cuda")
     depends_on("kokkos-kernels", when="+use_cuda")
     depends_on("eospac")
+    depends_on("py-h5py")
 
     phases=["install"]
 
