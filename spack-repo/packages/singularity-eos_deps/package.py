@@ -13,11 +13,12 @@ class SingularityEosDeps(BundlePackage):
     variant("use_cuda", default=False, description="Enable cuda support")
 
     depends_on("cmake")
-    depends_on("hdf5~mpi+cxx+hl")
+    depends_on("hdf5+mpi+cxx+hl")
     depends_on("eigen@3.3.9")
     depends_on("kokkos@3:", when="+use_cuda")
     depends_on("kokkos-kernels", when="+use_cuda")
     depends_on("eospac")
+    depends_on("py-h5py")
 
     phases=["install"]
 
