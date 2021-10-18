@@ -79,11 +79,4 @@ test_singularity-eos:
     - cd build
     - cmake -DSINGULARITY_USE_EOSPAC=ON -DSINGULARITY_BUILD_SESAME2SPINER=ON -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON -DSINGULARITY_EOS_TEST_DATA_DIR=${DATADIR} ..
     - make -j
-    - echo $SESAMEPATH
-    - export SESAMEPATH=
-    - ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat
-    - pwd
-    - ls
-    - cd test
-    - ./eos_unit_tests
-    #- make test
+    - make test
