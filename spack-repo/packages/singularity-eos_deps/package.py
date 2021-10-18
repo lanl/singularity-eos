@@ -42,8 +42,14 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
             description="Enable building fortran interface"
     )
 
+    variant("mpi",
+            default=False,
+            description="Build with MPI support"
+    )
+
     depends_on("mpark-variant")
-    depends_on("hdf5~mpi+cxx+hl")
+    depends_on("hdf5+cxx+hl~mpi", when="~mpi")
+    depends_on("hdf5+cxx+hl+mpi", when="+mpi")
     depends_on("eospac")
 
     depends_on("cmake@3.12:")
@@ -61,7 +67,8 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
 
     with when("+cuda+kokkos"):
         depends_on("kokkos@3.3:~shared+wrapper+cuda_lambda+cuda_relocatable_device_code")
-        depends_on("kokkos-nvcc-wrapper~mpi")
+        depends_on("kokkos-nvcc-wrapper~mpi", when="~mpi")
+        depends_on("kokkos-nvcc-wrapper+mpi", when="+mpi")
         for _flag in list(CudaPackage.cuda_arch_values):
             depends_on("kokkos@3.3: cuda_arch=" +_flag, when="cuda_arch=" + _flag)
             depends_on("kokkos-kernels cuda_arch=" +_flag, when="cuda_arch=" + _flag)
