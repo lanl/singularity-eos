@@ -12,7 +12,7 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
 
     variant("kokkos",
             description="Enable kokkos",
-            default=True
+            default=False
     )
 
     variant("kokkos-kernels",
