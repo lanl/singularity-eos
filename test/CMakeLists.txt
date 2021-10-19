@@ -62,9 +62,13 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
 
   message(STATUS "Generating stellar collapse table for tests using Python script")
   include(FindPythonInterp)
-  execute_process(COMMAND ${PYTHON_EXECUTABLE}
-                          ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_gamma.py
-                          -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
-
+  if (HDF5_IS_PARALLEL)
+    execute_process(COMMAND mpirun -n 1 ${PYTHON_EXECUTABLE}
+      ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_gamma.py
+      -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
+  else()
+    execute_process(COMMAND ${PYTHON_EXECUTABLE}
+      ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_gamma.py
+      -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
+  endif()
 endif()
-
