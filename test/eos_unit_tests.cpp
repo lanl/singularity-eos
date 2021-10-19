@@ -43,7 +43,7 @@ using singularity::EOSPAC;
 namespace EOSBuilder = singularity::EOSBuilder;
 namespace thermalqs = singularity::thermalqs;
 
-const std::string eosName = "../singularity-eos-data/materials.sp5";
+const std::string eosName = "../materials.sp5";
 const std::string airName = "air";
 const std::string steelName = "stainless steel 347";
 
@@ -52,12 +52,12 @@ const std::string steelName = "stainless steel 347";
 constexpr int steelID = 4272;
 constexpr int airID = 5030;
 constexpr int DTID = 5267;
-constexpr int goldID = 2700;
+constexpr int gID = 2700;
 constexpr Real ev2k = 1.160451812e4;
 #endif // SINGULARITY_TEST_SESAME
 #endif // SPINER_USE_HDF
 
-constexpr Real EPS = 1e-2; // within a percent
+constexpr Real EPS = 5e-2; // within a few percent
 PORTABLE_INLINE_FUNCTION bool isClose(Real a, Real b) {
   return fabs(b - a) / (fabs(a + b) + 1e-20) <= EPS;
 }
@@ -234,69 +234,61 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem]") {
 
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_SESAME
-SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT]") {
+#ifdef SINGULARITY_USE_EOSPAC
+SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") {
 
-  GIVEN("SpinerEOS for steel can be initialized with matid") {
+  GIVEN("SpinerEOS and EOSPAC EOS for steel can be initialized with matid") {
     EOS steelEOS_host_polymorphic = SpinerEOSDependsRhoT(eosName, steelID);
     EOS steelEOS = steelEOS_host_polymorphic.GetOnDevice();
     auto steelEOS_host = steelEOS_host_polymorphic.get<SpinerEOSDependsRhoT>();
+
+    EOS eospac = EOSPAC(steelID);
+
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
       REQUIRE(steelEOS_host.filename() == eosName);
 
       AND_THEN("We can get a reference density and temperature") {
         Real rho, T, sie, P, cv, bmod, dpde, dvdt;
-        steelEOS_host.ValuesAtReferenceState(rho, T, sie, P, cv, bmod, dpde, dvdt);
-        REQUIRE(isClose(rho, 7.91));
-        REQUIRE(isClose(T, 293));
+        Real rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac, dpde_pac, dvdt_pac;
+	steelEOS_host.ValuesAtReferenceState(rho, T, sie, P, cv, bmod, dpde, dvdt);
+	eospac.ValuesAtReferenceState(rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac, dpde_pac, dvdt_pac);
+        REQUIRE(isClose(rho, rho_pac));
+        REQUIRE(isClose(T, T_pac));
       }
 
       // TODO: this needs to be a much more rigorous test
       AND_THEN("Quantities can be read from density and temperature") {
-        int nw_ie{0}, nw_bm{0};
+	const Real sie_pac = eospac.InternalEnergyFromDensityTemperature(1e0, 1e6);
+
+        int nw_ie{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
         Kokkos::View<int, atomic_view> n_wrong_ie("wrong_ie");
-        Kokkos::View<int, atomic_view> n_wrong_bm("wrong_bm");
 #else
         PortableMDArray<int> n_wrong_ie(&nw_ie, 1);
-        PortableMDArray<int> n_wrong_bm(&nw_bm, 1);
 #endif
         portableFor(
             "calc ie's", 0, 100, PORTABLE_LAMBDA(const int &i) {
               const double ie = steelEOS.InternalEnergyFromDensityTemperature(1e0, 1e6);
-              const double bm = steelEOS.BulkModulusFromDensityTemperature(1e0, 1e6);
-              if (!isClose(ie, 4.96416e13)) n_wrong_ie() += 1;
-              if (!isClose(bm, 2.55268e13)) n_wrong_bm() += 1;
+              if (!isClose(ie, sie_pac)) n_wrong_ie() += 1;
             });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::deep_copy(nw_ie, n_wrong_ie);
-        Kokkos::deep_copy(nw_bm, n_wrong_bm);
 #endif
         REQUIRE(nw_ie == 0);
-        REQUIRE(nw_bm == 0);
       }
 
-      AND_THEN("rho(P,T) correct for P=1atm, T=room temp") {
-        Real T = 273;  // Kelvin
-        Real P = 1e6;  // barye
-        Real rho, sie; // output
+      AND_THEN("rho(P,T) correct for P=1atm, T=freezing") {
+        Real T = 273;    // Kelvin
+        Real P = 1e6;    // barye
+        Real rho, sie;   // output
+	Real rho_pac, sie_pac;
         std::vector<Real> lambda(steelEOS_host_polymorphic.nlambda());
         steelEOS_host_polymorphic.DensityEnergyFromPressureTemperature(
             P, T, lambda.data(), rho, sie);
-        REQUIRE(isClose(sie, -6.28625e+07));
-        REQUIRE(isClose(rho, 7.90679));
-      }
-
-      AND_THEN("rho(P,T) correct for P = 0, T = room temp") {
-        Real T = 273; // Kelvin
-        Real P = 0;   // barye
-        Real rho, sie;
-        std::vector<Real> lambda(steelEOS_host_polymorphic.nlambda());
-        steelEOS_host_polymorphic.DensityEnergyFromPressureTemperature(
-            P, T, lambda.data(), rho, sie);
-        REQUIRE(isClose(rho, 7.90679));
-        REQUIRE(isClose(sie, -6.28601e+07));
+	eospac.DensityEnergyFromPressureTemperature(P, T, nullptr, rho_pac, sie_pac);
+        REQUIRE(isClose(rho, rho_pac));
       }
     }
     // Failing to call finalize leads to a memory leak,
@@ -309,28 +301,25 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT]") {
     steelEOS.Finalize();                  // cleans up memory on device.
   }
 
-  GIVEN("SpinerEOS for air can be initialized with matid") {
+  GIVEN("SpinerEOS and EOSPAC for air can be initialized with matid") {
     SpinerEOSDependsRhoT airEOS_host = SpinerEOSDependsRhoT(eosName, airID);
     EOS airEOS = airEOS_host.GetOnDevice();
+    EOS eospac = EOSPAC(airID);
     constexpr Real rho = 1e0;
     constexpr Real sie = 2.5e-4;
     THEN("We can get a reference state") {
       Real rho, T, sie, P, cv, bmod, dpde, dvdt;
+      Real rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac, dpde_pac, dvdt_pac;
       airEOS_host.ValuesAtReferenceState(rho, T, sie, P, cv, bmod, dpde, dvdt);
-      REQUIRE(isClose(rho, 0.001293));
-      REQUIRE(isClose(T, 293));
+      eospac.ValuesAtReferenceState(rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac, dpde_pac, dvdt_pac);
+      REQUIRE(isClose(rho, rho_pac));
+      REQUIRE(isClose(T, T_pac));
     }
-    THEN("Quantities of rho and sie look sane on the cold curve on host") {
-      Real Gamma = airEOS_host.GruneisenParamFromDensityInternalEnergy(rho, sie);
-      REQUIRE(isClose(Gamma, 1.7873096807718434e+00));
-      Real bMod = airEOS_host.BulkModulusFromDensityInternalEnergy(rho, sie);
-      REQUIRE(isClose(std::sqrt(bMod / rho), 1.7110234124731066e+05));
-      Real T = airEOS_host.TemperatureFromDensityInternalEnergy(rho, sie);
-      REQUIRE(isClose(T, 175.236));
-      Real cv = airEOS_host.SpecificHeatFromDensityInternalEnergy(rho, sie);
-      REQUIRE(isClose(ev2k * cv, 9.3694474640148560e+10));
-    }
-    THEN("Quantities of rho and sie look sane on the cold curve on device") {
+    THEN("Quantities of rho and sie look sane on both host and device") {
+      Real gm1_host = airEOS_host.GruneisenParamFromDensityInternalEnergy(rho, sie);
+      Real T_host = airEOS_host.TemperatureFromDensityInternalEnergy(rho, sie);
+      Real cv_host = airEOS_host.SpecificHeatFromDensityInternalEnergy(rho, sie);
+
       int nw_gm1{0}, nw_cv{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
@@ -344,8 +333,8 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT]") {
           "calc gm1 and cv", 0, 100, PORTABLE_LAMBDA(const int &i) {
             const double gm1 = airEOS.GruneisenParamFromDensityInternalEnergy(rho, sie);
             const double cv = airEOS.SpecificHeatFromDensityInternalEnergy(rho, sie);
-            if (!isClose(gm1, 1.7873096807718434e+00)) n_wrong_gm1() += 1;
-            if (!isClose(cv * ev2k, 9.3694474640148560e+10)) n_wrong_cv() += 1;
+            if (!isClose(gm1, gm1_host)) n_wrong_gm1() += 1;
+            if (!isClose(cv, cv_host)) n_wrong_cv() += 1;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::deep_copy(nw_gm1, n_wrong_gm1);
@@ -358,36 +347,40 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT]") {
     airEOS.Finalize();
   }
 
-  GIVEN("SpinerEOS for Deuterium can be initialized with matid") {
-    SpinerEOSDependsRhoT dtEOS_host = SpinerEOSDependsRhoT(eosName, DTID);
+  GIVEN("EOS initialized with matid") {
+    SpinerEOSDependsRhoT eos_spiner = SpinerEOSDependsRhoT(eosName, DTID);
+    EOS eos_eospac = EOSPAC(DTID);
     Real P = 1e8;
     Real rho = 1.28e-3;
     THEN("Inversion for T(rho,P) works on host") {
       Real T, sie, cv, bmod;
-      unsigned long output =
+      Real T_pac, sie_pac, cv_pac, bmod_pac;
+      const unsigned long output =
           (thermalqs::temperature | thermalqs::specific_internal_energy |
            thermalqs::specific_heat | thermalqs::bulk_modulus);
-      dtEOS_host.FillEos(rho, T, sie, P, cv, bmod, output);
-      REQUIRE(isClose(T, 3.126436e-1 * ev2k));
-      REQUIRE(isClose(sie, 2.82e11));
-      REQUIRE(isClose(cv * ev2k, 1.862e12));
-      REQUIRE(isClose(std::sqrt(bmod / rho), 311563));
+      eos_spiner.FillEos(rho, T, sie, P, cv, bmod, output);
+      eos_eospac.FillEos(rho, T_pac, sie_pac, P, cv_pac, bmod_pac, output);
+      REQUIRE(isClose(T, T_pac));
+      REQUIRE(isClose(sie, sie_pac));
+      REQUIRE(isClose(cv, cv_pac));
     }
-    dtEOS_host.Finalize();
+    eos_spiner.Finalize();
   }
 
-  GIVEN("SpinerEOS for Gold can be initialized with matid") {
-    SpinerEOSDependsRhoT goldEOS_host = SpinerEOSDependsRhoT(eosName, goldID);
+  GIVEN("EOS initialized with matid") {
+    SpinerEOSDependsRhoT eos_spiner = SpinerEOSDependsRhoT(eosName, gID);
+    EOS eos_eospac = EOSPAC(gID);
     THEN("PT lookup works on the host") {
       Real P = 1e6;          // cgs
       Real T = 0.025 / ev2k; // K
       Real rho, sie;
-      std::vector<Real> lambda(goldEOS_host.nlambda());
-      goldEOS_host.DensityEnergyFromPressureTemperature(P, T, lambda.data(), rho, sie);
-      REQUIRE(isClose(rho, 19.2756));
-      REQUIRE(isClose(sie, 1.93876e+07));
+      Real rho_pac, sie_pac;
+      std::vector<Real> lambda(eos_spiner.nlambda());
+      eos_spiner.DensityEnergyFromPressureTemperature(P, T, lambda.data(), rho, sie);
+      eos_eospac.DensityEnergyFromPressureTemperature(P, T, lambda.data(), rho_pac, sie_pac);
+      REQUIRE(isClose(rho, rho_pac));
     }
-    goldEOS_host.Finalize();
+    eos_spiner.Finalize();
   }
 }
 
@@ -400,9 +393,6 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]") {
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
       REQUIRE(steelEOS_host.filename() == eosName);
-      // REQUIRE( steelEOS_host.lRhoOffset() == 0 );
-      // REQUIRE( steelEOS_host.lTOffset() == 0 );
-      // REQUIRE( isClose(steelEOS_host.lEOffset(), 0) );
 
       int nw_ie2{0}, nw_te2{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -479,6 +469,7 @@ SCENARIO("EOS Builder and SpinerEOS",
     }
   }
 }
+#endif // SINGULARITY_USE_EOSPAC
 #endif // SINGULARITY_TEST_SESAME
 
 #ifdef SINGULARITY_TEST_STELLAR_COLLAPSE
@@ -657,28 +648,6 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 }
 #endif // SINGULARITY_TEST_STELLAR_COLLAPSE
 #endif // USE_HDF5
-
-#ifdef SINGULARITY_USE_EOSPAC
-#ifdef SINGULARITY_TEST_SESAME
-SCENARIO("EOSPAC API", "[EOSPAC]") {
-  GIVEN("An EOSPAC EOS initialized with steel") {
-    EOS eos = EOSPAC(steelID);
-    THEN("We can get a reference density and temperature") {
-      Real rho, T, sie, P, cv, bmod, dpde, dvdt;
-      eos.ValuesAtReferenceState(rho, T, sie, P, cv, bmod, dpde, dvdt);
-      REQUIRE(isClose(rho, 7.91));
-      REQUIRE(isClose(T, 293));
-    }
-    THEN("Quantities can be read from density and temperature") {
-      Real ie = eos.InternalEnergyFromDensityTemperature(1e0, 1e6);
-      REQUIRE(isClose(ie, 4.96416e13));
-      Real bm = eos.BulkModulusFromDensityTemperature(1e0, 1e6);
-      REQUIRE(isClose(bm, 2.27214e+13));
-    }
-  }
-}
-#endif // SINGULARITY_TEST_SESAME
-#endif // SINGULARITY_USE_EOSPAC
 
 int main(int argc, char *argv[]) {
 

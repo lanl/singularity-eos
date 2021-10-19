@@ -20,7 +20,6 @@ variables:
 before_script:
   - export HOME=${CI_PROJECT_DIR}
   - export TMPDIR=${CI_PROJECT_DIR}
-  - export DATADIR=${SINGULARITY_CI_DATA_DIR}
   - cd ${CI_PROJECT_DIR}
   - unset SPACK_ROOT
   - git clone https://github.com/spack/spack.git
@@ -77,6 +76,7 @@ test_singularity-eos:
   script:
     - mkdir -p build
     - cd build
-    - cmake -DSINGULARITY_USE_EOSPAC=ON -DSINGULARITY_BUILD_SESAME2SPINER=ON -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON -DSINGULARITY_EOS_TEST_DATA_DIR=${DATADIR} ..
+    - cmake -DSINGULARITY_USE_EOSPAC=ON -DSINGULARITY_BUILD_SESAME2SPINER=ON -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON ..
     - make -j
+    - ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat
     - make test
