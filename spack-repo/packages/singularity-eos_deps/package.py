@@ -87,7 +87,7 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
             "SINGULARITY_USE_HDF5": "ON",
             "SINGULARITY_USE_FORTRAN": "ON",
             "SINGULARITY_USE_KOKKOS": "OFF",
-            "SINGULARITY_USE_EOSPAC": "OFF",
+            "SINGULARITY_USE_EOSPAC": "ON",
             "SINGULARITY_USE_CUDA": "OFF",
             "SINGULARITY_USE_KOKKOSKERNELS": "OFF",
             "SINGULARITY_BUILD_CLOSURE": "ON",
