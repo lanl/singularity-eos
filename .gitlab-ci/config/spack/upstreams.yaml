@@ -1,0 +1,5 @@
+upstreams:
+  oss-spack:
+    install_tree: /projects/xcap/oss/singularity-eos/spack-v0.16.3-tmp/opt/spack
+    modules:
+      tcl: /projects/xcap/oss/singularity-eos/spack-v0.16.3-tmp/share/spack/modules

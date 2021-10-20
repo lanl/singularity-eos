@@ -1,21 +1,19 @@
+###################
+# Global Settings #
+###################
+
+stages:
+  - static_analysis
+  - build_n_test
+
 variables:
   GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: recursive
   SPACK_REF: "v0.16.3"
+  SINGULARITY_EOS_CLANG_FORMAT_VERSION: "7.0.0"
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos-deps+mpi%gcc@${SINGULARITY_EOS_GCC_VERSION}"
   SINGULARITY_CI_DATA_DIR: "/projects/xcap/ec/singularity-eos-data"
-  SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
-
-.job:
-  tags:
-    - darwin-slurm-shared
-  only:
-    refs:
-      - master
-      - merge_requests
-  except:
-    refs:
-      - schedules
 
 before_script:
   - export HOME=${CI_PROJECT_DIR}
@@ -24,20 +22,18 @@ before_script:
   - unset SPACK_ROOT
   - git clone https://github.com/spack/spack.git
   - cd spack && git checkout ${SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
+  - cp ${CI_PROJECT_DIR}/.gitlab-ci/config/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
   - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
   - spack compiler find
   - spack compiler list
+  - spack external find
   - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
   - spack repo list
-  - |
-    printf "modules:\n  tcl:\n    verbose: True\n    naming_scheme: '{name}/{version}-{compiler.name}-{compiler.version}'\n    all:\n      autoload: 'direct'\n      conflict:\n        - '{name}'" > ${CI_PROJECT_DIR}/spack/etc/spack/modules.yaml
-  - |
-    printf "upstreams:\n  public-spack:\n    install_tree: /projects/xcap/oss/singularity-eos/spack-v0.16.3-tmp/opt/spack\n    modules:\n      tcl: /projects/xcap/oss/singularity-eos/spack-v0.16.3-tmp/share/spack/modules" > ${CI_PROJECT_DIR}/spack/etc/spack/upstreams.yaml
   - mkdir -p ${CI_PROJECT_DIR}/spack_env
   - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
   - spack env activate -d ${CI_PROJECT_DIR}/spack_env
-  - spack install --show-log-on-error singularity-eos-deps+mpi%gcc@${SINGULARITY_EOS_GCC_VERSION}
+  - spack install --show-log-on-error ${SINGULARITY_EOS_SPACK_SPEC}
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
   - spack module tcl refresh -y
   - spack env loads -r
@@ -46,37 +42,159 @@ before_script:
   - sed -i "1s;^;#%Module\n;" ${modName}
   - module use ${CI_PROJECT_DIR}/spack_env
   - module load loads # module load compiler, deps, etc.
-  #- module load anaconda/Anaconda3.2019.10
 
-install_singularity-eos_fort:
-  extends:
-    - .job
+##########################
+# Build Matrix Variables #
+##########################
+
+.buildtype_debug: &buildtype_debug
+  BUILD_TYPE: "Debug"
+
+.buildtype_release: &buildtype_release
+  BUILD_TYPE: "Release"
+
+.skylake: &skylake
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
+
+.power9: &power9
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=power9"
+
+#################
+# General Setup #
+#################
+
+.job: &job_def
+  tags:
+    - darwin-slurm-shared
+  variables:
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
+  only:
+    refs:
+      - master
+      - merge_requests
+  except:
+    refs:
+      - schedules
+
+.artifacts: &artifacts_def
+  artifacts:
+    name: "singularity-eos-${CI_COMMIT_REF_SLUG}-${CI_JOB_NAME}-${CI_JOB_ID}"
+    paths:
+      - ${CI_PROJECT_DIR}/build
+      - ${CI_PROJECT_DIR}/spack
+      - ${CI_PROJECT_DIR}/spack_env
+    when: always
+    expire_in: 3 hours
+  dependencies: []
+
+#######################
+# Job Script Template #
+#######################
+
+.clang-format:
+  stage: static_analysis
   script:
-    - export TARGET_DIR=${HOME}/install/fort
-    - mkdir -p ${TARGET_DIR}
-    - mkdir -p build && cd build
-    - cmake -DSINGULARITY_USE_EOSPAC=ON -DSINGULARITY_BUILD_SESAME2SPINER=ON -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} ..
-    - make -j
-    - make install
+    - cd ${CI_PROJECT_DIR}
+    - module purge
+    - module load clang/${SINGULARITY_EOS_CLANG_FORMAT_VERSION}
+    - clang-format -version
+    - find ${CI_PROJECT_DIR} -regex '.*\.\(cpp\|hpp\)' | xargs clang-format -style=file -i && git diff --exit-code --ignore-submodules
 
-install_singularity-eos_nofort:
-  extends:
-    - .job
+.sphinx-doc:
+  stage: static_analysis
   script:
-    - export TARGET_DIR=${HOME}/install/nofort
-    - mkdir -p ${TARGET_DIR}
-    - mkdir -p build && cd build
-    - cmake -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} -DSINGULARITY_USE_FORTRAN=OFF ..
-    - make -j
-    - make install
+    - cd ${CI_PROJECT_DIR}
+    - mkdir sphinx_doc_env
+    - spack env create --without-view -d ${CI_PROJECT_DIR}/sphinx_doc_env
+    - spack env activate -d ${CI_PROJECT_DIR}/sphinx_doc_env
+    - spack install --show-log-on-error py-sphinx%gcc@${SINGULARITY_EOS_GCC_VERSION}
+    - spack install --show-log-on-error py-sphinx-rtd-theme%gcc@${SINGULARITY_EOS_GCC_VERSION}
+    - spack module tcl refresh -y
+    - spack env loads -r
+    - source ${CI_PROJECT_DIR}/sphinx_doc_env/loads
+    - cd ${CI_PROJECT_DIR}/doc/sphinx
+    - make html
+    - rm -rf ${CI_PROJECT_DIR}/public
+    - mv _build/html ${CI_PROJECT_DIR}/public
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
 
-test_singularity-eos:
+.test:
+  stage: build_n_test
   extends:
     - .job
   script:
     - mkdir -p build
     - cd build
-    - cmake -DSINGULARITY_USE_EOSPAC=ON -DSINGULARITY_BUILD_SESAME2SPINER=ON -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_TEST_SESAME=ON -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON ..
+    - |
+      cmake -DSINGULARITY_USE_EOSPAC=ON \
+            -DSINGULARITY_USE_HDF5=ON \
+            -DSINGULARITY_BUILD_SESAME2SPINER=ON \
+            -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
+            -DSINGULARITY_BUILD_TESTS=ON \
+            -DSINGULARITY_TEST_SESAME=ON \
+            -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
+            ..
     - make -j
     - ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat
     - make test
+
+########
+# Jobs #
+########
+
+format:
+  <<: *job_def
+  extends: .clang-format
+
+.pages:
+  <<: *job_def
+  extends: .sphinx-doc
+
+gnu_skylake:
+  <<: *job_def
+  extends: .test
+  variables:
+    <<: *skylake
+
+gnu_power9:
+  <<: *job_def
+  extends: .test
+  variables:
+    <<: *power9
+
+install_singularity-eos_fort:
+  stage: build_n_test
+  extends:
+    - .job
+  script:
+    - export TARGET_DIR=${CI_PROJECT_DIR}/install/fort
+    - mkdir -p ${TARGET_DIR} build
+    - cd build
+    - |
+      cmake -DSINGULARITY_USE_FORTRAN=ON \
+            -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} \
+            -DSINGULARITY_USE_EOSPAC=ON \
+            -DSINGULARITY_BUILD_SESAME2SPINER=ON \
+            ..
+    - make -j
+    - make install
+
+install_singularity-eos_nofort:
+  stage: build_n_test
+  extends:
+    - .job
+  script:
+    - export TARGET_DIR=${CI_PROJECT_DIR}/install/nofort
+    - mkdir -p ${TARGET_DIR} build
+    - cd build
+    - |
+      cmake -DSINGULARITY_USE_FORTRAN=OFF \
+            -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} \
+            -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
+            ..
+    - make -j
+    - make install
