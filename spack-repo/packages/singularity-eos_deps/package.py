@@ -3,7 +3,6 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
-import os
 from spack import *
 
 class SingularityEosDeps(BundlePackage, CudaPackage):
@@ -71,8 +70,9 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
     depends_on("kokkos@3.3:~shared+wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
     depends_on("kokkos-nvcc-wrapper~mpi", when="+cuda+kokkos~mpi")
     depends_on("kokkos-nvcc-wrapper+mpi", when="+cuda+kokkos+mpi")
-    depends_on("kokkos@3.3: cuda_arch=" +_flag, when="+cuda+kokkoscuda_arch=" + _flag)
-    depends_on("kokkos-kernels cuda_arch=" +_flag, when="+cuda+kokkoscuda_arch=" + _flag)
+    for _flag in list(CudaPackage.cuda_arch_values):
+        depends_on("kokkos@3.3: cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
+        depends_on("kokkos-kernels cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
 
     conflicts("cuda_arch=none", when="+cuda",
           msg="CUDA architecture is required")
