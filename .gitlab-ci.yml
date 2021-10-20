@@ -7,7 +7,6 @@ stages:
   - build_n_test
 
 variables:
-  GIT_STRATEGY: clone
   GIT_SUBMODULE_STRATEGY: recursive
   SPACK_REF: "v0.16.3"
   SINGULARITY_EOS_CLANG_FORMAT_VERSION: "9.0.0"
@@ -94,6 +93,8 @@ before_script:
 
 .clang-format:
   stage: static_analysis
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
   before_script:
     - echo "Format Checking..."
   script:
@@ -105,6 +106,8 @@ before_script:
 
 .sphinx-doc:
   stage: static_analysis
+  variables:
+    GIT_SUBMODULE_STRATEGY: none
   script:
     - cd ${CI_PROJECT_DIR}
     - mkdir sphinx_doc_env
