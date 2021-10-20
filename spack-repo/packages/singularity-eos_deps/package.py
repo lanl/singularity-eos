@@ -1,4 +1,7 @@
-# dependency package for singulary-eos
+# Copyright 2013-2021 Lawrence Livermore National Security, LLC and other
+# Spack Project Developers. See the top-level COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import os
 from spack import *
@@ -61,18 +64,15 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
         depends_on("kokkos@3.3:" +_flag, when="+kokkos" + _flag)
         depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
 
-    with when("~kokkos"):
-        conflicts("+cuda")
-        conflicts("+openmp")
-        conflicts("+kokkos-kernels")
+    conflicts("+cuda", when="~kokkos")
+    conflicts("+openmp", when="~kokkos")
+    conflicts("+kokkos-kernels", when="~kokkos")
 
-    with when("+cuda+kokkos"):
-        depends_on("kokkos@3.3:~shared+wrapper+cuda_lambda+cuda_relocatable_device_code")
-        depends_on("kokkos-nvcc-wrapper~mpi", when="~mpi")
-        depends_on("kokkos-nvcc-wrapper+mpi", when="+mpi")
-        for _flag in list(CudaPackage.cuda_arch_values):
-            depends_on("kokkos@3.3: cuda_arch=" +_flag, when="cuda_arch=" + _flag)
-            depends_on("kokkos-kernels cuda_arch=" +_flag, when="cuda_arch=" + _flag)
+    depends_on("kokkos@3.3:~shared+wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
+    depends_on("kokkos-nvcc-wrapper~mpi", when="+cuda+kokkos~mpi")
+    depends_on("kokkos-nvcc-wrapper+mpi", when="+cuda+kokkos+mpi")
+    depends_on("kokkos@3.3: cuda_arch=" +_flag, when="+cuda+kokkoscuda_arch=" + _flag)
+    depends_on("kokkos-kernels cuda_arch=" +_flag, when="+cuda+kokkoscuda_arch=" + _flag)
 
     conflicts("cuda_arch=none", when="+cuda",
           msg="CUDA architecture is required")

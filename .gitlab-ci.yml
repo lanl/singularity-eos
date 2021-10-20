@@ -37,7 +37,7 @@ before_script:
   - mkdir -p ${CI_PROJECT_DIR}/spack_env
   - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
   - spack env activate -d ${CI_PROJECT_DIR}/spack_env
-  - spack install --no-checksum --show-log-on-error singularity-eos_deps+mpi~cuda%gcc@${SINGULARITY_EOS_GCC_VERSION}
+  - spack install --no-checksum --show-log-on-error singularity-eos_deps+mpi%gcc@${SINGULARITY_EOS_GCC_VERSION}
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
   - spack module tcl refresh -y
   - spack env loads -r
