@@ -93,6 +93,7 @@ before_script:
 
 .clang-format:
   stage: static_analysis
+  before_script:
   script:
     - cd ${CI_PROJECT_DIR}
     - module purge
