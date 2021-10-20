@@ -3,7 +3,7 @@
 import os
 from spack import *
 
-class SingularityEosDeps(BundlePackage, CudaPackage):
+class SingularityEosDeps(BundlePackage):
     homepage    = "https://github.com/lanl/singularity-eos"
     url         = "https://github.com/lanl/singularity-eos/archive/refs/heads/main.zip"
     git         = "git@github.com:lanl/singularity-eos.git"
@@ -126,6 +126,3 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
                 for k,v in cmake_args_map.items():
                     cmtcf.write("set(" +k + " " + v + " CACHE BOOL \"\")\n")
             install("singularity_tc.cmake", join_path(prefix, "singularity_tc.cmake"))
-            
-        
-
