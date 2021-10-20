@@ -3,7 +3,7 @@
 import os
 from spack import *
 
-class SingularityEosDeps(BundlePackage):
+class SingularityEosDeps(BundlePackage, CudaPackage):
     homepage    = "https://github.com/lanl/singularity-eos"
     url         = "https://github.com/lanl/singularity-eos/archive/refs/heads/main.zip"
     git         = "git@github.com:lanl/singularity-eos.git"
