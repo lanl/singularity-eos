@@ -33,7 +33,8 @@ before_script:
   - mkdir -p ${CI_PROJECT_DIR}/spack_env
   - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
   - spack env activate -d ${CI_PROJECT_DIR}/spack_env
-  - spack install --show-log-on-error ${SINGULARITY_EOS_SPACK_SPEC}
+  - export SINGULARITY_EOS_CMD="spack install --show-log-on-error ${SINGULARITY_EOS_SPACK_SPEC}"
+  - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
   - spack module tcl refresh -y
   - spack env loads -r
@@ -94,6 +95,7 @@ before_script:
 .clang-format:
   stage: static_analysis
   before_script:
+    - echo "Format Check..."
   script:
     - cd ${CI_PROJECT_DIR}
     - module purge
