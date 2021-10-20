@@ -51,6 +51,7 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
     depends_on("hdf5+cxx+hl~mpi", when="~mpi")
     depends_on("hdf5+cxx+hl+mpi", when="+mpi")
     depends_on("eospac")
+    depends_on("py-h5py")
 
     depends_on("cmake@3.12:")
     depends_on("eigen@3.3.9", when="~kokkos-kernels")
