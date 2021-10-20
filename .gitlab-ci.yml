@@ -26,7 +26,6 @@ before_script:
   - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
   - spack compiler find
   - spack compiler list
-  - spack external find
   - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
   - spack repo list
   - mkdir -p ${CI_PROJECT_DIR}/spack_env
