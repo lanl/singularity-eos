@@ -34,8 +34,6 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-#include <eos_Interface.h> // eospac API
-
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 
@@ -44,9 +42,10 @@
 
 #include <singularity-eos/eos/eos.hpp>
 
-#include <singularity-eos/sesame2spiner/io_eospac.hpp>
+#include <eospac-wrapper/eospac_wrapper.hpp>
 
 using namespace singularity;
+using namespace EospacWrapper;
 
 using duration = std::chrono::duration<long double>;
 using dvec = std::vector<double>;

@@ -95,8 +95,6 @@ if(SINGULARITY_USE_HDF5)
   endif()
 endif()
 
-
-
 if(SINGULARITY_BUILD_TESTS)
   include(CTest)
   add_subdirectory(test)
@@ -111,3 +109,4 @@ include(CPack)
 #                 DESCRIPTION "Enabled Features:"
 #                 VAR enabledFeaturesText)
 # message(STATUS "${enabledFeaturesText}")
+

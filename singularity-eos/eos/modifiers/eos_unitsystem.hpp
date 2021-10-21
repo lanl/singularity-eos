@@ -175,13 +175,17 @@ class UnitSystem {
     Real srho = rho_unit_ * rho;
     switch (t_.PreferredInput()) {
     case thermalqs::density | thermalqs::temperature:
+      {
       Real sT = temp_unit_ * temp;
       t_.FillEos(srho, sT, energy, press, cv, bmod, output, lambda);
       energy *= inv_sie_unit_;
+      }
       break;
     case thermalqs::density | thermalqs::specific_internal_energy:
+      {
       Real ssie = sie_unit_ * energy;
       t_.FillEos(srho, temp, ssie, press, cv, bmod, output, lambda);
+      }
       break;
     default:
       EOS_ERROR("Didn't find a valid input for ScaledEOS::FillEOS\n");

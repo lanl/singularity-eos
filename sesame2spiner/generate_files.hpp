@@ -23,8 +23,12 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
+#include <eospac-wrapper/eospac_wrapper.hpp>
+
 #include "io_eospac.hpp"
 #include "parser.hpp"
+
+using namespace EospacWrapper;
 
 constexpr int PPD_DEFAULT = 50;
 constexpr Real STRICTLY_POS_MIN = 1e-9;
