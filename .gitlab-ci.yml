@@ -41,6 +41,8 @@ before_script:
   - sed -i "1s;^;#%Module\n;" ${modName}
   - module use ${CI_PROJECT_DIR}/spack_env
   - module load loads # module load compiler, deps, etc.
+  - python --version
+  - python3 --version
 
 ##########################
 # Build Matrix Variables #
@@ -132,6 +134,8 @@ before_script:
   extends:
     - .job
   script:
+    - python --version
+    - python3 --version
     - mkdir -p build
     - cd build
     - |
