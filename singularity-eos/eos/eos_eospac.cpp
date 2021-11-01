@@ -30,10 +30,10 @@ namespace singularity {
 
 EOSPAC::EOSPAC(const int matid, bool invert_at_setup) : matid_(matid) {
   EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT, EOS_T_DPt};
-  eosSafeLoad(
-      NT, matid, tableType, tablehandle,
-      std::vector<std::string>({"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT", "EOS_T_DPt"}),
-      Verbosity::Quiet, invert_at_setup);
+  eosSafeLoad(NT, matid, tableType, tablehandle,
+              std::vector<std::string>(
+                  {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT", "EOS_T_DPt"}),
+              Verbosity::Quiet, invert_at_setup);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
@@ -115,7 +115,7 @@ PORTABLE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &p
       temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
     } else if (input & thermalqs::density && input & thermalqs::pressure) {
       EOS_INTEGER table = TofRP_table_;
-      eosSafeInterpolate(&table, nxypairs , R, P, T, dx, dy, "TofRP", Verbosity::Quiet);
+      eosSafeInterpolate(&table, nxypairs, R, P, T, dx, dy, "TofRP", Verbosity::Quiet);
       temp = temperatureFromSesame(T[0]);
     } else {
       UNDEFINED_ERROR;

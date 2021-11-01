@@ -193,18 +193,18 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem]") {
       constexpr Real sie_unit = 1e-1;
       constexpr Real temp_unit = 123;
       WHEN("We construct an IdealGas with EOSBuilder") {
-	units_params["rho_unit"].emplace<Real>(rho_unit);
-	units_params["sie_unit"].emplace<Real>(sie_unit);
-	units_params["temp_unit"].emplace<Real>(temp_unit);
-	modifiers[EOSBuilder::EOSModifier::UnitSystem] = units_params;
-	EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
-	THEN("Units cancel out for an ideal gas") {
-	  Real rho = 1e3;
-	  Real sie = 1e3;
-	  Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
-	  Real Ptrue = gm1*rho*sie;
-	  REQUIRE( std::abs(P - Ptrue)/Ptrue < 1e-3 );
-	}
+        units_params["rho_unit"].emplace<Real>(rho_unit);
+        units_params["sie_unit"].emplace<Real>(sie_unit);
+        units_params["temp_unit"].emplace<Real>(temp_unit);
+        modifiers[EOSBuilder::EOSModifier::UnitSystem] = units_params;
+        EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+        THEN("Units cancel out for an ideal gas") {
+          Real rho = 1e3;
+          Real sie = 1e3;
+          Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+          Real Ptrue = gm1 * rho * sie;
+          REQUIRE(std::abs(P - Ptrue) / Ptrue < 1e-3);
+        }
       }
     }
     GIVEN("Units with length and time units") {
@@ -213,20 +213,20 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem]") {
       constexpr Real mass_unit = 1e6;
       constexpr Real temp_unit = 789;
       WHEN("We construct an IdealGas with EOSBuilder") {
-	units_params["use_length_time"].emplace<bool>(true);
-	units_params["time_unit"].emplace<Real>(time_unit);
-	units_params["length_unit"].emplace<Real>(length_unit);
-	units_params["mass_unit"].emplace<Real>(mass_unit);
-	units_params["temp_unit"].emplace<Real>(temp_unit);
-	modifiers[EOSBuilder::EOSModifier::UnitSystem] = units_params;
-	EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
-	THEN("Units cancel out for an ideal gas") {
-	  Real rho = 1e3;
-	  Real sie = 1e3;
-	  Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
-	  Real Ptrue = gm1*rho*sie;
-	  REQUIRE( std::abs(P - Ptrue)/Ptrue < 1e-3 );
-	}
+        units_params["use_length_time"].emplace<bool>(true);
+        units_params["time_unit"].emplace<Real>(time_unit);
+        units_params["length_unit"].emplace<Real>(length_unit);
+        units_params["mass_unit"].emplace<Real>(mass_unit);
+        units_params["temp_unit"].emplace<Real>(temp_unit);
+        modifiers[EOSBuilder::EOSModifier::UnitSystem] = units_params;
+        EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+        THEN("Units cancel out for an ideal gas") {
+          Real rho = 1e3;
+          Real sie = 1e3;
+          Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
+          Real Ptrue = gm1 * rho * sie;
+          REQUIRE(std::abs(P - Ptrue) / Ptrue < 1e-3);
+        }
       }
     }
   }
@@ -251,15 +251,16 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
       AND_THEN("We can get a reference density and temperature") {
         Real rho, T, sie, P, cv, bmod, dpde, dvdt;
         Real rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac, dpde_pac, dvdt_pac;
-	steelEOS_host.ValuesAtReferenceState(rho, T, sie, P, cv, bmod, dpde, dvdt);
-	eospac.ValuesAtReferenceState(rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac, dpde_pac, dvdt_pac);
+        steelEOS_host.ValuesAtReferenceState(rho, T, sie, P, cv, bmod, dpde, dvdt);
+        eospac.ValuesAtReferenceState(rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac,
+                                      dpde_pac, dvdt_pac);
         REQUIRE(isClose(rho, rho_pac));
         REQUIRE(isClose(T, T_pac));
       }
 
       // TODO: this needs to be a much more rigorous test
       AND_THEN("Quantities can be read from density and temperature") {
-	const Real sie_pac = eospac.InternalEnergyFromDensityTemperature(1e0, 1e6);
+        const Real sie_pac = eospac.InternalEnergyFromDensityTemperature(1e0, 1e6);
 
         int nw_ie{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -280,14 +281,14 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
       }
 
       AND_THEN("rho(P,T) correct for P=1atm, T=freezing") {
-        Real T = 273;    // Kelvin
-        Real P = 1e6;    // barye
-        Real rho, sie;   // output
-	Real rho_pac, sie_pac;
+        Real T = 273;  // Kelvin
+        Real P = 1e6;  // barye
+        Real rho, sie; // output
+        Real rho_pac, sie_pac;
         std::vector<Real> lambda(steelEOS_host_polymorphic.nlambda());
         steelEOS_host_polymorphic.DensityEnergyFromPressureTemperature(
             P, T, lambda.data(), rho, sie);
-	eospac.DensityEnergyFromPressureTemperature(P, T, nullptr, rho_pac, sie_pac);
+        eospac.DensityEnergyFromPressureTemperature(P, T, nullptr, rho_pac, sie_pac);
         REQUIRE(isClose(rho, rho_pac));
       }
     }
@@ -311,7 +312,8 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
       Real rho, T, sie, P, cv, bmod, dpde, dvdt;
       Real rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac, dpde_pac, dvdt_pac;
       airEOS_host.ValuesAtReferenceState(rho, T, sie, P, cv, bmod, dpde, dvdt);
-      eospac.ValuesAtReferenceState(rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac, dpde_pac, dvdt_pac);
+      eospac.ValuesAtReferenceState(rho_pac, T_pac, sie_pac, P_pac, cv_pac, bmod_pac,
+                                    dpde_pac, dvdt_pac);
       REQUIRE(isClose(rho, rho_pac));
       REQUIRE(isClose(T, T_pac));
     }
@@ -377,7 +379,8 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
       Real rho_pac, sie_pac;
       std::vector<Real> lambda(eos_spiner.nlambda());
       eos_spiner.DensityEnergyFromPressureTemperature(P, T, lambda.data(), rho, sie);
-      eos_eospac.DensityEnergyFromPressureTemperature(P, T, lambda.data(), rho_pac, sie_pac);
+      eos_eospac.DensityEnergyFromPressureTemperature(P, T, lambda.data(), rho_pac,
+                                                      sie_pac);
       REQUIRE(isClose(rho, rho_pac));
     }
     eos_spiner.Finalize();

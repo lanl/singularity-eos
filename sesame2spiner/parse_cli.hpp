@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-const std::string DEFAULT_SAVENAME="materials.sp5";
+const std::string DEFAULT_SAVENAME = "materials.sp5";
 const std::string EXAMPLESTRING = R"(
 # air.dat
 # These are comments. 
