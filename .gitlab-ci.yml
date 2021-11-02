@@ -71,7 +71,7 @@ before_script:
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
   only:
     refs:
-      - master
+      - main
       - merge_requests
   except:
     refs:
@@ -127,7 +127,7 @@ before_script:
     paths:
       - public
   only:
-    - master
+    - main
 
 .test:
   stage: build_n_test
