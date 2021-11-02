@@ -160,7 +160,7 @@ format:
   extends: .clang-format
   allow_failure: true
 
-.pages:
+pages:
   <<: *job_def
   extends: .sphinx-doc
 
