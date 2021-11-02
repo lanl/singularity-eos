@@ -86,11 +86,11 @@ make test
 ## Formatting
 
 This project is formatted with `clang-format` using `clang-format`
-version 10.0.0. If contributing, please run clang-format on the files
+version 12. If contributing, please run clang-format on the files
 you modify.
 
-For now, we will periodically run clang-format on the repo to
-synchronize it. An automated solution will be forth coming.
+A clang-format auto formatting check is run on the main branch via CI,
+but commits are not currently blocked for a failed format check.
 
 ## Copyright
 

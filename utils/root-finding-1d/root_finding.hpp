@@ -192,6 +192,8 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
     dyDen = (2. * dx);
     dy = dyNum / dyDen;
     x -= y / dy;
+    if (x < xmin) x = xmin;
+    if (x > xmax) x = xmax;
     if (isnan(x) || isinf(x)) {
       // can't recover from this
 #if ROOT_DEBUG
@@ -215,22 +217,8 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
               xguess, ytarget, x, x_last, xmin, xmax, y, dx, yp, ym, dyNum, dyDen, dy,
               iter, (int)MY_SIGN(x));
 #endif
-#if ROOT_NAN_OK
-      if (isinf(x)) {
-        if (x < xmin) x = xmin;
-        if (x > xmax) x = xmax;
-      } else {
-        counts.increment(counts.more());
-        return Status::FAIL;
-      }
-#else
       counts.increment(counts.more());
       return Status::FAIL;
-#endif
-      // if (x < xmin)
-      //  x = xmin;
-      // if (x > xmax)
-      //  x = xmax;
     }
     if (fabs(x - x_last) / (fabs(x) + xtol) < xtol) break;
   }

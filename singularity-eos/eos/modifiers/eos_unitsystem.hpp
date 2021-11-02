@@ -57,8 +57,7 @@ class UnitSystem {
         inv_dpdr_unit_(rho_unit / press_unit_), inv_dtdr_unit_(rho_unit / temp_unit),
         inv_dtde_unit_(sie_unit / temp_unit) // obviously this is also Cv
         ,
-        inv_cv_unit_(temp_unit / sie_unit),
-        inv_bmod_unit_(1 / press_unit_) {}
+        inv_cv_unit_(temp_unit / sie_unit), inv_bmod_unit_(1 / press_unit_) {}
   UnitSystem(T &&t, eos_units_init::LengthTimeUnitsInit, const Real time_unit,
              const Real mass_unit, const Real length_unit, const Real temp_unit)
       : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag,
@@ -174,21 +173,20 @@ class UnitSystem {
     // TODO(JMM): Is this general enough? Do I need more switches/scales?
     Real srho = rho_unit_ * rho;
     switch (t_.PreferredInput()) {
-    case thermalqs::density | thermalqs::temperature:
-      {
+    case thermalqs::density | thermalqs::temperature: {
       Real sT = temp_unit_ * temp;
       t_.FillEos(srho, sT, energy, press, cv, bmod, output, lambda);
       energy *= inv_sie_unit_;
-      }
       break;
-    case thermalqs::density | thermalqs::specific_internal_energy:
-      {
+    }
+    case thermalqs::density | thermalqs::specific_internal_energy: {
       Real ssie = sie_unit_ * energy;
       t_.FillEos(srho, temp, ssie, press, cv, bmod, output, lambda);
-      }
       break;
-    default:
+    }
+    default: {
       EOS_ERROR("Didn't find a valid input for ScaledEOS::FillEOS\n");
+    }
     }
     press *= inv_press_unit_;
     cv *= inv_cv_unit_;

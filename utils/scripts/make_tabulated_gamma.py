@@ -21,7 +21,13 @@
 
 from __future__ import print_function
 import numpy as np
+
+try: # use parallel hdf5 if available otherwise don't
+    import mpi4py
+except ImportError:
+    pass
 import h5py
+
 from units import UnitSystem
 import units as bunits
 

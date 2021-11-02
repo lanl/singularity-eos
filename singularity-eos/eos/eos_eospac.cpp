@@ -14,6 +14,7 @@
 
 #ifdef SINGULARITY_USE_EOSPAC
 
+#include <cstdio>
 #include <string>
 #include <vector>
 
@@ -28,15 +29,16 @@ namespace singularity {
 // handles to the same table or read in the table multiple times?
 
 EOSPAC::EOSPAC(const int matid, bool invert_at_setup) : matid_(matid) {
-  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT};
-  eosSafeLoad(
-      NT, matid, tableType, tablehandle,
-      std::vector<std::string>({"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT"}),
-      Verbosity::Quiet, invert_at_setup);
+  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT, EOS_T_DPt};
+  eosSafeLoad(NT, matid, tableType, tablehandle,
+              std::vector<std::string>(
+                  {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT", "EOS_T_DPt"}),
+              Verbosity::Quiet, invert_at_setup);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
   RofPT_table_ = tablehandle[3];
+  TofRP_table_ = tablehandle[4];
 
   // Set reference states
   SesameMetadata m;
@@ -90,9 +92,35 @@ PORTABLE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(const Real rho,
 PORTABLE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press,
                                        Real &cv, Real &bmod, const unsigned long output,
                                        Real *lambda) const {
-  EOS_REAL R[1] = {rho}, T[1] = {temperatureToSesame(temp)}, E[1], P[1], dx[1], dy[1];
+  EOS_REAL R[1] = {rho}, T[1] = {temperatureToSesame(temp)};
+  EOS_REAL E[1] = {sie}, P[1] = {pressureToSesame(press)};
+  EOS_REAL dx[1], dy[1];
   EOS_INTEGER nxypairs = 1;
   Real CV, BMOD_T, BMOD, SIE, PRESS, DPDE, DPDT, DPDR, DEDT, DEDR;
+  const unsigned long input = ~output;
+  if (output == thermalqs::none) {
+    UNDEFINED_ERROR;
+  }
+  if (output & thermalqs::density) {
+    if (input & thermalqs::pressure && input & thermalqs::temperature) {
+      EOS_INTEGER table = RofPT_table_;
+      eosSafeInterpolate(&table, nxypairs, P, T, R, dx, dy, "RofPT", Verbosity::Quiet);
+      rho = R[0];
+    } else {
+      UNDEFINED_ERROR;
+    }
+  }
+  if (output & thermalqs::temperature) {
+    if (input & thermalqs::density && input & thermalqs::specific_internal_energy) {
+      temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
+    } else if (input & thermalqs::density && input & thermalqs::pressure) {
+      EOS_INTEGER table = TofRP_table_;
+      eosSafeInterpolate(&table, nxypairs, R, P, T, dx, dy, "TofRP", Verbosity::Quiet);
+      temp = temperatureFromSesame(T[0]);
+    } else {
+      UNDEFINED_ERROR;
+    }
+  }
   if ((output & thermalqs::specific_internal_energy) ||
       (output & thermalqs::specific_heat || output & thermalqs::bulk_modulus)) {
     EOS_INTEGER table = EofRT_table_;

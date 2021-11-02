@@ -1,6 +1,5 @@
-# dependency package for singulary-eos
+# Dependency Spackage for Singularity-EOS
 
-import os
 from spack import *
 
 class SingularityEosDeps(BundlePackage, CudaPackage):
@@ -51,6 +50,7 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
     depends_on("hdf5+cxx+hl~mpi", when="~mpi")
     depends_on("hdf5+cxx+hl+mpi", when="+mpi")
     depends_on("eospac")
+    depends_on("py-h5py")
 
     depends_on("cmake@3.12:")
     depends_on("eigen@3.3.9", when="~kokkos-kernels")
@@ -60,18 +60,16 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
         depends_on("kokkos@3.3:" +_flag, when="+kokkos" + _flag)
         depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
 
-    with when("~kokkos"):
-        conflicts("+cuda")
-        conflicts("+openmp")
-        conflicts("+kokkos-kernels")
+    conflicts("+cuda", when="~kokkos")
+    conflicts("+openmp", when="~kokkos")
+    conflicts("+kokkos-kernels", when="~kokkos")
 
-    with when("+cuda+kokkos"):
-        depends_on("kokkos@3.3:~shared+wrapper+cuda_lambda+cuda_relocatable_device_code")
-        depends_on("kokkos-nvcc-wrapper~mpi", when="~mpi")
-        depends_on("kokkos-nvcc-wrapper+mpi", when="+mpi")
-        for _flag in list(CudaPackage.cuda_arch_values):
-            depends_on("kokkos@3.3: cuda_arch=" +_flag, when="cuda_arch=" + _flag)
-            depends_on("kokkos-kernels cuda_arch=" +_flag, when="cuda_arch=" + _flag)
+    depends_on("kokkos@3.3:~shared+wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
+    depends_on("kokkos-nvcc-wrapper~mpi", when="+cuda+kokkos~mpi")
+    depends_on("kokkos-nvcc-wrapper+mpi", when="+cuda+kokkos+mpi")
+    for _flag in list(CudaPackage.cuda_arch_values):
+        depends_on("kokkos@3.3: cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
+        depends_on("kokkos-kernels cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
 
     conflicts("cuda_arch=none", when="+cuda",
           msg="CUDA architecture is required")
@@ -125,6 +123,3 @@ class SingularityEosDeps(BundlePackage, CudaPackage):
                 for k,v in cmake_args_map.items():
                     cmtcf.write("set(" +k + " " + v + " CACHE BOOL \"\")\n")
             install("singularity_tc.cmake", join_path(prefix, "singularity_tc.cmake"))
-            
-        
-

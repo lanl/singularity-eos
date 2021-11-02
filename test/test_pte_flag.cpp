@@ -145,9 +145,9 @@ int main(int argc, char *argv[]) {
   //  rho[i]*vfrac[i]/rho_tot << " " << press[i] << " " << temp[i] << std::endl;
   //}
   // std::cout << "Finished " << NTRIAL << " solves in " << sum_time.count() << " seconds"
-  // << std::endl; std::cout << "Solves/second = " << NTRIAL/sum_time.count() << std::endl;
-  // std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL-nsuccess <<
-  // std::endl;
+  // << std::endl; std::cout << "Solves/second = " << NTRIAL/sum_time.count() <<
+  // std::endl; std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL-nsuccess
+  // << std::endl;
 
   finalize_bd_eos(NMAT, eos, 1);
   return 0;

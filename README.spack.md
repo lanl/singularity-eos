@@ -72,22 +72,22 @@ The following variants may be used to customize the dependencies and their build
 ```
 These variants are subject to change as development continues. You may see all up-to-date variants using spack with
 ```bash
-$> spack info singularity-eos_deps
+$> spack info singularity-eos-deps
 ```
 The default installation, which installs very minimal dependencies
 ```bash
-$> spack install singularity-eos_deps
+$> spack install singularity-eos-deps
 ```
 ##### Step 3: Load the package
 
 Once installed, loading the package will load all the dependencies into your `${PATH}`
 ```bash
-$>spack load singularity-eos_deps`
+$>spack load singularity-eos-deps
 ```
 ## Building `singularity-eos` with Spack dependencies
 Once loaded, you may run CMake as you like.
 
-A useful feature of using the Spack dependencies package is automatic CMake configuration. Loading `singularity-eos_deps` will define an shell environment variable `${SINGULARITYEOS_TCF}`, which points to a CMake source with pre-configured CMake cache variables which were generated based on the selected variants.
+A useful feature of using the Spack dependencies package is automatic CMake configuration. Loading `singularity-eos-deps` will define an shell environment variable `${SINGULARITYEOS_TCF}`, which points to a CMake source with pre-configured CMake cache variables which were generated based on the selected variants.
 
 For example
 ```bash
@@ -106,7 +106,7 @@ The trailing options will override any set in `${SINGULARITYEOS_TCF}`.
 
 To unload, simply
 
-`spack unload singularity-eos_deps`
+`spack unload singularity-eos-deps`
 
 which will return your shell to a state prior to loading.
 
@@ -115,5 +115,5 @@ This non-exhaustive list provides examples for building with different back-end 
 
 To build with `kokkos` using a `cuda` backend (and required CUDA architecture)
 ```bash
-$> spack install singularity-eos_deps+cuda+kokkos+kokkos-kernels cuda_arch=70 +enable_tests+enable_fortran build_extra=sesame,stellarcollapse
+$> spack install singularity-eos-deps+cuda+kokkos+kokkos-kernels cuda_arch=70 +enable_tests+enable_fortran build_extra=sesame,stellarcollapse
 ```

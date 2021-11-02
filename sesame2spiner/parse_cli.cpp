@@ -35,8 +35,8 @@ void parseCLI(int argc, char *argv[], std::string &savename,
   helpStream << "Usage: " << argv[0]
              << "[-p] [-w] [-h] [-v] [-vv] [-d] [-s <savename>] <parameter files>\n\n"
              << "\t <parameter files>: input files, one per material\n"
-             << "\t-s <savename>: filename to save to. Defaults to "
-	     << DEFAULT_SAVENAME << "\n"
+             << "\t-s <savename>: filename to save to. Defaults to " << DEFAULT_SAVENAME
+             << "\n"
              << "\t-p:  print metadata associated with materials "
              << "in parameter files\n"
              << "\t-v:  print eospac warnings\n"
