@@ -16,6 +16,7 @@ If you are using `Docker`_, then simply pull the docker image specified below:
 .. _Docker: https://www.docker.com
 
 .. code-block::
+
   image: sphinxdoc/sphinx-latexpdf
 
 Then, after running :code:`docker run -it <docker-image-name> /bin/bash`, install the theme we are using with :code:`pip install sphinx_rtd_theme`
