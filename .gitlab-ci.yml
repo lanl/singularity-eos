@@ -125,7 +125,8 @@ before_script:
     paths:
       - public
   only:
-    - main
+    refs:
+      - main
 
 .test:
   stage: build_n_test
