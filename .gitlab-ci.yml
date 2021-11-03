@@ -41,8 +41,6 @@ before_script:
   - sed -i "1s;^;#%Module\n;" ${modName}
   - module use ${CI_PROJECT_DIR}/spack_env
   - module load loads # module load compiler, deps, etc.
-  - python --version
-  - python3 --version
 
 ##########################
 # Build Matrix Variables #
@@ -115,7 +113,7 @@ before_script:
     - spack env create --without-view -d ${CI_PROJECT_DIR}/sphinx_doc_env
     - spack env activate -d ${CI_PROJECT_DIR}/sphinx_doc_env
     - spack install --show-log-on-error py-sphinx%gcc@${SINGULARITY_EOS_GCC_VERSION}
-    - spack install --show-log-on-error py-sphinx-rtd-theme%gcc@${SINGULARITY_EOS_GCC_VERSION}
+    - spack install --show-log-on-error py-sphinx-rtd-theme@0.4.3%gcc@${SINGULARITY_EOS_GCC_VERSION}
     - spack module tcl refresh -y
     - spack env loads -r
     - source ${CI_PROJECT_DIR}/sphinx_doc_env/loads
@@ -126,16 +124,12 @@ before_script:
   artifacts:
     paths:
       - public
-  only:
-    - main
 
 .test:
   stage: build_n_test
   extends:
     - .job
   script:
-    - python --version
-    - python3 --version
     - mkdir -p build
     - cd build
     - |
@@ -163,6 +157,11 @@ format:
 pages:
   <<: *job_def
   extends: .sphinx-doc
+  only:
+    refs:
+      - main
+  except:
+
 
 gnu_skylake:
   <<: *job_def
