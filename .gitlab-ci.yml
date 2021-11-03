@@ -124,9 +124,6 @@ before_script:
   artifacts:
     paths:
       - public
-  only:
-    refs:
-      - main
 
 .test:
   stage: build_n_test
@@ -160,6 +157,11 @@ format:
 pages:
   <<: *job_def
   extends: .sphinx-doc
+  only:
+    refs:
+      - main
+  except:
+
 
 gnu_skylake:
   <<: *job_def
