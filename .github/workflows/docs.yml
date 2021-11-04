@@ -2,7 +2,7 @@ name: Build docs
 
 on:
   push:
-    brnaches: [ main ]
+    branches: [ main ]
 
 jobs:
     docs:
@@ -15,9 +15,8 @@ jobs:
         - name: Set system to non-interactive mode
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
+          run: pip install sphinx spinx-rtd-theme
+        - name: build the docs
           run: |
-            pip install sphinx spinx-rtd-theme
-	- name: build the docs
-	  run: |
-	    cd doc/sphinx
-	    make html
+            cd doc/sphinx
+            make html

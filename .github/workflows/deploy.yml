@@ -16,15 +16,16 @@ jobs:
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
           run: |
-            pip install sphinx spinx-rtd-theme
-	- name: build the docs
-	  run: |
-	    cd doc/sphinx
-	    make html
-	- name: Deploy
-	  uses: peaciris/actions-gh-pages@v3
-	  if: ${{ github.ref == 'refs/heads/main' }}
-	  with:
-	    github_token ${{ secrets.GITHUB_TOKEN }}
-	    publish_dir: ./doc/sphinx/_build
-	    force_orphan: true
+            pip install
+            pip install spinx-rtd-theme
+        - name: build docs
+          run: |
+            cd doc/sphinx
+            make html
+        - name: Deploy
+          uses: peaciris/actions-gh-pages@v3
+          if: ${{ github.ref == 'refs/heads/main' }}
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            publish_dir: ./doc/sphinx/_build
+            force_orphan: true
