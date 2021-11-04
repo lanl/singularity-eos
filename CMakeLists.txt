@@ -42,6 +42,7 @@ if (SINGULARITY_SUBMODULE_MODE)
   set(SINGULARITY_HIDE_MORE_WARNINGS ON CACHE BOOL "" FORCE)
 endif()
 
+
 # if cuda, need to set cxx compiler to nvcc_wrapper before compilers
 # are checked
 if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_CUDA)
@@ -381,3 +382,6 @@ install(CODE
     ${CMAKE_INSTALL_PREFIX}/include/ports-of-call \
   )"
   )
+
+# clang format
+include(cmake/Format.cmake)
