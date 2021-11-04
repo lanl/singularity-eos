@@ -1,0 +1,30 @@
+name: Deploy docs
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+    docs:
+      name: deploy docs
+      runs-on: ubuntu-latest
+
+      steps:      
+        - name: Checkout code
+          uses: actions/checkout@v2
+        - name: Set system to non-interactive mode
+          run: export DEBIAN_FRONTEND=noninteractive
+        - name: install dependencies
+          run: |
+            pip install sphinx spinx-rtd-theme
+	- name: build the docs
+	  run: |
+	    cd doc/sphinx
+	    make html
+	- name: Deploy
+	  uses: peaciris/actions-gh-pages@v3
+	  if: ${{ github.ref == 'refs/heads/main' }}
+	  with:
+	    github_token ${{ secrets.GITHUB_TOKEN }}
+	    publish_dir: ./doc/sphinx/_build
+	    force_orphan: true

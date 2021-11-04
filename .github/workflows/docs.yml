@@ -1,0 +1,23 @@
+name: Build docs
+
+on:
+  push:
+    brnaches: [ main ]
+
+jobs:
+    docs:
+      name: Build docs
+      runs-on: ubuntu-latest
+
+      steps:      
+        - name: Checkout code
+          uses: actions/checkout@v2
+        - name: Set system to non-interactive mode
+          run: export DEBIAN_FRONTEND=noninteractive
+        - name: install dependencies
+          run: |
+            pip install sphinx spinx-rtd-theme
+	- name: build the docs
+	  run: |
+	    cd doc/sphinx
+	    make html
