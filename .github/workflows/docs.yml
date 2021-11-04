@@ -17,7 +17,7 @@ jobs:
         - name: Set system to non-interactive mode
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
-          run: pip install sphinx spinx-rtd-theme
+          run: pip install sphinx sphinx-rtd-theme
         - name: build the docs
           run: |
             cd doc/sphinx
