@@ -12,8 +12,10 @@ More complete documentation is available [here](https://lanl.github.io/singulari
 ## Components
 
 - `eos` contains the analytic and tabular equation of state infrastructure
+- `eospac-wrapper` is a wrapper for eospac
 - `closure` contains mixed cell closure models. Currently pressure-temperature equilibrium is supported. Requires `eos`.
-- `utils/sesame2spiner` converts sesame tables to 
+- `sesame2spiner` converts sesame tables to spiner tables
+- `stellarcollaspe2spienr` converts tables found on stellarcollapse.org to spiner tables
 
 ## To Build
 
@@ -28,15 +30,6 @@ make
 ```
 
 ### To Make tests
-
-To build the tests, in the `singularity-eos` root directory, clone `singularity-eos-data`, which is a [git-lfs](https://git-lfs.github.com/) directory. First you need to install git-lfs. This only needs to be done once. Download git-lfs via, e.g.,
-```bash
-apt install git-lfs
-```
-and then add the requisite files into your home directory via
-```bash
-git lfs install
-```
 
 Then, in the singularity-eos root directory:
 ```bash
