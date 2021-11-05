@@ -3,7 +3,11 @@ Singularity EOS
 
 [![Tests](https://github.com/lanl/singularity-eos/actions/workflows/tests.yml/badge.svg)](https://github.com/lanl/singularity-eos/actions/workflows/tests.yml)
 
-A collection of closure models and tools useful for multiphysics codes
+A collection of closure models and tools useful for multiphysics codes.
+
+## Documentation
+
+More complete documentation is available [here](https://lanl.github.io/singularity-eos/).
 
 ## Components
 
