@@ -33,7 +33,6 @@ make
 
 Then, in the singularity-eos root directory:
 ```bash
-git clone git@gitlab.lanl.gov:singularity/singularity-eos-data.git
 mkdir -p bin
 cd bin
 cmake -DSINGULARITY_BUILD_TESTS=ON ..
