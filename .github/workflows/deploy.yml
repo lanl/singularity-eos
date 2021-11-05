@@ -16,7 +16,7 @@ jobs:
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
           run: |
-            pip install
+            pip install sphinx
             pip install spinx-rtd-theme
         - name: build docs
           run: |
