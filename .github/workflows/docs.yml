@@ -1,4 +1,4 @@
-name: Build docs
+name: Build and Deploy docs
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
     docs:
-      name: Build docs
+      name: build and deploy docs
       runs-on: ubuntu-latest
 
       steps:      
@@ -17,8 +17,17 @@ jobs:
         - name: Set system to non-interactive mode
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
-          run: pip install sphinx sphinx-rtd-theme
-        - name: build the docs
+          run: |
+            pip install sphinx
+            pip install sphinx-rtd-theme
+        - name: build docs
           run: |
             cd doc/sphinx
             make html
+        - name: Deploy
+          uses: peaceiris/actions-gh-pages@v3.7.3
+          if: ${{ github.ref == 'refs/heads/main' }}
+          with:
+            github_token: ${{ secrets.GITHUB_TOKEN }}
+            publish_dir: ./doc/sphinx/_build/html
+            force_orphan: true
