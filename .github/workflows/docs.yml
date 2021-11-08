@@ -20,13 +20,13 @@ jobs:
           run: |
             pip install sphinx
             pip install sphinx-rtd-theme
+	    pip install sphinx-multiversion
         - name: build docs
           run: |
             cd doc/sphinx
-            make html
+            make multiversion
         - name: Deploy
           uses: peaceiris/actions-gh-pages@v3.7.3
-          if: ${{ github.ref == 'refs/heads/main' }}
           with:
             github_token: ${{ secrets.GITHUB_TOKEN }}
             publish_dir: ./doc/sphinx/_build/html

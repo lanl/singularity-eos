@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Singularity-EOS'
-copyright = '2021, Singularity-EOS'
-author = 'Singularity-EOS'
+copyright = '2021, Triad National Security'
+author = 'The Singularity-EOS Team'
 
 
 # -- General configuration ---------------------------------------------------
@@ -28,7 +28,8 @@ author = 'Singularity-EOS'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autosectionlabel'
+    'sphinx.ext.autosectionlabel',
+    'sphinx_multiversion'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
