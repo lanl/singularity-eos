@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Singularity-EOS'
-copyright = '2021, Singularity-EOS'
-author = 'Singularity-EOS'
+copyright = '2021, Triad National Security'
+author = 'The Singularity-EOS Team'
 
 
 # -- General configuration ---------------------------------------------------
@@ -28,6 +28,8 @@ author = 'Singularity-EOS'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autosectionlabel',
+    'sphinx_multiversion'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -50,3 +52,6 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# configuration for sphinx_multiversion
+smv_remote_whitelist = r'^(origin)$'
