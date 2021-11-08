@@ -22,11 +22,10 @@ jobs:
           run: |
             pip install sphinx
             pip install sphinx-rtd-theme
-            pip install git+https://github.com/Holzhaus/sphinx-multiversion.git
+            pip install spinx-multiversion
         - name: build docs
           run: |
             cd doc/sphinx
-            git fetch
             make multiversion
         - name: Deploy
           uses: peaceiris/actions-gh-pages@v3.7.3
