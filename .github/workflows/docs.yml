@@ -22,7 +22,7 @@ jobs:
           run: |
             pip install sphinx
             pip install sphinx-rtd-theme
-            pip install sphinx-multiversion
+            pip install git+https://github.com/Holzhaus/sphinx-multiversion.git
         - name: build docs
           run: |
             cd doc/sphinx
