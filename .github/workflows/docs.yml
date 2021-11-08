@@ -20,7 +20,7 @@ jobs:
           run: |
             pip install sphinx
             pip install sphinx-rtd-theme
-	    pip install sphinx-multiversion
+            pip install sphinx-multiversion
         - name: build docs
           run: |
             cd doc/sphinx
