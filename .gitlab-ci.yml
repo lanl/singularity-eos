@@ -122,9 +122,6 @@ before_script:
     - make html
     - rm -rf ${CI_PROJECT_DIR}/public
     - mv _build/html ${CI_PROJECT_DIR}/public
-  artifacts:
-    paths:
-      - public
 
 .test:
   stage: build_n_test
@@ -155,14 +152,20 @@ format:
   extends: .clang-format
   allow_failure: true
 
+pages_check:
+  <<: *job_def
+  extends: .sphinx-doc
+
 pages:
   <<: *job_def
   extends: .sphinx-doc
+  artifacts:
+    paths:
+      - public
   only:
     refs:
       - main
   except:
-
 
 gnu_skylake:
   <<: *job_def
