@@ -14,10 +14,10 @@ class PySphinxMultiversion(PythonPackage):
     url      = "https://github.com/Holzhaus/sphinx-multiversion/archive/refs/tags/v0.2.4.tar.gz"
     #pypi = "sphinx-multiversion/sphinx-multiversion-0.2.4.tar.gz"
 
-    version('0.2.4', sha256='5cd1ca9ecb5eed63cb8d6ce5e9c438ca13af4fa98e7eb6f376be541dd4990bcb')
-    version('0.2.3', sha256='e46565ac2f703f3b55652f33c159c8059865f5d13dae7f0e8403e5afc2996f5f')
-    version('0.2.2', sha256='c0a4f2cbb13eb62b5cd79e2f6901e5d90ea191d3f37e96e1f15b976827de0ac0')
-    version('0.2.1', sha256='0775847454965005a3a8433c1bf38379f723c026de9c4a7ddd447b0349df90c1')
+    version('0.2.4', sha256='c22abc33160c8ff63b95bca6df7bffea6c418decfa0456b9645e2e93b8b8a99a')
+    version('0.2.3', sha256='a9c72cb3e994f61f3e5a5332e633484863a866a25d9fde9df01ed58a996043db')
+    version('0.2.2', sha256='a5af32563ba9261e17626d9a839632bec62d6a4597d1736d50432a7eee02b38c')
+    version('0.2.1', sha256='468aa861bc606144b1d5212bb7d5e9b83b1de697dffd3d1737708a203ff7ef59')
 
     depends_on('py-setuptools', type='build')
     depends_on('py-sphinx', type=('build', 'run'))
