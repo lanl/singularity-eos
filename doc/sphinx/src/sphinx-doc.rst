@@ -31,7 +31,7 @@ If you are using `Spack`_ to provision dependencies, then follow the steps as su
 .. literalinclude:: ../../../.gitlab-ci.yml
    :lineno-match:
    :language: yaml
-   :lines: 113-121
+   :lines: 111-120
 
 from :code:`.gitlab-ci.yml`
 
@@ -54,7 +54,7 @@ After you have the dependencies in your environment, then simply build your docu
 .. literalinclude:: ../../../.gitlab-ci.yml
    :lineno-match:
    :language: yaml
-   :lines: 122-123
+   :lines: 121-122
 
 from :code:`.gitlab-ci.yml`
 
