@@ -11,7 +11,7 @@ class PySphinxMultiversion(PythonPackage):
     """A Sphinx extension for building self-hosted versioned documentation."""
 
     homepage = "https://github.com/Holzhaus/sphinx-multiversion"
-    url      = "https://github.com/Holzhaus/sphinx-multiversion/archive/refs/tags/v0.2.4.tar.gz"
+    url      = "https://github.com/Holzhaus/sphinx-multiversion/releases/download/v0.2.4/sphinx-multiversion-0.2.4.tar.gz"
     #pypi = "sphinx-multiversion/sphinx-multiversion-0.2.4.tar.gz"
 
     version('0.2.4', sha256='c22abc33160c8ff63b95bca6df7bffea6c418decfa0456b9645e2e93b8b8a99a')
