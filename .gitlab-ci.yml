@@ -155,6 +155,10 @@ format:
 pages_check:
   <<: *job_def
   extends: .sphinx-doc
+  only:
+    refs:
+      - merge_requests
+  except:
 
 pages:
   <<: *job_def
