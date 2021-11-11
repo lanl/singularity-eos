@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include <hdf5.h>
@@ -148,6 +149,8 @@ herr_t saveAllMaterials(const std::string &savename,
                         Verbosity eospacWarn) {
   std::vector<Params> params;
   std::vector<int> matids;
+  std::unordered_set<std::string> used_names;
+  std::unordered_set<int> used_matids;
   SesameMetadata metadata;
   hid_t file;
   herr_t status = H5_SUCCESS;
@@ -171,12 +174,27 @@ herr_t saveAllMaterials(const std::string &savename,
 
   for (size_t i = 0; i < matids.size(); i++) {
     int matid = matids[i];
+    if (used_matids.count(matid) > 0) {
+      std::cerr << "...Duplicate matid " << matid << " detected. Skipping."
+		<< std::endl;
+      continue;
+    }
+    used_matids.insert(matid);
 
     std::cout << "..." << matid << std::endl;
 
     eosGetMetadata(matid, metadata, Verbosity::Debug);
     if (printMetadata) std::cout << metadata << std::endl;
     std::string name = params[i].Get("name", metadata.name);
+    if (used_names.count(name) > 0) {
+      std::string new_name = "material_" + std::to_string(i);
+      std::cerr << "...WARNING: Name " << name << " already used. "
+		<< "using a default name: "
+		<< new_name
+		<< std::endl;
+      name = new_name;
+    }
+    used_names.insert(name);
 
     Bounds lRhoBounds, lTBounds, leBounds;
     getMatBounds(i, matid, metadata, params[i], lRhoBounds, lTBounds, leBounds);

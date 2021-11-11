@@ -141,6 +141,7 @@ before_script:
             ..
     - make -j
     - ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat
+    - ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat
     - make test
 
 ########
