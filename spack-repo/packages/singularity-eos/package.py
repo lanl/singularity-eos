@@ -25,7 +25,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     variant("build_extra",
             description="Build converters",
             values=any_combination_of(
-                'sesame','stellarcollapse','closure'
+                'sesame','stellarcollapse'
             ).with_default('none') 	
     )
 
@@ -72,8 +72,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     conflicts("cuda_arch=none", when="+cuda",
           msg="CUDA architecture is required")
 
-    phases=["install"]
-
     def cmake_args(self):
 
         args = [
@@ -81,8 +79,8 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_USE_KOKKOS", "kokkos"),
             self.define_from_variant("SINGULARITY_USE_KOKKOSKERNELS", "kokkos-kernels"),
             self.define_from_variant("SINGULARITY_USE_FORTRAN", "enable_fortran"),
+            self.define_from_variant("SINGULARITY_BUILD_CLOSURE", "enable_fortran"),
             self.define_from_variant("SINGULARITY_BUILD_TESTS", "enable_tests"),
-            self.define("SINGULARITY_BUILD_CLOSURE", "closure" in self.spec.variants["build_extra"]),
             self.define("SINGULARITY_BUILD_SESAME2SPINER", "sesame" in self.spec.variants["build_extra"]),
             self.define("SINGULARITY_TEST_SESAME", ("sesame" in self.spec.variants["build_extra"] and "enable_tests" in self.spec)),
             self.define("SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER", "stellarcollapse" in self.spec.variants["build_extra"]),
