@@ -30,10 +30,10 @@ constexpr double SMALL = 1e-20; // to avoid dividing by zero
 // speed using a given EOS. We make the call two different ways, once
 // with single calls, and once with the FillEos call, which should be
 // more performant.
-inline void PressureSoundSpeedFromDensityEnergyDensity(const double *rho,
-						       const double *uu,
+inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
+						       double *uu,
 						       EOS &eos,
-						       double *P,
+						       double *P, // outputs
 						       double *cs,
 						       const int Ncells) {
   // Allocate lambda object, which is used for caching by the tables.
@@ -62,8 +62,12 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(const double *rho,
 
   // Loop through cells and use the FillEos function call
   for (int i = 0; i < Ncells; ++i) {
-    double temp, cv;
-    eos.FillEos(rho[i], temp, uu[i]/(rho[i] + SMALL), P[i], cv, cs[i], output, lambda.data());
+    double eps, temp, cv;
+    // FillEos is very general and is capable of modifying any of the inputs,
+    // so const vars cannot be passed into it. However, it is often more performant
+    // than making individual function calls.
+    Real sie = uu[i]/(rho[i] + SMALL); // convert to specific internal energy
+    eos.FillEos(rho[i], temp, sie, P[i], cv, cs[i], output, lambda.data());
     // convert bulk modulus to cs
     cs[i] = std::sqrt(cs[i]/(rho[i] + SMALL));
   }
@@ -104,16 +108,40 @@ int main() {
   modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
   EOS eos2 = EOSBuilder::buildEOS(type, base_params, modifiers); // build the builder
 
+  // If you're on device, you need to call
+  // eos1.GetOnDevice();
+  // to call the EOS on device
+  // However, since we're doing everything on host here, we don't make this call
+
   // Make some arrays
   constexpr int N = 50;
   std::vector<double> rho(N);
   std::vector<double> uu(N);
   std::vector<double> P(N);
   std::vector<double> cs(N);
-  // TODO: Fill the rho and uu arrays with something sensible.
+
+  // Here we fill the rho and uu arrays with something sensible.
+  for (int i = 0; i < N; ++i) {
+    rho[i] = 1 + 0.1*std::sin(2*M_PI*i/static_cast<double>(N));
+    uu[i] = 1e-2*rho[i];
+  }
   
   // Call it!
-  PressureFromDensityEnergyDensity(rho.data(), uu.data(), eos1.data(), P.data(), N);
+  PressureSoundSpeedFromDensityEnergyDensity(rho.data(), uu.data(), eos1, P.data(), cs.data(), N);
+
+  // And let's print out the final value just for fun
+  std::cout << "The final values are:\n"
+	    << "rho = " << rho[N-1] << "\n"
+	    << "uu  = " << uu[N-1] << "\n"
+	    << "P   = " << P[N-1] << "\n"
+	    << "cs  = " << cs[N-1]
+	    << std::endl;
+
+  // It's good practice to call Finalize() after you're done using an EOS.
+  // This usually only does anything if you're on device, but for GPU-data it
+  // will call the appropriate destructor.
+  eos1.Finalize();
+  eos2.Finalize();
 
   return 0;
 }
