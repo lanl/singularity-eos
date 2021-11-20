@@ -52,6 +52,7 @@ endif()
 set(
     GLOBS
     ${PROJECT_SOURCE_DIR}/eospac-wrapper/[^\.]*.cpp             ${PROJECT_SOURCE_DIR}/eospac-wrapper/[^\.]*.hpp
+    ${PROJECT_SOURCE_DIR}/example/[^\.]*.cpp                    ${PROJECT_SOURCE_DIR}/example/[^\.]*.hpp
     ${PROJECT_SOURCE_DIR}/sesame2smpiner/[^\.]*.cpp             ${PROJECT_SOURCE_DIR}/sesame2spiner/[^\.]*.hpp
     ${PROJECT_SOURCE_DIR}/singularity-eos/[^\.]*.cpp            ${PROJECT_SOURCE_DIR}/singularity-eos/[^\.]*.hpp
     ${PROJECT_SOURCE_DIR}/stellarcollapse2spiner/[^\.]*.cpp     ${PROJECT_SOURCE_DIR}/stellarcollapse2spiner/[^\.]*.hpp

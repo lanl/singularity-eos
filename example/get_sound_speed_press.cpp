@@ -31,11 +31,9 @@ constexpr double SMALL = 1e-20; // to avoid dividing by zero
 // with single calls, and once with the FillEos call, which should be
 // more performant.
 inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
-						       double *uu,
-						       EOS &eos,
-						       double *P, // outputs
-						       double *cs,
-						       const int Ncells) {
+                                                       double *uu, EOS &eos,
+                                                       double *P, // outputs
+                                                       double *cs, const int Ncells) {
   // Allocate lambda object, which is used for caching by the tables.
   // Lambdas can do other things, such as take extra parameters as well.
   //
@@ -50,10 +48,10 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
 
   // Loop through the cells and use the two function calls
   for (int i = 0; i < Ncells; ++i) {
-    double sie = uu[i]/(rho[i] + SMALL); // convert to specific internal energy
+    double sie = uu[i] / (rho[i] + SMALL); // convert to specific internal energy
     P[i] = eos.PressureFromDensityInternalEnergy(rho[i], sie, lambda.data());
     double bmod = eos.BulkModulusFromDensityInternalEnergy(rho[i], sie, lambda.data());
-    cs[i] = std::sqrt(bmod/(rho[i] + SMALL));
+    cs[i] = std::sqrt(bmod / (rho[i] + SMALL));
   }
 
   // request the output variables pressure and bulk modulus.
@@ -66,10 +64,10 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
     // FillEos is very general and is capable of modifying any of the inputs,
     // so const vars cannot be passed into it. However, it is often more performant
     // than making individual function calls.
-    Real sie = uu[i]/(rho[i] + SMALL); // convert to specific internal energy
+    Real sie = uu[i] / (rho[i] + SMALL); // convert to specific internal energy
     eos.FillEos(rho[i], temp, sie, P[i], cv, cs[i], output, lambda.data());
     // convert bulk modulus to cs
-    cs[i] = std::sqrt(cs[i]/(rho[i] + SMALL));
+    cs[i] = std::sqrt(cs[i] / (rho[i] + SMALL));
   }
 }
 
@@ -97,14 +95,16 @@ int main() {
   // This is equivalent to
   // EOS eos2 = Shifted(Scaled(IdealGas(gm1, Cv), scale), shift);
   EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-  EOSBuilder::modifiers_t modifiers; // this is a dictionary
+  EOSBuilder::modifiers_t modifiers;                               // this is a dictionary
   EOSBuilder::params_t base_params, shifted_params, scaled_params; // so are these
-  base_params["Cv"].emplace<Real>(Cv); // base params is the parameters of the underlying eos
+  base_params["Cv"].emplace<Real>(
+      Cv); // base params is the parameters of the underlying eos
   base_params["gm1"].emplace<Real>(gm1);
-  shifted_params["shift"].emplace<Real>(shift); // these are the parameters for the modifiers
-  scaled_params["scale"].emplace<Real>(scale);  // you use strings for the variable names
+  shifted_params["shift"].emplace<Real>(
+      shift); // these are the parameters for the modifiers
+  scaled_params["scale"].emplace<Real>(scale); // you use strings for the variable names
   // for each modifier put the relevant params in the modifiers object
-  modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params; 
+  modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
   modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
   EOS eos2 = EOSBuilder::buildEOS(type, base_params, modifiers); // build the builder
 
@@ -122,20 +122,20 @@ int main() {
 
   // Here we fill the rho and uu arrays with something sensible.
   for (int i = 0; i < N; ++i) {
-    rho[i] = 1 + 0.1*std::sin(2*M_PI*i/static_cast<double>(N));
-    uu[i] = 1e-2*rho[i];
+    rho[i] = 1 + 0.1 * std::sin(2 * M_PI * i / static_cast<double>(N));
+    uu[i] = 1e-2 * rho[i];
   }
-  
+
   // Call it!
-  PressureSoundSpeedFromDensityEnergyDensity(rho.data(), uu.data(), eos1, P.data(), cs.data(), N);
+  PressureSoundSpeedFromDensityEnergyDensity(rho.data(), uu.data(), eos1, P.data(),
+                                             cs.data(), N);
 
   // And let's print out the final value just for fun
   std::cout << "The final values are:\n"
-	    << "rho = " << rho[N-1] << "\n"
-	    << "uu  = " << uu[N-1] << "\n"
-	    << "P   = " << P[N-1] << "\n"
-	    << "cs  = " << cs[N-1]
-	    << std::endl;
+            << "rho = " << rho[N - 1] << "\n"
+            << "uu  = " << uu[N - 1] << "\n"
+            << "P   = " << P[N - 1] << "\n"
+            << "cs  = " << cs[N - 1] << std::endl;
 
   // It's good practice to call Finalize() after you're done using an EOS.
   // This usually only does anything if you're on device, but for GPU-data it
