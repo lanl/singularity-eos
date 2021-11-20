@@ -17,6 +17,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -149,7 +150,7 @@ herr_t saveAllMaterials(const std::string &savename,
                         Verbosity eospacWarn) {
   std::vector<Params> params;
   std::vector<int> matids;
-  std::unordered_set<std::string> used_names;
+  std::unordered_map<std::string,int> used_names;
   std::unordered_set<int> used_matids;
   SesameMetadata metadata;
   hid_t file;
@@ -185,16 +186,27 @@ herr_t saveAllMaterials(const std::string &savename,
 
     eosGetMetadata(matid, metadata, Verbosity::Debug);
     if (printMetadata) std::cout << metadata << std::endl;
+
     std::string name = params[i].Get("name", metadata.name);
-    if (used_names.count(name) > 0) {
+    if (name == "-1" || name == "") {
       std::string new_name = "material_" + std::to_string(i);
-      std::cerr << "...WARNING: Name " << name << " already used. "
-		<< "using a default name: "
+      std::cerr << "...WARNING: no reasonable name found. "
+		<< "Using a default name: "
 		<< new_name
 		<< std::endl;
       name = new_name;
     }
-    used_names.insert(name);
+    if (used_names.count(name) > 0) {
+      used_names[name] += 1;
+      std::string new_name = name + "_" + std::to_string(used_names[name]);
+      std::cerr << "...WARNING: Name " << name << " already used. "
+		<< "Using name: "
+		<< new_name
+		<< std::endl;
+      name = new_name;
+    } else {
+      used_names[name] = 1;
+    }
 
     Bounds lRhoBounds, lTBounds, leBounds;
     getMatBounds(i, matid, metadata, params[i], lRhoBounds, lTBounds, leBounds);
