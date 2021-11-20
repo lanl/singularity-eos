@@ -2,8 +2,8 @@
 
 .. _Sphinx CheatSheet: https://thomas-cokelaer.info/tutorials/sphinx/rest_syntax.html
 
-Sphinx Documentation
-====================
+How to Use Sphinx for Writing Docs
+===================================
 
 How to Get the Dependencies
 ---------------------------
@@ -31,7 +31,7 @@ If you are using `Spack`_ to provision dependencies, then follow the steps as su
 .. literalinclude:: ../../../.gitlab-ci.yml
    :lineno-match:
    :language: yaml
-   :lines: 113-121
+   :lines: 111-120
 
 from :code:`.gitlab-ci.yml`
 
@@ -54,7 +54,7 @@ After you have the dependencies in your environment, then simply build your docu
 .. literalinclude:: ../../../.gitlab-ci.yml
    :lineno-match:
    :language: yaml
-   :lines: 122-123
+   :lines: 121-122
 
 from :code:`.gitlab-ci.yml`
 
@@ -66,18 +66,17 @@ How to Deploy
 
 #. Submit a PR with your .rst changes for documentation on `Github Singularity-EOS`_
 #. Get your PR reviewed and merged into main
-#. Wait for the mirroring to update
-#. Make sure the :code:`pages` CI job passes in the Gitlab CI pipeline
+#. Make sure the :code:`pages` CI job passes in the CI pipeline
 
 .. _Github Singularity-EOS: https://github.com/lanl/singularity-eos
 
-As soon as the PR is merged into main, this will trigger the Gitlab Pages deployment automatically if the :code:`pages` CI job passes on the mirrored repo.
+As soon as the PR is merged into main, this will trigger the Pages deployment automatically if the :code:`pages` CI job passes.
 
-As long as you have access to the `re-git Singularity-EOS`_, then you can go and behold the beautiful, updated `Singularity-EOS Documentation`_!
+Documentation is available on `github-pages`_ and on `re-git`_
 
-.. _re-git Singularity-EOS: https://re-git.lanl.gov/xcap/oss/singularity-eos
+.. _github-pages: https://lanl.github.io/singularity-eos/
 
-.. _Singularity-EOS Documentation: http://xcap.re-pages.lanl.gov/oss/singularity-eos
+.. _re-git: http://xcap.re-pages.lanl.gov/oss/singularity-eos
 
 More Info.
 ----------

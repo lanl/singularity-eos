@@ -114,6 +114,7 @@ before_script:
     - spack env activate -d ${CI_PROJECT_DIR}/sphinx_doc_env
     - spack install --show-log-on-error py-sphinx%gcc@${SINGULARITY_EOS_GCC_VERSION}
     - spack install --show-log-on-error py-sphinx-rtd-theme@0.4.3%gcc@${SINGULARITY_EOS_GCC_VERSION}
+    - spack install --show-log-on-error py-sphinx-multiversion%gcc@${SINGULARITY_EOS_GCC_VERSION}
     - spack module tcl refresh -y
     - spack env loads -r
     - source ${CI_PROJECT_DIR}/sphinx_doc_env/loads
@@ -121,9 +122,6 @@ before_script:
     - make html
     - rm -rf ${CI_PROJECT_DIR}/public
     - mv _build/html ${CI_PROJECT_DIR}/public
-  artifacts:
-    paths:
-      - public
 
 .test:
   stage: build_n_test
@@ -154,14 +152,24 @@ format:
   extends: .clang-format
   allow_failure: true
 
-pages:
+pages_check:
   <<: *job_def
   extends: .sphinx-doc
   only:
     refs:
-      - main
+      - merge_requests
   except:
 
+pages:
+  <<: *job_def
+  extends: .sphinx-doc
+  artifacts:
+    paths:
+      - public
+  only:
+    refs:
+      - main
+  except:
 
 gnu_skylake:
   <<: *job_def

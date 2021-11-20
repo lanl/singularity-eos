@@ -6,13 +6,22 @@
 Welcome to Singularity-EOS's Documentation!
 =============================================
 
+Performance portable equations of state and mixed cell closures.
+
+Documentation approved for unlimited release. LA-UR-21-31131.
+
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
 
+   src/getting-started
+   src/philosophy
+   src/building
+   src/using-eos
+   src/models
+   src/using-closures
+   src/contributing
    src/sphinx-doc
-
-Performance portable equations of state and mixed cell closures
 
 Indices and tables
 ==================
