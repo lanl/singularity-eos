@@ -24,6 +24,7 @@ option (SINGULARITY_USE_CUDA "Enable cuda support" OFF)
 option (SINGULARITY_USE_KOKKOSKERNELS
   "Use kokkos-kernels for linear algebra" OFF)
 option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
+option (SINGULARITY_BUILD_EXAMPLES "Compile examples" OFF)
 option (SINGULARITY_BUILD_SESAME2SPINER "Compile sesame2spiner" OFF)
 option (SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" OFF)
 option (SINGULARITY_BETTER_DEBUG_FLAGS
@@ -336,6 +337,10 @@ if(SINGULARITY_BUILD_SESAME2SPINER)
       install(TARGETS sesame2spiner DESTINATION bin)
    endif()
   endif()
+endif()
+
+if (SINGULARITY_BUILD_EXAMPLES)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/example)
 endif()
 
 # These are always needed.
