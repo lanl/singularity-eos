@@ -1,8 +1,0 @@
-modules:
-  tcl:
-    verbose: True
-    naming_scheme: '{name}/{version}-{compiler.name}-{compiler.version}'
-    all:
-      autoload: 'direct'
-      conflict:
-        - '{name}'
