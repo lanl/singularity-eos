@@ -54,9 +54,23 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
     cs[i] = std::sqrt(bmod / (rho[i] + SMALL));
   }
 
-  // request the output variables pressure and bulk modulus.
-  // Use bitwise or to build the bitfield of quantities you want.
-  constexpr unsigned long output = thermalqs::pressure | thermalqs::bulk_modulus;
+  /*
+   * request the output variables pressure and bulk modulus.
+   * Use bitwise or to build the bitfield of quantities you want.
+   * Available variables for input/output are:
+   *
+   * density, specific_internal_energy, pressure,
+   * temperature, specific_heat, bulk_modulus
+   *
+   * Note that all quantities not requested as output are considered
+   * inputs.  Moreover, most equations of state calls require density
+   * and either temperature or energy as one of their inputs.
+   * Therefore, to tell the machinery that we want to use energy as an
+   * input, not temperature, we must also request temperature as an
+   * output.
+   */
+  constexpr unsigned long output =
+      (thermalqs::temperature | thermalqs::pressure | thermalqs::bulk_modulus);
 
   // Loop through cells and use the FillEos function call
   for (int i = 0; i < Ncells; ++i) {
