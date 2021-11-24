@@ -69,9 +69,8 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
    * input, not temperature, we must also request temperature as an
    * output.
    */
-  constexpr unsigned long output = (thermalqs::temperature
-                                    | thermalqs::pressure
-                                    | thermalqs::bulk_modulus);
+  constexpr unsigned long output =
+      (thermalqs::temperature | thermalqs::pressure | thermalqs::bulk_modulus);
 
   // Loop through cells and use the FillEos function call
   for (int i = 0; i < Ncells; ++i) {
