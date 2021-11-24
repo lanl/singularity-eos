@@ -197,6 +197,10 @@ install_singularity-eos_fort:
   extends:
     - .job
   script:
+    - module purge
+    - module use ${CI_PROJECT_DIR}/spack_env
+    - module load loads # module load compiler, deps, etc.
+    - module list
     - export TARGET_DIR=${CI_PROJECT_DIR}/install/fort
     - mkdir -p ${TARGET_DIR} build
     - cd build
@@ -214,6 +218,10 @@ install_singularity-eos_nofort:
   extends:
     - .job
   script:
+    - module purge
+    - module use ${CI_PROJECT_DIR}/spack_env
+    - module load loads # module load compiler, deps, etc.
+    - module list
     - export TARGET_DIR=${CI_PROJECT_DIR}/install/nofort
     - mkdir -p ${TARGET_DIR} build
     - cd build
