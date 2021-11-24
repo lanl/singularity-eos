@@ -62,9 +62,12 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
    * density, specific_internal_energy, pressure,
    * temperature, specific_heat, bulk_modulus
    *
-   * Note that all quantities not requested as output are considered inputs.
-   * Therefore, to tell the machinery that we want to use energy as an input,
-   * not temperature, we must also request temperature as an output.
+   * Note that all quantities not requested as output are considered
+   * inputs.  Moreover, most equations of state calls require density
+   * and either temperature or energy as one of their inputs.
+   * Therefore, to tell the machinery that we want to use energy as an
+   * input, not temperature, we must also request temperature as an
+   * output.
    */
   constexpr unsigned long output = (thermalqs::temperature
                                     | thermalqs::pressure
