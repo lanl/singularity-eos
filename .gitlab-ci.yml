@@ -8,10 +8,9 @@ stages:
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  SPACK_REF: "v0.16.3"
   SINGULARITY_EOS_CLANG_FORMAT_VERSION: "12.0.0"
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos-deps+mpi%gcc@${SINGULARITY_EOS_GCC_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos-deps@main+mpi%gcc@${SINGULARITY_EOS_GCC_VERSION}"
   SINGULARITY_CI_DATA_DIR: "/projects/xcap/ec/singularity-eos-data"
 
 before_script:
@@ -19,18 +18,26 @@ before_script:
   - export TMPDIR=${CI_PROJECT_DIR}
   - cd ${CI_PROJECT_DIR}
   - unset SPACK_ROOT
+  - echo "Spack Version:${XCAP_OSS_SPACK_REF}"
   - git clone https://github.com/spack/spack.git
-  - cd spack && git checkout ${SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
+  - cd spack && git checkout ${XCAP_OSS_SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
+  - export SPACK_ARCH=`./spack/bin/spack arch`
+  - echo ${SPACK_ARCH}
+  - export PLATFORM="${SPACK_ARCH%%-*}"
+  - echo ${PLATFORM}
+  - mkdir -p ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}
+  - cp ${XCAP_OSS_SPACK_DIR}/etc/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
   - cp ${CI_PROJECT_DIR}/.gitlab-ci/config/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
+  - sed -i "s;XCAP_OSS_SPACK_DIR_TMP;${XCAP_OSS_SPACK_DIR};g" "${CI_PROJECT_DIR}/spack/etc/spack/upstreams.yaml"
+  - cp ${XCAP_OSS_SPACK_DIR}/etc/spack/${PLATFORM}/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}/
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-  - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
-  - spack compiler find
   - spack compiler list
   - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
   - spack repo list
   - mkdir -p ${CI_PROJECT_DIR}/spack_env
   - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
   - spack env activate -d ${CI_PROJECT_DIR}/spack_env
+  - spack dev-build -q ${SINGULARITY_EOS_SPACK_SPEC} || ( cat spack-build-out.txt && exit 1 )
   - export SINGULARITY_EOS_CMD="spack install --show-log-on-error ${SINGULARITY_EOS_SPACK_SPEC}"
   - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
@@ -39,8 +46,6 @@ before_script:
   - export modName="${CI_PROJECT_DIR}/spack_env/loads"
   - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION}\n;" ${modName}
   - sed -i "1s;^;#%Module\n;" ${modName}
-  - module use ${CI_PROJECT_DIR}/spack_env
-  - module load loads # module load compiler, deps, etc.
 
 ##########################
 # Build Matrix Variables #
@@ -128,6 +133,10 @@ before_script:
   extends:
     - .job
   script:
+    - module purge
+    - module use ${CI_PROJECT_DIR}/spack_env
+    - module load loads # module load compiler, deps, etc.
+    - module list
     - mkdir -p build
     - cd build
     - |
@@ -188,6 +197,10 @@ install_singularity-eos_fort:
   extends:
     - .job
   script:
+    - module purge
+    - module use ${CI_PROJECT_DIR}/spack_env
+    - module load loads # module load compiler, deps, etc.
+    - module list
     - export TARGET_DIR=${CI_PROJECT_DIR}/install/fort
     - mkdir -p ${TARGET_DIR} build
     - cd build
@@ -205,6 +218,10 @@ install_singularity-eos_nofort:
   extends:
     - .job
   script:
+    - module purge
+    - module use ${CI_PROJECT_DIR}/spack_env
+    - module load loads # module load compiler, deps, etc.
+    - module list
     - export TARGET_DIR=${CI_PROJECT_DIR}/install/nofort
     - mkdir -p ${TARGET_DIR} build
     - cd build
