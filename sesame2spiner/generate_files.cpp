@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -203,12 +204,21 @@ herr_t saveAllMaterials(const std::string &savename,
 
 void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
                   Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds) {
-  Real rhoMin = params.Get("rhomin", metadata.rhoMin);
-  Real rhoMax = params.Get("rhomax", metadata.rhoMax);
-  Real TMin = params.Get("Tmin", metadata.TMin);
-  Real TMax = params.Get("Tmax", metadata.TMax);
-  Real sieMin = params.Get("siemin", metadata.sieMin);
-  Real sieMax = params.Get("siemax", metadata.sieMax);
+
+  // The "epsilon" shifts here are required to avoid eospac
+  // extrapolation errors at table bounds
+  constexpr Real TINY = std::numeric_limits<Real>::epsilon();
+  auto TinyShift = [=](Real val, int sign) {
+    Real shift = std::abs(std::min(10*val*TINY, TINY));
+    return val + sign*shift;
+  };
+
+  Real rhoMin = params.Get("rhomin", TinyShift(metadata.rhoMin,1));
+  Real rhoMax = params.Get("rhomax", TinyShift(metadata.rhoMax,-1));
+  Real TMin = params.Get("Tmin", TinyShift(metadata.TMin,1));
+  Real TMax = params.Get("Tmax", TinyShift(metadata.TMax,-1));
+  Real sieMin = params.Get("siemin", TinyShift(metadata.sieMin,1));
+  Real sieMax = params.Get("siemax", TinyShift(metadata.sieMax,-1));
 
   checkValInMatBounds(matid, "rhoMin", rhoMin, metadata.rhoMin, metadata.rhoMax);
   checkValInMatBounds(matid, "rhoMax", rhoMax, metadata.rhoMin, metadata.rhoMax);
