@@ -29,6 +29,7 @@ before_script:
   - cp ${XCAP_OSS_SPACK_DIR}/etc/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
   - cp ${CI_PROJECT_DIR}/.gitlab-ci/config/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
   - sed -i "s;XCAP_OSS_SPACK_DIR_TMP;${XCAP_OSS_SPACK_DIR};g" "${CI_PROJECT_DIR}/spack/etc/spack/upstreams.yaml"
+  - rm ${CI_PROJECT_DIR}/spack/etc/spack/repos.yaml
   - cp ${XCAP_OSS_SPACK_DIR}/etc/spack/${PLATFORM}/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}/
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
   - spack compiler list
