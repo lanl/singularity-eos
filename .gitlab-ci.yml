@@ -38,7 +38,7 @@ before_script:
   - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
   - spack env activate -d ${CI_PROJECT_DIR}/spack_env
   - spack dev-build -q ${SINGULARITY_EOS_SPACK_SPEC} || ( cat spack-build-out.txt && exit 1 )
-  - export SINGULARITY_EOS_CMD="spack install --show-log-on-error ${SINGULARITY_EOS_SPACK_SPEC}"
+  - export SINGULARITY_EOS_CMD="spack install --show-log-on-error --no-checksum --yes-to-all ${SINGULARITY_EOS_SPACK_SPEC}"
   - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
   - spack module tcl refresh -y
@@ -103,7 +103,7 @@ before_script:
     - mkdir clang_format_env
     - spack env create --without-view -d ${CI_PROJECT_DIR}/clang_format_env
     - spack env activate -d ${CI_PROJECT_DIR}/clang_format_env
-    - spack install --show-log-on-error singularity-eos+mpi+format%gcc@${SINGULARITY_EOS_GCC_VERSION}
+    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+format%gcc@${SINGULARITY_EOS_GCC_VERSION}
     - spack module tcl refresh -y
     - spack env loads -r
     - source ${CI_PROJECT_DIR}/clang_format_env/loads
@@ -119,7 +119,7 @@ before_script:
     - mkdir sphinx_doc_env
     - spack env create --without-view -d ${CI_PROJECT_DIR}/sphinx_doc_env
     - spack env activate -d ${CI_PROJECT_DIR}/sphinx_doc_env
-    - spack install --show-log-on-error singularity-eos+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION}
+    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION}
     - spack module tcl refresh -y
     - spack env loads -r
     - source ${CI_PROJECT_DIR}/sphinx_doc_env/loads
