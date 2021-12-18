@@ -10,7 +10,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   SINGULARITY_EOS_CLANG_FORMAT_VERSION: "12.0.0"
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos-deps@main+mpi%gcc@${SINGULARITY_EOS_GCC_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi%gcc@${SINGULARITY_EOS_GCC_VERSION}"
   SINGULARITY_CI_DATA_DIR: "/projects/xcap/ec/singularity-eos-data"
 
 before_script:
@@ -42,7 +42,7 @@ before_script:
   - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
   - spack module tcl refresh -y
-  - spack env loads -r
+  - spack env loads -r -x singularity-eos
   - export modName="${CI_PROJECT_DIR}/spack_env/loads"
   - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION}\n;" ${modName}
   - sed -i "1s;^;#%Module\n;" ${modName}
