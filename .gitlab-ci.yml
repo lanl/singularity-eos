@@ -104,7 +104,7 @@ before_script:
     - mkdir clang_format_env
     - spack env create --without-view -d ${CI_PROJECT_DIR}/clang_format_env
     - spack env activate -d ${CI_PROJECT_DIR}/clang_format_env
-    - spack install --show-log-on-error llvm@${XCAP_SAMPLE_REPO_CLANG_FORMAT_VERSION}+clang%gcc@${XCAP_SAMPLE_REPO_GCC_VERSION}
+    - spack install --show-log-on-error llvm@${SINGULARITY_EOS_CLANG_FORMAT_VERSION}+clang%gcc@${SINGULARITY_EOS_GCC_VERSION}
     - spack module tcl refresh -y
     - spack env loads -r
     - source ${CI_PROJECT_DIR}/clang_format_env/loads
