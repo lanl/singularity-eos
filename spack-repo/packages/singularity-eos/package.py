@@ -7,47 +7,17 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     version("main", branch="main", submodules=True)
 
-    variant("kokkos",
-            description="Enable kokkos",
-            default=False
-    )
+    variant("kokkos", default=False, description="Enable kokkos")
+    variant("kokkos-kernels", default=False, description="Enable kokkos-kernals for linear algebra")
+    variant("openmp", default=False, description="Enable openmp")
+    variant("mpi", default=False, description="Build with MPI support")
+    variant("build_extra", description="Build converters", values=any_combination_of("sesame","stellarcollapse").with_default("none"))
 
-    variant("kokkos-kernels",
-            description="Enable kokkos-kernals for linear algebra",
-            default=False
-    )
+    variant("enable_tests", default=False, description="Build tests")
+    variant("enable_fortran", default=True, description="Enable building fortran interface")
 
-    variant("openmp",
-            description="Enable openmp",
-            default=False
-    )
-
-    variant("build_extra",
-            description="Build converters",
-            values=any_combination_of(
-                'sesame','stellarcollapse'
-            ).with_default('none') 	
-    )
-
-    variant("enable_tests",
-            default=False,
-            description="Build tests"
-    )
-
-    variant("enable_fortran",
-            default=True,
-            description="Enable building fortran interface"
-    )
-
-    variant("mpi",
-            default=False,
-            description="Build with MPI support"
-    )
-
-    variant("doc",
-            default=False,
-            description="Enable Sphinx Documentation Support"
-    )
+    variant("doc", default=False, description="Sphinx Documentation Support")
+    variant("format", default=False, description="Clang-Format Support")
 
     #depends_on("mpark-variant")
     depends_on("hdf5+cxx+hl~mpi", when="~mpi")
@@ -62,6 +32,8 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("py-sphinx", when="+doc")
     depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
     depends_on("py-sphinx-multiversion", when="+doc")
+
+    depends_on('llvm@12.0.0+clang', when='+format')
 
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
         depends_on("kokkos@3.3:" +_flag, when="+kokkos" + _flag)

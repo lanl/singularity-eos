@@ -8,7 +8,6 @@ stages:
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
-  SINGULARITY_EOS_CLANG_FORMAT_VERSION: "12.0.0"
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi%gcc@${SINGULARITY_EOS_GCC_VERSION}"
   SINGULARITY_CI_DATA_DIR: "/projects/xcap/ec/singularity-eos-data"
@@ -104,7 +103,7 @@ before_script:
     - mkdir clang_format_env
     - spack env create --without-view -d ${CI_PROJECT_DIR}/clang_format_env
     - spack env activate -d ${CI_PROJECT_DIR}/clang_format_env
-    - spack install --show-log-on-error llvm@${SINGULARITY_EOS_CLANG_FORMAT_VERSION}+clang%gcc@${SINGULARITY_EOS_GCC_VERSION}
+    - spack install --show-log-on-error singularity-eos+mpi+format%gcc@${SINGULARITY_EOS_GCC_VERSION}
     - spack module tcl refresh -y
     - spack env loads -r
     - source ${CI_PROJECT_DIR}/clang_format_env/loads
