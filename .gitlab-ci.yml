@@ -119,9 +119,7 @@ before_script:
     - mkdir sphinx_doc_env
     - spack env create --without-view -d ${CI_PROJECT_DIR}/sphinx_doc_env
     - spack env activate -d ${CI_PROJECT_DIR}/sphinx_doc_env
-    - spack install --show-log-on-error py-sphinx%gcc@${SINGULARITY_EOS_GCC_VERSION}
-    - spack install --show-log-on-error py-sphinx-rtd-theme@0.4.3%gcc@${SINGULARITY_EOS_GCC_VERSION}
-    - spack install --show-log-on-error py-sphinx-multiversion%gcc@${SINGULARITY_EOS_GCC_VERSION}
+    - spack install --show-log-on-error singularity-eos+doc%gcc@${SINGULARITY_EOS_GCC_VERSION}
     - spack module tcl refresh -y
     - spack env loads -r
     - source ${CI_PROJECT_DIR}/sphinx_doc_env/loads

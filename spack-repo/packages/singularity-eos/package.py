@@ -44,6 +44,11 @@ class SingularityEos(CMakePackage, CudaPackage):
             description="Build with MPI support"
     )
 
+    variant("doc",
+            default=False,
+            description="Enable Sphinx Documentation Support"
+    )
+
     #depends_on("mpark-variant")
     depends_on("hdf5+cxx+hl~mpi", when="~mpi")
     depends_on("hdf5+cxx+hl+mpi", when="+mpi")
@@ -53,6 +58,10 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("cmake@3.12:")
     depends_on("eigen@3.3.9", when="~kokkos-kernels")
     depends_on("catch2@2.13.4:2.13.6", when="+enable_tests")
+
+    depends_on("py-sphinx", when="+doc")
+    depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
+    depends_on("py-sphinx-multiversion", when="+doc")
 
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
         depends_on("kokkos@3.3:" +_flag, when="+kokkos" + _flag)
