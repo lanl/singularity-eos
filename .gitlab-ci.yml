@@ -78,7 +78,6 @@ before_script:
       - merge_requests
   except:
     refs:
-      - schedules
 
 .artifacts: &artifacts_def
   artifacts:
@@ -99,12 +98,15 @@ before_script:
   stage: static_analysis
   variables:
     GIT_SUBMODULE_STRATEGY: none
-  before_script:
-    - echo "Format Checking..."
   script:
     - cd ${CI_PROJECT_DIR}
-    - module purge
-    - module load clang/${SINGULARITY_EOS_CLANG_FORMAT_VERSION}
+    - mkdir clang_format_env
+    - spack env create --without-view -d ${CI_PROJECT_DIR}/clang_format_env
+    - spack env activate -d ${CI_PROJECT_DIR}/clang_format_env
+    - spack install --show-log-on-error llvm@${XCAP_SAMPLE_REPO_CLANG_FORMAT_VERSION}+clang%gcc@${XCAP_SAMPLE_REPO_GCC_VERSION}
+    - spack module tcl refresh -y
+    - spack env loads -r
+    - source ${CI_PROJECT_DIR}/clang_format_env/loads
     - clang-format -version
     - find ${CI_PROJECT_DIR} -regex '.*\.\(cpp\|hpp\)' | xargs clang-format -style=file -i && git diff --exit-code --ignore-submodules
 
@@ -168,6 +170,7 @@ pages_check:
   only:
     refs:
       - merge_requests
+      - pipelines
   except:
 
 pages:
@@ -180,6 +183,8 @@ pages:
     refs:
       - main
   except:
+    refs:
+      - pipelines
 
 gnu_skylake:
   <<: *job_def
