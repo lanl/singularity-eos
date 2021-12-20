@@ -46,6 +46,12 @@ before_script:
 .buildtype_release: &buildtype_release
   BUILD_TYPE: "Release"
 
+.fort: &fort
+  USE_FORTRAN: true
+
+.nofort: &nofort
+  USE_FORTRAN: false
+
 .skylake: &skylake
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
 
@@ -139,21 +145,29 @@ before_script:
     - module use ${CI_PROJECT_DIR}/spack_env
     - module load loads # module load compiler, deps, etc.
     - module list
-    - mkdir -p build
+    - mkdir -p build install
     - cd build
     - |
-      cmake -DSINGULARITY_USE_EOSPAC=ON \
+      cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install \
+            -DSINGULARITY_USE_EOSPAC=ON \
             -DSINGULARITY_USE_HDF5=ON \
             -DSINGULARITY_BUILD_SESAME2SPINER=ON \
             -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
             -DSINGULARITY_BUILD_TESTS=ON \
             -DSINGULARITY_TEST_SESAME=ON \
             -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
+            -DSINGULARITY_USE_FORTRAN=$([ ${USE_FORTRAN} ] && echo ON || echo OFF) \
             ..
     - make -j
-    - ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat
-    - ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat
-    - make test
+    - |
+      if [[ ${CI_JOB_NAME} =~ "install" ]];
+      then
+        make install;
+      else
+        ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat;
+        ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat;
+        make test;
+      fi
 
 ########
 # Jobs #
@@ -186,77 +200,28 @@ pages:
     refs:
       - pipelines
 
-gnu_skylake:
+test_gnu_skylake:
   <<: *job_def
   extends: .test
   variables:
     <<: *skylake
 
-gnu_power9:
+test_gnu_power9:
   <<: *job_def
   extends: .test
   variables:
     <<: *power9
 
-install_singularity-eos_fort:
-  stage: build_n_test
-  extends:
-    - .job
-  script:
-    - mkdir -p ${CI_PROJECT_DIR}/spack_env
-    - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
-    - spack env activate -d ${CI_PROJECT_DIR}/spack_env
-    - spack dev-build -q ${SINGULARITY_EOS_SPACK_SPEC} || ( cat spack-build-out.txt && exit 1 )
-    - export SINGULARITY_EOS_CMD="spack install --show-log-on-error --no-checksum --yes-to-all ${SINGULARITY_EOS_SPACK_SPEC}"
-    - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - spack module tcl refresh -y
-    - spack env loads -r -x singularity-eos
-    - export modName="${CI_PROJECT_DIR}/spack_env/loads"
-    - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION}\n;" ${modName}
-    - sed -i "1s;^;#%Module\n;" ${modName}
-    - module use ${CI_PROJECT_DIR}/spack_env
-    - module load loads # module load compiler, deps, etc.
-    - module list
-    - export TARGET_DIR=${CI_PROJECT_DIR}/install/fort
-    - mkdir -p ${TARGET_DIR} build
-    - cd build
-    - |
-      cmake -DSINGULARITY_USE_FORTRAN=ON \
-            -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} \
-            -DSINGULARITY_USE_EOSPAC=ON \
-            -DSINGULARITY_BUILD_SESAME2SPINER=ON \
-            ..
-    - make -j
-    - make install
+install_gnu_skylake_fort:
+  <<: *job_def
+  extends: .test
+  variables:
+    <<: *skylake
+    <<: *fort
 
-install_singularity-eos_nofort:
-  stage: build_n_test
-  extends:
-    - .job
-  script:
-    - mkdir -p ${CI_PROJECT_DIR}/spack_env
-    - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
-    - spack env activate -d ${CI_PROJECT_DIR}/spack_env
-    - spack dev-build -q ${SINGULARITY_EOS_SPACK_SPEC} || ( cat spack-build-out.txt && exit 1 )
-    - export SINGULARITY_EOS_CMD="spack install --show-log-on-error --no-checksum --yes-to-all ${SINGULARITY_EOS_SPACK_SPEC}"
-    - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - spack module tcl refresh -y
-    - spack env loads -r -x singularity-eos
-    - export modName="${CI_PROJECT_DIR}/spack_env/loads"
-    - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION}\n;" ${modName}
-    - sed -i "1s;^;#%Module\n;" ${modName}
-    - module use ${CI_PROJECT_DIR}/spack_env
-    - module load loads # module load compiler, deps, etc.
-    - module list
-    - export TARGET_DIR=${CI_PROJECT_DIR}/install/nofort
-    - mkdir -p ${TARGET_DIR} build
-    - cd build
-    - |
-      cmake -DSINGULARITY_USE_FORTRAN=OFF \
-            -DCMAKE_INSTALL_PREFIX=${TARGET_DIR} \
-            -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
-            ..
-    - make -j
-    - make install
+install_gnu_skylake_nofort:
+  <<: *job_def
+  extends: .test
+  variables:
+    <<: *skylake
+    <<: *nofort
