@@ -47,10 +47,10 @@ before_script:
   BUILD_TYPE: "Release"
 
 .fort: &fort
-  USE_FORTRAN: true
+  SINGULARITY_USE_FORTRAN: "true"
 
 .nofort: &nofort
-  USE_FORTRAN: false
+  SINGULARITY_USE_FORTRAN: "false"
 
 .skylake: &skylake
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
@@ -156,7 +156,7 @@ before_script:
             -DSINGULARITY_BUILD_TESTS=ON \
             -DSINGULARITY_TEST_SESAME=ON \
             -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
-            -DSINGULARITY_USE_FORTRAN=$([ ${USE_FORTRAN} ] && echo ON || echo OFF) \
+            -DSINGULARITY_USE_FORTRAN=$([ ${SINGULARITY_USE_FORTRAN} = "true" ] && echo ON || echo OFF) \
             ..
     - make -j
     - |
