@@ -3,6 +3,7 @@
 from spack import *
 
 class SingularityEos(CMakePackage, CudaPackage):
+    homepage    = "https://lanl.github.io/singularity-eos/main/index.html"
     git         = "http://github.com/lanl/singularity-eos.git"
 
     version("main", branch="main", submodules=True)
