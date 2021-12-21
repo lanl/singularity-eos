@@ -7,42 +7,17 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     version("main", branch="main", submodules=True)
 
-    variant("kokkos",
-            description="Enable kokkos",
-            default=False
-    )
+    variant("kokkos", default=False, description="Enable kokkos")
+    variant("kokkos-kernels", default=False, description="Enable kokkos-kernals for linear algebra")
+    variant("openmp", default=False, description="Enable openmp")
+    variant("mpi", default=False, description="Build with MPI support")
+    variant("build_extra", description="Build converters", values=any_combination_of("sesame","stellarcollapse").with_default("none"))
 
-    variant("kokkos-kernels",
-            description="Enable kokkos-kernals for linear algebra",
-            default=False
-    )
+    variant("tests", default=False, description="Build tests")
+    variant("fortran", default=True, description="Enable building fortran interface")
 
-    variant("openmp",
-            description="Enable openmp",
-            default=False
-    )
-
-    variant("build_extra",
-            description="Build converters",
-            values=any_combination_of(
-                'sesame','stellarcollapse'
-            ).with_default('none') 	
-    )
-
-    variant("enable_tests",
-            default=False,
-            description="Build tests"
-    )
-
-    variant("enable_fortran",
-            default=True,
-            description="Enable building fortran interface"
-    )
-
-    variant("mpi",
-            default=False,
-            description="Build with MPI support"
-    )
+    variant("doc", default=False, description="Sphinx Documentation Support")
+    variant("format", default=False, description="Clang-Format Support")
 
     #depends_on("mpark-variant")
     depends_on("hdf5+cxx+hl~mpi", when="~mpi")
@@ -52,7 +27,13 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     depends_on("cmake@3.12:")
     depends_on("eigen@3.3.9", when="~kokkos-kernels")
-    depends_on("catch2@2.13.4:2.13.6", when="+enable_tests")
+    depends_on("catch2@2.13.4:2.13.6", when="+tests")
+
+    depends_on("py-sphinx", when="+doc")
+    depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
+    depends_on("py-sphinx-multiversion", when="+doc")
+
+    depends_on('llvm@12.0.0+clang', when='+format')
 
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
         depends_on("kokkos@3.3:" +_flag, when="+kokkos" + _flag)
@@ -78,13 +59,13 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_USE_CUDE", "cuda"),
             self.define_from_variant("SINGULARITY_USE_KOKKOS", "kokkos"),
             self.define_from_variant("SINGULARITY_USE_KOKKOSKERNELS", "kokkos-kernels"),
-            self.define_from_variant("SINGULARITY_USE_FORTRAN", "enable_fortran"),
-            self.define_from_variant("SINGULARITY_BUILD_CLOSURE", "enable_fortran"),
-            self.define_from_variant("SINGULARITY_BUILD_TESTS", "enable_tests"),
+            self.define_from_variant("SINGULARITY_USE_FORTRAN", "fortran"),
+            self.define_from_variant("SINGULARITY_BUILD_CLOSURE", "fortran"),
+            self.define_from_variant("SINGULARITY_BUILD_TESTS", "tests"),
             self.define("SINGULARITY_BUILD_SESAME2SPINER", "sesame" in self.spec.variants["build_extra"]),
-            self.define("SINGULARITY_TEST_SESAME", ("sesame" in self.spec.variants["build_extra"] and "enable_tests" in self.spec)),
+            self.define("SINGULARITY_TEST_SESAME", ("sesame" in self.spec.variants["build_extra"] and "tests" in self.spec)),
             self.define("SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER", "stellarcollapse" in self.spec.variants["build_extra"]),
-            self.define("SINGULARITY_TEST_STELLARCOLLAPSE2SPINER", ("stellarcollapse" in self.spec.variants["build_extra"] and "enable_tests" in self.spec)),
+            self.define("SINGULARITY_TEST_STELLARCOLLAPSE2SPINER", ("stellarcollapse" in self.spec.variants["build_extra"] and "tests" in self.spec)),
             self.define("SINGULARITY_USE_HDF5", True),
             self.define("SINGULARITY_USE_EOSPAC", True)
         ]
