@@ -151,7 +151,7 @@ herr_t saveAllMaterials(const std::string &savename,
                         Verbosity eospacWarn) {
   std::vector<Params> params;
   std::vector<int> matids;
-  std::unordered_map<std::string,int> used_names;
+  std::unordered_map<std::string, int> used_names;
   std::unordered_set<int> used_matids;
   SesameMetadata metadata;
   hid_t file;
@@ -177,8 +177,7 @@ herr_t saveAllMaterials(const std::string &savename,
   for (size_t i = 0; i < matids.size(); i++) {
     int matid = matids[i];
     if (used_matids.count(matid) > 0) {
-      std::cerr << "...Duplicate matid " << matid << " detected. Skipping."
-		<< std::endl;
+      std::cerr << "...Duplicate matid " << matid << " detected. Skipping." << std::endl;
       continue;
     }
     used_matids.insert(matid);
@@ -192,18 +191,14 @@ herr_t saveAllMaterials(const std::string &savename,
     if (name == "-1" || name == "") {
       std::string new_name = "material_" + std::to_string(i);
       std::cerr << "...WARNING: no reasonable name found. "
-		<< "Using a default name: "
-		<< new_name
-		<< std::endl;
+                << "Using a default name: " << new_name << std::endl;
       name = new_name;
     }
     if (used_names.count(name) > 0) {
       used_names[name] += 1;
       std::string new_name = name + "_" + std::to_string(used_names[name]);
       std::cerr << "...WARNING: Name " << name << " already used. "
-		<< "Using name: "
-		<< new_name
-		<< std::endl;
+                << "Using name: " << new_name << std::endl;
       name = new_name;
     } else {
       used_names[name] = 1;
@@ -239,16 +234,16 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   // extrapolation errors at table bounds
   constexpr Real TINY = std::numeric_limits<Real>::epsilon();
   auto TinyShift = [=](Real val, int sign) {
-    Real shift = std::abs(std::min(10*val*TINY, TINY));
-    return val + sign*shift;
+    Real shift = std::abs(std::min(10 * val * TINY, TINY));
+    return val + sign * shift;
   };
 
-  Real rhoMin = params.Get("rhomin", TinyShift(metadata.rhoMin,1));
-  Real rhoMax = params.Get("rhomax", TinyShift(metadata.rhoMax,-1));
-  Real TMin = params.Get("Tmin", TinyShift(metadata.TMin,1));
-  Real TMax = params.Get("Tmax", TinyShift(metadata.TMax,-1));
-  Real sieMin = params.Get("siemin", TinyShift(metadata.sieMin,1));
-  Real sieMax = params.Get("siemax", TinyShift(metadata.sieMax,-1));
+  Real rhoMin = params.Get("rhomin", TinyShift(metadata.rhoMin, 1));
+  Real rhoMax = params.Get("rhomax", TinyShift(metadata.rhoMax, -1));
+  Real TMin = params.Get("Tmin", TinyShift(metadata.TMin, 1));
+  Real TMax = params.Get("Tmax", TinyShift(metadata.TMax, -1));
+  Real sieMin = params.Get("siemin", TinyShift(metadata.sieMin, 1));
+  Real sieMax = params.Get("siemax", TinyShift(metadata.sieMax, -1));
 
   checkValInMatBounds(matid, "rhoMin", rhoMin, metadata.rhoMin, metadata.rhoMax);
   checkValInMatBounds(matid, "rhoMax", rhoMax, metadata.rhoMin, metadata.rhoMax);
