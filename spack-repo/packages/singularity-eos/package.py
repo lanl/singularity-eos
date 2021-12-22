@@ -57,7 +57,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     def cmake_args(self):
 
         args = [
-            self.define_from_variant("SINGULARITY_USE_CUDE", "cuda"),
+            self.define_from_variant("SINGULARITY_USE_CUDA", "cuda"),
             self.define_from_variant("SINGULARITY_USE_KOKKOS", "kokkos"),
             self.define_from_variant("SINGULARITY_USE_KOKKOSKERNELS", "kokkos-kernels"),
             self.define_from_variant("SINGULARITY_USE_FORTRAN", "fortran"),
