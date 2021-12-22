@@ -18,6 +18,7 @@ simply call
 .. _Spack: https://spack.io/
 
 .. code-block:: bash
+
   git clone --recursive git@github.com:lanl/singularity-eos.git
   spack repo add singularity-eos/spack-repo
   spack install singularity-eos
@@ -212,6 +213,7 @@ If you use spack, but would like to build ``singularity-eos`` from
 source, you can install dependencies via, e.g.,
 
 .. code-block:: bash
+
   git clone --recursive git@github.com:lanl/singularity-eos.git
   spack repo add singularity-eos/spack-repo
   spack install --only dependencies singularity-eos+cuda cuda_arch=70
