@@ -10,6 +10,10 @@ There are two main ways to build singularity-eos:
 Installing Via Spack
 --------------------
 
+.. warning::
+  The spack build is currently experimental. 
+  Please report problems you havee as github issues.
+
 Although the spackage has not yet made it to the main `Spack`_
 repositories, we provide a spackage for ``singularity-eos`` witin the
 the singularity-eos source repository. If you have spack installed,
