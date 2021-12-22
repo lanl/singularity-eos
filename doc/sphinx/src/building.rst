@@ -24,44 +24,45 @@ simply call
 
 to install ``singularity-eos`` into your spack instance. The spackage
 supports a number of relevant variants:
-+-----------------------------+---------+-----------------+-----------------------------+
-| Variant Name [default]      | When    | Allowed Values  | Description                 |
-+=============================+=========+=================+=============================+
-| build_extra [none]          | -----   | none, sesame,   | Build sesame2spiner         |
-|                             |         | stellarcollapse | or stellarcollapse2spiner   |
-+-----------------------------+---------+-----------------+-----------------------------+
-| build_type [RelWithDebInfo] | -----   | Debug, Release, | Equivalent to               |
-|                             |         | RelWitHDebInfo, | -DCMAKE_BUILD_TYPE          |
-|                             |         | MinSizeRel      | in cmake build              |
-+-----------------------------+---------+-----------------+-----------------------------+
-| cuda [off]                  | -----   | on, off         | Build with cuda             |
-+-----------------------------+---------+-----------------+-----------------------------+
-| cuda_arch [none]            | +cuda   | see kokkos spec | The target GPU architecture |
-+-----------------------------+---------+-----------------+-----------------------------+
-| doc [off]                   | -----   | on, off         | Build sphinx docs           |
-+-----------------------------+---------+-----------------+-----------------------------+
-| format [off]                | -----   | on, off         | Support for clang-format    |
-+-----------------------------+---------+-----------------+-----------------------------+
-| fortran [on]                | -----   | on, off         | Provide fortran bindings    |
-+-----------------------------+---------+-----------------+-----------------------------+
-| ipo [off]                   | -----   | on, off         | CMake interprocedural       |
-|                             |         |                 | optimization                |
-+-----------------------------+---------+-----------------+-----------------------------+
-| kokkos [off]                | -----   | on, off         | Enable Kokkos backend       |
-|                             |         |                 | Required for cuda support   |
-+-----------------------------+---------+-----------------+-----------------------------+
-| kokkos-kernels [off]        | -----   | on, off         | Use kokkos-kernels for      |
-|                             |         |                 | linear algebra suport,      |
-|                             |         |                 | which is needed with        |
-|                             |         |                 | mixed-cell closures on GPU  |
-+-----------------------------+---------+-----------------+-----------------------------+
-| mpi [off]                   | -----   | on, off         | Build with parallel HDF5    |
-|                             |         |                 | otherwise build with serial |
-+-----------------------------+---------+-----------------+-----------------------------+
-| opemp [off]                 | +kokkos | on, off         | Build Kokkos openmp backend |
-+-----------------------------+---------+-----------------+-----------------------------+
-| tests [off]                 | -----   | on, off         | Build tests                 |
-+-----------------------------+---------+-----------------+-----------------------------+
+
++-----------------------------+-----------------+-----------------------------+
+| Variant Name [default]      | Allowed Values  | Description                 |
++=============================+=================+=============================+
+| build_extra [none]          | none, sesame,   | Build sesame2spiner         |
+|                             | stellarcollapse | or stellarcollapse2spiner   |
++-----------------------------+-----------------+-----------------------------+
+| build_type [RelWithDebInfo] | Debug, Release, | Equivalent to               |
+|                             | RelWitHDebInfo, | -DCMAKE_BUILD_TYPE          |
+|                             | MinSizeRel      | in cmake build              |
++-----------------------------+-----------------+-----------------------------+
+| cuda [off]                  | on, off         | Build with cuda             |
++-----------------------------+-----------------+-----------------------------+
+| cuda_arch [none]            | see kokkos spec | The target GPU architecture |
++-----------------------------+-----------------+-----------------------------+
+| doc [off]                   | on, off         | Build sphinx docs           |
++-----------------------------+-----------------+-----------------------------+
+| format [off]                | on, off         | Support for clang-format    |
++-----------------------------+-----------------+-----------------------------+
+| fortran [on]                | on, off         | Provide fortran bindings    |
++-----------------------------+-----------------+-----------------------------+
+| ipo [off]                   | on, off         | CMake interprocedural       |
+|                             |                 | optimization                |
++-----------------------------+-----------------+-----------------------------+
+| kokkos [off]                | on, off         | Enable Kokkos backend       |
+|                             |                 | Required for cuda support   |
++-----------------------------+-----------------+-----------------------------+
+| kokkos-kernels [off]        | on, off         | Use kokkos-kernels for      |
+|                             |                 | linear algebra suport,      |
+|                             |                 | which is needed with        |
+|                             |                 | mixed-cell closures on GPU  |
++-----------------------------+-----------------+-----------------------------+
+| mpi [off]                   | on, off         | Build with parallel HDF5    |
+|                             |                 | otherwise build with serial |
++-----------------------------+-----------------+-----------------------------+
+| openmp [off]                | on, off         | Build Kokkos openmp backend |
++-----------------------------+-----------------+-----------------------------+
+| tests [off]                 | on, off         | Build tests                 |
++-----------------------------+-----------------+-----------------------------+
 
 Building Via Cmake
 --------------------
