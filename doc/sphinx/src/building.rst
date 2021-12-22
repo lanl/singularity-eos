@@ -172,6 +172,7 @@ Dependencies
 
 ``singularity-eos`` has a number of dependencies that are handled in a
 number of different ways:
+
 * `spiner`_ is a required dependency, included as a submodule
 * `hdf5`_ is an optional dependency. It is needed for the table
   readers. If you want it, it must be installed externally and
