@@ -345,6 +345,13 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
       REQUIRE(nw_gm1 == 0);
       REQUIRE(nw_cv == 0);
     }
+    AND_THEN("P(rho, sie) correct for extrapolation regime") {
+      Real rho = 1;
+      Real sie = 2.43e16;
+      Real P_pac = eospac.PressureFromDensityInternalEnergy(rho, sie);
+      Real P_spi = airEOS.PressureFromDensityInternalEnergy(rho, sie);
+      REQUIRE(isClose(P_pac, P_spi));
+    }
     airEOS_host.Finalize();
     airEOS.Finalize();
   }
