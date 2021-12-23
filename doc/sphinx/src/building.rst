@@ -224,3 +224,16 @@ source, you can install dependencies via, e.g.,
   spack install --only dependencies singularity-eos+cuda cuda_arch=70
 
 which will install all the dependencies for the variant of ``singularity-eos`` you've chosen.
+
+Spack can also be used to generate a cmake configuration file based on the 
+package variants, so that your development environment and build configuration
+are consistent
+
+.. code-block:: bash
+
+   spack install --until install singularity-eos
+   spack load singularity-eos
+   cd <to/build/dir>
+   cmake -C $SINGULARITY_SPACK_CMAKE_CONFIG <path/to/source/dir>
+
+
