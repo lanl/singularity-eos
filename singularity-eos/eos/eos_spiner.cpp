@@ -339,7 +339,8 @@ herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str, hid_t 
   gm1Max_.copyMetadata(PMax_);
   sielTMax_.copyMetadata(PMax_);
   for (int j = 0; j < numRho_; j++) {
-    Real rho = PMax_.range(0).x(j);
+    Real lRho = PMax_.range(0).x(j);
+    Real rho = rho_(lRho);
     PMax_(j) = P_(j, numT_ - 1);
     dEdTMax_(j) = dEdT_(j, numT_ - 1);
     gm1Max_(j) = dPdE_(j, numT_ - 1) / (rho + EPS); // max gruneisen

@@ -18,3 +18,10 @@ target_link_libraries(get_sound_speed_press PRIVATE
   eos
   singularity-eos::libs
   singularity-eos::flags)
+
+add_executable(get_sesame_state
+  get_sesame_state.cpp)
+target_link_libraries(get_sesame_state PRIVATE
+  eos
+  singularity-eos::libs
+  singularity-eos::flags)

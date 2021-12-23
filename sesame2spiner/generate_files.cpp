@@ -239,11 +239,11 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   };
 
   Real rhoMin = params.Get("rhomin", TinyShift(metadata.rhoMin, 1));
-  Real rhoMax = params.Get("rhomax", TinyShift(metadata.rhoMax, -1));
+  Real rhoMax = params.Get("rhomax", metadata.rhoMax);
   Real TMin = params.Get("Tmin", TinyShift(metadata.TMin, 1));
-  Real TMax = params.Get("Tmax", TinyShift(metadata.TMax, -1));
+  Real TMax = params.Get("Tmax", metadata.TMax);
   Real sieMin = params.Get("siemin", TinyShift(metadata.sieMin, 1));
-  Real sieMax = params.Get("siemax", TinyShift(metadata.sieMax, -1));
+  Real sieMax = params.Get("siemax", metadata.sieMax);
 
   checkValInMatBounds(matid, "rhoMin", rhoMin, metadata.rhoMin, metadata.rhoMax);
   checkValInMatBounds(matid, "rhoMax", rhoMax, metadata.rhoMin, metadata.rhoMax);
