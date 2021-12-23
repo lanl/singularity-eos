@@ -83,8 +83,10 @@ class Bounds {
         int Nmax = static_cast<int>((max - min) / dxguess);
         int Nanchor = static_cast<int>((anchor_point - min) / dxguess);
         Real dx = (anchor_point - min) / static_cast<Real>(Nanchor + 1);
-        max = dx * (Nmax) + min;
-        N += 1;
+        int Nmax_new = static_cast<int>((max - min) / dx);
+        Nmax_new = std::max(Nmax, Nmax_new);
+        max = dx * (Nmax_new) + min;
+        N = Nmax_new;
       }
     }
 
