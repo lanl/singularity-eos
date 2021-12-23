@@ -93,7 +93,7 @@ class SingularityEos(CMakePackage, CudaPackage):
                 for arg in cmake_config:
                     kt, v = arg.replace("-D","").split("=")
                     k, t = kt.split(":")
-                    cmc.write("set(" + k + " " + v + " CACHE " + t + " FORCE)" + "\n")
+                    cmc.write("set(" + k + " \"" + v + "\" CACHE " + t + " \"\" FORCE)" + "\n")
             install(config_fname, join_path(prefix, config_fname))
         return       
 
