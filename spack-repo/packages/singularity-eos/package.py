@@ -23,7 +23,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     #depends_on("mpark-variant")
     depends_on("eospac")
 
-    depends_on("cmake@3.12:")
+    depends_on("cmake@3.14:")
     depends_on("eigen@3.3.9", when="~cuda")
     depends_on("catch2@2.13.4:2.13.6", when="+tests")
 
@@ -35,7 +35,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
         depends_on("kokkos@3.3:" +_flag, when="+kokkos" + _flag)
-        depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
+        depends_on("kokkos-kernels ~shared" + _flag, when="+kokkos-kernels" + _flag)
 
 #   NOTE: we can do depends_on("libfoo cppflags='-fPIC -O2'") for compiler options
     conflicts("+cuda", when="~kokkos")
@@ -53,7 +53,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
 
     for _flag in list(CudaPackage.cuda_arch_values):
-        depends_on("kokkos@3.3: cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
+        depends_on("kokkos@3.2: cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
         depends_on("kokkos-kernels cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
 
     conflicts("cuda_arch=none", when="+cuda",
