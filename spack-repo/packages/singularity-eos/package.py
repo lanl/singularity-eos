@@ -1,6 +1,8 @@
 # Spackage for Singularity-EOS
 
+import os
 from spack import *
+import llnl.util.tty as tty
 
 class SingularityEos(CMakePackage, CudaPackage):
     homepage    = "https://lanl.github.io/singularity-eos/main/index.html"
@@ -43,8 +45,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     conflicts("+kokkos-kernels", when="~kokkos")
 
     depends_on("kokkos@3.3:~shared+wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
-#    depends_on("kokkos-nvcc-wrapper~mpi", when="+cuda+kokkos~mpi")
-#    depends_on("kokkos-nvcc-wrapper+mpi", when="+cuda+kokkos+mpi")
 
     for _flag in ("~mpi", "+mpi"):
         depends_on("hdf5+cxx+hl" + _flag, when=_flag)
@@ -78,13 +78,24 @@ class SingularityEos(CMakePackage, CudaPackage):
 
         return args
 
+    @property
+    def cmake_config_fname(self):
+        return "singularity-eos_spackconfig.cmake"
+
+
     @run_after('cmake')
     def generate_cmake_configuration(self):
-        config_fname = "singularity-eos_spackconfig.cmake"
+        config_fname = self.cmake_config_fname
         cmake_config = self.cmake_args()
+
         with working_dir("cmake-gen", create=True):
             with open(config_fname, "w") as cmc:
                 for arg in cmake_config:
-                    cmc.write(arg + "\n")
+                    kt, v = arg.replace("-D","").split("=")
+                    k, t = kt.split(":")
+                    cmc.write("set(" + k + " \"" + v + "\" CACHE " + t + " \"\" FORCE)" + "\n")
             install(config_fname, join_path(prefix, config_fname))
-        return        
+        return       
+
+    def setup_run_environment(self, env):
+        env.set("SINGULARITY_SPACK_CMAKE_CONFIG", os.path.join(self.prefix, self.cmake_config_fname))
