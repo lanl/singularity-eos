@@ -231,7 +231,7 @@ are consistent
 
 .. code-block:: bash
 
-   spack install --until install singularity-eos
+   spack install singularity-eos
    spack load singularity-eos
    cd <to/build/dir>
    cmake -C $SINGULARITY_SPACK_CMAKE_CONFIG <path/to/source/dir>
