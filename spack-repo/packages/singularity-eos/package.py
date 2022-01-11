@@ -26,8 +26,9 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("eospac")
 
     depends_on("cmake@3.14:")
-    depends_on("eigen@3.3.9", when="~cuda")
-    depends_on("catch2@2.13.4:2.13.6", when="+tests")
+    depends_on("eigen@3.3.8", when="~cuda")
+#    depends_on("catch2@2.13.4:2.13.6", when="+tests")
+    depends_on("catch2@2.12.3", when="+tests")
 
     depends_on("py-sphinx", when="+doc")
     depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
@@ -36,15 +37,15 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on('llvm@12.0.0+clang', when='+format')
 
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
-        depends_on("kokkos@3.2:" +_flag, when="+kokkos" + _flag)
-        depends_on("kokkos-kernels ~shared" + _flag, when="+kokkos-kernels" + _flag)
+        depends_on("kokkos@3.2.00 ~shared" +_flag, when="+kokkos" + _flag)
+        depends_on("kokkos-kernels@3.2.00 ~shared" + _flag, when="+kokkos-kernels" + _flag)
 
 #   NOTE: we can do depends_on("libfoo cppflags='-fPIC -O2'") for compiler options
     conflicts("+cuda", when="~kokkos")
     conflicts("+openmp", when="~kokkos")
     conflicts("+kokkos-kernels", when="~kokkos")
 
-    depends_on("kokkos@3.2:~shared+wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
+    depends_on("kokkos +wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
 
     for _flag in ("~mpi", "+mpi"):
         depends_on("hdf5+cxx+hl" + _flag, when=_flag)
@@ -53,7 +54,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
 
     for _flag in list(CudaPackage.cuda_arch_values):
-        depends_on("kokkos@3.2: cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
+        depends_on("kokkos cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
         depends_on("kokkos-kernels cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
 
     conflicts("cuda_arch=none", when="+cuda",
