@@ -174,7 +174,7 @@ class Gruneisen {
   // static constexpr const char _eos_type[] = {"Gruneisen"};
   PORTABLE_INLINE_FUNCTION
   Real Gamma(const Real rho) const {
-    return rho < _rho0 ? _G0 : _G0 + _b * (rho / _rho0 - 1.0);
+    return rho < _rho0 ? _G0 : _G0 * _rho0 / rho + _b * (1 - _rho0 / rho);
   }
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
