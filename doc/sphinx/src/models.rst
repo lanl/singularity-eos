@@ -196,7 +196,7 @@ The reference pressure along the Hugoniot is determined by
       \begin{cases}
         1                                                 & \rho < \rho_0 \\
         \frac{1 + \left(1 - \frac{1}{2}\Gamma_0 \right)\mu - \frac{b}{2} \mu^2}
-          {\left(1 - (s_1 - 1)\mu s_2 \frac{\mu^2}{1 + \mu}
+          {\left(1 - (s_1 - 1)\mu + s_2 \frac{\mu^2}{1 + \mu}
             - s_3 \frac{\mu^3}{(1+\mu)^2} \right)^2}      & \rho > \rho_0
       \end{cases}
 
