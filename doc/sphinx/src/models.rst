@@ -59,33 +59,33 @@ The EOS models in ``singularity-eos`` are defined for the following sets of
 dependent and independent variables through various member functions described
 in the :doc:`EOS API <using-eos>`.
 
-+--------------------------+----------------------+------------------------+
-| Function                 | Dependent Variable   | Independent Variables  |
-+==========================+======================+========================+
-| :math:`T(\rho, E)`       | Temperature          | Density, Energy        |
-+--------------------------+----------------------+                        |
-| :math:`P(\rho, E)`       | Pressure             |                        |
-+--------------------------+----------------------+------------------------+
-| :math:`E(\rho, T)`       | Energy               | Density, Temperature   |
-+--------------------------+----------------------+                        |
-| :math:`P(\rho, T)`       | Pressure             |                        |
-+--------------------------+----------------------+------------------------+
-| :math:`\rho(P, T)`       | Density              | Pressure, Temperature  |
-+--------------------------+----------------------+                        |
-| :math:`E(P, T)`          | Energy               |                        |
-+--------------------------+----------------------+------------------------+
-| :math:`C_V(\rho, T)`     | Constant Volume      | Density, Temperature   |
-+--------------------------+ Specific Heat        +------------------------+
-| :math:`C_V(\rho, E)`     | Capacity             | Density, Energy        |
-+--------------------------+----------------------+------------------------+
-| :math:`B_S(\rho, T)`     | Isentropic Bulk      | Density, Temperature   |
-+--------------------------+ Modulus              +------------------------+
-| :math:`B_S(\rho, E)`     |                      | Density, Energy        |
-+--------------------------+----------------------+------------------------+
-| :math:`\Gamma(\rho, T)`  | Gruneisen Parameter  | Density, Temperature   |
-+--------------------------+                      +------------------------+
-| :math:`\Gamma(\rho, E)`  |                      | Density, Energy        |
-+--------------------------+----------------------+------------------------+
++--------------------------+----------------------+--------------------------+
+| Function                 | Dependent Variable   | Independent Variables    |
++==========================+======================+==========================+
+| :math:`T(\rho, E)`       | Temperature          | Density, Internal Energy |
++--------------------------+----------------------+                          |
+| :math:`P(\rho, E)`       | Pressure             |                          |
++--------------------------+----------------------+--------------------------+
+| :math:`E(\rho, T)`       | Internal Energy      | Density, Temperature     |
++--------------------------+----------------------+                          |
+| :math:`P(\rho, T)`       | Pressure             |                          |
++--------------------------+----------------------+--------------------------+
+| :math:`\rho(P, T)`       | Density              | Pressure, Temperature    |
++--------------------------+----------------------+                          |
+| :math:`E(P, T)`          | Internal Energy      |                          |
++--------------------------+----------------------+--------------------------+
+| :math:`C_V(\rho, T)`     | Constant Volume      | Density, Temperature     |
++--------------------------+ Specific Heat        +--------------------------+
+| :math:`C_V(\rho, E)`     | Capacity             | Density, Internal Energy |
++--------------------------+----------------------+--------------------------+
+| :math:`B_S(\rho, T)`     | Isentropic Bulk      | Density, Temperature     |
++--------------------------+ Modulus              +--------------------------+
+| :math:`B_S(\rho, E)`     |                      | Density, Internal Energy |
++--------------------------+----------------------+--------------------------+
+| :math:`\Gamma(\rho, T)`  | Gruneisen Parameter  | Density, Temperature     |
++--------------------------+                      +--------------------------+
+| :math:`\Gamma(\rho, E)`  |                      | Density, Internal Energy |
++--------------------------+----------------------+--------------------------+
 
 A point of note is that "specific" implies that the quantity is intensive on a
 per unit mass basis.
