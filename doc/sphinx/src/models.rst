@@ -97,7 +97,7 @@ The default units for ``singularity-eos`` are cgs which results in the following
 units for thermodynamic quantities:
 
 +------------+------------------+---------------------------------------+-----------------------+
-|Quantity    | Default Units    | cgµ conversion                        | Sesame Units          |
+|Quantity    | Default Units    | cgµ conversion                        | mm-kg-µs Units        |
 +============+==================+=======================================+=======================+
 |:math:`P`   | µbar             | 10\ :sup:`-12` Mbar                   | 10\ :sup:`-10` GPa    |
 +------------+------------------+---------------------------------------+-----------------------+
