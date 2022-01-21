@@ -96,21 +96,21 @@ Units and conversions
 The default units for ``singularity-eos`` are cgs which results in the following
 units for thermodynamic quantities:
 
-+------------+------------------+---------------------------+-----------------------+
-|Quantity    | Default Units    | cgµ conversion            | Sesame Units          |
-+============+==================+===========================+=======================+
-|:math:`P`   | µbar             | 10\ :sup:`-12` Mbar       | 10\ :sup:`-10` GPa    |
-+------------+------------------+---------------------------+-----------------------+
-|:math:`\rho`| g/cm\ :sup:`3`   | 1                         | 1                     |
-+------------+------------------+---------------------------+-----------------------+
-|:math:`E`   | erg              | 10\ :sup:`-12` Mbar-cc/g  | 10\ :sup:`-10` kJ/g   |
-+------------+------------------+---------------------------+-----------------------+
-|:math:`T`   | K                | 1                         | 1                     |
-+------------+------------------+---------------------------+-----------------------+
-|:math:`C_V` | erg/g/K          | 10\ :sup:`-12` Mbar-cc/g/K| 10\ :sup:`-10` kJ/g/K |
-+------------+------------------+---------------------------+-----------------------+
-|:math:`B_S` | µbar             | 10\ :sup:`-12` Mbar       | 10\ :sup:`-10` GPa    |
-+------------+------------------+---------------------------+-----------------------+
++------------+------------------+---------------------------------------+-----------------------+
+|Quantity    | Default Units    | cgµ conversion                        | Sesame Units          |
++============+==================+=======================================+=======================+
+|:math:`P`   | µbar             | 10\ :sup:`-12` Mbar                   | 10\ :sup:`-10` GPa    |
++------------+------------------+---------------------------------------+-----------------------+
+|:math:`\rho`| g/cm\ :sup:`3`   | 1                                     | 1                     |
++------------+------------------+---------------------------------------+-----------------------+
+|:math:`E`   | erg              | 10\ :sup:`-12` Mbar-cm\ :sup:`3`/g    | 10\ :sup:`-10` kJ/g   |
++------------+------------------+---------------------------------------+-----------------------+
+|:math:`T`   | K                | 1                                     | 1                     |
++------------+------------------+---------------------------------------+-----------------------+
+|:math:`C_V` | erg/g/K          | 10\ :sup:`-12` Mbar-cm\ :sup:`3`/g/K  | 10\ :sup:`-10` kJ/g/K |
++------------+------------------+---------------------------------------+-----------------------+
+|:math:`B_S` | µbar             | 10\ :sup:`-12` Mbar                   | 10\ :sup:`-10` GPa    |
++------------+------------------+---------------------------------------+-----------------------+
 
 Note: some temperatures are measured in eV for which the conversion is
 8.617333262e-05 eV/K.
@@ -162,9 +162,10 @@ Here the subscript :math:`H` is a reminder that the reference curve is a
 Hugoniot. Other quantities are defined in the :ref:`nomenclature <Nomenclature>`
 section.
 
-The above is an incomplete equation of state because it relates the pressure to
-the density and energy, allowing for a solution to the Euler equations. To
-determine the temperature, a constant heat capacity is assumed so that
+The above is an incomplete equation of state because it only relates the
+pressure to the density and energy, the minimum required in a solution to the
+Euler equations. To complete the EOS and determine the temperature, a constant
+heat capacity is assumed so that
 
 .. math::
 
@@ -186,7 +187,7 @@ The Grunesien parameter is given by
       \end{cases}
 
 and when the unitless user parameter :math:`b=0`, this ensures the the Gruneisen
-parameter is of a form where :math:`rho\Gamma =` constant in compression.
+parameter is of a form where :math:`\rho\Gamma =` constant in compression.
 
 The reference pressure along the Hugoniot is determined by
 
@@ -200,8 +201,44 @@ The reference pressure along the Hugoniot is determined by
             - s_3 \frac{\mu^3}{(1+\mu)^2} \right)^2}      & \rho > \rho_0
       \end{cases}
 
-where :math:`c_0`, :math:`s_1`, :math:`s_2:`, and :math:`s_3` are fitting
+where :math:`c_0`, :math:`s_1`, :math:`s_2`, and :math:`s_3` are fitting
 paramters. The units of :math:`c_0` are velocity while the rest are unitless.
+
+JWL EOS
+````````
+
+The Jones-Wilkins-Lee (JWL) EOS is used mainly for detonation products of high
+explosives. Similar to the other EOS here, the JWL EOS can be written in a
+Mie-Gruneisen form as
+
+.. math::
+
+    P(\rho, E) = P_S(\rho) + \rho w (E - E_S(\rho))
+
+where the reference curve is an isentrope of the form
+
+.. math::
+
+    P_S(\rho) = A \exp^{R_1 \eta} + B \exp^{-R_2 \eta}
+
+.. math::
+
+    E_S(\rho) = \frac{A}{\rho_0 R_1} \exp^{R_1 \eta}
+                + \frac{B}{\rho_0 R_2} \exp^{R_1 \eta} \exp^{-R_2 \eta}
+
+where :math:`\eta = \frac{\rho_0}{\rho}` and :math:`R_1`, :math:`R_2`, :math:`A`,
+:math:`B`, and :math:`w` are constants particular to the material. Note that the
+parameter :math:`w` is simply the Gruneisen parameter and is assumed constant
+for the EOS (which is fairly reasonable since the detonation products are
+gasses).
+
+Finally, to complete the EOS the energy is related to the temperature by
+
+.. math::
+
+    E = E_S(\rho) + C_V T
+
+where :math:`C_V` is the constant volume specific heat capacity.
 
 
 Davis EOS
@@ -361,3 +398,14 @@ Here, there are four dimensionless parameters that are settable by the user,
 :math:`a`, :math:`b`:, :math:`k`, and :math:`n`, while :math:`P_\mathrm{C}`,
 :math:`E_\mathrm{C}`, :math:`V_\mathrm{C}` and :math:`T_\mathrm{C}` are tuning
 parameters with units related to their non-subscripted counterparts.
+
+
+Spiner EOS
+````````````
+
+Stellar Collapse EOS
+````````````````````
+
+EOSPAC EOS
+````````````
+
