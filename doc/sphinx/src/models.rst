@@ -110,7 +110,7 @@ context of Mie-Gruneisen equations of state. This should be differentiated from
 
  .. math::
 
-    `\gamma := \frac{C_P}{C_V} = \frac{B_S}{B_T}
+    \gamma := \frac{C_P}{C_V} = \frac{B_S}{B_T}
  
 though, which is the adiabatic exponent. Here :math:`C_P` is the specific heat
 capacity at constant *pressure* and :math:`B_T` is the *isothermal* bulk
@@ -267,9 +267,9 @@ where the reference curve is an isentrope of the form
 .. math::
 
     e_S(\rho) = \frac{A}{\rho_0 R_1} \exp^{R_1 \eta}
-                + \frac{B}{\rho_0 R_2} \exp^{R_1 \eta} \exp^{-R_2 \eta}
+                + \frac{B}{\rho_0 R_2} \exp^{R_1 \eta} \exp^{-R_2 \eta}.
 
-where :math:`\eta = \frac{\rho_0}{\rho}` and :math:`R_1`, :math:`R_2`, :math:`A`,
+Here :math:`\eta = \frac{\rho_0}{\rho}` and :math:`R_1`, :math:`R_2`, :math:`A`,
 :math:`B`, and :math:`w` are constants particular to the material. Note that the
 parameter :math:`w` is simply the Gruneisen parameter and is assumed constant
 for the EOS (which is fairly reasonable since the detonation products are
@@ -438,7 +438,7 @@ and
     e_{\mathrm{C}} = \frac{P_{\mathrm{C}} V_{\mathrm{C}}}{k - 1 + a}.
 
 Here, there are four dimensionless parameters that are settable by the user,
-:math:`a`, :math:`b`:, :math:`k`, and :math:`n`, while :math:`P_\mathrm{C}`,
+:math:`a`, :math:`b`, :math:`k`, and :math:`n`, while :math:`P_\mathrm{C}`,
 :math:`e_\mathrm{C}`, :math:`V_\mathrm{C}` and :math:`T_\mathrm{C}` are tuning
 parameters with units related to their non-subscripted counterparts.
 
