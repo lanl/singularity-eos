@@ -264,12 +264,12 @@ where the reference curve is an isentrope of the form
 
 .. math::
 
-    P_S(\rho) = A \exp^{R_1 \eta} + B \exp^{-R_2 \eta}
+    P_S(\rho) = A \mathrm{e}^{R_1 \eta} + B \mathrm{e}^{-R_2 \eta}
 
 .. math::
 
-    e_S(\rho) = \frac{A}{\rho_0 R_1} \exp^{R_1 \eta}
-                + \frac{B}{\rho_0 R_2} \exp^{R_1 \eta} \exp^{-R_2 \eta}.
+    e_S(\rho) = \frac{A}{\rho_0 R_1} \mathrm{e}^{R_1 \eta}
+                + \frac{B}{\rho_0 R_2} \mathrm{e}^{R_1 \eta} \mathrm{e}^{-R_2 \eta}.
 
 Here :math:`\eta = \frac{\rho_0}{\rho}` and :math:`R_1`, :math:`R_2`, :math:`A`,
 :math:`B`, and :math:`w` are constants particular to the material. Note that the
@@ -350,7 +350,7 @@ Finally, the pressure, energy, and temperature along the isentrope are given by
 
     P_S(\rho) = P_0 + \frac{\rho_0 A^2}{4B}
       \begin{cases}
-        \exp \left( 4By \right) -1   & \rho < \rho_0 \\
+        \mathrm{e} \left( 4By \right) -1   & \rho < \rho_0 \\
         \sum\limits_{j=1}^3 \frac{(4By)^j}{j!} + C\frac{(4By)^4}{4!}
             + \frac{y^2}{(1-y)^4}    & \rho >= \rho0
       \end{cases}
@@ -365,7 +365,7 @@ Finally, the pressure, energy, and temperature along the isentrope are given by
     T_S(\rho)  = T_0
       \begin{cases}
         \left(\frac{\rho}{\rho_0} \right)^{\Gamma_0}  & \rho < \rho_0 \\
-        \exp \left( -Zy \right) \left(\frac{\rho}{\rho_0} \right)^{\Gamma_0 + Z}
+        \mathrm{e} \left( -Zy \right) \left(\frac{\rho}{\rho_0} \right)^{\Gamma_0 + Z}
                                                       & \rho >= \rho_0
       \end{cases}
 
