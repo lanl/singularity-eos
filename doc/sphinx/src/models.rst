@@ -241,6 +241,12 @@ The reference pressure along the Hugoniot is determined by
 where :math:`c_0`, :math:`s_1`, :math:`s_2`, and :math:`s_3` are fitting
 paramters. The units of :math:`c_0` are velocity while the rest are unitless.
 
+Note that similar implementations may have subtly different definitions for the
+:math:`s_i` coefficients and care must be taken to use the correct values. Since
+:math:`s_2` and `s_3` are unitless for example, these parameters would not
+directly correspond to coefficients in a polynomial fit of the shock velocity to
+the particle velocity.
+
 JWL EOS
 ````````
 
