@@ -34,11 +34,11 @@ means that the general form of the EOS is
 
 .. math::
 
-    P - P_\mathrm{ref} = \rho \Gamma(\rho) (E - E_\mathrm{ref})
+    P - P_\mathrm{ref} = \rho \Gamma(\rho) (e - e_\mathrm{ref})
 
 where 'ref' denotes quantities along some reference curve, :math:`P` is the
 pressure, :math:`\rho` is the density, :math:`\Gamma` is the Gruneisen
-parameter, and :math:`E` is the specific internal energy. In this sense, an EOS
+parameter, and :math:`e` is the specific internal energy. In this sense, an EOS
 of this form uses the Gruneisen parameter to describe the pressure behavior of
 the EOS away from the reference curve. Coupled with a relationship between
 energy and temperature (sometimes as simple as a constant heat capacity), the
@@ -62,29 +62,29 @@ in the :doc:`EOS API <using-eos>`.
 +--------------------------+----------------------+--------------------------+
 | Function                 | Dependent Variable   | Independent Variables    |
 +==========================+======================+==========================+
-| :math:`T(\rho, E)`       | Temperature          | Density, Internal Energy |
+| :math:`T(\rho, e)`       | Temperature          | Density, Internal Energy |
 +--------------------------+----------------------+                          |
-| :math:`P(\rho, E)`       | Pressure             |                          |
+| :math:`P(\rho, e)`       | Pressure             |                          |
 +--------------------------+----------------------+--------------------------+
-| :math:`E(\rho, T)`       | Internal Energy      | Density, Temperature     |
+| :math:`e(\rho, T)`       | Internal Energy      | Density, Temperature     |
 +--------------------------+----------------------+                          |
 | :math:`P(\rho, T)`       | Pressure             |                          |
 +--------------------------+----------------------+--------------------------+
 | :math:`\rho(P, T)`       | Density              | Pressure, Temperature    |
 +--------------------------+----------------------+                          |
-| :math:`E(P, T)`          | Internal Energy      |                          |
+| :math:`e(P, T)`          | Internal Energy      |                          |
 +--------------------------+----------------------+--------------------------+
 | :math:`C_V(\rho, T)`     | Constant Volume      | Density, Temperature     |
 +--------------------------+ Specific Heat        +--------------------------+
-| :math:`C_V(\rho, E)`     | Capacity             | Density, Internal Energy |
+| :math:`C_V(\rho, e)`     | Capacity             | Density, Internal Energy |
 +--------------------------+----------------------+--------------------------+
 | :math:`B_S(\rho, T)`     | Isentropic Bulk      | Density, Temperature     |
 +--------------------------+ Modulus              +--------------------------+
-| :math:`B_S(\rho, E)`     |                      | Density, Internal Energy |
+| :math:`B_S(\rho, e)`     |                      | Density, Internal Energy |
 +--------------------------+----------------------+--------------------------+
 | :math:`\Gamma(\rho, T)`  | Gruneisen Parameter  | Density, Temperature     |
 +--------------------------+                      +--------------------------+
-| :math:`\Gamma(\rho, E)`  |                      | Density, Internal Energy |
+| :math:`\Gamma(\rho, e)`  |                      | Density, Internal Energy |
 +--------------------------+----------------------+--------------------------+
 
 A point of note is that "specific" implies that the quantity is intensive on a
@@ -103,7 +103,7 @@ units for thermodynamic quantities:
 +------------+------------------+---------------------------------------+-----------------------+
 |:math:`\rho`| g/cm\ :sup:`3`   | 1                                     | 1                     |
 +------------+------------------+---------------------------------------+-----------------------+
-|:math:`E`   | erg              | 10\ :sup:`-12` Mbar-cm\ :sup:`3`/g    | 10\ :sup:`-10` kJ/g   |
+|:math:`e`   | erg              | 10\ :sup:`-12` Mbar-cm\ :sup:`3`/g    | 10\ :sup:`-10` kJ/g   |
 +------------+------------------+---------------------------------------+-----------------------+
 |:math:`T`   | K                | 1                                     | 1                     |
 +------------+------------------+---------------------------------------+-----------------------+
@@ -127,22 +127,24 @@ the form
 
 .. math::
 
-    P = \Gamma \rho \hat{e}
+    P = \Gamma \rho e
 
 .. math::
 
-    \hat{e} = \hat{C_\mathrm{V}} T,
+    e = \hat{C_V} T,
 
 where quantities are defined in the :ref:`nomenclature <Nomenclature>` section.
 
 The settable parameters are the Gruneisen parameter and specific heat capacity.
+
+
 Although this differs from the traditional representation of the ideal gas law
-as :math:`P\hat{V} = RT`, the forms are equivalent by recognizing that
-:math:`\Gamma = \frac{R}{\tilde{C_\mathrm{V}}}` where :math:`R` is the ideal gas
-constant and :math:`\tilde{C_\mathrm{V}}` is the *molar* heat capacity,
-relatable to the *specific* heat capacity through the molecular weight of the
-gas. Since :math:`\tilde{C_\mathrm{V}} = \frac{5}{2} R` for a diatomic ideal
-gas, the corresponding Gruneisen parameter should be 0.4.
+as :math:`P\tilde{V} = RT`, the forms are equivalent by recognizing that
+:math:`\Gamma = \frac{R}{\tilde{C_V}}` where :math:`R` is the ideal gas constant
+in units of energy per mole per Kelvin and :math:`\tilde{C_\mathrm{V}}` is the
+*molar* heat capacity, relatable to the *specific* heat capacity through the
+molecular weight of the gas. Since :math:`\tilde{C_\mathrm{V}} = \frac{5}{2} R`
+for a diatomic ideal gas, the corresponding Gruneisen parameter shoul be 0.4.
 
 Gruneisen EOS
 `````````````
@@ -156,7 +158,7 @@ The pressure follows the traditional Mie-Gruneisen form,
 
 .. math::
 
-    P(\rho, E) = P_H(\rho) + \rho\Gamma(\rho) \left(E - E_H(\rho) \right),
+    P(\rho, e) = P_H(\rho) + \rho\Gamma(\rho) \left(e - e_H(\rho) \right),
 
 Here the subscript :math:`H` is a reminder that the reference curve is a
 Hugoniot. Other quantities are defined in the :ref:`nomenclature <Nomenclature>`
@@ -169,9 +171,9 @@ heat capacity is assumed so that
 
 .. math::
 
-    T(\rho, E) = \frac{E}{C_V} + T_0
+    T(\rho, e) = \frac{e}{C_V} + T_0
 
-The user should note that this implies that :math:`E=0` at the reference
+The user should note that this implies that :math:`e=0` at the reference
 temperature, :math:`T_0`. Given this simple relationship, the user should
 treat the temperature from this EOS as only a rough estimate.
 
@@ -213,7 +215,7 @@ Mie-Gruneisen form as
 
 .. math::
 
-    P(\rho, E) = P_S(\rho) + \rho w (E - E_S(\rho))
+    P(\rho, e) = P_S(\rho) + \rho w (e - e_S(\rho))
 
 where the reference curve is an isentrope of the form
 
@@ -223,7 +225,7 @@ where the reference curve is an isentrope of the form
 
 .. math::
 
-    E_S(\rho) = \frac{A}{\rho_0 R_1} \exp^{R_1 \eta}
+    e_S(\rho) = \frac{A}{\rho_0 R_1} \exp^{R_1 \eta}
                 + \frac{B}{\rho_0 R_2} \exp^{R_1 \eta} \exp^{-R_2 \eta}
 
 where :math:`\eta = \frac{\rho_0}{\rho}` and :math:`R_1`, :math:`R_2`, :math:`A`,
@@ -236,7 +238,7 @@ Finally, to complete the EOS the energy is related to the temperature by
 
 .. math::
 
-    E = E_S(\rho) + C_V T
+    e = e_S(\rho) + C_V T
 
 where :math:`C_V` is the constant volume specific heat capacity.
 
@@ -253,11 +255,11 @@ For both the reactants and products EOS, the pressure and energy take the forms
 
 .. math::
 
-    P(\rho, E) = P_S(\rho) + \rho\Gamma(\rho) \left(E - E_S(\rho) \right)
+    P(\rho, e) = P_S(\rho) + \rho\Gamma(\rho) \left(e - e_S(\rho) \right)
 
 .. math::
 
-    E(\rho, P) = E_S(\rho) + \frac{1}{\rho \Gamma(\rho)} \left(P - P_S(\rho)
+    e(\rho, P) = e_S(\rho) + \frac{1}{\rho \Gamma(\rho)} \left(P - P_S(\rho)
       \right),
 
 where the subscript :math:`S` denotes quantities along the reference isentrope
@@ -277,12 +279,12 @@ and assumes that the heat capacity varies linearly with entropy such that
 where subscript :math:`0` refers to the reference state and :math:`\alpha` is
 a dimensionless constant specified by the user. 
 
-The :math:`E(\rho, P)` lookup is quite awkward, so the energy is
+The :math:`e(\rho, P)` lookup is quite awkward, so the energy is
 more-conveniently cast in terms of termperature such that
 
 .. math::
 
-    E(\rho, T) = E_S(\rho) + \frac{C_{V,0} T_S(\rho)}{1 + \alpha}
+    e(\rho, T) = e_S(\rho) + \frac{C_{V,0} T_S(\rho)}{1 + \alpha}
       \left( \left(\frac{T}{T_S(\rho)} \right)^{1 + \alpha} - 1 \right),
 
 which can easily be inverted to find :math:`T(\rho, e)`.
@@ -312,7 +314,7 @@ Finally, the pressure, energy, and temperature along the isentrope are given by
 
 .. math::
 
-    E_S(\rho) = E_0 + \int\limits_{\rho_0}^{\rho}
+    e_S(\rho) = e_0 + \int\limits_{\rho_0}^{\rho}
       \frac{P_S(\bar{\rho})}{\bar{\rho^2}}~\mathrm{d}\bar{\rho}
 
 .. math::
@@ -346,7 +348,7 @@ temperature deviation from the reference isentrope such that
 
 .. math::
     
-    E(\rho, T) = E_S(\rho) + C_{V,0} (T - T_S(\rho)).
+    e(\rho, T) = e_S(\rho) + C_{V,0} (T - T_S(\rho)).
 
 The Gruneisen parameter is given by
 
@@ -373,7 +375,7 @@ Finally, the pressure, energy, and temperature along the isentrope are given by
 
 .. math::
 
-    E_S(\rho) = E_{\mathrm{C}} G(\rho) \frac{1}{\rho V_{\mathrm{C}}}
+    e_S(\rho) = e_{\mathrm{C}} G(\rho) \frac{1}{\rho V_{\mathrm{C}}}
 
 .. math::
 
@@ -392,11 +394,11 @@ and
 
 .. math::
 
-    E_{\mathrm{C}} = \frac{P_{\mathrm{C}} V_{\mathrm{C}}}{k - 1 + a}.
+    e_{\mathrm{C}} = \frac{P_{\mathrm{C}} V_{\mathrm{C}}}{k - 1 + a}.
 
 Here, there are four dimensionless parameters that are settable by the user,
 :math:`a`, :math:`b`:, :math:`k`, and :math:`n`, while :math:`P_\mathrm{C}`,
-:math:`E_\mathrm{C}`, :math:`V_\mathrm{C}` and :math:`T_\mathrm{C}` are tuning
+:math:`e_\mathrm{C}`, :math:`V_\mathrm{C}` and :math:`T_\mathrm{C}` are tuning
 parameters with units related to their non-subscripted counterparts.
 
 
