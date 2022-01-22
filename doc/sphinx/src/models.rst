@@ -146,7 +146,7 @@ as :math:`P\tilde{V} = RT`, the forms are equivalent by recognizing that
 in units of energy per mole per Kelvin and :math:`\tilde{C_\mathrm{V}}` is the
 *molar* heat capacity, relatable to the *specific* heat capacity through the
 molecular weight of the gas. Since :math:`\tilde{C_\mathrm{V}} = \frac{5}{2} R`
-for a diatomic ideal gas, the corresponding Gruneisen parameter shoul be 0.4.
+for a diatomic ideal gas, the corresponding Gruneisen parameter should be 0.4.
 
 Gruneisen EOS
 `````````````
