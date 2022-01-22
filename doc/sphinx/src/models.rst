@@ -25,6 +25,13 @@ pure hydrodynamics since it can relate pressure to a given energy-density state,
 but it is missing information that relates the energy to temperature (which in
 turn provides a means to calculate entropy).
 
+An excellent resource on equations of state in the context of hydrodynamics is
+the seminal work from `Menikoff and Plohr`_. In particular, Appendix A contains
+a number of thermodynamic relationships that can be useful for computing
+additional quantities from those output in ``singularity-eos``.
+
+.. _Menikoff and Plohr: https://doi.org/10.1103/RevModPhys.61.75
+
 The Mie-Gruneisen form
 ````````````````````````
 
@@ -92,6 +99,23 @@ per unit mass basis. It should be assumed that the internal energy is *always*
 specific since we are working in terms of density (the inverse of specific
 volume).
 
+Disambiguation
+````````````````
+
+Gruneisen Parameter
+'''''''''''''''''''
+In this description of the EOS models, we use :math:`\Gamma` to represent the
+Gruneisen coeficient since this is the most commonly-used symbol in the
+context of Mie-Gruneisen equations of state. This should be differentiated from
+
+ .. math::
+
+    `\gamma := \frac{C_P}{C_V} = \frac{B_S}{B_T}
+ 
+though, which is the adiabatic exponent. Here :math:`C_P` is the specific heat
+capacity at constant *pressure* and :math:`B_T` is the *isothermal* bulk
+modulus.
+
 Units and conversions
 ---------------------
 
@@ -149,6 +173,13 @@ in units of energy per mole per Kelvin and :math:`\tilde{C_\mathrm{V}}` is the
 *molar* heat capacity, relatable to the *specific* heat capacity through the
 molecular weight of the gas. Since :math:`\tilde{C_\mathrm{V}} = \frac{5}{2} R`
 for a diatomic ideal gas, the corresponding Gruneisen parameter should be 0.4.
+
+A common point of confusion is :math:`\Gamma` versus :math:`\gamma` with the
+latter being the adiabatic exponent. For an ideal gas, they are related through
+
+.. math::
+
+    \Gamma = \gamma - 1
 
 Gruneisen EOS
 `````````````
