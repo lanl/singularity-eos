@@ -88,7 +88,9 @@ in the :doc:`EOS API <using-eos>`.
 +--------------------------+----------------------+--------------------------+
 
 A point of note is that "specific" implies that the quantity is intensive on a
-per unit mass basis.
+per unit mass basis. It should be assumed that the internal energy is *always*
+specific since we are working in terms of density (the inverse of specific
+volume).
 
 Units and conversions
 ---------------------
