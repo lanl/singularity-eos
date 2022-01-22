@@ -161,7 +161,7 @@ the form
 
 .. math::
 
-    e = \hat{C_V} T,
+    e = C_V T,
 
 where quantities are defined in the :ref:`nomenclature <Nomenclature>` section.
 
