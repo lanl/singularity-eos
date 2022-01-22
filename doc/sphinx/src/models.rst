@@ -264,12 +264,12 @@ where the reference curve is an isentrope of the form
 
 .. math::
 
-    P_S(\rho) = A \mathrm{e}^{R_1 \eta} + B \mathrm{e}^{-R_2 \eta}
+    P_S(\rho) = A \mathrm{e}^{-R_1 \eta} + B \mathrm{e}^{-R_2 \eta}
 
 .. math::
 
-    e_S(\rho) = \frac{A}{\rho_0 R_1} \mathrm{e}^{R_1 \eta}
-                + \frac{B}{\rho_0 R_2} \mathrm{e}^{R_1 \eta} \mathrm{e}^{-R_2 \eta}.
+    e_S(\rho) = \frac{A}{\rho_0 R_1} \mathrm{e}^{-R_1 \eta}
+                + \frac{B}{\rho_0 R_2} \mathrm{e}^{-R_2 \eta}.
 
 Here :math:`\eta = \frac{\rho_0}{\rho}` and :math:`R_1`, :math:`R_2`, :math:`A`,
 :math:`B`, and :math:`w` are constants particular to the material. Note that the
