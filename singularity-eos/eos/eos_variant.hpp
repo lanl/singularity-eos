@@ -17,6 +17,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <variant/include/mpark/variant.hpp>
+#include <algorithm>
 
 using Real = double;
 
@@ -225,6 +226,245 @@ class Variant {
     return mpark::visit(
         [&press, &temp, &lambda, &rho, &sie](const auto &eos) {
           return eos.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
+        },
+        eos_);
+  }
+
+  /*
+  Vector versions of the member functions are only available for CPU
+  
+  RealIndexer must have an operator[](int) that returns a Real. e.g., Real*
+  ConstRealIndexer is as RealIndexer, but assumed const type.
+  LambdaIndexer must have an operator[](int) that returns a Real*. e.g., Real**
+*/
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+                                                  ConstRealIndexer &&sies,
+                                                  const int num,
+                                                  RealIndexer &&temperatures,
+                                                  LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &num, &temperatures, &lambdas, &num](const auto &eos) {
+          return eos.TemperatureFromDensityInternalEnergyVector(
+              rhos, sies, num, temperatures, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+                                                  ConstRealIndexer &&temperatures,
+                                                  const int num,
+                                                  RealIndexer &&sies,
+                                                  LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &num, &sies, &lambdas](const auto &eos) {
+          return eos.InternalEnergyFromDensityTemperatureVector(
+              rhos, temperatures, sies, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            const int num,
+                                            RealIndexer &&pressures,
+                                            LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &num, &pressures, &lambdas](const auto &eos) {
+          return eos.PressureFromDensityTemperatureVector(
+              rhos, temperatures, pressures, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&sies,
+                                               const int num,
+                                               RealIndexer &&pressures,
+                                               LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &num, &pressures, &lambdas](const auto &eos) {
+          return eos.PressureFromDensityInternalEnergyVector(
+              rhos, sies, pressures, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                const int num,
+                                                RealIndexer &&cvs,
+                                                LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &num, &cvs, &lambdas](const auto &eos) {
+          return eos.SpecificHeatFromDensityTemperatureVector(
+              rhos, temperatures, cvs, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&sies,
+                                                   const int num,
+                                                   RealIndexer &&cvs,
+                                                   LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &num, &cvs, &lambdas](const auto &eos) {
+          return eos.SpecificHeatFromDensityInternalEnergyVector(
+              rhos, sies, cvs, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&temperatures,
+                                               const int num,
+                                               RealIndexer &&bmods,
+                                               LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &num, &bmods, &lambdas](const auto &eos) {
+          return eos.BulkModulusFromDensityTemperatureVector(
+              rhos, temperatures, bmods, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+                                                  ConstRealIndexer &&sies,
+                                                  const int num,
+                                                  RealIndexer &&bmods,
+                                                  LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &num, &bmods, &lambdas](const auto &eos) {
+          return eos.BulkModulusFromDensityInternalEnergyVector(
+              rhos, sies, bmods, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+                                                  ConstRealIndexer &&temperatures,
+                                                  const int num,
+                                                  RealIndexer &&gm1s,
+                                                  LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &num, &gm1s, &lambdas](const auto &eos) {
+          return eos.GruneisenParamFromDensityTemperatureVector(
+              rhos, temperatures, gm1s, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+                                                     ConstRealIndexer &&sies,
+                                                     const int num,
+                                                     RealIndexer &&gm1s,
+                                                     LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &num, &gm1s, &lambdas](const auto &eos) {
+          return eos.GruneisenParamFromDensityInternalEnergyVector(
+              rhos, sies, gm1s, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename LambdaIndexer>
+  inline
+  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+                     const int num, const unsigned long output,
+                     LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temps, &energies, &presses, &cvs, &bmods, &num, &output,
+         &lambdas](const auto &eos) {
+          return eos.FillEosVector(rhos, temps, energies, presses, cvs, bmods,
+                                   num, output, lambdas);
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename LambdaIndexer>
+  inline
+  void PTofREVector(RealIndexer &&rhos, RealIndexer &&sies, const int num,
+                    LambdaIndexer &&lambdas, RealIndexer &&presses,
+                    RealIndexer &&temps, RealIndexer &&dpdrs,
+                    RealIndexer &&dpdes, RealIndexer &&dtdrs,
+                    RealIndexer &&dtdes) const {
+    return mpark::visit(
+        [&rhos, &sies, &num, &lambdas, &presses, &temps, &dpdrs, &dpdes, &dtdrs,
+         &dtdes](const auto &eos) {
+
+          // Lookup at density and energy
+          eos.PressureFromDensityInternalEnergyVector(rhos, sies, num, presses,
+                                                      lambdas);
+          eos.TemperatureFromDensityInternalEnergyVector(rhos, sies, num, temps,
+                                                         lambdas);
+          // Peturbation factor
+          Real factor = 1. + 1.0e-06;
+
+          // Perturb densities and do lookups
+          for (int i = 0; i < num ; i ++) {
+            rhos[i] *= factor;
+          }
+          eos.PressureFromDensityInternalEnergyVector(rhos, sies, dpdrs, lambdas);
+          eos.TemperatureFromDensityInternalEnergyVector(rhos, sies, dtdrs, lambdas);
+          
+          // Reset densities, perturb energies, and do lookups
+          for (int i = 0; i < num ; i ++) {
+            sies[i] *= factor;
+            rhos[i] /= factor;
+          }
+          eos.PressureFromDensityInternalEnergyVector(rhos, sies, dpdrs, lambdas);
+          eos.TemperatureFromDensityInternalEnergyVector(rhos, sies, dtdrs, lambdas);
+
+          // Reset the energies to their original values
+          for (int i = 0; i < num ; i ++) {
+            sies[i] /= factor;
+          }
+
+          // Calculate the derivatives
+          for(int i = 0; i < num ; i ++){
+            dpdrs[i] = (dpdrs[i] - presses[i]) / (rhos[i] * (1. - factor));
+            dpdes[i] = (dpdes[i] - presses[i]) / (sies[i] * (1. - factor));
+            dtdrs[i] = (dtdrs[i] - temps[i]) / (rhos[i] * (1. - factor));
+            dtdes[i] = (dtdes[i] - temps[i]) / (sies[i] * (1. - factor));
+          }
+
+          return;
+        },
+        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void DensityEnergyFromPressureTemperatureVector(ConstRealIndexer &&presses,
+                                                  ConstRealIndexer &&temps,
+                                                  LambdaIndexer &&lambdas,
+                                                  RealIndexer &rhos,
+                                                  RealIndexer &sies) const {
+    return mpark::visit(
+        [&presses, &temps, &lambdas, &rhos, &sies](const auto &eos) {
+          return eos.DensityEnergyFromPressureTemperatureVector(
+            presses, temps, lambdas, rhos, sies);
         },
         eos_);
   }
