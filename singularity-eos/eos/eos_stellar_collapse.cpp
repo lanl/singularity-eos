@@ -378,6 +378,8 @@ void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
   lTMax_ = lTGrid.max();
   YeMin_ = YeGrid.min();
   YeMax_ = YeGrid.max();
+  sieMin_ = eCold_.min();
+  sieMax_ = eHot_.max();
 }
 
 // Read data directly from a stellar collapse eos file
