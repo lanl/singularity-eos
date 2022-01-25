@@ -85,8 +85,8 @@ This project is formatted with `clang-format` using `clang-format`
 version 12. If contributing, please run clang-format on the files
 you modify.
 
-A clang-format auto formatting check is run on the main branch via CI,
-but commits are not currently blocked for a failed format check.
+To run formatting automatically, call `make format_singularity-eos`
+at the build step. Cmake automatically makes a target.
 
 ## Copyright
 
