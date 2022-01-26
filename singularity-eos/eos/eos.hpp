@@ -131,7 +131,7 @@ class IdealGas {
   */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&temperatures,
@@ -143,7 +143,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&sies,
@@ -155,7 +155,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
                                             const int num,
                                             RealIndexer &&pressures,
@@ -167,7 +167,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                const int num,
                                                RealIndexer &&pressures,
@@ -179,7 +179,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 const int num,
                                                 RealIndexer &&cvs,
@@ -191,7 +191,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&sies,
                                                    const int num,
                                                    RealIndexer &&cvs,
@@ -203,7 +203,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&temperatures,
                                                const int num,
                                                RealIndexer &&bmods,
@@ -215,7 +215,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&bmods,
@@ -227,7 +227,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&gm1s,
@@ -239,7 +239,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                      ConstRealIndexer &&sies,
                                                      const int num,
                                                      RealIndexer &&gm1s,
@@ -251,7 +251,7 @@ class IdealGas {
 
   template<typename RealIndexer, typename LambdaIndexer>
   inline
-  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                      const int num, const unsigned long output,
                      LambdaIndexer &&lambdas) const {
@@ -336,7 +336,7 @@ class Gruneisen {
   */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&temperatures,
@@ -348,7 +348,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&sies,
@@ -360,7 +360,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
                                             const int num,
                                             RealIndexer &&pressures,
@@ -372,7 +372,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                const int num,
                                                RealIndexer &&pressures,
@@ -384,7 +384,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 const int num,
                                                 RealIndexer &&cvs,
@@ -396,7 +396,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&sies,
                                                    const int num,
                                                    RealIndexer &&cvs,
@@ -408,7 +408,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&temperatures,
                                                const int num,
                                                RealIndexer &&bmods,
@@ -420,7 +420,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&bmods,
@@ -432,7 +432,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&gm1s,
@@ -444,7 +444,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                      ConstRealIndexer &&sies,
                                                      const int num,
                                                      RealIndexer &&gm1s,
@@ -456,7 +456,7 @@ class Gruneisen {
 
   template<typename RealIndexer, typename LambdaIndexer>
   inline
-  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                      const int num, const unsigned long output,
                      LambdaIndexer &&lambdas) const {
@@ -537,7 +537,7 @@ class JWL {
   */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&temperatures,
@@ -549,7 +549,7 @@ class JWL {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&sies,
@@ -561,7 +561,7 @@ class JWL {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
                                             const int num,
                                             RealIndexer &&pressures,
@@ -573,7 +573,7 @@ class JWL {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                const int num,
                                                RealIndexer &&pressures,
@@ -585,7 +585,7 @@ class JWL {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 const int num,
                                                 RealIndexer &&cvs,
@@ -597,7 +597,7 @@ class JWL {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&sies,
                                                    const int num,
                                                    RealIndexer &&cvs,
@@ -609,7 +609,7 @@ class JWL {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&temperatures,
                                                const int num,
                                                RealIndexer &&bmods,
@@ -621,7 +621,7 @@ class JWL {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&bmods,
@@ -633,7 +633,7 @@ class JWL {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&gm1s,
@@ -645,7 +645,7 @@ class JWL {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                      ConstRealIndexer &&sies,
                                                      const int num,
                                                      RealIndexer &&gm1s,
@@ -657,7 +657,7 @@ class JWL {
 
   template<typename RealIndexer, typename LambdaIndexer>
   inline
-  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                      const int num, const unsigned long output,
                      LambdaIndexer &&lambdas) const {
@@ -749,7 +749,7 @@ class DavisReactants {
   */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&temperatures,
@@ -761,7 +761,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&sies,
@@ -773,7 +773,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
                                             const int num,
                                             RealIndexer &&pressures,
@@ -785,7 +785,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                const int num,
                                                RealIndexer &&pressures,
@@ -797,7 +797,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 const int num,
                                                 RealIndexer &&cvs,
@@ -809,7 +809,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&sies,
                                                    const int num,
                                                    RealIndexer &&cvs,
@@ -821,7 +821,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&temperatures,
                                                const int num,
                                                RealIndexer &&bmods,
@@ -833,7 +833,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&bmods,
@@ -845,7 +845,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&gm1s,
@@ -857,7 +857,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                      ConstRealIndexer &&sies,
                                                      const int num,
                                                      RealIndexer &&gm1s,
@@ -869,7 +869,7 @@ class DavisReactants {
 
   template<typename RealIndexer, typename LambdaIndexer>
   inline
-  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                      const int num, const unsigned long output,
                      LambdaIndexer &&lambdas) const {
@@ -956,7 +956,7 @@ class DavisProducts {
   */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&temperatures,
@@ -968,7 +968,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&sies,
@@ -980,7 +980,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
                                             const int num,
                                             RealIndexer &&pressures,
@@ -992,7 +992,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                const int num,
                                                RealIndexer &&pressures,
@@ -1004,7 +1004,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 const int num,
                                                 RealIndexer &&cvs,
@@ -1016,7 +1016,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&sies,
                                                    const int num,
                                                    RealIndexer &&cvs,
@@ -1028,7 +1028,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&temperatures,
                                                const int num,
                                                RealIndexer &&bmods,
@@ -1040,7 +1040,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&bmods,
@@ -1052,7 +1052,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&gm1s,
@@ -1064,7 +1064,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                      ConstRealIndexer &&sies,
                                                      const int num,
                                                      RealIndexer &&gm1s,
@@ -1076,7 +1076,7 @@ class DavisProducts {
 
   template<typename RealIndexer, typename LambdaIndexer>
   inline
-  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                      const int num, const unsigned long output,
                      LambdaIndexer &&lambdas) const {
@@ -1190,7 +1190,7 @@ class SpinerEOSDependsRhoT {
   */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&temperatures,
@@ -1202,7 +1202,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&sies,
@@ -1214,7 +1214,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
                                             const int num,
                                             RealIndexer &&pressures,
@@ -1226,7 +1226,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                const int num,
                                                RealIndexer &&pressures,
@@ -1238,7 +1238,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 const int num,
                                                 RealIndexer &&cvs,
@@ -1250,7 +1250,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&sies,
                                                    const int num,
                                                    RealIndexer &&cvs,
@@ -1262,7 +1262,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&temperatures,
                                                const int num,
                                                RealIndexer &&bmods,
@@ -1274,7 +1274,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&bmods,
@@ -1286,7 +1286,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&gm1s,
@@ -1298,7 +1298,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                      ConstRealIndexer &&sies,
                                                      const int num,
                                                      RealIndexer &&gm1s,
@@ -1310,7 +1310,7 @@ class SpinerEOSDependsRhoT {
 
   template<typename RealIndexer, typename LambdaIndexer>
   inline
-  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                      const int num, const unsigned long output,
                      LambdaIndexer &&lambdas) const {
@@ -1524,7 +1524,7 @@ class SpinerEOSDependsRhoSie {
   */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&temperatures,
@@ -1536,7 +1536,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&sies,
@@ -1548,7 +1548,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
                                             const int num,
                                             RealIndexer &&pressures,
@@ -1560,7 +1560,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                const int num,
                                                RealIndexer &&pressures,
@@ -1572,7 +1572,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 const int num,
                                                 RealIndexer &&cvs,
@@ -1584,7 +1584,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&sies,
                                                    const int num,
                                                    RealIndexer &&cvs,
@@ -1596,7 +1596,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&temperatures,
                                                const int num,
                                                RealIndexer &&bmods,
@@ -1608,7 +1608,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&bmods,
@@ -1620,7 +1620,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&gm1s,
@@ -1632,7 +1632,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                      ConstRealIndexer &&sies,
                                                      const int num,
                                                      RealIndexer &&gm1s,
@@ -1644,7 +1644,7 @@ class SpinerEOSDependsRhoSie {
 
   template<typename RealIndexer, typename LambdaIndexer>
   inline
-  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                      const int num, const unsigned long output,
                      LambdaIndexer &&lambdas) const {
@@ -1816,7 +1816,7 @@ class StellarCollapse {
   */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&temperatures,
@@ -1828,7 +1828,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&sies,
@@ -1840,7 +1840,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
                                             const int num,
                                             RealIndexer &&pressures,
@@ -1852,7 +1852,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                const int num,
                                                RealIndexer &&pressures,
@@ -1864,7 +1864,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 const int num,
                                                 RealIndexer &&cvs,
@@ -1876,7 +1876,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&sies,
                                                    const int num,
                                                    RealIndexer &&cvs,
@@ -1888,7 +1888,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&temperatures,
                                                const int num,
                                                RealIndexer &&bmods,
@@ -1900,7 +1900,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&bmods,
@@ -1912,7 +1912,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&gm1s,
@@ -1924,7 +1924,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                      ConstRealIndexer &&sies,
                                                      const int num,
                                                      RealIndexer &&gm1s,
@@ -1936,7 +1936,7 @@ class StellarCollapse {
 
   template<typename RealIndexer, typename LambdaIndexer>
   inline
-  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                      const int num, const unsigned long output,
                      LambdaIndexer &&lambdas) const {
@@ -2190,77 +2190,77 @@ class EOSPAC {
   */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&temperatures,
                                                   LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void InternalEnergyFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&sies,
                                                   LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
                                             const int num,
                                             RealIndexer &&pressures,
                                             LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void PressureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                const int num,
                                                RealIndexer &&pressures,
                                                LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 const int num,
                                                 RealIndexer &&cvs,
                                                 LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void SpecificHeatFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&sies,
                                                    const int num,
                                                    RealIndexer &&cvs,
                                                    LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&temperatures,
                                                const int num,
                                                RealIndexer &&bmods,
                                                LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void BulkModulusFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&sies,
                                                   const int num,
                                                   RealIndexer &&bmods,
                                                   LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityTemperatureVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                   ConstRealIndexer &&temperatures,
                                                   const int num,
                                                   RealIndexer &&gm1s,
                                                   LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
-  void GruneisenParamFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                      ConstRealIndexer &&sies,
                                                      const int num,
                                                      RealIndexer &&gm1s,
                                                      LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename LambdaIndexer>
   inline
-  void FillEosVector(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                      const int num, const unsigned long output,
                      LambdaIndexer &&lambdas) const;
