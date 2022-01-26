@@ -425,16 +425,20 @@ class Variant {
           for (int i = 0; i < num ; i ++) {
             rhos[i] *= factor;
           }
-          eos.PressureFromDensityInternalEnergyVector(rhos, sies, dpdrs, lambdas);
-          eos.TemperatureFromDensityInternalEnergyVector(rhos, sies, dtdrs, lambdas);
+          eos.PressureFromDensityInternalEnergyVector(rhos, sies, num, dpdrs,
+                                                      lambdas);
+          eos.TemperatureFromDensityInternalEnergyVector(rhos, sies, num, dtdrs,
+                                                         lambdas);
           
           // Reset densities, perturb energies, and do lookups
           for (int i = 0; i < num ; i ++) {
             sies[i] *= factor;
             rhos[i] /= factor;
           }
-          eos.PressureFromDensityInternalEnergyVector(rhos, sies, dpdrs, lambdas);
-          eos.TemperatureFromDensityInternalEnergyVector(rhos, sies, dtdrs, lambdas);
+          eos.PressureFromDensityInternalEnergyVector(rhos, sies, num, dpdes,
+                                                      lambdas);
+          eos.TemperatureFromDensityInternalEnergyVector(rhos, sies, num, dtdes,
+                                                         lambdas);
 
           // Reset the energies to their original values
           for (int i = 0; i < num ; i ++) {
