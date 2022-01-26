@@ -458,21 +458,6 @@ class Variant {
         eos_);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void DensityEnergyFromPressureTemperatureVector(ConstRealIndexer &&presses,
-                                                  ConstRealIndexer &&temps,
-                                                  LambdaIndexer &&lambdas,
-                                                  RealIndexer &rhos,
-                                                  RealIndexer &sies) const {
-    return mpark::visit(
-        [&presses, &temps, &lambdas, &rhos, &sies](const auto &eos) {
-          return eos.DensityEnergyFromPressureTemperatureVector(
-            presses, temps, lambdas, rhos, sies);
-        },
-        eos_);
-  }
-
   PORTABLE_INLINE_FUNCTION
   unsigned long PreferredInput() const noexcept {
     return mpark::visit([](const auto &eos) { return eos.PreferredInput(); }, eos_);
