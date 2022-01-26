@@ -236,7 +236,7 @@ class Variant {
   RealIndexer must have an operator[](int) that returns a Real. e.g., Real*
   ConstRealIndexer is as RealIndexer, but assumed const type.
   LambdaIndexer must have an operator[](int) that returns a Real*. e.g., Real**
-*/
+  */
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergyVector(ConstRealIndexer &&rhos,
