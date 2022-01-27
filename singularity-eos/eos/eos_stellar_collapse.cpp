@@ -176,7 +176,7 @@ Real StellarCollapse::TemperatureFromDensityInternalEnergy(const Real rho, const
                                                            Real *lambda) const {
   const Real lRho = lRho_(rho);
   const Real lT = lTFromlRhoSie_(lRho, sie, lambda);
-  return T_(lT) / K2MeV_;
+  return T_(lT) * MeV2K_;
 }
 
 PORTABLE_FUNCTION
@@ -374,9 +374,8 @@ void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
   numYe_ = YeGrid.nPoints();
   lRhoMin_ = lRGrid.min();
   lRhoMax_ = lRGrid.max();
-  lTMin_ = std::log(std::exp(lTGrid.min() / K2MeV_));
-  lTMax_ = std::log(std::exp(lTGrid.max() / K2MeV_));
-  // lTMax_ = lTGrid.max();
+  lTMin_ = lTGrid.min();
+  lTMax_ = lTGrid.max();
   YeMin_ = YeGrid.min();
   YeMax_ = YeGrid.max();
   sieMin_ = eCold_.min();
