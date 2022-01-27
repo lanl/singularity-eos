@@ -427,7 +427,7 @@ class Variant {
               'PerturbDensities', 0, num, PORTABLE_LAMBDA(const int i) {
                 rhos[i] *= factor;
               }
-          )
+          );
           eos.PressureFromDensityInternalEnergy(rhos, sies, num, dpdrs,
                                                       lambdas);
           eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, dtdrs,
@@ -440,7 +440,7 @@ class Variant {
                 sies[i] *= factor;
                 rhos[i] /= factor;
               }
-          )
+          );
           eos.PressureFromDensityInternalEnergy(rhos, sies, dpdes, num,
                                                       lambdas);
           eos.TemperatureFromDensityInternalEnergy(rhos, sies, dtdes, num,
@@ -451,7 +451,7 @@ class Variant {
               'ResetEnergies', 0, num, PORTABLE_LAMBDA(const int i) {
                 sies[i] /= factor;
               }
-          )
+          );
 
           // Calculate the derivatives
           portableFor(
@@ -461,7 +461,7 @@ class Variant {
                 dtdrs[i] = (dtdrs[i] - temps[i]) / (rhos[i] * (1. - factor));
                 dtdes[i] = (dtdes[i] - temps[i]) / (sies[i] * (1. - factor));
               }
-          )
+          );
 
           return;
         },
