@@ -21,7 +21,18 @@ namespace singularity {
 namespace vector_utils {
 
 /*
-Wrapper for scalar lookups to allow them to take vectors on the CPU but then
+Class where the [] operator returns the null pointer for any index
+*/
+class NullIndexer {
+ public:
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real *operator[](int i) {
+    return nullptr;
+  }
+};
+
+/*
+Wrappers for scalar lookups to allow them to take vectors on the CPU but then
 call GPU kernels to do the actual lookups
 
 RealIndexer must have an operator[](int) that returns a Real. e.g., Real*
