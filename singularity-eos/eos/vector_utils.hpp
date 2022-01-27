@@ -21,7 +21,8 @@ namespace singularity {
 namespace vector_utils {
 
 /*
-Wrapper for scalar lookups to allow them to take vectors on the CPU
+Wrapper for scalar lookups to allow them to take vectors on the CPU but then
+call GPU kernels to do the actual lookups
 
 RealIndexer must have an operator[](int) that returns a Real. e.g., Real*
 ConstRealIndexer is as RealIndexer, but assumed const type.

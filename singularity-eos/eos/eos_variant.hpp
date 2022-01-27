@@ -231,7 +231,8 @@ class Variant {
   }
 
   /*
-  Vector versions of the member functions are only available for CPU
+  Vector versions of the member functions run on the host but the scalar
+  lookups will run on the device
   
   RealIndexer must have an operator[](int) that returns a Real. e.g., Real*
   ConstRealIndexer is as RealIndexer, but assumed const type.
