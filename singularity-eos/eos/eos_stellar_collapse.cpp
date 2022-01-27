@@ -176,7 +176,7 @@ Real StellarCollapse::TemperatureFromDensityInternalEnergy(const Real rho, const
                                                            Real *lambda) const {
   const Real lRho = lRho_(rho);
   const Real lT = lTFromlRhoSie_(lRho, sie, lambda);
-  return T_(lT);
+  return T_(lT) / K2MeV_;
 }
 
 PORTABLE_FUNCTION
@@ -184,7 +184,7 @@ Real StellarCollapse::InternalEnergyFromDensityTemperature(const Real rho,
                                                            const Real temp,
                                                            Real *lambda) const {
   Real lRho, lT, Ye;
-  getLogsFromRhoT_(rho, temp, lambda, lRho, lT, Ye);
+  getLogsFromRhoT_(rho, temp * K2MeV_, lambda, lRho, lT, Ye);
   const Real lE = lE_.interpToReal(Ye, lT, lRho);
   return le2e_(lE);
 }
@@ -194,7 +194,7 @@ Real StellarCollapse::PressureFromDensityTemperature(const Real rho,
                                                      const Real temperature,
                                                      Real *lambda) const {
   Real lRho, lT, Ye;
-  getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+  getLogsFromRhoT_(rho, temperature * K2MeV_, lambda, lRho, lT, Ye);
   const Real lP = lP_.interpToReal(Ye, lT, lRho);
   return lP2P_(lP);
 }
@@ -213,7 +213,7 @@ Real StellarCollapse::SpecificHeatFromDensityTemperature(const Real rho,
                                                          const Real temperature,
                                                          Real *lambda) const {
   Real lRho, lT, Ye;
-  getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+  getLogsFromRhoT_(rho, temperature * K2MeV_, lambda, lRho, lT, Ye);
   const Real Cv = K2MeV_ * dEdT_.interpToReal(Ye, lT, lRho);
   return (Cv > EPS ? Cv : EPS);
 }
@@ -233,7 +233,7 @@ Real StellarCollapse::BulkModulusFromDensityTemperature(const Real rho,
                                                         const Real temperature,
                                                         Real *lambda) const {
   Real lRho, lT, Ye;
-  getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+  getLogsFromRhoT_(rho, temperature * K2MeV_, lambda, lRho, lT, Ye);
   const Real lbmod = lBMod_.interpToReal(Ye, lT, lRho);
   const Real bMod = lB2B_(lbmod);
   return bMod > EPS ? bMod : EPS;
@@ -244,7 +244,7 @@ Real StellarCollapse::GruneisenParamFromDensityTemperature(const Real rho,
                                                            const Real temp,
                                                            Real *lambda) const {
   Real lRho, lT, Ye;
-  getLogsFromRhoT_(rho, temp, lambda, lRho, lT, Ye);
+  getLogsFromRhoT_(rho, temp * K2MeV_, lambda, lRho, lT, Ye);
   const Real dpde = dPdE_.interpToReal(Ye, lT, lRho);
   const Real gm1 = std::abs(dpde) / (std::abs(rho) + EPS);
   return gm1;
@@ -292,7 +292,7 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, 
     EOS_ERROR("StellarCollapse cannot output density at this time");
   }
   if (input & thermalqs::temperature) {
-    getLogsFromRhoT_(rho, temp, lambda, lRho, lT, Ye);
+    getLogsFromRhoT_(rho, temp * K2MeV_, lambda, lRho, lT, Ye);
   } else if (input & thermalqs::specific_internal_energy) {
     getLogsFromRhoSie_(rho, energy, lambda, lRho, lT, Ye);
   } else {
@@ -374,8 +374,9 @@ void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
   numYe_ = YeGrid.nPoints();
   lRhoMin_ = lRGrid.min();
   lRhoMax_ = lRGrid.max();
-  lTMin_ = lTGrid.min();
-  lTMax_ = lTGrid.max();
+  lTMin_ = std::log(std::exp(lTGrid.min() / K2MeV_));
+  lTMax_ = std::log(std::exp(lTGrid.max() / K2MeV_));
+  // lTMax_ = lTGrid.max();
   YeMin_ = YeGrid.min();
   YeMax_ = YeGrid.max();
   sieMin_ = eCold_.min();

@@ -963,7 +963,7 @@ class StellarCollapse {
 
   static constexpr Real MeV2GK_ = 11.604525006;
   static constexpr Real GK2MeV_ = 1. / MeV2GK_;
-  static constexpr Real MeV2K_ = 1.e6 * 1.60217653e-12;
+  static constexpr Real MeV2K_ = 1.e9*MeV2GK_;
   static constexpr Real K2MeV_ = 1. / MeV2K_;
   static constexpr Real TNormal_ = 5 * GK2MeV_; // Threshold of NSE
   static constexpr Real rhoNormal_ = 2.e12;     // 1./100'th of nuclear density
