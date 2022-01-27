@@ -17,7 +17,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <variant/include/mpark/variant.hpp>
-#include <algorithm>
+#include <vector>
 
 using Real = double;
 
@@ -238,6 +238,17 @@ class Variant {
   ConstRealIndexer is as RealIndexer, but assumed const type.
   LambdaIndexer must have an operator[](int) that returns a Real*. e.g., Real**
   */
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
+                                            const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return TemperatureFromDensityInternalEnergy(
+        &rhos, &sies, &temperatures, num, &lambdas);
+  }
+
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
@@ -251,6 +262,17 @@ class Variant {
               rhos, sies, temperatures, num, lambdas);
         },
         eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return InternalEnergyFromDensityTemperature(
+        &rhos, &temperatures, &sies, num, &lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -268,6 +290,17 @@ class Variant {
         eos_);
   }
 
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return PressureFromDensityTemperature(
+        &rhos, &temperatures, &pressures, num, &lambdas);
+  }
+
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -281,6 +314,17 @@ class Variant {
               rhos, temperatures, pressures, num, lambdas);
         },
         eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return PressureFromDensityInternalEnergy(
+        &rhos, &sies, &pressures, num, &lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -298,6 +342,17 @@ class Variant {
         eos_);
   }
 
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return SpecificHeatFromDensityTemperature(
+        &rhos, &temperatures, &cvs, num, &lambdas);
+  }
+
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -311,6 +366,17 @@ class Variant {
               rhos, temperatures, cvs, num, lambdas);
         },
         eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return SpecificHeatFromDensityInternalEnergy(
+        &rhos, &sies, &cvs, num, &lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -328,6 +394,17 @@ class Variant {
         eos_);
   }
 
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return BulkModulusFromDensityTemperature(
+        &rhos, &temperatures, &bmods, num, &lambdas);
+  }
+
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -341,6 +418,17 @@ class Variant {
               rhos, temperatures, bmods, num, lambdas);
         },
         eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return BulkModulusFromDensityInternalEnergy(
+        &rhos, &sies, &bmods, num, &lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -358,6 +446,17 @@ class Variant {
         eos_);
   }
 
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return GruneisenParamFromDensityTemperature(
+        &rhos, &temperatures, &gm1s, num, &lambdas);
+  }
+
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -371,6 +470,17 @@ class Variant {
               rhos, temperatures, gm1s, num, lambdas);
         },
         eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return GruneisenParamFromDensityInternalEnergy(
+        &rhos, &sies, &gm1s, num, &lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -388,6 +498,16 @@ class Variant {
         eos_);
   }
 
+  template<typename RealIndexer>
+  inline
+  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return FillEos(&rhos, &temps, &energies, &presses, &cvs, &bmods,
+                       num, output, &lambdas);
+  }
+
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
@@ -401,6 +521,18 @@ class Variant {
                                    num, output, lambdas);
         },
         eos_);
+  }
+
+  template<typename RealIndexer>
+  inline
+  void PTofRE(RealIndexer &&rhos, RealIndexer &&sies,
+              RealIndexer &&presses, RealIndexer &&temps,
+              RealIndexer &&dpdrs, RealIndexer &&dpdes,
+              RealIndexer &&dtdrs, RealIndexer &&dtdes,
+              const int num) const {
+    std::vector<double*> lambdas(num); // Vector of null pointers
+    return PTofRE(&rhos, &sies, &presses, &temps, &dpdrs, &dpdes, &dtdrs,
+                  &dtdes, num, &lambdas);
   }
 
   template<typename RealIndexer, typename LambdaIndexer>
