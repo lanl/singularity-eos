@@ -423,36 +423,45 @@ class Variant {
           Real factor = 1. + 1.0e-06;
 
           // Perturb densities and do lookups
-          for (int i = 0; i < num ; i ++) {
-            rhos[i] *= factor;
-          }
+          portableFor(
+              'PerturbDensities', 0, num, PORTABLE_LAMBDA(const int i) {
+                rhos[i] *= factor;
+              }
+          )
           eos.PressureFromDensityInternalEnergy(rhos, sies, num, dpdrs,
                                                       lambdas);
           eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, dtdrs,
                                                          lambdas);
           
           // Reset densities, perturb energies, and do lookups
-          for (int i = 0; i < num ; i ++) {
-            sies[i] *= factor;
-            rhos[i] /= factor;
-          }
+          portableFor(
+              'PerturbEnergiesResetDensities', 0, num,
+              PORTABLE_LAMBDA(const int i) {
+                sies[i] *= factor;
+                rhos[i] /= factor;
+              }
+          )
           eos.PressureFromDensityInternalEnergy(rhos, sies, dpdes, num,
                                                       lambdas);
           eos.TemperatureFromDensityInternalEnergy(rhos, sies, dtdes, num,
                                                          lambdas);
 
           // Reset the energies to their original values
-          for (int i = 0; i < num ; i ++) {
-            sies[i] /= factor;
-          }
+          portableFor(
+              'ResetEnergies', 0, num, PORTABLE_LAMBDA(const int i) {
+                sies[i] /= factor;
+              }
+          )
 
           // Calculate the derivatives
-          for(int i = 0; i < num ; i ++){
-            dpdrs[i] = (dpdrs[i] - presses[i]) / (rhos[i] * (1. - factor));
-            dpdes[i] = (dpdes[i] - presses[i]) / (sies[i] * (1. - factor));
-            dtdrs[i] = (dtdrs[i] - temps[i]) / (rhos[i] * (1. - factor));
-            dtdes[i] = (dtdes[i] - temps[i]) / (sies[i] * (1. - factor));
-          }
+          portableFor(
+              'CalculateDerivatives', 0., num, PORTABLE_LAMBDA(const int i) {
+                dpdrs[i] = (dpdrs[i] - presses[i]) / (rhos[i] * (1. - factor));
+                dpdes[i] = (dpdes[i] - presses[i]) / (sies[i] * (1. - factor));
+                dtdrs[i] = (dtdrs[i] - temps[i]) / (rhos[i] * (1. - factor));
+                dtdes[i] = (dtdes[i] - temps[i]) / (sies[i] * (1. - factor));
+              }
+          )
 
           return;
         },
