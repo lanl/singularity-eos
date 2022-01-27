@@ -23,6 +23,8 @@ using Real = double;
 
 namespace singularity {
 
+using namespace vector_utils;
+
 template <typename... Ts>
 using eos_variant = mpark::variant<Ts...>;
 
