@@ -25,6 +25,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
+#include <singularity-eos/eos/vector_utils.hpp>
 
 #ifdef SPINER_USE_HDF
 #include <fast-math/logs.hpp>
@@ -46,41 +47,9 @@
 #include <eos_Interface.h>
 #endif
 
-
-/*
-  Wrapper for scalar lookups to allow them to take vectors on the CPU
-  
-  RealIndexer must have an operator[](int) that returns a Real. e.g., Real*
-  ConstRealIndexer is as RealIndexer, but assumed const type.
-  LambdaIndexer must have an operator[](int) that returns a Real*. e.g., Real**
-  */
-template<typename EOS, typename LookupFunction, typename ConstRealIndexer,
-         typename RealIndexer, typename LambdaIndexer>
-inline
-void VectorizeScalarLookup(const EOS &eos, const LookupFunction &&f,
-                             const int num, ConstRealIndexer &&xs,
-                             ConstRealIndexer &&ys, RealIndexer &&result,
-                             LambdaIndexer &&lambdas) {
-  for (int i = 0; i < num; ++i) {
-    result[i] = (eos.*f)(xs[i], ys[i], lambdas[i]);
-  }
-}
-
-template<typename EOS, typename FillEosFunction, typename RealIndexer,
-         typename LambdaIndexer>
-inline
-void VectorizeFillEos(const EOS &eos, const FillEosFunction &&f,
-                      const int num, RealIndexer &&rhos, RealIndexer &&temps,
-                      RealIndexer &&energies, RealIndexer &&presses,
-                      RealIndexer &&cvs, RealIndexer &&bmods,
-                      const unsigned long output, LambdaIndexer &&lambdas) {
-  for (int i = 0; i < num; ++i) {
-    (eos.*f)(rhos[i], temps[i], energies[i], presses[i], cvs[i], bmods[i],
-              output, lambdas[i]);
-  }
-}
-
 namespace singularity {
+
+using namespace vector_utils;
 
 class IdealGas {
  public:
@@ -132,10 +101,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&temperatures,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::TemperatureFromDensityInternalEnergy, num,
         rhos, sies, temperatures, lambdas);
@@ -144,10 +113,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&sies,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::InternalEnergyFromDensityTemperature, num,
         rhos, temperatures, sies, lambdas);
@@ -156,10 +125,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            const int num,
-                                            RealIndexer &&pressures,
-                                            LambdaIndexer &&lambdas) const {
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num,
+                                      LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::PressureFromDensityTemperature, num,
         rhos, temperatures, pressures, lambdas);
@@ -168,10 +137,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               const int num,
-                                               RealIndexer &&pressures,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::PressureFromDensityInternalEnergy, num,
         rhos, sies, pressures, lambdas);
@@ -180,10 +149,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                const int num,
-                                                RealIndexer &&cvs,
-                                                LambdaIndexer &&lambdas) const {
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num,
+                                          LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::SpecificHeatFromDensityTemperature, num,
         rhos, temperatures, cvs, lambdas);
@@ -192,10 +161,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   const int num,
-                                                   RealIndexer &&cvs,
-                                                   LambdaIndexer &&lambdas) const {
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num,
+                                             LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, cvs, lambdas);
@@ -204,10 +173,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&temperatures,
-                                               const int num,
-                                               RealIndexer &&bmods,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::BulkModulusFromDensityTemperature, num,
         rhos, temperatures, bmods, lambdas);
@@ -216,10 +185,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&bmods,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, bmods, lambdas);
@@ -228,10 +197,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&gm1s,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::GruneisenParamFromDensityTemperature, num,
         rhos, temperatures, gm1s, lambdas);
@@ -240,10 +209,10 @@ class IdealGas {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                     ConstRealIndexer &&sies,
-                                                     const int num,
-                                                     RealIndexer &&gm1s,
-                                                     LambdaIndexer &&lambdas) const {
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num,
+                                               LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &IdealGas::GruneisenParamFromDensityInternalEnergy, num,
         rhos, sies, gm1s, lambdas);
@@ -252,9 +221,9 @@ class IdealGas {
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                     const int num, const unsigned long output,
-                     LambdaIndexer &&lambdas) const {
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output,
+               LambdaIndexer &&lambdas) const {
     VectorizeFillEos(
         *this, &IdealGas::FillEos, num, rhos, temps, energies, presses, cvs,
         bmods, output, lambdas);
@@ -337,10 +306,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&temperatures,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::TemperatureFromDensityInternalEnergy, num,
         rhos, sies, temperatures, lambdas);
@@ -349,10 +318,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&sies,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::InternalEnergyFromDensityTemperature, num,
         rhos, temperatures, sies, lambdas);
@@ -361,10 +330,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            const int num,
-                                            RealIndexer &&pressures,
-                                            LambdaIndexer &&lambdas) const {
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num,
+                                      LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::PressureFromDensityTemperature, num,
         rhos, temperatures, pressures, lambdas);
@@ -373,10 +342,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               const int num,
-                                               RealIndexer &&pressures,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::PressureFromDensityInternalEnergy, num,
         rhos, sies, pressures, lambdas);
@@ -385,10 +354,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                const int num,
-                                                RealIndexer &&cvs,
-                                                LambdaIndexer &&lambdas) const {
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num,
+                                          LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::SpecificHeatFromDensityTemperature, num,
         rhos, temperatures, cvs, lambdas);
@@ -397,10 +366,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   const int num,
-                                                   RealIndexer &&cvs,
-                                                   LambdaIndexer &&lambdas) const {
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num,
+                                             LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, cvs, lambdas);
@@ -409,10 +378,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&temperatures,
-                                               const int num,
-                                               RealIndexer &&bmods,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::BulkModulusFromDensityTemperature, num,
         rhos, temperatures, bmods, lambdas);
@@ -421,10 +390,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&bmods,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, bmods, lambdas);
@@ -433,10 +402,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&gm1s,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::GruneisenParamFromDensityTemperature, num,
         rhos, temperatures, gm1s, lambdas);
@@ -445,10 +414,10 @@ class Gruneisen {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                     ConstRealIndexer &&sies,
-                                                     const int num,
-                                                     RealIndexer &&gm1s,
-                                                     LambdaIndexer &&lambdas) const {
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num,
+                                               LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &Gruneisen::GruneisenParamFromDensityInternalEnergy, num,
         rhos, sies, gm1s, lambdas);
@@ -457,9 +426,9 @@ class Gruneisen {
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                     const int num, const unsigned long output,
-                     LambdaIndexer &&lambdas) const {
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output,
+               LambdaIndexer &&lambdas) const {
     VectorizeFillEos(
         *this, &Gruneisen::FillEos, num, rhos, temps, energies, presses, cvs,
         bmods, output, lambdas);
@@ -538,10 +507,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&temperatures,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::TemperatureFromDensityInternalEnergy, num,
         rhos, sies, temperatures, lambdas);
@@ -550,10 +519,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&sies,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::InternalEnergyFromDensityTemperature, num,
         rhos, temperatures, sies, lambdas);
@@ -562,10 +531,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            const int num,
-                                            RealIndexer &&pressures,
-                                            LambdaIndexer &&lambdas) const {
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num,
+                                      LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::PressureFromDensityTemperature, num,
         rhos, temperatures, pressures, lambdas);
@@ -574,10 +543,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               const int num,
-                                               RealIndexer &&pressures,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::PressureFromDensityInternalEnergy, num,
         rhos, sies, pressures, lambdas);
@@ -586,10 +555,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                const int num,
-                                                RealIndexer &&cvs,
-                                                LambdaIndexer &&lambdas) const {
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num,
+                                          LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::SpecificHeatFromDensityTemperature, num,
         rhos, temperatures, cvs, lambdas);
@@ -598,10 +567,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   const int num,
-                                                   RealIndexer &&cvs,
-                                                   LambdaIndexer &&lambdas) const {
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num,
+                                             LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, cvs, lambdas);
@@ -610,10 +579,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&temperatures,
-                                               const int num,
-                                               RealIndexer &&bmods,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::BulkModulusFromDensityTemperature, num,
         rhos, temperatures, bmods, lambdas);
@@ -622,10 +591,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&bmods,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, bmods, lambdas);
@@ -634,10 +603,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&gm1s,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::GruneisenParamFromDensityTemperature, num,
         rhos, temperatures, gm1s, lambdas);
@@ -646,10 +615,10 @@ class JWL {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                     ConstRealIndexer &&sies,
-                                                     const int num,
-                                                     RealIndexer &&gm1s,
-                                                     LambdaIndexer &&lambdas) const {
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num,
+                                               LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &JWL::GruneisenParamFromDensityInternalEnergy, num,
         rhos, sies, gm1s, lambdas);
@@ -658,9 +627,9 @@ class JWL {
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                     const int num, const unsigned long output,
-                     LambdaIndexer &&lambdas) const {
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output,
+               LambdaIndexer &&lambdas) const {
     VectorizeFillEos(
         *this, &JWL::FillEos, num, rhos, temps, energies, presses, cvs,
         bmods, output, lambdas);
@@ -750,10 +719,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&temperatures,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::TemperatureFromDensityInternalEnergy, num,
         rhos, sies, temperatures, lambdas);
@@ -762,10 +731,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&sies,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::InternalEnergyFromDensityTemperature, num,
         rhos, temperatures, sies, lambdas);
@@ -774,10 +743,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            const int num,
-                                            RealIndexer &&pressures,
-                                            LambdaIndexer &&lambdas) const {
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num,
+                                      LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::PressureFromDensityTemperature, num,
         rhos, temperatures, pressures, lambdas);
@@ -786,10 +755,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               const int num,
-                                               RealIndexer &&pressures,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::PressureFromDensityInternalEnergy, num,
         rhos, sies, pressures, lambdas);
@@ -798,10 +767,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                const int num,
-                                                RealIndexer &&cvs,
-                                                LambdaIndexer &&lambdas) const {
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num,
+                                          LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::SpecificHeatFromDensityTemperature, num,
         rhos, temperatures, cvs, lambdas);
@@ -810,10 +779,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   const int num,
-                                                   RealIndexer &&cvs,
-                                                   LambdaIndexer &&lambdas) const {
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num,
+                                             LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, cvs, lambdas);
@@ -822,10 +791,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&temperatures,
-                                               const int num,
-                                               RealIndexer &&bmods,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::BulkModulusFromDensityTemperature, num,
         rhos, temperatures, bmods, lambdas);
@@ -834,10 +803,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&bmods,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, bmods, lambdas);
@@ -846,10 +815,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&gm1s,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::GruneisenParamFromDensityTemperature, num,
         rhos, temperatures, gm1s, lambdas);
@@ -858,10 +827,10 @@ class DavisReactants {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                     ConstRealIndexer &&sies,
-                                                     const int num,
-                                                     RealIndexer &&gm1s,
-                                                     LambdaIndexer &&lambdas) const {
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num,
+                                               LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisReactants::GruneisenParamFromDensityInternalEnergy, num,
         rhos, sies, gm1s, lambdas);
@@ -870,9 +839,9 @@ class DavisReactants {
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                     const int num, const unsigned long output,
-                     LambdaIndexer &&lambdas) const {
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output,
+               LambdaIndexer &&lambdas) const {
     VectorizeFillEos(
         *this, &DavisReactants::FillEos, num, rhos, temps, energies, presses, cvs,
         bmods, output, lambdas);
@@ -957,10 +926,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&temperatures,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::TemperatureFromDensityInternalEnergy, num,
         rhos, sies, temperatures, lambdas);
@@ -969,10 +938,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&sies,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::InternalEnergyFromDensityTemperature, num,
         rhos, temperatures, sies, lambdas);
@@ -981,10 +950,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            const int num,
-                                            RealIndexer &&pressures,
-                                            LambdaIndexer &&lambdas) const {
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num,
+                                      LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::PressureFromDensityTemperature, num,
         rhos, temperatures, pressures, lambdas);
@@ -993,10 +962,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               const int num,
-                                               RealIndexer &&pressures,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::PressureFromDensityInternalEnergy, num,
         rhos, sies, pressures, lambdas);
@@ -1005,10 +974,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                const int num,
-                                                RealIndexer &&cvs,
-                                                LambdaIndexer &&lambdas) const {
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num,
+                                          LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::SpecificHeatFromDensityTemperature, num,
         rhos, temperatures, cvs, lambdas);
@@ -1017,10 +986,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   const int num,
-                                                   RealIndexer &&cvs,
-                                                   LambdaIndexer &&lambdas) const {
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num,
+                                             LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, cvs, lambdas);
@@ -1029,10 +998,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&temperatures,
-                                               const int num,
-                                               RealIndexer &&bmods,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::BulkModulusFromDensityTemperature, num,
         rhos, temperatures, bmods, lambdas);
@@ -1041,10 +1010,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&bmods,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, bmods, lambdas);
@@ -1053,10 +1022,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&gm1s,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::GruneisenParamFromDensityTemperature, num,
         rhos, temperatures, gm1s, lambdas);
@@ -1065,10 +1034,10 @@ class DavisProducts {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                     ConstRealIndexer &&sies,
-                                                     const int num,
-                                                     RealIndexer &&gm1s,
-                                                     LambdaIndexer &&lambdas) const {
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num,
+                                               LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &DavisProducts::GruneisenParamFromDensityInternalEnergy, num,
         rhos, sies, gm1s, lambdas);
@@ -1077,9 +1046,9 @@ class DavisProducts {
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                     const int num, const unsigned long output,
-                     LambdaIndexer &&lambdas) const {
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output,
+               LambdaIndexer &&lambdas) const {
     VectorizeFillEos(
         *this, &DavisProducts::FillEos, num, rhos, temps, energies, presses, cvs,
         bmods, output, lambdas);
@@ -1191,10 +1160,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&temperatures,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::TemperatureFromDensityInternalEnergy, num,
         rhos, sies, temperatures, lambdas);
@@ -1203,10 +1172,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&sies,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::InternalEnergyFromDensityTemperature, num,
         rhos, temperatures, sies, lambdas);
@@ -1215,10 +1184,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            const int num,
-                                            RealIndexer &&pressures,
-                                            LambdaIndexer &&lambdas) const {
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num,
+                                      LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::PressureFromDensityTemperature, num,
         rhos, temperatures, pressures, lambdas);
@@ -1227,10 +1196,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               const int num,
-                                               RealIndexer &&pressures,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy, num,
         rhos, sies, pressures, lambdas);
@@ -1239,10 +1208,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                const int num,
-                                                RealIndexer &&cvs,
-                                                LambdaIndexer &&lambdas) const {
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num,
+                                          LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::SpecificHeatFromDensityTemperature, num,
         rhos, temperatures, cvs, lambdas);
@@ -1251,10 +1220,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   const int num,
-                                                   RealIndexer &&cvs,
-                                                   LambdaIndexer &&lambdas) const {
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num,
+                                             LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, cvs, lambdas);
@@ -1263,10 +1232,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&temperatures,
-                                               const int num,
-                                               RealIndexer &&bmods,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::BulkModulusFromDensityTemperature, num,
         rhos, temperatures, bmods, lambdas);
@@ -1275,10 +1244,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&bmods,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, bmods, lambdas);
@@ -1287,10 +1256,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&gm1s,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::GruneisenParamFromDensityTemperature, num,
         rhos, temperatures, gm1s, lambdas);
@@ -1299,10 +1268,10 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                     ConstRealIndexer &&sies,
-                                                     const int num,
-                                                     RealIndexer &&gm1s,
-                                                     LambdaIndexer &&lambdas) const {
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num,
+                                               LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy, num,
         rhos, sies, gm1s, lambdas);
@@ -1311,9 +1280,9 @@ class SpinerEOSDependsRhoT {
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                     const int num, const unsigned long output,
-                     LambdaIndexer &&lambdas) const {
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output,
+               LambdaIndexer &&lambdas) const {
     VectorizeFillEos(
         *this, &SpinerEOSDependsRhoT::FillEos, num, rhos, temps, energies, presses, cvs,
         bmods, output, lambdas);
@@ -1525,10 +1494,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&temperatures,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::TemperatureFromDensityInternalEnergy, num,
         rhos, sies, temperatures, lambdas);
@@ -1537,10 +1506,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&sies,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::InternalEnergyFromDensityTemperature, num,
         rhos, temperatures, sies, lambdas);
@@ -1549,10 +1518,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            const int num,
-                                            RealIndexer &&pressures,
-                                            LambdaIndexer &&lambdas) const {
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num,
+                                      LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::PressureFromDensityTemperature, num,
         rhos, temperatures, pressures, lambdas);
@@ -1561,10 +1530,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               const int num,
-                                               RealIndexer &&pressures,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::PressureFromDensityInternalEnergy, num,
         rhos, sies, pressures, lambdas);
@@ -1573,10 +1542,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                const int num,
-                                                RealIndexer &&cvs,
-                                                LambdaIndexer &&lambdas) const {
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num,
+                                          LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::SpecificHeatFromDensityTemperature, num,
         rhos, temperatures, cvs, lambdas);
@@ -1585,10 +1554,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   const int num,
-                                                   RealIndexer &&cvs,
-                                                   LambdaIndexer &&lambdas) const {
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num,
+                                             LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, cvs, lambdas);
@@ -1597,10 +1566,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&temperatures,
-                                               const int num,
-                                               RealIndexer &&bmods,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::BulkModulusFromDensityTemperature, num,
         rhos, temperatures, bmods, lambdas);
@@ -1609,10 +1578,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&bmods,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, bmods, lambdas);
@@ -1621,10 +1590,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&gm1s,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::GruneisenParamFromDensityTemperature, num,
         rhos, temperatures, gm1s, lambdas);
@@ -1633,10 +1602,10 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                     ConstRealIndexer &&sies,
-                                                     const int num,
-                                                     RealIndexer &&gm1s,
-                                                     LambdaIndexer &&lambdas) const {
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num,
+                                               LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &SpinerEOSDependsRhoSie::GruneisenParamFromDensityInternalEnergy, num,
         rhos, sies, gm1s, lambdas);
@@ -1645,9 +1614,9 @@ class SpinerEOSDependsRhoSie {
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                     const int num, const unsigned long output,
-                     LambdaIndexer &&lambdas) const {
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output,
+               LambdaIndexer &&lambdas) const {
     VectorizeFillEos(
         *this, &SpinerEOSDependsRhoSie::FillEos, num, rhos, temps, energies, presses, cvs,
         bmods, output, lambdas);
@@ -1817,10 +1786,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&temperatures,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::TemperatureFromDensityInternalEnergy, num,
         rhos, sies, temperatures, lambdas);
@@ -1829,10 +1798,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&sies,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::InternalEnergyFromDensityTemperature, num,
         rhos, temperatures, sies, lambdas);
@@ -1841,10 +1810,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            const int num,
-                                            RealIndexer &&pressures,
-                                            LambdaIndexer &&lambdas) const {
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num,
+                                      LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::PressureFromDensityTemperature, num,
         rhos, temperatures, pressures, lambdas);
@@ -1853,10 +1822,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               const int num,
-                                               RealIndexer &&pressures,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::PressureFromDensityInternalEnergy, num,
         rhos, sies, pressures, lambdas);
@@ -1865,10 +1834,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                const int num,
-                                                RealIndexer &&cvs,
-                                                LambdaIndexer &&lambdas) const {
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num,
+                                          LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::SpecificHeatFromDensityTemperature, num,
         rhos, temperatures, cvs, lambdas);
@@ -1877,10 +1846,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   const int num,
-                                                   RealIndexer &&cvs,
-                                                   LambdaIndexer &&lambdas) const {
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num,
+                                             LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, cvs, lambdas);
@@ -1889,10 +1858,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&temperatures,
-                                               const int num,
-                                               RealIndexer &&bmods,
-                                               LambdaIndexer &&lambdas) const {
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::BulkModulusFromDensityTemperature, num,
         rhos, temperatures, bmods, lambdas);
@@ -1901,10 +1870,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&bmods,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::SpecificHeatFromDensityInternalEnergy, num,
         rhos, sies, bmods, lambdas);
@@ -1913,10 +1882,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&gm1s,
-                                                  LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::GruneisenParamFromDensityTemperature, num,
         rhos, temperatures, gm1s, lambdas);
@@ -1925,10 +1894,10 @@ class StellarCollapse {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                     ConstRealIndexer &&sies,
-                                                     const int num,
-                                                     RealIndexer &&gm1s,
-                                                     LambdaIndexer &&lambdas) const {
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num,
+                                               LambdaIndexer &&lambdas) const {
     VectorizeScalarLookup(
         *this, &StellarCollapse::GruneisenParamFromDensityInternalEnergy, num,
         rhos, sies, gm1s, lambdas);
@@ -1937,9 +1906,9 @@ class StellarCollapse {
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                     const int num, const unsigned long output,
-                     LambdaIndexer &&lambdas) const {
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output,
+               LambdaIndexer &&lambdas) const {
     VectorizeFillEos(
         *this, &StellarCollapse::FillEos, num, rhos, temps, energies, presses, cvs,
         bmods, output, lambdas);
@@ -2191,79 +2160,82 @@ class EOSPAC {
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&temperatures,
-                                                  LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&sies,
-                                                  LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&temperatures,
                                             const int num,
-                                            RealIndexer &&pressures,
                                             LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
+  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&sies,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const;
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
+  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
+                                      ConstRealIndexer &&temperatures,
+                                      RealIndexer &&pressures,
+                                      const int num,
+                                      LambdaIndexer &&lambdas) const;
+  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               const int num,
-                                               RealIndexer &&pressures,
-                                               LambdaIndexer &&lambdas) const;
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                const int num,
-                                                RealIndexer &&cvs,
-                                                LambdaIndexer &&lambdas) const;
+                                          ConstRealIndexer &&temperatures,
+                                          RealIndexer &&cvs,
+                                          const int num,
+                                          LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                   ConstRealIndexer &&sies,
-                                                   const int num,
-                                                   RealIndexer &&cvs,
-                                                   LambdaIndexer &&lambdas) const;
+                                             ConstRealIndexer &&sies,
+                                             RealIndexer &&cvs,
+                                             const int num,
+                                             LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&temperatures,
-                                               const int num,
-                                               RealIndexer &&bmods,
-                                               LambdaIndexer &&lambdas) const;
+                                         ConstRealIndexer &&temperatures,
+                                         RealIndexer &&bmods,
+                                         const int num,
+                                         LambdaIndexer &&lambdas) const;
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&sies,
-                                                  const int num,
-                                                  RealIndexer &&bmods,
-                                                  LambdaIndexer &&lambdas) const;
+                                            ConstRealIndexer &&sies,
+                                            RealIndexer &&bmods,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const;
+
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                  ConstRealIndexer &&temperatures,
-                                                  const int num,
-                                                  RealIndexer &&gm1s,
-                                                  LambdaIndexer &&lambdas) const;
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&gm1s,
+                                            const int num,
+                                            LambdaIndexer &&lambdas) const;
+
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                                     ConstRealIndexer &&sies,
-                                                     const int num,
-                                                     RealIndexer &&gm1s,
-                                                     LambdaIndexer &&lambdas) const;
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&gm1s,
+                                               const int num,
+                                               LambdaIndexer &&lambdas) const;
+
   template<typename RealIndexer, typename LambdaIndexer>
   inline
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-                     RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-                     const int num, const unsigned long output,
-                     LambdaIndexer &&lambdas) const;
+               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+               const int num, const unsigned long output,
+               LambdaIndexer &&lambdas) const;
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   int nlambda() const noexcept { return 0; }
