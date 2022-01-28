@@ -403,7 +403,10 @@ void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) 
 
   // Bounds
   readBounds_(file_id, "logrho", numRho_, lRhoMin_, lRhoMax_);
+  // TODO(BRR) convert to K
   readBounds_(file_id, "logtemp", numT_, lTMin_, lTMax_);
+  lTMin_ += log10(MeV2K_);
+  lTMax_ += log10(MeV2K_);
   readBounds_(file_id, "ye", numYe_, YeMin_, YeMax_);
 
   // Tables
@@ -415,6 +418,7 @@ void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) 
   readSCDset_(file_id, "logenergy", lE_);
   readSCDset_(file_id, "dpdrhoe", dPdRho_);
   readSCDset_(file_id, "dpderho", dPdE_);
+  // TODO(BRR) convert to K
   readSCDset_(file_id, "dedt", dEdT_);
 
   // TODO(JMM): entropy, mass fractions, and average atomic mass and
@@ -427,6 +431,11 @@ void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) 
   readSCDset_(file_id, "Xp", Xp_);
   readSCDset_(file_id, "Abar", Abar_);
   readSCDset_(file_id, "Zbar", Zbar_);
+
+  // TODO(BRR) if reading in chemical potentials, convert from MeV to K
+
+  // UNIT CONVERSIONS GO HERE JUST DO A FOR LOOP
+
   H5Fclose(file_id);
 }
 

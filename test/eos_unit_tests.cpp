@@ -519,6 +519,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
         constexpr Real kb = 1.3806505e-16;
         //constexpr Real Cv = 1. / (mp * (gamma - 1)); // assumes cgs
         constexpr Real Cv = kb / (mp * (gamma - 1)); // assumes cgs
+        printf("Cv: %e\n", Cv);
         IdealGas ig(gamma - 1, Cv);
         auto ig_d = ig.GetOnDevice();
         THEN("The tabulated gamma Stellar Collapse and the gamma agree roughly") {

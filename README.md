@@ -88,6 +88,13 @@ you modify.
 To run formatting automatically, call `make format_singularity-eos`
 at the build step. Cmake automatically makes a target.
 
+## Units
+
+singularity-eos, prior to unit modifiers, always uses CGS units internally. For
+concreteness, the units of each call are:
+
+
+
 ## Copyright
 
 © 2021. Triad National Security, LLC. All rights reserved.  This
