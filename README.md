@@ -91,9 +91,17 @@ at the build step. Cmake automatically makes a target.
 ## Units
 
 singularity-eos, prior to unit modifiers, always uses CGS units internally. For
-concreteness, the units of each call are:
+concreteness, the internal units of each quantity are:
 
-
+| Quantity                  | Alternate names      | Units         |
+| ------------------------- | -------------------- | ------------- |
+| Mass density              | rho                  | g cm^-3       |
+| Temperature               | temperature          | K             |
+| Specific Internal Energy  | sie, Internal Energy | erg g^-1      |
+| Pressure                  |                      | erg cm^-3     |
+| Specific Heat             |                      | erg g^-1 K^-1 |
+| Bulk Modulus              |                      | erg cm^-3     |
+| Gruneisen Parameter       |                      |               |
 
 ## Copyright
 

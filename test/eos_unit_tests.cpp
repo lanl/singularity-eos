@@ -517,7 +517,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
         constexpr Real gamma = 1.4;
         constexpr Real mp = 1.67262171e-24;
         constexpr Real kb = 1.3806505e-16;
-        //constexpr Real Cv = 1. / (mp * (gamma - 1)); // assumes cgs
+        // constexpr Real Cv = 1. / (mp * (gamma - 1)); // assumes cgs
         constexpr Real Cv = kb / (mp * (gamma - 1)); // assumes cgs
         printf("Cv: %e\n", Cv);
         IdealGas ig(gamma - 1, Cv);
@@ -553,7 +553,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
                 Real Ye = yemin + k * dY;
                 Real lT = ltmin + j * dlT;
                 Real lR = lrhomin + i * dlR;
-                Real T = std::pow(10., lT);// * MeV2K_;
+                Real T = std::pow(10., lT); // * MeV2K_;
                 Real R = std::pow(10., lR);
                 Real e1, e2, p1, p2, cv1, cv2, b1, b2;
                 unsigned long output = (singularity::thermalqs::pressure |
@@ -564,15 +564,6 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 
                 sc_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
                 ig_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);
-                /*printf("ltmin: %e j: %i dlT: %e lT: %e T: %e\n",
-                  ltmin, j, dlT, lT, std::pow(10., lT));
-                printf("rho: %e T: %e\n", R, T);
-                printf("e: sc: %e ig: %e\n", e1, e2);
-                printf("p: sc: %e ig: %e\n", p1, p2);
-                printf("cv: sc: %e ig: %e\n", cv1, cv2);
-                printf("b: sc: %e ig: %e\n", b1, b2);
-                printf("T: %e\n", T);
-                exit(-1);*/
                 if (!isClose(e1, e2)) {
                   nwrong_d() += 1;
                 }

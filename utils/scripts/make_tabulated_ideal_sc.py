@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# © 2021. Triad National Security, LLC. All rights reserved.  This
+# © 2022. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -49,6 +49,7 @@ parser.add_argument('-o', '--output', default = None, type=str,
                     help = 'Name of output file')
 args = parser.parse_args()
 
+# Arguments
 filename = args.output
 mu = args.mu
 gam = args.gamma
@@ -65,23 +66,17 @@ ye_max = args.yemax
 n_ye = args.nye
 energy_shift = 0.0 # All energies positive for gamma law
 
+# Base grid
 lrho = np.linspace(np.log10(rho_min), np.log10(rho_max), n_rho)
 ltemp = np.linspace(np.log10(temp_min), np.log10(temp_max), n_temp)
 ltemp_MeV = np.linspace(np.log10(temp_min_MeV), np.log10(temp_max_MeV), n_temp)
 ye = np.linspace(ye_min, ye_max, n_ye)
 rho = np.power(10., lrho)
 temp = np.power(10., ltemp)
-#prs = rho*cgs['KBOL']*temp/mu
-#u = prs/(gam - 1.)
-#eps = u/rho
 
+# 3D grid quantities
 YE, T, RHO = np.meshgrid(ye, temp, rho, indexing='ij')
 PRS = RHO*cgs['KBOL']*T/mu
-
-#print("mu: ", mu)
-#print("prs: ", PRS[0,0,0])
-#import sys
-#sys.exit()
 UU = PRS/(gam - 1.)
 EPS = UU/RHO
 EF = RHO*cgs['CL']**2 + UU*gam
@@ -101,6 +96,7 @@ Xn = 1. - Xp
 Abar = np.ones_like(PRS)
 Zbar = np.ones_like(PRS)
 
+# Output
 if filename is None:
   print("No filename provided! Exiting...")
   import sys
