@@ -400,8 +400,9 @@ void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) 
   // Bounds
   readBounds_(file_id, "logrho", numRho_, lRhoMin_, lRhoMax_);
   readBounds_(file_id, "logtemp", numT_, lTMin_, lTMax_);
-  lTMin_ += log10(MeV2K_);
-  lTMax_ += log10(MeV2K_);
+  const Real logMev2K = std::log10(MeV2K_);
+  lTMin_ += logMev2K;
+  lTMax_ += logMev2K;
   readBounds_(file_id, "ye", numYe_, YeMin_, YeMax_);
 
   // Tables
