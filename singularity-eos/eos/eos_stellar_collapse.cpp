@@ -214,7 +214,7 @@ Real StellarCollapse::SpecificHeatFromDensityTemperature(const Real rho,
                                                          Real *lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
-  const Real Cv = K2MeV_ * dEdT_.interpToReal(Ye, lT, lRho);
+  const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
   return (Cv > EPS ? Cv : EPS);
 }
 
@@ -224,7 +224,7 @@ Real StellarCollapse::SpecificHeatFromDensityInternalEnergy(const Real rho,
                                                             Real *lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
-  const Real Cv = K2MeV_ * dEdT_.interpToReal(Ye, lT, lRho);
+  const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
   return (Cv > EPS ? Cv : EPS);
 }
 
@@ -307,7 +307,7 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, 
     press = lP2P_(lP);
   }
   if (output & thermalqs::specific_heat) {
-    const Real Cv = K2MeV_ * dEdT_.interpToReal(Ye, lT, lRho);
+    const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
     cv = (Cv > EPS ? Cv : EPS);
   }
   if (output & thermalqs::bulk_modulus) {
@@ -400,6 +400,9 @@ void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) 
   // Bounds
   readBounds_(file_id, "logrho", numRho_, lRhoMin_, lRhoMax_);
   readBounds_(file_id, "logtemp", numT_, lTMin_, lTMax_);
+  const Real logMev2K = std::log10(MeV2K_);
+  lTMin_ += logMev2K;
+  lTMax_ += logMev2K;
   readBounds_(file_id, "ye", numYe_, YeMin_, YeMax_);
 
   // Tables
@@ -423,6 +426,18 @@ void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) 
   readSCDset_(file_id, "Xp", Xp_);
   readSCDset_(file_id, "Abar", Abar_);
   readSCDset_(file_id, "Zbar", Zbar_);
+
+  // TODO(BRR): in the future, if reading in chemical potentials, convert from MeV to K
+
+  // Convert MeV to K in tabulated data
+  for (int iY = 0; iY < numYe_; ++iY) {
+    for (int iT = 0; iT < numT_; ++iT) {
+      for (int irho = 0; irho < numRho_; ++irho) {
+        dEdT_(iY, iT, irho) *= K2MeV_;
+      }
+    }
+  }
+
   H5Fclose(file_id);
 }
 
@@ -590,7 +605,7 @@ void StellarCollapse::setNormalValues_() {
   const Real lP = lP_.interpToReal(Ye, lT, lRho);
   PNormal_ = lP2P_(lP);
 
-  const Real Cv = K2MeV_ * dEdT_.interpToReal(Ye, lT, lRho);
+  const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
   CvNormal_ = (Cv > EPS ? Cv : EPS);
 
   const Real lB = lBMod_.interpToReal(Ye, lT, lRho);
