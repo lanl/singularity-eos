@@ -811,15 +811,9 @@ class StellarCollapse {
   Real lRhoMax() const { return lRhoMax_; }
   Real rhoMin() const { return rho_(lRhoMin_); }
   Real rhoMax() const { return rho_(lRhoMax_); }
-  Real lTMin() const {
-    printf("HERE lTMin_: %e\n", lTMin_);
-    return lTMin_;
-  }
+  Real lTMin() const { return lTMin_; }
   Real lTMax() const { return lTMax_; }
-  Real TMin() const {
-    printf("HERE TMin_: %e (lTMin_ = %e)\n", T_(lTMin_), lTMin_);
-    return T_(lTMin_);
-  }
+  Real TMin() const { return T_(lTMin_); }
   Real TMax() const { return T_(lTMax_); }
   Real YeMin() const { return YeMin_; }
   Real YeMax() const { return YeMax_; }

@@ -428,7 +428,7 @@ void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) 
 
   // TODO(BRR): in the future, if reading in chemical potentials, convert from MeV to K
 
-  // UNIT CONVERSIONS GO HERE JUST DO A FOR LOOP
+  // Convert MeV to K in tabulated data
   for (int iY = 0; iY < numYe_; ++iY) {
     for (int iT = 0; iT < numT_; ++iT) {
       for (int irho = 0; irho < numRho_; ++irho) {

@@ -517,9 +517,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
         constexpr Real gamma = 1.4;
         constexpr Real mp = 1.67262171e-24;
         constexpr Real kb = 1.3806505e-16;
-        // constexpr Real Cv = 1. / (mp * (gamma - 1)); // assumes cgs
-        constexpr Real Cv = kb / (mp * (gamma - 1)); // assumes cgs
-        printf("Cv: %e\n", Cv);
+        constexpr Real Cv = kb / (mp * (gamma - 1)); // mean molecular weight = mp
         IdealGas ig(gamma - 1, Cv);
         auto ig_d = ig.GetOnDevice();
         THEN("The tabulated gamma Stellar Collapse and the gamma agree roughly") {
@@ -532,7 +530,6 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
           Real lrhomin = sc.lRhoMin();
           Real lrhomax = sc.lRhoMax();
           auto sc_d = sc.GetOnDevice();
-          printf("tmin: %e tmax: %e\n", tmin, tmax);
 
           int nwrong_h = 0;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -553,7 +550,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
                 Real Ye = yemin + k * dY;
                 Real lT = ltmin + j * dlT;
                 Real lR = lrhomin + i * dlR;
-                Real T = std::pow(10., lT); // * MeV2K_;
+                Real T = std::pow(10., lT);
                 Real R = std::pow(10., lR);
                 Real e1, e2, p1, p2, cv1, cv2, b1, b2;
                 unsigned long output = (singularity::thermalqs::pressure |
@@ -629,7 +626,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
                   Real Ye = yemin + k * dY;
                   Real lT = ltmin + j * dlT;
                   Real lR = lrhomin + i * dlR;
-                  Real T = std::pow(10., lT) * MeV2K_;
+                  Real T = std::pow(10., lT);
                   Real R = std::pow(10., lR);
                   Real e1, e2, p1, p2, cv1, cv2, b1, b2;
                   unsigned long output =
