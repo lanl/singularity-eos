@@ -564,15 +564,15 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 
                 sc_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
                 ig_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);
-                printf("ltmin: %e j: %i dlT: %e lT: %e T: %e\n",
+                /*printf("ltmin: %e j: %i dlT: %e lT: %e T: %e\n",
                   ltmin, j, dlT, lT, std::pow(10., lT));
                 printf("rho: %e T: %e\n", R, T);
                 printf("e: sc: %e ig: %e\n", e1, e2);
                 printf("p: sc: %e ig: %e\n", p1, p2);
-                printf("true p: %e\n", R*kb*T/(mp));
                 printf("cv: sc: %e ig: %e\n", cv1, cv2);
+                printf("b: sc: %e ig: %e\n", b1, b2);
                 printf("T: %e\n", T);
-                exit(-1);
+                exit(-1);*/
                 if (!isClose(e1, e2)) {
                   nwrong_d() += 1;
                 }
@@ -647,8 +647,6 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
                        singularity::thermalqs::specific_heat |
                        singularity::thermalqs::bulk_modulus);
                   lambda[0] = Ye;
-                  printf("T: %e\n", T);
-                  exit(-1);
 
                   sc1_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
                   sc2_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);

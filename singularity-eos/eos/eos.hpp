@@ -658,10 +658,10 @@ class SpinerEOSDependsRhoSie {
   Real lEOffset() const { return lEOffset_; }
   Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
   Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
-  Real TMin() const { return fromLog_(sie_.range(0).min(), lTOffset_); }
-  Real TMax() const { return fromLog_(sie_.range(0).max(), lTOffset_); }
-  Real sieMin() const { return fromLog_(T_.range(0).min(), lEOffset_); }
-  Real sieMax() const { return fromLog_(T_.range(0).max(), lEOffset_); }
+  Real TMin() const { return fromLog_(T_.range(0).min(), lTOffset_); }
+  Real TMax() const { return fromLog_(T_.range(0).max(), lTOffset_); }
+  Real sieMin() const { return fromLog_(sie_.range(0).min(), lEOffset_); }
+  Real sieMax() const { return fromLog_(sie_.range(0).max(), lEOffset_); }
 
   static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
@@ -811,9 +811,9 @@ class StellarCollapse {
   Real lRhoMax() const { return lRhoMax_; }
   Real rhoMin() const { return rho_(lRhoMin_); }
   Real rhoMax() const { return rho_(lRhoMax_); }
-  Real lTMin() const { return lTMin_; }
+  Real lTMin() const { printf("HERE lTMin_: %e\n", lTMin_); return lTMin_; }
   Real lTMax() const { return lTMax_; }
-  Real TMin() const { return T_(lTMin_); }
+  Real TMin() const { printf("HERE TMin_: %e (lTMin_ = %e)\n", T_(lTMin_), lTMin_); return T_(lTMin_); }
   Real TMax() const { return T_(lTMax_); }
   Real YeMin() const { return YeMin_; }
   Real YeMax() const { return YeMax_; }
@@ -876,11 +876,9 @@ class StellarCollapse {
     return out;
     // return out < lRhoMin_ ? lRhoMin_ : out;
   }
-  // TODO(JMM): Use log K2MeV so we can do addition instead of
-  // multiplication?
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   lT_(const Real T) const noexcept {
-    return toLog_(T * K2MeV_, lTOffset_);
+    return toLog_(T, lTOffset_);
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   rho_(const Real lRho) const noexcept {
@@ -889,7 +887,7 @@ class StellarCollapse {
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   T_(const Real lT) const noexcept {
-    return MeV2K_ * fromLog_(lT, lTOffset_);
+    return fromLog_(lT, lTOffset_);
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   le2e_(const Real le) const noexcept {
