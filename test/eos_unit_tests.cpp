@@ -487,6 +487,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
   using singularity::IdealGas;
   using singularity::StellarCollapse;
   const std::string savename = "stellar_collapse_ideal_2.sp5";
+  static constexpr Real MeV2K_ = 1.e9 * 11.604525006;
   GIVEN("A stellar collapse EOS") {
     const std::string filename = "../stellar_collapse_ideal.h5";
     THEN("We can load the file") { // don't bother filtering bmod here.
@@ -515,7 +516,9 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
       GIVEN("An Ideal Gas equation of state") {
         constexpr Real gamma = 1.4;
         constexpr Real mp = 1.67262171e-24;
-        constexpr Real Cv = 1. / (mp * (gamma - 1)); // assumes cgs
+        constexpr Real kb = 1.3806505e-16;
+        //constexpr Real Cv = 1. / (mp * (gamma - 1)); // assumes cgs
+        constexpr Real Cv = kb / (mp * (gamma - 1)); // assumes cgs
         IdealGas ig(gamma - 1, Cv);
         auto ig_d = ig.GetOnDevice();
         THEN("The tabulated gamma Stellar Collapse and the gamma agree roughly") {
@@ -528,6 +531,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
           Real lrhomin = sc.lRhoMin();
           Real lrhomax = sc.lRhoMax();
           auto sc_d = sc.GetOnDevice();
+          printf("tmin: %e tmax: %e\n", tmin, tmax);
 
           int nwrong_h = 0;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -548,7 +552,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
                 Real Ye = yemin + k * dY;
                 Real lT = ltmin + j * dlT;
                 Real lR = lrhomin + i * dlR;
-                Real T = std::pow(10., lT);
+                Real T = std::pow(10., lT);// * MeV2K_;
                 Real R = std::pow(10., lR);
                 Real e1, e2, p1, p2, cv1, cv2, b1, b2;
                 unsigned long output = (singularity::thermalqs::pressure |
@@ -559,6 +563,15 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 
                 sc_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
                 ig_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);
+                printf("ltmin: %e j: %i dlT: %e lT: %e T: %e\n",
+                  ltmin, j, dlT, lT, std::pow(10., lT));
+                printf("rho: %e T: %e\n", R, T);
+                printf("e: sc: %e ig: %e\n", e1, e2);
+                printf("p: sc: %e ig: %e\n", p1, p2);
+                printf("true p: %e\n", R*kb*T/(mp));
+                printf("cv: sc: %e ig: %e\n", cv1, cv2);
+                printf("T: %e\n", T);
+                exit(-1);
                 if (!isClose(e1, e2)) {
                   nwrong_d() += 1;
                 }
@@ -624,7 +637,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
                   Real Ye = yemin + k * dY;
                   Real lT = ltmin + j * dlT;
                   Real lR = lrhomin + i * dlR;
-                  Real T = std::pow(10., lT);
+                  Real T = std::pow(10., lT) * MeV2K_;
                   Real R = std::pow(10., lR);
                   Real e1, e2, p1, p2, cv1, cv2, b1, b2;
                   unsigned long output =
@@ -633,6 +646,8 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
                        singularity::thermalqs::specific_heat |
                        singularity::thermalqs::bulk_modulus);
                   lambda[0] = Ye;
+                  printf("T: %e\n", T);
+                  exit(-1);
 
                   sc1_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
                   sc2_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);

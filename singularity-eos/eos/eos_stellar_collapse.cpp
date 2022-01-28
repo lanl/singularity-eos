@@ -292,7 +292,9 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, 
     EOS_ERROR("StellarCollapse cannot output density at this time");
   }
   if (input & thermalqs::temperature) {
+    printf("temp %e (%e)\n", temp, temp*K2MeV_);
     getLogsFromRhoT_(rho, temp * K2MeV_, lambda, lRho, lT, Ye);
+    printf("lT: %e\n", lT);
   } else if (input & thermalqs::specific_internal_energy) {
     getLogsFromRhoSie_(rho, energy, lambda, lRho, lT, Ye);
   } else {
@@ -303,7 +305,9 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, 
     energy = le2e_(lE);
   }
   if (output & thermalqs::pressure) {
+    printf("Ye: %e lT: %e lRho: %e\n", Ye, lT, lRho);
     const Real lP = lP_.interpToReal(Ye, lT, lRho);
+    printf("lP: %e P: %e\n", lP, pow(10.,lP));
     press = lP2P_(lP);
   }
   if (output & thermalqs::specific_heat) {
@@ -321,14 +325,14 @@ void StellarCollapse::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
                                              Real &press, Real &cv, Real &bmod,
                                              Real &dpde, Real &dvdt, Real *lambda) const {
   rho = rhoNormal_;
-  temp = TNormal_;
+  temp = TNormal_ * MeV2K_;
   sie = sieNormal_;
   press = PNormal_;
   cv = CvNormal_;
   bmod = bModNormal_;
   dpde = dPdENormal_;
   dvdt = dVdTNormal_;
-  Real lT = lT_(temp);
+  Real lT = lT_(temp * K2MeV_);
   lambda[Lambda::Ye] = YeNormal_;
   lambda[Lambda::lT] = lT;
 }

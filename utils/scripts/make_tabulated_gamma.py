@@ -48,6 +48,7 @@ def e2temp(eps, gam, M_unit = MP):
     #out = M_unit*(gam - 1.)*eps
     #out = MP*(gam - 1.)*eps
     out = (gam - 1.)*eps
+    #out = MP/KBOL*(gam - 1.)*eps
     return out
 
 def eps(u,rho):
@@ -84,7 +85,8 @@ def make_filename(gam):
 def make_table_u(rho_min, rho_max, n_rho,
                  u_min, u_max, n_u,
                  ye_min, ye_max, n_ye,
-                 units, gam, filename = None,
+                 units, gam, output_units,
+                 filename = None,
                  crash_on_sound_speed = True):
     eps_min  = eps(u_min, rho_max)
     eps_max  = eps(u_max, rho_min)
@@ -96,13 +98,15 @@ def make_table_u(rho_min, rho_max, n_rho,
     return make_table_temp(rho_min,rho_max,n_rho,
                            temp_min,temp_max,n_temp,
                            ye_min, ye_max, n_ye,
-                           units, gam, filename,
+                           units, gam, output_units,
+                           filename,
                            crash_on_sound_speed)
 
 def make_table_temp(rho_min, rho_max, n_rho,
                     temp_min, temp_max, n_temp,
                     ye_min, ye_max, n_ye,
-                    units, gam, filename = None,
+                    units, gam, output_units,
+                    filename = None,
                     crash_on_sound_speed = True):
     assert gam > 1
     # from code units to CGS
@@ -153,8 +157,40 @@ def make_table_temp(rho_min, rho_max, n_rho,
     # Zbar: average atomic number
     Zbar = np.ones_like(P)
 
+    # Convert to stellar collapse units if requested
+    if output_units == "stellar_collapse" or True:
+      print("Here!")
+      print(lrho[0])
+      print(CS2[0])
+      CS2 = CS2*CL*CL
+      print(CS2[0])
+      DPDRHOE = DPDRHOE*units.RHO/units.U
+      DPDERHO = DPDERHO/units.RHO
+      #DEDT =
+      #ENT =
+      #GAMMA =
+      LE = np.log10(np.power(10.,LE)*units.RHO/units.U)
+      LP = np.log10(np.power(10.,LP)/units.U)
+      lrho = np.log10(np.power(10.,lrho)/units.RHO)
+      print("lt0: ", lt[0])
+      lt = np.log10(np.power(10.,lt)*units.RHO/units.U*MP/KBOL)
+      #rho = np.power(10., lrho)
+      #u = np.power(10., lu)
+      print(LE.shape)
+      print(lt.shape)
+
+      #eps = np.power(10., LE)
+      #lt = (gam-1.)*eps*MP/KBOL
+      print("lt0: ", lt[0])
+      import sys
+      sys.exit()
+
+      #print(units.RHO)
+      #print(lrho[0])
+      print(lt[0])
+
     # make the hdf5 file
-    
+
     if filename is None:
         filename = make_filename(gam)
     with h5py.File(filename,'w') as f:
@@ -219,6 +255,9 @@ if __name__ == "__main__":
                         help = "Maximum electron fraction.")
     parser.add_argument('--nye', default = 50, type=int,
                         help = "Number of points in electron fraction")
+    parser.add_argument('--units', default = "scale_free", type=str,
+                        choices = ["scale_free", "stellar_collapse"],
+                        help = "What unit system to use in the final table")
     parser.add_argument('-o', '--output', default = None, type=str,
                         help = "Name of output file.")
     args = parser.parse_args()
@@ -250,12 +289,14 @@ if __name__ == "__main__":
         make_table_temp(args.rhomin,args.rhomax,args.nrho,
                         args.tempmin,args.tempmax,args.ntemp,
                         args.yemin,args.yemax,args.nye,
-                        units, args.gamma, args.output)
+                        units, args.gamma, args.units,
+                        args.output)
     else:
         print("\tUsing [umin, umax]       = [{}, {}]".format(args.umin,
                                                              args.umax))
         make_table_u(args.rhomin,args.rhomax,args.nrho,
                      args.umin,args.umax,args.ntemp,
                      args.yemin,args.yemax,args.nye,
-                     units, args.gamma, args.output)
+                     units, args.gamma, args.units,
+                     args.output)
     print("Done.")
