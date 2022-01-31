@@ -501,7 +501,7 @@ try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot, const Rea
   Real etrial[nmat], vtrial[nmat], ttrial[nmat], ptrial[nmat];
   for (int m = 0; m < nmat; m++) {
     etrial[m] = B[m] * Tequil;
-    vtrial[m] = A[m]/alpha;
+    vtrial[m] = A[m] / alpha;
   }
   for (int m = 0; m < nmat; m++) {
     ttrial[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(rho[m]/vtrial[m], etrial[m], Cache[m]);
@@ -536,7 +536,8 @@ try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot, const Rea
       sie[m] = etrial[m];
       vfrac[m] = vtrial[m];
     }
-  }
+  } 
+
   return;
 }
 
@@ -610,6 +611,29 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
   niter = 0;
   constexpr const int pte_max_iter = nmat * pte_max_iter_per_mat;
   for (niter = 0; niter < pte_max_iter; ++niter) {
+
+    pte_residual<nmat>(utot, vfrac, u, temp, press, residual);
+    // Calculate errors
+    Real mean_p = vfrac[0] * press[0];
+    Real mean_t = rhobar[0] * temp[0];
+    Real error_p = 0.0;
+    Real error_t = 0.0;
+    for (int m = 1; m < nmat; ++m) {
+      mean_p += vfrac[m] * press[m];
+      mean_t += rhobar[m] * temp[m];
+      error_p += residual[m + 1] * residual[m + 1];
+      error_t += residual[m + nmat] * residual[m + nmat];
+    }
+    mean_t /= rho_total;
+    error_p = std::sqrt(error_p);
+    error_t = std::sqrt(error_t);
+    // Check for convergence
+    converged_p = (error_p < pte_rel_tolerance_p * std::abs(mean_p) ||
+                   error_p < pte_abs_tolerance_p);
+    converged_t =
+        (error_t < pte_rel_tolerance_t * mean_t || error_t < pte_abs_tolerance_t);
+    converged = (converged_p && converged_t);
+    if (converged) break;
     for (int m = 0; m < nmat; m++) {
       //////////////////////////////
       // perturb volume fractions
@@ -660,7 +684,6 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
       }
     }
     // Fill in the residual
-    pte_residual<nmat>(utot, vfrac, u, temp, press, residual);
     Real err = 0;
     for (int i = 0; i < 2 * nmat; ++i)
       err += residual[i] * residual[i];
@@ -762,29 +785,11 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
       u[m] = utemp[m];
       sie[m] = u[m] / rhobar[m];
     }
-    // Calculate errors
-    Real mean_p = vfrac[0] * press[0];
-    Real mean_t = rhobar[0] * temp[0];
-    Real error_p = 0.0;
-    Real error_t = 0.0;
-    for (int m = 1; m < nmat; ++m) {
-      mean_p += vfrac[m] * press[m];
-      mean_t += rhobar[m] * temp[m];
-      error_p += residual[m + 1] * residual[m + 1];
-      error_t += residual[m + nmat] * residual[m + nmat];
-    }
-    mean_t /= rho_total;
-    error_p = std::sqrt(error_p);
-    error_t = std::sqrt(error_t);
-    // Check for convergence
-    converged_p = (error_p < pte_rel_tolerance_p * std::abs(mean_p) ||
-                   error_p < pte_abs_tolerance_p);
-    converged_t =
-        (error_t < pte_rel_tolerance_t * mean_t || error_t < pte_abs_tolerance_t);
-    converged = (converged_p && converged_t);
-    if (converged) break;
     // niter++;
   } // while (niter < pte_max_iter && !converged);
+  if (niter != 0) {
+    printf("took %d iters\n", niter);
+  }
   for (int m = 0; m < nmat; ++m)
     vfrac[m] *= vfrac_tot;
   return converged;
