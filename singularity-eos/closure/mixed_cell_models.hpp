@@ -480,6 +480,68 @@ PORTABLE_INLINE_FUNCTION static void pte_residual(const Real utot, T1 &&vfrac, R
 
 template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer,
           typename OFFSETTER>
+PORTABLE_INLINE_FUNCTION void
+try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot, const Real rho[nmat],
+              RealIndexer &&vfrac, RealIndexer &&sie, RealIndexer &&temp, RealIndexer &&press,
+              LambdaIndexer &&lambda const OFFSETTER ofst) {
+  Real A[nmat], B[nmat];
+  Real rhoBsum = 0.0;
+  Real Asum = 0.0;
+  for (int m = 0; m < nmat; m++) {
+    A[m] = vfrac[m] * press[m]/temp[m];
+    Asum += A[m];
+    B[m] = sie[m]/temp[m];
+    rhoBsum += rho[m] * B[m];
+  }
+
+  const Real Tequil = utot/rhoBsum;
+  const Real Pequil = Tequil * Asum/vfrac_tot;
+  const Real alpha = Pequil/Tequil;
+
+  Real etrial[nmat], vtrial[nmat], ttrial[nmat], ptrial[nmat];
+  for (int m = 0; m < nmat; m++) {
+    etrial[m] = B[m] * Tequil;
+    vtrial[m] = A[m]/alpha;
+  }
+  for (int m = 0; m < nmat; m++) {
+    ttrial[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(rho[m]/vtrial[m], etrial[m], Cache[m]);
+    if (eos[ofst(m)].PreferredInput() ==
+        (thermalqs::density | thermalqs::specific_internal_energy)) {
+      ptrial[m] = eos[ofst(m)].PressureFromDensityInternalEnergy(rho[m]/vtrial[m], etrial[m], Cache[m]);
+    } else if (eos[ofst(m)].PreferredInput() ==
+               (thermalqs::density | thermalqs::temperature)) {
+      ptrial[m] = eos[ofst(m)].PressureFromDensityTemperature(rho[m]/vtrial[m], ttrial[m], Cache[m]);
+    }
+  }
+
+  // compare std dev of pressures and accept if they're reduced
+  Real sum_orig = 0.0;
+  Real sq_sum_orig = 0.0;
+  Real sum_new = 0.0;
+  Real sq_sum_new = 0.0;
+  for (int m = 0; m < nmat; m++) {
+    sum_orig += press[m];
+    sq_sum_orig += press[m] * press[m];
+    sum_new += ptrial[m];
+    sq_sum_new += ptrial[m] * ptrial[m];
+  }
+  const Real mean_orig = sum_orig / nmat;
+  const Real var_orig = sq_sum_orig / nmat - mean_orig * mean_orig;
+  const Real mean_new = sum_new / nmat;
+  const Real var_new = sq_sum_new / nmat - mean_new * mean_new;
+  if (var_new < var_orig) {
+    for (int m = 0; m < nmat; m++) {
+      press[m] = ptrial[m];
+      temp[m] = ttrial[m];
+      sie[m] = etrial[m];
+      vfrac[m] = vtrial[m];
+    }
+  }
+  return;
+}
+
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer,
+          typename OFFSETTER>
 PORTABLE_INLINE_FUNCTION bool
 pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot,
                       RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
@@ -493,6 +555,7 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
     vsum += vfrac[m];
   for (int m = 0; m < nmat; ++m)
     vfrac[m] /= vsum;
+
   Real rhobar[nmat]; // This is a fixed quantity: the average density of
                      // material m averaged over the full PTE volume
   for (int m = 0; m < nmat; ++m)
@@ -502,24 +565,8 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
     rho_total += rhobar[m];
   // Renormalize energies as well
   Real utot = rho_total * sie_tot;
-  Real u[nmat];
-  Real esum = 0.0;
-  for (int m = 0; m < nmat; ++m)
-    u[m] = sie[m] * rhobar[m];
-  for (int m = 0; m < nmat; ++m)
-    esum += u[m];
-  for (int m = 0; m < nmat; ++m)
-    u[m] *= utot / esum;
-  Real jacobian[4 * nmat * nmat];
-  Real dx[2 * nmat];
-  Real residual[2 * nmat];
+
   Real Cache[nmat][MAX_NUM_LAMBDAS];
-  // Real* Cache[nmat];
-  // for (int m {0}; m < nmat; ++m) Cache[m] = nullptr;
-  Real vtemp[nmat], rtemp[nmat], utemp[nmat];
-
-  Real dpde[nmat], dtde[nmat], dpdv[nmat], dtdv[nmat];
-
   // set some options and make the initial EOS calls
   enum class EosPreference { RhoT, Rhoe };
   EosPreference eos_choice[nmat];
@@ -535,6 +582,27 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
       press[m] = eos[ofst(m)].PressureFromDensityTemperature(rho[m], temp[m], Cache[m]);
     }
   }
+
+  // at this point we have initial guesses for rho, vfrac, sie, pressure, temperature
+  // try to solve for PTE assuming an ideal gas to reset initial guess
+  try_ideal_pte<nmat,EOSIndexer,RealIndexer,LambdaIndexer,OFFSETTER>(eos, vfrac_tot, utot, rhobar, vfrac, sie, temp, press, lambda, ofst);
+
+  Real u[nmat];
+  Real esum = 0.0;
+  for (int m = 0; m < nmat; ++m)
+    u[m] = sie[m] * rhobar[m];
+  for (int m = 0; m < nmat; ++m)
+    esum += u[m];
+  for (int m = 0; m < nmat; ++m)
+    u[m] *= utot / esum;
+  Real jacobian[4 * nmat * nmat];
+  Real dx[2 * nmat];
+  Real residual[2 * nmat];
+  // Real* Cache[nmat];
+  // for (int m {0}; m < nmat; ++m) Cache[m] = nullptr;
+  Real vtemp[nmat], rtemp[nmat], utemp[nmat];
+
+  Real dpde[nmat], dtde[nmat], dpdv[nmat], dtdv[nmat];
 
   bool converged_p = false;
   bool converged_t = false;
