@@ -462,15 +462,16 @@ pte_closure_flag_with_line_impl(EOSIndexer &&eoss, const Real Volume, const Real
 // RealIndexer types may be different because some might be arrays and
 // some might be pointers.
 template <int nmat, typename T1, typename T2, typename T3>
-PORTABLE_INLINE_FUNCTION static void pte_residual(const Real utot, T1 &&vfrac, Real *u,
-                                                  T2 &&temp, T3 &&press, Real *residual) {
+PORTABLE_INLINE_FUNCTION static void pte_residual(const Real vfrac_tot, const Real utot,
+                                                  T1 &&vfrac, Real *u, T2 &&temp,
+                                                  T3 &&press, Real *residual) {
   Real vsum = 0.0;
   Real esum = 0.0;
   for (int m = 0; m < nmat; ++m) {
     vsum += vfrac[m];
     esum += u[m];
   }
-  residual[0] = 1.0 - vsum;
+  residual[0] = vfrac_tot - vsum;
   residual[1] = utot - esum;
   for (int m = 0; m < nmat - 1; ++m) {
     residual[2 + m] = press[m + 1] - press[m];
@@ -515,6 +516,7 @@ try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot, const Rea
   }
 
   // compare std dev of pressures and accept if they're reduced
+  // this is a bit hokey.  what's the right acceptance criteria?
   Real sum_orig = 0.0;
   Real sq_sum_orig = 0.0;
   Real sum_new = 0.0;
@@ -586,7 +588,8 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
 
   // at this point we have initial guesses for rho, vfrac, sie, pressure, temperature
   // try to solve for PTE assuming an ideal gas to reset initial guess
-  try_ideal_pte<nmat,EOSIndexer,RealIndexer,LambdaIndexer,OFFSETTER>(eos, vfrac_tot, utot, rhobar, vfrac, sie, temp, press, lambda, ofst, Cache);
+  try_ideal_pte<nmat,EOSIndexer,RealIndexer,LambdaIndexer,OFFSETTER>(eos, vfrac_tot, utot,
+    rhobar, vfrac, sie, temp, press, lambda, ofst, Cache);
 
   Real u[nmat];
   Real esum = 0.0;
@@ -610,10 +613,10 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
   bool converged = true;
   niter = 0;
   constexpr const int pte_max_iter = nmat * pte_max_iter_per_mat;
+  // get the initial residual
+  pte_residual<nmat>(vfrac_tot, utot, vfrac, u, temp, press, residual);
   for (niter = 0; niter < pte_max_iter; ++niter) {
-
-    pte_residual<nmat>(utot, vfrac, u, temp, press, residual);
-    // Calculate errors
+    // Calculate errors and break of converged
     Real mean_p = vfrac[0] * press[0];
     Real mean_t = rhobar[0] * temp[0];
     Real error_p = 0.0;
@@ -634,6 +637,7 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
         (error_t < pte_rel_tolerance_t * mean_t || error_t < pte_abs_tolerance_t);
     converged = (converged_p && converged_t);
     if (converged) break;
+
     for (int m = 0; m < nmat; m++) {
       //////////////////////////////
       // perturb volume fractions
@@ -766,7 +770,7 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
           break;
         }
       }
-      pte_residual<nmat>(utot, vtemp, utemp, temp, press, residual);
+      pte_residual<nmat>(vfrac_tot, utot, vtemp, utemp, temp, press, residual);
       Real err = 0;
       for (int i = 0; i < 2 * nmat; ++i)
         err += residual[i] * residual[i];
@@ -787,9 +791,6 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
     }
     // niter++;
   } // while (niter < pte_max_iter && !converged);
-  if (niter != 0) {
-    printf("took %d iters\n", niter);
-  }
   for (int m = 0; m < nmat; ++m)
     vfrac[m] *= vfrac_tot;
   return converged;
