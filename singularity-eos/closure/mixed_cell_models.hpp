@@ -483,7 +483,7 @@ template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIn
 PORTABLE_INLINE_FUNCTION void
 try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot, const Real rho[nmat],
               RealIndexer &&vfrac, RealIndexer &&sie, RealIndexer &&temp, RealIndexer &&press,
-              LambdaIndexer &&lambda, const OFFSETTER ofst) {
+              LambdaIndexer &&lambda, const OFFSETTER ofst, Real Cache[nmat][MAX_NUM_LAMBDAS]) {
   Real A[nmat], B[nmat];
   Real rhoBsum = 0.0;
   Real Asum = 0.0;
@@ -585,7 +585,7 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
 
   // at this point we have initial guesses for rho, vfrac, sie, pressure, temperature
   // try to solve for PTE assuming an ideal gas to reset initial guess
-  try_ideal_pte<nmat,EOSIndexer,RealIndexer,LambdaIndexer,OFFSETTER>(eos, vfrac_tot, utot, rhobar, vfrac, sie, temp, press, lambda, ofst);
+  try_ideal_pte<nmat,EOSIndexer,RealIndexer,LambdaIndexer,OFFSETTER>(eos, vfrac_tot, utot, rhobar, vfrac, sie, temp, press, lambda, ofst, Cache);
 
   Real u[nmat];
   Real esum = 0.0;
