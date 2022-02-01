@@ -479,64 +479,96 @@ PORTABLE_INLINE_FUNCTION static void pte_residual(const Real vfrac_tot, const Re
   }
 }
 
-template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer,
-          typename OFFSETTER>
+template <int nmat, typename RealIndexer>
+PORTABLE_INLINE_FUNCTION
+bool CheckPTE(const Real rho_total, RealIndexer &&vfrac, const Real rhobar[nmat],
+              RealIndexer &&press, RealIndexer &&temp, Real residual[2 * nmat]) {
+  using namespace mix_params;
+  Real mean_p = vfrac[0] * press[0];
+  Real mean_t = rhobar[0] * temp[0];
+  Real error_p = 0.0;
+  Real error_t = 0.0;
+  for (int m = 1; m < nmat; ++m) {
+    mean_p += vfrac[m] * press[m];
+    mean_t += rhobar[m] * temp[m];
+    error_p += residual[m + 1] * residual[m + 1];
+    error_t += residual[m + nmat] * residual[m + nmat];
+  }
+  mean_t /= rho_total;
+  error_p = std::sqrt(error_p);
+  error_t = std::sqrt(error_t);
+  // Check for convergence
+  bool converged_p = (error_p < pte_rel_tolerance_p * std::abs(mean_p) ||
+                 error_p < pte_abs_tolerance_p);
+  bool converged_t =
+      (error_t < pte_rel_tolerance_t * mean_t || error_t < pte_abs_tolerance_t);
+  return (converged_p && converged_t);
+}
+
+template <int nmat, typename RealIndexer>
 PORTABLE_INLINE_FUNCTION void
-try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot, const Real rho[nmat],
+get_ideal_pte(const Real vfrac_tot, const Real utot, const Real rho[nmat],
               RealIndexer &&vfrac, RealIndexer &&sie, RealIndexer &&temp, RealIndexer &&press,
-              LambdaIndexer &&lambda, const OFFSETTER ofst, Real Cache[nmat][MAX_NUM_LAMBDAS]) {
-  Real A[nmat], B[nmat];
+              Real &Pequil, Real &Tequil) {
   Real rhoBsum = 0.0;
   Real Asum = 0.0;
   for (int m = 0; m < nmat; m++) {
-    A[m] = vfrac[m] * press[m]/temp[m];
-    Asum += A[m];
-    B[m] = sie[m]/temp[m];
-    rhoBsum += rho[m] * B[m];
+    //A[m] = vfrac[m] * press[m]/temp[m];
+    Asum += vfrac[m] * press[m] / temp[m];
+    //B[m] = sie[m]/temp[m];
+    rhoBsum += rho[m] * sie[m] / temp[m];
   }
 
-  const Real Tequil = utot/rhoBsum;
-  const Real Pequil = Tequil * Asum/vfrac_tot;
+  Tequil = utot/rhoBsum;
+  Pequil = Tequil * Asum/vfrac_tot;
+}
+
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer,
+          typename OFFSETTER>
+PORTABLE_INLINE_FUNCTION void
+try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot, const Real rhobar[nmat],
+              RealIndexer &&vfrac, RealIndexer &&sie, RealIndexer &&temp, RealIndexer &&press,
+              LambdaIndexer &&lambda, const OFFSETTER ofst, Real Cache[nmat][MAX_NUM_LAMBDAS],
+              Real residual[2 * nmat]) {
+  Real Pequil, Tequil;
+  get_ideal_pte<nmat, RealIndexer>(vfrac_tot, utot, rhobar, vfrac, sie, temp, press, Pequil, Tequil);
   const Real alpha = Pequil/Tequil;
 
-  Real etrial[nmat], vtrial[nmat], ttrial[nmat], ptrial[nmat];
+  Real etrial[nmat], vtrial[nmat], ttrial[nmat], ptrial[nmat], utrial[nmat];
   for (int m = 0; m < nmat; m++) {
-    etrial[m] = B[m] * Tequil;
-    vtrial[m] = A[m] / alpha;
+    etrial[m] = sie[m] / temp[m] * Tequil;
+    utrial[m] = rhobar[m] * etrial[m];
+    vtrial[m] = vfrac[m] * press[m] / (temp[m] * alpha);
   }
   for (int m = 0; m < nmat; m++) {
-    ttrial[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(rho[m]/vtrial[m], etrial[m], Cache[m]);
+    ttrial[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(rhobar[m]/vtrial[m], etrial[m], Cache[m]);
     if (eos[ofst(m)].PreferredInput() ==
         (thermalqs::density | thermalqs::specific_internal_energy)) {
-      ptrial[m] = eos[ofst(m)].PressureFromDensityInternalEnergy(rho[m]/vtrial[m], etrial[m], Cache[m]);
+      ptrial[m] = eos[ofst(m)].PressureFromDensityInternalEnergy(rhobar[m]/vtrial[m], etrial[m], Cache[m]);
     } else if (eos[ofst(m)].PreferredInput() ==
                (thermalqs::density | thermalqs::temperature)) {
-      ptrial[m] = eos[ofst(m)].PressureFromDensityTemperature(rho[m]/vtrial[m], ttrial[m], Cache[m]);
+      ptrial[m] = eos[ofst(m)].PressureFromDensityTemperature(rhobar[m]/vtrial[m], ttrial[m], Cache[m]);
     }
   }
 
-  // compare std dev of pressures and accept if they're reduced
-  // this is a bit hokey.  what's the right acceptance criteria?
-  Real sum_orig = 0.0;
-  Real sq_sum_orig = 0.0;
-  Real sum_new = 0.0;
-  Real sq_sum_new = 0.0;
-  for (int m = 0; m < nmat; m++) {
-    sum_orig += press[m];
-    sq_sum_orig += press[m] * press[m];
-    sum_new += ptrial[m];
-    sq_sum_new += ptrial[m] * ptrial[m];
+  Real res_new[2 * nmat];
+  pte_residual<nmat>(vfrac_tot, utot, vtrial, utrial, ttrial, ptrial, res_new);
+
+  Real res0 = 0.0;
+  Real res1 = 0.0;
+  for (int m = 0; m < 2*nmat; m++) {
+    res0 += residual[m] * residual[m];
+    res1 += res_new[m] * res_new[m];
   }
-  const Real mean_orig = sum_orig / nmat;
-  const Real var_orig = sq_sum_orig / nmat - mean_orig * mean_orig;
-  const Real mean_new = sum_new / nmat;
-  const Real var_new = sq_sum_new / nmat - mean_new * mean_new;
-  if (var_new < var_orig) {
+
+  if (res1 < res0) {
     for (int m = 0; m < nmat; m++) {
       press[m] = ptrial[m];
       temp[m] = ttrial[m];
       sie[m] = etrial[m];
       vfrac[m] = vtrial[m];
+      residual[2*m] = res_new[2*m];
+      residual[2*m+1] = res_new[2*m+1];
     }
   } 
 
@@ -586,10 +618,6 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
     }
   }
 
-  // at this point we have initial guesses for rho, vfrac, sie, pressure, temperature
-  // try to solve for PTE assuming an ideal gas to reset initial guess
-  try_ideal_pte<nmat,EOSIndexer,RealIndexer,LambdaIndexer,OFFSETTER>(eos, vfrac_tot, utot,
-    rhobar, vfrac, sie, temp, press, lambda, ofst, Cache);
 
   Real u[nmat];
   Real esum = 0.0;
@@ -604,8 +632,15 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
   Real residual[2 * nmat];
   // Real* Cache[nmat];
   // for (int m {0}; m < nmat; ++m) Cache[m] = nullptr;
-  Real vtemp[nmat], rtemp[nmat], utemp[nmat];
 
+  pte_residual<nmat>(vfrac_tot, utot, vfrac, u, temp, press, residual);
+
+  // at this point we have initial guesses for rho, vfrac, sie, pressure, temperature
+  // try to solve for PTE assuming an ideal gas to reset initial guess
+  try_ideal_pte<nmat,EOSIndexer,RealIndexer,LambdaIndexer,OFFSETTER>(eos, vfrac_tot, utot,
+    rhobar, vfrac, sie, temp, press, lambda, ofst, Cache, residual);
+
+  Real vtemp[nmat], rtemp[nmat], utemp[nmat];
   Real dpde[nmat], dtde[nmat], dpdv[nmat], dtdv[nmat];
 
   bool converged_p = false;
@@ -614,28 +649,9 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
   niter = 0;
   constexpr const int pte_max_iter = nmat * pte_max_iter_per_mat;
   // get the initial residual
-  pte_residual<nmat>(vfrac_tot, utot, vfrac, u, temp, press, residual);
   for (niter = 0; niter < pte_max_iter; ++niter) {
     // Calculate errors and break of converged
-    Real mean_p = vfrac[0] * press[0];
-    Real mean_t = rhobar[0] * temp[0];
-    Real error_p = 0.0;
-    Real error_t = 0.0;
-    for (int m = 1; m < nmat; ++m) {
-      mean_p += vfrac[m] * press[m];
-      mean_t += rhobar[m] * temp[m];
-      error_p += residual[m + 1] * residual[m + 1];
-      error_t += residual[m + nmat] * residual[m + nmat];
-    }
-    mean_t /= rho_total;
-    error_p = std::sqrt(error_p);
-    error_t = std::sqrt(error_t);
-    // Check for convergence
-    converged_p = (error_p < pte_rel_tolerance_p * std::abs(mean_p) ||
-                   error_p < pte_abs_tolerance_p);
-    converged_t =
-        (error_t < pte_rel_tolerance_t * mean_t || error_t < pte_abs_tolerance_t);
-    converged = (converged_p && converged_t);
+    converged = CheckPTE<nmat, RealIndexer>(rho_total, vfrac, rhobar, press, temp, residual);
     if (converged) break;
 
     for (int m = 0; m < nmat; m++) {
@@ -684,7 +700,6 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
       dtde[m] = (t_pert - temp[m]) / de;
       if (std::abs(dtde[m]) < 1.e-16) { // must be on the cold curve
         dtde[m] = derivative_eps;
-        ;
       }
     }
     // Fill in the residual
