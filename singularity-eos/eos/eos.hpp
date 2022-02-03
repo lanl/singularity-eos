@@ -90,82 +90,18 @@ class IdealGas : public EosBase<IdealGas> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num,
-                                      LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num,
-                                          LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num,
-                                             LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output,
-               LambdaIndexer &&lambdas) const;
+  // Vector functions that overload the scalar versions declared here
+  using EosBase<IdealGas>::TemperatureFromDensityInternalEnergy;
+  using EosBase<IdealGas>::InternalEnergyFromDensityTemperature;
+  using EosBase<IdealGas>::PressureFromDensityTemperature;
+  using EosBase<IdealGas>::PressureFromDensityInternalEnergy;
+  using EosBase<IdealGas>::SpecificHeatFromDensityTemperature;
+  using EosBase<IdealGas>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<IdealGas>::BulkModulusFromDensityTemperature;
+  using EosBase<IdealGas>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<IdealGas>::GruneisenParamFromDensityTemperature;
+  using EosBase<IdealGas>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<IdealGas>::FillEos;
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -232,82 +168,18 @@ class Gruneisen : EosBase<Gruneisen> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num,
-                                      LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num,
-                                          LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num,
-                                             LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output,
-               LambdaIndexer &&lambdas) const;
+  // Vector functions that overload the scalar versions declared here
+  using EosBase<Gruneisen>::TemperatureFromDensityInternalEnergy;
+  using EosBase<Gruneisen>::InternalEnergyFromDensityTemperature;
+  using EosBase<Gruneisen>::PressureFromDensityTemperature;
+  using EosBase<Gruneisen>::PressureFromDensityInternalEnergy;
+  using EosBase<Gruneisen>::SpecificHeatFromDensityTemperature;
+  using EosBase<Gruneisen>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<Gruneisen>::BulkModulusFromDensityTemperature;
+  using EosBase<Gruneisen>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<Gruneisen>::GruneisenParamFromDensityTemperature;
+  using EosBase<Gruneisen>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<Gruneisen>::FillEos;
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -369,82 +241,18 @@ class JWL : EosBase<JWL> {
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
                                  Real *lambda = nullptr) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num,
-                                      LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num,
-                                          LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num,
-                                             LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output,
-               LambdaIndexer &&lambdas) const;
+  // Vector functions that overload the scalar versions declared here
+  using EosBase<JWL>::TemperatureFromDensityInternalEnergy;
+  using EosBase<JWL>::InternalEnergyFromDensityTemperature;
+  using EosBase<JWL>::PressureFromDensityTemperature;
+  using EosBase<JWL>::PressureFromDensityInternalEnergy;
+  using EosBase<JWL>::SpecificHeatFromDensityTemperature;
+  using EosBase<JWL>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<JWL>::BulkModulusFromDensityTemperature;
+  using EosBase<JWL>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<JWL>::GruneisenParamFromDensityTemperature;
+  using EosBase<JWL>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<JWL>::FillEos;
   PORTABLE_FUNCTION
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -518,82 +326,18 @@ class DavisReactants : EosBase<DavisReactants> {
                                                               const Real temp,
                                                               Real *lambda, Real &rho,
                                                               Real &sie) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num,
-                                      LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num,
-                                          LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num,
-                                             LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output,
-               LambdaIndexer &&lambdas) const;
+  // Vector functions that overload the scalar versions declared here
+  using EosBase<DavisReactants>::TemperatureFromDensityInternalEnergy;
+  using EosBase<DavisReactants>::InternalEnergyFromDensityTemperature;
+  using EosBase<DavisReactants>::PressureFromDensityTemperature;
+  using EosBase<DavisReactants>::PressureFromDensityInternalEnergy;
+  using EosBase<DavisReactants>::SpecificHeatFromDensityTemperature;
+  using EosBase<DavisReactants>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<DavisReactants>::BulkModulusFromDensityTemperature;
+  using EosBase<DavisReactants>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<DavisReactants>::GruneisenParamFromDensityTemperature;
+  using EosBase<DavisReactants>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<DavisReactants>::FillEos;
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -659,82 +403,18 @@ class DavisProducts : EosBase<DavisProducts> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num,
-                                      LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num,
-                                          LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num,
-                                             LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output,
-               LambdaIndexer &&lambdas) const;
+  // Vector functions that overload the scalar versions declared here
+  using EosBase<DavisProducts>::TemperatureFromDensityInternalEnergy;
+  using EosBase<DavisProducts>::InternalEnergyFromDensityTemperature;
+  using EosBase<DavisProducts>::PressureFromDensityTemperature;
+  using EosBase<DavisProducts>::PressureFromDensityInternalEnergy;
+  using EosBase<DavisProducts>::SpecificHeatFromDensityTemperature;
+  using EosBase<DavisProducts>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<DavisProducts>::BulkModulusFromDensityTemperature;
+  using EosBase<DavisProducts>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<DavisProducts>::GruneisenParamFromDensityTemperature;
+  using EosBase<DavisProducts>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<DavisProducts>::FillEos;
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -830,82 +510,18 @@ class SpinerEOSDependsRhoT : EosBase<SpinerEOSDependsRhoT> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num,
-                                      LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num,
-                                          LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num,
-                                             LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output,
-               LambdaIndexer &&lambdas) const;
+  // Vector functions that overload the scalar versions declared here
+  using EosBase<SpinerEOSDependsRhoT>::TemperatureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::InternalEnergyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::FillEos;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
   std::string materialName() const { return std::string(materialName_); }
@@ -1101,82 +717,18 @@ class SpinerEOSDependsRhoSie : EosBase<SpinerEOSDependsRhoSie> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num,
-                                      LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num,
-                                          LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num,
-                                             LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output,
-               LambdaIndexer &&lambdas) const;
+  // Vector functions that overload the scalar versions declared here
+  using EosBase<SpinerEOSDependsRhoSie>::TemperatureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::InternalEnergyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::FillEos;
   PORTABLE_FUNCTION
   unsigned long PreferredInput() const { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
@@ -1321,82 +873,18 @@ class StellarCollapse : EosBase<StellarCollapse> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num,
-                                      LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num,
-                                          LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num,
-                                             LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const;
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output,
-               LambdaIndexer &&lambdas) const;
+  // Vector functions that overload the scalar versions declared here
+  using EosBase<StellarCollapse>::TemperatureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
+  using EosBase<StellarCollapse>::PressureFromDensityTemperature;
+  using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
+  using EosBase<StellarCollapse>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::BulkModulusFromDensityTemperature;
+  using EosBase<StellarCollapse>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::GruneisenParamFromDensityTemperature;
+  using EosBase<StellarCollapse>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::FillEos;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
   Real lRhoOffset() const { return lRhoOffset_; }
@@ -1711,7 +1199,6 @@ class EOSPAC : EosBase<EOSPAC> {
                RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                const int num, const unsigned long output,
                LambdaIndexer &&lambdas) const;
-
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   int nlambda() const noexcept { return 0; }
   inline void Finalize() {}
