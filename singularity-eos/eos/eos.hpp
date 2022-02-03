@@ -51,7 +51,7 @@ namespace singularity {
 
 using namespace eos_base;
 
-class IdealGas {
+class IdealGas : public EosBase<IdealGas> {
  public:
   IdealGas() = default;
   PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv)
@@ -193,7 +193,7 @@ class IdealGas {
 // COMMENT: This is meant to be an implementation of the Steinberg version of
 // the Gruneisen EOS which should correspond to eostype(3) in xRAGE and
 // /[...]/eos/gruneisen in FLAG
-class Gruneisen {
+class Gruneisen : EosBase<Gruneisen> {
  public:
   Gruneisen() = default;
   PORTABLE_INLINE_FUNCTION
@@ -336,7 +336,7 @@ class Gruneisen {
 
 // COMMENT: This is meant to be an implementation of the "standard" JWL as
 // implemented in xRAGE for eostype(1).  It does not include any energy shifting
-class JWL {
+class JWL : EosBase<JWL> {
  public:
   JWL() = default;
   PORTABLE_INLINE_FUNCTION JWL(const Real A, const Real B, const Real R1, const Real R2,
@@ -474,7 +474,7 @@ class JWL {
       thermalqs::density | thermalqs::specific_internal_energy;
 };
 
-class DavisReactants {
+class DavisReactants : EosBase<DavisReactants> {
  public:
   DavisReactants() = default;
   PORTABLE_INLINE_FUNCTION
@@ -617,7 +617,7 @@ class DavisReactants {
   PORTABLE_INLINE_FUNCTION Real Gamma(const Real rho) const;
 };
 
-class DavisProducts {
+class DavisProducts : EosBase<DavisProducts> {
  public:
   DavisProducts() = default;
   PORTABLE_INLINE_FUNCTION
@@ -770,7 +770,7 @@ class DavisProducts {
   For low densities, we floor the density. For high densities, we
   we use log-linear extrapolation.
 */
-class SpinerEOSDependsRhoT {
+class SpinerEOSDependsRhoT : EosBase<SpinerEOSDependsRhoT> {
  public:
   // A weakly typed index map for lambdas
   struct Lambda {
@@ -1043,7 +1043,7 @@ class SpinerEOSDependsRhoT {
   - An ideal gas term
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
-class SpinerEOSDependsRhoSie {
+class SpinerEOSDependsRhoSie : EosBase<SpinerEOSDependsRhoSie> {
  public:
   struct SP5Tables {
     Spiner::DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
@@ -1262,7 +1262,7 @@ class SpinerEOSDependsRhoSie {
 // TODO(JMM): For now the bottom of the table is a floor and the top
 // is linear extrapolation in log-log space. We should reconsider this
 // and introduce extrapolation as needed.
-class StellarCollapse {
+class StellarCollapse : EosBase<StellarCollapse> {
  public:
   // A weakly typed index map for lambdas
   struct Lambda {
@@ -1591,7 +1591,7 @@ class StellarCollapse {
 #ifdef SINGULARITY_USE_EOSPAC
 // Only really works in serial
 // Not really supported on device
-class EOSPAC {
+class EOSPAC : EosBase<EOSPAC> {
  public:
   EOSPAC() = default;
   EOSPAC(int matid, bool invert_at_setup = false);

@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_EOS_EOS_VECTOR_
-#define _SINGULARITY_EOS_EOS_EOS_VECTOR_
+#ifndef _SINGULARITY_EOS_EOS_EOS_BASE_
+#define _SINGULARITY_EOS_EOS_EOS_BASE_
 
 #include <string>
 
@@ -39,8 +39,8 @@ public:
                                             RealIndexer &&temperatures,
                                             const int num,
                                             LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::TemperatureFromDensityInternalEnergy');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::TemperatureFromDensityInternalEnergy');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         temperatures[i] = static_cast<CRTP const&>(*this).TemperatureFromDensityInternalEnergy(
           rhos[i], sies[i], lambdas[i]);
@@ -54,8 +54,8 @@ public:
                                             RealIndexer &&sies,
                                             const int num,
                                             LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::InternalEnergyFromDensityTemperature');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::InternalEnergyFromDensityTemperature');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         sies[i] = static_cast<CRTP const&>(*this).InternalEnergyFromDensityTemperature(
           rhos[i], rhos[i], lambdas[i]);
@@ -69,8 +69,8 @@ public:
                                       RealIndexer &&pressures,
                                       const int num,
                                       LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::PressureFromDensityTemperature');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::PressureFromDensityTemperature');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         pressures[i] = static_cast<CRTP const&>(*this).PressureFromDensityTemperature(
           rhos[i], temperatures[i], lambdas[i]);
@@ -84,8 +84,8 @@ public:
                                          RealIndexer &&pressures,
                                          const int num,
                                          LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::PressureFromDensityInternalEnergy');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::PressureFromDensityInternalEnergy');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         pressures[i] = static_cast<CRTP const&>(*this).PressureFromDensityInternalEnergy(
           rhos[i], sies[i], lambdas[i]);
@@ -99,8 +99,8 @@ public:
                                           RealIndexer &&cvs,
                                           const int num,
                                           LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::SpecificHeatFromDensityTemperature');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::SpecificHeatFromDensityTemperature');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         cvs[i] = static_cast<CRTP const&>(*this).SpecificHeatFromDensityTemperature(
           rhos[i], temperatures[i], lambdas[i]);
@@ -114,8 +114,8 @@ public:
                                              RealIndexer &&cvs,
                                              const int num,
                                              LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::SpecificHeatFromDensityInternalEnergy');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::SpecificHeatFromDensityInternalEnergy');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         cvs[i] = static_cast<CRTP const&>(*this).SpecificHeatFromDensityInternalEnergy(
           rhos[i], sies[i], lambdas[i]);
@@ -129,8 +129,8 @@ public:
                                          RealIndexer &&bmods,
                                          const int num,
                                          LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::BulkModulusFromDensityTemperature');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::BulkModulusFromDensityTemperature');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         bmods[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
           rhos[i], temperatures[i], lambdas[i]);
@@ -144,8 +144,8 @@ public:
                                             RealIndexer &&bmods,
                                             const int num,
                                             LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::BulkModulusFromDensityInternalEnergy');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::BulkModulusFromDensityInternalEnergy');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         bmods[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
           rhos[i], sies[i], lambdas[i]);
@@ -159,8 +159,8 @@ public:
                                             RealIndexer &&gm1s,
                                             const int num,
                                             LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::GruneisenParamFromDensityTemperature');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::GruneisenParamFromDensityTemperature');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         gm1s[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
           rhos[i], temperatures[i], lambdas[i]);
@@ -174,8 +174,8 @@ public:
                                                RealIndexer &&gm1s,
                                                const int num,
                                                LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::GruneisenParamFromDensityTemperature');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::GruneisenParamFromDensityTemperature');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         gm1s[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
           rhos[i], sies[i], lambdas[i]);
@@ -188,8 +188,8 @@ public:
                RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                const int num, const unsigned long output,
                LambdaIndexer &&lambdas) const {
-    const std::string name = std::string(typeid(CRTP).name())
-                             + std::string('::FillEos');
+    static const std::string name = std::string(typeid(CRTP).name())
+      + std::string('::FillEos');
     portableFor(name, 0, num, PORTABLE_LAMBDA(const int i) {
         static_cast<CRTP const&>(*this).FillEos(
           rhos[i], temps[i], energies[i], presses[i], cvs[i], bmods[i], output,
@@ -205,6 +205,9 @@ public:
               RealIndexer &&dpdrs, RealIndexer &&dpdes,
               RealIndexer &&dtdrs, RealIndexer &&dtdes,
               const int num, LambdaIndexer &&lambdas) const {
+    // Get the dervived class
+    auto eos = static_cast<CRTP const&>(*this);
+
     // Lookup at density and energy
     eos.PressureFromDensityInternalEnergy(rhos, sies, num, presses,
                                                 lambdas);
@@ -254,12 +257,15 @@ public:
         }
     );
 
-    return
+    return;
   }
   // Scalar version of PTofRE
   PORTABLE_INLINE_FUNCTION
   void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr,
               Real &dpde, Real &dtdr, Real &dtde) const {
+    // Get the dervived class
+    auto eos = static_cast<CRTP const&>(*this);
+
     press = eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
     temp = eos.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
     const Real drho = rho * 1.0e-6;
@@ -281,3 +287,5 @@ public:
 
 } // eos_base
 } // singularity
+
+#endif
