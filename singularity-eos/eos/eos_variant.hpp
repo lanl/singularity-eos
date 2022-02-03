@@ -17,16 +17,25 @@
 
 #include <ports-of-call/portability.hpp>
 #include <variant/include/mpark/variant.hpp>
-#include <singularity-eos/eos/vector_utils.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 using Real = double;
 
 namespace singularity {
 
-using namespace vector_utils;
+using namespace nullindexer;
 
 template <typename... Ts>
 using eos_variant = mpark::variant<Ts...>;
+
+// Provide default functionality when lambda isn't passed to vector functions
+class NullIndexer {
+ public:
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real *operator[](int i) {
+    return nullptr;
+  }
+};
 
 template <typename... EOSs>
 class Variant {
@@ -547,57 +556,8 @@ class Variant {
     return mpark::visit(
         [&rhos, &sies, &presses, &temps, &dpdrs, &dpdes, &dtdrs, &dtdes,
          &num, &lambdas](const auto &eos) {
-
-          // Lookup at density and energy
-          eos.PressureFromDensityInternalEnergy(rhos, sies, num, presses,
-                                                      lambdas);
-          eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, temps,
-                                                         lambdas);
-          // Peturbation factor
-          Real factor = 1. + 1.0e-06;
-
-          // Perturb densities and do lookups
-          portableFor(
-              'PerturbDensities', 0, num, PORTABLE_LAMBDA(const int i) {
-                rhos[i] *= factor;
-              }
-          );
-          eos.PressureFromDensityInternalEnergy(rhos, sies, num, dpdrs,
-                                                      lambdas);
-          eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, dtdrs,
-                                                         lambdas);
-          
-          // Reset densities, perturb energies, and do lookups
-          portableFor(
-              'PerturbEnergiesResetDensities', 0, num,
-              PORTABLE_LAMBDA(const int i) {
-                sies[i] *= factor;
-                rhos[i] /= factor;
-              }
-          );
-          eos.PressureFromDensityInternalEnergy(rhos, sies, dpdes, num,
-                                                      lambdas);
-          eos.TemperatureFromDensityInternalEnergy(rhos, sies, dtdes, num,
-                                                         lambdas);
-
-          // Reset the energies to their original values
-          portableFor(
-              'ResetEnergies', 0, num, PORTABLE_LAMBDA(const int i) {
-                sies[i] /= factor;
-              }
-          );
-
-          // Calculate the derivatives
-          portableFor(
-              'CalculateDerivatives', 0., num, PORTABLE_LAMBDA(const int i) {
-                dpdrs[i] = (dpdrs[i] - presses[i]) / (rhos[i] * (1. - factor));
-                dpdes[i] = (dpdes[i] - presses[i]) / (sies[i] * (1. - factor));
-                dtdrs[i] = (dtdrs[i] - temps[i]) / (rhos[i] * (1. - factor));
-                dtdes[i] = (dtdes[i] - temps[i]) / (sies[i] * (1. - factor));
-              }
-          );
-
-          return;
+          return eos.PTofRE(rhos, sies, presses, temps, dpdrs, dpdes, dtdrs,
+                            dtdes, num, lambdas);
         },
         eos_);
   }
