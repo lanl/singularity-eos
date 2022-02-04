@@ -19,13 +19,13 @@
 
 #include <ports-of-call/portability.hpp>
 
-namespace singularity {
-namespace eos_base {
-
 // Macro for portableFor naming
-#define MEMBER_FUNC_NAME() \
+#define SG_MEMBER_FUNC_NAME() \
   (std::string(typeid(CRTP).name()) \
     + std::string("::") + std::string(__func__))
+
+namespace singularity {
+namespace eos_base {
 
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
@@ -45,7 +45,7 @@ public:
                                             RealIndexer &&temperatures,
                                             const int num,
                                             LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         temperatures[i] = static_cast<CRTP const&>(*this).TemperatureFromDensityInternalEnergy(
@@ -60,7 +60,7 @@ public:
                                             RealIndexer &&sies,
                                             const int num,
                                             LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         sies[i] = static_cast<CRTP const&>(*this).InternalEnergyFromDensityTemperature(
@@ -75,7 +75,7 @@ public:
                                       RealIndexer &&pressures,
                                       const int num,
                                       LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         pressures[i] = static_cast<CRTP const&>(*this).PressureFromDensityTemperature(
@@ -90,7 +90,7 @@ public:
                                          RealIndexer &&pressures,
                                          const int num,
                                          LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         pressures[i] = static_cast<CRTP const&>(*this).PressureFromDensityInternalEnergy(
@@ -105,7 +105,7 @@ public:
                                           RealIndexer &&cvs,
                                           const int num,
                                           LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         cvs[i] = static_cast<CRTP const&>(*this).SpecificHeatFromDensityTemperature(
@@ -120,7 +120,7 @@ public:
                                              RealIndexer &&cvs,
                                              const int num,
                                              LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         cvs[i] = static_cast<CRTP const&>(*this).SpecificHeatFromDensityInternalEnergy(
@@ -135,7 +135,7 @@ public:
                                          RealIndexer &&bmods,
                                          const int num,
                                          LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         bmods[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
@@ -150,7 +150,7 @@ public:
                                             RealIndexer &&bmods,
                                             const int num,
                                             LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         bmods[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
@@ -165,7 +165,7 @@ public:
                                             RealIndexer &&gm1s,
                                             const int num,
                                             LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         gm1s[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
@@ -180,7 +180,7 @@ public:
                                                RealIndexer &&gm1s,
                                                const int num,
                                                LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         gm1s[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
@@ -194,7 +194,7 @@ public:
                RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                const int num, const unsigned long output,
                LambdaIndexer &&lambdas) const {
-    static auto const name = MEMBER_FUNC_NAME();
+    static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         static_cast<CRTP const&>(*this).FillEos(
