@@ -39,6 +39,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # TODO: do we always depend on eospac? 
     depends_on("eospac")
+    variant("eospac", default=True, description="Pull in EOSPAC")
 
     # building/testing/docs
     depends_on("cmake@3.14:")
