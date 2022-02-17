@@ -153,7 +153,7 @@ public:
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
-        bmods[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
+        bmods[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityInternalEnergy(
           rhos[i], sies[i], lambdas[i]);
       }
     );
@@ -168,7 +168,7 @@ public:
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
-        gm1s[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
+        gm1s[i] = static_cast<CRTP const&>(*this).GruneisenParamFromDensityTemperature(
           rhos[i], temperatures[i], lambdas[i]);
       }
     );
@@ -183,7 +183,7 @@ public:
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
-        gm1s[i] = static_cast<CRTP const&>(*this).BulkModulusFromDensityTemperature(
+        gm1s[i] = static_cast<CRTP const&>(*this).GruneisenParamFromDensityInternalEnergy(
           rhos[i], sies[i], lambdas[i]);
       }
     );
