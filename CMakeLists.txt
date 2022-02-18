@@ -329,7 +329,7 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
    install(TARGETS stellarcollapse2spiner DESTINATION bin)
 endif()
 
-install(TARGETS eos singularity-eos DESTINATION lib)
+install(TARGETS eos singularity-eos eospac-wrapper DESTINATION lib)
 if(SINGULARITY_BUILD_SESAME2SPINER)
   if(SINGULARITY_USE_EOSPAC)
     if(SINGULARITY_USE_HDF5)
