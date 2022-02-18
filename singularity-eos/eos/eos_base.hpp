@@ -64,7 +64,7 @@ public:
     static auto const cname = name.c_str();
     portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
         sies[i] = static_cast<CRTP const&>(*this).InternalEnergyFromDensityTemperature(
-          rhos[i], rhos[i], lambdas[i]);
+          rhos[i], temperatures[i], lambdas[i]);
       }
     );
   }
