@@ -285,7 +285,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       WHEN("A bulk modulus lookup is performed") {
         std::array<Real, num> bulkmodulus;
         auto presult = bulkmodulus.data();
-        eos.SpecificHeatFromDensityInternalEnergy(pdensity, penergy, presult,
+        eos.BulkModulusFromDensityInternalEnergy(pdensity, penergy, presult,
                                                   num, lambdas);
         THEN("The returned bulk modulus should be equal to the true bulk "
               "modulus") {
@@ -324,6 +324,51 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
         THEN("The returned energy should be equal to the true energy") {
           for (int i; i < num; i++) {
             REQUIRE(energy[i] == Approx(energy_true[i]));
+          }
+        }
+      }
+      WHEN("A pressure lookup is performed") {
+        std::array<Real, num> pressure;
+        auto presult = pressure.data();
+        eos.PressureFromDensityTemperature(pdensity, ptemperature,
+                                           presult, num, lambdas);
+        THEN("The returned pressure should be equal to the true pressure") {
+          for (int i; i < num; i++) {
+            REQUIRE(pressure[i] == Approx(pressure_true[i]));
+          }
+        }
+      }
+      WHEN("A heat capacity lookup is performed") {
+        std::array<Real, num> heatcapacity;
+        auto presult = heatcapacity.data();
+        eos.SpecificHeatFromDensityTemperature(pdensity, ptemperature,
+                                               presult, num, lambdas);
+        THEN("The returned heat capacity should be constant") {
+          for (int i; i < num; i++) {
+            REQUIRE(heatcapacity[i] == Approx(Cv));
+          }
+        }
+      }
+      WHEN("A bulk modulus lookup is performed") {
+        std::array<Real, num> bulkmodulus;
+        auto presult = bulkmodulus.data();
+        eos.BulkModulusFromDensityTemperature(pdensity, ptemperature,
+                                              presult, num, lambdas);
+        THEN("The returned bulk modulus should be equal to the true bulk "
+              "modulus") {
+          for (int i; i < num; i++) {
+            REQUIRE(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
+          }
+        }
+      }
+      WHEN("A Gruneisen parameter lookup is performed") {
+        std::array<Real, num> gruneisen;
+        auto presult = gruneisen.data();
+        eos.GruneisenParamFromDensityTemperature(pdensity, ptemperature,
+                                                 presult, num, lambdas);
+        THEN("The returned Gruneisen parameter should be constant") {
+          for (int i; i < num; i++) {
+            REQUIRE(gruneisen[i] == Approx(gm1));
           }
         }
       }
