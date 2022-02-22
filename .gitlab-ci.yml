@@ -155,6 +155,7 @@ before_script:
             -DSINGULARITY_BUILD_TESTS=ON \
             -DSINGULARITY_TEST_SESAME=ON \
             -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
+            -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_FORTRAN=$([ ${SINGULARITY_USE_FORTRAN} = "true" ] && echo ON || echo OFF) \
             ..
     - make -j
@@ -209,6 +210,13 @@ test_gnu_power9:
   <<: *job_def
   extends: .test
   variables:
+    <<: *power9
+
+test_gnu_power9_gpu:
+  <<: *job_def
+  extends: .test
+  variables:
+    SINGULARITY_USE_CUDA: ON
     <<: *power9
 
 install_gnu_skylake_fort:
