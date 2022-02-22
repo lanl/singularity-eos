@@ -159,7 +159,7 @@ before_script:
             -DSINGULARITY_TEST_SESAME=ON \
             -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
             -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
-            -SINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
+            -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_FORTRAN=$([ ${SINGULARITY_USE_FORTRAN} = "true" ] && echo ON || echo OFF) \
             ..
     - make -j
