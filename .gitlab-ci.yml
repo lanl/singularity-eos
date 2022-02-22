@@ -45,6 +45,9 @@ before_script:
 .buildtype_release: &buildtype_release
   BUILD_TYPE: "Release"
 
+.gpu: &gpu
+  SINGULARITY_USE_CUDA: "true"
+
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"
 
@@ -215,9 +218,9 @@ test_gnu_power9:
 test_gnu_power9_gpu:
   <<: *job_def
   extends: .test
-  variables:
-    SINGULARITY_USE_CUDA: ON
+  variables:    
     <<: *power9
+    <<: *gpu
 
 install_gnu_skylake_fort:
   <<: *job_def
