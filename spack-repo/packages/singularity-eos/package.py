@@ -37,8 +37,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     # TODO: decide if this should stay in the source tree, or split out a seperate dependency build
     #depends_on("mpark-variant")
 
-    # TODO: do we always depend on eospac? 
-    depends_on("eospac")
     variant("eospac", default=True, description="Pull in EOSPAC")
 
     # building/testing/docs
@@ -52,6 +50,8 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # linear algebra when not using GPUs
     depends_on("eigen@3.3.8", when="~cuda")
+
+    depends_on("eospac", when="+eospac")
 
     # set up kokkos offloading dependencies
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
