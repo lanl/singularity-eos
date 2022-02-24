@@ -26,11 +26,14 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
 
+using namespace eos_base;
+
 template <typename T>
-class ShiftedEOS {
+class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
  public:
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
@@ -137,6 +140,12 @@ class ShiftedEOS {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
     sie += shift_;
   }
+
+  // Vector functions that overload the scalar versions declared here. For
+  // modifiers, we really should just define vector versions of these member
+  // functions that apply the modifier over the entire input array instead of
+  // inheriting the looping behavior from the EosBase
+  SG_ADD_BASE_CLASS_USINGS(ShiftedEOS<T>)
 
  private:
   T t_;

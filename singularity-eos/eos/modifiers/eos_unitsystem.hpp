@@ -26,8 +26,11 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
+
+using namespace eos_base;
 
 // tag dispatch for constructors for UnitSystem
 namespace eos_units_init {
@@ -38,7 +41,7 @@ static struct LengthTimeUnitsInit {
 } // namespace eos_units_init
 
 template <typename T>
-class UnitSystem {
+class UnitSystem : public EosBase<UnitSystem<T>> {
  public:
   // move semantics ensures dynamic memory comes along for the ride
   // TODO(JMM): Entropy unit needed?
@@ -207,6 +210,12 @@ class UnitSystem {
     dpde *= inv_dpde_unit_;
     dvdt *= inv_dvdt_unit_;
   }
+
+  // Vector functions that overload the scalar versions declared here. For
+  // modifiers, we really should just define vector versions of these member
+  // functions that apply the modifier over the entire input array instead of
+  // inheriting the looping behavior from the EosBase
+  SG_ADD_BASE_CLASS_USINGS(UnitSystem<T>)
 
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return t_.nlambda(); }

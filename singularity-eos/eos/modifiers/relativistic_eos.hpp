@@ -26,11 +26,14 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
 
+using namespace eos_base;
+
 template <typename T>
-class RelativisticEOS {
+class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
  public:
   // move semantics ensures dynamic memory comes along for the ride
   RelativisticEOS(T &&t, const Real cl)
@@ -130,6 +133,12 @@ class RelativisticEOS {
                               Real *lambda = nullptr) const {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
+
+  // Vector functions that overload the scalar versions declared here. For
+  // modifiers, we really should just define vector versions of these member
+  // functions that apply the modifier over the entire input array instead of
+  // inheriting the looping behavior from the EosBase
+  SG_ADD_BASE_CLASS_USINGS(RelativisticEOS<T>)
 
  private:
   T t_;
