@@ -27,6 +27,23 @@
 namespace singularity {
 namespace eos_base {
 
+// This Macro adds the `using` statements that allow for the base class
+// vector functionality to overload the scalar implementations in the derived
+// classes
+#define SG_ADD_BASE_CLASS_USINGS(EOSDERIVED) \
+using EosBase<EOSDERIVED>::TemperatureFromDensityInternalEnergy;\
+using EosBase<EOSDERIVED>::InternalEnergyFromDensityTemperature;\
+using EosBase<EOSDERIVED>::PressureFromDensityTemperature;\
+using EosBase<EOSDERIVED>::PressureFromDensityInternalEnergy;\
+using EosBase<EOSDERIVED>::SpecificHeatFromDensityTemperature;\
+using EosBase<EOSDERIVED>::SpecificHeatFromDensityInternalEnergy;\
+using EosBase<EOSDERIVED>::BulkModulusFromDensityTemperature;\
+using EosBase<EOSDERIVED>::BulkModulusFromDensityInternalEnergy;\
+using EosBase<EOSDERIVED>::GruneisenParamFromDensityTemperature;\
+using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;\
+using EosBase<EOSDERIVED>::FillEos;
+
+
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
 various member functions can be defined.
