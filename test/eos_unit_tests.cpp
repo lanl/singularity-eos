@@ -78,8 +78,8 @@ If this doesn't happen, the resulting namespace conflict can cause undefined
 behavior. This can include running bilions of assertions and unreproducible test
 results.
 
-I (JHP) haven't tested whether this also happens across SCENARIOS, but it's
-likely safer to keep sections unique across scenarios as well.
+I (JHP) haven't tested whether this also happens across SCENARIOS, but Jonah
+thinks that is probably okay.
 */
 
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
@@ -249,23 +249,42 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
 }
 
 SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
+
   GIVEN("Parameters for an ideal gas") {
+    // Create ideal gas EOS ojbect
     constexpr Real Cv = 5.0;
     constexpr Real gm1 = 0.4;
-    IdealGas eos(gm1, Cv);
+    EOS eos = IdealGas(gm1, Cv);
+
     GIVEN("Energies and densities") {
+      // Input arrays and pointers
       constexpr int num = 3;
       constexpr std::array<Real, num> density {1.0, 2.0, 5.0};
       constexpr std::array<Real, num> energy {5.0, 10.0, 15.0};
-      Real* lambdas[num];
+      std::array<Real*, num> lambdas;
+
+      auto plambdas = lambdas.data();
       auto pdensity = density.data();
       auto penergy = energy.data();
+
+      // Gold standard values
       constexpr std::array<Real, num> pressure_true {2.0, 8.0, 30.0};
       constexpr std::array<Real, num> temperature_true {1., 2., 3.};
       constexpr std::array<Real, num> bulkmodulus_true {2.8, 11.2, 42.};
+
+      // Output arrays and pointers
+      std::array<Real, num> temperature;
+      std::array<Real, num> pressure;
+      std::array<Real, num> heatcapacity;
+      std::array<Real, num> bulkmodulus;
+      std::array<Real, num> gruneisen;
+      auto ptemperature = temperature.data();
+      auto ppressure = pressure.data();
+      auto pheatcapacity = heatcapacity.data();
+      auto pbulkmodulus = bulkmodulus.data();
+      auto pgruneisen = gruneisen.data();
+
       WHEN("A T(rho, e) lookup is performed") {
-        std::array<Real, num> temperature;
-        auto ptemperature = temperature.data();
         eos.TemperatureFromDensityInternalEnergy(pdensity, penergy,
                                                  ptemperature, num, lambdas);
         THEN("The returned T(rho, e) should be equal to the true "
@@ -277,9 +296,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           }
         }
       }
+
       WHEN("A P(rho, e) lookup is performed") {
-        std::array<Real, num> pressure;
-        auto ppressure = pressure.data();
         eos.PressureFromDensityInternalEnergy(pdensity, penergy, ppressure,
                                               num, lambdas);
         THEN("The returned P(rho, e) should be equal to the true pressure") {
@@ -290,9 +308,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           }
         }
       }
+
       WHEN("A C_v(rho, e) lookup is performed") {
-        std::array<Real, num> heatcapacity;
-        auto pheatcapacity = heatcapacity.data();
         eos.SpecificHeatFromDensityInternalEnergy(pdensity, penergy,
                                                   pheatcapacity, num, lambdas);
         THEN("The returned C_v(rho, e) should be constant") {
@@ -303,9 +320,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           }
         }
       }
+
       WHEN("A B_S(rho, e) lookup is performed") {
-        std::array<Real, num> bulkmodulus;
-        auto pbulkmodulus = bulkmodulus.data();
         eos.BulkModulusFromDensityInternalEnergy(pdensity, penergy,
                                                  pbulkmodulus, num, lambdas);
         THEN("The returned B_S(rho, e) should be equal to the true bulk "
@@ -317,9 +333,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           }
         }
       }
+
       WHEN("A Gamma(rho, e) lookup is performed") {
-        std::array<Real, num> gruneisen;
-        auto pgruneisen = gruneisen.data();
         eos.GruneisenParamFromDensityInternalEnergy(pdensity, penergy,
                                                     pgruneisen, num, lambdas);
         THEN("The returned Gamma(rho, e) should be constant") {
@@ -332,18 +347,33 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       }
     }
     GIVEN("Densities and temperatures") {
+      // Input arrays and pointers
       constexpr int num = 3;
       constexpr std::array<Real, num> density {1.0, 2.0, 5.0};
       constexpr std::array<Real, num> temperature {50., 100., 150.};
-      Real* lambdas[num];
+      std::array<Real*, num> lambdas;
+      auto plambdas = lambdas.data();
       auto pdensity = density.data();
       auto ptemperature = temperature.data();
+
+      // Gold standard values
       constexpr std::array<Real, num> energy_true {250., 500., 750.};
       constexpr std::array<Real, num> pressure_true {100., 400., 1500.};
       constexpr std::array<Real, num> bulkmodulus_true {140., 560., 2100.};
+
+      // Output arrays and pointers
+      std::array<Real, num> energy;
+      std::array<Real, num> pressure;
+      std::array<Real, num> heatcapacity;
+      std::array<Real, num> bulkmodulus;
+      std::array<Real, num> gruneisen;
+      auto penergy = energy.data();
+      auto ppressure = pressure.data();
+      auto pheatcapacity = heatcapacity.data();
+      auto pbulkmodulus = bulkmodulus.data();
+      auto pgruneisen = gruneisen.data();
+
       WHEN("A e(rho, T) lookup is performed") {
-        std::array<Real, num> energy;
-        auto penergy = energy.data();
         eos.InternalEnergyFromDensityTemperature(pdensity, ptemperature,
                                                  penergy, num, lambdas);
         THEN("The returned e(rho, T) should be equal to the true energy") {
@@ -354,9 +384,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           }
         }
       }
+
       WHEN("A P(rho, T) lookup is performed") {
-        std::array<Real, num> pressure;
-        auto ppressure = pressure.data();
         eos.PressureFromDensityTemperature(pdensity, ptemperature,
                                            ppressure, num, lambdas);
         THEN("The returned P(rho, T) should be equal to the true pressure") {
@@ -367,9 +396,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           }
         }
       }
+
       WHEN("A C_v(rho, T) lookup is performed") {
-        std::array<Real, num> heatcapacity;
-        auto pheatcapacity = heatcapacity.data();
         eos.SpecificHeatFromDensityTemperature(pdensity, ptemperature,
                                                pheatcapacity, num, lambdas);
         THEN("The returned C_v(rho, T) should be constant") {
@@ -380,9 +408,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           }
         }
       }
+
       WHEN("A B_S(rho, T) lookup is performed") {
-        std::array<Real, num> bulkmodulus;
-        auto pbulkmodulus = bulkmodulus.data();
         eos.BulkModulusFromDensityTemperature(pdensity, ptemperature,
                                               pbulkmodulus, num, lambdas);
         THEN("The returned B_S(rho, T) should be equal to the true bulk "
@@ -394,9 +421,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           }
         }
       }
+
       WHEN("A Gamma(rho, T) lookup is performed") {
-        std::array<Real, num> gruneisen;
-        auto pgruneisen = gruneisen.data();
         eos.GruneisenParamFromDensityTemperature(pdensity, ptemperature,
                                                  pgruneisen, num, lambdas);
         THEN("The returned Gamma(rho, T) should be constant") {
