@@ -205,26 +205,13 @@ class Variant {
   }
 
   PORTABLE_INLINE_FUNCTION
-  void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr,
-              Real &dpde, Real &dtdr, Real &dtde) const {
+  void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp,
+              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
     return mpark::visit(
         [&rho, &sie, &lambda, &press, &temp, &dpdr, &dpde, &dtdr,
          &dtde](const auto &eos) {
-          press = eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
-          temp = eos.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-          const Real drho = rho * 1.0e-6;
-          const Real de = sie * 1.0e-6;
-          const Real Pr = eos.PressureFromDensityInternalEnergy(rho + drho, sie, lambda);
-          const Real Pe = eos.PressureFromDensityInternalEnergy(rho, sie + de, lambda);
-          const Real Tr =
-              eos.TemperatureFromDensityInternalEnergy(rho + drho, sie, lambda);
-          const Real Te = eos.TemperatureFromDensityInternalEnergy(rho, sie + de, lambda);
-          dpdr = (Pr - press) / drho;
-          dpde = (Pe - press) / de;
-          dtdr = (Tr - temp) / drho;
-          dtde = (Te - temp) /
-                 de; // Would it be better to skip the calculation of Te and return 1/cv?
-          return;
+          return eos.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr,
+                            dtde);
         },
         eos_);
   }
@@ -233,7 +220,7 @@ class Variant {
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                             Real *lambda, Real &rho, Real &sie) const {
     return mpark::visit(
-        [&press, &temp, &lambda, &rho, &sie](const auto &eos) {
+        [&press, &temp, lambda, &rho, &sie](const auto &eos) {
           return eos.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
         },
         eos_);

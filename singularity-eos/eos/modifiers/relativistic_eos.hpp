@@ -122,11 +122,11 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
     t_.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
   }
 
-  PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
-    t_.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr, dtde);
-  }
+  // PORTABLE_FUNCTION
+  // void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+  //             Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
+  //   t_.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr, dtde);
+  // }
   PORTABLE_FUNCTION
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
@@ -134,10 +134,7 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 
-  // Vector functions that overload the scalar versions declared here. For
-  // modifiers, we really should just define vector versions of these member
-  // functions that apply the modifier over the entire input array instead of
-  // inheriting the looping behavior from the EosBase
+  // Vector functions that overload the scalar versions declared here.
   SG_ADD_BASE_CLASS_USINGS(RelativisticEOS<T>)
 
  private:

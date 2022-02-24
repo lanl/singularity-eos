@@ -145,21 +145,18 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
     sie = sie * scale_;
   }
 
-  PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
-    t_.PTofRE(scale_ * rho, inv_scale_ * sie, lambda, press, temp, dpdr, dpde, dtdr,
-              dtde);
-    dpdr = dpdr * scale_;
-    dtdr = dtdr * scale_;
-    dpde = dpde * inv_scale_;
-    dtde = dtde * inv_scale_;
-  }
+  // PORTABLE_FUNCTION
+  // void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+  //             Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
+  //   t_.PTofRE(scale_ * rho, inv_scale_ * sie, lambda, press, temp, dpdr, dpde, dtdr,
+  //             dtde);
+  //   dpdr = dpdr * scale_;
+  //   dtdr = dtdr * scale_;
+  //   dpde = dpde * inv_scale_;
+  //   dtde = dtde * inv_scale_;
+  // }
 
-  // Vector functions that overload the scalar versions declared here. For
-  // modifiers, we really should just define vector versions of these member
-  // functions that apply the modifier over the entire input array instead of
-  // inheriting the looping behavior from the EosBase
+  // Vector functions that overload the scalar versions declared here.
   SG_ADD_BASE_CLASS_USINGS(ScaledEOS<T>)
 
  private:

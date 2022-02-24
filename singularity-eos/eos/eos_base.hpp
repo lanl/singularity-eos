@@ -41,8 +41,8 @@ using EosBase<EOSDERIVED>::BulkModulusFromDensityTemperature;\
 using EosBase<EOSDERIVED>::BulkModulusFromDensityInternalEnergy;\
 using EosBase<EOSDERIVED>::GruneisenParamFromDensityTemperature;\
 using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;\
+using EosBase<EOSDERIVED>::PTofRE;\
 using EosBase<EOSDERIVED>::FillEos;
-
 
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
@@ -228,59 +228,14 @@ public:
               RealIndexer &&dpdrs, RealIndexer &&dpdes,
               RealIndexer &&dtdrs, RealIndexer &&dtdes,
               const int num, LambdaIndexer &&lambdas) const {
-    // Get the dervived class
-    auto eos = static_cast<CRTP const&>(*this);
-
-    // Lookup at density and energy
-    eos.PressureFromDensityInternalEnergy(rhos, sies, num, presses,
-                                                lambdas);
-    eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, temps,
-                                                   lambdas);
-    // Peturbation factor
-    Real factor = 1. + 1.0e-06;
-
-    // Perturb densities and do lookups
-    portableFor(
-        'PerturbDensities', 0, num, PORTABLE_LAMBDA(const int i) {
-          rhos[i] *= factor;
-        }
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        static_cast<CRTP const&>(*this).PTofRE(
+          rhos[i], sies[i], lambdas[i], presses[i], temps[i], dpdrs[i],
+          dpdes[i], dtdrs[i], dtdes[i]);
+      }
     );
-    eos.PressureFromDensityInternalEnergy(rhos, sies, num, dpdrs,
-                                                lambdas);
-    eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, dtdrs,
-                                                   lambdas);
-
-    // Reset densities, perturb energies, and do lookups
-    portableFor(
-        'PerturbEnergiesResetDensities', 0, num,
-        PORTABLE_LAMBDA(const int i) {
-          sies[i] *= factor;
-          rhos[i] /= factor;
-        }
-    );
-    eos.PressureFromDensityInternalEnergy(rhos, sies, dpdes, num,
-                                                lambdas);
-    eos.TemperatureFromDensityInternalEnergy(rhos, sies, dtdes, num,
-                                                   lambdas);
-
-    // Reset the energies to their original values
-    portableFor(
-        'ResetEnergies', 0, num, PORTABLE_LAMBDA(const int i) {
-          sies[i] /= factor;
-        }
-    );
-
-    // Calculate the derivatives
-    portableFor(
-        'CalculateDerivatives', 0., num, PORTABLE_LAMBDA(const int i) {
-          dpdrs[i] = (dpdrs[i] - presses[i]) / (rhos[i] * (1. - factor));
-          dpdes[i] = (dpdes[i] - presses[i]) / (sies[i] * (1. - factor));
-          dtdrs[i] = (dtdrs[i] - temps[i]) / (rhos[i] * (1. - factor));
-          dtdes[i] = (dtdes[i] - temps[i]) / (sies[i] * (1. - factor));
-        }
-    );
-
-    return;
   }
   // Scalar version of PTofRE
   PORTABLE_INLINE_FUNCTION
@@ -305,6 +260,69 @@ public:
            de; // Would it be better to skip the calculation of Te and return 1/cv?
     return;
   }
+  // Specialzied vector version of PTofRE maybe more suited for EOSPAC
+  // }
+  // template<typename RealIndexer, typename LambdaIndexer>
+  // inline
+  // void PTofRE(RealIndexer &&rhos, RealIndexer &&sies,
+  //             RealIndexer &&presses, RealIndexer &&temps,
+  //             RealIndexer &&dpdrs, RealIndexer &&dpdes,
+  //             RealIndexer &&dtdrs, RealIndexer &&dtdes,
+  //             const int num, LambdaIndexer &&lambdas) const {
+  //   // Get the dervived class
+  //   auto eos = static_cast<CRTP const&>(*this);
+
+  //   // Lookup at density and energy
+  //   eos.PressureFromDensityInternalEnergy(rhos, sies, num, presses,
+  //                                               lambdas);
+  //   eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, temps,
+  //                                                  lambdas);
+  //   // Peturbation factor
+  //   Real factor = 1. + 1.0e-06;
+
+  //   // Perturb densities and do lookups
+  //   portableFor(
+  //       'PerturbDensities', 0, num, PORTABLE_LAMBDA(const int i) {
+  //         rhos[i] *= factor;
+  //       }
+  //   );
+  //   eos.PressureFromDensityInternalEnergy(rhos, sies, num, dpdrs,
+  //                                               lambdas);
+  //   eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, dtdrs,
+  //                                                  lambdas);
+
+  //   // Reset densities, perturb energies, and do lookups
+  //   portableFor(
+  //       'PerturbEnergiesResetDensities', 0, num,
+  //       PORTABLE_LAMBDA(const int i) {
+  //         sies[i] *= factor;
+  //         rhos[i] /= factor;
+  //       }
+  //   );
+  //   eos.PressureFromDensityInternalEnergy(rhos, sies, dpdes, num,
+  //                                               lambdas);
+  //   eos.TemperatureFromDensityInternalEnergy(rhos, sies, dtdes, num,
+  //                                                  lambdas);
+
+  //   // Reset the energies to their original values
+  //   portableFor(
+  //       'ResetEnergies', 0, num, PORTABLE_LAMBDA(const int i) {
+  //         sies[i] /= factor;
+  //       }
+  //   );
+
+  //   // Calculate the derivatives
+  //   portableFor(
+  //       'CalculateDerivatives', 0., num, PORTABLE_LAMBDA(const int i) {
+  //         dpdrs[i] = (dpdrs[i] - presses[i]) / (rhos[i] * (1. - factor));
+  //         dpdes[i] = (dpdes[i] - presses[i]) / (sies[i] * (1. - factor));
+  //         dtdrs[i] = (dtdrs[i] - temps[i]) / (rhos[i] * (1. - factor));
+  //         dtdes[i] = (dtdes[i] - temps[i]) / (sies[i] * (1. - factor));
+  //       }
+  //   );
+
+  //   return;
+  // }
 };
 } // eos_base
 } // singularity
