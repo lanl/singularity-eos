@@ -1127,13 +1127,13 @@ class EOSPAC : public EosBase<EOSPAC> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   int matid_;
-  static constexpr int NT = 6;
+  static constexpr int NT = 5;
   EOS_INTEGER PofRT_table_;
   EOS_INTEGER TofRE_table_;
   EOS_INTEGER EofRT_table_;
   EOS_INTEGER RofPT_table_;
   EOS_INTEGER TofRP_table_;
-  EOS_INTEGER PofRE_table_;
+  // EOS_INTEGER PofRE_table_;
   EOS_INTEGER tablehandle[NT];
   EOS_INTEGER EOS_Info_table_;
   static constexpr Real temp_ref_ = 293;
