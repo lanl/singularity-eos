@@ -47,7 +47,7 @@ before_script:
 
 .gpu: &gpu
   SINGULARITY_USE_CUDA: "true"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos+kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
 
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"
