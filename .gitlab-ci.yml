@@ -151,7 +151,6 @@ before_script:
     - if [ "$POWER9" = "true" ]; then module load cuda; fi
     - module list
     - mkdir -p build install
-    - sed -i '157s/REQUIRED//' CMakeLists.txt
     - cd build
     - |
       cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install \
