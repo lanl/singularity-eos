@@ -31,7 +31,7 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
                              ${CMAKE_SOURCE_DIR}/utils/ports-of-call
                              ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
 endif()
-catch_discover_tests(eos_unit_tests)
+catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
 
 if (SINGULARITY_BUILD_CLOSURE)
   add_executable(test_pte
