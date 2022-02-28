@@ -68,7 +68,7 @@ PORTABLE_INLINE_FUNCTION Real myAtan(Real x, Real shift, Real scale, Real offset
 }
 
 /*
-A note for creating tests within the Catch2 framework:
+Notes for creating tests within the Catch2 framework:
 
 Within each "SCENARIO", the "GIVEN", "WHEN", "THEN" , etc. blocks all are
 aliases for "SECTION" and the Catch2 documentation states that all "SECTION"s
@@ -80,6 +80,10 @@ results.
 
 I (JHP) haven't tested whether this also happens across SCENARIOS, but Jonah
 thinks that is probably okay.
+
+There also seems to be an issue with a REQUIRE statment in a loop causing a
+timeout for the test when run with `ctest -V`. Changing these to CHECK
+statements seems to solve the issue.
 */
 
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
@@ -292,7 +296,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            REQUIRE(temperature[i] == Approx(temperature_true[i]));
+            CHECK(temperature[i] == Approx(temperature_true[i]));
           }
         }
       }
@@ -304,7 +308,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            REQUIRE(pressure[i] == Approx(pressure_true[i]));
+            CHECK(pressure[i] == Approx(pressure_true[i]));
           }
         }
       }
@@ -316,7 +320,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            REQUIRE(heatcapacity[i] == Approx(Cv));
+            CHECK(heatcapacity[i] == Approx(Cv));
           }
         }
       }
@@ -329,7 +333,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            REQUIRE(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
+            CHECK(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
           }
         }
       }
@@ -341,7 +345,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            REQUIRE(gruneisen[i] == Approx(gm1));
+            CHECK(gruneisen[i] == Approx(gm1));
           }
         }
       }
@@ -380,7 +384,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            REQUIRE(energy[i] == Approx(energy_true[i]));
+            CHECK(energy[i] == Approx(energy_true[i]));
           }
         }
       }
@@ -392,7 +396,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            REQUIRE(pressure[i] == Approx(pressure_true[i]));
+            CHECK(pressure[i] == Approx(pressure_true[i]));
           }
         }
       }
@@ -404,7 +408,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            REQUIRE(heatcapacity[i] == Approx(Cv));
+            CHECK(heatcapacity[i] == Approx(Cv));
           }
         }
       }
@@ -417,7 +421,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            REQUIRE(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
+            CHECK(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
           }
         }
       }
@@ -429,7 +433,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            REQUIRE(gruneisen[i] == Approx(gm1));
+            CHECK(gruneisen[i] == Approx(gm1));
           }
         }
       }
