@@ -664,10 +664,10 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   Real lEOffset() const { return lEOffset_; }
   Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
   Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
-  Real TMin() const { return fromLog_(sie_.range(0).min(), lTOffset_); }
-  Real TMax() const { return fromLog_(sie_.range(0).max(), lTOffset_); }
-  Real sieMin() const { return fromLog_(T_.range(0).min(), lEOffset_); }
-  Real sieMax() const { return fromLog_(T_.range(0).max(), lEOffset_); }
+  Real TMin() const { return fromLog_(T_.range(0).min(), lTOffset_); }
+  Real TMax() const { return fromLog_(T_.range(0).max(), lTOffset_); }
+  Real sieMin() const { return fromLog_(sie_.range(0).min(), lEOffset_); }
+  Real sieMax() const { return fromLog_(sie_.range(0).max(), lEOffset_); }
 
   static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
@@ -874,11 +874,9 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     return out;
     // return out < lRhoMin_ ? lRhoMin_ : out;
   }
-  // TODO(JMM): Use log K2MeV so we can do addition instead of
-  // multiplication?
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   lT_(const Real T) const noexcept {
-    return toLog_(T * K2MeV_, lTOffset_);
+    return toLog_(T, lTOffset_);
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   rho_(const Real lRho) const noexcept {
@@ -887,7 +885,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   T_(const Real lT) const noexcept {
-    return MeV2K_ * fromLog_(lT, lTOffset_);
+    return fromLog_(lT, lTOffset_);
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   le2e_(const Real le) const noexcept {
@@ -961,7 +959,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 
   static constexpr Real MeV2GK_ = 11.604525006;
   static constexpr Real GK2MeV_ = 1. / MeV2GK_;
-  static constexpr Real MeV2K_ = 1.e6 * 1.60217653e-12;
+  static constexpr Real MeV2K_ = 1.e9 * MeV2GK_;
   static constexpr Real K2MeV_ = 1. / MeV2K_;
   static constexpr Real TNormal_ = 5 * GK2MeV_; // Threshold of NSE
   static constexpr Real rhoNormal_ = 2.e12;     // 1./100'th of nuclear density

@@ -17,11 +17,11 @@
 
 namespace singularity {
 
-PORTABLE_FUNCTION Real JWL::ReferenceEnergy(const Real rho) const {
+PORTABLE_FUNCTION Real JWL::ReferencePressure(const Real rho) const {
   const Real x = _rho0 / rho;
   return _A * std::exp(-_R1 * x) + _B * std::exp(-_R2 * x);
 }
-PORTABLE_FUNCTION Real JWL::ReferencePressure(const Real rho) const {
+PORTABLE_FUNCTION Real JWL::ReferenceEnergy(const Real rho) const {
   const Real x = _rho0 / rho;
   return _A / (_rho0 * _R1) * std::exp(-_R1 * x) +
          _B / (_rho0 * _R2) * std::exp(-_R2 * x);
