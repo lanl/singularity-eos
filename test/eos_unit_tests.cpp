@@ -80,10 +80,6 @@ results.
 
 I (JHP) haven't tested whether this also happens across SCENARIOS, but Jonah
 thinks that is probably okay.
-
-There also seems to be an issue with a REQUIRE statment in a loop causing a
-timeout for the test when run with `ctest -V`. Changing these to CHECK
-statements seems to solve the issue.
 */
 
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
@@ -296,7 +292,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            CHECK(temperature[i] == Approx(temperature_true[i]));
+            REQUIRE(temperature[i] == Approx(temperature_true[i]));
           }
         }
       }
@@ -308,7 +304,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            CHECK(pressure[i] == Approx(pressure_true[i]));
+            REQUIRE(pressure[i] == Approx(pressure_true[i]));
           }
         }
       }
@@ -320,7 +316,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            CHECK(heatcapacity[i] == Approx(Cv));
+            REQUIRE(heatcapacity[i] == Approx(Cv));
           }
         }
       }
@@ -333,7 +329,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            CHECK(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
+            REQUIRE(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
           }
         }
       }
@@ -345,7 +341,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Energy: "
                  << energy[i]);
-            CHECK(gruneisen[i] == Approx(gm1));
+            REQUIRE(gruneisen[i] == Approx(gm1));
           }
         }
       }
@@ -384,7 +380,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            CHECK(energy[i] == Approx(energy_true[i]));
+            REQUIRE(energy[i] == Approx(energy_true[i]));
           }
         }
       }
@@ -396,7 +392,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            CHECK(pressure[i] == Approx(pressure_true[i]));
+            REQUIRE(pressure[i] == Approx(pressure_true[i]));
           }
         }
       }
@@ -408,7 +404,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            CHECK(heatcapacity[i] == Approx(Cv));
+            REQUIRE(heatcapacity[i] == Approx(Cv));
           }
         }
       }
@@ -421,7 +417,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            CHECK(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
+            REQUIRE(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
           }
         }
       }
@@ -433,7 +429,7 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
           for (int i; i < num; i++) {
             INFO("i: " << i << " Density: " << density[i] << " Temperature: "
                  << temperature[i]);
-            CHECK(gruneisen[i] == Approx(gm1));
+            REQUIRE(gruneisen[i] == Approx(gm1));
           }
         }
       }
