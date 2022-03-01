@@ -67,20 +67,15 @@ PORTABLE_INLINE_FUNCTION Real myAtan(Real x, Real shift, Real scale, Real offset
   return scale * atan(x - shift) + offset;
 }
 
-/*
-Notes for creating tests within the Catch2 framework:
-
-Within each "SCENARIO", the "GIVEN", "WHEN", "THEN" , etc. blocks all are
-aliases for "SECTION" and the Catch2 documentation states that all "SECTION"s
-must have unique names. Even if the "SECTION" is a subsection of another
-"SECTION", it still needs to have a completley unique string associated with it.
-If this doesn't happen, the resulting namespace conflict can cause undefined
-behavior. This can include running bilions of assertions and unreproducible test
-results.
-
-I (JHP) haven't tested whether this also happens across SCENARIOS, but Jonah
-thinks that is probably okay.
-*/
+template<typename X, typename Y, typename Z, typename ZT, typename XN, typename YN>
+PORTABLE_INLINE_FUNCTION void array_compare(int num, X &&x, Y &&y, Z &&z, 
+                                            ZT &&ztrue, XN xname, YN yname) {
+  for (int i = 0; i < num; i++) {
+    INFO("i: " << i << " ," << xname << ": " << x[i] << " ," << yname << ": "
+         << y[i]);
+    REQUIRE(z[i] == Approx(ztrue[i]));
+  }
+}
 
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
 
@@ -271,6 +266,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       constexpr std::array<Real, num> pressure_true {2.0, 8.0, 30.0};
       constexpr std::array<Real, num> temperature_true {1., 2., 3.};
       constexpr std::array<Real, num> bulkmodulus_true {2.8, 11.2, 42.};
+      constexpr std::array<Real, num> heatcapacity_true {Cv, Cv, Cv};
+      constexpr std::array<Real, num> gruneisen_true {gm1, gm1, gm1};
 
       // Output arrays and pointers
       std::array<Real, num> temperature;
@@ -289,11 +286,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
                                                  ptemperature, num, lambdas);
         THEN("The returned T(rho, e) should be equal to the true "
              "temperature") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Energy: "
-                 << energy[i]);
-            REQUIRE(temperature[i] == Approx(temperature_true[i]));
-          }
+          array_compare(num, density, energy, temperature, temperature_true,
+                        "Density", "Energy");
         }
       }
 
@@ -301,11 +295,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
         eos.PressureFromDensityInternalEnergy(pdensity, penergy, ppressure,
                                               num, lambdas);
         THEN("The returned P(rho, e) should be equal to the true pressure") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Energy: "
-                 << energy[i]);
-            REQUIRE(pressure[i] == Approx(pressure_true[i]));
-          }
+          array_compare(num, density, energy, pressure, pressure_true,
+                        "Density", "Energy");
         }
       }
 
@@ -313,11 +304,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
         eos.SpecificHeatFromDensityInternalEnergy(pdensity, penergy,
                                                   pheatcapacity, num, lambdas);
         THEN("The returned C_v(rho, e) should be constant") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Energy: "
-                 << energy[i]);
-            REQUIRE(heatcapacity[i] == Approx(Cv));
-          }
+          array_compare(num, density, energy, heatcapacity, heatcapacity_true,
+                        "Density", "Energy");
         }
       }
 
@@ -326,11 +314,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
                                                  pbulkmodulus, num, lambdas);
         THEN("The returned B_S(rho, e) should be equal to the true bulk "
               "modulus") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Energy: "
-                 << energy[i]);
-            REQUIRE(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
-          }
+          array_compare(num, density, energy, bulkmodulus, bulkmodulus_true,
+                        "Density", "Energy");
         }
       }
 
@@ -338,11 +323,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
         eos.GruneisenParamFromDensityInternalEnergy(pdensity, penergy,
                                                     pgruneisen, num, lambdas);
         THEN("The returned Gamma(rho, e) should be constant") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Energy: "
-                 << energy[i]);
-            REQUIRE(gruneisen[i] == Approx(gm1));
-          }
+          array_compare(num, density, energy, gruneisen, gruneisen_true,
+                        "Density", "Energy");
         }
       }
     }
@@ -360,6 +342,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       constexpr std::array<Real, num> energy_true {250., 500., 750.};
       constexpr std::array<Real, num> pressure_true {100., 400., 1500.};
       constexpr std::array<Real, num> bulkmodulus_true {140., 560., 2100.};
+      constexpr std::array<Real, num> heatcapacity_true {Cv, Cv, Cv};
+      constexpr std::array<Real, num> gruneisen_true {gm1, gm1, gm1};
 
       // Output arrays and pointers
       std::array<Real, num> energy;
@@ -377,11 +361,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
         eos.InternalEnergyFromDensityTemperature(pdensity, ptemperature,
                                                  penergy, num, lambdas);
         THEN("The returned e(rho, T) should be equal to the true energy") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Temperature: "
-                 << temperature[i]);
-            REQUIRE(energy[i] == Approx(energy_true[i]));
-          }
+          array_compare(num, density, temperature, energy, energy_true,
+                        "Density", "Temperature");
         }
       }
 
@@ -389,11 +370,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
         eos.PressureFromDensityTemperature(pdensity, ptemperature,
                                            ppressure, num, lambdas);
         THEN("The returned P(rho, T) should be equal to the true pressure") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Temperature: "
-                 << temperature[i]);
-            REQUIRE(pressure[i] == Approx(pressure_true[i]));
-          }
+          array_compare(num, density, temperature, pressure, pressure_true,
+                        "Density", "Temperature");
         }
       }
 
@@ -401,11 +379,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
         eos.SpecificHeatFromDensityTemperature(pdensity, ptemperature,
                                                pheatcapacity, num, lambdas);
         THEN("The returned C_v(rho, T) should be constant") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Temperature: "
-                 << temperature[i]);
-            REQUIRE(heatcapacity[i] == Approx(Cv));
-          }
+          array_compare(num, density, temperature, heatcapacity,
+                        heatcapacity_true, "Density", "Temperature");
         }
       }
 
@@ -414,11 +389,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
                                               pbulkmodulus, num, lambdas);
         THEN("The returned B_S(rho, T) should be equal to the true bulk "
               "modulus") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Temperature: "
-                 << temperature[i]);
-            REQUIRE(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
-          }
+          array_compare(num, density, temperature, bulkmodulus,
+                        bulkmodulus_true, "Density", "Temperature");
         }
       }
 
@@ -426,11 +398,8 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
         eos.GruneisenParamFromDensityTemperature(pdensity, ptemperature,
                                                  pgruneisen, num, lambdas);
         THEN("The returned Gamma(rho, T) should be constant") {
-          for (int i; i < num; i++) {
-            INFO("i: " << i << " Density: " << density[i] << " Temperature: "
-                 << temperature[i]);
-            REQUIRE(gruneisen[i] == Approx(gm1));
-          }
+          array_compare(num, density, temperature, gruneisen, gruneisen_true,
+                        "Density", "Temperature");
         }
       }
     }
