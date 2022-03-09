@@ -631,6 +631,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
   using singularity::IdealGas;
   using singularity::StellarCollapse;
   const std::string savename = "stellar_collapse_ideal_2.sp5";
+  static constexpr Real MeV2K_ = 1.e9 * 11.604525006;
   GIVEN("A stellar collapse EOS") {
     const std::string filename = "../stellar_collapse_ideal.h5";
     THEN("We can load the file") { // don't bother filtering bmod here.
@@ -659,7 +660,8 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
       GIVEN("An Ideal Gas equation of state") {
         constexpr Real gamma = 1.4;
         constexpr Real mp = 1.67262171e-24;
-        constexpr Real Cv = 1. / (mp * (gamma - 1)); // assumes cgs
+        constexpr Real kb = 1.3806505e-16;
+        constexpr Real Cv = kb / (mp * (gamma - 1)); // mean molecular weight = mp
         IdealGas ig(gamma - 1, Cv);
         auto ig_d = ig.GetOnDevice();
         THEN("The tabulated gamma Stellar Collapse and the gamma agree roughly") {
