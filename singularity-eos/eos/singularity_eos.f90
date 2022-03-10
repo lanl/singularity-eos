@@ -40,8 +40,10 @@ module singularity_eos
     init_sg_SpinerDependsRhoT_f,&
     init_sg_SpinerDependsRhoSie_f,&
     init_sg_eospac_f,&
+    get_sg_PressureFromDensityInternalEnergy_f, &
     get_sg_eos_f,&
     finalize_sg_eos_f
+
 
 ! interface functions
   interface
@@ -156,6 +158,18 @@ module singularity_eos
       type(c_ptr), value, intent(in)    :: eos
       type(c_ptr), value, intent(in)    :: sg_mods_enabled, sg_mods_values
     end function init_sg_eospac
+  end interface
+
+  interface
+   integer(kind=c_int) function &
+       get_sg_pressureFromDensityInternalEnergy(matindex, eos, rhos, sies,&
+                                               pressures, len) &
+       bind(C, name='sg_pressureFromDensityInternalEnergy')
+       import
+       integer(c_int), value, intent(in) :: matindex, len
+       type(c_ptr), value, intent(in):: eos, rhos, sies
+       type(c_ptr), value, intent(in):: pressures
+    end function
   end interface
 
   interface
@@ -375,6 +389,9 @@ contains
                                       c_loc(sg_mods_values))
   end function init_sg_SpinerDependsRhoSie_f
 
+  
+
+
   integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
                                     sg_mods_values) &
     result(err)
@@ -385,6 +402,18 @@ contains
     err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled), &
                          c_loc(sg_mods_values))
   end function init_sg_eospac_f
+
+  integer function get_sg_pressureFromDensityInternalEnergy_f(matindex, &
+       eos, rhos, sies, pressures, len) &
+       result(err)
+       integer(c_int), intent(in) :: matindex, len
+       real(kind=8), dimension(:,:,:), intent(in):: rhos, sies
+       real(kind=8), dimension(:,:,:), intent(inout):: pressures
+       type(sg_eos_ary_t), intent(in)    :: eos
+       err = get_sg_pressureFromDensityInternalEnergy(matindex-1, &
+            eos%ptr, c_loc(rhos), c_loc(sies), c_loc(pressures), len)
+     end function get_sg_pressureFromDensityInternalEnergy_f
+
 
   integer function finalize_sg_eos_f(nmat, eos) &
     result(err)

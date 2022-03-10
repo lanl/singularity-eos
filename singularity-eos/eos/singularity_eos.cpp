@@ -166,6 +166,17 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id) {
 }
 #endif // SINGULARITY_USE_EOSPAC
 
+int get_PressureFromDensityInternalEnergy(int matindex,
+					  EOS *eos,
+					  const double* rhos,
+					  const double*  sies,
+					  double* pressures,
+					  const int len
+					  ){
+  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, singularity::mix_impl::NullPtrIndexer());  
+  return 0; 
+
+}
 #undef SGAPPLYMOD
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
