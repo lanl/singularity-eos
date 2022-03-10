@@ -407,8 +407,8 @@ contains
        eos, rhos, sies, pressures, len) &
        result(err)
        integer(c_int), intent(in) :: matindex, len
-       real(kind=8), dimension(:,:,:), intent(in):: rhos, sies
-       real(kind=8), dimension(:,:,:), intent(inout):: pressures
+       real(kind=8), dimension(:,:,:), target, intent(inout):: rhos, sies
+       real(kind=8), dimension(:,:,:), target, intent(inout):: pressures
        type(sg_eos_ary_t), intent(in)    :: eos
        err = get_sg_pressureFromDensityInternalEnergy(matindex-1, &
             eos%ptr, c_loc(rhos), c_loc(sies), c_loc(pressures), len)

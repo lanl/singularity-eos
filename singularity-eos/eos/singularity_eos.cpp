@@ -173,7 +173,8 @@ int get_PressureFromDensityInternalEnergy(int matindex,
 					  double* pressures,
 					  const int len
 					  ){
-  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, singularity::mix_impl::NullPtrIndexer());  
+  singularity::mix_impl::NullPtrIndexer lambda();
+  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, lambda);
   return 0; 
 
 }
