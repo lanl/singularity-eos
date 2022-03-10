@@ -166,15 +166,14 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id) {
 }
 #endif // SINGULARITY_USE_EOSPAC
 
-int get_PressureFromDensityInternalEnergy(int matindex,
+int get_sg_PressureFromDensityInternalEnergy(int matindex,
 					  EOS *eos,
 					  const double* rhos,
 					  const double*  sies,
 					  double* pressures,
 					  const int len
 					  ){
-  singularity::mix_impl::NullPtrIndexer lambda();
-  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, lambda);
+  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
   return 0; 
 
 }
