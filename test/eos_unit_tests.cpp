@@ -67,6 +67,16 @@ PORTABLE_INLINE_FUNCTION Real myAtan(Real x, Real shift, Real scale, Real offset
   return scale * atan(x - shift) + offset;
 }
 
+template<typename X, typename Y, typename Z, typename ZT, typename XN, typename YN>
+PORTABLE_INLINE_FUNCTION void array_compare(int num, X &&x, Y &&y, Z &&z, 
+                                            ZT &&ztrue, XN xname, YN yname) {
+  for (int i = 0; i < num; i++) {
+    INFO("i: " << i << " ," << xname << ": " << x[i] << " ," << yname << ": "
+         << y[i]);
+    REQUIRE(z[i] == Approx(ztrue[i]));
+  }
+}
+
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
 
   GIVEN("A root counts object") {
@@ -234,142 +244,162 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
 }
 
 SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
+
   GIVEN("Parameters for an ideal gas") {
+    // Create ideal gas EOS ojbect
     constexpr Real Cv = 5.0;
     constexpr Real gm1 = 0.4;
-    IdealGas eos(gm1, Cv);
+    EOS eos = IdealGas(gm1, Cv);
+
     GIVEN("Energies and densities") {
+      // Input arrays and pointers
       constexpr int num = 3;
       constexpr std::array<Real, num> density {1.0, 2.0, 5.0};
       constexpr std::array<Real, num> energy {5.0, 10.0, 15.0};
-      Real* lambdas[num];
+      std::array<Real*, num> lambdas;
+
+      auto plambdas = lambdas.data();
       auto pdensity = density.data();
       auto penergy = energy.data();
+
+      // Gold standard values
       constexpr std::array<Real, num> pressure_true {2.0, 8.0, 30.0};
       constexpr std::array<Real, num> temperature_true {1., 2., 3.};
       constexpr std::array<Real, num> bulkmodulus_true {2.8, 11.2, 42.};
-      WHEN("A temperature lookup is performed") {
-        std::array<Real, num> temperature;
-        auto presult = temperature.data();
-        eos.TemperatureFromDensityInternalEnergy(pdensity, penergy, presult,
-                                                 num, lambdas);
-        THEN("The returned temperature should be equal to the true "
+      constexpr std::array<Real, num> heatcapacity_true {Cv, Cv, Cv};
+      constexpr std::array<Real, num> gruneisen_true {gm1, gm1, gm1};
+
+      // Output arrays and pointers
+      std::array<Real, num> temperature;
+      std::array<Real, num> pressure;
+      std::array<Real, num> heatcapacity;
+      std::array<Real, num> bulkmodulus;
+      std::array<Real, num> gruneisen;
+      auto ptemperature = temperature.data();
+      auto ppressure = pressure.data();
+      auto pheatcapacity = heatcapacity.data();
+      auto pbulkmodulus = bulkmodulus.data();
+      auto pgruneisen = gruneisen.data();
+
+      WHEN("A T(rho, e) lookup is performed") {
+        eos.TemperatureFromDensityInternalEnergy(pdensity, penergy,
+                                                 ptemperature, num, lambdas);
+        THEN("The returned T(rho, e) should be equal to the true "
              "temperature") {
-          for (int i; i < num; i++) {
-            REQUIRE(temperature[i] == Approx(temperature_true[i]));
-          }
+          array_compare(num, density, energy, temperature, temperature_true,
+                        "Density", "Energy");
         }
       }
-      WHEN("A pressure lookup is performed") {
-        std::array<Real, num> pressure;
-        auto presult = pressure.data();
-        eos.PressureFromDensityInternalEnergy(pdensity, penergy, presult,
+
+      WHEN("A P(rho, e) lookup is performed") {
+        eos.PressureFromDensityInternalEnergy(pdensity, penergy, ppressure,
                                               num, lambdas);
-        THEN("The returned pressure should be equal to the true pressure") {
-          for (int i; i < num; i++) {
-            REQUIRE(pressure[i] == Approx(pressure_true[i]));
-          }
+        THEN("The returned P(rho, e) should be equal to the true pressure") {
+          array_compare(num, density, energy, pressure, pressure_true,
+                        "Density", "Energy");
         }
       }
-      WHEN("A heat capacity lookup is performed") {
-        std::array<Real, num> heatcapacity;
-        auto presult = heatcapacity.data();
-        eos.SpecificHeatFromDensityInternalEnergy(pdensity, penergy, presult,
-                                                  num, lambdas);
-        THEN("The returned heat capacity should be constant") {
-          for (int i; i < num; i++) {
-            REQUIRE(heatcapacity[i] == Approx(Cv));
-          }
+
+      WHEN("A C_v(rho, e) lookup is performed") {
+        eos.SpecificHeatFromDensityInternalEnergy(pdensity, penergy,
+                                                  pheatcapacity, num, lambdas);
+        THEN("The returned C_v(rho, e) should be constant") {
+          array_compare(num, density, energy, heatcapacity, heatcapacity_true,
+                        "Density", "Energy");
         }
       }
-      WHEN("A bulk modulus lookup is performed") {
-        std::array<Real, num> bulkmodulus;
-        auto presult = bulkmodulus.data();
-        eos.BulkModulusFromDensityInternalEnergy(pdensity, penergy, presult,
-                                                  num, lambdas);
-        THEN("The returned bulk modulus should be equal to the true bulk "
+
+      WHEN("A B_S(rho, e) lookup is performed") {
+        eos.BulkModulusFromDensityInternalEnergy(pdensity, penergy,
+                                                 pbulkmodulus, num, lambdas);
+        THEN("The returned B_S(rho, e) should be equal to the true bulk "
               "modulus") {
-          for (int i; i < num; i++) {
-            REQUIRE(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
-          }
+          array_compare(num, density, energy, bulkmodulus, bulkmodulus_true,
+                        "Density", "Energy");
         }
       }
-      WHEN("A Gruneisen parameter lookup is performed") {
-        std::array<Real, num> gruneisen;
-        auto presult = gruneisen.data();
-        eos.GruneisenParamFromDensityInternalEnergy(pdensity, penergy, presult,
-                                                    num, lambdas);
-        THEN("The returned Gruneisen parameter should be constant") {
-          for (int i; i < num; i++) {
-            REQUIRE(gruneisen[i] == Approx(gm1));
-          }
+
+      WHEN("A Gamma(rho, e) lookup is performed") {
+        eos.GruneisenParamFromDensityInternalEnergy(pdensity, penergy,
+                                                    pgruneisen, num, lambdas);
+        THEN("The returned Gamma(rho, e) should be constant") {
+          array_compare(num, density, energy, gruneisen, gruneisen_true,
+                        "Density", "Energy");
         }
       }
     }
     GIVEN("Densities and temperatures") {
+      // Input arrays and pointers
       constexpr int num = 3;
       constexpr std::array<Real, num> density {1.0, 2.0, 5.0};
       constexpr std::array<Real, num> temperature {50., 100., 150.};
-      Real* lambdas[num];
+      std::array<Real*, num> lambdas;
+      auto plambdas = lambdas.data();
       auto pdensity = density.data();
       auto ptemperature = temperature.data();
+
+      // Gold standard values
       constexpr std::array<Real, num> energy_true {250., 500., 750.};
       constexpr std::array<Real, num> pressure_true {100., 400., 1500.};
       constexpr std::array<Real, num> bulkmodulus_true {140., 560., 2100.};
-      WHEN("An energy lookup is performed") {
-        std::array<Real, num> energy;
-        auto presult = energy.data();
+      constexpr std::array<Real, num> heatcapacity_true {Cv, Cv, Cv};
+      constexpr std::array<Real, num> gruneisen_true {gm1, gm1, gm1};
+
+      // Output arrays and pointers
+      std::array<Real, num> energy;
+      std::array<Real, num> pressure;
+      std::array<Real, num> heatcapacity;
+      std::array<Real, num> bulkmodulus;
+      std::array<Real, num> gruneisen;
+      auto penergy = energy.data();
+      auto ppressure = pressure.data();
+      auto pheatcapacity = heatcapacity.data();
+      auto pbulkmodulus = bulkmodulus.data();
+      auto pgruneisen = gruneisen.data();
+
+      WHEN("A e(rho, T) lookup is performed") {
         eos.InternalEnergyFromDensityTemperature(pdensity, ptemperature,
-                                                 presult, num, lambdas);
-        THEN("The returned energy should be equal to the true energy") {
-          for (int i; i < num; i++) {
-            REQUIRE(energy[i] == Approx(energy_true[i]));
-          }
+                                                 penergy, num, lambdas);
+        THEN("The returned e(rho, T) should be equal to the true energy") {
+          array_compare(num, density, temperature, energy, energy_true,
+                        "Density", "Temperature");
         }
       }
-      WHEN("A pressure lookup is performed") {
-        std::array<Real, num> pressure;
-        auto presult = pressure.data();
+
+      WHEN("A P(rho, T) lookup is performed") {
         eos.PressureFromDensityTemperature(pdensity, ptemperature,
-                                           presult, num, lambdas);
-        THEN("The returned pressure should be equal to the true pressure") {
-          for (int i; i < num; i++) {
-            REQUIRE(pressure[i] == Approx(pressure_true[i]));
-          }
+                                           ppressure, num, lambdas);
+        THEN("The returned P(rho, T) should be equal to the true pressure") {
+          array_compare(num, density, temperature, pressure, pressure_true,
+                        "Density", "Temperature");
         }
       }
-      WHEN("A heat capacity lookup is performed") {
-        std::array<Real, num> heatcapacity;
-        auto presult = heatcapacity.data();
+
+      WHEN("A C_v(rho, T) lookup is performed") {
         eos.SpecificHeatFromDensityTemperature(pdensity, ptemperature,
-                                               presult, num, lambdas);
-        THEN("The returned heat capacity should be constant") {
-          for (int i; i < num; i++) {
-            REQUIRE(heatcapacity[i] == Approx(Cv));
-          }
+                                               pheatcapacity, num, lambdas);
+        THEN("The returned C_v(rho, T) should be constant") {
+          array_compare(num, density, temperature, heatcapacity,
+                        heatcapacity_true, "Density", "Temperature");
         }
       }
-      WHEN("A bulk modulus lookup is performed") {
-        std::array<Real, num> bulkmodulus;
-        auto presult = bulkmodulus.data();
+
+      WHEN("A B_S(rho, T) lookup is performed") {
         eos.BulkModulusFromDensityTemperature(pdensity, ptemperature,
-                                              presult, num, lambdas);
-        THEN("The returned bulk modulus should be equal to the true bulk "
+                                              pbulkmodulus, num, lambdas);
+        THEN("The returned B_S(rho, T) should be equal to the true bulk "
               "modulus") {
-          for (int i; i < num; i++) {
-            REQUIRE(bulkmodulus[i] == Approx(bulkmodulus_true[i]));
-          }
+          array_compare(num, density, temperature, bulkmodulus,
+                        bulkmodulus_true, "Density", "Temperature");
         }
       }
-      WHEN("A Gruneisen parameter lookup is performed") {
-        std::array<Real, num> gruneisen;
-        auto presult = gruneisen.data();
+
+      WHEN("A Gamma(rho, T) lookup is performed") {
         eos.GruneisenParamFromDensityTemperature(pdensity, ptemperature,
-                                                 presult, num, lambdas);
-        THEN("The returned Gruneisen parameter should be constant") {
-          for (int i; i < num; i++) {
-            REQUIRE(gruneisen[i] == Approx(gm1));
-          }
+                                                 pgruneisen, num, lambdas);
+        THEN("The returned Gamma(rho, T) should be constant") {
+          array_compare(num, density, temperature, gruneisen, gruneisen_true,
+                        "Density", "Temperature");
         }
       }
     }

@@ -26,11 +26,14 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
 
+using namespace eos_base;
+
 template <typename T>
-class ScaledEOS {
+class ScaledEOS : public EosBase<ScaledEOS<T>> {
  public:
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
@@ -142,16 +145,19 @@ class ScaledEOS {
     sie = sie * scale_;
   }
 
-  PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
-    t_.PTofRE(scale_ * rho, inv_scale_ * sie, lambda, press, temp, dpdr, dpde, dtdr,
-              dtde);
-    dpdr = dpdr * scale_;
-    dtdr = dtdr * scale_;
-    dpde = dpde * inv_scale_;
-    dtde = dtde * inv_scale_;
-  }
+  // PORTABLE_FUNCTION
+  // void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
+  //             Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
+  //   t_.PTofRE(scale_ * rho, inv_scale_ * sie, lambda, press, temp, dpdr, dpde, dtdr,
+  //             dtde);
+  //   dpdr = dpdr * scale_;
+  //   dtdr = dtdr * scale_;
+  //   dpde = dpde * inv_scale_;
+  //   dtde = dtde * inv_scale_;
+  // }
+
+  // Vector functions that overload the scalar versions declared here.
+  SG_ADD_BASE_CLASS_USINGS(ScaledEOS<T>)
 
  private:
   T t_;
