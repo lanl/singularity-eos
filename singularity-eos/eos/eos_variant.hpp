@@ -27,10 +27,9 @@ template <typename... Ts>
 using eos_variant = mpark::variant<Ts...>;
 
 // Provide default functionality when lambda isn't passed to vector functions
-class NullIndexer {
- public:
+struct NullIndexer {
   PORTABLE_FORCEINLINE_FUNCTION
-  Real *operator[](int i) {
+  Real *operator[](const int i) {
     return nullptr;
   }
 };
@@ -240,9 +239,9 @@ class Variant {
                                             ConstRealIndexer &&sies,
                                             RealIndexer &&temperatures,
                                             const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return TemperatureFromDensityInternalEnergy(
-        &rhos, &sies, &temperatures, num, &lambdas);
+        rhos, sies, temperatures, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -266,9 +265,9 @@ class Variant {
                                             ConstRealIndexer &&temperatures,
                                             RealIndexer &&sies,
                                             const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return InternalEnergyFromDensityTemperature(
-        &rhos, &temperatures, &sies, num, &lambdas);
+        rhos, temperatures, sies, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -292,9 +291,9 @@ class Variant {
                                       ConstRealIndexer &&temperatures,
                                       RealIndexer &&pressures,
                                       const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return PressureFromDensityTemperature(
-        &rhos, &temperatures, &pressures, num, &lambdas);
+        rhos, temperatures, pressures, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -318,9 +317,9 @@ class Variant {
                                          ConstRealIndexer &&sies,
                                          RealIndexer &&pressures,
                                          const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return PressureFromDensityInternalEnergy(
-        &rhos, &sies, &pressures, num, &lambdas);
+        rhos, sies, pressures, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -344,9 +343,9 @@ class Variant {
                                           ConstRealIndexer &&temperatures,
                                           RealIndexer &&cvs,
                                           const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return SpecificHeatFromDensityTemperature(
-        &rhos, &temperatures, &cvs, num, &lambdas);
+        rhos, temperatures, cvs, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -370,9 +369,9 @@ class Variant {
                                              ConstRealIndexer &&sies,
                                              RealIndexer &&cvs,
                                              const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return SpecificHeatFromDensityInternalEnergy(
-        &rhos, &sies, &cvs, num, &lambdas);
+        rhos, sies, cvs, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -396,9 +395,9 @@ class Variant {
                                          ConstRealIndexer &&temperatures,
                                          RealIndexer &&bmods,
                                          const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return BulkModulusFromDensityTemperature(
-        &rhos, &temperatures, &bmods, num, &lambdas);
+        rhos, temperatures, bmods, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -422,9 +421,9 @@ class Variant {
                                             ConstRealIndexer &&sies,
                                             RealIndexer &&bmods,
                                             const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return BulkModulusFromDensityInternalEnergy(
-        &rhos, &sies, &bmods, num, &lambdas);
+        rhos, sies, bmods, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -448,9 +447,9 @@ class Variant {
                                             ConstRealIndexer &&temperatures,
                                             RealIndexer &&gm1s,
                                             const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return GruneisenParamFromDensityTemperature(
-        &rhos, &temperatures, &gm1s, num, &lambdas);
+        rhos, temperatures, gm1s, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -474,9 +473,9 @@ class Variant {
                                                ConstRealIndexer &&sies,
                                                RealIndexer &&gm1s,
                                                const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
+    NullIndexer lambdas(); // Returns null pointer for every index
     return GruneisenParamFromDensityInternalEnergy(
-        &rhos, &sies, &gm1s, num, &lambdas);
+        rhos, sies, gm1s, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -499,9 +498,9 @@ class Variant {
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                const int num, const unsigned long output) const {
-    NullIndexer lambdas; // Returns null pointer for every index
-    return FillEos(&rhos, &temps, &energies, &presses, &cvs, &bmods,
-                       num, output, &lambdas);
+    NullIndexer lambdas(); // Returns null pointer for every index
+    return FillEos(rhos, temps, energies, presses, cvs, bmods,
+                       num, output, lambdas);
   }
 
   template<typename RealIndexer, typename LambdaIndexer>
@@ -526,9 +525,9 @@ class Variant {
               RealIndexer &&dpdrs, RealIndexer &&dpdes,
               RealIndexer &&dtdrs, RealIndexer &&dtdes,
               const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
-    return PTofRE(&rhos, &sies, &presses, &temps, &dpdrs, &dpdes, &dtdrs,
-                  &dtdes, num, &lambdas);
+    NullIndexer lambdas(); // Returns null pointer for every index
+    return PTofRE(rhos, sies, presses, temps, dpdrs, dpdes, dtdrs,
+                  dtdes, num, lambdas);
   }
 
   template<typename RealIndexer, typename LambdaIndexer>
