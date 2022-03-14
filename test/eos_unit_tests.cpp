@@ -588,7 +588,7 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
       Real rho = 1;
       Real sie = 2.43e16;
       Real P_pac = eospac.PressureFromDensityInternalEnergy(rho, sie);
-      Real P_spi = airEOS.PressureFromDensityInternalEnergy(rho, sie);
+      Real P_spi = airEOS_host.PressureFromDensityInternalEnergy(rho, sie);
       REQUIRE(isClose(P_pac, P_spi));
     }
     airEOS_host.Finalize();

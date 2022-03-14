@@ -80,7 +80,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # NOTE: these are set so that dependencies in downstream projects share common MPI dependence
     for _flag in ("~mpi", "+mpi"):
-        depends_on("hdf5+cxx+hl" + _flag, when=_flag)
+        depends_on("hdf5+hl" + _flag, when=_flag)
         depends_on("py-h5py" + _flag, when=_flag)
         depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos"+_flag)
 
