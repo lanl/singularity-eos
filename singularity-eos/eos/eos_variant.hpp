@@ -30,7 +30,7 @@ using eos_variant = mpark::variant<Ts...>;
 class NullIndexer {
  public:
   PORTABLE_FORCEINLINE_FUNCTION
-  Real *operator[](int i) {
+  Real *operator[](int i) const {
     return nullptr;
   }
 };
@@ -325,17 +325,6 @@ class Variant {
         eos_);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num) const {
-    NullIndexer lambdas; // Returns null pointer for every index
-    return PressureFromDensityInternalEnergy(
-        &rhos, &sies, &pressures, num, &lambdas);
-  }
-
   template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline
   void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
@@ -349,6 +338,23 @@ class Variant {
               rhos, sies, pressures, num, lambdas);
         },
         eos_);
+//    return mpark::visit(
+//        [rhos, sies, pressures, num, lambdas](const auto &eos) {
+//          return eos.PressureFromDensityInternalEnergy(
+//              rhos, sies, pressures, num, lambdas);
+//        },
+//        eos_);
+  }
+
+  template<typename RealIndexer, typename ConstRealIndexer>
+  inline
+  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                         ConstRealIndexer &&sies,
+                                         RealIndexer &&pressures,
+                                         const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return this->PressureFromDensityInternalEnergy(
+        rhos, sies, pressures, num, lambdas);
   }
 
   template<typename RealIndexer, typename ConstRealIndexer>
