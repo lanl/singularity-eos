@@ -296,10 +296,26 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: gm1, Cv
-    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
-    err = init_sg_IdealGas(matindex-1, eos%ptr, gm1, Cv, &
-                           c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+    integer(kind=c_int), &
+         dimension(:), target, &
+         optional, intent(in)         :: sg_mods_enabled
+    real(kind=8), &
+         dimension(:), target,&
+         optional, intent(in)         :: sg_mods_values
+    
+    ! arrays for if optionals aren't included
+    integer(kind=c_int), dimension(2) :: zero_mods
+    integer(kind=8), dimension(2) :: zero_values
+    ! use arrays if present, else use 0s
+    if (present(sg_mods_enabled) .and. present(sg_mods_values)) then
+       err = init_sg_IdealGas(matindex-1, eos%ptr, gm1, Cv, &
+                              c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+    else
+       zero_mods = 0
+       zero_values = 0.d0
+       err = init_sg_IdealGas(matindex-1, eos%ptr, gm1, Cv, &
+                              c_loc(zero_mods), c_loc(zero_values))
+    endif
   end function init_sg_IdealGas_f
 
   integer function init_sg_Gruneisen_f(matindex, eos, C0, s1, s2, s3, G0, b,&

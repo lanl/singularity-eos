@@ -253,7 +253,7 @@ class Variant {
                                             const int num,
                                             LambdaIndexer &&lambdas) const {
     return mpark::visit(
-        [&rhos, &sies, &num, &temperatures, &num, &lambdas](const auto &eos) {
+        [&rhos, &sies, &temperatures, &num, &lambdas](const auto &eos) {
           return eos.TemperatureFromDensityInternalEnergy(
               rhos, sies, temperatures, num, lambdas);
         },
