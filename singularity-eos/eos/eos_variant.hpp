@@ -29,7 +29,11 @@ using eos_variant = mpark::variant<Ts...>;
 // Provide default functionality when lambda isn't passed to vector functions
 struct NullIndexer {
   PORTABLE_FORCEINLINE_FUNCTION
-  Real *operator[](int i) const {
+  Real* operator[](int i) {
+    return nullptr;
+  }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real* operator[](int i) const {
     return nullptr;
   }
 };
