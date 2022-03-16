@@ -29,7 +29,7 @@ using eos_variant = mpark::variant<Ts...>;
 // Provide default functionality when lambda isn't passed to vector functions
 struct NullIndexer {
   PORTABLE_FORCEINLINE_FUNCTION
-  Real *operator[](const int i) {
+  Real *operator[](int i) const {
     return nullptr;
   }
 };
@@ -239,7 +239,7 @@ class Variant {
                                             ConstRealIndexer &&sies,
                                             RealIndexer &&temperatures,
                                             const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return TemperatureFromDensityInternalEnergy(
         rhos, sies, temperatures, num, lambdas);
   }
@@ -265,7 +265,7 @@ class Variant {
                                             ConstRealIndexer &&temperatures,
                                             RealIndexer &&sies,
                                             const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return InternalEnergyFromDensityTemperature(
         rhos, temperatures, sies, num, lambdas);
   }
@@ -291,7 +291,7 @@ class Variant {
                                       ConstRealIndexer &&temperatures,
                                       RealIndexer &&pressures,
                                       const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return PressureFromDensityTemperature(
         rhos, temperatures, pressures, num, lambdas);
   }
@@ -317,7 +317,7 @@ class Variant {
                                          ConstRealIndexer &&sies,
                                          RealIndexer &&pressures,
                                          const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return PressureFromDensityInternalEnergy(
         rhos, sies, pressures, num, lambdas);
   }
@@ -343,7 +343,7 @@ class Variant {
                                           ConstRealIndexer &&temperatures,
                                           RealIndexer &&cvs,
                                           const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return SpecificHeatFromDensityTemperature(
         rhos, temperatures, cvs, num, lambdas);
   }
@@ -369,7 +369,7 @@ class Variant {
                                              ConstRealIndexer &&sies,
                                              RealIndexer &&cvs,
                                              const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return SpecificHeatFromDensityInternalEnergy(
         rhos, sies, cvs, num, lambdas);
   }
@@ -395,7 +395,7 @@ class Variant {
                                          ConstRealIndexer &&temperatures,
                                          RealIndexer &&bmods,
                                          const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return BulkModulusFromDensityTemperature(
         rhos, temperatures, bmods, num, lambdas);
   }
@@ -421,7 +421,7 @@ class Variant {
                                             ConstRealIndexer &&sies,
                                             RealIndexer &&bmods,
                                             const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return BulkModulusFromDensityInternalEnergy(
         rhos, sies, bmods, num, lambdas);
   }
@@ -447,7 +447,7 @@ class Variant {
                                             ConstRealIndexer &&temperatures,
                                             RealIndexer &&gm1s,
                                             const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return GruneisenParamFromDensityTemperature(
         rhos, temperatures, gm1s, num, lambdas);
   }
@@ -473,7 +473,7 @@ class Variant {
                                                ConstRealIndexer &&sies,
                                                RealIndexer &&gm1s,
                                                const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return GruneisenParamFromDensityInternalEnergy(
         rhos, sies, gm1s, num, lambdas);
   }
@@ -498,7 +498,7 @@ class Variant {
   void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                const int num, const unsigned long output) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return FillEos(rhos, temps, energies, presses, cvs, bmods,
                        num, output, lambdas);
   }
@@ -525,7 +525,7 @@ class Variant {
               RealIndexer &&dpdrs, RealIndexer &&dpdes,
               RealIndexer &&dtdrs, RealIndexer &&dtdes,
               const int num) const {
-    NullIndexer lambdas(); // Returns null pointer for every index
+    NullIndexer lambdas{}; // Returns null pointer for every index
     return PTofRE(rhos, sies, presses, temps, dpdrs, dpdes, dtdrs,
                   dtdes, num, lambdas);
   }
