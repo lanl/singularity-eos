@@ -165,6 +165,7 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id) {
   return init_sg_eospac(matindex, eos, id, def_en, def_v);
 }
 #endif // SINGULARITY_USE_EOSPAC
+#undef SGAPPLYMOD
 
 int get_sg_PressureFromDensityInternalEnergy(int matindex,
 					  EOS *eos,
@@ -177,7 +178,20 @@ int get_sg_PressureFromDensityInternalEnergy(int matindex,
   return 0; 
 
 }
-#undef SGAPPLYMOD
+
+int get_sg_BulkModulusFromDensityInternalEnergy(int matindex,
+					  EOS *eos,
+					  const double* rhos,
+					  const double*  sies,
+					  double* bmods,
+					  const int len
+					  ){
+  std::vector<Real*> lambdas(len);
+  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len, lambdas);
+  return 0; 
+
+}
+
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using Lrgt = Kokkos::LayoutRight;
