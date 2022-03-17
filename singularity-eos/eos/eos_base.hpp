@@ -21,12 +21,12 @@
 
 namespace singularity {
 namespace mfuncname {
-static inline auto member_func_name(const char *type_name, const char *func_name) {
+static inline auto member_func_name(const char* type_name, const char* func_name) {
   return std::string(type_name) + std::string("::") + std::string(func_name);
 }
 } // namespace mfuncname
 } // namespace singularity
-#define SG_MEMBER_FUNC_NAME()                                                            \
+#define SG_MEMBER_FUNC_NAME() \
   singularity::mfuncname::member_func_name(typeid(CRTP).name(), __func__);
 
 namespace singularity {
@@ -52,6 +52,7 @@ namespace eos_base {
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
 various member functions can be defined.
+https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
 
 In particular, the default behavior for the vector version of the EOS lookup
 member functions is to perform a `portableFor` loop over all of the input states

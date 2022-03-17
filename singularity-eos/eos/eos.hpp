@@ -90,7 +90,8 @@ class IdealGas : public EosBase<IdealGas> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // Vector functions that overload the scalar versions declared here
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(IdealGas)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -158,7 +159,8 @@ class Gruneisen : public EosBase<Gruneisen> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // Vector functions that overload the scalar versions declared here
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Gruneisen)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -221,7 +223,8 @@ class JWL : public EosBase<JWL> {
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
                                  Real *lambda = nullptr) const;
-  // Vector functions that overload the scalar versions declared here
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(JWL)
   PORTABLE_FUNCTION
   PORTABLE_INLINE_FUNCTION
@@ -296,7 +299,8 @@ class DavisReactants : public EosBase<DavisReactants> {
                                                               const Real temp,
                                                               Real *lambda, Real &rho,
                                                               Real &sie) const;
-  // Vector functions that overload the scalar versions declared here
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(DavisReactants)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -363,7 +367,8 @@ class DavisProducts : public EosBase<DavisProducts> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // Vector functions that overload the scalar versions declared here
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(DavisProducts)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -457,7 +462,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // Vector functions that overload the scalar versions declared here
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT)
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
@@ -651,7 +657,8 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // Vector functions that overload the scalar versions declared here
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie)
   PORTABLE_FUNCTION
   unsigned long PreferredInput() const { return _preferred_input; }
@@ -797,7 +804,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // Vector functions that overload the scalar versions declared here
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(StellarCollapse)
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
@@ -1029,10 +1037,11 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                 Real &press, Real &cv, Real &bmod,
                                                 Real &dpde, Real &dvdt,
                                                 Real *lambda = nullptr) const;
-  // Vector functions for EOSPAC do not rely on the base class so they are
-  // declared here.
-  // Vector functions that overload the scalar versions declared here
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(EOSPAC)
+
+  // TODO (JHP): Change EOSPAC vector implementations to be more performant
   // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   // inline
   // void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
