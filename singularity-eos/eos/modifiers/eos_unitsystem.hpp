@@ -157,19 +157,6 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     sie *= inv_sie_unit_;
   }
 
-  // PORTABLE_FUNCTION
-  // void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-  //             Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
-  //   t_.PTofRE(rho * rho_unit_, sie * sie_unit_, lambda, press, temp, dpdr, dpde, dtdr,
-  //             dtde);
-  //   press *= inv_press_unit_;
-  //   temp *= inv_temp_unit_;
-  //   dpdr *= inv_dpdr_unit_;
-  //   dpde *= inv_dpde_unit_;
-  //   dtdr *= inv_dtdr_unit_;
-  //   dtde *= inv_dtde_unit_;
-  // }
-
   PORTABLE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
                const unsigned long output, Real *lambda = nullptr) const {
