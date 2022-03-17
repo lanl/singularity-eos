@@ -21,12 +21,12 @@
 
 namespace singularity {
 namespace mfuncname {
-static inline auto member_func_name(const char* type_name, const char* func_name) {
+static inline auto member_func_name(const char *type_name, const char *func_name) {
   return std::string(type_name) + std::string("::") + std::string(func_name);
 }
 } // namespace mfuncname
 } // namespace singularity
-#define SG_MEMBER_FUNC_NAME() \
+#define SG_MEMBER_FUNC_NAME()                                                            \
   singularity::mfuncname::member_func_name(typeid(CRTP).name(), __func__);
 
 namespace singularity {
