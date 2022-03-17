@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
 #ifdef SPINER_USE_HDF
@@ -48,7 +49,9 @@
 
 namespace singularity {
 
-class IdealGas {
+using namespace eos_base;
+
+class IdealGas : public EosBase<IdealGas> {
  public:
   IdealGas() = default;
   PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv)
@@ -87,7 +90,9 @@ class IdealGas {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(IdealGas)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -115,7 +120,7 @@ class IdealGas {
 // COMMENT: This is meant to be an implementation of the Steinberg version of
 // the Gruneisen EOS which should correspond to eostype(3) in xRAGE and
 // /[...]/eos/gruneisen in FLAG
-class Gruneisen {
+class Gruneisen : public EosBase<Gruneisen> {
  public:
   Gruneisen() = default;
   PORTABLE_INLINE_FUNCTION
@@ -154,6 +159,9 @@ class Gruneisen {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(Gruneisen)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -182,7 +190,7 @@ class Gruneisen {
 
 // COMMENT: This is meant to be an implementation of the "standard" JWL as
 // implemented in xRAGE for eostype(1).  It does not include any energy shifting
-class JWL {
+class JWL : public EosBase<JWL> {
  public:
   JWL() = default;
   PORTABLE_INLINE_FUNCTION JWL(const Real A, const Real B, const Real R1, const Real R2,
@@ -215,6 +223,9 @@ class JWL {
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
                                  Real *lambda = nullptr) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(JWL)
   PORTABLE_FUNCTION
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -244,7 +255,7 @@ class JWL {
       thermalqs::density | thermalqs::specific_internal_energy;
 };
 
-class DavisReactants {
+class DavisReactants : public EosBase<DavisReactants> {
  public:
   DavisReactants() = default;
   PORTABLE_INLINE_FUNCTION
@@ -288,6 +299,9 @@ class DavisReactants {
                                                               const Real temp,
                                                               Real *lambda, Real &rho,
                                                               Real &sie) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(DavisReactants)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -311,7 +325,7 @@ class DavisReactants {
   PORTABLE_INLINE_FUNCTION Real Gamma(const Real rho) const;
 };
 
-class DavisProducts {
+class DavisProducts : public EosBase<DavisProducts> {
  public:
   DavisProducts() = default;
   PORTABLE_INLINE_FUNCTION
@@ -353,9 +367,9 @@ class DavisProducts {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // PORTABLE_FUNCTION void PTofRE(const Real rho, const Real sie, Real *
-  // lambda, Real& press, Real& temp, Real & dpdr, Real & dpde, Real & dtdr,
-  // Real & dtde) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(DavisProducts)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -391,7 +405,7 @@ class DavisProducts {
   For low densities, we floor the density. For high densities, we
   we use log-linear extrapolation.
 */
-class SpinerEOSDependsRhoT {
+class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
  public:
   // A weakly typed index map for lambdas
   struct Lambda {
@@ -441,9 +455,6 @@ class SpinerEOSDependsRhoT {
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                             Real *lambda, Real &rho, Real &sie) const;
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const;
-  PORTABLE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
                const unsigned long output, Real *lambda = nullptr) const;
 
@@ -451,7 +462,9 @@ class SpinerEOSDependsRhoT {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT)
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
   std::string materialName() const { return std::string(materialName_); }
@@ -589,7 +602,7 @@ class SpinerEOSDependsRhoT {
   - An ideal gas term
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
-class SpinerEOSDependsRhoSie {
+class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
  public:
   struct SP5Tables {
     Spiner::DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
@@ -638,16 +651,15 @@ class SpinerEOSDependsRhoSie {
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                             Real *lambda, Real &rho, Real &sie) const;
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const;
-  PORTABLE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
                const unsigned long output, Real *lambda = nullptr) const;
   PORTABLE_FUNCTION
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie)
   PORTABLE_FUNCTION
   unsigned long PreferredInput() const { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
@@ -733,7 +745,7 @@ class SpinerEOSDependsRhoSie {
 // TODO(JMM): For now the bottom of the table is a floor and the top
 // is linear extrapolation in log-log space. We should reconsider this
 // and introduce extrapolation as needed.
-class StellarCollapse {
+class StellarCollapse : public EosBase<StellarCollapse> {
  public:
   // A weakly typed index map for lambdas
   struct Lambda {
@@ -784,15 +796,6 @@ class StellarCollapse {
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                             Real *lambda, Real &rho, Real &sie) const;
-  /*
-  // Provided by eos_variant
-  PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie,
-              Real * lambda, Real& press,
-              Real& temp, Real & dpdr, Real & dpde, Real & dtdr, Real & dtde)
-  const;
-  */
-  // TODO(JMM): Should this function fill in the mass fractions too?
   PORTABLE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
                const unsigned long output, Real *lambda = nullptr) const;
@@ -801,7 +804,9 @@ class StellarCollapse {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(StellarCollapse)
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
   Real lRhoOffset() const { return lRhoOffset_; }
@@ -994,7 +999,7 @@ class StellarCollapse {
 #ifdef SINGULARITY_USE_EOSPAC
 // Only really works in serial
 // Not really supported on device
-class EOSPAC {
+class EOSPAC : public EosBase<EOSPAC> {
  public:
   EOSPAC() = default;
   EOSPAC(int matid, bool invert_at_setup = false);
@@ -1028,13 +1033,94 @@ class EOSPAC {
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                             Real *lambda, Real &rho, Real &sie) const;
-  PORTABLE_FUNCTION void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press,
-                                Real &temp, Real &dpdr, Real &dpde, Real &dtdr,
-                                Real &dtde) const;
   PORTABLE_FUNCTION void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
                                                 Real &press, Real &cv, Real &bmod,
                                                 Real &dpde, Real &dvdt,
                                                 Real *lambda = nullptr) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(EOSPAC)
+
+  // TODO (JHP): Change EOSPAC vector implementations to be more performant
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+  //                                           ConstRealIndexer &&sies,
+  //                                           RealIndexer &&temperatures,
+  //                                           const int num,
+  //                                           LambdaIndexer &&lambdas) const;
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+  //                                           ConstRealIndexer &&temperatures,
+  //                                           RealIndexer &&sies,
+  //                                           const int num,
+  //                                           LambdaIndexer &&lambdas) const;
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
+  //                                     ConstRealIndexer &&temperatures,
+  //                                     RealIndexer &&pressures,
+  //                                     const int num,
+  //                                     LambdaIndexer &&lambdas) const;
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+  //                                        ConstRealIndexer &&sies,
+  //                                        RealIndexer &&pressures,
+  //                                        const int num,
+  //                                        LambdaIndexer &&lambdas) const;
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+  //                                         ConstRealIndexer &&temperatures,
+  //                                         RealIndexer &&cvs,
+  //                                         const int num,
+  //                                         LambdaIndexer &&lambdas) const;
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+  //                                            ConstRealIndexer &&sies,
+  //                                            RealIndexer &&cvs,
+  //                                            const int num,
+  //                                            LambdaIndexer &&lambdas) const;
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+  //                                        ConstRealIndexer &&temperatures,
+  //                                        RealIndexer &&bmods,
+  //                                        const int num,
+  //                                        LambdaIndexer &&lambdas) const;
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+  //                                           ConstRealIndexer &&sies,
+  //                                           RealIndexer &&bmods,
+  //                                           const int num,
+  //                                           LambdaIndexer &&lambdas) const;
+
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+  //                                           ConstRealIndexer &&temperatures,
+  //                                           RealIndexer &&gm1s,
+  //                                           const int num,
+  //                                           LambdaIndexer &&lambdas) const;
+
+  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  // inline
+  // void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+  //                                              ConstRealIndexer &&sies,
+  //                                              RealIndexer &&gm1s,
+  //                                              const int num,
+  //                                              LambdaIndexer &&lambdas) const;
+
+  // template<typename RealIndexer, typename LambdaIndexer>
+  // inline
+  // void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+  //              RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+  //              const int num, const unsigned long output,
+  //              LambdaIndexer &&lambdas) const;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   int nlambda() const noexcept { return 0; }
   inline void Finalize() {}
@@ -1053,6 +1139,7 @@ class EOSPAC {
   EOS_INTEGER EofRT_table_;
   EOS_INTEGER RofPT_table_;
   EOS_INTEGER TofRP_table_;
+  // EOS_INTEGER PofRE_table_;
   EOS_INTEGER tablehandle[NT];
   EOS_INTEGER EOS_Info_table_;
   static constexpr Real temp_ref_ = 293;

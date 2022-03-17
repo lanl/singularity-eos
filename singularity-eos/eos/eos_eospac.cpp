@@ -254,30 +254,6 @@ void EOSPAC::DensityEnergyFromPressureTemperature(const Real press, const Real t
   sie = sieFromSesame(E[0]);
 }
 
-PORTABLE_FUNCTION void EOSPAC::PTofRE(const Real rho, const Real sie, Real *lambda,
-                                      Real &press, Real &temp, Real &dpdr, Real &dpde,
-                                      Real &dtdr, Real &dtde) const {
-  EOS_REAL R[1] = {rho}, T[1], E[1] = {sieToSesame(sie)}, P[1], dx[1], dy[1];
-  EOS_INTEGER nxypairs = 1;
-  Real DTDR_E, DTDE_R, DPDR_T, DPDT_R;
-
-  EOS_INTEGER table = TofRE_table_;
-  eosSafeInterpolate(&table, nxypairs, R, E, T, dx, dy, "TofRE", Verbosity::Quiet);
-  DTDR_E = dx[0];
-  DTDE_R = dy[0];
-  table = PofRT_table_;
-  eosSafeInterpolate(&table, nxypairs, R, T, P, dx, dy, "PofRT", Verbosity::Quiet);
-  DPDR_T = dx[0];
-  DPDT_R = dy[0];
-
-  press = pressureFromSesame(P[0]);
-  temp = temperatureFromSesame(T[0]);
-  dtdr = temperatureFromSesame(DTDR_E);
-  dtde = sieToSesame(temperatureFromSesame(DTDE_R));
-  dpde = sieToSesame(pressureFromSesame(DPDT_R * DTDE_R));
-  dpdr = pressureFromSesame(DPDR_T + DTDR_E * DPDT_R);
-}
-
 PORTABLE_FUNCTION void EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
                                                       Real &press, Real &cv, Real &bmod,
                                                       Real &dpde, Real &dvdt,

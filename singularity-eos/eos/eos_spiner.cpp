@@ -620,39 +620,6 @@ void SpinerEOSDependsRhoT::DensityEnergyFromPressureTemperature(const Real press
 }
 
 PORTABLE_FUNCTION
-void SpinerEOSDependsRhoT::PTofRE(const Real rho, const Real sie, Real *lambda,
-                                  Real &press, Real &temp, Real &dpdr, Real &dpde,
-                                  Real &dtdr, Real &dtde) const {
-  TableStatus whereAmI;
-  const Real lRho = lRho_(rho);
-  const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
-  temp = T_(lT);
-  if (whereAmI == TableStatus::OffBottom) {
-    press = PCold_.interpToReal(lRho);
-    dpdr = dPdRhoCold_.interpToReal(lRho);
-    dpde = dPdECold_.interpToReal(lRho);
-    dtdr = dTdRhoCold_.interpToReal(lRho);
-    dtde = dTdECold_.interpToReal(lRho);
-  } else if (whereAmI == TableStatus::OffTop) {
-    const Real Cv = dEdTMax_.interpToReal(lRho);
-    const Real gm1 = gm1Max_.interpToReal(lRho);
-    const Real e0 = sielTMax_.interpToReal(lRho);
-    const Real e = e0 + Cv * (temp - TMax_);
-    press = gm1 * rho * e;
-    dpdr = gm1 * e;
-    dpde = gm1 * rho;
-    dtdr = -press / (gm1 * Cv * rho * rho);
-    dtde = 1. / Cv;
-  } else { // on table
-    press = P_.interpToReal(lRho, lT);
-    dpdr = dPdRho_.interpToReal(lRho, lT);
-    dpde = dPdE_.interpToReal(lRho, lT);
-    dtdr = dTdRho_.interpToReal(lRho, lT);
-    dtde = dTdE_.interpToReal(lRho, lT);
-  }
-}
-
-PORTABLE_FUNCTION
 void SpinerEOSDependsRhoT::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                    Real &cv, Real &bmod, const unsigned long output,
                                    Real *lambda) const {
@@ -1308,20 +1275,6 @@ void SpinerEOSDependsRhoSie::DensityEnergyFromPressureTemperature(const Real pre
   Real lRho = lRhoFromPlT_(press, lT, lambda);
   rho = fromLog_(lRho, lRhoOffset_);
   sie = sie_.interpToReal(lRho, lT);
-}
-
-PORTABLE_FUNCTION
-void SpinerEOSDependsRhoSie::PTofRE(const Real rho, const Real sie, Real *lambda,
-                                    Real &press, Real &temp, Real &dpdr, Real &dpde,
-                                    Real &dtdr, Real &dtde) const {
-  Real lRho = toLog_(rho, lRhoOffset_);
-  Real lE = toLog_(sie, lEOffset_);
-  press = dependsRhoSie_.P.interpToReal(lRho, lE);
-  temp = T_.interpToReal(lRho, lE);
-  dpdr = dependsRhoSie_.dPdRho.interpToReal(lRho, lE);
-  dpde = dependsRhoSie_.dPdE.interpToReal(lRho, lE);
-  dtdr = dependsRhoSie_.dTdRho.interpToReal(lRho, lE);
-  dtde = dependsRhoSie_.dTdE.interpToReal(lRho, lE);
 }
 
 PORTABLE_FUNCTION
