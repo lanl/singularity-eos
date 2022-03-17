@@ -21,7 +21,7 @@
 
 namespace singularity {
 namespace mfuncname {
-inline auto member_func_name(const char* type_name, const char* func_name) {
+static inline auto member_func_name(const char* type_name, const char* func_name) {
   return std::string(type_name) + std::string("::") + std::string(func_name);
 }
 } // namespace mfuncname
