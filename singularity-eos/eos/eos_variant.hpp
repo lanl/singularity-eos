@@ -223,7 +223,7 @@ class Variant {
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                             Real *lambda, Real &rho, Real &sie) const {
     return mpark::visit(
-        [&press, &temp, lambda, &rho, &sie](const auto &eos) {
+        [&press, &temp, &lambda, &rho, &sie](const auto &eos) {
           return eos.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
         },
         eos_);
