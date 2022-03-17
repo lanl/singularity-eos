@@ -24,8 +24,8 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/eos/eos_variant.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
 
 #ifdef SPINER_USE_HDF
 #include <fast-math/logs.hpp>
@@ -46,7 +46,6 @@
 #ifdef SINGULARITY_USE_EOSPAC
 #include <eos_Interface.h>
 #endif
-
 
 namespace singularity {
 
