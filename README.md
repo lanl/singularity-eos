@@ -88,6 +88,17 @@ you modify.
 To run formatting automatically, call `make format_singularity-eos`
 at the build step. Cmake automatically makes a target.
 
+You can also call the bash script `format.sh` in the `utils/scripts`
+directory as
+```bash
+utils/scripts/format.sh
+```
+The script optionally sets the `clang-format` binary from an
+environment variable, e.g.,
+```bash
+CFM=clang-format=12 utils/scripts/format.sh
+```
+
 ## Units
 
 singularity-eos, prior to unit modifiers, always uses CGS units internally. For
