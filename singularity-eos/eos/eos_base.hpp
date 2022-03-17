@@ -26,6 +26,7 @@ static inline auto member_func_name(const char *type_name, const char *func_name
 }
 } // namespace mfuncname
 } // namespace singularity
+#undef SG_MEMBER_FUNC_NAME
 #define SG_MEMBER_FUNC_NAME()                                                            \
   singularity::mfuncname::member_func_name(typeid(CRTP).name(), __func__);
 
@@ -35,6 +36,7 @@ namespace eos_base {
 // This Macro adds the `using` statements that allow for the base class
 // vector functionality to overload the scalar implementations in the derived
 // classes
+#undef SG_ADD_BASE_CLASS_USINGS
 #define SG_ADD_BASE_CLASS_USINGS(EOSDERIVED)                                             \
   using EosBase<EOSDERIVED>::TemperatureFromDensityInternalEnergy;                       \
   using EosBase<EOSDERIVED>::InternalEnergyFromDensityTemperature;                       \
