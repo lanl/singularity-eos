@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Singularity-EOS'
-copyright = '2022. Triad National Security'
+copyright = '2021 - 2022. Triad National Security'
 author = 'The Singularity-EOS Team'
 
 
