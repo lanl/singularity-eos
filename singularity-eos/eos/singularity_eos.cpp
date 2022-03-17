@@ -186,8 +186,7 @@ int get_sg_BulkModulusFromDensityInternalEnergy(int matindex,
 					  double* bmods,
 					  const int len
 					  ){
-  std::vector<Real*> lambdas(len);
-  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len, lambdas);
+  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
   return 0; 
 
 }

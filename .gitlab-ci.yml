@@ -45,6 +45,10 @@ before_script:
 .buildtype_release: &buildtype_release
   BUILD_TYPE: "Release"
 
+.gpu: &gpu
+  SINGULARITY_USE_CUDA: "true"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
+
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"
 
@@ -56,6 +60,7 @@ before_script:
 
 .power9: &power9
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=power9"
+    POWER9: "true"
 
 #################
 # General Setup #
@@ -143,6 +148,7 @@ before_script:
     - sed -i "1s;^;#%Module\n;" ${modName}
     - module use ${CI_PROJECT_DIR}/spack_env
     - module load loads # module load compiler, deps, etc.
+    - if [ "$POWER9" = "true" ]; then module load cuda; fi
     - module list
     - mkdir -p build install
     - cd build
@@ -155,6 +161,9 @@ before_script:
             -DSINGULARITY_BUILD_TESTS=ON \
             -DSINGULARITY_TEST_SESAME=ON \
             -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
+            -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
+            -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
+            -DSINGULARITY_USE_KOKKOSKERNELS=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_FORTRAN=$([ ${SINGULARITY_USE_FORTRAN} = "true" ] && echo ON || echo OFF) \
             ..
     - make -j
@@ -210,6 +219,13 @@ test_gnu_power9:
   extends: .test
   variables:
     <<: *power9
+
+test_gnu_power9_gpu:
+  <<: *job_def
+  extends: .test
+  variables:    
+    <<: *power9
+    <<: *gpu
 
 install_gnu_skylake_fort:
   <<: *job_def
