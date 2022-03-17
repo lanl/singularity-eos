@@ -58,8 +58,8 @@ constexpr Real ev2k = 1.160451812e4;
 #endif // SINGULARITY_TEST_SESAME
 #endif // SPINER_USE_HDF
 
-PORTABLE_INLINE_FUNCTION bool isClose(Real a, Real b, Real EPS = 5e-2) {
-  return fabs(b - a) / (fabs(a + b) + 1e-20) <= EPS;
+PORTABLE_INLINE_FUNCTION bool isClose(Real a, Real b, Real eps = 5e-2) {
+  return fabs(b - a) / (fabs(a + b) + 1e-20) <= eps;
 }
 
 PORTABLE_INLINE_FUNCTION Real myAtan(Real x, Real shift, Real scale, Real offset) {

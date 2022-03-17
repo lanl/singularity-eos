@@ -19,9 +19,15 @@
 
 #include <ports-of-call/portability.hpp>
 
-// Macro for portableFor naming
-#define SG_MEMBER_FUNC_NAME()                                                            \
-  (std::string(typeid(CRTP).name()) + std::string("::") + std::string(__func__))
+namespace singularity {
+namespace mfuncname {
+inline auto member_func_name(const char* type_name, const char* func_name) {
+  return std::string(type_name) + std::string("::") + std::string(func_name);
+}
+} // namespace mfuncname
+} // namespace singularity
+#define SG_MEMBER_FUNC_NAME() \
+  singularity::mfuncname::member_func_name(typeid(CRTP).name(), __func__);
 
 namespace singularity {
 namespace eos_base {
