@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -156,19 +156,6 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     rho *= inv_rho_unit_;
     sie *= inv_sie_unit_;
   }
-
-  // PORTABLE_FUNCTION
-  // void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-  //             Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
-  //   t_.PTofRE(rho * rho_unit_, sie * sie_unit_, lambda, press, temp, dpdr, dpde, dtdr,
-  //             dtde);
-  //   press *= inv_press_unit_;
-  //   temp *= inv_temp_unit_;
-  //   dpdr *= inv_dpdr_unit_;
-  //   dpde *= inv_dpde_unit_;
-  //   dtdr *= inv_dtdr_unit_;
-  //   dtde *= inv_dtde_unit_;
-  // }
 
   PORTABLE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,

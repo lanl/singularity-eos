@@ -88,6 +88,17 @@ you modify.
 To run formatting automatically, call `make format_singularity-eos`
 at the build step. Cmake automatically makes a target.
 
+You can also call the bash script `format.sh` in the `utils/scripts`
+directory as
+```bash
+utils/scripts/format.sh
+```
+The script optionally sets the `clang-format` binary from an
+environment variable, e.g.,
+```bash
+CFM=clang-format=12 utils/scripts/format.sh
+```
+
 ## Units
 
 singularity-eos, prior to unit modifiers, always uses CGS units internally. For
@@ -105,7 +116,7 @@ concreteness, the internal units of each quantity are:
 
 ## Copyright
 
-© 2021. Triad National Security, LLC. All rights reserved.  This
+© 2021-2022. Triad National Security, LLC. All rights reserved.  This
 program was produced under U.S. Government contract 89233218CNA000001
 for Los Alamos National Laboratory (LANL), which is operated by Triad
 National Security, LLC for the U.S.  Department of Energy/National

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -16,8 +16,8 @@
 #define EOS_VARIANT_HPP
 
 #include <ports-of-call/portability.hpp>
-#include <variant/include/mpark/variant.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <variant/include/mpark/variant.hpp>
 
 using Real = double;
 
@@ -29,13 +29,9 @@ using eos_variant = mpark::variant<Ts...>;
 // Provide default functionality when lambda isn't passed to vector functions
 struct NullIndexer {
   PORTABLE_FORCEINLINE_FUNCTION
-  Real* operator[](int i) {
-    return nullptr;
-  }
+  Real *operator[](int i) { return nullptr; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real* operator[](int i) const {
-    return nullptr;
-  }
+  Real *operator[](int i) const { return nullptr; }
 };
 
 template <typename... EOSs>
@@ -208,13 +204,12 @@ class Variant {
   }
 
   PORTABLE_INLINE_FUNCTION
-  void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
+  void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr,
+              Real &dpde, Real &dtdr, Real &dtde) const {
     return mpark::visit(
         [&rho, &sie, &lambda, &press, &temp, &dpdr, &dpde, &dtdr,
          &dtde](const auto &eos) {
-          return eos.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr,
-                            dtde);
+          return eos.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr, dtde);
         },
         eos_);
   }
@@ -223,7 +218,7 @@ class Variant {
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                             Real *lambda, Real &rho, Real &sie) const {
     return mpark::visit(
-        [&press, &temp, lambda, &rho, &sie](const auto &eos) {
+        [&press, &temp, &lambda, &rho, &sie](const auto &eos) {
           return eos.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
         },
         eos_);
@@ -232,320 +227,264 @@ class Variant {
   /*
   Vector versions of the member functions run on the host but the scalar
   lookups will run on the device
-  
+
   RealIndexer must have an operator[](int) that returns a Real. e.g., Real*
   ConstRealIndexer is as RealIndexer, but assumed const type.
   LambdaIndexer must have an operator[](int) that returns a Real*. e.g., Real**
   */
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num) const {
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void
+  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&temperatures, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return TemperatureFromDensityInternalEnergy(
-        rhos, sies, temperatures, num, lambdas);
+    return TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num, lambdas);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&temperatures,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const {
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&temperatures, const int num,
+                                       LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &sies, &temperatures, &num, &lambdas](const auto &eos) {
-          return eos.TemperatureFromDensityInternalEnergy(
-              rhos, sies, temperatures, num, lambdas);
+          return eos.TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
+                                                          lambdas);
         },
         eos_);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num) const {
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&sies,
+                                                   const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return InternalEnergyFromDensityTemperature(
-        rhos, temperatures, sies, num, lambdas);
+    return InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num, lambdas);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&sies,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const {
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&sies, const int num,
+                                                   LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &temperatures, &sies, &num, &lambdas](const auto &eos) {
-          return eos.InternalEnergyFromDensityTemperature(
-              rhos, temperatures, sies, num, lambdas);
+          return eos.InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
+                                                          lambdas);
         },
         eos_);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num) const {
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void
+  PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                 RealIndexer &&pressures, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return PressureFromDensityTemperature(
-        rhos, temperatures, pressures, num, lambdas);
+    return PressureFromDensityTemperature(rhos, temperatures, pressures, num, lambdas);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-                                      ConstRealIndexer &&temperatures,
-                                      RealIndexer &&pressures,
-                                      const int num,
-                                      LambdaIndexer &&lambdas) const {
-    return mpark::visit(
-        [&rhos, &temperatures, &pressures, &num, &lambdas](const auto &eos) {
-          return eos.PressureFromDensityTemperature(
-              rhos, temperatures, pressures, num, lambdas);
-        },
-        eos_);
-  }
-
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num) const {
-    NullIndexer lambdas{}; // Returns null pointer for every index
-    return PressureFromDensityInternalEnergy(
-        rhos, sies, pressures, num, lambdas);
-  }
-
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&sies,
-                                         RealIndexer &&pressures,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const {
-    return mpark::visit(
-        [&rhos, &sies, &pressures, &num, &lambdas](const auto &eos) {
-          return eos.PressureFromDensityInternalEnergy(
-              rhos, sies, pressures, num, lambdas);
-        },
-        eos_);
-  }
-
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num) const {
-    NullIndexer lambdas{}; // Returns null pointer for every index
-    return SpecificHeatFromDensityTemperature(
-        rhos, temperatures, cvs, num, lambdas);
-  }
-
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-                                          ConstRealIndexer &&temperatures,
-                                          RealIndexer &&cvs,
-                                          const int num,
-                                          LambdaIndexer &&lambdas) const {
-    return mpark::visit(
-        [&rhos, &temperatures, &cvs, &num, &lambdas](const auto &eos) {
-          return eos.SpecificHeatFromDensityTemperature(
-              rhos, temperatures, cvs, num, lambdas);
-        },
-        eos_);
-  }
-
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num) const {
-    NullIndexer lambdas{}; // Returns null pointer for every index
-    return SpecificHeatFromDensityInternalEnergy(
-        rhos, sies, cvs, num, lambdas);
-  }
-
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                             ConstRealIndexer &&sies,
-                                             RealIndexer &&cvs,
-                                             const int num,
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
+                                             ConstRealIndexer &&temperatures,
+                                             RealIndexer &&pressures, const int num,
                                              LambdaIndexer &&lambdas) const {
     return mpark::visit(
-        [&rhos, &sies, &cvs, &num, &lambdas](const auto &eos) {
-          return eos.SpecificHeatFromDensityInternalEnergy(
-              rhos, sies, cvs, num, lambdas);
+        [&rhos, &temperatures, &pressures, &num, &lambdas](const auto &eos) {
+          return eos.PressureFromDensityTemperature(rhos, temperatures, pressures, num,
+                                                    lambdas);
         },
         eos_);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num) const {
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void
+  PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                    RealIndexer &&pressures, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return BulkModulusFromDensityTemperature(
-        rhos, temperatures, bmods, num, lambdas);
+    return PressureFromDensityInternalEnergy(rhos, sies, pressures, num, lambdas);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-                                         ConstRealIndexer &&temperatures,
-                                         RealIndexer &&bmods,
-                                         const int num,
-                                         LambdaIndexer &&lambdas) const {
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&sies,
+                                                RealIndexer &&pressures, const int num,
+                                                LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &pressures, &num, &lambdas](const auto &eos) {
+          return eos.PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
+                                                       lambdas);
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                 ConstRealIndexer &&temperatures,
+                                                 RealIndexer &&cvs, const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                 ConstRealIndexer &&temperatures,
+                                                 RealIndexer &&cvs, const int num,
+                                                 LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &cvs, &num, &lambdas](const auto &eos) {
+          return eos.SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
+                                                        lambdas);
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void
+  SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                        RealIndexer &&cvs, const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                    ConstRealIndexer &&sies,
+                                                    RealIndexer &&cvs, const int num,
+                                                    LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &cvs, &num, &lambdas](const auto &eos) {
+          return eos.SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                RealIndexer &&bmods,
+                                                const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                RealIndexer &&bmods, const int num,
+                                                LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &temperatures, &bmods, &num, &lambdas](const auto &eos) {
-          return eos.BulkModulusFromDensityTemperature(
-              rhos, temperatures, bmods, num, lambdas);
+          return eos.BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
+                                                       lambdas);
         },
         eos_);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num) const {
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void
+  BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&bmods, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return BulkModulusFromDensityInternalEnergy(
-        rhos, sies, bmods, num, lambdas);
+    return BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num, lambdas);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&sies,
-                                            RealIndexer &&bmods,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const {
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&sies,
+                                                   RealIndexer &&bmods, const int num,
+                                                   LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &sies, &bmods, &num, &lambdas](const auto &eos) {
-          return eos.BulkModulusFromDensityInternalEnergy(
-              rhos, sies, bmods, num, lambdas);
+          return eos.BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
+                                                          lambdas);
         },
         eos_);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num) const {
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&gm1s,
+                                                   const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return GruneisenParamFromDensityTemperature(
-        rhos, temperatures, gm1s, num, lambdas);
+    return GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num, lambdas);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-                                            ConstRealIndexer &&temperatures,
-                                            RealIndexer &&gm1s,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const {
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&gm1s, const int num,
+                                                   LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &temperatures, &gm1s, &num, &lambdas](const auto &eos) {
-          return eos.GruneisenParamFromDensityTemperature(
-              rhos, temperatures, gm1s, num, lambdas);
+          return eos.GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
+                                                          lambdas);
         },
         eos_);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num) const {
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                      ConstRealIndexer &&sies,
+                                                      RealIndexer &&gm1s,
+                                                      const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return GruneisenParamFromDensityInternalEnergy(
-        rhos, sies, gm1s, num, lambdas);
+    return GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num, lambdas);
   }
 
-  template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline
-  void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-                                               ConstRealIndexer &&sies,
-                                               RealIndexer &&gm1s,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const {
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                      ConstRealIndexer &&sies,
+                                                      RealIndexer &&gm1s, const int num,
+                                                      LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &sies, &gm1s, &lambdas, &num](const auto &eos) {
-          return eos.GruneisenParamFromDensityInternalEnergy(
-              rhos, sies, gm1s, num, lambdas);
+          return eos.GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
+                                                             lambdas);
         },
         eos_);
   }
 
-  template<typename RealIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output) const {
+  template <typename RealIndexer>
+  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+                      const int num, const unsigned long output) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return FillEos(rhos, temps, energies, presses, cvs, bmods,
-                       num, output, lambdas);
+    return FillEos(rhos, temps, energies, presses, cvs, bmods, num, output, lambdas);
   }
 
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-               RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-               const int num, const unsigned long output,
-               LambdaIndexer &&lambdas) const {
+  template <typename RealIndexer, typename LambdaIndexer>
+  inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
+                      RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
+                      const int num, const unsigned long output,
+                      LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &temps, &energies, &presses, &cvs, &bmods, &num, &output,
          &lambdas](const auto &eos) {
-          return eos.FillEos(rhos, temps, energies, presses, cvs, bmods,
-                                   num, output, lambdas);
+          return eos.FillEos(rhos, temps, energies, presses, cvs, bmods, num, output,
+                             lambdas);
         },
         eos_);
   }
 
-  template<typename RealIndexer>
-  inline
-  void PTofRE(RealIndexer &&rhos, RealIndexer &&sies,
-              RealIndexer &&presses, RealIndexer &&temps,
-              RealIndexer &&dpdrs, RealIndexer &&dpdes,
-              RealIndexer &&dtdrs, RealIndexer &&dtdes,
-              const int num) const {
+  template <typename RealIndexer>
+  inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,
+                     RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
+                     RealIndexer &&dtdrs, RealIndexer &&dtdes, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return PTofRE(rhos, sies, presses, temps, dpdrs, dpdes, dtdrs,
-                  dtdes, num, lambdas);
+    return PTofRE(rhos, sies, presses, temps, dpdrs, dpdes, dtdrs, dtdes, num, lambdas);
   }
 
-  template<typename RealIndexer, typename LambdaIndexer>
-  inline
-  void PTofRE(RealIndexer &&rhos, RealIndexer &&sies,
-              RealIndexer &&presses, RealIndexer &&temps,
-              RealIndexer &&dpdrs, RealIndexer &&dpdes,
-              RealIndexer &&dtdrs, RealIndexer &&dtdes,
-              const int num, LambdaIndexer &&lambdas) const {
+  template <typename RealIndexer, typename LambdaIndexer>
+  inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,
+                     RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
+                     RealIndexer &&dtdrs, RealIndexer &&dtdes, const int num,
+                     LambdaIndexer &&lambdas) const {
     return mpark::visit(
-        [&rhos, &sies, &presses, &temps, &dpdrs, &dpdes, &dtdrs, &dtdes,
-         &num, &lambdas](const auto &eos) {
-          return eos.PTofRE(rhos, sies, presses, temps, dpdrs, dpdes, dtdrs,
-                            dtdes, num, lambdas);
+        [&rhos, &sies, &presses, &temps, &dpdrs, &dpdes, &dtdrs, &dtdes, &num,
+         &lambdas](const auto &eos) {
+          return eos.PTofRE(rhos, sies, presses, temps, dpdrs, dpdes, dtdrs, dtdes, num,
+                            lambdas);
         },
         eos_);
   }
