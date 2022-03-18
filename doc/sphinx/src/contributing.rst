@@ -56,7 +56,7 @@ function calls could only be achieved by creating vector modifiers of all the
 implemented EOS.
 
 Instead, the strategy we decided to use in this case was to implement the
-polymorphism at compile time through the `CRTP`_ (curiously recurisve templating
+polymorphism at compile time through the `CRTP`_ (curiously recurring template
 pattern). The basic idea is two-fold:
 
 1.  The base class is templated on the derived class to avoid the need for
