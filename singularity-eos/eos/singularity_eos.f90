@@ -53,7 +53,7 @@ module singularity_eos
       bind(C, name='init_sg_eos')
       import
       integer(c_int), value, intent(in) :: nmat
-      type(c_ptr), intent(in)           :: eos
+      type(c_ptr), intent(inout)        :: eos
     end function init_sg_eos
   end interface
 
@@ -230,7 +230,7 @@ module singularity_eos
       bind(C, name='finalize_sg_eos')
       import
       integer(kind=c_int), value, intent(in) :: nmat
-      type(c_ptr), intent(in)                :: eos
+      type(c_ptr), intent(inout)             :: eos
       integer(kind=c_int), value, intent(in) :: own_kokkos
     end function finalize_sg_eos
   end interface
@@ -298,8 +298,8 @@ contains
 
   integer function init_sg_eos_f(nmat, eos) &
     result(err)
-    integer(kind=c_int), intent(in) :: nmat
-    type(sg_eos_ary_t), intent(in)  :: eos
+    integer(kind=c_int), intent(in)   :: nmat
+    type(sg_eos_ary_t), intent(inout) :: eos
     err = init_sg_eos(nmat, eos%ptr)
   end function init_sg_eos_f
 
@@ -584,7 +584,7 @@ contains
   integer function finalize_sg_eos_f(nmat, eos) &
     result(err)
     integer(c_int), value, intent(in) :: nmat
-    type(sg_eos_ary_t), intent(in)    :: eos
+    type(sg_eos_ary_t), intent(inout) :: eos
     err = finalize_sg_eos(nmat, eos%ptr, 1)
   end function finalize_sg_eos_f
 end module singularity_eos
