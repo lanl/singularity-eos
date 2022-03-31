@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -17,11 +17,11 @@
 
 namespace singularity {
 
-PORTABLE_FUNCTION Real JWL::ReferenceEnergy(const Real rho) const {
+PORTABLE_FUNCTION Real JWL::ReferencePressure(const Real rho) const {
   const Real x = _rho0 / rho;
   return _A * std::exp(-_R1 * x) + _B * std::exp(-_R2 * x);
 }
-PORTABLE_FUNCTION Real JWL::ReferencePressure(const Real rho) const {
+PORTABLE_FUNCTION Real JWL::ReferenceEnergy(const Real rho) const {
   const Real x = _rho0 / rho;
   return _A / (_rho0 * _R1) * std::exp(-_R1 * x) +
          _B / (_rho0 * _R2) * std::exp(-_R2 * x);

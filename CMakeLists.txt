@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------#
-# © 2021. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -154,7 +154,7 @@ if (SINGULARITY_USE_KOKKOS)
       list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_KOKKOS_INSTALL_DIR}")
       set(Kokkos_ROOT "${SINGULARITY_KOKKOS_INSTALL_DIR}/lib64/cmake/Kokkos")
     endif()
-    find_package(Kokkos REQUIRED)
+    find_package(Kokkos)
     if(NOT Kokkos_FOUND)
       if(SINGULARITY_USE_CUDA)
         set(Kokkos_ENABLE_CUDA ON CACHE BOOL "" FORCE)

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -26,11 +26,14 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
 
+using namespace eos_base;
+
 template <typename T>
-class ShiftedEOS {
+class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
  public:
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
@@ -126,17 +129,15 @@ class ShiftedEOS {
   }
 
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
-    t_.PTofRE(rho, sie - shift_, lambda, press, temp, dpdr, dpde, dtdr, dtde);
-  }
-  PORTABLE_FUNCTION
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
     sie += shift_;
   }
+
+  // Vector functions that overload the scalar versions declared here.
+  SG_ADD_BASE_CLASS_USINGS(ShiftedEOS<T>)
 
  private:
   T t_;
