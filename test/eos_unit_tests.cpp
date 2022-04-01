@@ -29,6 +29,7 @@
 
 using singularity::EOS;
 using singularity::IdealGas;
+using singularity::Gruneisen;
 using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
 
@@ -73,7 +74,7 @@ inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN
   for (int i = 0; i < num; i++) {
     INFO("i: " << i << ", " << xname << ": " << x[i] << ", " << yname << ": " << y[i]
                << ", Value: " << z[i] << ", True Value: " << ztrue[i]);
-    REQUIRE(isClose(z[i], ztrue[i], 1e-12));
+    CHECK(isClose(z[i], ztrue[i], 1e-12));
   }
 }
 
@@ -515,6 +516,86 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
         THEN("The returned Gamma(rho, T) should be constant") {
           array_compare(num, density, temperature, h_gruneisen, gruneisen_true, "Density",
                         "Temperature");
+        }
+      }
+    }
+  }
+}
+
+SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
+  GIVEN("Parameters for a Gruneisen EOS") {
+    // Unit conversions
+    constexpr Real mm = 10.;
+    constexpr Real us = 1e-06;
+    constexpr Real Mbcc_per_g = 1e12;
+    // Gruneisen parameters for copper
+    constexpr Real C0 = 0.394 * mm / us;
+    constexpr Real S1 = 1.489;
+    constexpr Real S2 = 0.;
+    constexpr Real S3 = 0.;
+    constexpr Real Gamma0 = 2.02;
+    constexpr Real b = 0.47;
+    constexpr Real rho0 = 8.93;
+    constexpr Real T0 = 298.;
+    constexpr Real P0 = 0.;
+    constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
+    // Create the EOS
+    EOS eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
+    GIVEN("Densities and energies") {
+      constexpr int num = 3;
+      constexpr std::array<Real, num> rho{8., 9., 9.5};
+      constexpr std::array<Real, num> sie{1.e9, 5.e8, 1.e8};
+      auto prho = rho.data();
+      auto psie = sie.data();
+
+      // Gold standard values for a subset of lookups
+      constexpr std::array<Real, num> pressure_true{
+        -1.442078800000000e+13, 1.103964838912181e+12, 9.414588969513447e+12};
+      constexpr std::array<Real, num> bulkmodulus_true{
+        9.507496824000003e+13, 1.440573092814230e+14, 1.844847821528217e+14};
+      constexpr std::array<Real, num> temperature_true{
+        5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02};
+      constexpr std::array<Real, num> gruneisen_true{
+        2.020000000000000e+00, 2.007944444444444e+00, 1.927000000000000e+00};
+
+      // Output arrays
+      std::array<Real, num> pressure;
+      std::array<Real, num> bulkmodulus;
+      std::array<Real, num> temperature;
+      std::array<Real, num> gruneisen;
+      auto ppressure = pressure.data();
+      auto pbulkmodulus = bulkmodulus.data();
+      auto ptemperature = temperature.data();
+      auto pgruneisen = gruneisen.data();
+
+      WHEN("A P(rho, e) lookup is performed") {
+        eos.PressureFromDensityInternalEnergy(prho, psie, ppressure, num);
+        THEN("The returned P(rho, e) should be equal to the true value") {
+          array_compare(num, rho, sie, pressure, pressure_true, "Density", "Energy");
+        }
+      }
+
+      WHEN("A B_S(rho, e) lookup is performed") {
+        eos.BulkModulusFromDensityInternalEnergy(prho, psie, pbulkmodulus, num);
+        THEN("The returned B_S(rho, e) should be equal to the true value") {
+          array_compare(num, rho, sie, bulkmodulus, bulkmodulus_true, "Density", 
+                        "Energy");
+        }
+      }
+
+      WHEN("A T(rho, e) lookup is performed") {
+        eos.TemperatureFromDensityInternalEnergy(prho, psie, ptemperature, num);
+        THEN("The returned B_S(rho, e) should be equal to the true value") {
+          array_compare(num, rho, sie, temperature, temperature_true, "Density", 
+                        "Energy");
+        }
+      }
+
+      WHEN("A B_S(rho, e) lookup is performed") {
+        eos.GruneisenParamFromDensityInternalEnergy(prho, psie, pgruneisen, num);
+        THEN("The returned Gamma(rho, e) should be equal to the true value") {
+          array_compare(num, rho, sie, gruneisen, gruneisen_true, "Density", 
+                        "Energy");
         }
       }
     }

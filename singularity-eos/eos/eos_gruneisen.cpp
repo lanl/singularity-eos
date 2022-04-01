@@ -29,24 +29,20 @@ PORTABLE_FUNCTION Real Gruneisen::TemperatureFromDensityInternalEnergy(
 PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie,
     Real *lambda) const { // Will a compiler clean this up for me?
-  const Real top2 = 1.0 - 0.5 * _G0;
-  const Real top3 = -0.5 * _b;
-  const Real eta = rho / _rho0;
-  const Real mu = eta - 1.0;
-  Real scale = 1.0;
-  const Real G = Gamma(rho);
-  if (mu > 0.0) {
-    const Real top = 1.0 + mu * (top2 + mu * top3);
-    const Real z = mu / eta;
-    const Real bot1 = (1.0 - _s1) * mu;
-    const Real bot2 = -_s2 * mu * z;
-    const Real bot3 = -_s3 * mu * z * z;
-    const Real bot = 1.0 + bot1 + bot2 + bot3;
-    scale = top / square(bot);
-    // if(sie>0.0) G = _G0+_b*mu;
+  const Real eta = 1 - _rho0 / rho;
+  Real P_H;
+  Real E_H;
+  if (eta > 0) {
+    const Real denom = square(1 - _s1 * eta - _s2 * square(eta) - _s3 * cube(eta));
+    P_H = _P0 + square(_C0) * _rho0 * eta / denom;
+    E_H = (P_H + _P0) * eta / _rho0 / 2.;
+  } else {
+    // This isn't thermodynamically consistent but it's widely used for expansion
+    P_H = _P0 + square(_C0) * eta * rho;
+    E_H = 0.;
   }
-  const Real rho_min = rho < _rho0 ? rho : _rho0;
-  return scale * _rho0 * _C0 * _C0 * mu + G * rho_min * sie;
+  return P_H + Gamma(rho) * rho * (sie - E_H);
+  
 }
 PORTABLE_FUNCTION Real Gruneisen::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
@@ -54,19 +50,19 @@ PORTABLE_FUNCTION Real Gruneisen::SpecificHeatFromDensityInternalEnergy(
 }
 PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  const Real mu = rho / _rho0 - 1;
-  if (mu <= 0) {
-    return rho * square(_C0) +
-           _G0 * (rho * sie + PressureFromDensityInternalEnergy(rho, sie));
+  const Real eta = 1 - _rho0 / rho;
+  if (eta < 0) {
+    return rho * square(_C0)
+           + _G0 * (rho * sie + PressureFromDensityInternalEnergy(rho, sie));
   } else {
-    const Real x = 1 - _rho0 / rho;
-    const Real s = _s1 + _s2 * x + _s3 * square(x);
-    const Real ds = _s2 + 2 * _s3 * x;
-    const Real Pr = _rho0 * square(_C0) * x / square(1 - x * s);
-    const Real dPr = -square(_rho0 * _C0) * (1 + x * (s + 2 * x * ds)) / cube(1 - s * x);
-    const Real G = _G0 + _b * mu;
-    return -dPr / rho * (1 - 0.5 * G * x) - 0.5 * G * Pr +
-           G * PressureFromDensityInternalEnergy(rho, sie) / (mu + 1) + rho * _b * sie;
+    const Real s = _s1 + _s2 * eta + _s3 * square(eta);
+    const Real ds = _s2 + 2 * _s3 * eta;
+    const Real Pr = _rho0 * square(_C0) * eta / square(1 - eta * s);
+    const Real dPr = -square(_rho0 * _C0) * (1 + eta * (s + 2 * eta * ds))
+      / cube(1 - s * eta);
+    const Real G = Gamma(rho);
+    return -dPr / rho * (1 - 0.5 * G * eta) - 0.5 * G * Pr
+           + G * PressureFromDensityInternalEnergy(rho, sie) * (1 - eta) + rho * _b * sie;
   }
 }
 PORTABLE_FUNCTION
