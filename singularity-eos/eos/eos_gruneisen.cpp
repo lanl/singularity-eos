@@ -42,7 +42,6 @@ PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
     E_H = 0.;
   }
   return P_H + Gamma(rho) * rho * (sie - E_H);
-  
 }
 PORTABLE_FUNCTION Real Gruneisen::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
@@ -52,17 +51,17 @@ PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   const Real eta = 1 - _rho0 / rho;
   if (eta < 0) {
-    return rho * square(_C0)
-           + _G0 * (rho * sie + PressureFromDensityInternalEnergy(rho, sie));
+    return rho * square(_C0) +
+           _G0 * (rho * sie + PressureFromDensityInternalEnergy(rho, sie));
   } else {
     const Real s = _s1 + _s2 * eta + _s3 * square(eta);
     const Real ds = _s2 + 2 * _s3 * eta;
     const Real Pr = _rho0 * square(_C0) * eta / square(1 - eta * s);
-    const Real dPr = -square(_rho0 * _C0) * (1 + eta * (s + 2 * eta * ds))
-      / cube(1 - s * eta);
+    const Real dPr =
+        -square(_rho0 * _C0) * (1 + eta * (s + 2 * eta * ds)) / cube(1 - s * eta);
     const Real G = Gamma(rho);
-    return -dPr / rho * (1 - 0.5 * G * eta) - 0.5 * G * Pr
-           + G * PressureFromDensityInternalEnergy(rho, sie) * (1 - eta) + rho * _b * sie;
+    return -dPr / rho * (1 - 0.5 * G * eta) - 0.5 * G * Pr +
+           G * PressureFromDensityInternalEnergy(rho, sie) * (1 - eta) + rho * _b * sie;
   }
 }
 PORTABLE_FUNCTION

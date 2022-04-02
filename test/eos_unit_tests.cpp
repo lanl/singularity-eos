@@ -28,8 +28,8 @@
 #include "catch2/catch.hpp"
 
 using singularity::EOS;
-using singularity::IdealGas;
 using singularity::Gruneisen;
+using singularity::IdealGas;
 using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
 
@@ -550,13 +550,13 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
 
       // Gold standard values for a subset of lookups
       constexpr std::array<Real, num> pressure_true{
-        -1.442078800000000e+13, 1.103964838912181e+12, 9.414588969513447e+12};
+          -1.442078800000000e+13, 1.103964838912181e+12, 9.414588969513447e+12};
       constexpr std::array<Real, num> bulkmodulus_true{
-        9.507496824000003e+13, 1.440573092814230e+14, 1.844847821528217e+14};
+          9.507496824000003e+13, 1.440573092814230e+14, 1.844847821528217e+14};
       constexpr std::array<Real, num> temperature_true{
-        5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02};
+          5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02};
       constexpr std::array<Real, num> gruneisen_true{
-        2.020000000000000e+00, 2.007944444444444e+00, 1.927000000000000e+00};
+          2.020000000000000e+00, 2.007944444444444e+00, 1.927000000000000e+00};
 
       // Output arrays
       std::array<Real, num> pressure;
@@ -578,7 +578,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
       WHEN("A B_S(rho, e) lookup is performed") {
         eos.BulkModulusFromDensityInternalEnergy(prho, psie, pbulkmodulus, num);
         THEN("The returned B_S(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, bulkmodulus, bulkmodulus_true, "Density", 
+          array_compare(num, rho, sie, bulkmodulus, bulkmodulus_true, "Density",
                         "Energy");
         }
       }
@@ -586,7 +586,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
       WHEN("A T(rho, e) lookup is performed") {
         eos.TemperatureFromDensityInternalEnergy(prho, psie, ptemperature, num);
         THEN("The returned B_S(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, temperature, temperature_true, "Density", 
+          array_compare(num, rho, sie, temperature, temperature_true, "Density",
                         "Energy");
         }
       }
@@ -594,8 +594,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
       WHEN("A B_S(rho, e) lookup is performed") {
         eos.GruneisenParamFromDensityInternalEnergy(prho, psie, pgruneisen, num);
         THEN("The returned Gamma(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, gruneisen, gruneisen_true, "Density", 
-                        "Energy");
+          array_compare(num, rho, sie, gruneisen, gruneisen_true, "Density", "Energy");
         }
       }
     }
