@@ -106,7 +106,14 @@ Gruneisen Parameter
 '''''''''''''''''''
 In this description of the EOS models, we use :math:`\Gamma` to represent the
 Gruneisen coeficient since this is the most commonly-used symbol in the
-context of Mie-Gruneisen equations of state. This should be differentiated from
+context of Mie-Gruneisen equations of state. The definition of the Gruneisen
+parameter is
+
+ .. math::
+
+    \Gamma := \frac{1}{\rho} \left( \frac{\partial P}{\partial e} \right)_\rho
+
+This should be differentiated from
 
  .. math::
 
@@ -214,40 +221,66 @@ The user should note that this implies that :math:`e=0` at the reference
 temperature, :math:`T_0`. Given this simple relationship, the user should
 treat the temperature from this EOS as only a rough estimate.
 
-The Grunesien parameter is given by
+First defining the compression as
+
+.. math::
+
+    \eta = 1 - \frac{\rho_0}{\rho},
+
+where :math:`\rho_0` is the reference density, the Grunesien parameter is given
+by
 
 .. math::
 
     \Gamma(\rho) =
       \begin{cases}
         \Gamma_0                                          & \rho < \rho_0 \\
-        \Gamma_0 \frac{\rho_0}{\rho} 
-           + b(1 - \frac{\rho_0}{\rho})                   & \rho >= \rho_0
+        \Gamma_0 (1 - \eta) + b\eta                       & \rho >= \rho_0
       \end{cases}
 
-and when the unitless user parameter :math:`b=0`, this ensures the the Gruneisen
+When the unitless user parameter :math:`b=0`, this ensures the the Gruneisen
 parameter is of a form where :math:`\rho\Gamma =` constant in compression.
 
 The reference pressure along the Hugoniot is determined by
 
 .. math::
 
-    P_H(\rho) = \rho_0 c_0^2 \mu
+    P_H(\rho) = P_0 + c_0^2 \eta
       \begin{cases}
-        1                                                 & \rho < \rho_0 \\
-        \frac{1 + \left(1 - \frac{1}{2}\Gamma_0 \right)\mu - \frac{b}{2} \mu^2}
-          {\left(1 - (s_1 - 1)\mu + s_2 \frac{\mu^2}{1 + \mu}
-            - s_3 \frac{\mu^3}{(1+\mu)^2} \right)^2}      & \rho > \rho_0
+        \rho                                                  & \rho < \rho_0 \\
+        \frac{\rho_0}{\left(
+          1 - s_1 \eta - s_2 \eta^2 - s_3 \eta^3 \right)^2}   & \rho > \rho_0
       \end{cases}
 
-where :math:`c_0`, :math:`s_1`, :math:`s_2`, and :math:`s_3` are fitting
-paramters. The units of :math:`c_0` are velocity while the rest are unitless.
+where :math:`P_0` is the reference pressure and :math:`c_0`, :math:`s_1`,
+:math:`s_2`, and :math:`s_3` are fitting paramters to the
+:math:`U_s`-:math:`u_p` curve such that
 
-Note that similar implementations may have subtly different definitions for the
-:math:`s_i` coefficients and care must be taken to use the correct values. Since
-:math:`s_2` and `s_3` are unitless for example, these parameters would not
-directly correspond to coefficients in a polynomial fit of the shock velocity to
-the particle velocity.
+.. math::
+
+    U_s = c_0 + u_p \left( s_1 + s_2 \frac{u_p}{U_s} 
+                           + s_3\left(\frac{u_p}{U_s}\right)^2 \right).
+
+Here :math:`U_s` is the shock velocity and :math:`u_p` is the particle
+velocity. For many materials, this relationship is roughly linear so only the
+:math:`s_1` parameter is needed. The units for :math:`c_0` are velocity while
+the rest are unitless.
+
+Finally the energy along the Hugoniot is given by
+
+.. math::
+
+    E_H(\rho) =
+      \begin{cases}
+        0                                               & \rho < \rho_0 \\
+        \frac{\eta (P_H + P_0)}{\rho_0 2}
+      \end{cases}.
+
+One should note that in this form neither the expansion region nor the overall
+temperature are thermodynamically consistent with the rest of the EOS. Since the
+EOS is a fit to the principal Hugoniot, the EOS will obviously reproduce single
+shocks quite well, but it may not be as appropriate when there are multiple
+shocks or for modeling the release behavior of a material.
 
 JWL EOS
 ````````
