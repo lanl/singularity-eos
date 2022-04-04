@@ -173,7 +173,8 @@ int get_sg_PressureFromDensityInternalEnergy(int matindex,
 					  const double*  sies,
 					  double* pressures,
 					  const int len
-					  ){
+					     )
+{
   eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
   return 0; 
 

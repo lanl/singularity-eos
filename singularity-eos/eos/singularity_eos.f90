@@ -167,9 +167,9 @@ module singularity_eos
                                                pressures, len) &
        bind(C, name='get_sg_PressureFromDensityInternalEnergy')
        import
-       integer(c_int), value :: matindex, len
-       type(c_ptr), value :: eos, rhos, sies
-       type(c_ptr), value :: pressures
+       integer(c_int), value, intent(in) :: matindex, len
+       type(c_ptr), value, intent(in) :: eos, rhos, sies
+       type(c_ptr), value, intent(in) :: pressures
     end function
   end interface
 
@@ -179,9 +179,9 @@ module singularity_eos
                                                bmods, len) &
        bind(C, name='get_sg_BulkModulusFromDensityInternalEnergy')
        import
-       integer(c_int),value :: matindex, len
-       type(c_ptr), value :: eos, rhos, sies
-       type(c_ptr), value :: bmods
+       integer(c_int),value, intent(in) :: matindex, len
+       type(c_ptr), value, intent(in) :: eos, rhos, sies
+       type(c_ptr), value, intent(in) :: bmods
     end function
   end interface
 
@@ -562,8 +562,8 @@ contains
     eos, rhos, sies, pressures, len) &
     result(err)
     integer(c_int), intent(in) :: matindex, len
-    real(kind=8), dimension(:,:,:), target:: rhos, sies
-    real(kind=8), dimension(:,:,:), target:: pressures
+    real(kind=8), dimension(:,:,:), intent(in), target:: rhos, sies
+    real(kind=8), dimension(:,:,:), intent(inout), target:: pressures
     type(sg_eos_ary_t), intent(in)    :: eos
     err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
@@ -573,8 +573,8 @@ contains
     eos, rhos, sies, bmods, len) &
     result(err)
     integer(c_int), intent(in) :: matindex, len
-    real(kind=8), dimension(:,:,:), target:: rhos, sies
-    real(kind=8), dimension(:,:,:), target:: bmods
+    real(kind=8), dimension(:,:,:), intent(in), target:: rhos, sies
+    real(kind=8), dimension(:,:,:), intent(inout), target:: bmods
     type(sg_eos_ary_t), intent(in)    :: eos
     err = get_sg_BulkModulusFromDensityInternalEnergy(matindex-1, &
        eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len)
