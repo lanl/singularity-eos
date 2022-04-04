@@ -617,7 +617,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
         Kokkos::deep_copy(h_pressure, v_pressure);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned P(rho, e) should be equal to the true value") {
-          array_compare(num, denisty, energy, h_pressure, pressure_true, "Density",
+          array_compare(num, density, energy, h_pressure, pressure_true, "Density",
                         "Energy");
         }
       }
@@ -629,7 +629,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
         Kokkos::deep_copy(h_bulkmodulus, v_bulkmodulus);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
-          array_compare(num, denisty, energy, h_bulkmodulus, bulkmodulus_true, "Density",
+          array_compare(num, density, energy, h_bulkmodulus, bulkmodulus_true, "Density",
                         "Energy");
         }
       }
@@ -641,7 +641,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
         Kokkos::deep_copy(h_temperature, v_temperature);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
-          array_compare(num, denisty, energy, h_temperature, temperature_true, "Density",
+          array_compare(num, density, energy, h_temperature, temperature_true, "Density",
                         "Energy");
         }
       }
@@ -654,7 +654,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
         Kokkos::deep_copy(h_gruneisen, v_gruneisen);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned Gamma(rho, e) should be equal to the true value") {
-          array_compare(num, denisty, energy, h_gruneisen, gruneisen_true, "Density",
+          array_compare(num, density, energy, h_gruneisen, gruneisen_true, "Density",
                         "Energy");
         }
       }
