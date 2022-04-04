@@ -544,10 +544,37 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
     EOS eos = host_eos.GetOnDevice();
     GIVEN("Densities and energies") {
       constexpr int num = 3;
-      constexpr std::array<Real, num> rho{8., 9., 9.5};
-      constexpr std::array<Real, num> sie{1.e9, 5.e8, 1.e8};
-      auto prho = rho.data();
-      auto psie = sie.data();
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create Kokkos views on device for the input arrays
+      Kokkos::View<Real[num]> v_density("density");
+      Kokkos::View<Real[num]> v_energy("density");
+#else
+      // Otherwise just create arrays to contain values and create pointers to
+      // be passed to the functions in place of the Kokkos views
+      std::array<Real, num> density;
+      std::array<Real, num> energy;
+      auto v_density = density.data();
+      auto v_energy = energy.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      // Populate the input arrays
+      portableFor(
+          "Initialize density and energy", 0, 1, PORTABLE_LAMBDA(int i) {
+            v_density[0] = 8.0;
+            v_density[1] = 9.0;
+            v_density[2] = 9.5;
+            v_energy[0] = 1.e9;
+            v_energy[1] = 5.e8;
+            v_energy[2] = 1.e8;
+          });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create host-side mirrors of the inputs and copy the inputs. These are
+      // just used for the comparisons
+      auto density = Kokkos::create_mirror_view(v_density);
+      auto energy = Kokkos::create_mirror_view(v_energy);
+      Kokkos::deep_copy(density, v_density);
+      Kokkos::deep_copy(energy, v_energy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
       constexpr std::array<Real, num> pressure_true{
@@ -559,55 +586,74 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
       constexpr std::array<Real, num> gruneisen_true{
           2.020000000000000e+00, 2.007944444444444e+00, 1.927000000000000e+00};
 
-      // Output arrays
-      std::array<Real, num> pressure;
-      std::array<Real, num> bulkmodulus;
-      std::array<Real, num> temperature;
-      std::array<Real, num> gruneisen;
-      auto ppressure = pressure.data();
-      auto pbulkmodulus = bulkmodulus.data();
-      auto ptemperature = temperature.data();
-      auto pgruneisen = gruneisen.data();
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create device views for outputs and mirror those views on the host
+      Kokkos::View<Real[num]> v_temperature("Temperature");
+      Kokkos::View<Real[num]> v_pressure("Pressure");
+      Kokkos::View<Real[num]> v_bulkmodulus("bmod");
+      Kokkos::View<Real[num]> v_gruneisen("Gamma");
+      auto h_temperature = Kokkos::create_mirror_view(v_temperature);
+      auto h_pressure = Kokkos::create_mirror_view(v_pressure);
+      auto h_bulkmodulus = Kokkos::create_mirror_view(v_bulkmodulus);
+      auto h_gruneisen = Kokkos::create_mirror_view(v_gruneisen);
+#else
+      // Create arrays for the outputs and then pointers to those arrays that
+      // will be passed to the functions in place of the Kokkos views
+      std::array<Real, num> h_temperature;
+      std::array<Real, num> h_pressure;
+      std::array<Real, num> h_bulkmodulus;
+      std::array<Real, num> h_gruneisen;
+      // Just alias the existing pointers
+      auto v_temperature = h_temperature.data();
+      auto v_pressure = h_pressure.data();
+      auto v_bulkmodulus = h_bulkmodulus.data();
+      auto v_gruneisen = h_gruneisen.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
 
       WHEN("A P(rho, e) lookup is performed") {
-        portableFor(
-            "P(rho, e)", 0, num, PORTABLE_LAMBDA(const int i) {
-              ppressure[i] = eos.PressureFromDensityInternalEnergy(rho[i], sie[i]);
-            });
+        eos.PressureFromDensityInternalEnergy(v_density, v_energy, v_pressure, num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_pressure, v_pressure);
+#endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned P(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, pressure, pressure_true, "Density", "Energy");
+          array_compare(num, rho, sie, h_pressure, pressure_true, "Density", "Energy");
         }
       }
 
       WHEN("A B_S(rho, e) lookup is performed") {
-        portableFor(
-            "B_S(rho, e)", 0, num, PORTABLE_LAMBDA(const int i) {
-              pbulkmodulus[i] = eos.BulkModulusFromDensityInternalEnergy(rho[i], sie[i]);
-            });
+        eos.BulkModulusFromDensityInternalEnergy(v_density, v_energy, v_bulkmodulus, num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_bulkmodulus, v_bulkmodulus);
+#endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, bulkmodulus, bulkmodulus_true, "Density",
+          array_compare(num, rho, sie, h_bulkmodulus, bulkmodulus_true, "Density",
                         "Energy");
         }
       }
 
       WHEN("A T(rho, e) lookup is performed") {
-        portableFor(
-            "T(rho, e)", 0, num, PORTABLE_LAMBDA(const int i) {
-              ptemperature[i] = eos.TemperatureFromDensityInternalEnergy(rho[i], sie[i]);
-            });
+        eos.TemperatureFromDensityInternalEnergy(v_density, v_energy, v_temperature, num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_temperature, v_temperature);
+#endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, temperature, temperature_true, "Density",
+          array_compare(num, rho, sie, h_temperature, temperature_true, "Density",
                         "Energy");
         }
       }
 
       WHEN("A Gamma(rho, e) lookup is performed") {
-        portableFor(
-            "Gamma(rho, e)", 0, num, PORTABLE_LAMBDA(const int i) {
-              pgruneisen[i] = eos.GruneisenParamFromDensityInternalEnergy(rho[i], sie[i]);
-            });
+        eos.GruneisenParamFromDensityInternalEnergy(v_density, v_energy, v_gruneisen,
+                                                    num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_gruneisen, v_gruneisen);
+#endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned Gamma(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, gruneisen, gruneisen_true, "Density", "Energy");
+          array_compare(num, rho, sie, h_gruneisen, gruneisen_true, "Density", "Energy");
         }
       }
     }
