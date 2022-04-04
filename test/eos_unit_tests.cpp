@@ -540,7 +540,8 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
     constexpr Real P0 = 0.;
     constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
     // Create the EOS
-    EOS eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
+    EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
+    EOS eos = host_eos.GetOnDevice();
     GIVEN("Densities and energies") {
       constexpr int num = 3;
       constexpr std::array<Real, num> rho{8., 9., 9.5};
@@ -569,14 +570,20 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
       auto pgruneisen = gruneisen.data();
 
       WHEN("A P(rho, e) lookup is performed") {
-        eos.PressureFromDensityInternalEnergy(prho, psie, ppressure, num);
+        portableFor(
+            "P(rho, e)", 0, num, PORTABLE_LAMBDA(const int i) {
+              ppressure[i] = eos.PressureFromDensityInternalEnergy(rho[i], sie[i]);
+            });
         THEN("The returned P(rho, e) should be equal to the true value") {
           array_compare(num, rho, sie, pressure, pressure_true, "Density", "Energy");
         }
       }
 
       WHEN("A B_S(rho, e) lookup is performed") {
-        eos.BulkModulusFromDensityInternalEnergy(prho, psie, pbulkmodulus, num);
+        portableFor(
+            "B_S(rho, e)", 0, num, PORTABLE_LAMBDA(const int i) {
+              pbulkmodulus[i] = eos.BulkModulusFromDensityInternalEnergy(rho[i], sie[i]);
+            });
         THEN("The returned B_S(rho, e) should be equal to the true value") {
           array_compare(num, rho, sie, bulkmodulus, bulkmodulus_true, "Density",
                         "Energy");
@@ -584,15 +591,21 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
       }
 
       WHEN("A T(rho, e) lookup is performed") {
-        eos.TemperatureFromDensityInternalEnergy(prho, psie, ptemperature, num);
+        portableFor(
+            "T(rho, e)", 0, num, PORTABLE_LAMBDA(const int i) {
+              ptemperature[i] = eos.TemperatureFromDensityInternalEnergy(rho[i], sie[i]);
+            });
         THEN("The returned B_S(rho, e) should be equal to the true value") {
           array_compare(num, rho, sie, temperature, temperature_true, "Density",
                         "Energy");
         }
       }
 
-      WHEN("A B_S(rho, e) lookup is performed") {
-        eos.GruneisenParamFromDensityInternalEnergy(prho, psie, pgruneisen, num);
+      WHEN("A Gamma(rho, e) lookup is performed") {
+        portableFor(
+            "Gamma(rho, e)", 0, num, PORTABLE_LAMBDA(const int i) {
+              pgruneisen[i] = eos.GruneisenParamFromDensityInternalEnergy(rho[i], sie[i]);
+            });
         THEN("The returned Gamma(rho, e) should be equal to the true value") {
           array_compare(num, rho, sie, gruneisen, gruneisen_true, "Density", "Energy");
         }
