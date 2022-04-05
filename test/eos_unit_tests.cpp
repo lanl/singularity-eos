@@ -543,7 +543,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
     EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
     EOS eos = host_eos.GetOnDevice();
     GIVEN("Densities and energies") {
-      constexpr int num = 3;
+      constexpr int num = 4;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create Kokkos views on device for the input arrays
       Kokkos::View<Real[num]> v_density("density");
@@ -563,9 +563,11 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
             v_density[0] = 8.0;
             v_density[1] = 9.0;
             v_density[2] = 9.5;
+            v_density[3] = 0.;
             v_energy[0] = 1.e9;
             v_energy[1] = 5.e8;
             v_energy[2] = 1.e8;
+            v_energy[3] = 0.;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create host-side mirrors of the inputs and copy the inputs. These are
@@ -578,13 +580,16 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
 
       // Gold standard values for a subset of lookups
       constexpr std::array<Real, num> pressure_true{
-          -1.442078800000000e+13, 1.103964838912181e+12, 9.414588969513447e+12};
+          -1.442078800000000e+13, 1.103964838912181e+12, 9.414588969513447e+12,
+          P0 - C0 * C0 * rho0};
       constexpr std::array<Real, num> bulkmodulus_true{
-          9.507496824000003e+13, 1.440573092814230e+14, 1.844847821528217e+14};
+          9.507496824000003e+13, 1.440573092814230e+14, 1.844847821528217e+14,
+          Gamma0 * (P0 - C0 * C0 * rho0)};
       constexpr std::array<Real, num> temperature_true{
-          5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02};
+          5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02,
+          T0};
       constexpr std::array<Real, num> gruneisen_true{
-          2.020000000000000e+00, 2.007944444444444e+00, 1.927000000000000e+00};
+          Gamma0, 2.007944444444444e+00, 1.927000000000000e+00, Gamma0};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
