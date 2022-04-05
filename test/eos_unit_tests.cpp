@@ -586,10 +586,9 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
           9.507496824000003e+13, 1.440573092814230e+14, 1.844847821528217e+14,
           Gamma0 * (P0 - C0 * C0 * rho0)};
       constexpr std::array<Real, num> temperature_true{
-          5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02,
-          T0};
-      constexpr std::array<Real, num> gruneisen_true{
-          Gamma0, 2.007944444444444e+00, 1.927000000000000e+00, Gamma0};
+          5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02, T0};
+      constexpr std::array<Real, num> gruneisen_true{Gamma0, 2.007944444444444e+00,
+                                                     1.927000000000000e+00, Gamma0};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
