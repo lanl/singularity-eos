@@ -34,6 +34,10 @@ class Params {
   T Get(const std::string &key, T default_value) const {
     return Contains(key) ? Get<T>(key) : default_value;
   }
+  template<typename T>
+  void Add(const std::string &key, const T &val) {
+    params[key] = std::to_string(val);
+  }
 
  private:
   void Parse(std::istream &s);
