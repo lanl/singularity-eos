@@ -29,16 +29,16 @@ PORTABLE_FUNCTION Real Gruneisen::TemperatureFromDensityInternalEnergy(
 PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie,
     Real *lambda) const { // Will a compiler clean this up for me?
-  const Real eta = 1 - _rho0 / rho;
   Real P_H;
   Real E_H;
-  if (eta > 0) {
+  if (rho >= _rho0) {
+    const Real eta = 1 - _rho0 / rho;
     const Real denom = square(1 - _s1 * eta - _s2 * square(eta) - _s3 * cube(eta));
     P_H = _P0 + square(_C0) * _rho0 * eta / denom;
     E_H = (P_H + _P0) * eta / _rho0 / 2.;
   } else {
     // This isn't thermodynamically consistent but it's widely used for expansion
-    P_H = _P0 + square(_C0) * eta * rho;
+    P_H = _P0 + square(_C0) * (rho - _rho0);
     E_H = 0.;
   }
   return P_H + Gamma(rho) * rho * (sie - E_H);
@@ -49,11 +49,11 @@ PORTABLE_FUNCTION Real Gruneisen::SpecificHeatFromDensityInternalEnergy(
 }
 PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  const Real eta = 1 - _rho0 / rho;
-  if (eta < 0) {
+  if (rho < _rho0) {
     return rho * square(_C0) +
            _G0 * (rho * sie + PressureFromDensityInternalEnergy(rho, sie));
   } else {
+    const Real eta = 1 - _rho0 / rho;
     const Real s = _s1 + _s2 * eta + _s3 * square(eta);
     const Real ds = _s2 + 2 * _s3 * eta;
     const Real Pr = _rho0 * square(_C0) * eta / square(1 - eta * s);
