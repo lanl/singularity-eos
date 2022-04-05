@@ -151,11 +151,6 @@ herr_t saveAllMaterials(const std::string &savename,
                         Verbosity eospacWarn) {
   std::vector<Params> params;
   std::vector<int> matids;
-  std::unordered_map<std::string, int> used_names;
-  std::unordered_set<int> used_matids;
-  SesameMetadata metadata;
-  hid_t file;
-  herr_t status = H5_SUCCESS;
 
   for (auto const &filename : filenames) {
     Params p(filename);
@@ -169,61 +164,7 @@ herr_t saveAllMaterials(const std::string &savename,
     params.push_back(p);
   }
 
-  std::cout << "Saving to file " << savename << std::endl;
-  file = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-
-  std::cout << "Processing " << matids.size() << " materials..." << std::endl;
-
-  for (size_t i = 0; i < matids.size(); i++) {
-    int matid = matids[i];
-    if (used_matids.count(matid) > 0) {
-      std::cerr << "...Duplicate matid " << matid << " detected. Skipping." << std::endl;
-      continue;
-    }
-    used_matids.insert(matid);
-
-    std::cout << "..." << matid << std::endl;
-
-    eosGetMetadata(matid, metadata, Verbosity::Debug);
-    if (printMetadata) std::cout << metadata << std::endl;
-
-    std::string name = params[i].Get("name", metadata.name);
-    if (name == "-1" || name == "") {
-      std::string new_name = "material_" + std::to_string(i);
-      std::cerr << "...WARNING: no reasonable name found. "
-                << "Using a default name: " << new_name << std::endl;
-      name = new_name;
-    }
-    if (used_names.count(name) > 0) {
-      used_names[name] += 1;
-      std::string new_name = name + "_" + std::to_string(used_names[name]);
-      std::cerr << "...WARNING: Name " << name << " already used. "
-                << "Using name: " << new_name << std::endl;
-      name = new_name;
-    } else {
-      used_names[name] = 1;
-    }
-
-    Bounds lRhoBounds, lTBounds, leBounds;
-    getMatBounds(i, matid, metadata, params[i], lRhoBounds, lTBounds, leBounds);
-
-    if (eospacWarn == Verbosity::Debug) {
-      std::cout << "bounds for log(rho), log(T), log(sie) are:\n"
-                << lRhoBounds << lTBounds << leBounds << std::endl;
-    }
-
-    status +=
-        saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name, eospacWarn);
-    if (status != H5_SUCCESS) {
-      std::cerr << "WARNING: problem with HDf5" << std::endl;
-    }
-  }
-
-  std::cout << "Cleaning up." << std::endl;
-  status += H5Fclose(file);
-  if (status != H5_SUCCESS) {
-    std::cerr << "WARNING: problem with HDf5" << std::endl;
-  }
+  herr_t status = saveAllMaterials(savename, matids, params, printMetadata, eospacWarn);
   return status;
 }
 
@@ -303,6 +244,74 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
 
   return;
+}
+
+herr_t saveAllMaterials(const std::string &savename, const std::vector<int> matids,
+                        const std::vector<Params> &params, bool printMetadata,
+                        Verbosity eospacWarn) {
+  std::unordered_map<std::string, int> used_names;
+  std::unordered_set<int> used_matids;
+  SesameMetadata metadata;
+  hid_t file;
+  herr_t status = H5_SUCCESS;
+
+  std::cout << "Saving to file " << savename << std::endl;
+  file = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+  std::cout << "Processing " << matids.size() << " materials..." << std::endl;
+
+  for (size_t i = 0; i < matids.size(); i++) {
+    int matid = matids[i];
+    if (used_matids.count(matid) > 0) {
+      std::cerr << "...Duplicate matid " << matid << " detected. Skipping." << std::endl;
+      continue;
+    }
+    used_matids.insert(matid);
+
+    std::cout << "..." << matid << std::endl;
+
+    eosGetMetadata(matid, metadata, Verbosity::Debug);
+    if (printMetadata) std::cout << metadata << std::endl;
+
+    std::string name = params[i].Get("name", metadata.name);
+    if (name == "-1" || name == "") {
+      std::string new_name = "material_" + std::to_string(i);
+      std::cerr << "...WARNING: no reasonable name found. "
+                << "Using a default name: " << new_name << std::endl;
+      name = new_name;
+    }
+    if (used_names.count(name) > 0) {
+      used_names[name] += 1;
+      std::string new_name = name + "_" + std::to_string(used_names[name]);
+      std::cerr << "...WARNING: Name " << name << " already used. "
+                << "Using name: " << new_name << std::endl;
+      name = new_name;
+    } else {
+      used_names[name] = 1;
+    }
+
+    Bounds lRhoBounds, lTBounds, leBounds;
+    getMatBounds(i, matid, metadata, params[i], lRhoBounds, lTBounds, leBounds);
+
+    if (eospacWarn == Verbosity::Debug) {
+      std::cout << "bounds for log(rho), log(T), log(sie) are:\n"
+                << lRhoBounds << lTBounds << leBounds << std::endl;
+    }
+
+    status +=
+        saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name, eospacWarn);
+    if (status != H5_SUCCESS) {
+      std::cerr << "WARNING: problem with HDf5" << std::endl;
+    }
+  }
+
+  std::cout << "Cleaning up." << std::endl;
+  status += H5Fclose(file);
+  if (status != H5_SUCCESS) {
+    std::cerr << "WARNING: problem with HDf5" << std::endl;
+  }
+
+  return status;
 }
 
 bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin,

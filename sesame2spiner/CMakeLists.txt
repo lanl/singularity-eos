@@ -12,27 +12,32 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
-add_executable(sesame2spiner
-               io_eospac.cpp
-	       io_eospac.hpp
+add_library(sesame2spiner-lib
+  io_eospac.cpp
+  io_eospac.hpp
+  
+  generate_files.cpp
+  generate_files.hpp
+  
+  parse_cli.cpp
+  parse_cli.hpp
+  
+  parser.cpp
+  parser.hpp
+  )
 
-               generate_files.cpp
-	       generate_files.hpp
-
-	       parse_cli.cpp
-	       parse_cli.hpp
-
-               parser.cpp
-	       parser.hpp
-
-               main.cpp
-              )
-
-target_include_directories(sesame2spiner PUBLIC  
+target_include_directories(sesame2spiner-lib PUBLIC  
                            ${CMAKE_CURRENT_BINARY_DIR}
                            ${CMAKE_CURRENT_SOURCE_DIR}
                           )
 
-target_link_libraries(sesame2spiner singularity-eos::libs singularity-eos::flags)
+target_link_libraries(sesame2spiner-lib
+  singularity-eos::libs singularity-eos::flags)
 
-# TODO: Add tests for sesame2spiner here.
+add_executable(sesame2spiner
+  main.cpp
+  )
+
+target_link_libraries(sesame2spiner
+  sesame2spiner-lib
+  singularity-eos::libs singularity-eos::flags)

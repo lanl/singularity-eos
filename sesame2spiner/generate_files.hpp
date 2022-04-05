@@ -41,6 +41,12 @@ herr_t saveAllMaterials(const std::string &savename,
                         const std::vector<std::string> &filenames, bool printMetadata,
                         Verbosity eospacWarn);
 
+herr_t saveAllMaterials(const std::string &savename,
+                        const std::vector<int> matids,
+                        const std::vector<Params> &params,
+                        bool printMetadata = false,
+                        Verbosity eospacWarn = Verbosity::Quiet);
+
 void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
                   Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds);
 
