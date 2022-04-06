@@ -1,0 +1,706 @@
+The system is: Linux - 5.13.15-1-MANJARO - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /bin/clang 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+The C compiler identification is Clang, found in "/home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/3.21.2/CompilerIdC/a.out"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /bin/clang++ 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+
+The CXX compiler identification is Clang, found in "/home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/3.21.2/CompilerIdCXX/a.out"
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/home/mauneyc/devel/singularity_local/singularity-eos/env/.spack-env/view/bin/ninja-build cmTC_c7bb6 && [1/2] Building C object CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o
+clang version 12.0.1
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /bin
+Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Selected multilib: .;@m64
+ (in-process)
+ "/usr/bin/clang-12" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all --mrelax-relocations -disable-free -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -fno-rounding-math -mconstructor-aliases -munwind-tables -target-cpu x86-64 -tune-cpu generic -fno-split-dwarf-inlining -debugger-tuning=gdb -v -resource-dir /usr/lib/clang/12.0.1 -dependency-file CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/local/include -internal-isystem /usr/lib/clang/12.0.1/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdebug-compilation-dir /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -faddrsig -o CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-3.21/Modules/CMakeCCompilerABI.c
+clang -cc1 version 12.0.1 based upon LLVM 12.0.1 default target x86_64-pc-linux-gnu
+ignoring nonexistent directory "/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /usr/local/include
+ /usr/lib/clang/12.0.1/include
+ /usr/include
+End of search list.
+[2/2] Linking C executable cmTC_c7bb6
+clang version 12.0.1
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /bin
+Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Selected multilib: .;@m64
+ "/bin/ld" -pie --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_c7bb6 /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64 -L/usr/bin/../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../.. -L/usr/bin/../lib -L/lib -L/usr/lib CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o
+
+
+
+Parsed C implicit include dir info from above output: rv=done
+  found start of include info
+  found start of implicit include info
+    add: [/usr/local/include]
+    add: [/usr/lib/clang/12.0.1/include]
+    add: [/usr/include]
+  end of search list found
+  collapse include dir [/usr/local/include] ==> [/usr/local/include]
+  collapse include dir [/usr/lib/clang/12.0.1/include] ==> [/usr/lib/clang/12.0.1/include]
+  collapse include dir [/usr/include] ==> [/usr/include]
+  implicit include dirs: [/usr/local/include;/usr/lib/clang/12.0.1/include;/usr/include]
+
+
+Parsed C implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command(s):/home/mauneyc/devel/singularity_local/singularity-eos/env/.spack-env/view/bin/ninja-build cmTC_c7bb6 && [1/2] Building C object CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o]
+  ignore line: [clang version 12.0.1]
+  ignore line: [Target: x86_64-pc-linux-gnu]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /bin]
+  ignore line: [Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Candidate multilib: .]
+  ignore line: [@m64]
+  ignore line: [Candidate multilib: 32]
+  ignore line: [@m32]
+  ignore line: [Selected multilib: .]
+  ignore line: [@m64]
+  ignore line: [ (in-process)]
+  ignore line: [ "/usr/bin/clang-12" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all --mrelax-relocations -disable-free -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -fno-rounding-math -mconstructor-aliases -munwind-tables -target-cpu x86-64 -tune-cpu generic -fno-split-dwarf-inlining -debugger-tuning=gdb -v -resource-dir /usr/lib/clang/12.0.1 -dependency-file CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o -sys-header-deps -internal-isystem /usr/local/include -internal-isystem /usr/lib/clang/12.0.1/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdebug-compilation-dir /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -faddrsig -o CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o -x c /usr/share/cmake-3.21/Modules/CMakeCCompilerABI.c]
+  ignore line: [clang -cc1 version 12.0.1 based upon LLVM 12.0.1 default target x86_64-pc-linux-gnu]
+  ignore line: [ignoring nonexistent directory "/include"]
+  ignore line: [#include "..." search starts here:]
+  ignore line: [#include <...> search starts here:]
+  ignore line: [ /usr/local/include]
+  ignore line: [ /usr/lib/clang/12.0.1/include]
+  ignore line: [ /usr/include]
+  ignore line: [End of search list.]
+  ignore line: [[2/2] Linking C executable cmTC_c7bb6]
+  ignore line: [clang version 12.0.1]
+  ignore line: [Target: x86_64-pc-linux-gnu]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /bin]
+  ignore line: [Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Candidate multilib: .]
+  ignore line: [@m64]
+  ignore line: [Candidate multilib: 32]
+  ignore line: [@m32]
+  ignore line: [Selected multilib: .]
+  ignore line: [@m64]
+  link line: [ "/bin/ld" -pie --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_c7bb6 /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64 -L/usr/bin/../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../.. -L/usr/bin/../lib -L/lib -L/usr/lib CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o]
+    arg [/bin/ld] ==> ignore
+    arg [-pie] ==> ignore
+    arg [--eh-frame-hdr] ==> ignore
+    arg [-m] ==> ignore
+    arg [elf_x86_64] ==> ignore
+    arg [-dynamic-linker] ==> ignore
+    arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_c7bb6] ==> ignore
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64]
+    arg [-L/usr/bin/../lib64] ==> dir [/usr/bin/../lib64]
+    arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+    arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..]
+    arg [-L/usr/bin/../lib] ==> dir [/usr/bin/../lib]
+    arg [-L/lib] ==> dir [/lib]
+    arg [-L/usr/lib] ==> dir [/usr/lib]
+    arg [CMakeFiles/cmTC_c7bb6.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [-lgcc] ==> lib [gcc]
+    arg [--as-needed] ==> ignore
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [--no-as-needed] ==> ignore
+    arg [-lc] ==> lib [c]
+    arg [-lgcc] ==> lib [gcc]
+    arg [--as-needed] ==> ignore
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [--no-as-needed] ==> ignore
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o] ==> [/lib64/Scrt1.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o] ==> [/lib64/crti.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o] ==> [/lib64/crtn.o]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64] ==> [/lib64]
+  collapse library dir [/usr/bin/../lib64] ==> [/usr/lib64]
+  collapse library dir [/lib/../lib64] ==> [/lib64]
+  collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..] ==> [/lib64]
+  collapse library dir [/usr/bin/../lib] ==> [/usr/lib]
+  collapse library dir [/lib] ==> [/lib]
+  collapse library dir [/usr/lib] ==> [/usr/lib]
+  implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+  implicit objs: [/lib64/Scrt1.o;/lib64/crti.o;/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o;/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o;/lib64/crtn.o]
+  implicit dirs: [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0;/lib64;/usr/lib64;/usr/lib;/lib]
+  implicit fwks: []
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/home/mauneyc/devel/singularity_local/singularity-eos/env/.spack-env/view/bin/ninja-build cmTC_2ed7a && [1/2] Building CXX object CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o
+clang version 12.0.1
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /bin
+Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Selected multilib: .;@m64
+ (in-process)
+ "/usr/bin/clang-12" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all --mrelax-relocations -disable-free -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -fno-rounding-math -mconstructor-aliases -munwind-tables -target-cpu x86-64 -tune-cpu generic -fno-split-dwarf-inlining -debugger-tuning=gdb -v -resource-dir /usr/lib/clang/12.0.1 -dependency-file CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0 -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward -internal-isystem /usr/local/include -internal-isystem /usr/lib/clang/12.0.1/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -fdebug-compilation-dir /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -faddrsig -o CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake-3.21/Modules/CMakeCXXCompilerABI.cpp
+clang -cc1 version 12.0.1 based upon LLVM 12.0.1 default target x86_64-pc-linux-gnu
+ignoring nonexistent directory "/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0
+ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu
+ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward
+ /usr/local/include
+ /usr/lib/clang/12.0.1/include
+ /usr/include
+End of search list.
+[2/2] Linking CXX executable cmTC_2ed7a
+clang version 12.0.1
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /bin
+Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Selected multilib: .;@m64
+ "/bin/ld" -pie --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_2ed7a /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64 -L/usr/bin/../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../.. -L/usr/bin/../lib -L/lib -L/usr/lib CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o
+
+
+
+Parsed CXX implicit include dir info from above output: rv=done
+  found start of include info
+  found start of implicit include info
+    add: [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0]
+    add: [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu]
+    add: [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward]
+    add: [/usr/local/include]
+    add: [/usr/lib/clang/12.0.1/include]
+    add: [/usr/include]
+  end of search list found
+  collapse include dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0] ==> [/include/c++/11.1.0]
+  collapse include dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu] ==> [/include/c++/11.1.0/x86_64-pc-linux-gnu]
+  collapse include dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward] ==> [/include/c++/11.1.0/backward]
+  collapse include dir [/usr/local/include] ==> [/usr/local/include]
+  collapse include dir [/usr/lib/clang/12.0.1/include] ==> [/usr/lib/clang/12.0.1/include]
+  collapse include dir [/usr/include] ==> [/usr/include]
+  implicit include dirs: [/include/c++/11.1.0;/include/c++/11.1.0/x86_64-pc-linux-gnu;/include/c++/11.1.0/backward;/usr/local/include;/usr/lib/clang/12.0.1/include;/usr/include]
+
+
+Parsed CXX implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command(s):/home/mauneyc/devel/singularity_local/singularity-eos/env/.spack-env/view/bin/ninja-build cmTC_2ed7a && [1/2] Building CXX object CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [clang version 12.0.1]
+  ignore line: [Target: x86_64-pc-linux-gnu]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /bin]
+  ignore line: [Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Candidate multilib: .]
+  ignore line: [@m64]
+  ignore line: [Candidate multilib: 32]
+  ignore line: [@m32]
+  ignore line: [Selected multilib: .]
+  ignore line: [@m64]
+  ignore line: [ (in-process)]
+  ignore line: [ "/usr/bin/clang-12" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all --mrelax-relocations -disable-free -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -fno-rounding-math -mconstructor-aliases -munwind-tables -target-cpu x86-64 -tune-cpu generic -fno-split-dwarf-inlining -debugger-tuning=gdb -v -resource-dir /usr/lib/clang/12.0.1 -dependency-file CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0 -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward -internal-isystem /usr/local/include -internal-isystem /usr/lib/clang/12.0.1/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -fdebug-compilation-dir /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -faddrsig -o CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o -x c++ /usr/share/cmake-3.21/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [clang -cc1 version 12.0.1 based upon LLVM 12.0.1 default target x86_64-pc-linux-gnu]
+  ignore line: [ignoring nonexistent directory "/include"]
+  ignore line: [#include "..." search starts here:]
+  ignore line: [#include <...> search starts here:]
+  ignore line: [ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0]
+  ignore line: [ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu]
+  ignore line: [ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward]
+  ignore line: [ /usr/local/include]
+  ignore line: [ /usr/lib/clang/12.0.1/include]
+  ignore line: [ /usr/include]
+  ignore line: [End of search list.]
+  ignore line: [[2/2] Linking CXX executable cmTC_2ed7a]
+  ignore line: [clang version 12.0.1]
+  ignore line: [Target: x86_64-pc-linux-gnu]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /bin]
+  ignore line: [Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Candidate multilib: .]
+  ignore line: [@m64]
+  ignore line: [Candidate multilib: 32]
+  ignore line: [@m32]
+  ignore line: [Selected multilib: .]
+  ignore line: [@m64]
+  link line: [ "/bin/ld" -pie --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_2ed7a /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64 -L/usr/bin/../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../.. -L/usr/bin/../lib -L/lib -L/usr/lib CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o]
+    arg [/bin/ld] ==> ignore
+    arg [-pie] ==> ignore
+    arg [--eh-frame-hdr] ==> ignore
+    arg [-m] ==> ignore
+    arg [elf_x86_64] ==> ignore
+    arg [-dynamic-linker] ==> ignore
+    arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_2ed7a] ==> ignore
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64]
+    arg [-L/usr/bin/../lib64] ==> dir [/usr/bin/../lib64]
+    arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+    arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..]
+    arg [-L/usr/bin/../lib] ==> dir [/usr/bin/../lib]
+    arg [-L/lib] ==> dir [/lib]
+    arg [-L/usr/lib] ==> dir [/usr/lib]
+    arg [CMakeFiles/cmTC_2ed7a.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [-lstdc++] ==> lib [stdc++]
+    arg [-lm] ==> lib [m]
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lc] ==> lib [c]
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [-lgcc] ==> lib [gcc]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o] ==> [/lib64/Scrt1.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o] ==> [/lib64/crti.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o] ==> [/lib64/crtn.o]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64] ==> [/lib64]
+  collapse library dir [/usr/bin/../lib64] ==> [/usr/lib64]
+  collapse library dir [/lib/../lib64] ==> [/lib64]
+  collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..] ==> [/lib64]
+  collapse library dir [/usr/bin/../lib] ==> [/usr/lib]
+  collapse library dir [/lib] ==> [/lib]
+  collapse library dir [/usr/lib] ==> [/usr/lib]
+  implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+  implicit objs: [/lib64/Scrt1.o;/lib64/crti.o;/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o;/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o;/lib64/crtn.o]
+  implicit dirs: [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0;/lib64;/usr/lib64;/usr/lib;/lib]
+  implicit fwks: []
+
+
+The system is: Linux - 5.13.19-2-MANJARO - x86_64
+Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+Compiler: /bin/clang 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+
+The C compiler identification is Clang, found in "/home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/3.21.3/CompilerIdC/a.out"
+
+Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+Compiler: /bin/clang++ 
+Build flags: 
+Id flags:  
+
+The output was:
+0
+
+
+Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+
+The CXX compiler identification is Clang, found in "/home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/3.21.3/CompilerIdCXX/a.out"
+
+Detecting C compiler ABI info compiled with the following output:
+Change Dir: /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/home/mauneyc/devel/singularity_local/singularity-eos/env/.spack-env/view/bin/ninja-build cmTC_bd188 && [1/2] Building C object CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o
+clang version 12.0.1
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /bin
+Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Selected multilib: .;@m64
+ (in-process)
+ "/usr/bin/clang-12" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all --mrelax-relocations -disable-free -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -fno-rounding-math -mconstructor-aliases -munwind-tables -target-cpu x86-64 -tune-cpu generic -fno-split-dwarf-inlining -debugger-tuning=gdb -v -resource-dir /usr/lib/clang/12.0.1 -dependency-file CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o -sys-header-deps -I/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3 -internal-isystem /usr/local/include -internal-isystem /usr/lib/clang/12.0.1/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdebug-compilation-dir /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -faddrsig -o CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o -x c /home/mauneyc/spack/opt/spack/linux-manjaro21-skylake/gcc-11.1.0/cmake-3.21.3-qczxzmboyti2hudj5ownsnkwp2x6iixy/share/cmake-3.21/Modules/CMakeCCompilerABI.c
+clang -cc1 version 12.0.1 based upon LLVM 12.0.1 default target x86_64-pc-linux-gnu
+ignoring nonexistent directory "/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3
+ /usr/local/include
+ /usr/lib/clang/12.0.1/include
+ /usr/include
+End of search list.
+[2/2] Linking C executable cmTC_bd188
+clang version 12.0.1
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /bin
+Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Selected multilib: .;@m64
+ "/bin/ld" -pie --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_bd188 /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64 -L/usr/bin/../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../.. -L/usr/bin/../lib -L/lib -L/usr/lib CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o
+
+
+
+Parsed C implicit include dir info from above output: rv=done
+  found start of include info
+  found start of implicit include info
+    add: [/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3]
+    add: [/usr/local/include]
+    add: [/usr/lib/clang/12.0.1/include]
+    add: [/usr/include]
+  end of search list found
+  collapse include dir [/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3] ==> [/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3]
+  collapse include dir [/usr/local/include] ==> [/usr/local/include]
+  collapse include dir [/usr/lib/clang/12.0.1/include] ==> [/usr/lib/clang/12.0.1/include]
+  collapse include dir [/usr/include] ==> [/usr/include]
+  implicit include dirs: [/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3;/usr/local/include;/usr/lib/clang/12.0.1/include;/usr/include]
+
+
+Parsed C implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command(s):/home/mauneyc/devel/singularity_local/singularity-eos/env/.spack-env/view/bin/ninja-build cmTC_bd188 && [1/2] Building C object CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o]
+  ignore line: [clang version 12.0.1]
+  ignore line: [Target: x86_64-pc-linux-gnu]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /bin]
+  ignore line: [Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Candidate multilib: .]
+  ignore line: [@m64]
+  ignore line: [Candidate multilib: 32]
+  ignore line: [@m32]
+  ignore line: [Selected multilib: .]
+  ignore line: [@m64]
+  ignore line: [ (in-process)]
+  ignore line: [ "/usr/bin/clang-12" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all --mrelax-relocations -disable-free -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -fno-rounding-math -mconstructor-aliases -munwind-tables -target-cpu x86-64 -tune-cpu generic -fno-split-dwarf-inlining -debugger-tuning=gdb -v -resource-dir /usr/lib/clang/12.0.1 -dependency-file CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o.d -MT CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o -sys-header-deps -I/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3 -internal-isystem /usr/local/include -internal-isystem /usr/lib/clang/12.0.1/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdebug-compilation-dir /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -faddrsig -o CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o -x c /home/mauneyc/spack/opt/spack/linux-manjaro21-skylake/gcc-11.1.0/cmake-3.21.3-qczxzmboyti2hudj5ownsnkwp2x6iixy/share/cmake-3.21/Modules/CMakeCCompilerABI.c]
+  ignore line: [clang -cc1 version 12.0.1 based upon LLVM 12.0.1 default target x86_64-pc-linux-gnu]
+  ignore line: [ignoring nonexistent directory "/include"]
+  ignore line: [#include "..." search starts here:]
+  ignore line: [#include <...> search starts here:]
+  ignore line: [ /home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3]
+  ignore line: [ /usr/local/include]
+  ignore line: [ /usr/lib/clang/12.0.1/include]
+  ignore line: [ /usr/include]
+  ignore line: [End of search list.]
+  ignore line: [[2/2] Linking C executable cmTC_bd188]
+  ignore line: [clang version 12.0.1]
+  ignore line: [Target: x86_64-pc-linux-gnu]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /bin]
+  ignore line: [Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Candidate multilib: .]
+  ignore line: [@m64]
+  ignore line: [Candidate multilib: 32]
+  ignore line: [@m32]
+  ignore line: [Selected multilib: .]
+  ignore line: [@m64]
+  link line: [ "/bin/ld" -pie --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_bd188 /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64 -L/usr/bin/../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../.. -L/usr/bin/../lib -L/lib -L/usr/lib CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o]
+    arg [/bin/ld] ==> ignore
+    arg [-pie] ==> ignore
+    arg [--eh-frame-hdr] ==> ignore
+    arg [-m] ==> ignore
+    arg [elf_x86_64] ==> ignore
+    arg [-dynamic-linker] ==> ignore
+    arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_bd188] ==> ignore
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64]
+    arg [-L/usr/bin/../lib64] ==> dir [/usr/bin/../lib64]
+    arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+    arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..]
+    arg [-L/usr/bin/../lib] ==> dir [/usr/bin/../lib]
+    arg [-L/lib] ==> dir [/lib]
+    arg [-L/usr/lib] ==> dir [/usr/lib]
+    arg [CMakeFiles/cmTC_bd188.dir/CMakeCCompilerABI.c.o] ==> ignore
+    arg [-lgcc] ==> lib [gcc]
+    arg [--as-needed] ==> ignore
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [--no-as-needed] ==> ignore
+    arg [-lc] ==> lib [c]
+    arg [-lgcc] ==> lib [gcc]
+    arg [--as-needed] ==> ignore
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [--no-as-needed] ==> ignore
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o] ==> [/lib64/Scrt1.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o] ==> [/lib64/crti.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o] ==> [/lib64/crtn.o]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64] ==> [/lib64]
+  collapse library dir [/usr/bin/../lib64] ==> [/usr/lib64]
+  collapse library dir [/lib/../lib64] ==> [/lib64]
+  collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..] ==> [/lib64]
+  collapse library dir [/usr/bin/../lib] ==> [/usr/lib]
+  collapse library dir [/lib] ==> [/lib]
+  collapse library dir [/usr/lib] ==> [/usr/lib]
+  implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+  implicit objs: [/lib64/Scrt1.o;/lib64/crti.o;/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o;/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o;/lib64/crtn.o]
+  implicit dirs: [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0;/lib64;/usr/lib64;/usr/lib;/lib]
+  implicit fwks: []
+
+
+Detecting CXX compiler ABI info compiled with the following output:
+Change Dir: /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/home/mauneyc/devel/singularity_local/singularity-eos/env/.spack-env/view/bin/ninja-build cmTC_ad74a && [1/2] Building CXX object CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o
+clang version 12.0.1
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /bin
+Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Selected multilib: .;@m64
+ (in-process)
+ "/usr/bin/clang-12" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all --mrelax-relocations -disable-free -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -fno-rounding-math -mconstructor-aliases -munwind-tables -target-cpu x86-64 -tune-cpu generic -fno-split-dwarf-inlining -debugger-tuning=gdb -v -resource-dir /usr/lib/clang/12.0.1 -dependency-file CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -I/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3 -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0 -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward -internal-isystem /usr/local/include -internal-isystem /usr/lib/clang/12.0.1/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -fdebug-compilation-dir /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -faddrsig -o CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o -x c++ /home/mauneyc/spack/opt/spack/linux-manjaro21-skylake/gcc-11.1.0/cmake-3.21.3-qczxzmboyti2hudj5ownsnkwp2x6iixy/share/cmake-3.21/Modules/CMakeCXXCompilerABI.cpp
+clang -cc1 version 12.0.1 based upon LLVM 12.0.1 default target x86_64-pc-linux-gnu
+ignoring nonexistent directory "/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3
+ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0
+ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu
+ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward
+ /usr/local/include
+ /usr/lib/clang/12.0.1/include
+ /usr/include
+End of search list.
+[2/2] Linking CXX executable cmTC_ad74a
+clang version 12.0.1
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /bin
+Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0
+Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Selected multilib: .;@m64
+ "/bin/ld" -pie --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_ad74a /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64 -L/usr/bin/../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../.. -L/usr/bin/../lib -L/lib -L/usr/lib CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o
+
+
+
+Parsed CXX implicit include dir info from above output: rv=done
+  found start of include info
+  found start of implicit include info
+    add: [/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3]
+    add: [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0]
+    add: [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu]
+    add: [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward]
+    add: [/usr/local/include]
+    add: [/usr/lib/clang/12.0.1/include]
+    add: [/usr/include]
+  end of search list found
+  collapse include dir [/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3] ==> [/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3]
+  collapse include dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0] ==> [/include/c++/11.1.0]
+  collapse include dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu] ==> [/include/c++/11.1.0/x86_64-pc-linux-gnu]
+  collapse include dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward] ==> [/include/c++/11.1.0/backward]
+  collapse include dir [/usr/local/include] ==> [/usr/local/include]
+  collapse include dir [/usr/lib/clang/12.0.1/include] ==> [/usr/lib/clang/12.0.1/include]
+  collapse include dir [/usr/include] ==> [/usr/include]
+  implicit include dirs: [/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3;/include/c++/11.1.0;/include/c++/11.1.0/x86_64-pc-linux-gnu;/include/c++/11.1.0/backward;/usr/local/include;/usr/lib/clang/12.0.1/include;/usr/include]
+
+
+Parsed CXX implicit link information from above output:
+  link line regex: [^( *|.*[/\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\]+-)?ld|collect2)[^/\]*( |$)]
+  ignore line: [Change Dir: /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp]
+  ignore line: []
+  ignore line: [Run Build Command(s):/home/mauneyc/devel/singularity_local/singularity-eos/env/.spack-env/view/bin/ninja-build cmTC_ad74a && [1/2] Building CXX object CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o]
+  ignore line: [clang version 12.0.1]
+  ignore line: [Target: x86_64-pc-linux-gnu]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /bin]
+  ignore line: [Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Candidate multilib: .]
+  ignore line: [@m64]
+  ignore line: [Candidate multilib: 32]
+  ignore line: [@m32]
+  ignore line: [Selected multilib: .]
+  ignore line: [@m64]
+  ignore line: [ (in-process)]
+  ignore line: [ "/usr/bin/clang-12" -cc1 -triple x86_64-pc-linux-gnu -emit-obj -mrelax-all --mrelax-relocations -disable-free -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -pic-is-pie -mframe-pointer=all -fmath-errno -fno-rounding-math -mconstructor-aliases -munwind-tables -target-cpu x86-64 -tune-cpu generic -fno-split-dwarf-inlining -debugger-tuning=gdb -v -resource-dir /usr/lib/clang/12.0.1 -dependency-file CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o.d -MT CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -I/home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3 -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0 -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu -internal-isystem /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward -internal-isystem /usr/local/include -internal-isystem /usr/lib/clang/12.0.1/include -internal-externc-isystem /include -internal-externc-isystem /usr/include -fdeprecated-macro -fdebug-compilation-dir /home/mauneyc/devel/singularity_local/singularity-eos/build/CMakeFiles/CMakeTmp -ferror-limit 19 -stack-protector 2 -fgnuc-version=4.2.1 -fcxx-exceptions -fexceptions -faddrsig -o CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o -x c++ /home/mauneyc/spack/opt/spack/linux-manjaro21-skylake/gcc-11.1.0/cmake-3.21.3-qczxzmboyti2hudj5ownsnkwp2x6iixy/share/cmake-3.21/Modules/CMakeCXXCompilerABI.cpp]
+  ignore line: [clang -cc1 version 12.0.1 based upon LLVM 12.0.1 default target x86_64-pc-linux-gnu]
+  ignore line: [ignoring nonexistent directory "/include"]
+  ignore line: [#include "..." search starts here:]
+  ignore line: [#include <...> search starts here:]
+  ignore line: [ /home/mauneyc/devel/singularity_local/env.singularity/.spack-env/view/include/eigen3]
+  ignore line: [ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0]
+  ignore line: [ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/x86_64-pc-linux-gnu]
+  ignore line: [ /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../include/c++/11.1.0/backward]
+  ignore line: [ /usr/local/include]
+  ignore line: [ /usr/lib/clang/12.0.1/include]
+  ignore line: [ /usr/include]
+  ignore line: [End of search list.]
+  ignore line: [[2/2] Linking CXX executable cmTC_ad74a]
+  ignore line: [clang version 12.0.1]
+  ignore line: [Target: x86_64-pc-linux-gnu]
+  ignore line: [Thread model: posix]
+  ignore line: [InstalledDir: /bin]
+  ignore line: [Found candidate GCC installation: /bin/../lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Found candidate GCC installation: /usr/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Selected GCC installation: /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  ignore line: [Candidate multilib: .]
+  ignore line: [@m64]
+  ignore line: [Candidate multilib: 32]
+  ignore line: [@m32]
+  ignore line: [Selected multilib: .]
+  ignore line: [@m64]
+  link line: [ "/bin/ld" -pie --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o cmTC_ad74a /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64 -L/usr/bin/../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../.. -L/usr/bin/../lib -L/lib -L/usr/lib CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o /bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o]
+    arg [/bin/ld] ==> ignore
+    arg [-pie] ==> ignore
+    arg [--eh-frame-hdr] ==> ignore
+    arg [-m] ==> ignore
+    arg [elf_x86_64] ==> ignore
+    arg [-dynamic-linker] ==> ignore
+    arg [/lib64/ld-linux-x86-64.so.2] ==> ignore
+    arg [-o] ==> ignore
+    arg [cmTC_ad74a] ==> ignore
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64]
+    arg [-L/usr/bin/../lib64] ==> dir [/usr/bin/../lib64]
+    arg [-L/lib/../lib64] ==> dir [/lib/../lib64]
+    arg [-L/usr/lib/../lib64] ==> dir [/usr/lib/../lib64]
+    arg [-L/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..] ==> dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..]
+    arg [-L/usr/bin/../lib] ==> dir [/usr/bin/../lib]
+    arg [-L/lib] ==> dir [/lib]
+    arg [-L/usr/lib] ==> dir [/usr/lib]
+    arg [CMakeFiles/cmTC_ad74a.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+    arg [-lstdc++] ==> lib [stdc++]
+    arg [-lm] ==> lib [m]
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [-lgcc] ==> lib [gcc]
+    arg [-lc] ==> lib [c]
+    arg [-lgcc_s] ==> lib [gcc_s]
+    arg [-lgcc] ==> lib [gcc]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o]
+    arg [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o] ==> obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/Scrt1.o] ==> [/lib64/Scrt1.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crti.o] ==> [/lib64/crti.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o]
+  collapse obj [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64/crtn.o] ==> [/lib64/crtn.o]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0] ==> [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../../../lib64] ==> [/lib64]
+  collapse library dir [/usr/bin/../lib64] ==> [/usr/lib64]
+  collapse library dir [/lib/../lib64] ==> [/lib64]
+  collapse library dir [/usr/lib/../lib64] ==> [/usr/lib64]
+  collapse library dir [/bin/../lib64/gcc/x86_64-pc-linux-gnu/11.1.0/../../..] ==> [/lib64]
+  collapse library dir [/usr/bin/../lib] ==> [/usr/lib]
+  collapse library dir [/lib] ==> [/lib]
+  collapse library dir [/usr/lib] ==> [/usr/lib]
+  implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+  implicit objs: [/lib64/Scrt1.o;/lib64/crti.o;/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtbeginS.o;/lib64/gcc/x86_64-pc-linux-gnu/11.1.0/crtendS.o;/lib64/crtn.o]
+  implicit dirs: [/lib64/gcc/x86_64-pc-linux-gnu/11.1.0;/lib64;/usr/lib64;/usr/lib;/lib]
+  implicit fwks: []
+
+

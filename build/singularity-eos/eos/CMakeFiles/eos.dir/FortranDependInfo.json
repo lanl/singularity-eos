@@ -1,0 +1,21 @@
+{
+	"compiler-id" : "GNU",
+	"dir-cur-bld" : "/home/mauneyc/devel/singularity_local/singularity-eos/build/singularity-eos/eos",
+	"dir-cur-src" : "/home/mauneyc/devel/singularity_local/singularity-eos/singularity-eos/eos",
+	"dir-top-bld" : "/home/mauneyc/devel/singularity_local/singularity-eos/build",
+	"dir-top-src" : "/home/mauneyc/devel/singularity_local/singularity-eos",
+	"include-dirs" : 
+	[
+		"../singularity-eos/eos",
+		"../utils",
+		"../",
+		"../utils/eigen",
+		"../env/.spack-env/view/include",
+		"../utils/ports-of-call"
+	],
+	"language" : "Fortran",
+	"linked-target-dirs" : [],
+	"module-dir" : "/home/mauneyc/devel/singularity_local/singularity-eos/build/singularity-eos/eos",
+	"submodule-ext" : ".smod",
+	"submodule-sep" : "@"
+}

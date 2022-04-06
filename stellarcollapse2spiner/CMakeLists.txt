@@ -12,9 +12,13 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
-add_executable(stellarcollapse2spiner main.cpp)
+set(SC2S_EXE stellarcollapse2spiner)
+
+add_executable(${SC2S_EXE} main.cpp)
 
 target_link_libraries(stellarcollapse2spiner
-  eos
-  singularity-eos::libs
-  singularity-eos::flags)
+PUBLIC:
+  singularity-eos::singularity-eos
+)
+
+install(TARGETS ${SC2S_EXE} DESTINATION bin)

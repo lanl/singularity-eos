@@ -1,0 +1,11 @@
+#pragma once
+
+/* #undef SINGULARITY_USE_EOS */
+/* #undef PORTABILITY_STRATAGY_KOKKOS */
+/* #undef SPINER_USE_HDF */
+
+/* #undef SINGULARITY_INVERT_AT_SETUP */
+/* #undef SINGULARITY_EOS_SKIP_EXTRAP */
+
+#define SINGULARITY_USE_FMATH_ORDER 7
+

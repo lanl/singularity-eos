@@ -1,0 +1,128 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-1c1ac8a89af9f295ba8a.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.19"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "utils/variant",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-utils.variant-Debug-ff973c2b526fd59ed88f.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.6.3"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "utils/variant"
+				},
+				{
+					"build" : "singularity-eos/base",
+					"jsonFile" : "directory-singularity-eos.base-Debug-b326bf63cfa8874bf657.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.19"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "singularity-eos/base"
+				},
+				{
+					"build" : "singularity-eos/closure",
+					"jsonFile" : "directory-singularity-eos.closure-Debug-5b830d6a5f92e9019689.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.19"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "singularity-eos/closure"
+				},
+				{
+					"build" : "singularity-eos/eos",
+					"jsonFile" : "directory-singularity-eos.eos-Debug-41850fa81a54b84f7ee9.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.19"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "singularity-eos/eos"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0,
+						2,
+						3,
+						4
+					],
+					"name" : "singularity-eos",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "MPark.Variant",
+					"parentIndex" : 0
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "singularity-eos::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-singularity-eos-Debug-ea60418f3f0afb2c2b35.json",
+					"name" : "singularity-eos",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/mauneyc/devel/singularity_local/singularity-eos/build",
+		"source" : "/home/mauneyc/devel/singularity_local/singularity-eos"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

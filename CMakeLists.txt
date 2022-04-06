@@ -63,38 +63,82 @@ endif()
 
 project(singularity-eos VERSION 1.5.0)
 
-if(SINGULARITY_USE_FORTRAN)
-  enable_language(CXX Fortran)
-else()
-  enable_language(CXX)
-endif()
+#------------------------------------------------------------------------------#
+# Compiler & language setup
+#------------------------------------------------------------------------------#
+enable_language(CXX)
 include(CMakeDetermineCXXCompiler)
+if(SINGULARITY_USE_FORTRAN)
+  enable_language(Fortran)
+  # $CMM/cmake-idiomatic-install
+  # $CMM added to determine Fortran compiler
+  include(CMakeDetermineFortranCompiler)
+endif()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# $CMM/cmake-idiomatic-install
+# $CMM prepare some generator-string snippets
+set(with_cxx "$<COMPILE_LANGUAGE:CXX>")
+set(build_release "$<CONFIG:Release>")
+set(build_debug "$<CONFIG:Debug>")
+set(on_xl "$<COMPILER_ID:XL>")
+
+set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
 
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
 message(STATUS "Patching mpark::variant to support GPUs")
 execute_process(COMMAND patch -N -s -V never
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch)
+                ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
+)
+#------------------------------------------------------------------------------#
 
-add_library (singularity-eos::flags INTERFACE IMPORTED GLOBAL)
-add_library (singularity-eos::libs INTERFACE IMPORTED)
+#add_library (singularity-eos::flags INTERFACE IMPORTED GLOBAL)
+#add_library (singularity-eos::libs INTERFACE IMPORTED)
+set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
+
+set(_tar singularity-eos)
+set(_ns singularity-eos)
+
+add_subdirectory(singularity-eos)
+foreach(_header ${EOS_HEADERS})
+  list(APPEND _install_headers ${_header})
+  list(APPEND _headers singularity-eos/${_header})
+endforeach()
+
+foreach(_src ${EOS_SRCS})
+  list(APPEND _srcs singularity-eos/${_src})
+endforeach()
+
+add_library(${_tar} ${_srcs} ${_headers})
+add_library(${_ns}::${_tar} ALIAS ${_tar})
+
+if (SINGULARITY_USE_FORTRAN)
+  set_target_properties(${_tar} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  target_include_directories(${_tar} INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
+endif()
+
+target_include_directories(${_tar}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+)
 
 # TODO: Is this generator expression correct/needed?
-target_include_directories(singularity-eos::flags
-                           INTERFACE
-                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>)
+#target_include_directories(singularity-eos::flags
+#                           INTERFACE
+#                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+#                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>)
 
 # xl fix
-target_compile_options(singularity-eos::flags INTERFACE
-                       $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
-target_link_options(singularity-eos::flags INTERFACE
-                   $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
+#target_compile_options(singularity-eos::flags INTERFACE
+#                       $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
+#target_link_options(singularity-eos::flags INTERFACE
+#                   $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
 
 #target_compile_features(singularity-eos::flags INTERFACE cxx_std_14)
 #target_compile_features(singularity-eos::libs INTERFACE cxx_std_14)
@@ -114,20 +158,20 @@ if (SINGULARITY_USE_EOSPAC)
 endif()
 
 if (SINGULARITY_TEST_SESAME)
-   target_compile_definitions(singularity-eos::flags INTERFACE SINGULARITY_TEST_SESAME)
+   target_compile_definitions(${_tar} INTERFACE SINGULARITY_TEST_SESAME)
 endif()
 
 if (SINGULARITY_USE_HDF5)
-  target_compile_definitions(singularity-eos::flags INTERFACE
+  target_compile_definitions(${_tar} INTERFACE
                              SPINER_USE_HDF)
   if(SINGULARITY_HDF5_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_HDF5_INSTALL_DIR}")
   endif()
   find_package(HDF5 COMPONENTS C HL)
   if(HDF5_FOUND)
-    add_library(singularity-eos::hdf5 INTERFACE IMPORTED GLOBAL)
-    set_target_properties(singularity-eos::hdf5 PROPERTIES
-      INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARIES};${HDF5_HL_LIBRARIES}"
+    set_target_properties(${_tar}
+      PROPERTIES
+        INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARIES};${HDF5_HL_LIBRARIES}"
       INTERFACE_COMPILE_DEFINITIONS "SINGULARITY_USE_HDF5"
       INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}")
     if(HDF5_IS_PARALLEL)
@@ -136,17 +180,16 @@ if (SINGULARITY_USE_HDF5)
       endif()
       find_package(MPI COMPONENTS CXX)
       if(MPI_FOUND)
-        target_include_directories(singularity-eos::libs INTERFACE "${MPI_CXX_INCLUDE_DIRS}")
+        target_include_directories(${_tar} INTERFACE "${MPI_CXX_INCLUDE_DIRS}")
       endif()
     endif()
   else()
     message(FATAL_ERROR "HDF5 was requested but not found. Can be disabled with -DSINGULARITY_USE_HDF5=OFF")
   endif()
-  target_link_libraries(singularity-eos::libs INTERFACE singularity-eos::hdf5)
 endif()
 
 if (SINGULARITY_USE_KOKKOS)
-  target_compile_definitions(singularity-eos::flags INTERFACE
+  target_compile_definitions(${_tar} INTERFACE
                              PORTABILITY_STRATEGY_KOKKOS)
   # Import Kokkos if not already available as a build target
   if (NOT TARGET Kokkos::kokkos)
@@ -163,12 +206,13 @@ if (SINGULARITY_USE_KOKKOS)
         set(Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE ON CACHE BOOL "" FORCE)
       endif()
       add_subdirectory(${PROJECT_SOURCE_DIR}/utils/kokkos)
-      install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/kokkos"
-            DESTINATION "include"
-            FILES_MATCHING PATTERN "*.hpp"
-      )
     endif()
+    get_target_property(KOKKOS_COMPILE_OPTIONS Kokkos::kokkoscore
+        INTERFACE_COMPILE_OPTIONS
+    )
+    target_link_libraries(${_tar} PUBLIC Kokkos::kokkos)
   endif()
+
   # cuda specific flags
   if(SINGULARITY_USE_CUDA)
     if(SINGULARITY_HIDE_MORE_WARNINGS)
@@ -195,7 +239,6 @@ if (SINGULARITY_USE_KOKKOS)
         )
     endif()
   endif()
-  target_link_libraries(singularity-eos::libs INTERFACE Kokkos::kokkos)
 endif ()
 
 # linear algebra library
@@ -245,52 +288,66 @@ if(SINGULARITY_USE_KOKKOSKERNELS)
     endif()
     find_package(KokkosKernels REQUIRED)
   endif()
-  target_link_libraries(singularity-eos::flags INTERFACE
+  target_link_libraries(${_tar} PUBLIC
                         Kokkos::kokkoskernels)
-  target_compile_definitions(singularity-eos::flags INTERFACE
+  target_compile_definitions(${_tar} INTERFACE
                              SINGULARITY_USE_KOKKOSKERNELS)
 else()
   # Eigen
   if (NOT TARGET Eigen3::Eigen)
-    find_package(Eigen3 REQUIRED)
-    target_link_libraries(singularity-eos::flags INTERFACE Eigen3::Eigen)
-    install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/eigen"
-      DESTINATION "include"
-      FILES_MATCHING PATTERN "*.hpp"
-      )
+    find_package(Eigen3 QUIET)
+    if(NOT Eigen3_FOUND)
+        set(EIGEN_TEST_CXX11 OFF CACHE BOOL "" FORCE)
+        set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
+        set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
+        set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/utils/eigen)
+      endif()
+    target_link_libraries(${_tar} PUBLIC Eigen3::Eigen)
   endif()
 endif()
 
 if (SINGULARITY_USE_EOSPAC)
   add_subdirectory(eospac-wrapper)
-  target_link_libraries(singularity-eos::libs
+  target_link_libraries(${_tar}
     INTERFACE
     eospac-wrapper)
-  target_compile_definitions(singularity-eos::flags
+  target_compile_definitions(${_tar}
     INTERFACE
     SINGULARITY_USE_EOSPAC)
 endif ()
 
 # fast math
 if (SINGULARITY_USE_SINGLE_LOGS)
-  target_compile_definitions(singularity-eos::flags INTERFACE
+  target_compile_definitions(${_tar} INTERFACE
       SINGULARITY_USE_SINGLE_LOGS)
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_4 AND SINGULARITY_FMATH_USE_ORDER_5)
   message(FATAL_ERROR "Order 4 and order 5 interpolation both specified. Please specify only one or zero. If no specification is made, order 7 will be used.")
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_4)
-  target_compile_definitions(singularity-eos::flags INTERFACE
+  target_compile_definitions(${_tar} INTERFACE
     SINGULARITY_FMATH_USE_ORDER_4)
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_5)
-  target_compile_definitions(singularity-eos::flags INTERFACE
+  target_compile_definitions(${_tar} INTERFACE
     SINGULAIRTY_FMATH_USE_ORDER_5)
 endif()
 
 # required package ports of call
-find_package(PortsofCall REQUIRED)
-target_link_libraries(singularity-eos::flags INTERFACE PortsofCall::PortsofCall)
+include(GNUInstallDirs)
+add_library(PortsofCall INTERFACE IMPORTED)
+
+target_include_directories(PortsofCall INTERFACE
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call>
+)
+
+target_link_libraries(${_tar} PUBLIC PortsofCall)
+
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/utils/ports-of-call
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call)
+
 
 # catch2
 if(SINGULARITY_BUILD_TESTS)
@@ -302,91 +359,81 @@ if(SINGULARITY_BUILD_TESTS)
   include(${PROJECT_SOURCE_DIR}/utils/spiner/Catch2/contrib/Catch.cmake)
 endif()
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/singularity-eos/eos)
-if (SINGULARITY_BUILD_TESTS)
-  add_subdirectory(test)
-endif()
-# create the libsingularity-eos.a library
-if(SINGULARITY_USE_FORTRAN)
-  if (NOT SINGULARITY_BUILD_CLOSURE)
-    message(FATAL_ERROR "The fortran library relies on closures. "
-      "Please either enable closures with -DSINGULARITY_BUILD_CLOSURE=ON "
-      "or disable fortran with -DSINGULARITY_USE_FORTRAN=OFF")
-  endif()
-  add_library(singularity-eos
-              $<TARGET_OBJECTS:eos_f>
-              $<TARGET_OBJECTS:eos_objs>)
-  install(DIRECTORY "${CMAKE_BINARY_DIR}/singularity-eos"
-    DESTINATION "include"
-    FILES_MATCHING PATTERN "*.mod")
-else()
-  add_library(singularity-eos
-              $<TARGET_OBJECTS:eos_objs>)
-endif()
-
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
    add_subdirectory(${PROJECT_SOURCE_DIR}/stellarcollapse2spiner)
    install(TARGETS stellarcollapse2spiner DESTINATION bin)
-endif()
-
-install(TARGETS eos singularity-eos DESTINATION lib)
-if(SINGULARITY_BUILD_SESAME2SPINER)
-  if(SINGULARITY_USE_EOSPAC)
-    if(SINGULARITY_USE_HDF5)
-      add_subdirectory(${PROJECT_SOURCE_DIR}/sesame2spiner)
-      install(TARGETS sesame2spiner DESTINATION bin)
-   endif()
-  endif()
 endif()
 
 if (SINGULARITY_BUILD_EXAMPLES)
   add_subdirectory(${PROJECT_SOURCE_DIR}/example)
 endif()
 
-# These are always needed.
-# TODO(JMM): Should always-needed utils be moved into a separate
-# directory? Or the optional ones be moved to something like
-# "external"?
-# TODO(JMM): Should I write a function so I'm not repeating all these
-# install calls?  More cmake wizardry than I have is required for
-# that, I think.
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/singularity-eos"
-  DESTINATION "include"
-  FILES_MATCHING PATTERN "*.hpp"
-  )
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/fast-math"
-  DESTINATION "include"
-  FILES_MATCHING PATTERN "*.hpp"
-  )
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/root-finding-1d"
-  DESTINATION "include"
-  FILES_MATCHING PATTERN "*.hpp"
-  )
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/sp5"
-  DESTINATION "include"
-  FILES_MATCHING PATTERN "*.hpp"
-  )
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/spiner"
-  DESTINATION "include"
-  FILES_MATCHING PATTERN "*.hpp"
-  )
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/utils/variant"
-  DESTINATION "include"
-  FILES_MATCHING PATTERN "*.hpp"
-  )
-if (SINGULARITY_USE_EOSPAC)
-  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/eospac-wrapper"
-    DESTINATION "include"
-    FILES_MATCHING PATTERN "*.hpp"
-    )
+if(NOT DEFINED _libdir)
+  include(GNUInstallDirs)
+  set(_libdir "${CMAKE_INSTALL_LIBDIR}")
+endif(NOT DEFINED _libdir)
+
+install(
+  TARGETS ${_tar}
+  EXPORT ${_tar}Targets
+  DESTINATION ${_libdir}
+)
+
+install(
+  EXPORT ${_tar}Targets
+  FILE  ${_tar}Targets.cmake
+  NAMESPACE "${_ns}::"
+  DESTINATION ${_libdir}/cmake/${_tar}
+)
+
+foreach(file ${_install_headers})
+  get_filename_component(DIR ${file} DIRECTORY)
+  install(FILES ${_tar}/${file}
+  DESTINATION include/${_tar}/${DIR})
+endforeach()
+
+#----------------------------------------------------------------------------#
+# Packaging
+#----------------------------------------------------------------------------#
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(${CMAKE_SOURCE_DIR}/config/${_tar}Config.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/${_tar}Config.cmake
+  INSTALL_DESTINATION ${_libdir}/cmake/${_tar}
+)
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/${_tar}Config.cmake
+  DESTINATION ${_libdir}/cmake/${_tar}
+)
+
+#----------------------------------------------------------------------------#
+# Local export
+#----------------------------------------------------------------------------#
+
+export(
+  EXPORT    ${_tar}Targets
+  FILE      ${CMAKE_CURRENT_BINARY_DIR}/cmake/${_tar}Targets.cmake
+  NAMESPACE ${_ns}::
+)
+
+export(PACKAGE ${_tar})
+
+if(SINGULARITY_USE_HDF5)
+  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
+    add_subdirectory(sesame2spiner)
+  endif()
 endif()
-install(CODE
-  "execute_process( \
-    COMMAND ${CMAKE_COMMAND} -E create_symlink \
-    ${CMAKE_INSTALL_PREFIX}/include/spiner/ports-of-call \
-    ${CMAKE_INSTALL_PREFIX}/include/ports-of-call \
-  )"
-  )
+
+if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+  add_subdirectory(stellarcollapse2spiner)
+endif()
+
+if(SINGULARITY_BUILD_TESTS)
+  include(CTest)
+  add_subdirectory(test)
+endif()
 
 # clang format
 include(cmake/Format.cmake)
+
+include(CPack)
