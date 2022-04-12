@@ -117,11 +117,20 @@ This should be differentiated from
 
  .. math::
 
-    \gamma := \frac{C_P}{C_V} = \frac{B_S}{B_T}
+    \gamma := \frac{V}{P} \left( \frac{\partial P}{\partial V} \right)_S =
+            \frac{B_S}{P}
  
-though, which is the adiabatic exponent. Here :math:`C_P` is the specific heat
-capacity at constant *pressure* and :math:`B_T` is the *isothermal* bulk
-modulus.
+though, which is the adiabatic exponent. 
+
+For an ideal gas, the adiabatic exponent is simply the ratio of the heat
+capacities,
+
+ .. math::
+
+    \gamma_\mathrm{id} = \frac{C_P}{C_V} = \frac{B_S}{B_T}.
+
+Here :math:`C_P` is the specific heat capacity at constant *pressure*
+and :math:`B_T` is the *isothermal* bulk modulus.
 
 Units and conversions
 ---------------------
@@ -273,7 +282,7 @@ Finally the energy along the Hugoniot is given by
     E_H(\rho) =
       \begin{cases}
         0                                               & \rho < \rho_0 \\
-        \frac{\eta (P_H + P_0)}{\rho_0 2}
+        \frac{\eta (P_H + P_0)}{2 \rho_0}
       \end{cases}.
 
 One should note that in this form neither the expansion region nor the overall
