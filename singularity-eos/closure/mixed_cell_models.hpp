@@ -883,7 +883,7 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
 
   // at this point we have initial guesses for rho, vfrac, sie, pressure, temperature
   // try to solve for PTE assuming an ideal gas to reset initial guess
-  try_ideal_pte<nmat, EOSIndexer, RealIndexer, LambdaIndexer, OFFSETTER>(
+  try_ideal_pte<nmat, 2*nmat, EOSIndexer, RealIndexer, LambdaIndexer, OFFSETTER>(
       eos, vfrac_tot, utot, rhobar, vfrac, sie, temp, press, lambda, ofst, Cache,
       residual);
 
