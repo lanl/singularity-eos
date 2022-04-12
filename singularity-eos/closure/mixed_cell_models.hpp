@@ -734,10 +734,10 @@ pte_closure_josh2_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_to
     }
     jacobian[neq + nmat] = dedT_sum;
     for (int m = 0; m < nmat - 1; m++) {
-      const int ind = MatIndex(2+m,m);
+      const int ind = MatIndex<nmat+1>(2+m,m);
       jacobian[ind] = dpdv[m];
       jacobian[ind+1] = -dpdv[m+1];
-      jacobian[MatIndex(2+m,nmat)] = dpdT[m] - dpdT[m+1];
+      jacobian[MatIndex<nmat+1>(2+m,nmat)] = dpdT[m] - dpdT[m+1];
     }
 
     for (int i = 0; i < nmat+1; ++i)
@@ -1470,7 +1470,7 @@ pte_closure_josh2(int nmat, EOSIndexer &&eoss, const Real vfrac_tot, const Real 
   return false;
 }
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_josh_offset(int nmat, EOS *eoss, const Real vfrac_tot, const Real sie_tot,
+pte_closure_josh2_offset(int nmat, EOS *eoss, const Real vfrac_tot, const Real sie_tot,
                         int const *const Mats, Real *rho, Real *vfrac, Real *sie,
                         Real *temp, Real *press, Real **lambdas, int &niter) {
   switch (nmat) {
