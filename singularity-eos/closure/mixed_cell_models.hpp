@@ -603,7 +603,7 @@ try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot,
 
 template <int size>
 PORTABLE_INLINE_FUNCTION int
-MatIndex(const int i, const int j) {
+MatIndex(const int &i, const int &j) {
   return i*size + j;
 }
 
@@ -713,8 +713,7 @@ pte_closure_josh2_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_to
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
-      Real ldT = std::log(derivative_eps * std::abs(Tequil)) * ilog2;
-      Real dT = Tequil*derivate_eps;
+      Real dT = Tequil*derivative_eps;
 
       p_pert = eos[ofst(m)].PressureFromDensityTemperature(rho[m], Tequil + dT, Cache[m]);
       e_pert = eos[ofst(m)].InternalEnergyFromDensityTemperature(rho[m], Tequil + dT, Cache[m]);
@@ -737,7 +736,7 @@ pte_closure_josh2_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_to
     for (int m = 0; m < nmat - 1; m++) {
       const int ind = MatIndex(2+m,m);
       jacobian[ind] = dpdv[m];
-      jacobian[ind+1] = -dpdv[m+1]
+      jacobian[ind+1] = -dpdv[m+1];
       jacobian[MatIndex(2+m,nmat)] = dpdT[m] - dpdT[m+1];
     }
 
@@ -1111,7 +1110,7 @@ PORTABLE_INLINE_FUNCTION bool pte_closure_josh2(EOSIndexer &&eos, const Real vfr
 
 template <int nmat>
 PORTABLE_INLINE_FUNCTION bool
-pte_closure_josh_offset(EOS *eos, const Real vfrac_tot, const Real sie_tot,
+pte_closure_josh2_offset(EOS *eos, const Real vfrac_tot, const Real sie_tot,
                         int const *const Mats, Real *rho, Real *vfrac, Real *sie,
                         Real *temp, Real *press, Real **lambda, int &niter) {
   using namespace mix_impl;
