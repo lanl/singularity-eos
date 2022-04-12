@@ -760,11 +760,9 @@ pte_closure_josh2_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_to
       } else if (vt > 1.0) {
         scale = 0.1 * (1.0 - vfrac[m]) / dx[m];
       }
-      // maybe the below is dangerous??
-      // const Real dt = (dtdv[m] * dx[m] + dtde[m] * dx[m + nmat]);
-      // const Real tt = temp[m] + scale * dt;
-      // if (tt < 0.0)
-      //  scale = -0.1 * temp[m] / dt;
+    }
+    if (Tequil + scale * dx[nmat] < 0.0) {
+      scale = -0.2 * Tequil / dx[nmat];
     }
     // Now apply the overall scaling
     for (int i = 0; i < neq; ++i)
