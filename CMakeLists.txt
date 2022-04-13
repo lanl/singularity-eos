@@ -97,10 +97,6 @@ execute_process(COMMAND patch -N -s -V never
 )
 #------------------------------------------------------------------------------#
 
-#add_library (singularity-eos::flags INTERFACE IMPORTED GLOBAL)
-#add_library (singularity-eos::libs INTERFACE IMPORTED)
-set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
-
 set(_tar singularity-eos)
 set(_ns singularity-eos)
 
@@ -119,7 +115,10 @@ add_library(${_ns}::${_tar} ALIAS ${_tar})
 
 if (SINGULARITY_USE_FORTRAN)
   set_target_properties(${_tar} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  target_include_directories(${_tar} INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
+  target_include_directories(${_tar} INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
 endif()
 
 target_include_directories(${_tar}
@@ -169,11 +168,14 @@ if (SINGULARITY_USE_HDF5)
   endif()
   find_package(HDF5 COMPONENTS C HL)
   if(HDF5_FOUND)
-    set_target_properties(${_tar}
-      PROPERTIES
-        INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARIES};${HDF5_HL_LIBRARIES}"
-      INTERFACE_COMPILE_DEFINITIONS "SINGULARITY_USE_HDF5"
-      INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}")
+    #    set_target_properties(${_tar}
+    #  PROPERTIES
+    #    INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARIES};${HDF5_HL_LIBRARIES}"
+    #  INTERFACE_COMPILE_DEFINITIONS "SINGULARITY_USE_HDF5"
+    #  INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}")
+    target_link_libraries(${_tar} INTERFACE "${HDF5_LIBRARIES};${HDF5_HL_LIBRARIES}")
+    target_compile_definitions(${_tar} INTERFACE "SINGULARITY_USE_HDF5")
+    target_include_directories(${_tar} INTERFACE "${HDF5_INCLUDE_DIRS}")
     if(HDF5_IS_PARALLEL)
       if(SINGULARITY_MPI_INSTALL_DIR)
         list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_MPI_INSTALL_DIR}")
@@ -310,10 +312,10 @@ endif()
 if (SINGULARITY_USE_EOSPAC)
   add_subdirectory(eospac-wrapper)
   target_link_libraries(${_tar}
-    INTERFACE
+    PUBLIC
     eospac-wrapper)
   target_compile_definitions(${_tar}
-    INTERFACE
+    PUBLIC
     SINGULARITY_USE_EOSPAC)
 endif ()
 
@@ -337,6 +339,13 @@ endif()
 # required package ports of call
 include(GNUInstallDirs)
 add_library(PortsofCall INTERFACE IMPORTED)
+
+# temporary
+
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/../installs.singularity/spiner.main.defaultconfig/lib/cmake")
+find_package(spiner REQUIRED)
+
+target_link_libraries(${_tar} PUBLIC spiner::spiner)
 
 target_include_directories(PortsofCall INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>
@@ -373,11 +382,13 @@ if(NOT DEFINED _libdir)
   set(_libdir "${CMAKE_INSTALL_LIBDIR}")
 endif(NOT DEFINED _libdir)
 
+if(SINGULARITY_USE_EOSPAC)
 install(
-  TARGETS ${_tar}
+  TARGETS ${_tar} eospac-wrapper
   EXPORT ${_tar}Targets
   DESTINATION ${_libdir}
 )
+endif()
 
 install(
   EXPORT ${_tar}Targets
