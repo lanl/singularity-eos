@@ -76,7 +76,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
-    return t_.PressureFromDensityInternalEnergy(rho, temperature, lambda);
+    return t_.PressureFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
