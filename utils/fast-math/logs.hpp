@@ -68,7 +68,7 @@
  */
 
 namespace singularity {
-namespace Math {
+namespace FastMath {
 
 PORTABLE_FORCEINLINE_FUNCTION
 double lg(const double x) {
@@ -108,7 +108,7 @@ double pow10(const double x) {
   return pow2(LOG10OLOG2 * x);
 }
 
-} // namespace Math
+} // namespace FastMath
 } // namespace singularity
 
 #endif //  _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_

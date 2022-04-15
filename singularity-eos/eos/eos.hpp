@@ -499,10 +499,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
     // return std::log10(x + offset + EPS);
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
-    return Math::pow10(lx) - offset;
+    return FastMath::pow10(lx) - offset;
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   lRho_(const Real rho) const noexcept {
@@ -698,10 +698,10 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
   static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
-    return Math::pow10(lx) - offset;
+    return FastMath::pow10(lx) - offset;
   }
   PORTABLE_FUNCTION
   Real interpRhoT_(const Real rho, const Real T, const Spiner::DataBox &db,
