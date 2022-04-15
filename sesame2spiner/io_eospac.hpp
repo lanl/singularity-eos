@@ -65,15 +65,15 @@ class Bounds {
       min += offset;
       max += offset;
 
-      min = std::log10(std::abs(min));
-      max = std::log10(std::abs(max));
+      min = singularity::Math::log10(std::abs(min));
+      max = singularity::Math::log10(std::abs(max));
       Real delta = max - min;
       min += 0.5 * shrinkRange * delta;
       max -= 0.5 * shrinkRange * delta;
 
       if (!(std::isnan(anchor_point))) {
         anchor_point += offset;
-        anchor_point = std::log10(std::abs(anchor_point));
+        anchor_point = singularity::Math::log10(std::abs(anchor_point));
       }
     }
 
@@ -93,7 +93,7 @@ class Bounds {
     grid = RegularGrid1D(min, max, N);
   }
 
-  inline Real log2lin(Real xl) const { return pow(10., xl) - offset; }
+  inline Real log2lin(Real xl) const { return singularity::Math::pow10(xl) - offset; }
   inline Real i2lin(int i) const { return log2lin(grid.x(i)); }
 
   friend std::ostream &operator<<(std::ostream &os, const Bounds &b) {

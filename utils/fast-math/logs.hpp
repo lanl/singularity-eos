@@ -19,6 +19,30 @@
 #include <cmath>
 #include <ports-of-call/portability.hpp>
 
+/*
+ * These functions are for use when moving to and from the gridding space
+ * for Spiner grids.
+ *
+ * The core idea here is to move onto a grid that's roughly
+ * logarithmically spaced. It doesn't actually matter if that grid is
+ * EXACTLY logarithmic. Just that it is approximately so.
+ *
+ * It is important that the function that we use to translate to "grid
+ * space" is invertible and fast.
+ *
+ * To meet these constraints, we approximate a logarithm by using
+ * frexp and ldexp to split a real number into its mantissa + exponent.
+ * to truly take the log, one needs to take the log of the mantissa.
+ * However, the first term in the logarithm's Taylor series is linear.
+ * Thus a linear approximation to log, for small numbers is valid.
+ * We use that linear approximation, which turns out to be:
+ * 2*(mantissa - 1)
+ * Then the approximate log of the whole thing is the approximation of
+ * the log of the mantissa, plus the exponent:
+ * 2*(mantissa - 1) + exponent
+ * Which is a continuous, invertible function.
+ */
+
 namespace singularity {
 namespace Math {
 
