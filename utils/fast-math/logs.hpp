@@ -1,6 +1,4 @@
 //======================================================================
-// approximate log10, approximately 5x faster than std::log10
-// Author: Jonah Miller (jonahm@lanl.gov)
 // © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
@@ -26,21 +24,47 @@
  * The core idea here is to move onto a grid that's roughly
  * logarithmically spaced. It doesn't actually matter if that grid is
  * EXACTLY logarithmic. Just that it is approximately so.
+ * There are however some constraints that do matter:
  *
- * It is important that the function that we use to translate to "grid
- * space" is invertible and fast.
+ * 1. The function we use to translate to "grid space" must be
+ * precise, meaning you get the same answer each time.
+ *
+ * 2. The function must be invertible, meaning you can go back to
+ * "linear space." Ideally it is also continuous.
+ * 
+ * 3. The function and its inverse must be fast.
  *
  * To meet these constraints, we approximate a logarithm by using
- * frexp and ldexp to split a real number into its mantissa + exponent.
- * to truly take the log, one needs to take the log of the mantissa.
+ * frexp and ldexp to split a real number into its mantissa + exponent
+ * in base 2. The mantissa is a real number on the interval [0.5, 1)
+ * and the exponent is an integer such that
+ *
+ * mantissa * 2^exponent = number
+ *
+ * To truly take the log, one needs to take the log of the mantissa.
  * However, the first term in the logarithm's Taylor series is linear.
  * Thus a linear approximation to log, for small numbers is valid.
  * We use that linear approximation, which turns out to be:
+ *
  * 2*(mantissa - 1)
+ *
+ * So that mantissa = 0.5 returns log_2(0.5) = -1 and mantissa (1)
+ * yields 0.
+ * 
  * Then the approximate log of the whole thing is the approximation of
  * the log of the mantissa, plus the exponent:
+ *
  * 2*(mantissa - 1) + exponent
- * Which is a continuous, invertible function.
+ *
+ * Which is a continuous, invertible function that approximates lg
+ * only relatively accurately. The absolute error of this
+ * approximation is about 0.1 at its largest. This translates to a
+ * relative error of at most 25%.
+ *
+ * However, we don't mind this error, as we're only interested in
+ * generating a grid spacing "close enough" to log spacing. As long as
+ * we can go into and out of "grid space" reliably and quickly, we're
+ * happy.
  */
 
 namespace singularity {

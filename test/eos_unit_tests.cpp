@@ -17,10 +17,13 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream> // debug
+#include <limits>
 
+#include <fast-math/logs.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <root-finding-1d/root_finding.hpp>
+
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 
@@ -104,6 +107,45 @@ inline void compare_two_eoss(const EOS &test_e, const EOS &ref_e) {
   REQUIRE(isClose(test_e.GruneisenParamFromDensityTemperature(1, 1),
                   ref_e.GruneisenParamFromDensityTemperature(1, 1), 1.e-15));
   return;
+}
+
+SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
+  GIVEN("A set of values to invert over a large dynamic range") {
+    constexpr Real LXMIN = -20;
+    constexpr Real LXMAX = 32;
+    constexpr int NX = 1000;
+    constexpr Real DLX = (LXMAX - LXMIN) / (NX - 1);
+    Real *x = (Real *)PORTABLE_MALLOC(NX * sizeof(Real));
+    portableFor(
+        "Set x values", 0, NX, PORTABLE_LAMBDA(const int i) {
+          const Real lx = LXMIN + i * DLX;
+          x[i] = std::pow(10., lx);
+        });
+    THEN("The fast exp of the fast log returns the original") {
+      int nw_ie = 0;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
+      Kokkos::View<int, atomic_view> n_wrong_ie("wrong_ie");
+#else
+      PortableMDArray<int> n_wrong_ie(&nw_ie, 1);
+#endif
+      portableFor(
+          "try out the fast math", 0, NX, PORTABLE_LAMBDA(const int i) {
+            constexpr Real machine_eps = std::numeric_limits<Real>::epsilon();
+	    constexpr Real acceptable_err = 100*machine_eps;
+            const Real lx = singularity::Math::log10(x[i]);
+            const Real elx = singularity::Math::pow10(lx);
+            const Real rel_err = 2.0 * std::abs(x[i] - elx) /
+                                 (std::abs(x[i]) + std::abs(elx) + machine_eps);
+            n_wrong_ie() += (rel_err > acceptable_err);
+          });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::deep_copy(nw_ie, n_wrong_ie);
+#endif
+      REQUIRE(nw_ie == 0);
+    }
+    free(x);
+  }
 }
 
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
