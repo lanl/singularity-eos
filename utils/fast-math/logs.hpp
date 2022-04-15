@@ -31,7 +31,7 @@
  *
  * 2. The function must be invertible, meaning you can go back to
  * "linear space." Ideally it is also continuous.
- * 
+ *
  * 3. The function and its inverse must be fast.
  *
  * To meet these constraints, we approximate a logarithm by using
@@ -50,7 +50,7 @@
  *
  * So that mantissa = 0.5 returns log_2(0.5) = -1 and mantissa (1)
  * yields 0.
- * 
+ *
  * Then the approximate log of the whole thing is the approximation of
  * the log of the mantissa, plus the exponent:
  *
@@ -80,20 +80,20 @@ double lg(const double x) {
   const float y = frexpf((float)x, &n); // faster but less accurate
 #endif // SINGULARITY_USE_SINGLE_LOGS
 
-  return 2*(y - 1) + n;
+  return 2 * (y - 1) + n;
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
 double log10(const double x) {
   constexpr double LOG2OLOG10 = 0.301029995663981195;
-  return LOG2OLOG10*lg(x);
+  return LOG2OLOG10 * lg(x);
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
 double pow2(const double x) {
   const int flr = std::floor(x);
   const double remainder = x - flr;
-  const double mantissa = 0.5*(remainder + 1);
+  const double mantissa = 0.5 * (remainder + 1);
   const double exponent = flr + 1;
 #ifndef SINGULARITY_USE_SINGLE_LOGS
   return ldexp(mantissa, exponent);
@@ -105,7 +105,7 @@ double pow2(const double x) {
 PORTABLE_FORCEINLINE_FUNCTION
 double pow10(const double x) {
   constexpr double LOG10OLOG2 = 3.321928094887362626;
-  return pow2(LOG10OLOG2*x);
+  return pow2(LOG10OLOG2 * x);
 }
 
 } // namespace Math

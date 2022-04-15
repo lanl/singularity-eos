@@ -132,7 +132,7 @@ SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
       portableFor(
           "try out the fast math", 0, NX, PORTABLE_LAMBDA(const int i) {
             constexpr Real machine_eps = std::numeric_limits<Real>::epsilon();
-	    constexpr Real acceptable_err = 100*machine_eps;
+            constexpr Real acceptable_err = 100 * machine_eps;
             const Real lx = singularity::Math::log10(x[i]);
             const Real elx = singularity::Math::pow10(lx);
             const Real rel_err = 2.0 * std::abs(x[i] - elx) /
