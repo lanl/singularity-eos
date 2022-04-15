@@ -701,7 +701,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
-    return std::pow10(lx) - offset;
+    return Math::pow10(lx) - offset;
   }
   PORTABLE_FUNCTION
   Real interpRhoT_(const Real rho, const Real T, const Spiner::DataBox &db,
