@@ -64,6 +64,7 @@ before_script:
 
 .x86volta: &x86volta
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=x96-volta"
+    DO_GPU: "true"
 
 #################
 # General Setup #
