@@ -62,8 +62,7 @@ class Bounds {
   Bounds(Real min, Real max, int N, Real offset)
       : grid(RegularGrid1D(min, max, N)), offset(offset) {}
 
-  Bounds(Real min, Real max, int N)
-      : offset(0) {
+  Bounds(Real min, Real max, int N) : offset(0) {
     constexpr Real epsilon = std::numeric_limits<float>::epsilon();
     const Real min_offset = 10 * std::abs(epsilon);
     if (min <= 0) offset = 1.1 * std::abs(min) + min_offset;
@@ -280,9 +279,7 @@ int main(int argc, char *argv[]) {
 
       portableFor(
           "densities", 0, nFineRho,
-          PORTABLE_LAMBDA(const int &j) {
-	    rhos(j) = lRhoBounds.i2lin(j);
-	  });
+          PORTABLE_LAMBDA(const int &j) { rhos(j) = lRhoBounds.i2lin(j); });
       portableFor(
           "temperatures", 0, nFineT, PORTABLE_LAMBDA(const int &i) {
             Ts(i) = lTBounds.i2lin(i);
