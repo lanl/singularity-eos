@@ -304,7 +304,7 @@ endif()
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/singularity-eos/eos)
 if (SINGULARITY_BUILD_TESTS)
-  add_subdirectory(test)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/test)
 endif()
 # create the libsingularity-eos.a library
 if(SINGULARITY_USE_FORTRAN)

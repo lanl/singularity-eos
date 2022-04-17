@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
           sie_tot /= rho_tot;
 
           int niter = 0;
-          bool success = pte_closure_josh(NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp,
+          bool success = pte_closure_josh2(NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp,
                                           press, lambda, niter);
           if (success) {
             nsuccess_d() += 1;
