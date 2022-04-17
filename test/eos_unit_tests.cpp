@@ -138,7 +138,7 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
           "find roots", 0, ntimes, PORTABLE_LAMBDA(const int i) {
             RootCounts per_thread_counts;
             statuses(i) =
-                findRoot(f, 0, guess, -1, 3, 1e-10, 1e-10, roots(i), per_thread_counts);
+                regula_falsi(f, 0, guess, -1, 3, 1e-10, 1e-10, roots(i), per_thread_counts);
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::View<Status> s_copy(statuses, 0);
