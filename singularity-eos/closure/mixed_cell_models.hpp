@@ -461,7 +461,7 @@ pte_closure_flag_with_line_impl(EOSIndexer &&eoss, const Real Volume, const Real
 
 // RealIndexer types may be different because some might be arrays and
 // some might be pointers.
-template <int nmat, typename T1, typename T2, typename T3>
+template <int nmat, int res_size, typename T1, typename T2, typename T3>
 PORTABLE_INLINE_FUNCTION static void pte_residual(const Real vfrac_tot, const Real utot,
                                                   T1 &&vfrac, Real *u, T2 &&temp,
                                                   T3 &&press, Real *residual) {
@@ -475,8 +475,28 @@ PORTABLE_INLINE_FUNCTION static void pte_residual(const Real vfrac_tot, const Re
   residual[1] = utot - esum;
   for (int m = 0; m < nmat - 1; ++m) {
     residual[2 + m] = press[m + 1] - press[m];
-    residual[1 + nmat + m] = temp[m + 1] - temp[m];
   }
+  for (int m = nmat+1; m < res_size; m++) {
+    residual[m] = temp[m - nmat] - temp[m - nmat - 1];
+  }
+}
+
+template <int nmat, typename RealIndexer>
+PORTABLE_INLINE_FUNCTION bool CheckPTE2(const Real rho_total, RealIndexer &&vfrac,
+                                        const Real rhobar[nmat], RealIndexer &&press,
+                                        Real residual[nmat+1]) {
+  using namespace mix_params;
+  Real mean_p = vfrac[0] * press[0];
+  Real error_p = 0.0;
+  for (int m = 1; m < nmat; ++m) {
+    mean_p += vfrac[m] * press[m];
+    error_p += residual[m + 1] * residual[m + 1];
+  }
+  error_p = std::sqrt(error_p);
+  // Check for convergence
+  bool converged_p =
+      (error_p < pte_rel_tolerance_p * std::abs(mean_p) || error_p < pte_abs_tolerance_p);
+  return converged_p;
 }
 
 template <int nmat, typename RealIndexer>
@@ -523,14 +543,14 @@ get_ideal_pte(const Real vfrac_tot, const Real utot, const Real rho[nmat],
   Pequil = Tequil * Asum / vfrac_tot;
 }
 
-template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer,
+template <int nmat, int res_size, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer,
           typename OFFSETTER>
 PORTABLE_INLINE_FUNCTION void
 try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot,
               const Real rhobar[nmat], RealIndexer &&vfrac, RealIndexer &&sie,
               RealIndexer &&temp, RealIndexer &&press, LambdaIndexer &&lambda,
               const OFFSETTER ofst, Real Cache[nmat][MAX_NUM_LAMBDAS],
-              Real residual[2 * nmat]) {
+              Real residual[res_size]) {
   Real Pequil, Tequil;
   get_ideal_pte<nmat, RealIndexer>(vfrac_tot, utot, rhobar, vfrac, sie, temp, press,
                                    Pequil, Tequil);
@@ -556,12 +576,12 @@ try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot,
     }
   }
 
-  Real res_new[2 * nmat];
-  pte_residual<nmat>(vfrac_tot, utot, vtrial, utrial, ttrial, ptrial, res_new);
+  Real res_new[res_size];
+  pte_residual<nmat, res_size>(vfrac_tot, utot, vtrial, utrial, ttrial, ptrial, res_new);
 
   Real res0 = 0.0;
   Real res1 = 0.0;
-  for (int m = 0; m < 2 * nmat; m++) {
+  for (int m = 0; m < res_size; m++) {
     res0 += residual[m] * residual[m];
     res1 += res_new[m] * res_new[m];
   }
@@ -572,13 +592,233 @@ try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot,
       temp[m] = ttrial[m];
       sie[m] = etrial[m];
       vfrac[m] = vtrial[m];
-      residual[2 * m] = res_new[2 * m];
-      residual[2 * m + 1] = res_new[2 * m + 1];
+    }
+    for (int m = 0; m < res_size; m++) {
+      residual[m] = res_new[m];
     }
   }
 
   return;
 }
+
+template <int size>
+PORTABLE_INLINE_FUNCTION int
+MatIndex(const int &i, const int &j) {
+  return i*size + j;
+}
+
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer,
+          typename OFFSETTER>
+PORTABLE_INLINE_FUNCTION bool
+pte_closure_josh2_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot,
+                      RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                      RealIndexer &&temp, RealIndexer &&press, LambdaIndexer &&lambda,
+                      const OFFSETTER ofst, int &niter) {
+  using namespace mix_params;
+  const Real ilog2 = 1.0 / std::log(2.0);
+  Real vsum = 0.0;
+  // Normalize vfrac
+  for (int m = 0; m < nmat; ++m)
+    vsum += vfrac[m];
+  for (int m = 0; m < nmat; ++m)
+    vfrac[m] /= vsum;
+
+  Real rhobar[nmat]; // This is a fixed quantity: the average density of
+                     // material m averaged over the full PTE volume
+  for (int m = 0; m < nmat; ++m)
+    rhobar[m] = rho[m] * vfrac[m];
+  Real rho_total = 0.0;
+  for (int m = 0; m < nmat; ++m)
+    rho_total += rhobar[m];
+  // Renormalize energies as well
+  Real utot = rho_total * sie_tot;
+
+  Real Cache[nmat][MAX_NUM_LAMBDAS];
+  // set some options and make the initial EOS calls
+  enum class EosPreference { RhoT, Rhoe };
+  EosPreference eos_choice[nmat];
+  for (int m = 0; m < nmat; m++) {
+    temp[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]);
+    if (eos[ofst(m)].PreferredInput() ==
+        (thermalqs::density | thermalqs::specific_internal_energy)) {
+      eos_choice[m] = EosPreference::Rhoe;
+      press[m] = eos[ofst(m)].PressureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]);
+    } else if (eos[ofst(m)].PreferredInput() ==
+               (thermalqs::density | thermalqs::temperature)) {
+      eos_choice[m] = EosPreference::RhoT;
+      press[m] = eos[ofst(m)].PressureFromDensityTemperature(rho[m], temp[m], Cache[m]);
+    }
+  }
+
+  Real u[nmat];
+  Real esum = 0.0;
+  for (int m = 0; m < nmat; ++m)
+    u[m] = sie[m] * rhobar[m];
+  for (int m = 0; m < nmat; ++m)
+    esum += u[m];
+  for (int m = 0; m < nmat; ++m)
+    u[m] *= utot / esum;
+  Real jacobian[(nmat+1) * (nmat+1)];
+  Real dx[nmat+1];
+  Real residual[nmat+1];
+  // Real* Cache[nmat];
+  // for (int m {0}; m < nmat; ++m) Cache[m] = nullptr;
+
+  pte_residual<nmat,nmat+1>(vfrac_tot, utot, vfrac, u, temp, press, residual);
+
+  // at this point we have initial guesses for rho, vfrac, sie, pressure, temperature
+  // try to solve for PTE assuming an ideal gas to reset initial guess
+  try_ideal_pte<nmat, nmat+1, EOSIndexer, RealIndexer, LambdaIndexer, OFFSETTER>(
+      eos, vfrac_tot, utot, rhobar, vfrac, sie, temp, press, lambda, ofst, Cache,
+      residual);
+  
+  // compute a mass-weighted avg temperature for an initial guess
+  Real Tequil = 0.0;
+  for (int m = 0; m < nmat; m++) {
+    Tequil += rhobar[m] * temp[m];
+  }
+  Tequil /= rho_total;
+
+  Real vtemp[nmat], rtemp[nmat], utemp[nmat];
+  Real dpdT[nmat], dpdv[nmat], dedv[nmat];
+
+  bool converged_p = false;
+  bool converged = true;
+  niter = 0;
+  const int neq = nmat + 1;
+  constexpr const int pte_max_iter = nmat * pte_max_iter_per_mat;
+  // get the initial residual
+  for (niter = 0; niter < pte_max_iter; ++niter) {
+    // Calculate errors and break of converged
+    converged =
+        CheckPTE2<nmat, RealIndexer>(rho_total, vfrac, rhobar, press, residual);
+    if (converged) break;
+
+    Real dedT_sum = 0.0;
+    for (int m = 0; m < nmat; m++) {
+      //////////////////////////////
+      // perturb volume fractions
+      //////////////////////////////
+      const Real deriv_mult = vfrac[m] > 0.01 ? vfrac[m] : 0.01;
+      const Real ldv = std::log(derivative_eps * deriv_mult) * ilog2;
+      Real dv = std::pow(2.0, std::round(ldv));
+      dv *= (vfrac[m] < 0.5 ? 1.0 : -1.0);
+      const Real vf_pert = vfrac[m] + dv;
+      const Real rho_pert = rhobar[m] / vf_pert;
+
+      Real p_pert = eos[ofst(m)].PressureFromDensityTemperature(rho_pert, Tequil, Cache[m]);
+      Real e_pert = eos[ofst(m)].InternalEnergyFromDensityTemperature(rho_pert, Tequil, Cache[m]);
+      dpdv[m] = (p_pert - press[m]) / dv;
+      dedv[m] = (rhobar[m] * e_pert - u[m]) / dv;
+      //////////////////////////////
+      // perturb temperature
+      //////////////////////////////
+      Real dT = Tequil*derivative_eps;
+
+      p_pert = eos[ofst(m)].PressureFromDensityTemperature(rho[m], Tequil + dT, Cache[m]);
+      e_pert = eos[ofst(m)].InternalEnergyFromDensityTemperature(rho[m], Tequil + dT, Cache[m]);
+      dpdT[m] = (p_pert - press[m]) / dT;
+      dedT_sum += (rhobar[m] * e_pert - u[m]) / dT;
+    }
+    // Fill in the residual
+    Real err = 0;
+    for (int i = 0; i < neq; ++i)
+      err += residual[i] * residual[i];
+    err *= 0.5;
+    // Fill in the Jacobian
+    for (int i = 0; i < neq*neq; ++i)
+      jacobian[i] = 0.0;
+    for (int m = 0; m < nmat; ++m) {
+      jacobian[m] = 1.0;
+      jacobian[neq + m] = dedv[m];
+    }
+    jacobian[neq + nmat] = dedT_sum;
+    for (int m = 0; m < nmat - 1; m++) {
+      const int ind = MatIndex<nmat+1>(2+m,m);
+      jacobian[ind] = dpdv[m];
+      jacobian[ind+1] = -dpdv[m+1];
+      jacobian[MatIndex<nmat+1>(2+m,nmat)] = dpdT[m] - dpdT[m+1];
+    }
+
+    for (int i = 0; i < nmat+1; ++i)
+      dx[i] = residual[i];
+    if (!solve_Ax_b<nmat+1>(jacobian, dx)) {
+      // do something to crash out?  Tell folks what happened?
+#ifndef KOKKOS_ENABLE_CUDA
+      printf("crashing out at iteration: %i\n", niter);
+#endif // KOKKOS_ENABLE_CUDA
+      converged = false;
+      // std::cout << "Crashing out on iteration "<< niter << std::endl;
+      break;
+    }
+    // Now, get overall scaling limit
+    Real scale = 1.0;
+    for (int m = 0; m < nmat; ++m) {
+      Real vt = vfrac[m] + scale * dx[m];
+      if (vt < 0.0) {
+        scale = -0.1 * vfrac[m] / dx[m];
+      } else if (vt > 1.0) {
+        scale = 0.1 * (1.0 - vfrac[m]) / dx[m];
+      }
+    }
+    if (Tequil + scale * dx[nmat] < 0.0) {
+      scale = -0.2 * Tequil / dx[nmat];
+    }
+    // Now apply the overall scaling
+    for (int i = 0; i < neq; ++i)
+      dx[i] *= scale;
+    // Line search
+    Real gradfdx = -2.0 * scale * err;
+    scale = 1.0;
+    Real err_old = err;
+    int line_iter = 0;
+    Real Ttemp;
+    do {
+      Ttemp = Tequil + scale * dx[nmat];
+      for (int m = 0; m < nmat; ++m) {
+        vtemp[m] = vfrac[m] + scale * dx[m];
+        rtemp[m] = rhobar[m] / vtemp[m];
+        utemp[m] = rhobar[m] * eos[ofst(m)].InternalEnergyFromDensityTemperature(rtemp[m], Ttemp, Cache[m]);
+        sie[m] = utemp[m] / rhobar[m];
+        temp[m] = Ttemp;
+        switch (eos_choice[m]) {
+        case EosPreference::Rhoe:
+          press[m] =
+              eos[ofst(m)].PressureFromDensityInternalEnergy(rtemp[m], sie[m], Cache[m]);
+          break;
+        case EosPreference::RhoT:
+          press[m] =
+              eos[ofst(m)].PressureFromDensityTemperature(rtemp[m], temp[m], Cache[m]);
+          break;
+        }
+      }
+      pte_residual<nmat,nmat+1>(vfrac_tot, utot, vtemp, utemp, temp, press, residual);
+      Real err = 0;
+      for (int i = 0; i < neq; ++i)
+        err += residual[i] * residual[i];
+      err *= 0.5;
+      line_iter++;
+      if (line_iter > line_search_max_iter ||
+          err < err_old + line_search_alpha * scale * gradfdx)
+        break;
+      scale *= 0.5;
+    } while (true);
+
+    // Update values
+    Tequil = Ttemp;
+    for (int m = 0; m < nmat; ++m) {
+      vfrac[m] = vtemp[m];
+      rho[m] = rhobar[m] / vfrac[m];
+      u[m] = utemp[m];
+      sie[m] = u[m] / rhobar[m];
+    }
+    // niter++;
+  } // while (niter < pte_max_iter && !converged);
+  for (int m = 0; m < nmat; ++m)
+    vfrac[m] *= vfrac_tot;
+  return converged;
+}
+
 
 template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer,
           typename OFFSETTER>
@@ -637,11 +877,11 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
   // Real* Cache[nmat];
   // for (int m {0}; m < nmat; ++m) Cache[m] = nullptr;
 
-  pte_residual<nmat>(vfrac_tot, utot, vfrac, u, temp, press, residual);
+  pte_residual<nmat,2*nmat>(vfrac_tot, utot, vfrac, u, temp, press, residual);
 
   // at this point we have initial guesses for rho, vfrac, sie, pressure, temperature
   // try to solve for PTE assuming an ideal gas to reset initial guess
-  try_ideal_pte<nmat, EOSIndexer, RealIndexer, LambdaIndexer, OFFSETTER>(
+  try_ideal_pte<nmat, 2*nmat, EOSIndexer, RealIndexer, LambdaIndexer, OFFSETTER>(
       eos, vfrac_tot, utot, rhobar, vfrac, sie, temp, press, lambda, ofst, Cache,
       residual);
 
@@ -791,7 +1031,7 @@ pte_closure_josh_impl(EOSIndexer &&eos, const Real vfrac_tot, const Real sie_tot
           break;
         }
       }
-      pte_residual<nmat>(vfrac_tot, utot, vtemp, utemp, temp, press, residual);
+      pte_residual<nmat,2*nmat>(vfrac_tot, utot, vtemp, utemp, temp, press, residual);
       Real err = 0;
       for (int i = 0; i < 2 * nmat; ++i)
         err += residual[i] * residual[i];
@@ -854,6 +1094,34 @@ pte_closure_flag_with_line_offset(EOS *eoss, const Real Volume, const Real Total
       lambdas, [&ComponentMats](const int m) { return ComponentMats[m]; }, niter);
 }
 
+template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
+PORTABLE_INLINE_FUNCTION bool pte_closure_josh2(EOSIndexer &&eos, const Real vfrac_tot,
+                                               const Real sie_tot, RealIndexer &&rho,
+                                               RealIndexer &&vfrac, RealIndexer &&sie,
+                                               RealIndexer &&temp, RealIndexer &&press,
+                                               LambdaIndexer &&lambda, int &niter) {
+  using namespace mix_impl;
+  return pte_closure_josh2_impl<nmat>(
+      eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+      [&](const int m) { return m; }, niter);
+}
+
+template <int nmat>
+PORTABLE_INLINE_FUNCTION bool
+pte_closure_josh2_offset(EOS *eos, const Real vfrac_tot, const Real sie_tot,
+                        int const *const Mats, Real *rho, Real *vfrac, Real *sie,
+                        Real *temp, Real *press, Real **lambda, int &niter) {
+  using namespace mix_impl;
+  if (lambda == nullptr) {
+    NullPtrIndexer lambda_indexer;
+    return pte_closure_josh2_impl<nmat>(
+        eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda_indexer,
+        [&](const int m) { return m; }, niter);
+  }
+  return pte_closure_josh2_impl<nmat>(
+      eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+      [&Mats](const int m) { return Mats[m]; }, niter);
+}
 template <int nmat, typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 PORTABLE_INLINE_FUNCTION bool pte_closure_josh(EOSIndexer &&eos, const Real vfrac_tot,
                                                const Real sie_tot, RealIndexer &&rho,
@@ -1155,6 +1423,84 @@ bool pte_closure_flag_offset(int nmat, EOS *eoss, const Real Volume, const Real 
     return pte_closure_flag_with_line_offset<8>(eoss, Volume, TotalSIE, ComponentMats,
                                                 ComponentMasses, ComponentVolumes,
                                                 ComponentEnergies, lambdas, niter);
+    break;
+  }
+  return false;
+}
+template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
+PORTABLE_INLINE_FUNCTION bool
+pte_closure_josh2(int nmat, EOSIndexer &&eoss, const Real vfrac_tot, const Real sie_tot,
+                 RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                 RealIndexer &&temp, RealIndexer &&press, LambdaIndexer &&lambdas,
+                 int &niter) {
+  switch (nmat) {
+  case 1:
+    return true; // (or should we call the EOS actually?)
+  case 2:
+    return pte_closure_josh2<2>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
+    break;
+  case 3:
+    return pte_closure_josh2<3>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
+    break;
+  case 4:
+    return pte_closure_josh2<4>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
+    break;
+  case 5:
+    return pte_closure_josh2<5>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
+    break;
+  case 6:
+    return pte_closure_josh2<6>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
+    break;
+  case 7:
+    return pte_closure_josh2<7>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
+    break;
+  case 8:
+    return pte_closure_josh2<8>(eoss, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press,
+                               lambdas, niter);
+    break;
+  }
+  return false;
+}
+PORTABLE_INLINE_FUNCTION bool
+pte_closure_josh2_offset(int nmat, EOS *eoss, const Real vfrac_tot, const Real sie_tot,
+                        int const *const Mats, Real *rho, Real *vfrac, Real *sie,
+                        Real *temp, Real *press, Real **lambdas, int &niter) {
+  switch (nmat) {
+  case 1:
+    return true; // (or should we call the EOS actually?)
+  case 2:
+    return pte_closure_josh2_offset<2>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
+    break;
+  case 3:
+    return pte_closure_josh2_offset<3>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
+    break;
+  case 4:
+    return pte_closure_josh2_offset<4>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
+    break;
+  case 5:
+    return pte_closure_josh2_offset<5>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
+    break;
+  case 6:
+    return pte_closure_josh2_offset<6>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
+    break;
+  case 7:
+    return pte_closure_josh2_offset<7>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
+    break;
+  case 8:
+    return pte_closure_josh2_offset<8>(eoss, vfrac_tot, sie_tot, Mats, rho, vfrac, sie,
+                                      temp, press, lambdas, niter);
     break;
   }
   return false;
