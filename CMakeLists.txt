@@ -160,6 +160,7 @@ if (SINGULARITY_TEST_SESAME)
    target_compile_definitions(${_tar} INTERFACE SINGULARITY_TEST_SESAME)
 endif()
 
+# only use hdf5 if spiner
 if (SINGULARITY_USE_HDF5)
   target_compile_definitions(${_tar} INTERFACE
                              SPINER_USE_HDF)
@@ -337,12 +338,13 @@ if (SINGULARITY_FMATH_USE_ORDER_5)
 endif()
 
 # required package ports of call
+# same as spiner
 include(GNUInstallDirs)
 add_library(PortsofCall INTERFACE IMPORTED)
 
 # temporary
-
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/../installs.singularity/spiner.main.defaultconfig/lib/cmake")
+# add submodule or use subdir
+list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/../installs.singularity/spiner.main.defaultconfig/lib/cmake/spiner")
 find_package(spiner REQUIRED)
 
 target_link_libraries(${_tar} PUBLIC spiner::spiner)
@@ -350,7 +352,7 @@ target_link_libraries(${_tar} PUBLIC spiner::spiner)
 target_include_directories(PortsofCall INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call>
-)
+    )
 
 target_link_libraries(${_tar} PUBLIC PortsofCall)
 
@@ -358,9 +360,9 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/utils/ports-of-call
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call)
 
 
-# catch2
+# catch2 - check for env catch first, otherwise fetch
 if(SINGULARITY_BUILD_TESTS)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/utils/spiner/Catch2)
+  #  add_subdirectory(${PROJECT_SOURCE_DIR}/utils/spiner/Catch2)
 endif()
 
 if(SINGULARITY_BUILD_TESTS)
@@ -382,13 +384,11 @@ if(NOT DEFINED _libdir)
   set(_libdir "${CMAKE_INSTALL_LIBDIR}")
 endif(NOT DEFINED _libdir)
 
-if(SINGULARITY_USE_EOSPAC)
 install(
-  TARGETS ${_tar} eospac-wrapper
+  TARGETS ${_tar} 
   EXPORT ${_tar}Targets
   DESTINATION ${_libdir}
 )
-endif()
 
 install(
   EXPORT ${_tar}Targets
