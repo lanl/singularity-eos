@@ -555,16 +555,18 @@ try_ideal_pte(EOSIndexer &&eos, const Real vfrac_tot, const Real utot,
   get_ideal_pte<nmat, RealIndexer>(vfrac_tot, utot, rhobar, vfrac, sie, temp, press,
                                    Pequil, Tequil);
   const Real alpha = Pequil / Tequil;
-
   Real etrial[nmat], vtrial[nmat], ttrial[nmat], ptrial[nmat], utrial[nmat];
   for (int m = 0; m < nmat; m++) {
+#if 1 // do we take the equil temp and call eos to get sie or the other way?
+    ttrial[m] = Tequil;
+    etrial[m] = eos[ofst(m)].InternalEnergyFromDensityTemperature(rhobar[m] / vtrial[m],
+                                                                  Tequil, Cache[m]);
+#else
     etrial[m] = sie[m] / temp[m] * Tequil;
-    utrial[m] = rhobar[m] * etrial[m];
+    ttrial[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(rhobar[m] / vtrial[m], etrial[m], Cache[m]);
+#endif
     vtrial[m] = vfrac[m] * press[m] / (temp[m] * alpha);
-  }
-  for (int m = 0; m < nmat; m++) {
-    ttrial[m] = eos[ofst(m)].TemperatureFromDensityInternalEnergy(rhobar[m] / vtrial[m],
-                                                                  etrial[m], Cache[m]);
+    utrial[m] = rhobar[m] * etrial[m];
     if (eos[ofst(m)].PreferredInput() ==
         (thermalqs::density | thermalqs::specific_internal_energy)) {
       ptrial[m] = eos[ofst(m)].PressureFromDensityInternalEnergy(rhobar[m] / vtrial[m],
