@@ -79,4 +79,3 @@ Going Deeper
 * To learn about the available equations of state, look :ref:`here <models>`.
 * To learn about our mixed-cell closure models, such as pressure-temperature equilibrium, look at :ref:`using-closures`.
 * If you're interested in contributing, check out our :ref:`documentation for developers <contributing>`.
-

@@ -60,7 +60,11 @@ before_script:
 
 .power9: &power9
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=power9"
-    POWER9: "true"
+    DO_GPU: "true"
+
+.x86volta: &x86volta
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86"
+    DO_GPU: "true"
 
 #################
 # General Setup #
@@ -148,7 +152,7 @@ before_script:
     - sed -i "1s;^;#%Module\n;" ${modName}
     - module use ${CI_PROJECT_DIR}/spack_env
     - module load loads # module load compiler, deps, etc.
-    - if [ "$POWER9" = "true" ]; then module load cuda; fi
+    - if [ "DO_GPU" = "true" ]; then module load cuda; fi
     - module list
     - mkdir -p build install
     - cd build
@@ -225,6 +229,13 @@ test_gnu_power9_gpu:
   extends: .test
   variables:    
     <<: *power9
+    <<: *gpu
+
+test_x86_volta_gpu:
+  <<: *job_def
+  extends: .test
+  variables:    
+    <<: *x86volta
     <<: *gpu
 
 install_gnu_skylake_fort:
