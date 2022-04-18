@@ -9,7 +9,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     git         = "http://github.com/lanl/singularity-eos.git"
 
     version("main", branch="main", submodules=True)
-    version("cmakeii", branch="mauneyc/update/cmake-idiomatic-install", submodules=True)
 
     # build with kokkos, kokkos-kernels for offloading support
     variant("kokkos", default=False, description="Enable kokkos")
