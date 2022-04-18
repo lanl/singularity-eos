@@ -152,7 +152,7 @@ before_script:
     - sed -i "1s;^;#%Module\n;" ${modName}
     - module use ${CI_PROJECT_DIR}/spack_env
     - module load loads # module load compiler, deps, etc.
-    - if [ "DO_GPU" = "true" ]; then module load cuda; fi
+    - if [ "$DO_GPU" = "true" ]; then module load cuda; fi
     - module list
     - mkdir -p build install
     - cd build
@@ -168,6 +168,7 @@ before_script:
             -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_KOKKOSKERNELS=${SINGULARITY_USE_CUDA:-OFF} \
+            -DSINGULARITY_USE_FORTRAN=$([ "$SINGULARITY_USE_FORTRAN" = "true" ] && echo ON || echo OFF) \
             -DSINGULARITY_USE_FORTRAN=$([ ${SINGULARITY_USE_FORTRAN} == "true" ] && echo ON || echo OFF) \
             ..
     - make -j
