@@ -300,15 +300,40 @@ else()
   if (NOT TARGET Eigen3::Eigen)
     find_package(Eigen3 QUIET)
     if(NOT Eigen3_FOUND)
-        set(EIGEN_TEST_CXX11 OFF CACHE BOOL "" FORCE)
-        set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
-        set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
-        set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
-        add_subdirectory(${PROJECT_SOURCE_DIR}/utils/eigen)
-      endif()
-    target_link_libraries(${_tar} PUBLIC Eigen3::Eigen)
+      set(EIGEN_TEST_CXX11 OFF CACHE BOOL "" FORCE)
+      set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
+      set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
+      set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+      add_subdirectory(${PROJECT_SOURCE_DIR}/utils/eigen)
+    endif()
   endif()
+  target_link_libraries(${_tar} PUBLIC Eigen3::Eigen)
 endif()
+
+include(cmake/dependency.cmake)
+
+add_target_dependency(${_tar}
+  PKG spiner
+  NAMESPACE spiner::
+  SUBDIR ${PROJECT_SOURCE_DIR}/utils/spiner}
+)
+
+#if (NOT TARGET spiner::spiner)
+#    find_package(spiner QUIET)
+#    if(NOT spiner_FOUND)
+#        add_subdirectory(${PROJECT_SOURCE_DIR}/utils/spiner)
+#    endif()
+#  target_link_libraries(${_tar} PUBLIC spiner::spiner)
+#endif()
+
+if (NOT TARGET PortsofCall::PortsofCall)
+  find_package(PortsofCall QUIET)
+  if(NOT PortsofCall_FOUND)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/utils/ports-of-call)
+  endif()
+  target_link_libraries(${_tar} PUBLIC PortsofCall::PortsofCall)
+endif()
+
 
 if (SINGULARITY_USE_EOSPAC)
   add_subdirectory(eospac-wrapper)
@@ -339,25 +364,18 @@ endif()
 
 # required package ports of call
 # same as spiner
-include(GNUInstallDirs)
-add_library(PortsofCall INTERFACE IMPORTED)
+#include(GNUInstallDirs)
+#add_library(PortsofCall INTERFACE IMPORTED)
 
-# temporary
-# add submodule or use subdir
-list(APPEND CMAKE_PREFIX_PATH "${PROJECT_SOURCE_DIR}/../installs.singularity/spiner.main.defaultconfig/lib/cmake/spiner")
-find_package(spiner REQUIRED)
+#target_include_directories(PortsofCall INTERFACE
+#    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>
+#    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call>
+#    )
 
-target_link_libraries(${_tar} PUBLIC spiner::spiner)
+#target_link_libraries(${_tar} PUBLIC PortsofCall)
 
-target_include_directories(PortsofCall INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call>
-    )
-
-target_link_libraries(${_tar} PUBLIC PortsofCall)
-
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/utils/ports-of-call
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call)
+#install(DIRECTORY ${PROJECT_SOURCE_DIR}/utils/ports-of-call
+#        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call)
 
 
 # catch2 - check for env catch first, otherwise fetch
