@@ -222,7 +222,7 @@ class EosBase {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const { return 0; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real Minimum MinimumTemperature() const { return 0; }
+  Real MinimumTemperature() const { return 0; }
 
   template <typename RealIndexer, typename LambdaIndexer>
   inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,

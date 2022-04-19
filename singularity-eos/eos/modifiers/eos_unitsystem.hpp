@@ -220,7 +220,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
-    return inv_rho_unit * t_.MinimumDensity();
+    return inv_rho_unit_ * t_.MinimumDensity();
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return inv_temp_unit_ * t_.MinimumTemperature();
