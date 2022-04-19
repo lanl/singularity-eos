@@ -266,8 +266,8 @@ test_x86_volta_gpu_temp:
       - merge_requests
   variables:
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86"
-    DO_GPU: "true"
     SINGULARITY_USE_CUDA: "true"
+    SINGULARITY_USE_FORTRAN: "false"
     SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
   script:
     - echo "Starting script"
