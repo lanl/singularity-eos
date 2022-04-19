@@ -103,6 +103,9 @@ inline void compare_two_eoss(const EOS &test_e, const EOS &ref_e) {
                   ref_e.BulkModulusFromDensityTemperature(1, 1), 1.e-15));
   REQUIRE(isClose(test_e.GruneisenParamFromDensityTemperature(1, 1),
                   ref_e.GruneisenParamFromDensityTemperature(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.MinimumDensity(1, 1), ref_e.MinimumDensity(1, 1), 1.e-15));
+  REQUIRE(
+      isClose(test_e.MinimumTemperature(1, 1), ref_e.MinimumTemperature(1, 1), 1.e-15));
   return;
 }
 

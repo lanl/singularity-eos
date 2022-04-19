@@ -35,6 +35,7 @@ namespace eos_base {
 // This Macro adds the `using` statements that allow for the base class
 // vector functionality to overload the scalar implementations in the derived
 // classes
+// TODO(JMM): Should we have more macros that capture just some of these?
 #define SG_ADD_BASE_CLASS_USINGS(EOSDERIVED)                                             \
   using EosBase<EOSDERIVED>::TemperatureFromDensityInternalEnergy;                       \
   using EosBase<EOSDERIVED>::InternalEnergyFromDensityTemperature;                       \
@@ -46,6 +47,8 @@ namespace eos_base {
   using EosBase<EOSDERIVED>::BulkModulusFromDensityInternalEnergy;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityTemperature;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;                    \
+  using EosBase<EOSDERIVED>::MinimumDensity;                                             \
+  using EosBase<EOSDERIVED>::MinimumTemperature;                                         \
   using EosBase<EOSDERIVED>::PTofRE;                                                     \
   using EosBase<EOSDERIVED>::FillEos;
 
@@ -215,6 +218,12 @@ class EosBase {
                        output, lambdas[i]);
         });
   }
+  // Report minimum values of density and temperature
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return 0; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real Minimum MinimumTemperature() const { return 0; }
+
   template <typename RealIndexer, typename LambdaIndexer>
   inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,
                      RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
@@ -251,6 +260,7 @@ class EosBase {
            de; // Would it be better to skip the calculation of Te and return 1/cv?
     return;
   }
+
   // Specialzied vector version of PTofRE maybe more suited for EOSPAC
   // }
   // template<typename RealIndexer, typename LambdaIndexer>

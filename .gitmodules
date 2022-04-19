@@ -1,9 +1,6 @@
 [submodule "utils/eigen"]
 	path = utils/eigen
 	url = https://gitlab.com/libeigen/eigen.git
-[submodule "utils/json"]
-	path = utils/json
-	url = https://github.com/nlohmann/json.git
 [submodule "utils/spiner"]
 	path = utils/spiner
 	url = ../spiner.git
