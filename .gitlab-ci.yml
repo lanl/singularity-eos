@@ -151,7 +151,7 @@ before_script:
     - sed -i "1s;^;#%Module\n;" ${modName}
     - module use ${CI_PROJECT_DIR}/spack_env
     - module load loads # module load compiler, deps, etc.
-    - if [ "$DO_GPU" = "true" ]; then module load cuda; fi
+    # - if [ "$DO_GPU" = "true" ]; then module load cuda; fi
     - module list
     - mkdir -p build install
     - cd build
