@@ -35,9 +35,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     # include depedencies for automatic code formatting (i.e. clang-format)
     variant("format", default=False, description="Clang-Format Support")
 
-    # TODO: decide if this should stay in the source tree, or split out a seperate dependency build
-    #depends_on("mpark-variant")
-
     # TODO: do we always depend on eospac? 
     depends_on("eospac")
 

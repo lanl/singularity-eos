@@ -27,10 +27,10 @@
 #include <singularity-eos/eos/eos_variant.hpp>
 
 #ifdef SPINER_USE_HDF
-#include <fast-math/logs.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include <root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/spiner_types.hpp>
 #endif // SPINER_USE_HDF

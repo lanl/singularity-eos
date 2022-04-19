@@ -13,7 +13,7 @@
 #------------------------------------------------------------------------------#
 
 cmake_minimum_required(VERSION 3.14)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 # options
 option (SINGULARITY_USE_HDF5 "Pull in hdf5" ON)
@@ -97,6 +97,8 @@ execute_process(COMMAND patch -N -s -V never
 )
 #------------------------------------------------------------------------------#
 
+#------------------------------------------------------------------------------#
+
 set(_tar singularity-eos)
 set(_ns singularity-eos)
 
@@ -127,11 +129,6 @@ target_include_directories(${_tar}
     $<INSTALL_INTERFACE:include>
 )
 
-# TODO: Is this generator expression correct/needed?
-#target_include_directories(singularity-eos::flags
-#                           INTERFACE
-#                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
-#                           $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>)
 
 # xl fix
 #target_compile_options(singularity-eos::flags INTERFACE
@@ -162,18 +159,13 @@ endif()
 
 # only use hdf5 if spiner
 if (SINGULARITY_USE_HDF5)
-  target_compile_definitions(${_tar} INTERFACE
+  target_compile_definitions(${_tar} PUBLIC
                              SPINER_USE_HDF)
   if(SINGULARITY_HDF5_INSTALL_DIR)
     list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_HDF5_INSTALL_DIR}")
   endif()
   find_package(HDF5 COMPONENTS C HL)
   if(HDF5_FOUND)
-    #    set_target_properties(${_tar}
-    #  PROPERTIES
-    #    INTERFACE_LINK_LIBRARIES "${HDF5_LIBRARIES};${HDF5_HL_LIBRARIES}"
-    #  INTERFACE_COMPILE_DEFINITIONS "SINGULARITY_USE_HDF5"
-    #  INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}")
     target_link_libraries(${_tar} INTERFACE "${HDF5_LIBRARIES};${HDF5_HL_LIBRARIES}")
     target_compile_definitions(${_tar} INTERFACE "SINGULARITY_USE_HDF5")
     target_include_directories(${_tar} INTERFACE "${HDF5_INCLUDE_DIRS}")
@@ -192,7 +184,7 @@ if (SINGULARITY_USE_HDF5)
 endif()
 
 if (SINGULARITY_USE_KOKKOS)
-  target_compile_definitions(${_tar} INTERFACE
+  target_compile_definitions(${_tar} PUBLIC
                              PORTABILITY_STRATEGY_KOKKOS)
   # Import Kokkos if not already available as a build target
   if (NOT TARGET Kokkos::kokkos)
@@ -312,30 +304,21 @@ endif()
 
 include(cmake/dependency.cmake)
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/utils/variant)
+target_link_libraries(${_tar}
+  PRIVATE
+    mpark_variant)
+
 add_target_dependency(${_tar}
   PKG spiner
-  NAMESPACE spiner::
-  SUBDIR ${PROJECT_SOURCE_DIR}/utils/spiner}
 )
 
-#if (NOT TARGET spiner::spiner)
-#    find_package(spiner QUIET)
-#    if(NOT spiner_FOUND)
-#        add_subdirectory(${PROJECT_SOURCE_DIR}/utils/spiner)
-#    endif()
-#  target_link_libraries(${_tar} PUBLIC spiner::spiner)
-#endif()
-
-if (NOT TARGET PortsofCall::PortsofCall)
-  find_package(PortsofCall QUIET)
-  if(NOT PortsofCall_FOUND)
-    add_subdirectory(${PROJECT_SOURCE_DIR}/utils/ports-of-call)
-  endif()
-  target_link_libraries(${_tar} PUBLIC PortsofCall::PortsofCall)
-endif()
-
+add_target_dependency(${_tar}
+  PKG ports-of-call
+)
 
 if (SINGULARITY_USE_EOSPAC)
+  find_package(EOSPAC REQUIRED)
   add_subdirectory(eospac-wrapper)
   target_link_libraries(${_tar}
     PUBLIC
@@ -362,22 +345,6 @@ if (SINGULARITY_FMATH_USE_ORDER_5)
     SINGULAIRTY_FMATH_USE_ORDER_5)
 endif()
 
-# required package ports of call
-# same as spiner
-#include(GNUInstallDirs)
-#add_library(PortsofCall INTERFACE IMPORTED)
-
-#target_include_directories(PortsofCall INTERFACE
-#    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/utils>
-#    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call>
-#    )
-
-#target_link_libraries(${_tar} PUBLIC PortsofCall)
-
-#install(DIRECTORY ${PROJECT_SOURCE_DIR}/utils/ports-of-call
-#        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/ports-of-call)
-
-
 # catch2 - check for env catch first, otherwise fetch
 if(SINGULARITY_BUILD_TESTS)
   #  add_subdirectory(${PROJECT_SOURCE_DIR}/utils/spiner/Catch2)
@@ -397,42 +364,71 @@ if (SINGULARITY_BUILD_EXAMPLES)
   add_subdirectory(${PROJECT_SOURCE_DIR}/example)
 endif()
 
-if(NOT DEFINED _libdir)
-  include(GNUInstallDirs)
-  set(_libdir "${CMAKE_INSTALL_LIBDIR}")
-endif(NOT DEFINED _libdir)
+if(SINGULARITY_USE_HDF5)
+  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
+    add_subdirectory(sesame2spiner)
+  endif()
+endif()
+
+if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+  add_subdirectory(stellarcollapse2spiner)
+endif()
+
+
+# 
+get_cmake_property(_variableNames VARIABLES)
+string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
+  _matchedVars "${_variableNames}")
+
+foreach(_variableName ${_matchedVars})
+  set(SINGULARITY_CONFIG_CODE
+    "${SINGULARITY_CONFIG_CODE}\nset(${_variableName} \"${${_variableName}}\")")
+endforeach()
+
+#
+
+
+include(GNUInstallDirs)
 
 install(
   TARGETS ${_tar} 
   EXPORT ${_tar}Targets
-  DESTINATION ${_libdir}
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 install(
   EXPORT ${_tar}Targets
   FILE  ${_tar}Targets.cmake
   NAMESPACE "${_ns}::"
-  DESTINATION ${_libdir}/cmake/${_tar}
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${_tar}
 )
 
-foreach(file ${_install_headers})
-  get_filename_component(DIR ${file} DIRECTORY)
-  install(FILES ${_tar}/${file}
-  DESTINATION include/${_tar}/${DIR})
-endforeach()
 
 #----------------------------------------------------------------------------#
 # Packaging
 #----------------------------------------------------------------------------#
 
-include(CMakePackageConfigHelpers)
-configure_package_config_file(${CMAKE_SOURCE_DIR}/config/${_tar}Config.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/${_tar}Config.cmake
-  INSTALL_DESTINATION ${_libdir}/cmake/${_tar}
+foreach(file ${_install_headers})
+  get_filename_component(DIR ${file} DIRECTORY)
+  install(
+    FILES ${_tar}/${file}
+    DESTINATION include/${_tar}/${DIR}
+  )
+endforeach()
+
+configure_file(${PROJECT_SOURCE_DIR}/config/${_tar}Config.cmake.in
+  ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${_tar}Config.cmake @ONLY)
+
+install(
+  FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${_tar}Config.cmake
+  DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/${_tar}
 )
-install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/${_tar}Config.cmake
-  DESTINATION ${_libdir}/cmake/${_tar}
+
+# modules
+
+install(
+  FILES ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
+  DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/${_tar}
 )
 
 #----------------------------------------------------------------------------#
@@ -446,16 +442,6 @@ export(
 )
 
 export(PACKAGE ${_tar})
-
-if(SINGULARITY_USE_HDF5)
-  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
-    add_subdirectory(sesame2spiner)
-  endif()
-endif()
-
-if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
-  add_subdirectory(stellarcollapse2spiner)
-endif()
 
 if(SINGULARITY_BUILD_TESTS)
   include(CTest)

@@ -20,7 +20,7 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <string>
 #include <unordered_set>
-#include <variant/include/mpark/variant.hpp>
+#include <mpark/variant.hpp>
 
 namespace singularity {
 

@@ -1,7 +1,6 @@
 
 
 function(add_target_dependency target)
-  #argument options
 
   set(options)
   set(one_value_args
@@ -15,6 +14,14 @@ function(add_target_dependency target)
   )
 
   cmake_parse_arguments(dep "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+  if(NOT dep_NAMESPACE)
+    set(dep_NAMESPACE ${dep_PKG})
+  endif()
+
+  if(NOT dep_SUBDIR)
+    set(dep_SUBDIR ${PROJECT_SOURCE_DIR}/utils/${dep_PKG})
+  endif()
 
   if (NOT TARGET ${dep_NAMESPACE}::${dep_PKG})
     find_package(${dep_PKG} QUIET)

@@ -18,7 +18,6 @@ if (SINGULARITY_EOSPAC_INSTALL_DIR)
   list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_EOSPAC_INSTALL_DIR}")
   set(EOSPAC_INCLUDE_DIR "${SINGULARITY_EOSPAC_INSTALL_DIR}/include")
 endif()
-find_package(EOSPAC REQUIRED)
 
 add_library(eospac-wrapper
   eospac_wrapper.hpp
@@ -35,4 +34,4 @@ target_link_libraries(eospac-wrapper
   PUBLIC
     EOSPAC::eospac)
 
-install(TARGETS eospac-wrapper DESTINATION lib)
+  install(TARGETS eospac-wrapper EXPORT ${_tar}Targets DESTINATION lib)
