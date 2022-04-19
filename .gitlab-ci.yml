@@ -184,75 +184,75 @@ before_script:
 # Jobs #
 ########
 
-# format:
-#   <<: *job_def
-#   extends: .clang-format
-#   allow_failure: true
-# 
-# pages_check:
-#   <<: *job_def
-#   extends: .sphinx-doc
-#   only:
-#     refs:
-#       - merge_requests
-#       - pipelines
-#   except:
-# 
-# pages:
-#   <<: *job_def
-#   extends: .sphinx-doc
-#   artifacts:
-#     paths:
-#       - public
-#   only:
-#     refs:
-#       - main
-#   except:
-#     refs:
-#       - pipelines
-# 
-# test_gnu_skylake:
-#   <<: *job_def
-#   extends: .test
-#   variables:
-#     <<: *skylake
-# 
-# test_gnu_power9:
-#   <<: *job_def
-#   extends: .test
-#   variables:
-#     <<: *power9
-# 
-# test_gnu_power9_gpu:
-#   <<: *job_def
-#   extends: .test
-#   variables:    
-#     <<: *power9
-#     <<: *gpu
-# 
-# # TODO(JMM): This test doesn't work
-# # and needs to be repaired.
-# test_x86_volta_gpu:
-#   <<: *job_def
-#   extends: .test
-#   allow_failure: true
-#   variables:    
-#     <<: *x86volta
-#     <<: *gpu
-# 
-# install_gnu_skylake_fort:
-#   <<: *job_def
-#   extends: .test
-#   variables:
-#     <<: *skylake
-#     <<: *fort
-# 
-# install_gnu_skylake_nofort:
-#   <<: *job_def
-#   extends: .test
-#   variables:
-#     <<: *skylake
-#     <<: *nofort
+format:
+  <<: *job_def
+  extends: .clang-format
+  allow_failure: true
+
+pages_check:
+  <<: *job_def
+  extends: .sphinx-doc
+  only:
+    refs:
+      - merge_requests
+      - pipelines
+  except:
+
+pages:
+  <<: *job_def
+  extends: .sphinx-doc
+  artifacts:
+    paths:
+      - public
+  only:
+    refs:
+      - main
+  except:
+    refs:
+      - pipelines
+
+test_gnu_skylake:
+  <<: *job_def
+  extends: .test
+  variables:
+    <<: *skylake
+
+test_gnu_power9:
+  <<: *job_def
+  extends: .test
+  variables:
+    <<: *power9
+
+test_gnu_power9_gpu:
+  <<: *job_def
+  extends: .test
+  variables:    
+    <<: *power9
+    <<: *gpu
+
+# TODO(JMM): This test doesn't work
+# and needs to be repaired.
+test_x86_volta_gpu:
+  <<: *job_def
+  extends: .test
+  allow_failure: true
+  variables:    
+    <<: *x86volta
+    <<: *gpu
+
+install_gnu_skylake_fort:
+  <<: *job_def
+  extends: .test
+  variables:
+    <<: *skylake
+    <<: *fort
+
+install_gnu_skylake_nofort:
+  <<: *job_def
+  extends: .test
+  variables:
+    <<: *skylake
+    <<: *nofort
 
 # Temporary job that builds everything
 # for the x86-volta nodes from scratch
