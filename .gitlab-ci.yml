@@ -46,15 +46,15 @@ before_script:
   BUILD_TYPE: "Release"
 
 .gpu: &gpu
-  DO_GPU: true
-  SINGULARITY_USE_CUDA: true
+  DO_GPU: "true"
+  SINGULARITY_USE_CUDA: "true"
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
 
 .fort: &fort
-  SINGULARITY_USE_FORTRAN: true
+  SINGULARITY_USE_FORTRAN: "true"
 
 .nofort: &nofort
-  SINGULARITY_USE_FORTRAN: false
+  SINGULARITY_USE_FORTRAN: "false"
 
 .skylake: &skylake
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
@@ -151,7 +151,7 @@ before_script:
     - sed -i "1s;^;#%Module\n;" ${modName}
     - module use ${CI_PROJECT_DIR}/spack_env
     - module load loads # module load compiler, deps, etc.
-    - if [ "$DO_GPU" ]; then module load cuda; fi
+    - if [ "$DO_GPU" = "true" ]; then module load cuda; fi
     - module list
     - mkdir -p build install
     - cd build
@@ -258,12 +258,11 @@ install_gnu_skylake_nofort:
 # for the x86-volta nodes from scratch
 test_x86_volta_gpu_temp:
   stage: build_n_test
-  extends:
-    - .job
+  extends: .job
   variables:
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86"
-    DO_GPU: true
-    SINGULARITY_USE_CUDA: true
+    DO_GPU: "true"
+    SINGULARITY_USE_CUDA: "true"
     SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
   script:
     - unset SPACK_ROOT
@@ -300,7 +299,7 @@ test_x86_volta_gpu_temp:
             -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_KOKKOSKERNELS=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_FORTRAN=$([ "$SINGULARITY_USE_FORTRAN" ] && echo ON || echo OFF) \
+            -DSINGULARITY_USE_FORTRAN=${SINGULARITY_USE_FORTRAN:-OFF} \
             ..
     - make -j
     - |
