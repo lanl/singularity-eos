@@ -290,7 +290,7 @@ test_x86_volta_gpu_temp:
     - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
     - spack repo list
     - spack install --only dependencies ${SINGULARITY_EOS_SPACK_SPEC}
-    - spack load kokkos-nvcc-wrapper kokkos kokkos-kernels eospac hdf5+hl
+    - spack load kokkos-nvcc-wrapper kokkos kokkos-kernels eospac hdf5+hl py-h5py py-numpy
     - mkdir -p bin && cd bin
     - rm -rf ./*
     - |
