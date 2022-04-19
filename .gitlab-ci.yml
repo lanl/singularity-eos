@@ -259,6 +259,8 @@ install_gnu_skylake_nofort:
 # for the x86-volta nodes from scratch
 test_x86_volta_gpu_temp:
   stage: build_n_test
+  extends:
+    - .job
   variables:
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86"
     DO_GPU: "true"
