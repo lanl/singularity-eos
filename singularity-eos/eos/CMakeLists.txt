@@ -18,6 +18,7 @@ endif()
 
 set(EOS_SRCS
     eos.hpp
+    eos_base.hpp
     modifiers/eos_unitsystem.hpp
     modifiers/scaled_eos.hpp
     modifiers/shifted_eos.hpp
