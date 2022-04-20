@@ -689,10 +689,10 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed Comparison", "[GruneisenEOS]") {
     EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
     EOS eos = host_eos.GetOnDevice();
     GIVEN("Density and energy") {
-      constexpr Real density = 8.49314308166504;  // g/cm^3
-      constexpr Real energy = 853911911.830730;   // erg/g
-      constexpr Real true_pres = 22.411161266695618;  // Mbar
-      constexpr Real true_sound_speed = 5.098846961186335;  // cm/us
+      constexpr Real density = 5.92418956756592;  // g/cm^3
+      constexpr Real energy = 792486007.804619;   // erg/g
+      constexpr Real true_pres = 2.620656373250729;  // Mbar
+      constexpr Real true_sound_speed = 1.5247992468363685;  // cm/us
       WHEN("A P(rho, e) lookup is performed") {
         Real pres = eos.PressureFromDensityInternalEnergy(density, energy);
         THEN("The correct pressure should be returned"){
