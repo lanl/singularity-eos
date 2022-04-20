@@ -72,28 +72,48 @@ namespace singularity {
 namespace FastMath {
 
 PORTABLE_FORCEINLINE_FUNCTION
-double lg(const double x) {
-
-#ifdef SINGULARITY_USE_TRUE_LOG_GRIDDING
-  // Slower but conforms exactly to log grid spacing
-#ifndef SINGULARITY_USE_SINGLE_LOGS
-  return std::log2(x);
-#else // SINGULARITY_USE_SINGLE_LOGS
-  return std::log2f(x);
-#endif // SINGULARITY_USE_SINGLE_LOGS
-#else //  SINGULARITY_USE_TRUE_LOG_GRIDDING
+double fastlg(const double x) {
   int n;
 #ifndef SINGULARITY_USE_SINGLE_LOGS
-  // This is the default expression
+  // double precision is default
   const double y = frexp(x, &n);
 #else
   // faster but less accurate
   const float y = frexpf((float)x, &n);
 #endif // SINGULARITY_USE_SINGLE_LOGS
-
   return 2 * (y - 1) + n;
-#endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
+}
 
+PORTABLE_FORCEINLINE_FUNCTION
+double fastpow2(const double x) {
+
+  const int flr = std::floor(x);
+  const double remainder = x - flr;
+  const double mantissa = 0.5 * (remainder + 1);
+  const double exponent = flr + 1;
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+  // double precision is default
+  return ldexp(mantissa, exponent);
+#else
+  // Faster but less accurate
+  return ldexpf((float)mantissa, exponent);
+#endif // SINGULARITY_USE_SINGLE_LOGS
+}
+
+PORTABLE_FORCEINLINE_FUNCTION
+double lg(const double x) {
+
+#ifndef SINGULARITY_USE_TRUE_LOG_GRIDDING
+  // Default expression
+  return fastlg(x);
+#else
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+  // double precision is default
+  return std::log2(x);
+#else
+  return std::log2f(x);
+#endif // SINGULARITY_USE_SINGLE_LOGS
+#endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
@@ -104,24 +124,15 @@ double log10(const double x) {
 
 PORTABLE_FORCEINLINE_FUNCTION
 double pow2(const double x) {
-#ifdef SINGULARITY_USE_TRUE_LOG_GRIDDING
-  // Slower but conforms exactly to log grid spacing
-#ifndef SINGULARITY_USE_SINGLE_LOGS
-  return std::exp2(x);
-#else // SINGULARITY_USE_SINGLE_LOGS
-  returtn std::exp2f(x);
-#endif // SINGULARITY_USE_SINGLE_LOGS
-#else // SINGULARITY_USE_TRUE_LOG_GRIDDING
-  // This is the default expression
-  const int flr = std::floor(x);
-  const double remainder = x - flr;
-  const double mantissa = 0.5 * (remainder + 1);
-  const double exponent = flr + 1;
-#ifndef SINGULARITY_USE_SINGLE_LOGS
-  return ldexp(mantissa, exponent);
+#ifndef SINGULARITY_USE_TRUE_LOG_GRIDDING
+  // Default expression
+  return fastpow2(x);
 #else
-  // Faster but less accurate
-  return ldexpf(mantissa, exponent);
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+  // double precision is default
+  return std::exp2(x);
+#else
+  return std::exp2f(x);
 #endif // SINGULARITY_USE_SINGLE_LOGS
 #endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
 }
