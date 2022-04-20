@@ -307,6 +307,21 @@ herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str, hid_t 
   // where sie(rho,Tcrit(rho)) = sieCold(rho)
   setlTColdCrit_();
 
+  // fill in minimum pressure as a function of temperature
+  rho_at_pmin_.resize(numT_);
+  rho_at_pmin_.setRange(lTMin_, lTMax_);
+  for (int i = 0; i < numT_; i++) {
+    pmin = std::numeric_limits<Real>::max();
+    jmax = -1;
+    for (int j = 0; j < numRho_; j++) {
+      if (P_(j, i) < pmin) {
+        pmin = P_(j,i);
+        jmax = j;
+      }
+    }
+    rho_at_pmin_(i) = rho_(P_.range(1).x(jmax));
+  }
+
   // fill in Gruneisen parameter and bulk modulus on cold curves
   // unfortunately, EOSPAC's output for these parameters appears
   // unreliable we fix it by using constant extrapolation of our
@@ -684,6 +699,12 @@ void SpinerEOSDependsRhoT::ValuesAtReferenceState(Real &rho, Real &temp, Real &s
   bmod = bModNormal_;
   dpde = dPdENormal_;
   dvdt = dVdTNormal_;
+}
+
+PORTABLE_FUNCTION
+Real RhoPmin(const Real temp) {
+  const Real lT = lT_(temp);
+  return rho_at_pmin_.interpToReal(lT);
 }
 
 PORTABLE_FUNCTION

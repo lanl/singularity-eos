@@ -462,6 +462,9 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
+
+  PORTABLE_FUNCTION
+  Real RhoPmin(const Real temp) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT)
@@ -563,6 +566,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Spiner::DataBox lTColdCrit_;
   Spiner::DataBox PCold_, sieCold_, bModCold_;
   Spiner::DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
+  Spiner::DataBox rho_at_pmin_;
   int numRho_, numT_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lRhoMinSearch_;
