@@ -565,11 +565,11 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
 SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
   GIVEN("Parameters for a Gruneisen EOS") {
     // Unit conversions
-    constexpr Real mm = 10.;
+    constexpr Real cm = 1.;
     constexpr Real us = 1e-06;
     constexpr Real Mbcc_per_g = 1e12;
     // Gruneisen parameters for copper
-    constexpr Real C0 = 0.394 * mm / us;
+    constexpr Real C0 = 0.394 * cm / us;
     constexpr Real S1 = 1.489;
     constexpr Real S2 = 0.;
     constexpr Real S3 = 0.;
@@ -620,15 +620,15 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
 
       // Gold standard values for a subset of lookups
       constexpr std::array<Real, num> pressure_true{
-          -1.442078800000000e+13, 1.103964838912181e+12, 9.414588969513447e+12,
+          -1.282094800000000e+11, 1.998504088912181e+10, 9.595823319513451e+10,
           P0 - C0 * C0 * rho0};
       constexpr std::array<Real, num> bulkmodulus_true{
-          9.507496824000003e+13, 1.440573092814230e+14, 1.844847821528217e+14,
+          9.990648504000005e+11, 1.460692677162573e+12, 1.851227213843747e+12,
           Gamma0 * (P0 - C0 * C0 * rho0)};
       constexpr std::array<Real, num> temperature_true{
           5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02, T0};
-      constexpr std::array<Real, num> gruneisen_true{Gamma0, 2.007944444444444e+00,
-                                                     1.927000000000000e+00, Gamma0};
+      constexpr std::array<Real, num> gruneisen_true{
+          Gamma0, 2.007944444444444e+00, 1.927000000000000e+00, Gamma0};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -700,6 +700,77 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
         THEN("The returned Gamma(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_gruneisen, gruneisen_true, "Density",
                         "Energy");
+        }
+      }
+    }
+  }
+}
+
+SCENARIO("Aluminum Gruneisen EOS Sound Speed Comparison", "[GruneisenEOS]") {
+  GIVEN("Parameters for a Gruneisen EOS") {
+    // Unit conversions
+    constexpr Real mm = 10.;
+    constexpr Real cm = 1.;
+    constexpr Real us = 1.e-06;
+    constexpr Real Mbar = 1.e12;
+    constexpr Real Mbcc_per_g = 1e12;
+    // Gruneisen parameters for copper
+    constexpr Real C0 = 0.535 * cm / us;
+    constexpr Real S1 = 1.34;
+    constexpr Real S2 = 0.;
+    constexpr Real S3 = 0.;
+    constexpr Real Gamma0 = 1.97;
+    constexpr Real b = 0.;
+    constexpr Real rho0 = 2.714000;
+    constexpr Real T0 = 298.;
+    constexpr Real P0 = 1e-06 * Mbar;
+    constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
+    // Create the EOS
+    EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
+    EOS eos = host_eos.GetOnDevice();
+    GIVEN("Density and energy") {
+      constexpr Real density = 5.92418956756592;  // g/cm^3
+      constexpr Real energy = 792486007.804619;   // erg/g
+      constexpr Real true_pres = 2.620656373250729;  // Mbar
+      constexpr Real true_sound_speed = 1.5247992468363685;  // cm/us
+      WHEN("A P(rho, e) lookup is performed") {
+        Real pres = eos.PressureFromDensityInternalEnergy(density, energy);
+        THEN("The correct pressure should be returned"){
+          pres = pres / Mbar;
+          INFO("Density: " << density << "  Energy: " << energy << "  Pressure: " <<
+               pres << " Mbar  True pressure: " << true_pres << " Mbar");
+          REQUIRE(isClose(pres, true_pres, 1e-12));
+        }
+      }
+      WHEN("A B_S(rho, e) lookup is performed") {
+        const Real bulk_modulus = eos.BulkModulusFromDensityInternalEnergy(density, energy);
+        THEN("The correct sound speed should be computed"){
+          const Real sound_speed = std::sqrt(bulk_modulus / density) / (cm / us);
+          INFO("Density: " << density << "  Energy: " << energy << "  Sound speed: " <<
+               sound_speed << " cm/us  True sound speed: " << true_sound_speed << 
+               " cm/us");
+          REQUIRE(isClose(sound_speed, true_sound_speed, 1e-12));
+        }
+      }
+      WHEN("A finite difference approximation is used for the bulk modulus") {
+        // Bulk modulus approximation:
+        //  B_S = rho * dPdr_e + P / rho * dPde_r
+        constexpr Real drho = 1e-06 * density;
+        constexpr Real de = 1e-06 * energy;
+        const Real P1 = eos.PressureFromDensityInternalEnergy(density, energy);
+        Real P2 = eos.PressureFromDensityInternalEnergy(density + drho, energy);
+        const Real dPdr_e = (P2 - P1) / drho;
+        P2 = eos.PressureFromDensityInternalEnergy(density, energy + de);
+        const Real dPde_r = (P2 - P1) / de;
+        const Real bmod_approx = density * dPdr_e + P1 / density * dPde_r;
+        THEN("The finite difference solution should approximate the exact solution") {
+          const Real bulk_modulus = eos.BulkModulusFromDensityInternalEnergy(density, energy);
+          const Real ss_approx = std::sqrt(bmod_approx / density);
+          const Real sound_speed = std::sqrt(bulk_modulus / density);
+          INFO("Density: " << density << "  Energy: " << energy << "  Sound speed: " <<
+               sound_speed << " cm/us  Approximate sound speed: " << ss_approx << 
+               " cm/us");
+          REQUIRE(isClose(sound_speed, ss_approx, 1e-5));
         }
       }
     }

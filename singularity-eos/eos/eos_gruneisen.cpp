@@ -18,6 +18,28 @@ namespace singularity {
 
 PORTABLE_INLINE_FUNCTION Real square(const Real x) { return x * x; }
 PORTABLE_INLINE_FUNCTION Real cube(const Real x) { return x * x * x; }
+
+PORTABLE_INLINE_FUNCTION Real Gruneisen::Gamma(const Real rho) const {
+  return rho < _rho0 ? _G0 : _G0 * _rho0 / rho + _b * (1 - _rho0 / rho);
+}
+PORTABLE_INLINE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho, const Real sie) const {
+  if (rho < _rho0) {
+    return square(_C0) + Gamma(rho) * sie;
+  } else {
+    const Real eta = 1 - _rho0 / rho;
+    const Real s = _s1 * eta + _s2 * square(eta) + _s3 * cube(eta);
+    const Real ds = _s1 + 2 * _s2 * eta + 3 * _s3 * square(eta);
+    const Real deta = _rho0 / square(rho);
+    const Real dGam = (_b - _G0) * deta;
+    const Real P_H = _P0 + square(_C0) * _rho0 * eta / square(1 - s);
+    const Real dP_H = square(_C0) * _rho0 / square(1 - s) * deta * (1 + 2 * eta * ds /
+      (1 - s));
+    const Real E_H = (P_H + _P0) * eta / _rho0 / 2.;
+    const Real dE_H = deta * (P_H + _P0) / _rho0 / 2. + eta / _rho0 / 2 * dP_H;
+    return dP_H + Gamma(rho) * (sie - E_H) + rho * dGam * (sie - E_H) - 
+      rho * Gamma(rho) * dE_H;
+  }
+}
 PORTABLE_FUNCTION Real Gruneisen::InternalEnergyFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   return _Cv * (temp - _T0);
@@ -33,8 +55,8 @@ PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
   Real E_H;
   if (rho >= _rho0) {
     const Real eta = 1 - _rho0 / rho;
-    const Real denom = square(1 - _s1 * eta - _s2 * square(eta) - _s3 * cube(eta));
-    P_H = _P0 + square(_C0) * _rho0 * eta / denom;
+    const Real s = _s1 * eta + _s2 * square(eta) + _s3 * cube(eta);
+    P_H = _P0 + square(_C0) * _rho0 * eta / square(1 - s);
     E_H = (P_H + _P0) * eta / _rho0 / 2.;
   } else {
     // This isn't thermodynamically consistent but it's widely used for expansion
@@ -49,19 +71,16 @@ PORTABLE_FUNCTION Real Gruneisen::SpecificHeatFromDensityInternalEnergy(
 }
 PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
+  // The if statement exists here to avoid the divide by zero
   if (rho < _rho0) {
     return rho * square(_C0) +
            _G0 * (rho * sie + PressureFromDensityInternalEnergy(rho, sie));
   } else {
-    const Real eta = 1 - _rho0 / rho;
-    const Real s = _s1 + _s2 * eta + _s3 * square(eta);
-    const Real ds = _s2 + 2 * _s3 * eta;
-    const Real Pr = _rho0 * square(_C0) * eta / square(1 - eta * s);
-    const Real dPr =
-        -square(_rho0 * _C0) * (1 + eta * (s + 2 * eta * ds)) / cube(1 - s * eta);
-    const Real G = Gamma(rho);
-    return -dPr / rho * (1 - 0.5 * G * eta) - 0.5 * G * Pr +
-           G * PressureFromDensityInternalEnergy(rho, sie) * (1 - eta) + rho * _b * sie;
+    const Real dPdr_e = dPres_drho_e(rho, sie);
+    const Real dPde_r = rho * Gamma(rho);
+    std::cout << dPdr_e << std::endl;
+    // Thermodynamic identity
+    return rho * dPdr_e + PressureFromDensityInternalEnergy(rho, sie) / rho * dPde_r;
   }
 }
 PORTABLE_FUNCTION
@@ -100,7 +119,7 @@ PORTABLE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
   // should be above or below rho0
   Real Pref = PressureFromDensityInternalEnergy(_rho0, sie);
   if (press < Pref) {
-    rho = (press + _C0 * _C0 * _rho0) / (_C0 * _C0 + _G0 * sie);
+    rho = (press - _P0 + _C0 * _C0 * _rho0) / (_C0 * _C0 + _G0 * sie);
   } else { // We are in compression; iterate
     auto residual = [&](const Real r) {
       return press - PressureFromDensityInternalEnergy(r, sie);
@@ -152,24 +171,4 @@ void Gruneisen::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &p
   Real gm1 = GruneisenParamFromDensityInternalEnergy(rho, sie, lambda) * rho;
   dvdt = gm1 * cv / bmod;
 }
-
-#if 0
-PORTABLE_FUNCTION void Gruneisen::PTofRE(const Real rho, const Real sie, Real * lambda, Real& press, Real& temp, Real & dpdr, Real & dpde, Real & dtdr, Real & dtde) const
-{
-    press = PressureFromDensityInternalEnergy(rho,sie);
-    temp = TemperatureFromDensityInternalEnergy(rho,sie);
-    const Real u = rho/_rho0 - 1.0;
-    if(u>0) {
-        const Real b0 = 1.0-_s1;
-	const Real b3 = _s2+_s3;
-  const Real d = 1.0+(b0+1)
-    dpdr = (fu/square(d)-2.0*aa*du/d)/_rho0+_b*sie;
-	dpde = (_G0+_b*u)*_rho0;
-    } else {
-      dpdr = _C0*_C0;
-      dpde = _G0*_rho0;
-    }
-}
-#endif
-
 } // namespace singularity
