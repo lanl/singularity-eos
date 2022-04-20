@@ -14,6 +14,7 @@
 
 #ifndef _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
 #define _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
+#include <cassert>
 #include <cmath>
 #include <ports-of-call/portability.hpp>
 
