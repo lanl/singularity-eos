@@ -35,6 +35,27 @@ using namespace eos_base;
 template <typename T>
 class ScaledEOS : public EosBase<ScaledEOS<T>> {
  public:
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+
+  // TODO(JMM): The modifier EOS's should probably call the specific
+  // sub-functions of the class they modify so that they can leverage,
+  // e.g., an especially performant or special version of these
+  using EosBase<ScaledEOS<T>>::TemperatureFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::InternalEnergyFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::PressureFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::BulkModulusFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::PTofRE;
+  using EosBase<ScaledEOS<T>>::FillEos;
+
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
       : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {}
@@ -145,8 +166,12 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
     sie = sie * scale_;
   }
 
-  // Vector functions that overload the scalar versions declared here.
-  SG_ADD_BASE_CLASS_USINGS(ScaledEOS<T>)
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
+    return inv_scale_ * t_.MinimumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
+    return t_.MinimumTemperature();
+  }
 
  private:
   T t_;

@@ -35,6 +35,27 @@ using namespace eos_base;
 template <typename T>
 class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
  public:
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+
+  // TODO(JMM): The modifier EOS's should probably call the specific
+  // sub-functions of the class they modify so that they can leverage,
+  // e.g., an especially performant or special version of these
+  using EosBase<RelativisticEOS<T>>::TemperatureFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::InternalEnergyFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::PressureFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::SpecificHeatFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::BulkModulusFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::PTofRE;
+  using EosBase<RelativisticEOS<T>>::FillEos;
+
   // move semantics ensures dynamic memory comes along for the ride
   RelativisticEOS(T &&t, const Real cl)
       : t_(std::forward<T>(t)), cl_(cl) // speed of light, units arbitrary
@@ -112,6 +133,13 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return t_.nlambda(); }
 
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
+    return t_.MinimumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
+    return t_.MinimumTemperature();
+  }
+
   PORTABLE_FUNCTION
   unsigned long PreferredInput() const { return t_.PreferredInput(); }
 
@@ -128,9 +156,6 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
                               Real *lambda = nullptr) const {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
-
-  // Vector functions that overload the scalar versions declared here.
-  SG_ADD_BASE_CLASS_USINGS(RelativisticEOS<T>)
 
  private:
   T t_;

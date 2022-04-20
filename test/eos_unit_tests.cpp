@@ -78,6 +78,37 @@ inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN
   }
 }
 
+inline void compare_two_eoss(const EOS &test_e, const EOS &ref_e) {
+  // compare all individual member functions with 1 as inputs,
+  // this function is meant to catch mis-implementations of
+  // modifiers that can be initialized in such a way as to
+  // be equivalent of an unmodified eos. Best used with analytic
+  // eoss.
+  REQUIRE(isClose(test_e.TemperatureFromDensityInternalEnergy(1, 1),
+                  ref_e.TemperatureFromDensityInternalEnergy(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.InternalEnergyFromDensityTemperature(1, 1),
+                  ref_e.InternalEnergyFromDensityTemperature(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.PressureFromDensityInternalEnergy(1, 1),
+                  ref_e.PressureFromDensityInternalEnergy(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.SpecificHeatFromDensityInternalEnergy(1, 1),
+                  ref_e.SpecificHeatFromDensityInternalEnergy(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.BulkModulusFromDensityInternalEnergy(1, 1),
+                  ref_e.BulkModulusFromDensityInternalEnergy(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.GruneisenParamFromDensityInternalEnergy(1, 1),
+                  ref_e.GruneisenParamFromDensityInternalEnergy(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.PressureFromDensityTemperature(1, 1),
+                  ref_e.PressureFromDensityTemperature(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.SpecificHeatFromDensityTemperature(1, 1),
+                  ref_e.SpecificHeatFromDensityTemperature(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.BulkModulusFromDensityTemperature(1, 1),
+                  ref_e.BulkModulusFromDensityTemperature(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.GruneisenParamFromDensityTemperature(1, 1),
+                  ref_e.GruneisenParamFromDensityTemperature(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.MinimumDensity(), ref_e.MinimumDensity(), 1.e-15));
+  REQUIRE(isClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15));
+  return;
+}
+
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
 
   GIVEN("A root counts object") {
@@ -162,6 +193,15 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
       THEN("The shift and scale parameters pass through correctly") {
         REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.4);
+      }
+    }
+    WHEN("We construct a non-modifying modifier") {
+      EOS ig = IdealGas(gm1, Cv);
+      EOS igsh = ScaledEOS<IdealGas>(IdealGas(gm1, Cv), 1.0);
+      EOS igsc = ShiftedEOS<IdealGas>(IdealGas(gm1, Cv), 0.0);
+      THEN("The modified EOS should produce equivalent results") {
+        compare_two_eoss(igsh, ig);
+        compare_two_eoss(igsc, ig);
       }
     }
   }

@@ -224,6 +224,16 @@ class Variant {
         eos_);
   }
 
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const {
+    return mpark::visit([](const auto &eos) { return eos.MinimumDensity(); }, eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumTemperature() const {
+    return mpark::visit([](const auto &eos) { return eos.MinimumTemperature(); }, eos_);
+  }
+
   /*
   Vector versions of the member functions run on the host but the scalar
   lookups will run on the device
