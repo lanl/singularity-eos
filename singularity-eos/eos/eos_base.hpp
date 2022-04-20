@@ -35,6 +35,7 @@ namespace eos_base {
 // This Macro adds the `using` statements that allow for the base class
 // vector functionality to overload the scalar implementations in the derived
 // classes
+// TODO(JMM): Should we have more macros that capture just some of these?
 #define SG_ADD_BASE_CLASS_USINGS(EOSDERIVED)                                             \
   using EosBase<EOSDERIVED>::TemperatureFromDensityInternalEnergy;                       \
   using EosBase<EOSDERIVED>::InternalEnergyFromDensityTemperature;                       \
@@ -46,6 +47,8 @@ namespace eos_base {
   using EosBase<EOSDERIVED>::BulkModulusFromDensityInternalEnergy;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityTemperature;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;                    \
+  using EosBase<EOSDERIVED>::MinimumDensity;                                             \
+  using EosBase<EOSDERIVED>::MinimumTemperature;                                         \
   using EosBase<EOSDERIVED>::PTofRE;                                                     \
   using EosBase<EOSDERIVED>::FillEos;
 
@@ -68,11 +71,11 @@ class EosBase {
                                        LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           temperatures[i] =
-              static_cast<CRTP const &>(*this).TemperatureFromDensityInternalEnergy(
-                  rhos[i], sies[i], lambdas[i]);
+              copy.TemperatureFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -82,10 +85,11 @@ class EosBase {
                                                    LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          sies[i] = static_cast<CRTP const &>(*this).InternalEnergyFromDensityTemperature(
-              rhos[i], temperatures[i], lambdas[i]);
+          sies[i] = copy.InternalEnergyFromDensityTemperature(rhos[i], temperatures[i],
+                                                              lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -95,10 +99,11 @@ class EosBase {
                                              LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          pressures[i] = static_cast<CRTP const &>(*this).PressureFromDensityTemperature(
-              rhos[i], temperatures[i], lambdas[i]);
+          pressures[i] =
+              copy.PressureFromDensityTemperature(rhos[i], temperatures[i], lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -108,11 +113,11 @@ class EosBase {
                                                 LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           pressures[i] =
-              static_cast<CRTP const &>(*this).PressureFromDensityInternalEnergy(
-                  rhos[i], sies[i], lambdas[i]);
+              copy.PressureFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -122,10 +127,11 @@ class EosBase {
                                                  LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] = static_cast<CRTP const &>(*this).SpecificHeatFromDensityTemperature(
-              rhos[i], temperatures[i], lambdas[i]);
+          cvs[i] = copy.SpecificHeatFromDensityTemperature(rhos[i], temperatures[i],
+                                                           lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -135,10 +141,11 @@ class EosBase {
                                                     LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] = static_cast<CRTP const &>(*this).SpecificHeatFromDensityInternalEnergy(
-              rhos[i], sies[i], lambdas[i]);
+          cvs[i] =
+              copy.SpecificHeatFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -148,10 +155,11 @@ class EosBase {
                                                 LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          bmods[i] = static_cast<CRTP const &>(*this).BulkModulusFromDensityTemperature(
-              rhos[i], temperatures[i], lambdas[i]);
+          bmods[i] = copy.BulkModulusFromDensityTemperature(rhos[i], temperatures[i],
+                                                            lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -161,11 +169,11 @@ class EosBase {
                                                    LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           bmods[i] =
-              static_cast<CRTP const &>(*this).BulkModulusFromDensityInternalEnergy(
-                  rhos[i], sies[i], lambdas[i]);
+              copy.BulkModulusFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -175,10 +183,11 @@ class EosBase {
                                                    LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          gm1s[i] = static_cast<CRTP const &>(*this).GruneisenParamFromDensityTemperature(
-              rhos[i], temperatures[i], lambdas[i]);
+          gm1s[i] = copy.GruneisenParamFromDensityTemperature(rhos[i], temperatures[i],
+                                                              lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -188,11 +197,11 @@ class EosBase {
                                                       LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           gm1s[i] =
-              static_cast<CRTP const &>(*this).GruneisenParamFromDensityInternalEnergy(
-                  rhos[i], sies[i], lambdas[i]);
+              copy.GruneisenParamFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
   template <typename RealIndexer, typename LambdaIndexer>
@@ -202,13 +211,19 @@ class EosBase {
                       LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          static_cast<CRTP const &>(*this).FillEos(rhos[i], temps[i], energies[i],
-                                                   presses[i], cvs[i], bmods[i], output,
-                                                   lambdas[i]);
+          copy.FillEos(rhos[i], temps[i], energies[i], presses[i], cvs[i], bmods[i],
+                       output, lambdas[i]);
         });
   }
+  // Report minimum values of density and temperature
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return 0; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumTemperature() const { return 0; }
+
   template <typename RealIndexer, typename LambdaIndexer>
   inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,
                      RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
@@ -216,11 +231,11 @@ class EosBase {
                      LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          static_cast<CRTP const &>(*this).PTofRE(rhos[i], sies[i], lambdas[i],
-                                                  presses[i], temps[i], dpdrs[i],
-                                                  dpdes[i], dtdrs[i], dtdes[i]);
+          copy.PTofRE(rhos[i], sies[i], lambdas[i], presses[i], temps[i], dpdrs[i],
+                      dpdes[i], dtdrs[i], dtdes[i]);
         });
   }
   // Scalar version of PTofRE
@@ -245,6 +260,7 @@ class EosBase {
            de; // Would it be better to skip the calculation of Te and return 1/cv?
     return;
   }
+
   // Specialzied vector version of PTofRE maybe more suited for EOSPAC
   // }
   // template<typename RealIndexer, typename LambdaIndexer>

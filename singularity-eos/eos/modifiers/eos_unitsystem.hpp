@@ -43,6 +43,27 @@ static struct LengthTimeUnitsInit {
 template <typename T>
 class UnitSystem : public EosBase<UnitSystem<T>> {
  public:
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+
+  // TODO(JMM): The modifier EOS's should probably call the specific
+  // sub-functions of the class they modify so that they can leverage,
+  // e.g., an especially performant or special version of these
+  using EosBase<UnitSystem<T>>::TemperatureFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::InternalEnergyFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::PressureFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::SpecificHeatFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::BulkModulusFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::GruneisenParamFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::PTofRE;
+  using EosBase<UnitSystem<T>>::FillEos;
+
   // move semantics ensures dynamic memory comes along for the ride
   // TODO(JMM): Entropy unit needed?
   UnitSystem(T &&t, eos_units_init::ThermalUnitsInit, const Real rho_unit,
@@ -198,8 +219,12 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     dvdt *= inv_dvdt_unit_;
   }
 
-  // Vector functions that overload the scalar versions declared here.
-  SG_ADD_BASE_CLASS_USINGS(UnitSystem<T>)
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
+    return inv_rho_unit_ * t_.MinimumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
+    return inv_temp_unit_ * t_.MinimumTemperature();
+  }
 
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return t_.nlambda(); }
