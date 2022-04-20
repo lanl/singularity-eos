@@ -244,7 +244,7 @@ by
     \Gamma(\rho) =
       \begin{cases}
         \Gamma_0                                          & \rho < \rho_0 \\
-        \Gamma_0 (1 - \eta) + b\eta                       & \rho >= \rho_0
+        \Gamma_0 (1 - \eta) + b\eta                       & \rho \geq \rho_0
       \end{cases}
 
 When the unitless user parameter :math:`b=0`, this ensures the the Gruneisen
@@ -258,7 +258,7 @@ The reference pressure along the Hugoniot is determined by
       \begin{cases}
         \rho                                                  & \rho < \rho_0 \\
         \frac{\rho_0}{\left(
-          1 - s_1 \eta - s_2 \eta^2 - s_3 \eta^3 \right)^2}   & \rho > \rho_0
+          1 - s_1 \eta - s_2 \eta^2 - s_3 \eta^3 \right)^2}   & \rho \geq \rho_0
       \end{cases}
 
 where :math:`P_0` is the reference pressure and :math:`c_0`, :math:`s_1`,
@@ -282,7 +282,7 @@ Finally the energy along the Hugoniot is given by
     E_H(\rho) =
       \begin{cases}
         0                                               & \rho < \rho_0 \\
-        \frac{\eta (P_H + P_0)}{2 \rho_0}
+        \frac{\eta (P_H + P_0)}{2 \rho_0}               & \rho \geq \rho_0
       \end{cases}.
 
 One should note that in this form neither the expansion region nor the overall
