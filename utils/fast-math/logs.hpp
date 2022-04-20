@@ -74,14 +74,26 @@ namespace FastMath {
 PORTABLE_FORCEINLINE_FUNCTION
 double lg(const double x) {
 
+#ifdef SINGULARITY_USE_TRUE_LOG_GRIDDING
+  // Slower but conforms exactly to log grid spacing
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+  return std::log2(x);
+#else // SINGULARITY_USE_SINGLE_LOGS
+  return std::log2f(x);
+#endif // SINGULARITY_USE_SINGLE_LOGS
+#else //  SINGULARITY_USE_TRUE_LOG_GRIDDING
   int n;
 #ifndef SINGULARITY_USE_SINGLE_LOGS
-  const double y = frexp(x, &n); // default is double precision
+  // This is the default expression
+  const double y = frexp(x, &n);
 #else
-  const float y = frexpf((float)x, &n); // faster but less accurate
+  // faster but less accurate
+  const float y = frexpf((float)x, &n);
 #endif // SINGULARITY_USE_SINGLE_LOGS
 
   return 2 * (y - 1) + n;
+#endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
+
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
@@ -92,6 +104,15 @@ double log10(const double x) {
 
 PORTABLE_FORCEINLINE_FUNCTION
 double pow2(const double x) {
+#ifdef SINGULARITY_USE_TRUE_LOG_GRIDDING
+  // Slower but conforms exactly to log grid spacing
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+  return std::exp2(x);
+#else // SINGULARITY_USE_SINGLE_LOGS
+  returtn std::exp2f(x);
+#endif // SINGULARITY_USE_SINGLE_LOGS
+#else // SINGULARITY_USE_TRUE_LOG_GRIDDING
+  // This is the default expression
   const int flr = std::floor(x);
   const double remainder = x - flr;
   const double mantissa = 0.5 * (remainder + 1);
@@ -99,8 +120,10 @@ double pow2(const double x) {
 #ifndef SINGULARITY_USE_SINGLE_LOGS
   return ldexp(mantissa, exponent);
 #else
+  // Faster but less accurate
   return ldexpf(mantissa, exponent);
 #endif // SINGULARITY_USE_SINGLE_LOGS
+#endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
