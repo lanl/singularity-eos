@@ -117,12 +117,6 @@ double lg(const double x) {
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
-double log10(const double x) {
-  constexpr double LOG2OLOG10 = 0.301029995663981195;
-  return LOG2OLOG10 * lg(x);
-}
-
-PORTABLE_FORCEINLINE_FUNCTION
 double pow2(const double x) {
 #ifndef SINGULARITY_USE_TRUE_LOG_GRIDDING
   // Default expression
@@ -135,6 +129,12 @@ double pow2(const double x) {
   return std::exp2f(x);
 #endif // SINGULARITY_USE_SINGLE_LOGS
 #endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
+}
+
+PORTABLE_FORCEINLINE_FUNCTION
+double log10(const double x) {
+  constexpr double LOG2OLOG10 = 0.301029995663981195;
+  return LOG2OLOG10 * lg(x);
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
