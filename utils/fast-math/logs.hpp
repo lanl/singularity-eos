@@ -57,14 +57,15 @@
  * 2*(mantissa - 1) + exponent
  *
  * Which is a continuous, invertible function that approximates lg
- * only relatively accurately. The absolute error of this
- * approximation is about 0.1 at its largest. This translates to a
- * relative error of at most 25%.
+ * only relatively accurately. The absolute difference of this
+ * function from lg is about 0.1 at its largest. This translates to a
+ * relative difference of at most 25%.
  *
- * However, we don't mind this error, as we're only interested in
+ * However, we don't mind this difference, as we're only interested in
  * generating a grid spacing "close enough" to log spacing. As long as
  * we can go into and out of "grid space" reliably and quickly, we're
- * happy.
+ * happy, and this function is an EXACT map into and out of that
+ * space.
  */
 
 namespace singularity {
