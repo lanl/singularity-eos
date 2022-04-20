@@ -74,6 +74,7 @@ namespace FastMath {
 PORTABLE_FORCEINLINE_FUNCTION
 double fastlg(const double x) {
   int n;
+  assert(x > 0 && "log divergent for x <= 0");
 #ifndef SINGULARITY_USE_SINGLE_LOGS
   // double precision is default
   const double y = frexp(x, &n);
@@ -102,6 +103,8 @@ double fastpow2(const double x) {
 
 PORTABLE_FORCEINLINE_FUNCTION
 double lg(const double x) {
+
+  assert(x > 0 && "log divergent for x <= 0");
 
 #ifndef SINGULARITY_USE_TRUE_LOG_GRIDDING
   // Default expression
