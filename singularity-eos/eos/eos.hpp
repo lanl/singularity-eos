@@ -856,7 +856,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                               Real *lambda = nullptr) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(StellarCollapse)
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
   Real lRhoOffset() const { return lRhoOffset_; }
