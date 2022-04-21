@@ -1096,18 +1096,18 @@ class EOSPAC : public EosBase<EOSPAC> {
   // e.g. the vector overloads that use the scalar versions declared
   // here We explicitly list, rather than using the macro because we
   // overload some methods.
-  using EosBase<SpinerEOSDependsRhoSie>::TemperatureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::InternalEnergyFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::PTofRE;
-  using EosBase<SpinerEOSDependsRhoSie>::FillEos;
+  using EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::InternalEnergyFromDensityTemperature;
+  using EosBase<EOSPAC>::PressureFromDensityTemperature;
+  using EosBase<EOSPAC>::PressureFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::SpecificHeatFromDensityTemperature;
+  using EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::BulkModulusFromDensityTemperature;
+  using EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::GruneisenParamFromDensityTemperature;
+  using EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::PTofRE;
+  using EosBase<EOSPAC>::FillEos;
 
   // TODO (JHP): Change EOSPAC vector implementations to be more performant
   // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
