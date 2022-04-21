@@ -31,10 +31,6 @@
 
 #define SINGULARITY_ROOT_DEBUG (0)
 #define SINGULARITY_ROOT_VERBOSE (0)
-// TODO: mauneyc: this isn't used here, and I can't
-// find it used elsewhere. it also doesn't get unset.
-// should it be ditched?
-#define SINGULARITY_ROOT_NAN_OK (0)
 
 #define SINGULARITY_MY_SIGN(x) (x > 0) - (x < 0)
 
