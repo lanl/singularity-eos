@@ -627,8 +627,8 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
           Gamma0 * (P0 - C0 * C0 * rho0)};
       constexpr std::array<Real, num> temperature_true{
           5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02, T0};
-      constexpr std::array<Real, num> gruneisen_true{
-          Gamma0, 2.007944444444444e+00, 1.927000000000000e+00, Gamma0};
+      constexpr std::array<Real, num> gruneisen_true{Gamma0, 2.007944444444444e+00,
+                                                     1.927000000000000e+00, Gamma0};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -729,26 +729,28 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed Comparison", "[GruneisenEOS]") {
     EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
     EOS eos = host_eos.GetOnDevice();
     GIVEN("Density and energy") {
-      constexpr Real density = 5.92418956756592;  // g/cm^3
-      constexpr Real energy = 792486007.804619;   // erg/g
-      constexpr Real true_pres = 2.620656373250729;  // Mbar
-      constexpr Real true_sound_speed = 1.5247992468363685;  // cm/us
+      constexpr Real density = 5.92418956756592;            // g/cm^3
+      constexpr Real energy = 792486007.804619;             // erg/g
+      constexpr Real true_pres = 2.620656373250729;         // Mbar
+      constexpr Real true_sound_speed = 1.5247992468363685; // cm/us
       WHEN("A P(rho, e) lookup is performed") {
         Real pres = eos.PressureFromDensityInternalEnergy(density, energy);
-        THEN("The correct pressure should be returned"){
+        THEN("The correct pressure should be returned") {
           pres = pres / Mbar;
-          INFO("Density: " << density << "  Energy: " << energy << "  Pressure: " <<
-               pres << " Mbar  True pressure: " << true_pres << " Mbar");
+          INFO("Density: " << density << "  Energy: " << energy << "  Pressure: " << pres
+                           << " Mbar  True pressure: " << true_pres << " Mbar");
           REQUIRE(isClose(pres, true_pres, 1e-12));
         }
       }
       WHEN("A B_S(rho, e) lookup is performed") {
-        const Real bulk_modulus = eos.BulkModulusFromDensityInternalEnergy(density, energy);
-        THEN("The correct sound speed should be computed"){
+        const Real bulk_modulus =
+            eos.BulkModulusFromDensityInternalEnergy(density, energy);
+        THEN("The correct sound speed should be computed") {
           const Real sound_speed = std::sqrt(bulk_modulus / density) / (cm / us);
-          INFO("Density: " << density << "  Energy: " << energy << "  Sound speed: " <<
-               sound_speed << " cm/us  True sound speed: " << true_sound_speed << 
-               " cm/us");
+          INFO("Density: " << density << "  Energy: " << energy
+                           << "  Sound speed: " << sound_speed
+                           << " cm/us  True sound speed: " << true_sound_speed
+                           << " cm/us");
           REQUIRE(isClose(sound_speed, true_sound_speed, 1e-12));
         }
       }
@@ -764,12 +766,14 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed Comparison", "[GruneisenEOS]") {
         const Real dPde_r = (P2 - P1) / de;
         const Real bmod_approx = density * dPdr_e + P1 / density * dPde_r;
         THEN("The finite difference solution should approximate the exact solution") {
-          const Real bulk_modulus = eos.BulkModulusFromDensityInternalEnergy(density, energy);
+          const Real bulk_modulus =
+              eos.BulkModulusFromDensityInternalEnergy(density, energy);
           const Real ss_approx = std::sqrt(bmod_approx / density);
           const Real sound_speed = std::sqrt(bulk_modulus / density);
-          INFO("Density: " << density << "  Energy: " << energy << "  Sound speed: " <<
-               sound_speed << " cm/us  Approximate sound speed: " << ss_approx << 
-               " cm/us");
+          INFO("Density: " << density << "  Energy: " << energy
+                           << "  Sound speed: " << sound_speed
+                           << " cm/us  Approximate sound speed: " << ss_approx
+                           << " cm/us");
           REQUIRE(isClose(sound_speed, ss_approx, 1e-5));
         }
       }

@@ -22,7 +22,8 @@ PORTABLE_INLINE_FUNCTION Real cube(const Real x) { return x * x * x; }
 PORTABLE_INLINE_FUNCTION Real Gruneisen::Gamma(const Real rho) const {
   return rho < _rho0 ? _G0 : _G0 * _rho0 / rho + _b * (1 - _rho0 / rho);
 }
-PORTABLE_INLINE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho, const Real sie) const {
+PORTABLE_INLINE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho,
+                                                      const Real sie) const {
   if (rho < _rho0) {
     return square(_C0) + Gamma(rho) * sie;
   } else {
@@ -32,12 +33,12 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho, const Real
     const Real deta = _rho0 / square(rho);
     const Real dGam = (_b - _G0) * deta;
     const Real P_H = _P0 + square(_C0) * _rho0 * eta / square(1 - s);
-    const Real dP_H = square(_C0) * _rho0 / square(1 - s) * deta * (1 + 2 * eta * ds /
-      (1 - s));
+    const Real dP_H =
+        square(_C0) * _rho0 / square(1 - s) * deta * (1 + 2 * eta * ds / (1 - s));
     const Real E_H = (P_H + _P0) * eta / _rho0 / 2.;
     const Real dE_H = deta * (P_H + _P0) / _rho0 / 2. + eta / _rho0 / 2 * dP_H;
-    return dP_H + Gamma(rho) * (sie - E_H) + rho * dGam * (sie - E_H) - 
-      rho * Gamma(rho) * dE_H;
+    return dP_H + Gamma(rho) * (sie - E_H) + rho * dGam * (sie - E_H) -
+           rho * Gamma(rho) * dE_H;
   }
 }
 PORTABLE_FUNCTION Real Gruneisen::InternalEnergyFromDensityTemperature(
