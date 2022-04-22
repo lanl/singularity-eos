@@ -78,7 +78,6 @@ PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
   } else {
     const Real dPdr_e = dPres_drho_e(rho, sie);
     const Real dPde_r = rho * Gamma(rho);
-    std::cout << dPdr_e << std::endl;
     // Thermodynamic identity
     return rho * dPdr_e + PressureFromDensityInternalEnergy(rho, sie) / rho * dPde_r;
   }
