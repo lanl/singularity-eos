@@ -47,8 +47,6 @@
 
 #include <singularity-eos/eos/eos.hpp>
 
-#include <sesame2spiner/io_eospac.hpp>
-
 using namespace Spiner;
 using namespace singularity;
 using namespace EospacWrapper;
@@ -56,6 +54,40 @@ using namespace EospacWrapper;
 using duration = std::chrono::microseconds;
 constexpr char diffFileName[] = "diffs.sp5";
 constexpr int NTIMES = 10;
+
+class Bounds {
+ public:
+  Bounds() {}
+
+  Bounds(Real min, Real max, int N, Real offset)
+      : grid(RegularGrid1D(min, max, N)), offset(offset) {}
+
+  Bounds(Real min, Real max, int N) : offset(0) {
+    constexpr Real epsilon = std::numeric_limits<float>::epsilon();
+    const Real min_offset = 10 * std::abs(epsilon);
+    if (min <= 0) offset = 1.1 * std::abs(min) + min_offset;
+    min += offset;
+    max += offset;
+    min = std::log10(std::abs(min));
+    max = std::log10(std::abs(max));
+    grid = RegularGrid1D(min, max, N);
+  }
+
+  PORTABLE_INLINE_FUNCTION Real log2lin(Real xl) const { return pow(10., xl) - offset; }
+  PORTABLE_INLINE_FUNCTION Real i2lin(int i) const { return log2lin(grid.x(i)); }
+
+  friend std::ostream &operator<<(std::ostream &os, const Bounds &b) {
+    os << "Bounds: [" << b.grid.min() << ", " << b.grid.max() << "]"
+       << " + " << b.offset << ", "
+       << "[N,dx] = [" << b.grid.nPoints() << ", " << b.grid.dx() << "]"
+       << "\n";
+    return os;
+  }
+
+ public:
+  RegularGrid1D grid;
+  Real offset;
+};
 
 int main(int argc, char *argv[]) {
 
@@ -172,7 +204,6 @@ int main(int argc, char *argv[]) {
     duration durationEospacTot = duration::zero();
     duration durationSpinerTot = duration::zero();
     duration durationSpinerDTot = duration::zero();
-    duration durationSpinerSieTot = duration::zero();
     duration durationEospac = duration::zero();
     duration durationSpiner = duration::zero();
     duration durationSpinerSie = duration::zero();
@@ -216,13 +247,10 @@ int main(int argc, char *argv[]) {
       Real TMax = eosE_host.TMax();
       Real sieMin = eosE_host.sieMin();
       Real sieMax = eosE_host.sieMax();
-      Real shrinklRhoBounds = 0.0;
-      Real shrinklTBounds = 0.0;
-      Real shrinkleBounds = 0.0;
 
-      Bounds lRhoBounds(rhoMin, rhoMax, nFineRho, true, shrinklRhoBounds);
-      Bounds lTBounds(TMin, TMax, nFineT, true, shrinklTBounds);
-      Bounds leBounds(sieMin, sieMax, nFineT, true, shrinkleBounds);
+      Bounds lRhoBounds(rhoMin, rhoMax, nFineRho);
+      Bounds lTBounds(TMin, TMax, nFineT);
+      Bounds leBounds(sieMin, sieMax, nFineT);
 
       std::cout << "\t\trho bounds = [" << rhoMin << ", " << rhoMax << "]" << std::endl;
       std::cout << "\t\tT   bounds = [" << TMin << ", " << TMax << "]" << std::endl;
@@ -504,7 +532,6 @@ int main(int argc, char *argv[]) {
         durationSpinerSieDev += std::chrono::duration_cast<duration>(stop - start);
 
         std::cout << "\t\t...comparing host data..." << std::endl;
-        Real diffL1, diffL1E, diffL1_d, diffL1E_d;
         Real diffL2, diffL2E, diffL2_d, diffL2E_d;
         Real L2{0.0};
         diffL2 = 0;
