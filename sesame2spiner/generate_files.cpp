@@ -30,10 +30,10 @@
 #endif // SPINER_USE_HDF
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
-#include <sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
-#include <spiner/ports-of-call/portability.hpp>
+#include <ports-of-call/portability.hpp>
 #include <spiner/sp5.hpp>
 
 #include "generate_files.hpp"

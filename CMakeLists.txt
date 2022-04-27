@@ -84,6 +84,9 @@ endif()
 #------------------------------------------------------------------------------#
 # De-thaw some options
 #------------------------------------------------------------------------------#
+
+# using this space for "immediate" logic that can be avoid messages getting
+# lost inside the brrrrrrrr of cmake.
 if(SINGULARITY_USE_KOKKOSKERNELS AND NOT SINGULARITY_USE_KOKKOS)
   message(FATAL_ERROR "Kokkos is required for KokkosKernels.")
 endif()
@@ -105,7 +108,24 @@ endif()
 # Process some options
 #------------------------------------------------------------------------------#
 
-#TODO: process
+#TODO: process. i want to try to 'reduce' some of the boolean logic of before
+# to single T/F vars, e.g.
+#   before:
+#     if(SINGULARITY_BUILD_SESAME2SPINER)
+#       if(SINGULARITY_USE_EOSPAC)
+#         if(SINGULARITY_USE_HDF5)
+#           add_subdirectory(${PROJECT_SOURCE_DIR}/sesame2spiner)
+#   after:
+#   # in this section
+#     if(...) ...
+#       list(APPEND _subdirs2add sesame2spiner)
+#     ...
+#   # later...
+#     foreach(_sdir ${_subdirs2add})
+#       add_subdirectory(${_sdir})
+#     endforeach()
+# this way, we can decouple the input processing from the configuration 
+# execution. 
 
 #------------------------------------------------------------------------------#
 # Handle dependencies
@@ -113,12 +133,16 @@ endif()
 
 include(cmake/dependency.cmake)
 
-set(TAR_PUBLIC_DEFINES "")
-set(TAR_PRIVATE_DEFINES "")
-set(TAR_PUBLIC_LIB "")
-set(TAR_PRIVATE_LIB "")
-set(TAR_COMPILEFLAGS "")
-set(TAR_LIB_DEPS "")
+# keep config data stored in easily accessable vars,
+# only attaching them to targets as late as possible.
+# this allows for easier handling and manipulating, as
+# well as later info printing and debugging
+set(TAR_PUBLIC_DEFINES "")  # list to `target_compile_definitions()`
+set(TAR_PRIVATE_DEFINES "") # """
+set(TAR_PUBLIC_LIB "")      # list to `target_link_libraries()`
+set(TAR_PRIVATE_LIB "")     # """
+set(TAR_COMPILEFLAGS "")    # TODO: actually use these
+set(TAR_LIB_DEPS "")        # a list of packages, used to generate import rules for installed targets. (may want to rename)
 
 if(SINGULARITY_USE_KOKKOS)
   list(APPEND TAR_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
@@ -170,8 +194,8 @@ if (SINGULARITY_USE_HDF5)
   #TODO: check on HDF5_IS_PARALLEL; these should be brought in by HDF5, but if not need to include them here.
 endif()
 
-
-#TODO: MOVE AROUND TESTING
+#TODO: this feels out-of-place here, though i haven't crawled into the source yet to see
+# what the point is.
 if (SINGULARITY_TEST_SESAME)
   list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_TEST_SESAME)
 endif()

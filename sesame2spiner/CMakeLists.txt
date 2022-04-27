@@ -12,8 +12,6 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
-set(S2S_EXE sesame2spiner)
-
 add_executable(sesame2spiner
   io_eospac.cpp
   io_eospac.hpp
@@ -26,17 +24,17 @@ add_executable(sesame2spiner
   main.cpp
 )
 
-target_include_directories(${S2S_EXE} 
+target_include_directories(sesame2spiner
   PUBLIC  
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_BINDIR}>
 )
 
-target_link_libraries(${S2S_EXE}
+target_link_libraries(sesame2spiner
   PUBLIC
     singularity-eos::singularity-eos
 )
 
-install(TARGETS ${S2S_EXE} DESTINATION bin)
+install(TARGETS sesame2spiner DESTINATION bin)
 
 # TODO: Add tests for sesame2spiner here.
