@@ -62,8 +62,8 @@ before_script:
 .power9: &power9
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=power9"
 
-.x86volta: &x86volta
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86"
+.clxvolta: &clxvolta
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=clx-volta"
 
 #################
 # General Setup #
@@ -237,7 +237,7 @@ test_x86_volta_gpu:
   extends: .test
   allow_failure: true
   variables:    
-    <<: *x86volta
+    <<: *clxvolta
     <<: *gpu
 
 install_gnu_skylake_fort:
