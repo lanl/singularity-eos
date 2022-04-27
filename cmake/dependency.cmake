@@ -33,8 +33,7 @@ include(cmake/submodule_configs.cmake)
 #     )
 #     # message("${DEPS_MPI}") will print "C;CXX"
 #------------------------------------------------------------------------------
-function(append_target_dependency targetlist deplist)
-
+macro(append_target_dependency targetlist deplist)
   set(options)
   set(one_value_args
     PKG
@@ -55,8 +54,8 @@ function(append_target_dependency targetlist deplist)
   # we will bail if ANY of the targets we request already exist; that doesn't
   # feel robust, but it covers enough inputs for this project to not be an issue.
   set(_anyTargetsDefined 0)
-  foreach(_tar ${dep_TARGETS})
-    if(TARGET ${_tar})
+  foreach(_targ ${dep_TARGETS})
+    if(TARGET ${_targ})
       set(_anyTargetsDefined 1)
       break()
     endif()
@@ -74,19 +73,18 @@ function(append_target_dependency targetlist deplist)
       # if adding a subdirectory, set the config variables (if any) for the package
       singularity_cmake_config(${dep_PKG})
       add_subdirectory(${dep_SUBDIR})
+      message(STATUS "dependency ${dep_PKG} added from in-tree: ${dep_SUBDIR}")
+    else()
+      message(STATUS "dependency ${dep_PKG} located: ${${dep_PKG}_DIR}")
     endif()
   endif()
 
   list(APPEND ${targetlist} ${dep_TARGETS})
   list(APPEND ${deplist} ${dep_PKG})
 
-  # recover variables in caller-scope
-  set(${targetlist} "${${targetlist}}" PARENT_SCOPE)
-  set(${deplist} "${${deplist}}" PARENT_SCOPE)
-  # if components were requested, recover these as well
   if(dep_COMPONENTS)
-    set(${deplist}_${dep_PKG} "${dep_COMPONENTS}" PARENT_SCOPE)
+    set(${deplist}_${dep_PKG} "${dep_COMPONENTS}")
   endif()
 
-endfunction()
+endmacro()
 

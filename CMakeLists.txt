@@ -76,10 +76,10 @@ if(SINGULARITY_USE_FORTRAN)
 endif()
 
 # NOTE: this may not work with kokkos, we'll see.
-if(SINGULARITY_USE_CUDA)
-  enable_language(CUDA)
-  include(CMakeDetermineCUDACompiler)
-endif()
+#if(SINGULARITY_USE_CUDA)
+#  enable_language(CUDA)
+#  include(CMakeDetermineCUDACompiler)
+#endif()
 
 #------------------------------------------------------------------------------#
 # De-thaw some options
@@ -191,7 +191,13 @@ if (SINGULARITY_USE_HDF5)
     TARGETS HDF5::HDF5 hdf5::hdf5_hl
     COMPONENTS C HL
   )
-  #TODO: check on HDF5_IS_PARALLEL; these should be brought in by HDF5, but if not need to include them here.
+  if(HDF5_IS_PARALLEL)
+    append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+      PKG MPI
+      TARGETS MPI::MPI_CXX
+      COMPONENTS CXX
+    )
+  endif()
 endif()
 
 #TODO: this feels out-of-place here, though i haven't crawled into the source yet to see
@@ -200,7 +206,12 @@ if (SINGULARITY_TEST_SESAME)
   list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_TEST_SESAME)
 endif()
 
-#------------------------------------------------------------------------------#
+message(STATUS "[== INFO: status so far ===============================")
+message(STATUS "[== dependency list: ${TAR_LIB_DEPS}")
+message(STATUS "[== library targets: ${TAR_PUBLIC_LIB} ${TAR_PRIVATE_LIB}")
+message(STATUS "[== compiler definitions: ${TAR_PUBLIC_DEFINES} ${TAR_PRIVATE_DEFINES}")
+message(STATUS "[======================================================")
+#==============================================================================#
 # singularity-eos library
 #------------------------------------------------------------------------------#
 
@@ -275,23 +286,23 @@ target_link_options(singularity-eos
 if(SINGULARITY_USE_CUDA)
   if(SINGULARITY_HIDE_MORE_WARNINGS)
     target_compile_options(singularity-eos
-       INTERFACE # Generator expression shamelessly copied from EAP
+       PUBLIC # Generator expression shamelessly copied from EAP
          "$<$<COMPILE_LANGUAGE:CXX>:--expt-relaxed-constexpr;>"
     )
   else()
     target_compile_options(singularity-eos
-       INTERFACE # Generator expression shamelessly copied from EAP
+       PUBLIC # Generator expression shamelessly copied from EAP
          "$<$<COMPILE_LANGUAGE:CXX>:--expt-relaxed-constexpr;-Xcudafe;--diag_suppress=esa_on_defaulted_function_ignored;>"
     )
   endif()
   if(CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_options(singularity-eos
-      PRIVATE
+      PUBLIC
         -use_fast_math
     )
   elseif(CMAKE_BUILD_TYPE STREQUAL "Debug" AND SINGULARITY_BETTER_DEBUG_FLAGS)
     target_compile_options(singularity-eos
-      PRIVATE
+      PUBLIC
         "$<$<COMPILE_LANGUAGE:CXX>:-G;-lineinfo;>"
     )
   endif()

@@ -15,8 +15,8 @@
 add_executable(stellarcollapse2spiner main.cpp)
 
 target_link_libraries(stellarcollapse2spiner
-PUBLIC:
-  singularity-eos::singularity-eos
+  PUBLIC
+    singularity-eos::singularity-eos
 )
 
 install(TARGETS stellarcollapse2spiner DESTINATION bin)
