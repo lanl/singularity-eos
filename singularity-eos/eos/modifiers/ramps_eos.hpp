@@ -46,7 +46,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
     {}
   SAPRampEOS() = default;
 
-  auto GetOnDevice() { return SAPRampEOS<T>(t_.GetOnDevice(), shift_); }
+  auto GetOnDevice() { return SAPRampEOS<T>(t_.GetOnDevice(), r0_, a_, b_, c_); }
   inline void Finalize() { t_.Finalize(); }
 
   PORTABLE_INLINE_FUNCTION
