@@ -12,25 +12,51 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
+if (NOT TARGET Catch2::Catch2)
+  find_package(Catch2 QUIET)
+endif()
+
+if(NOT Catch2_FOUND)
+  message(STATUS "Fetching Catch2 as needed")
+  # idiomatic FetchContent
+  include(FetchContent)
+  FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v2.13.7)
+  FetchContent_MakeAvailable(Catch2)
+  list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
+endif()
+
 add_executable(eos_unit_tests
                  eos_unit_tests.cpp)
-if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
-  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+
+if(SINGULARITY_USE_HDF5)
+  if(SINGULARITY_TEST_SESAME)
+    target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+  endif()
+  if(SINGULARITY_TEST_STELLAR_COLLAPSE)
+    target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
+  endif()
 endif()
-if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
-  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
-endif()
-target_link_libraries(eos_unit_tests Catch2::Catch2 singularity-eos::singularity-eos)
+
+target_link_libraries(eos_unit_tests 
+  PRIVATE
+    Catch2::Catch2
+    singularity-eos::singularity-eos
+)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
                  compare_to_eospac.cpp)
-  target_link_libraries(compare_to_eospac Catch2::Catch2 singularity-eos::singularity-eos)
-  #  target_include_directories(compare_to_eospac PUBLIC
-  #                           ${CMAKE_SOURCE_DIR}/utils/spiner
-  #                           ${CMAKE_SOURCE_DIR}/utils/ports-of-call
-  #                           ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
+  target_link_libraries(compare_to_eospac
+    PRIVATE
+      Catch2::Catch2
+      singularity-eos::singularity-eos
+  )
 endif()
+
+include(Catch)
 catch_discover_tests(eos_unit_tests)
 
 if (SINGULARITY_BUILD_CLOSURE)

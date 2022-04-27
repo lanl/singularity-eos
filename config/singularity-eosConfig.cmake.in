@@ -6,31 +6,7 @@
 
 list(APPEND CMAKE_MODULE_PATH @CMAKE_INSTALL_FULL_LIBDIR@/cmake/singularity-eos)
 
-find_package(mpark_variant REQUIRED)
-find_package(spiner REQUIRED)
-find_package(ports-of-call REQUIRED)
-
-if(@SINGULARITY_USE_HDF5@)
-  find_package(HDF5 COMPONENTS C HL)
-endif()
-
-if(@SINGULARITY_USE_EOSPAC@)
-  find_package(EOSPAC REQUIRED)
-endif()
-
-if(@SINGULARITY_USE_KOKKOS@)
-  find_package(Kokkos REQUIRED)
-endif()
-
-if(@SINGULARITY_USE_CUDA@)
-  find_package(CUDA REQUIRED)
-endif()
-
-if(@SINGULARITY_USE_KOKKOSKERNELS@)
-  find_package(KokkosKernels REQUIRED)
-else()
-  find_package(Eigen3 REQUIRED)
-endif()
+@SINGULARITY_CONFIG_DEPENDENCIES@
 
 if(NOT TARGET singularity-eos AND NOT singularity-eos_BINARY_DIR)
   include(@CMAKE_INSTALL_FULL_LIBDIR@/cmake/singularity-eos/singularity-eosTargets.cmake)

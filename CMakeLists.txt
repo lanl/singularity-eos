@@ -13,9 +13,14 @@
 #------------------------------------------------------------------------------#
 
 cmake_minimum_required(VERSION 3.14)
+
+project(singularity-eos VERSION 1.5.0)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-# options
+#------------------------------------------------------------------------------#
+# Options
+#------------------------------------------------------------------------------#
 option (SINGULARITY_USE_HDF5 "Pull in hdf5" ON)
 option (SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option (SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
@@ -43,51 +48,6 @@ if (SINGULARITY_SUBMODULE_MODE)
   set(SINGULARITY_HIDE_MORE_WARNINGS ON CACHE BOOL "" FORCE)
 endif()
 
-
-# if cuda, need to set cxx compiler to nvcc_wrapper before compilers
-# are checked
-if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_CUDA)
-  # set nvcc wrapper default compiler
-  if(NOT "$ENV{CXX}x" STREQUAL "x" AND
-     "$ENV{NVCC_WRAPPER_DEFAULT_COMPILER}x" STREQUAL "x")
-    set(ENV{NVCC_WRAPPER_DEFAULT_COMPILER} "$ENV{CXX}")
-  endif()
-  # set necessary kokkos build options if building inline
-  if(NOT SINGULARITY_KOKKOS_INSTALL_DIR)
-    set(NVCC_WRAPPER_DIR ${CMAKE_CURRENT_SOURCE_DIR}/utils/kokkos/bin CACHE STRING "")
-  else()
-    set(NVCC_WRAPPER_DIR ${SINGULARITY_KOKKOS_INSTALL_DIR}/bin CACHE STRING "")
-  endif()
-  set(CMAKE_CXX_COMPILER ${NVCC_WRAPPER_DIR}/nvcc_wrapper CACHE STRING "")
-endif()
-
-project(singularity-eos VERSION 1.5.0)
-
-#------------------------------------------------------------------------------#
-# Compiler & language setup
-#------------------------------------------------------------------------------#
-enable_language(CXX)
-include(CMakeDetermineCXXCompiler)
-if(SINGULARITY_USE_FORTRAN)
-  enable_language(Fortran)
-  # $CMM/cmake-idiomatic-install
-  # $CMM added to determine Fortran compiler
-  include(CMakeDetermineFortranCompiler)
-endif()
-
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-# $CMM/cmake-idiomatic-install
-# $CMM prepare some generator-string snippets
-set(with_cxx "$<COMPILE_LANGUAGE:CXX>")
-set(build_release "$<CONFIG:Release>")
-set(build_debug "$<CONFIG:Debug>")
-set(on_xl "$<COMPILER_ID:XL>")
-
-set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
-
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
 message(STATUS "Patching mpark::variant to support GPUs")
@@ -95,51 +55,39 @@ execute_process(COMMAND patch -N -s -V never
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
 )
-#------------------------------------------------------------------------------#
 
 #------------------------------------------------------------------------------#
+# Compiler & language setup
+#------------------------------------------------------------------------------#
 
-set(_tar singularity-eos)
-set(_ns singularity-eos)
-
-add_subdirectory(singularity-eos)
-foreach(_header ${EOS_HEADERS})
-  list(APPEND _install_headers ${_header})
-  list(APPEND _headers singularity-eos/${_header})
-endforeach()
-
-foreach(_src ${EOS_SRCS})
-  list(APPEND _srcs singularity-eos/${_src})
-endforeach()
-
-add_library(${_tar} ${_srcs} ${_headers})
-add_library(${_ns}::${_tar} ALIAS ${_tar})
-
-if (SINGULARITY_USE_FORTRAN)
-  set_target_properties(${_tar} PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-  target_include_directories(${_tar} INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:include>
-  )
+# checks if this is our build, or we've 
+# been imported via `add_subdirectory`
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
 
-target_include_directories(${_tar}
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<INSTALL_INTERFACE:include>
-)
+enable_language(CXX)
+include(CMakeDetermineCXXCompiler)
+if(SINGULARITY_USE_FORTRAN)
+  enable_language(Fortran)
+  include(CMakeDetermineFortranCompiler)
+endif()
 
+# NOTE: this may not work with kokkos, we'll see.
+if(SINGULARITY_USE_CUDA)
+  enable_language(CUDA)
+  include(CMakeDetermineCUDACompiler)
+endif()
 
-# xl fix
-#target_compile_options(singularity-eos::flags INTERFACE
-#                       $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
-#target_link_options(singularity-eos::flags INTERFACE
-#                   $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
+#------------------------------------------------------------------------------#
+# De-thaw some options
+#------------------------------------------------------------------------------#
+if(SINGULARITY_USE_KOKKOSKERNELS AND NOT SINGULARITY_USE_KOKKOS)
+  message(FATAL_ERROR "Kokkos is required for KokkosKernels.")
+endif()
 
-#target_compile_features(singularity-eos::flags INTERFACE cxx_std_14)
-#target_compile_features(singularity-eos::libs INTERFACE cxx_std_14)
-
-# check for currently incompatible option
 if(SINGULARITY_USE_CUDA AND NOT SINGULARITY_USE_KOKKOS)
   message(FATAL_ERROR "Cuda without kokkos is not currently supported")
 endif()
@@ -153,302 +101,344 @@ if (SINGULARITY_USE_EOSPAC)
   endif()
 endif()
 
-if (SINGULARITY_TEST_SESAME)
-   target_compile_definitions(${_tar} INTERFACE SINGULARITY_TEST_SESAME)
-endif()
+#------------------------------------------------------------------------------#
+# Process some options
+#------------------------------------------------------------------------------#
 
-# only use hdf5 if spiner
-if (SINGULARITY_USE_HDF5)
-  target_compile_definitions(${_tar} PUBLIC
-                             SPINER_USE_HDF)
-  if(SINGULARITY_HDF5_INSTALL_DIR)
-    list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_HDF5_INSTALL_DIR}")
-  endif()
-  find_package(HDF5 COMPONENTS C HL)
-  if(HDF5_FOUND)
-    target_link_libraries(${_tar} INTERFACE "${HDF5_LIBRARIES};${HDF5_HL_LIBRARIES}")
-    target_compile_definitions(${_tar} INTERFACE "SINGULARITY_USE_HDF5")
-    target_include_directories(${_tar} INTERFACE "${HDF5_INCLUDE_DIRS}")
-    if(HDF5_IS_PARALLEL)
-      if(SINGULARITY_MPI_INSTALL_DIR)
-        list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_MPI_INSTALL_DIR}")
-      endif()
-      find_package(MPI COMPONENTS CXX)
-      if(MPI_FOUND)
-        target_include_directories(${_tar} INTERFACE "${MPI_CXX_INCLUDE_DIRS}")
-      endif()
-    endif()
-  else()
-    message(FATAL_ERROR "HDF5 was requested but not found. Can be disabled with -DSINGULARITY_USE_HDF5=OFF")
-  endif()
-endif()
+#TODO: process
 
-if (SINGULARITY_USE_KOKKOS)
-  target_compile_definitions(${_tar} PUBLIC
-                             PORTABILITY_STRATEGY_KOKKOS)
-  # Import Kokkos if not already available as a build target
-  if (NOT TARGET Kokkos::kokkos)
-    if (SINGULARITY_KOKKOS_INSTALL_DIR)
-      list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_KOKKOS_INSTALL_DIR}")
-      set(Kokkos_ROOT "${SINGULARITY_KOKKOS_INSTALL_DIR}/lib64/cmake/Kokkos")
-    endif()
-    find_package(Kokkos)
-    if(NOT Kokkos_FOUND)
-      if(SINGULARITY_USE_CUDA)
-        set(Kokkos_ENABLE_CUDA ON CACHE BOOL "" FORCE)
-        set(Kokkos_ENABLE_SERIAL ON CACHE BOOL "" FORCE)
-        set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "" FORCE)
-        set(Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE ON CACHE BOOL "" FORCE)
-      endif()
-      add_subdirectory(${PROJECT_SOURCE_DIR}/utils/kokkos)
-    endif()
-    get_target_property(KOKKOS_COMPILE_OPTIONS Kokkos::kokkoscore
-        INTERFACE_COMPILE_OPTIONS
-    )
-    target_link_libraries(${_tar} PUBLIC Kokkos::kokkos)
-  endif()
-
-  # cuda specific flags
-  if(SINGULARITY_USE_CUDA)
-    if(SINGULARITY_HIDE_MORE_WARNINGS)
-      target_compile_options(
-        singularity-eos::flags
-         INTERFACE # Generator expression shamelessly copied from EAP
-         "$<$<COMPILE_LANGUAGE:CXX>:--expt-relaxed-constexpr;>"
-           )
-    else()
-      target_compile_options(
-        singularity-eos::flags
-         INTERFACE # Generator expression shamelessly copied from EAP
-         "$<$<COMPILE_LANGUAGE:CXX>:--expt-relaxed-constexpr;-Xcudafe;--diag_suppress=esa_on_defaulted_function_ignored;>"
-           )
-    endif()
-    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-      target_compile_options(singularity-eos::flags INTERFACE
-                             -use_fast_math)
-    elseif(CMAKE_BUILD_TYPE STREQUAL "Debug" AND SINGULARITY_BETTER_DEBUG_FLAGS)
-      target_compile_options(
-        singularity-eos::flags
-        INTERFACE
-        "$<$<COMPILE_LANGUAGE:CXX>:-G;-lineinfo;>"
-        )
-    endif()
-  endif()
-endif ()
-
-# linear algebra library
-if(SINGULARITY_KOKKOSKERNELS_SUB_DIR)
-  set(SINGULARITY_USE_KOKKOSKERNELS ON CACHE BOOL "" FORCE)
-endif()
-if(SINGULARITY_KOKKOSKERNELS_INSTALL_DIR)
-  set(SINGULARITY_USE_KOKKOSKERNELS ON CACHE BOOL "" FORCE)
-endif()
-if(SINGULARITY_USE_CUDA AND NOT SINGULARITY_USE_KOKKOSKERNELS)
-  message(WARNING "Kokkos Kernels is required if you want to use closures on GPU.")
-endif()
-if(SINGULARITY_USE_KOKKOSKERNELS)
-  if(NOT DEFINED SINGULARITY_USE_KOKKOS)
-    message(FATAL_ERROR "Kokkos is a required dependency for KokkosKernels")
-  endif()
-  # kokkos kernels
-  if(SINGULARITY_KOKKOSKERNELS_SUB_DIR)
-    # Disable TPLs
-    set(KokkosKernels_ENABLE_TPL_BLAS OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_ENABLE_TPL_MKL OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_ENABLE_TPL_LAPACK OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_ENABLE_TPL_CUBLAS OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_ENABLE_TPL_CUSPARSE OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_ENABLE_TPL_MAGMA OFF CACHE BOOL "" FORCE)
-    # Disable ETIs
-    set(KokkosKernels_INST_COMPLEX_DOUBLE OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_COMPLEX_FLOAT OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_DOUBLE OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_EXECSPACE_OPENMP OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_EXECSPACE_SERIAL OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_EXECSPACE_THREADS OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_EXECSPACE_CUDA OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_FLOAT OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_LAYOUTLEFT OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_LAYOUTRIGHT OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_MEMSPACE_HOSTSPACE OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_OFFSET_INT OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_OFFSET_SIZE_T OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_ORDINAL_INT OFF CACHE BOOL "" FORCE)
-    set(KokkosKernels_INST_ORDINAL_INT OFF CACHE BOOL "" FORCE)
-    add_subdirectory(${SINGULARITY_KOKKOSKERNELS_SUB_DIR}
-                     ${PROJECT_BINARY_DIR}/utils/kokkos-kernels)
-  else()
-    if(SINGULARITY_KOKKOSKERNELS_INSTALL_DIR)
-      set(KokkosKernels_ROOT "${SINGULARITY_KOKKOSKERNELS_INSTALL_DIR}")
-    endif()
-    find_package(KokkosKernels REQUIRED)
-  endif()
-  target_link_libraries(${_tar} PUBLIC
-                        Kokkos::kokkoskernels)
-  target_compile_definitions(${_tar} INTERFACE
-                             SINGULARITY_USE_KOKKOSKERNELS)
-else()
-  # Eigen
-  if (NOT TARGET Eigen3::Eigen)
-    find_package(Eigen3 QUIET)
-    if(NOT Eigen3_FOUND)
-      set(EIGEN_TEST_CXX11 OFF CACHE BOOL "" FORCE)
-      set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
-      set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
-      set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
-      add_subdirectory(${PROJECT_SOURCE_DIR}/utils/eigen)
-    endif()
-  endif()
-  target_link_libraries(${_tar} PUBLIC Eigen3::Eigen)
-endif()
+#------------------------------------------------------------------------------#
+# Handle dependencies
+#------------------------------------------------------------------------------#
 
 include(cmake/dependency.cmake)
 
-add_subdirectory(${PROJECT_SOURCE_DIR}/utils/variant)
-target_link_libraries(${_tar}
-  PRIVATE
-    mpark_variant)
+set(TAR_PUBLIC_DEFINES "")
+set(TAR_PRIVATE_DEFINES "")
+set(TAR_PUBLIC_LIB "")
+set(TAR_PRIVATE_LIB "")
+set(TAR_COMPILEFLAGS "")
+set(TAR_LIB_DEPS "")
 
-add_target_dependency(${_tar}
+if(SINGULARITY_USE_KOKKOS)
+  list(APPEND TAR_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
+  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+    PKG Kokkos
+    TARGETS Kokkos::kokkos
+    )
+endif() #SINGULARITY_USE_KOKKOS
+
+if(SINGULARITY_USE_KOKKOSKERNELS)
+  list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
+  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+    PKG KokkosKernels
+    TARGETS Kokkos::kokkoskernels
+  )
+else()
+  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+    PKG Eigen3
+    TARGETS Eigen3::Eigen
+    SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
+  )
+endif() #SINGULARITY_USE_KOKKOSKERNELS
+
+append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+  PKG mpark_variant
+  TARGETS mpark_variant
+  SUBDIR ${PROJECT_SOURCE_DIR}/utils/variant
+)
+
+append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
   PKG spiner
+  TARGETS spiner::spiner
 )
 
-add_target_dependency(${_tar}
+append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
   PKG ports-of-call
+  TARGETS ports-of-call::ports-of-call
 )
 
+# only use hdf5 if spiner
+if (SINGULARITY_USE_HDF5)
+  list(APPEND TAR_PUBLIC_DEFINES SPINER_USE_HDF)
+  list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_USE_HDF)
+  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+    PKG HDF5
+    TARGETS HDF5::HDF5 hdf5::hdf5_hl
+    COMPONENTS C HL
+  )
+  #TODO: check on HDF5_IS_PARALLEL; these should be brought in by HDF5, but if not need to include them here.
+endif()
+
+
+#TODO: MOVE AROUND TESTING
+if (SINGULARITY_TEST_SESAME)
+  list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_TEST_SESAME)
+endif()
+
+#------------------------------------------------------------------------------#
+# singularity-eos library
+#------------------------------------------------------------------------------#
+
+# this subdirectory populates `EOS_HEADERS/EOS_SRCS`
+# NOTE: these include path prefixes of subdirectories on files (e.g. eos/eos.hpp)
+# see singularity-eos/CMakeLists.txt
+
+add_subdirectory(singularity-eos)
+
+foreach(_header ${EOS_HEADERS})
+  list(APPEND _install_headers ${_header})
+  list(APPEND _headers singularity-eos/${_header})
+endforeach()
+
+foreach(_src ${EOS_SRCS})
+  list(APPEND _srcs singularity-eos/${_src})
+endforeach()
+
+add_library(singularity-eos ${_srcs} ${_headers})
+add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
+
+# make sure .mods are placed in build path, and installed
+# along with includes
+if (SINGULARITY_USE_FORTRAN)
+  set_target_properties(singularity-eos PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+  target_include_directories(singularity-eos INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:include>
+  )
+endif() # SINGULARITY_USE_FORTRAN
+
+target_include_directories(singularity-eos
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include>
+)
+
+# plug in collected includes/libs/definitions
+
+target_link_libraries(singularity-eos
+  PUBLIC
+    ${TAR_PUBLIC_LIB}
+  PRIVATE
+    ${TAR_PRIVATE_LIB}
+)
+
+target_compile_definitions(singularity-eos
+  PUBLIC
+    ${TAR_PUBLIC_DEFINES}
+  PRIVATE
+    ${TAR_PRIVATE_DEFINES}
+)
+
+#------------------------------------------------------------------------------#
+# "Unincorperated real-estate"
+# this section includes cmake that hasn't been reworked, and is largely 
+# unmodified at present.
+# TODO: for the sake of harmony, these bits could be given a polish. however,
+# not much would functionally change.
+#------------------------------------------------------------------------------#
+
+# xl fix
+#TODO: should these be private? I think so, but not sure
+target_compile_options(singularity-eos
+  PRIVATE
+    $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
+target_link_options(singularity-eos
+  PRIVATE
+  $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
+
+# cuda specific flags
+if(SINGULARITY_USE_CUDA)
+  if(SINGULARITY_HIDE_MORE_WARNINGS)
+    target_compile_options(singularity-eos
+       INTERFACE # Generator expression shamelessly copied from EAP
+         "$<$<COMPILE_LANGUAGE:CXX>:--expt-relaxed-constexpr;>"
+    )
+  else()
+    target_compile_options(singularity-eos
+       INTERFACE # Generator expression shamelessly copied from EAP
+         "$<$<COMPILE_LANGUAGE:CXX>:--expt-relaxed-constexpr;-Xcudafe;--diag_suppress=esa_on_defaulted_function_ignored;>"
+    )
+  endif()
+  if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_compile_options(singularity-eos
+      PRIVATE
+        -use_fast_math
+    )
+  elseif(CMAKE_BUILD_TYPE STREQUAL "Debug" AND SINGULARITY_BETTER_DEBUG_FLAGS)
+    target_compile_options(singularity-eos
+      PRIVATE
+        "$<$<COMPILE_LANGUAGE:CXX>:-G;-lineinfo;>"
+    )
+  endif()
+endif()
+
+#TODO: Check: Does EOSPAC only pass into side-targets?
 if (SINGULARITY_USE_EOSPAC)
+  #TODO: should be strictly module mode
   find_package(EOSPAC REQUIRED)
+  list(APPEND TAR_LIB_DEPS EOSPAC)
+
   add_subdirectory(eospac-wrapper)
-  target_link_libraries(${_tar}
+  target_link_libraries(singularity-eos
     PUBLIC
     eospac-wrapper)
-  target_compile_definitions(${_tar}
+  target_compile_definitions(singularity-eos
     PUBLIC
     SINGULARITY_USE_EOSPAC)
 endif ()
 
 # fast math
 if (SINGULARITY_USE_SINGLE_LOGS)
-  target_compile_definitions(${_tar} INTERFACE
+  target_compile_definitions(singularity-eos PRIVATE
       SINGULARITY_USE_SINGLE_LOGS)
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_4 AND SINGULARITY_FMATH_USE_ORDER_5)
   message(FATAL_ERROR "Order 4 and order 5 interpolation both specified. Please specify only one or zero. If no specification is made, order 7 will be used.")
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_4)
-  target_compile_definitions(${_tar} INTERFACE
+  target_compile_definitions(singularity-eos PRIVATE
     SINGULARITY_FMATH_USE_ORDER_4)
 endif()
 if (SINGULARITY_FMATH_USE_ORDER_5)
-  target_compile_definitions(${_tar} INTERFACE
+  target_compile_definitions(singularity-eos PRIVATE
     SINGULAIRTY_FMATH_USE_ORDER_5)
 endif()
 
-# catch2 - check for env catch first, otherwise fetch
-if(SINGULARITY_BUILD_TESTS)
-  #  add_subdirectory(${PROJECT_SOURCE_DIR}/utils/spiner/Catch2)
-endif()
-
-if(SINGULARITY_BUILD_TESTS)
-  include(CTest)
-  include(${PROJECT_SOURCE_DIR}/utils/spiner/Catch2/contrib/Catch.cmake)
-endif()
-
-if (SINGULARITY_USE_HDF5 AND SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
-   add_subdirectory(${PROJECT_SOURCE_DIR}/stellarcollapse2spiner)
-   install(TARGETS stellarcollapse2spiner DESTINATION bin)
-endif()
-
-if (SINGULARITY_BUILD_EXAMPLES)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/example)
-endif()
-
-if(SINGULARITY_USE_HDF5)
+if (SINGULARITY_USE_HDF5)
+  if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+    add_subdirectory(stellarcollapse2spiner)
+  endif()
   if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
     add_subdirectory(sesame2spiner)
   endif()
 endif()
 
-if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
-  add_subdirectory(stellarcollapse2spiner)
+if (SINGULARITY_BUILD_EXAMPLES)
+  add_subdirectory(example)
 endif()
 
 
-# 
+#----------------------------------------------------------------------------#
+# Generate config file
+#----------------------------------------------------------------------------#
+
+# get all available `SINGULARITY_` cmake variables set during configuration
 get_cmake_property(_variableNames VARIABLES)
 string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
   _matchedVars "${_variableNames}")
 
+# use config template to generate the configuration of the build
+# not sure why CMake doesn't do this automatically, but w/e
 foreach(_variableName ${_matchedVars})
   set(SINGULARITY_CONFIG_CODE
     "${SINGULARITY_CONFIG_CODE}\nset(${_variableName} \"${${_variableName}}\")")
 endforeach()
 
-#
+# for all the upstream packages collected in the configuration, replicate
+# the `find_package()` in the install configuration. note that
+# if a package was consumed with `add_subdirectory` in configuration,
+# the downstream `find_package()` should find it's way to the consumed
+# package install path
+foreach(_depName ${TAR_LIB_DEPS})
+  set(_components "")
+  if(TAR_LIB_DEPS_${_depName})
+    set(_components "COMPONENTS ${TAR_LIB_DEPS_${_depName}}")
+  endif()
+  set(SINGULARITY_CONFIG_DEPENDENCIES
+    "${SINGULARITY_CONFIG_DEPENDENCIES}\nfind_package(${_depName} ${_components} REQUIRED)")
+endforeach()
 
+# generate the configuration file
+# NOTE: for some lunatic reason, `CMAKE_FILES_DIRECTORY` is set with a leading `/`
+configure_file(${PROJECT_SOURCE_DIR}/config/singularity-eosConfig.cmake.in
+  ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/singularity-eosConfig.cmake @ONLY)
+
+#----------------------------------------------------------------------------#
+# Install library
+#----------------------------------------------------------------------------#
 
 include(GNUInstallDirs)
 
+# declare library install, and associate it with the export targets.
+# NOTE: the `DESTINATION` here is the implicit default, tho I think we 
+# *have* to make it explicit since we (may) also install a fortran module.
 install(
-  TARGETS ${_tar} 
-  EXPORT ${_tar}Targets
+  TARGETS singularity-eos 
+  EXPORT singularity-eosTargets
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+# export install; generates CMake code that instructs other projects how to 
+# import targets from this source tree.
 install(
-  EXPORT ${_tar}Targets
-  FILE  ${_tar}Targets.cmake
-  NAMESPACE "${_ns}::"
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${_tar}
+  EXPORT singularity-eosTargets
+  FILE  singularity-eosTargets.cmake
+  NAMESPACE "singularity-eos::"
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos
 )
 
-
 #----------------------------------------------------------------------------#
-# Packaging
+# Install headers/cmake modules + Packaging
 #----------------------------------------------------------------------------#
 
+# install singularity-eos headers
 foreach(file ${_install_headers})
   get_filename_component(DIR ${file} DIRECTORY)
   install(
-    FILES ${_tar}/${file}
-    DESTINATION include/${_tar}/${DIR}
+    FILES singularity-eos/${file}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/${DIR}
   )
 endforeach()
 
-configure_file(${PROJECT_SOURCE_DIR}/config/${_tar}Config.cmake.in
-  ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${_tar}Config.cmake @ONLY)
-
+# install the generated config file
 install(
-  FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${_tar}Config.cmake
-  DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/${_tar}
+  FILES ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/singularity-eosConfig.cmake
+  DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/singularity-eos
 )
 
-# modules
-
+# install cmake modules
+# NOTE: I don't appear to need `FindPortsofCall.cmake`, probably due to recent updates to that code
 install(
-  FILES ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
-  DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/${_tar}
+  FILES 
+    ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/FindHDF5.cmake
+  DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/singularity-eos
 )
 
 #----------------------------------------------------------------------------#
 # Local export
 #----------------------------------------------------------------------------#
 
+# same as install step, but just places the file in the build tree.
+# useful for downstream projects that use the source directly
 export(
-  EXPORT    ${_tar}Targets
-  FILE      ${CMAKE_CURRENT_BINARY_DIR}/cmake/${_tar}Targets.cmake
-  NAMESPACE ${_ns}::
+  EXPORT    singularity-eosTargets
+  FILE      ${CMAKE_CURRENT_BINARY_DIR}/cmake/singularity-eosTargets.cmake
+  NAMESPACE singularity-eos::
 )
 
-export(PACKAGE ${_tar})
+# apparently, this doesn't do anything anymore,
+# see https://cmake.org/cmake/help/latest/policy/CMP0090.html
+# to re-enable, uncomment 
+## set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
+export(PACKAGE singularity-eos)
 
+#----------------------------------------------------------------------------#
+# Testing
+#----------------------------------------------------------------------------#
+
+#NOTE: `include(CTest)` comes "pre-set" with options and modules
+# to enable tests. It creates a "BUILD_TESTING" option, and runs
+# `enable_testing()`. See https://cmake.org/cmake/help/latest/module/CTest.html
 if(SINGULARITY_BUILD_TESTS)
-  include(CTest)
+  enable_testing()
   add_subdirectory(test)
 endif()
 
+#----------------------------------------------------------------------------#
+# Misc.
+#----------------------------------------------------------------------------#
+
 # clang format
 include(cmake/Format.cmake)
-
-include(CPack)
