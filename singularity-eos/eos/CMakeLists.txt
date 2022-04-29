@@ -23,6 +23,7 @@ set(EOS_SRCS
     modifiers/scaled_eos.hpp
     modifiers/shifted_eos.hpp
     modifiers/relativistic_eos.hpp
+    modifiers/ramps_eos.hpp
     eos_spiner.cpp
     eos_jwl.cpp
     eos_builder.cpp

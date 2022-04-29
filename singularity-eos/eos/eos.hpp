@@ -42,6 +42,7 @@
 #include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
 #include <singularity-eos/eos/modifiers/scaled_eos.hpp>
 #include <singularity-eos/eos/modifiers/shifted_eos.hpp>
+#include <singularity-eos/eos/modifiers/ramps_eos.hpp>
 
 #ifdef SINGULARITY_USE_EOSPAC
 #include <eos_Interface.h>

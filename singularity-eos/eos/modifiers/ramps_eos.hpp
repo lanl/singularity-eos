@@ -43,7 +43,13 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
     b_(b),
     c_(c),
     rmid_(r0*(a-b*c)/(a-b))
-    {}
+  {
+    // add input parameter checks to ensure validity of the ramp
+    assert(r0 >= 0.0);
+    assert(a > 0.0);
+    assert(b >= 0);
+    assert(a != b);
+  }
   SAPRampEOS() = default;
 
   auto GetOnDevice() { return SAPRampEOS<T>(t_.GetOnDevice(), r0_, a_, b_, c_); }
