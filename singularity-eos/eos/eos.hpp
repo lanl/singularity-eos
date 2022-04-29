@@ -1225,59 +1225,57 @@ class EOSPAC : public EosBase<EOSPAC> {
 };
 #endif // SINGULARITY_USE_EOSPAC
 
-  // recreate variadic list
-  template <typename ... Ts>
-  using tl = singularity::detail::type_list<Ts...>;
-  
-  template< template<typename> typename ... Ts>
-  using al = singularity::detail::adapt_list<Ts...>;
-  
-  // transform variadic list: applies modifiers to eos's
-  using singularity::detail::transform_variadic_list;
+// recreate variadic list
+template <typename... Ts>
+using tl = singularity::detail::type_list<Ts...>;
 
-  // all eos's
-  using full_eos_list =
-    tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
-       #ifdef SPINER_USE_HDF
-       , SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie,
-       StellarCollapse
-       #endif // SPINER_USE_HDF
-       #ifdef SINGULARITY_USE_EOSPAC
-       , EOSPAC
-       #endif // SINGULARITY_USE_EOSPAC
-       >;
-  // eos's that get relativistic and unit system modifiers
-  using partial_eos_list = 
-    tl<IdealGas
-       #ifdef SPINER_USE_HDF
-       , SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie,
-       StellarCollapse
-       #endif // SPINER_USE_HDF
-       >;
-  // modifiers that get applied to all eos's
-  using apply_to_all = al<ScaledEOS, ShiftedEOS>;
-  // modifiers thet get applied to a subset of eos's
-  using apply_to_partial = al<UnitSystem, RelativisticEOS>;
-  // variadic list of eos's with shifted or scaled modifiers
-  constexpr auto shifted_or_scaled = 
+template <template <typename> typename... Ts>
+using al = singularity::detail::adapt_list<Ts...>;
+
+// transform variadic list: applies modifiers to eos's
+using singularity::detail::transform_variadic_list;
+
+// all eos's
+using full_eos_list = tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
+#ifdef SPINER_USE_HDF
+                         ,
+                         SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+#endif // SPINER_USE_HDF
+#ifdef SINGULARITY_USE_EOSPAC
+                         ,
+                         EOSPAC
+#endif // SINGULARITY_USE_EOSPAC
+                         >;
+// eos's that get relativistic and unit system modifiers
+using partial_eos_list = tl<IdealGas
+#ifdef SPINER_USE_HDF
+                            ,
+                            SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+#endif // SPINER_USE_HDF
+                            >;
+// modifiers that get applied to all eos's
+using apply_to_all = al<ScaledEOS, ShiftedEOS>;
+// modifiers thet get applied to a subset of eos's
+using apply_to_partial = al<UnitSystem, RelativisticEOS>;
+// variadic list of eos's with shifted or scaled modifiers
+constexpr auto shifted_or_scaled =
     transform_variadic_list(full_eos_list{}, apply_to_all{});
-  // variadic list of eos's with nested shifted and scaled modifiers
-  constexpr auto shifted_and_scaled = 
+// variadic list of eos's with nested shifted and scaled modifiers
+constexpr auto shifted_and_scaled =
     transform_variadic_list(shifted_or_scaled, apply_to_all{});
-  // relativistic and unit system modifiers
-  constexpr auto unit_or_rel =
+// relativistic and unit system modifiers
+constexpr auto unit_or_rel =
     transform_variadic_list(partial_eos_list{}, apply_to_partial{});
-  // create combined list
-  constexpr auto combined_list =
-    singularity::detail::concat(full_eos_list{}, shifted_or_scaled,
-				shifted_and_scaled, unit_or_rel);
-  // a function that returns a Variand from a typelist
-  template <typename ... Ts>
-  constexpr auto tl_to_Variant(tl<Ts...>) {
-    return Variant<Ts...>{};
-  }
-  // create the alias
-  using EOS = decltype(tl_to_Variant(combined_list));
+// create combined list
+constexpr auto combined_list = singularity::detail::concat(
+    full_eos_list{}, shifted_or_scaled, shifted_and_scaled, unit_or_rel);
+// a function that returns a Variand from a typelist
+template <typename... Ts>
+constexpr auto tl_to_Variant(tl<Ts...>) {
+  return Variant<Ts...>{};
+}
+// create the alias
+using EOS = decltype(tl_to_Variant(combined_list));
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_EOS_HPP_
