@@ -242,7 +242,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       EOS ig = IdealGas(gm1, Cv);
       EOS igsh = ScaledEOS<IdealGas>(IdealGas(gm1, Cv), 1.0);
       EOS igsc = ShiftedEOS<IdealGas>(IdealGas(gm1, Cv), 0.0);
-      auto igra = SAPRampEOS<IdealGas>(IdealGas(gm1, Cv), 1.e9, 1.0, 1.0, 1.0);
+      auto igra = SAPRampEOS<IdealGas>(IdealGas(gm1, Cv), 1.e9, 1.0, 2.0, 1.0);
       THEN("The modified EOS should produce equivalent results") {
         compare_two_eoss(igsh, ig);
         compare_two_eoss(igsc, ig);
