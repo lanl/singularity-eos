@@ -32,9 +32,9 @@
 
 using singularity::EOS;
 using singularity::IdealGas;
+using singularity::SAPRampEOS;
 using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
-using singularity::SAPRampEOS;
 
 #ifdef SPINER_USE_HDF
 using singularity::SpinerEOSDependsRhoSie;
@@ -81,8 +81,8 @@ inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN
   }
 }
 
-template<typename E1, typename E2>
-inline void compare_two_eoss(E1&& test_e, E2&& ref_e) {
+template <typename E1, typename E2>
+inline void compare_two_eoss(E1 &&test_e, E2 &&ref_e) {
   // compare all individual member functions with 1 as inputs,
   // this function is meant to catch mis-implementations of
   // modifiers that can be initialized in such a way as to
@@ -246,7 +246,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       THEN("The modified EOS should produce equivalent results") {
         compare_two_eoss(igsh, ig);
         compare_two_eoss(igsc, ig);
-	compare_two_eoss(igra, ig);
+        compare_two_eoss(igra, ig);
       }
     }
   }

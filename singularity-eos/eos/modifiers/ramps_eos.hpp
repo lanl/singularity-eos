@@ -36,14 +36,9 @@ template <typename T>
 class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
  public:
   // move semantics ensures dynamic memory comes along for the ride
-  SAPRampEOS(T &&t, const Real r0, const Real a, const Real b, const Real c) 
-  : t_(std::forward<T>(t)),
-    r0_(r0),
-    a_(a),
-    b_(b),
-    c_(c),
-    rmid_(r0*(a-b*c)/(a-b))
-  {
+  SAPRampEOS(T &&t, const Real r0, const Real a, const Real b, const Real c)
+      : t_(std::forward<T>(t)), r0_(r0), a_(a), b_(b), c_(c),
+        rmid_(r0 * (a - b * c) / (a - b)) {
     // add input parameter checks to ensure validity of the ramp
     assert(r0 >= 0.0);
     assert(a > 0.0);
@@ -57,9 +52,9 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
 
   PORTABLE_INLINE_FUNCTION
   Real get_ramp_pressure(Real rho) const {
-    const Real p_ramp {rho < r0_ ? 0.0                  :
-                       rho < rmid_ ? a_*(rho/r0_ - 1.0) :
-                                       b_*(rho/r0_ - c_)};
+    const Real p_ramp{rho < r0_     ? 0.0
+                      : rho < rmid_ ? a_ * (rho / r0_ - 1.0)
+                                    : b_ * (rho / r0_ - c_)};
     return p_ramp;
   }
 
@@ -77,9 +72,9 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const {
     // ramp pressure
-    const Real p_ramp {get_ramp_pressure(rho)};
+    const Real p_ramp{get_ramp_pressure(rho)};
     // pressure from eos
-    const Real p_eos {t_.PressureFromDensityInternalEnergy(rho, sie, lambda)};
+    const Real p_eos{t_.PressureFromDensityInternalEnergy(rho, sie, lambda)};
     // return max(p_ramp, p_eos)
     return p_eos < p_ramp ? p_ramp : p_eos;
   }
@@ -101,8 +96,8 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
-    const Real p_ramp {get_ramp_pressure(rho)};
-    const Real p_eos {t_.PressureFromDensityTemperature(rho, temperature, lambda)};
+    const Real p_ramp{get_ramp_pressure(rho)};
+    const Real p_eos{t_.PressureFromDensityTemperature(rho, temperature, lambda)};
     return p_eos < p_ramp ? p_ramp : p_eos;
   }
   PORTABLE_FUNCTION
@@ -132,10 +127,9 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
       // maybe switch case on preferred input and check for not output of the input
       // for now sie lookup is prioritized
       if (!(output & thermalqs::specific_internal_energy)) {
-	press = this->PressureFromDensityInternalEnergy(rho, energy, lambda);
-      }
-      else if (!(output & thermalqs::temperature)) {
-	press = this->PressureFromDensityTemperature(rho, temp, lambda);
+        press = this->PressureFromDensityInternalEnergy(rho, energy, lambda);
+      } else if (!(output & thermalqs::temperature)) {
+        press = this->PressureFromDensityTemperature(rho, temp, lambda);
       }
     }
     // call internal filleos
