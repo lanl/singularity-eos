@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -26,8 +26,11 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
+
+using namespace eos_base;
 
 // tag dispatch for constructors for UnitSystem
 namespace eos_units_init {
@@ -38,8 +41,29 @@ static struct LengthTimeUnitsInit {
 } // namespace eos_units_init
 
 template <typename T>
-class UnitSystem {
+class UnitSystem : public EosBase<UnitSystem<T>> {
  public:
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+
+  // TODO(JMM): The modifier EOS's should probably call the specific
+  // sub-functions of the class they modify so that they can leverage,
+  // e.g., an especially performant or special version of these
+  using EosBase<UnitSystem<T>>::TemperatureFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::InternalEnergyFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::PressureFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::SpecificHeatFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::BulkModulusFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::GruneisenParamFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::PTofRE;
+  using EosBase<UnitSystem<T>>::FillEos;
+
   // move semantics ensures dynamic memory comes along for the ride
   // TODO(JMM): Entropy unit needed?
   UnitSystem(T &&t, eos_units_init::ThermalUnitsInit, const Real rho_unit,
@@ -155,19 +179,6 @@ class UnitSystem {
   }
 
   PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
-    t_.PTofRE(rho * rho_unit_, sie * sie_unit_, lambda, press, temp, dpdr, dpde, dtdr,
-              dtde);
-    press *= inv_press_unit_;
-    temp *= inv_temp_unit_;
-    dpdr *= inv_dpdr_unit_;
-    dpde *= inv_dpde_unit_;
-    dtdr *= inv_dtdr_unit_;
-    dtde *= inv_dtde_unit_;
-  }
-
-  PORTABLE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
                const unsigned long output, Real *lambda = nullptr) const {
     // TODO(JMM): Is this general enough? Do I need more switches/scales?
@@ -206,6 +217,13 @@ class UnitSystem {
     bmod *= inv_bmod_unit_;
     dpde *= inv_dpde_unit_;
     dvdt *= inv_dvdt_unit_;
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
+    return inv_rho_unit_ * t_.MinimumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
+    return inv_temp_unit_ * t_.MinimumTemperature();
   }
 
   PORTABLE_INLINE_FUNCTION

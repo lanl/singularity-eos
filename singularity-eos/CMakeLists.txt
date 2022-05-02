@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------#
-# © 2021. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -27,6 +27,7 @@ set(EOS_HEADERS
 )
 
 set(EOS_SRCS
+<<<<<<< HEAD:singularity-eos/CMakeLists.txt
     eos/eos_spiner.cpp
     eos/eos_jwl.cpp
     eos/eos_builder.cpp

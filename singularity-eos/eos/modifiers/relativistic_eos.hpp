@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -26,12 +26,36 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
 
+using namespace eos_base;
+
 template <typename T>
-class RelativisticEOS {
+class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
  public:
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+
+  // TODO(JMM): The modifier EOS's should probably call the specific
+  // sub-functions of the class they modify so that they can leverage,
+  // e.g., an especially performant or special version of these
+  using EosBase<RelativisticEOS<T>>::TemperatureFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::InternalEnergyFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::PressureFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::SpecificHeatFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::BulkModulusFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::PTofRE;
+  using EosBase<RelativisticEOS<T>>::FillEos;
+
   // move semantics ensures dynamic memory comes along for the ride
   RelativisticEOS(T &&t, const Real cl)
       : t_(std::forward<T>(t)), cl_(cl) // speed of light, units arbitrary
@@ -109,6 +133,13 @@ class RelativisticEOS {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return t_.nlambda(); }
 
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
+    return t_.MinimumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
+    return t_.MinimumTemperature();
+  }
+
   PORTABLE_FUNCTION
   unsigned long PreferredInput() const { return t_.PreferredInput(); }
 
@@ -119,11 +150,6 @@ class RelativisticEOS {
     t_.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
   }
 
-  PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
-    t_.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr, dtde);
-  }
   PORTABLE_FUNCTION
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,

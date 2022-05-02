@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -26,12 +26,36 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
 
+using namespace eos_base;
+
 template <typename T>
-class ScaledEOS {
+class ScaledEOS : public EosBase<ScaledEOS<T>> {
  public:
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+
+  // TODO(JMM): The modifier EOS's should probably call the specific
+  // sub-functions of the class they modify so that they can leverage,
+  // e.g., an especially performant or special version of these
+  using EosBase<ScaledEOS<T>>::TemperatureFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::InternalEnergyFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::PressureFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::BulkModulusFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::PTofRE;
+  using EosBase<ScaledEOS<T>>::FillEos;
+
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
       : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {}
@@ -142,15 +166,11 @@ class ScaledEOS {
     sie = sie * scale_;
   }
 
-  PORTABLE_FUNCTION
-  void PTofRE(const Real rho, const Real sie, Real *lambda, Real &press, Real &temp,
-              Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const {
-    t_.PTofRE(scale_ * rho, inv_scale_ * sie, lambda, press, temp, dpdr, dpde, dtdr,
-              dtde);
-    dpdr = dpdr * scale_;
-    dtdr = dtdr * scale_;
-    dpde = dpde * inv_scale_;
-    dtde = dtde * inv_scale_;
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
+    return inv_scale_ * t_.MinimumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
+    return t_.MinimumTemperature();
   }
 
  private:
