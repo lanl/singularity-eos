@@ -1237,42 +1237,42 @@ using singularity::detail::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-  tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
+    tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
 #ifdef SPINER_USE_HDF
-     ,
-     SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
 #endif // SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
-     ,
-     EOSPAC
+       ,
+       EOSPAC
 #endif // SINGULARITY_USE_EOSPAC
-     >{};
+       >{};
 // eos's that get relativistic and unit system modifiers
 static constexpr const auto partial_eos_list =
-  tl<IdealGas
+    tl<IdealGas
 #ifdef SPINER_USE_HDF
-     ,
-     SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
 #endif // SPINER_USE_HDF
-     >{};
+       >{};
 // modifiers that get applied to all eos's
 static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
 // modifiers thet get applied to a subset of eos's
 static constexpr const auto apply_to_partial = al<UnitSystem, RelativisticEOS>{};
 // variadic list of eos's with shifted or scaled modifiers
 static constexpr const auto shifted_or_scaled =
-  transform_variadic_list(full_eos_list, apply_to_all);
+    transform_variadic_list(full_eos_list, apply_to_all);
 // variadic list of eos's with nested shifted and scaled modifiers
 static constexpr const auto shifted_and_scaled =
-  transform_variadic_list(shifted_or_scaled, apply_to_all);
+    transform_variadic_list(shifted_or_scaled, apply_to_all);
 // relativistic and unit system modifiers
 static constexpr const auto unit_or_rel =
-  transform_variadic_list(partial_eos_list, apply_to_partial);
+    transform_variadic_list(partial_eos_list, apply_to_partial);
 // create combined list
 static constexpr const auto combined_list = singularity::detail::concat(
-  full_eos_list, shifted_or_scaled, shifted_and_scaled, unit_or_rel);
+    full_eos_list, shifted_or_scaled, shifted_and_scaled, unit_or_rel);
 // a function that returns a Variant from a typelist
-template<typename ... Ts>
+template <typename... Ts>
 struct tl_to_Variant_struct {
   using vt = Variant<Ts...>;
 };
