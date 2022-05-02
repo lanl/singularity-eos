@@ -1236,7 +1236,7 @@ using al = singularity::detail::adapt_list<Ts...>;
 using singularity::detail::transform_variadic_list;
 
 // all eos's
-constexpr const auto full_eos_list =
+static constexpr const auto full_eos_list =
   tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
 #ifdef SPINER_USE_HDF
      ,
@@ -1248,7 +1248,7 @@ constexpr const auto full_eos_list =
 #endif // SINGULARITY_USE_EOSPAC
      >{};
 // eos's that get relativistic and unit system modifiers
-constexpr const auto partial_eos_list =
+static constexpr const auto partial_eos_list =
   tl<IdealGas
 #ifdef SPINER_USE_HDF
      ,
@@ -1256,20 +1256,20 @@ constexpr const auto partial_eos_list =
 #endif // SPINER_USE_HDF
      >{};
 // modifiers that get applied to all eos's
-  constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
+static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
 // modifiers thet get applied to a subset of eos's
-  constexpr const auto apply_to_partial = al<UnitSystem, RelativisticEOS>{};
+static constexpr const auto apply_to_partial = al<UnitSystem, RelativisticEOS>{};
 // variadic list of eos's with shifted or scaled modifiers
-constexpr const auto shifted_or_scaled =
+static constexpr const auto shifted_or_scaled =
   transform_variadic_list(full_eos_list, apply_to_all);
 // variadic list of eos's with nested shifted and scaled modifiers
-constexpr const auto shifted_and_scaled =
+static constexpr const auto shifted_and_scaled =
   transform_variadic_list(shifted_or_scaled, apply_to_all);
 // relativistic and unit system modifiers
-constexpr const auto unit_or_rel =
+static constexpr const auto unit_or_rel =
   transform_variadic_list(partial_eos_list, apply_to_partial);
 // create combined list
-constexpr auto combined_list = singularity::detail::concat(
+static constexpr const auto combined_list = singularity::detail::concat(
   full_eos_list, shifted_or_scaled, shifted_and_scaled, unit_or_rel);
 // a function that returns a Variant from a typelist
 template<typename ... Ts>
