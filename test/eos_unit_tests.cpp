@@ -248,11 +248,11 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
     constexpr Real sie = 0.5;
     WHEN("We construct a shifted, scaled IdealGas by hand") {
       IdealGas a = IdealGas(gm1, Cv);
-      ScaledEOS<IdealGas> b = ScaledEOS<IdealGas>(std::move(a), scale);
-      EOS eos = ShiftedEOS<ScaledEOS<IdealGas>>(std::move(b), shift);
+      ShiftedEOS<IdealGas> b = ShiftedEOS<IdealGas>(std::move(a), shift);
+      EOS eos = ScaledEOS<ShiftedEOS<IdealGas>>(std::move(b), scale);
       THEN("The shift and scale parameters pass through correctly") {
 
-        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.4);
+        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
     }
     WHEN("We use the EOSBuilder") {
@@ -267,7 +267,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
       EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
       THEN("The shift and scale parameters pass through correctly") {
-        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.4);
+        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
     }
     WHEN("We construct a non-modifying modifier") {
