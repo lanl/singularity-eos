@@ -27,6 +27,34 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 
+// typename demangler
+#ifdef __GNUG__
+#include <cstdlib>
+#include <memory>
+#include <cxxabi.h>
+
+std::string demangle(const char* name) {
+
+    int status = -4; // some arbitrary value to eliminate the compiler warning
+
+    // enable c++11 by passing the flag -std=c++11 to g++
+    std::unique_ptr<char, void(*)(void*)> res {
+        abi::__cxa_demangle(name, NULL, NULL, &status),
+        std::free
+    };
+
+    return (status==0) ? res.get() : name ;
+}
+
+#else
+
+// does nothing if not g++
+std::string demangle(const char* name) {
+    return name;
+}
+
+#endif
+
 #define CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
 
@@ -202,6 +230,12 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
     }
   }
 }
+
+SCENARIO("EOS Variant Type", "[Variant][EOS]") {
+  // print out the eos type
+  std::cout << demangle(typeid(EOS).name()) << std::endl;
+}
+
 
 SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
 
