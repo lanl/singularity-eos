@@ -1261,18 +1261,18 @@ static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
 static constexpr const auto apply_to_partial = al<UnitSystem, RelativisticEOS>{};
 // variadic list of eos's with shifted or scaled modifiers
 static constexpr const auto shifted =
-  transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
+    transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
 static constexpr const auto scaled =
-  transform_variadic_list(full_eos_list, al<ScaledEOS>{});
+    transform_variadic_list(full_eos_list, al<ScaledEOS>{});
 // variadic list of Scaled<Shifted<T>>'s
 static constexpr const auto scaled_of_shifted =
-  transform_variadic_list(shifted, al<ScaledEOS>{});
+    transform_variadic_list(shifted, al<ScaledEOS>{});
 // relativistic and unit system modifiers
 static constexpr const auto unit_or_rel =
     transform_variadic_list(partial_eos_list, apply_to_partial);
 // create combined list
 static constexpr const auto combined_list = singularity::detail::concat(
-  full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel);
+    full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel);
 // a function that returns a Variant from a typelist
 template <typename... Ts>
 struct tl_to_Variant_struct {
