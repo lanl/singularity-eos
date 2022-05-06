@@ -251,6 +251,11 @@ class EosBase {
            de; // Would it be better to skip the calculation of Te and return 1/cv?
     return;
   }
+
+  PORTABLE_INLINE_FUNCTION
+  Real RhoPmin(const Real temp) const {
+    return 0.0;
+  }
   // Specialzied vector version of PTofRE maybe more suited for EOSPAC
   // }
   // template<typename RealIndexer, typename LambdaIndexer>

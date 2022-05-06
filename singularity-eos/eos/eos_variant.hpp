@@ -224,6 +224,14 @@ class Variant {
         eos_);
   }
 
+  PORTABLE_INLINE_FUNCTION
+  Real RhoPmin(const Real temp) const {
+    return mpark::visit([&temp](const auto &eos) {
+      return eos.RhoPmin(temp);
+    },
+    eos_);
+  }
+
   /*
   Vector versions of the member functions run on the host but the scalar
   lookups will run on the device

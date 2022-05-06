@@ -198,6 +198,7 @@ SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
   other.dTdECold_ = Spiner::getOnDeviceDataBox(dTdECold_);
   other.dEdTCold_ = Spiner::getOnDeviceDataBox(dEdTCold_);
   other.lTColdCrit_ = Spiner::getOnDeviceDataBox(lTColdCrit_);
+  other.rho_at_pmin_ = Spiner::getOnDeviceDataBox(rho_at_pmin_);
   other.lRhoMin_ = lRhoMin_;
   other.lRhoMax_ = lRhoMax_;
   other.rhoMax_ = rhoMax_;
@@ -247,6 +248,7 @@ void SpinerEOSDependsRhoT::Finalize() {
   dEdTCold_.finalize();
   dTdECold_.finalize();
   lTColdCrit_.finalize();
+  rho_at_pmin_.finalize();
   memoryStatus_ = DataStatus::Deallocated;
 }
 
@@ -309,16 +311,18 @@ herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str, hid_t 
 
   // fill in minimum pressure as a function of temperature
   rho_at_pmin_.resize(numT_);
-  rho_at_pmin_.setRange(lTMin_, lTMax_);
+  //rho_at_pmin_.setRange(0, P_.range(0));
+  rho_at_pmin_.setRange(0, lTMin_, lTMax_, numT_);
   for (int i = 0; i < numT_; i++) {
-    pmin = std::numeric_limits<Real>::max();
-    jmax = -1;
+    Real pmin = std::numeric_limits<Real>::max();
+    int jmax = -1;
     for (int j = 0; j < numRho_; j++) {
       if (P_(j, i) < pmin) {
         pmin = P_(j,i);
         jmax = j;
       }
     }
+    if (jmax < 0) printf("Failed to find minimum pressure.  WTF!\n");
     rho_at_pmin_(i) = rho_(P_.range(1).x(jmax));
   }
 
@@ -702,8 +706,10 @@ void SpinerEOSDependsRhoT::ValuesAtReferenceState(Real &rho, Real &temp, Real &s
 }
 
 PORTABLE_FUNCTION
-Real RhoPmin(const Real temp) {
+Real SpinerEOSDependsRhoT::RhoPmin(const Real temp) const {
   const Real lT = lT_(temp);
+  if (lT <= lTMin_) return rho_at_pmin_(0);
+  if (lT >= lTMax_) return 0.0;
   return rho_at_pmin_.interpToReal(lT);
 }
 
