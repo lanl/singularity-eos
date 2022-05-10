@@ -46,9 +46,8 @@ before_script:
   BUILD_TYPE: "Release"
 
 .gpu: &gpu
-  DO_GPU: "true"
   SINGULARITY_USE_CUDA: "true"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cuda@11.4.2"
 
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"
@@ -151,7 +150,6 @@ before_script:
     - sed -i "1s;^;#%Module\n;" ${modName}
     - module use ${CI_PROJECT_DIR}/spack_env
     - module load loads # module load compiler, deps, etc.
-    # - if [ "$DO_GPU" = "true" ]; then module load cuda; fi
     - module list
     - mkdir -p build install
     - cd build
