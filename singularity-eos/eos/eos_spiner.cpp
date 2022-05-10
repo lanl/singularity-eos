@@ -311,14 +311,14 @@ herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str, hid_t 
 
   // fill in minimum pressure as a function of temperature
   rho_at_pmin_.resize(numT_);
-  //rho_at_pmin_.setRange(0, P_.range(0));
+  // rho_at_pmin_.setRange(0, P_.range(0));
   rho_at_pmin_.setRange(0, lTMin_, lTMax_, numT_);
   for (int i = 0; i < numT_; i++) {
     Real pmin = std::numeric_limits<Real>::max();
     int jmax = -1;
     for (int j = 0; j < numRho_; j++) {
       if (P_(j, i) < pmin) {
-        pmin = P_(j,i);
+        pmin = P_(j, i);
         jmax = j;
       }
     }
@@ -465,7 +465,7 @@ void SpinerEOSDependsRhoT::setlTColdCrit_() {
       Real lTupper = bMod_.range(0).x(ilast + 1);
       Real lTGuess = 0.5 * (lTlower + lTupper);
       auto status = regula_falsi(sieFunc, sieCold, lTGuess, lTlower, lTupper, ROOT_THRESH,
-                             ROOT_THRESH, lT, counts);
+                                 ROOT_THRESH, lT, counts);
       if (status != RootFinding1D::Status::SUCCESS) {
         lT = lTGuess;
       }
@@ -740,21 +740,24 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
   if (lT <= lTMin_) { // cold curve
     whereAmI = TableStatus::OffBottom;
     const callable_interp::interp PFunc(PCold_);
-    status = regula_falsi(PFunc, P, lRhoGuess,
-                      // lRhoMin_, lRhoMax_,
-                      lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
+    status =
+        regula_falsi(PFunc, P, lRhoGuess,
+                     // lRhoMin_, lRhoMax_,
+                     lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
   } else if (lT >= lTMax_) { // ideal gas
     whereAmI = TableStatus::OffTop;
     const callable_interp::prod_interp_1d PFunc(gm1Max_, dEdTMax_, lT);
-    status = regula_falsi(PFunc, P, lRhoGuess,
-                      // lRhoMin_, lRhoMax_,
-                      lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
+    status =
+        regula_falsi(PFunc, P, lRhoGuess,
+                     // lRhoMin_, lRhoMax_,
+                     lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
   } else { // on table
     whereAmI = TableStatus::OnTable;
     const callable_interp::l_interp PFunc(P_, lT);
-    status = regula_falsi(PFunc, P, lRhoGuess,
-                      // lRhoMin_, lRhoMax_,
-                      lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
+    status =
+        regula_falsi(PFunc, P, lRhoGuess,
+                     // lRhoMin_, lRhoMax_,
+                     lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
   }
   if (status_ != RootFinding1D::Status::SUCCESS) {
 #if EPINER_EOS_VERBOSE
@@ -804,8 +807,8 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
       lTGuess = lambda[Lambda::lT];
     }
     const callable_interp::r_interp sieFunc(sie_, lRho);
-    status = regula_falsi(sieFunc, sie, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH, lT,
-                      counts);
+    status = regula_falsi(sieFunc, sie, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
+                          lT, counts);
 
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
@@ -856,8 +859,8 @@ Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
       lTGuess = 0.5 * (lTMin_ + lTMax_);
     }
     const callable_interp::r_interp PFunc(P_, lRho);
-    status = regula_falsi(PFunc, press, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH, lT,
-                      counts);
+    status = regula_falsi(PFunc, press, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
+                          lT, counts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
@@ -1411,7 +1414,8 @@ Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
       lRhoGuess = *lambda;
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
-    status_ = regula_falsi(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, EPS, EPS, lRho, counts);
+    status_ =
+        regula_falsi(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, EPS, EPS, lRho, counts);
 
     if (status_ != RootFinding1D::Status::SUCCESS) {
 #if EPINER_EOS_VERBOSE

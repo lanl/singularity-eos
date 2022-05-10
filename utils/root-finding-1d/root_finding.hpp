@@ -144,14 +144,12 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
 
 // solves for f(x,params) - ytarget = 0
 template <typename T>
-PORTABLE_INLINE_FUNCTION
-Status regula_falsi(const T &f, const Real ytarget, const Real guess, Real a, Real b,
-                    const Real xtol, const Real ytol, Real &xroot,
-                    const RootCounts &counts) {
+PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
+                                             const Real guess, Real a, Real b,
+                                             const Real xtol, const Real ytol,
+                                             Real &xroot, const RootCounts &counts) {
   constexpr int max_iter = 100;
-  auto func = [&](const Real x) {
-    return f(x) - ytarget;
-  };
+  auto func = [&](const Real x) { return f(x) - ytarget; };
   Real ya = func(a);
   Real yg = func(guess);
   Real yb;
@@ -179,9 +177,8 @@ Status regula_falsi(const T &f, const Real ytarget, const Real guess, Real a, Re
   int b1 = 0;
   int b2 = 0;
   int iteration_count = 0;
-  while (b - a > 2.0 * xtol &&
-         (std::abs(ya) > ytol || std::abs(yb) > ytol) &&
-        iteration_count < max_iter) {
+  while (b - a > 2.0 * xtol && (std::abs(ya) > ytol || std::abs(yb) > ytol) &&
+         iteration_count < max_iter) {
     Real c = (a * yb - b * ya) / (yb - ya);
     // guard against roundoff because ya or yb is sufficiently close to zero
     if (c == a) {
@@ -212,7 +209,8 @@ Status regula_falsi(const T &f, const Real ytarget, const Real guess, Real a, Re
   }
   auto status = Status::SUCCESS;
   if (iteration_count == max_iter) {
-    printf("root finding reached the maximum number of iterations.  likely not converged");
+    printf(
+        "root finding reached the maximum number of iterations.  likely not converged");
     status = Status::FAIL;
   }
   if (iteration_count < counts.nBins()) {
@@ -220,9 +218,8 @@ Status regula_falsi(const T &f, const Real ytarget, const Real guess, Real a, Re
   } else {
     counts.increment(counts.more());
   }
-  xroot = 0.5*(a + b);
+  xroot = 0.5 * (a + b);
   return status;
-
 }
 
 template <typename T>

@@ -644,8 +644,8 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
     // Get log(sie)
     Real lE = e2le_(sie);
     const callable_interp::LogT lEFunc(lE_, Ye, lRho);
-    status = regula_falsi(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH, lT,
-                      counts);
+    status = regula_falsi(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
+                          lT, counts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if STELLAR_COLLAPSE_EOS_VERBOSE
       std::stringstream errorMessage;

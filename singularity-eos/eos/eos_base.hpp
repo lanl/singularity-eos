@@ -262,9 +262,7 @@ class EosBase {
   }
 
   PORTABLE_INLINE_FUNCTION
-  Real RhoPmin(const Real temp) const {
-    return 0.0;
-  }
+  Real RhoPmin(const Real temp) const { return 0.0; }
 
   // Specialzied vector version of PTofRE maybe more suited for EOSPAC
   // }

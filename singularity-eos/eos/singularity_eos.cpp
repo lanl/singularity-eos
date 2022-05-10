@@ -332,7 +332,8 @@ int get_sg_eos( // sizing information
   ScratchV<double> press_pte("PTE::scratch press", scratch_size, nmat_local);
   ScratchV<double> rho_pte("PTE::scratch rho", scratch_size, nmat_local);
   const int pte_solver_scratch_size = PTESolverRhoTRequiredScratch(nmat_local);
-  ScratchV<double> solver_scratch("PTE::scratch solver", scratch_size, pte_solver_scratch_size);
+  ScratchV<double> solver_scratch("PTE::scratch solver", scratch_size,
+                                  pte_solver_scratch_size);
   // ScratchV<EOS> eos_pte("PTE::scratch eos", scratch_size, nmat);
 
   Kokkos::View<int, MemoryTraits<at_int>> res("PTE::num fails");
@@ -529,21 +530,19 @@ int get_sg_eos( // sizing information
         struct EOSAccessor_ {
           PORTABLE_INLINE_FUNCTION
           EOSAccessor_(const Kokkos::View<EOS *, Llft> &eos_v, int *mats)
-            : eos_v_(eos_v), mats_(mats) {}
+              : eos_v_(eos_v), mats_(mats) {}
           PORTABLE_INLINE_FUNCTION
-          EOS &operator[] (const int m) const {
-            return eos_v_(mats_[m]);
-          }
+          EOS &operator[](const int m) const { return eos_v_(mats_[m]); }
           Kokkos::View<EOS *, Llft> eos_v_;
           int *mats_;
         };
         EOSAccessor_ eos_inx(eos_v, &pte_mats(tid, 0));
-        PTESolverRhoT<EOSAccessor_, Real *, Real **>
-          method(npte, eos_inx, vfrac_tot, sie_tot, &rho_pte(tid, 0), &vfrac_pte(tid, 0),
-                 &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), lambda_map,
-                 &solver_scratch(tid, 0));
+        PTESolverRhoT<EOSAccessor_, Real *, Real **> method(
+            npte, eos_inx, vfrac_tot, sie_tot, &rho_pte(tid, 0), &vfrac_pte(tid, 0),
+            &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), lambda_map,
+            &solver_scratch(tid, 0));
         const bool res_{PTESolver(method)};
-        //const bool res_{pte_closure_josh_offset(
+        // const bool res_{pte_closure_josh_offset(
         //    npte, eos_v.data(), vfrac_tot, sie_tot, &pte_mats(tid, 0), &rho_pte(tid, 0),
         //    &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0),
         //    lambda_map)};

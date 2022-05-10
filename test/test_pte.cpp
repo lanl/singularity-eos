@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
 
           int niter = 0;
           bool success = pte_closure_josh2(NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp,
-                                          press, lambda, niter);
+                                           press, lambda, niter);
           if (success) {
             nsuccess_d() += 1;
           }
