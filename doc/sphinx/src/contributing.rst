@@ -65,10 +65,11 @@ for :math:`\lg` is just
 
    2 (m - 1) + e
 
-for the mantissa and exponent extracted via ``frexp``. The absolute
-error of this approximation is about 0.1 at its largest, which
-translates to a relative error of at most 25 percent. This error is
-acceptable, for the reasoning stated above.
+for the mantissa and exponent extracted via ``frexp``. This differs
+from :math:`lg` by a maximum of about 0.1, which translates to at most
+a 25 percent difference. As discussed above, however, the function
+itself is an exact representation of itself and the difference from
+:math:`lg` is acceptable.
 
 To invert, we use the built in function that inverts ``frexp``,
 ``ldexp``, which combines the mantissa and exponent into the original

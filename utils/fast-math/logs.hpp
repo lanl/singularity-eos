@@ -14,6 +14,7 @@
 
 #ifndef _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
 #define _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
+#include <cassert>
 #include <cmath>
 #include <ports-of-call/portability.hpp>
 
@@ -57,49 +58,87 @@
  * 2*(mantissa - 1) + exponent
  *
  * Which is a continuous, invertible function that approximates lg
- * only relatively accurately. The absolute error of this
- * approximation is about 0.1 at its largest. This translates to a
- * relative error of at most 25%.
+ * only relatively accurately. The absolute difference of this
+ * function from lg is about 0.1 at its largest. This translates to a
+ * relative difference of at most 25%.
  *
- * However, we don't mind this error, as we're only interested in
+ * However, we don't mind this difference, as we're only interested in
  * generating a grid spacing "close enough" to log spacing. As long as
  * we can go into and out of "grid space" reliably and quickly, we're
- * happy.
+ * happy, and this function is an EXACT map into and out of that
+ * space.
  */
 
 namespace singularity {
 namespace FastMath {
 
 PORTABLE_FORCEINLINE_FUNCTION
+double fastlg(const double x) {
+  int n;
+  assert(x > 0 && "log divergent for x <= 0");
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+  // double precision is default
+  const double y = frexp(x, &n);
+#else
+  // faster but less accurate
+  const float y = frexpf((float)x, &n);
+#endif // SINGULARITY_USE_SINGLE_LOGS
+  return 2 * (y - 1) + n;
+}
+
+PORTABLE_FORCEINLINE_FUNCTION
+double fastpow2(const double x) {
+
+  const int flr = std::floor(x);
+  const double remainder = x - flr;
+  const double mantissa = 0.5 * (remainder + 1);
+  const double exponent = flr + 1;
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+  // double precision is default
+  return ldexp(mantissa, exponent);
+#else
+  // Faster but less accurate
+  return ldexpf((float)mantissa, exponent);
+#endif // SINGULARITY_USE_SINGLE_LOGS
+}
+
+PORTABLE_FORCEINLINE_FUNCTION
 double lg(const double x) {
 
-  int n;
-#ifndef SINGULARITY_USE_SINGLE_LOGS
-  const double y = frexp(x, &n); // default is double precision
-#else
-  const float y = frexpf((float)x, &n); // faster but less accurate
-#endif // SINGULARITY_USE_SINGLE_LOGS
+  assert(x > 0 && "log divergent for x <= 0");
 
-  return 2 * (y - 1) + n;
+#ifndef SINGULARITY_USE_TRUE_LOG_GRIDDING
+  // Default expression
+  return fastlg(x);
+#else
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+  // double precision is default
+  return std::log2(x);
+#else
+  return std::log2f(x);
+#endif // SINGULARITY_USE_SINGLE_LOGS
+#endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
+}
+
+PORTABLE_FORCEINLINE_FUNCTION
+double pow2(const double x) {
+#ifndef SINGULARITY_USE_TRUE_LOG_GRIDDING
+  // Default expression
+  return fastpow2(x);
+#else
+#ifndef SINGULARITY_USE_SINGLE_LOGS
+  // double precision is default
+  return std::exp2(x);
+#else
+  return std::exp2f(x);
+#endif // SINGULARITY_USE_SINGLE_LOGS
+#endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
 double log10(const double x) {
   constexpr double LOG2OLOG10 = 0.301029995663981195;
   return LOG2OLOG10 * lg(x);
-}
-
-PORTABLE_FORCEINLINE_FUNCTION
-double pow2(const double x) {
-  const int flr = std::floor(x);
-  const double remainder = x - flr;
-  const double mantissa = 0.5 * (remainder + 1);
-  const double exponent = flr + 1;
-#ifndef SINGULARITY_USE_SINGLE_LOGS
-  return ldexp(mantissa, exponent);
-#else
-  return ldexpf(mantissa, exponent);
-#endif // SINGULARITY_USE_SINGLE_LOGS
 }
 
 PORTABLE_FORCEINLINE_FUNCTION

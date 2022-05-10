@@ -27,6 +27,30 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 
+// typename demangler
+#ifdef __GNUG__
+#include <cstdlib>
+#include <cxxabi.h>
+#include <memory>
+
+std::string demangle(const char *name) {
+
+  int status = -4; // some arbitrary value to eliminate the compiler warning
+
+  // enable c++11 by passing the flag -std=c++11 to g++
+  std::unique_ptr<char, void (*)(void *)> res{
+      abi::__cxa_demangle(name, NULL, NULL, &status), std::free};
+
+  return (status == 0) ? res.get() : name;
+}
+
+#else
+
+// does nothing if not g++
+std::string demangle(const char *name) { return name; }
+
+#endif
+
 #define CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
 
@@ -106,6 +130,8 @@ inline void compare_two_eoss(const EOS &test_e, const EOS &ref_e) {
                   ref_e.BulkModulusFromDensityTemperature(1, 1), 1.e-15));
   REQUIRE(isClose(test_e.GruneisenParamFromDensityTemperature(1, 1),
                   ref_e.GruneisenParamFromDensityTemperature(1, 1), 1.e-15));
+  REQUIRE(isClose(test_e.MinimumDensity(), ref_e.MinimumDensity(), 1.e-15));
+  REQUIRE(isClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15));
   return;
 }
 
@@ -201,6 +227,11 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
   }
 }
 
+SCENARIO("EOS Variant Type", "[Variant][EOS]") {
+  // print out the eos type
+  std::cout << demangle(typeid(EOS).name()) << std::endl;
+}
+
 SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
 
   GIVEN("Parameters for a shifted and scaled ideal gas") {
@@ -212,11 +243,11 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
     constexpr Real sie = 0.5;
     WHEN("We construct a shifted, scaled IdealGas by hand") {
       IdealGas a = IdealGas(gm1, Cv);
-      ScaledEOS<IdealGas> b = ScaledEOS<IdealGas>(std::move(a), scale);
-      EOS eos = ShiftedEOS<ScaledEOS<IdealGas>>(std::move(b), shift);
+      ShiftedEOS<IdealGas> b = ShiftedEOS<IdealGas>(std::move(a), shift);
+      EOS eos = ScaledEOS<ShiftedEOS<IdealGas>>(std::move(b), scale);
       THEN("The shift and scale parameters pass through correctly") {
 
-        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.4);
+        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
     }
     WHEN("We use the EOSBuilder") {
@@ -231,7 +262,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
       EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
       THEN("The shift and scale parameters pass through correctly") {
-        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.4);
+        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
     }
     WHEN("We construct a non-modifying modifier") {

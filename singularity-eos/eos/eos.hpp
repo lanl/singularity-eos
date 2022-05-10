@@ -38,6 +38,7 @@
 
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
 #include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
 #include <singularity-eos/eos/modifiers/scaled_eos.hpp>
@@ -411,6 +412,22 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };
   };
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<SpinerEOSDependsRhoT>::TemperatureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::InternalEnergyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::PTofRE;
+  using EosBase<SpinerEOSDependsRhoT>::FillEos;
 
   SpinerEOSDependsRhoT(const std::string &filename, int matid,
                        bool reproduciblity_mode = false);
@@ -465,6 +482,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   PORTABLE_FUNCTION
   Real RhoPmin(const Real temp) const;
+
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT)
@@ -486,6 +504,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
            materialName_);
     return;
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
   static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }
   inline TableStatus tableStatus() const { return whereAmI_; }
@@ -611,6 +631,23 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   struct SP5Tables {
     Spiner::DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
   };
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<SpinerEOSDependsRhoSie>::TemperatureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::InternalEnergyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::PTofRE;
+  using EosBase<SpinerEOSDependsRhoSie>::FillEos;
+
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
   SpinerEOSDependsRhoSie(const std::string &filename, int matid,
@@ -661,9 +698,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // Generic functions provided by the base class. These contain e.g. the vector
-  // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie)
+
   PORTABLE_FUNCTION
   unsigned long PreferredInput() const { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
@@ -678,6 +713,9 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   Real TMax() const { return fromLog_(T_.range(0).max(), lTOffset_); }
   Real sieMin() const { return fromLog_(sie_.range(0).min(), lEOffset_); }
   Real sieMax() const { return fromLog_(sie_.range(0).max(), lEOffset_); }
+
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
 
   static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
@@ -756,6 +794,23 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     enum Index { Ye = 0, lT = 1 };
   };
 
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<StellarCollapse>::TemperatureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
+  using EosBase<StellarCollapse>::PressureFromDensityTemperature;
+  using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
+  using EosBase<StellarCollapse>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::BulkModulusFromDensityTemperature;
+  using EosBase<StellarCollapse>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::GruneisenParamFromDensityTemperature;
+  using EosBase<StellarCollapse>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::PTofRE;
+  using EosBase<StellarCollapse>::FillEos;
+
   StellarCollapse(const std::string &filename, bool use_sp5 = false,
                   bool filter_bmod = true);
 
@@ -810,7 +865,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                               Real *lambda = nullptr) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(StellarCollapse)
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
   Real lRhoOffset() const { return lRhoOffset_; }
@@ -838,6 +892,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
            filename_, lRhoMin_, lRhoMax_, lTMin_, lTMax_, YeMin_, YeMax_);
     return;
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }
@@ -1043,9 +1099,23 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                 Real &press, Real &cv, Real &bmod,
                                                 Real &dpde, Real &dvdt,
                                                 Real *lambda = nullptr) const;
-  // Generic functions provided by the base class. These contain e.g. the vector
-  // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(EOSPAC)
+
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::InternalEnergyFromDensityTemperature;
+  using EosBase<EOSPAC>::PressureFromDensityTemperature;
+  using EosBase<EOSPAC>::PressureFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::SpecificHeatFromDensityTemperature;
+  using EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::BulkModulusFromDensityTemperature;
+  using EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::GruneisenParamFromDensityTemperature;
+  using EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::PTofRE;
+  using EosBase<EOSPAC>::FillEos;
 
   // TODO (JHP): Change EOSPAC vector implementations to be more performant
   // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -1134,6 +1204,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("EOSPAC parameters:\nmatid = %s\n", matid_);
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
 
  private:
   static constexpr const unsigned long _preferred_input =
@@ -1156,43 +1228,72 @@ class EOSPAC : public EosBase<EOSPAC> {
   Real bmod_ref_ = 1;
   Real dpde_ref_ = 1;
   Real dvdt_ref_ = 1;
+  Real rho_min_ = 0;
+  Real temp_min_ = 0;
 };
 #endif // SINGULARITY_USE_EOSPAC
 
-using EOS = Variant<
-    IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts, ScaledEOS<IdealGas>,
-    ShiftedEOS<IdealGas>, ShiftedEOS<ScaledEOS<IdealGas>>,
-    ScaledEOS<ShiftedEOS<IdealGas>>, RelativisticEOS<IdealGas>, ScaledEOS<Gruneisen>,
-    ShiftedEOS<Gruneisen>, ScaledEOS<ShiftedEOS<Gruneisen>>, ScaledEOS<JWL>,
-    ShiftedEOS<JWL>, ScaledEOS<ShiftedEOS<JWL>>, ScaledEOS<DavisReactants>,
-    ShiftedEOS<DavisReactants>, ScaledEOS<ShiftedEOS<DavisReactants>>,
-    ScaledEOS<DavisProducts>, ShiftedEOS<DavisProducts>,
-    ScaledEOS<ShiftedEOS<DavisProducts>>, UnitSystem<IdealGas>
+// recreate variadic list
+template <typename... Ts>
+using tl = singularity::detail::type_list<Ts...>;
+
+template <template <typename> typename... Ts>
+using al = singularity::detail::adapt_list<Ts...>;
+
+// transform variadic list: applies modifiers to eos's
+using singularity::detail::transform_variadic_list;
+
+// all eos's
+static constexpr const auto full_eos_list =
+    tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
 #ifdef SPINER_USE_HDF
-    ,
-    SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, ScaledEOS<SpinerEOSDependsRhoT>,
-    ScaledEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<SpinerEOSDependsRhoT>,
-    ShiftedEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoT>>,
-    ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoSie>>,
-    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoT>>,
-    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoSie>>, RelativisticEOS<SpinerEOSDependsRhoT>,
-    RelativisticEOS<SpinerEOSDependsRhoSie>, UnitSystem<SpinerEOSDependsRhoT>,
-    UnitSystem<SpinerEOSDependsRhoSie>,
-    // TODO(JMM): Might need shifted + relativistic
-    // for StellarCollapse. Might not. Negative
-    // energies can throw off normalization of cs2 by
-    // enthalpy weirdly.
-    StellarCollapse, ScaledEOS<StellarCollapse>, ShiftedEOS<StellarCollapse>,
-    ShiftedEOS<ScaledEOS<StellarCollapse>>, RelativisticEOS<StellarCollapse>,
-    UnitSystem<StellarCollapse>
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
 #endif // SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
-    ,
-    EOSPAC, ScaledEOS<EOSPAC>, ShiftedEOS<EOSPAC>, ShiftedEOS<ScaledEOS<EOSPAC>>,
-    ScaledEOS<ShiftedEOS<EOSPAC>>
+       ,
+       EOSPAC
 #endif // SINGULARITY_USE_EOSPAC
-    >;
+       >{};
+// eos's that get relativistic and unit system modifiers
+static constexpr const auto partial_eos_list =
+    tl<IdealGas
+#ifdef SPINER_USE_HDF
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+#endif // SPINER_USE_HDF
+       >{};
+// modifiers that get applied to all eos's
+static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
+// modifiers thet get applied to a subset of eos's
+static constexpr const auto apply_to_partial = al<UnitSystem, RelativisticEOS>{};
+// variadic list of eos's with shifted or scaled modifiers
+static constexpr const auto shifted =
+    transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
+static constexpr const auto scaled =
+    transform_variadic_list(full_eos_list, al<ScaledEOS>{});
+// variadic list of Scaled<Shifted<T>>'s
+static constexpr const auto scaled_of_shifted =
+    transform_variadic_list(shifted, al<ScaledEOS>{});
+// relativistic and unit system modifiers
+static constexpr const auto unit_or_rel =
+    transform_variadic_list(partial_eos_list, apply_to_partial);
+// create combined list
+static constexpr const auto combined_list = singularity::detail::concat(
+    full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel);
+// a function that returns a Variant from a typelist
+template <typename... Ts>
+struct tl_to_Variant_struct {
+  using vt = Variant<Ts...>;
+};
 
+template <typename... Ts>
+constexpr auto tl_to_Variant(tl<Ts...>) {
+  return tl_to_Variant_struct<Ts...>{};
+}
+
+// create the alias
+using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_EOS_HPP_
