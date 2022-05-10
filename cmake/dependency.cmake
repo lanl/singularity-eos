@@ -45,6 +45,11 @@ macro(append_target_dependency targetlist deplist)
   )
   cmake_parse_arguments(dep "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
+  # this is just temporary
+  if(SINGULARITY_${dep_PKG}_INSTALL_DIR)
+    list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_${dep_PKG}_INSTALL_DIR}")
+  endif()
+
   if(NOT dep_SUBDIR)
     set(dep_SUBDIR ${PROJECT_SOURCE_DIR}/utils/${dep_PKG})
   endif()
