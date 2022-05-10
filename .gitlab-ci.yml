@@ -228,12 +228,9 @@ test_gnu_power9_gpu:
     <<: *power9
     <<: *gpu
 
-# TODO(JMM): This test doesn't work
-# and needs to be repaired.
 test_x86_volta_gpu:
   <<: *job_def
   extends: .test
-  allow_failure: true
   variables:    
     <<: *x86volta
     <<: *gpu
@@ -251,67 +248,3 @@ install_gnu_skylake_nofort:
   variables:
     <<: *skylake
     <<: *nofort
-
-# Temporary job that builds everything
-# for the x86-volta nodes from scratch
-test_x86_volta_gpu_temp:
-  stage: build_n_test
-  tags:
-    - darwin-slurm-shared
-  only:
-    refs:
-      - main
-      - merge_requests
-  variables:
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86"
-    SINGULARITY_USE_CUDA: "true"
-    SINGULARITY_USE_FORTRAN: "false"
-    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
-  script:
-    - echo "Starting script"
-    - unset SPACK_ROOT
-    - rm -rf spack ${HOME}/.spack
-    - echo "Spack Version:" ${XCAP_OSS_SPACK_REF}
-    - git clone https://github.com/spack/spack.git
-    - cd spack && git checkout ${XCAP_OSS_SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - export SPACK_ARCH=`./spack/bin/spack arch`
-    - echo ${SPACK_ARCH}
-    - export PLATFORM="${SPACK_ARCH%%-*}"
-    - echo ${PLATFORM}
-    - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
-    - module load cuda
-    - module load cmake
-    - module list
-    - spack compiler find
-    - spack external find
-    - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
-    - spack repo list
-    - spack install --only dependencies ${SINGULARITY_EOS_SPACK_SPEC}
-    - spack load kokkos-nvcc-wrapper kokkos kokkos-kernels eospac hdf5+hl py-h5py py-numpy
-    - mkdir -p bin && cd bin
-    - rm -rf ./*
-    - |
-      cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install \
-            -DSINGULARITY_USE_EOSPAC=ON \
-            -DSINGULARITY_USE_HDF5=ON \
-            -DSINGULARITY_BUILD_SESAME2SPINER=ON \
-            -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
-            -DSINGULARITY_BUILD_TESTS=ON \
-            -DSINGULARITY_TEST_SESAME=ON \
-            -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
-            -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_KOKKOSKERNELS=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_FORTRAN=${SINGULARITY_USE_FORTRAN:-OFF} \
-            ..
-    - make -j
-    - |
-      if [[ ${CI_JOB_NAME} =~ "install" ]];
-      then
-        make install;
-      else
-        ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat;
-        ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat;
-        make test;
-      fi
