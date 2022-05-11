@@ -125,8 +125,8 @@ bool solve_Ax_b_wscr(const int n, Real *a, Real *b, Real *scr) {
   // Eigen VERSION
   Eigen::Map<Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> A(a, n,
                                                                                      n);
-  Eigen::Map<Eigen::Vector<Real, Eigen::Dynamic>> B(b, n);
-  Eigen::Map<Eigen::Vector<Real, Eigen::Dynamic>> X(scr, n);
+  Eigen::Map<Eigen::VectorXd> B(b, n);
+  Eigen::Map<Eigen::VectorXd> X(scr, n);
   X = A.lu().solve(B);
   B = X;
 #endif // SINGULARITY_USE_KOKKOSKERNELS
@@ -214,6 +214,8 @@ class PTESolverBase {
     Real Tguess = 0.0;
     for (int m = 0; m < nmat; ++m)
       Tguess = std::max(Tguess, temp[m]);
+    // check for sanity.  basically checks that the input temperatures weren't garbage
+    assert(Tguess >= 0.0 && Tguess < 1.0e15);
     Tnorm = Tguess;
 
     // rhobar is a fixed quantity: the average density of
