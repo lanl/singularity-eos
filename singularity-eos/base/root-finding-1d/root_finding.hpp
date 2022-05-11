@@ -24,9 +24,9 @@
 
 // #include <iostream> // debug
 // #include <iomanip>
-#include <ports-of-call/portability.hpp>
 #include <assert.h>
 #include <math.h>
+#include <ports-of-call/portability.hpp>
 #include <stdio.h>
 
 #define SINGULARITY_ROOT_DEBUG (0)

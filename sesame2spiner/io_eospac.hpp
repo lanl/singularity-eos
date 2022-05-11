@@ -29,10 +29,10 @@
 #error "HDF5 must be enabled"
 #endif
 
+#include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
-#include <ports-of-call/portability.hpp>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 
