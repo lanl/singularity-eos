@@ -157,6 +157,9 @@ class PTESolverBase {
   PTESolverBase() = delete;
   PORTABLE_INLINE_FUNCTION int Nmat() const { return nmat; }
   PORTABLE_INLINE_FUNCTION int &Niter() { return niter; }
+  // Fixup is meant to be a hook for derived classes to provide arbitrary manipulations
+  // after each iteration of the Newton solver.  This version just renormalizes the
+  // volume fractions, which is useful to deal with roundoff error.
   PORTABLE_INLINE_FUNCTION
   virtual void Fixup() const {
     Real vsum = 0;
@@ -165,6 +168,8 @@ class PTESolverBase {
     for (int m = 0; m < nmat; ++m)
       vfrac[m] *= vfrac_total / vsum;
   }
+  // Finalize restores the temperatures, energies, and pressures to unscaled values from
+  // the internally scaled quantities used by the solvers
   PORTABLE_INLINE_FUNCTION
   void Finalize() {
     for (int m = 0; m < nmat; m++) {
@@ -173,7 +178,7 @@ class PTESolverBase {
       press[m] *= u_total;
     }
   }
-
+  // Solve the linear system for the update dx
   PORTABLE_INLINE_FUNCTION
   bool Solve() const {
     for (int m = 0; m < neq; m++)
@@ -199,6 +204,11 @@ class PTESolverBase {
     Cache = CacheAccessor(AssignIncrement(scratch, nmat * MAX_NUM_LAMBDAS));
   }
 
+  // Initialize the volume fractions, avg densities, temperatures, energies, and
+  // pressures of the materials.  Compute the total density and internal energy.
+  // Scale the energy densities u = rho sie and pressures with the total internal energy
+  // density.  This makes Sum(u(mat)) = 1.  Also scale the temperature with the initial
+  // guess, so all the initial, scaled material temperatures are = 1.
   PORTABLE_INLINE_FUNCTION
   void InitBase() {
     Real Tguess = 0.0;
@@ -214,8 +224,6 @@ class PTESolverBase {
       rho_total += rhobar[m];
     }
     u_total = rho_total * sie_total;
-
-    // printf("PTE start: %g %g\n", rho_total, utot);
 
     Real vsum = 0.0;
     // set volume fractions
@@ -239,8 +247,10 @@ class PTESolverBase {
     }
 
     for (int m = 0; m < nmat; m++) {
+      // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess);
+      // note the scaling of pressure
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
         press[m] =
@@ -252,6 +262,7 @@ class PTESolverBase {
       }
     }
 
+    // note the scaling of the material internal energy densities
     for (int m = 0; m < nmat; ++m)
       u[m] = sie[m] * rhobar[m] / u_total;
   }
@@ -267,6 +278,8 @@ class PTESolverBase {
   PORTABLE_FORCEINLINE_FUNCTION
   int MatIndex(const int &i, const int &j) const { return i * neq + j; }
 
+  // Compute the equilibrium pressure and temperature assuming an ideal EOS for each
+  // material.  Set Pideal and Tideal to the ***scaled*** solution.
   PORTABLE_INLINE_FUNCTION
   void GetIdealPTE(Real &Pideal, Real &Tideal) const {
     Real rhoBsum = 0.0;
@@ -281,6 +294,8 @@ class PTESolverBase {
     Pideal = Tideal * Asum / vfrac_total / u_total;
   }
 
+  // Compute the ideal EOS PTE solution and replace the initial guess if it has a lower
+  // residual.
   template <typename T>
   PORTABLE_INLINE_FUNCTION void TryIdealPTE(T *solver) {
     Real Pideal, Tideal;
@@ -441,6 +456,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     InitBase();
     Residual();
     TryIdealPTE(this);
+    // Set the current guess for the equilibrium temperature.  Note that this is already
+    // scaled, so really this could just be set to 1.
     Tequil = temp[0];
     return ResidualNorm();
   }
@@ -454,6 +471,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       esum += u[m];
     }
     residual[0] = vfrac_total - vsum;
+    // the 1 here is the scaled total internal energy density
     residual[1] = 1.0 - esum;
     for (int m = 0; m < nmat - 1; ++m) {
       residual[2 + m] = press[m + 1] - press[m];
@@ -546,12 +564,14 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real ScaleDx() const {
     using namespace mix_params;
     Real scale = 1.0;
+    // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
       if (scale * dx[m] < -vfrac_safety_fac * vfrac[m]) {
         scale = -vfrac_safety_fac * vfrac[m] / dx[m];
       }
     }
     const Real Tnew = Tequil + scale * dx[nmat];
+    // control how big of a step toward rho = rho(Pmin) is allowed
     for (int m = 0; m < nmat; m++) {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
@@ -560,6 +580,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
         scale = 0.5 * (alpha_max - vfrac[m]) / dx[m];
       }
     }
+    // control how big of a step toward T = 0 is allowed
     if (scale * dx[nmat] < -0.95 * Tequil) {
       scale = -0.95 * Tequil / dx[nmat];
     }
@@ -569,6 +590,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     return scale;
   }
 
+  // Update the solution and return new residual.  Possibly called repeatedly with
+  // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
   Real TestUpdate(const Real scale) {
     if (scale == 1.0) {
@@ -598,15 +621,6 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     }
     Residual();
     return ResidualNorm();
-  }
-
-  PORTABLE_INLINE_FUNCTION
-  void Finalize() {
-    for (int m = 0; m < nmat; m++) {
-      temp[m] *= Tnorm;
-      u[m] *= u_total;
-      press[m] *= u_total;
-    }
   }
 
  private:
@@ -691,6 +705,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       esum += u[m];
     }
     residual[0] = vfrac_total - vsum;
+    // the 1 here is the scaled total internal energy density
     residual[1] = 1.0 - esum;
     for (int m = 0; m < nmat - 1; ++m) {
       residual[2 + m] = press[m + 1] - press[m];
@@ -807,9 +822,11 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     using namespace mix_params;
     Real scale = 1.0;
     for (int m = 0; m < nmat; ++m) {
+      // control how big of a step toward vfrac = 0 is allowed
       if (scale * dx[m] < -0.1 * vfrac[m]) {
         scale = -0.1 * vfrac[m] / dx[m];
       }
+      // try to control steps toward T = 0
       const Real dt = (dtdv[m] * dx[m] + dtde[m] * dx[m + nmat]);
       if (scale * dt < -0.1 * temp[m]) {
         scale = -0.1 * temp[m] / dt;
@@ -818,6 +835,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * temp[m]), eos[m].RhoPmin(Tnorm * tt));
       const Real alpha_max = rhobar[m] / rho_min;
+      // control how big of a step toward rho = rho(Pmin) is allowed
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
         scale = 0.5 * (alpha_max - vfrac[m]) / dx[m];
       }
@@ -828,6 +846,8 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     return scale;
   }
 
+  // Update the solution and return new residual.  Possibly called repeatedly with
+  // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
   Real TestUpdate(const Real scale) const {
     if (scale == 1.0) {
@@ -914,7 +934,7 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
       }
     }
 
-    // renormalize volume fractions to deal with round-off
+    // apply fixes post update, e.g. renormalize volume fractions to deal with round-off
     s.Fixup();
 
     // check for the case where we have converged as much as precision allows
@@ -923,7 +943,11 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
       break;
     }
   }
+  // Call it converged even though CheckPTE never said it was because the residual is
+  // small.  Helps to avoid "failures" where things have actually converged as well as
+  // finite precision allows
   if (!converged && err < residual_tol) converged = true;
+  // undo any scaling that was applied internally for the solver
   s.Finalize();
   return converged;
 }
