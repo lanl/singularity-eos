@@ -75,12 +75,6 @@ bool check_nans(Real const *const a, const int n, const bool verbose = false) {
   return retval;
 }
 
-template <int n>
-PORTABLE_INLINE_FUNCTION bool solve_Ax_b(Real *a, Real *b) {
-  Real t_[n], w_[n];
-  return solve_Ax_b_wscr(n, a, b, t_, w_);
-}
-
 PORTABLE_INLINE_FUNCTION
 bool solve_Ax_b_wscr(const int n, Real *a, Real *b, Real *scr) {
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
@@ -189,10 +183,10 @@ class PTESolverBase {
 
  protected:
   PORTABLE_INLINE_FUNCTION
-  PTESolverBase(int nmats, int neqs, EOSIndexer &eos_, const Real vfrac_tot,
-                const Real sie_tot, RealIndexer &rho_, RealIndexer &vfrac_,
-                RealIndexer &sie_, RealIndexer &temp_, RealIndexer &press_,
-                Real *&scratch)
+  PTESolverBase(int nmats, int neqs, const EOSIndexer &eos_, const Real vfrac_tot,
+                const Real sie_tot, const RealIndexer &rho_, const RealIndexer &vfrac_,
+                const RealIndexer &sie_, const RealIndexer &temp_,
+                const RealIndexer &press_, Real *&scratch)
       : nmat(nmats), neq(neqs), niter(0), eos(eos_), vfrac_total(vfrac_tot),
         sie_total(sie_tot), rho(rho_), vfrac(vfrac_), sie(sie_), temp(temp_),
         press(press_) {
@@ -662,9 +656,9 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
-  PTESolverRhoU(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
-                Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
-                Lambda_t &&lambda, Real *scratch)
+  PTESolverRhoU(const int nmat, const EOS_t &&eos, const Real vfrac_tot,
+                const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
+                Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch)
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2 * nmat, eos, vfrac_tot,
                                                          sie_tot, rho, vfrac, sie, temp,
                                                          press, scratch) {

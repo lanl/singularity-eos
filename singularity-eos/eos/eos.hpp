@@ -483,9 +483,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_FUNCTION
   Real RhoPmin(const Real temp) const;
 
-  // Generic functions provided by the base class. These contain e.g. the vector
-  // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT)
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
   std::string materialName() const { return std::string(materialName_); }
