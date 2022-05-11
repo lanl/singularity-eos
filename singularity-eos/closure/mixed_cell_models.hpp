@@ -131,8 +131,8 @@ bool solve_Ax_b_wscr(const int n, Real *a, Real *b, Real *scr) {
   // Eigen VERSION
   Eigen::Map<Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> A(a, n,
                                                                                      n);
-  Eigen::Map<Eigen::Vector<Real, Eigen::Dynamic, 1>> B(b, n);
-  Eigen::Map<Eigen::Vector<Real, Eigen::Dynamic, 1>> X(scr, n);
+  Eigen::Map<Eigen::Vector<Real, Eigen::Dynamic>> B(b, n);
+  Eigen::Map<Eigen::Vector<Real, Eigen::Dynamic>> X(scr, n);
   X = A.lu().solve(B);
   B = X;
 #endif // SINGULARITY_USE_KOKKOSKERNELS
