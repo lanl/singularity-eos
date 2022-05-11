@@ -27,7 +27,7 @@ set(EOS_HEADERS
 )
 
 set(EOS_SRCS
-<<<<<<< HEAD:singularity-eos/CMakeLists.txt
+    eos/singularity-eos.cpp
     eos/eos_spiner.cpp
     eos/eos_jwl.cpp
     eos/eos_builder.cpp
