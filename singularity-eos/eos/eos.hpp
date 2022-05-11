@@ -38,6 +38,7 @@
 
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
 #include <singularity-eos/eos/modifiers/ramps_eos.hpp>
 #include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
@@ -1225,40 +1226,67 @@ class EOSPAC : public EosBase<EOSPAC> {
 };
 #endif // SINGULARITY_USE_EOSPAC
 
-using EOS = Variant<
-    IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts, ScaledEOS<IdealGas>,
-    ShiftedEOS<IdealGas>, ShiftedEOS<ScaledEOS<IdealGas>>,
-    ScaledEOS<ShiftedEOS<IdealGas>>, RelativisticEOS<IdealGas>, ScaledEOS<Gruneisen>,
-    ShiftedEOS<Gruneisen>, ScaledEOS<ShiftedEOS<Gruneisen>>, ScaledEOS<JWL>,
-    ShiftedEOS<JWL>, ScaledEOS<ShiftedEOS<JWL>>, ScaledEOS<DavisReactants>,
-    ShiftedEOS<DavisReactants>, ScaledEOS<ShiftedEOS<DavisReactants>>,
-    ScaledEOS<DavisProducts>, ShiftedEOS<DavisProducts>,
-    ScaledEOS<ShiftedEOS<DavisProducts>>, UnitSystem<IdealGas>
+// recreate variadic list
+template <typename... Ts>
+using tl = singularity::detail::type_list<Ts...>;
+
+template <template <typename> typename... Ts>
+using al = singularity::detail::adapt_list<Ts...>;
+
+// transform variadic list: applies modifiers to eos's
+using singularity::detail::transform_variadic_list;
+
+// all eos's
+static constexpr const auto full_eos_list =
+    tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
 #ifdef SPINER_USE_HDF
-    ,
-    SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, ScaledEOS<SpinerEOSDependsRhoT>,
-    ScaledEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<SpinerEOSDependsRhoT>,
-    ShiftedEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoT>>,
-    ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoSie>>,
-    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoT>>,
-    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoSie>>, RelativisticEOS<SpinerEOSDependsRhoT>,
-    RelativisticEOS<SpinerEOSDependsRhoSie>, UnitSystem<SpinerEOSDependsRhoT>,
-    UnitSystem<SpinerEOSDependsRhoSie>,
-    // TODO(JMM): Might need shifted + relativistic
-    // for StellarCollapse. Might not. Negative
-    // energies can throw off normalization of cs2 by
-    // enthalpy weirdly.
-    StellarCollapse, ScaledEOS<StellarCollapse>, ShiftedEOS<StellarCollapse>,
-    ShiftedEOS<ScaledEOS<StellarCollapse>>, RelativisticEOS<StellarCollapse>,
-    UnitSystem<StellarCollapse>
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
 #endif // SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
-    ,
-    EOSPAC, ScaledEOS<EOSPAC>, ShiftedEOS<EOSPAC>, ShiftedEOS<ScaledEOS<EOSPAC>>,
-    ScaledEOS<ShiftedEOS<EOSPAC>>
+       ,
+       EOSPAC
 #endif // SINGULARITY_USE_EOSPAC
-    >;
+       >{};
+// eos's that get relativistic and unit system modifiers
+static constexpr const auto partial_eos_list =
+    tl<IdealGas
+#ifdef SPINER_USE_HDF
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+#endif // SPINER_USE_HDF
+       >{};
+// modifiers that get applied to all eos's
+static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
+// modifiers thet get applied to a subset of eos's
+static constexpr const auto apply_to_partial = al<UnitSystem, RelativisticEOS>{};
+// variadic list of eos's with shifted or scaled modifiers
+static constexpr const auto shifted =
+    transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
+static constexpr const auto scaled =
+    transform_variadic_list(full_eos_list, al<ScaledEOS>{});
+// variadic list of Scaled<Shifted<T>>'s
+static constexpr const auto scaled_of_shifted =
+    transform_variadic_list(shifted, al<ScaledEOS>{});
+// relativistic and unit system modifiers
+static constexpr const auto unit_or_rel =
+    transform_variadic_list(partial_eos_list, apply_to_partial);
+// create combined list
+static constexpr const auto combined_list = singularity::detail::concat(
+    full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel);
+// a function that returns a Variant from a typelist
+template <typename... Ts>
+struct tl_to_Variant_struct {
+  using vt = Variant<Ts...>;
+};
 
+template <typename... Ts>
+constexpr auto tl_to_Variant(tl<Ts...>) {
+  return tl_to_Variant_struct<Ts...>{};
+}
+
+// create the alias
+using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_EOS_HPP_
