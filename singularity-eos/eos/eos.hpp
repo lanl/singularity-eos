@@ -38,6 +38,7 @@
 
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
 #include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
 #include <singularity-eos/eos/modifiers/scaled_eos.hpp>
@@ -125,6 +126,12 @@ class Gruneisen : public EosBase<Gruneisen> {
   Gruneisen() = default;
   PORTABLE_INLINE_FUNCTION
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
+            const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv,
+            const Real rho_max)
+      : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
+        _Cv(Cv), _rho_max(rho_max) {}
+  PORTABLE_INLINE_FUNCTION
+  Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
       : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
         _Cv(Cv) {}
@@ -176,9 +183,12 @@ class Gruneisen : public EosBase<Gruneisen> {
                                                               Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("Gruneisen"); }
+  PORTABLE_INLINE_FUNCTION
+  // Special to Gruneisen EOS: compute the maximum density for which the EOS is valid
+  Real GetRhoMax() const;
 
  private:
-  Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv;
+  Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max;
   // static constexpr const char _eos_type[] = {"Gruneisen"};
   PORTABLE_INLINE_FUNCTION
   Real Gamma(const Real rho) const;
@@ -514,10 +524,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
     // return std::log10(x + offset + EPS);
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
-    return std::pow(10., lx) - offset;
+    return FastMath::pow10(lx) - offset;
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   lRho_(const Real rho) const noexcept {
@@ -731,10 +741,10 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
   static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
-    return std::pow(10., lx) - offset;
+    return FastMath::pow10(lx) - offset;
   }
   PORTABLE_FUNCTION
   Real interpRhoT_(const Real rho, const Real T, const Spiner::DataBox &db,
@@ -854,6 +864,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
   Real lRhoOffset() const { return lRhoOffset_; }
@@ -916,12 +928,14 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) Real
   toLog_(const Real x, const Real offset) const noexcept {
-    // return std::log10(x + offset + EPS);
-    // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    // StellarCollapse can't use fast logs, unless we re-grid onto the
+    // "fast log grid"
+    return std::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   fromLog_(const Real lx, const Real offset) const noexcept {
+    // StellarCollapse can't use fast logs, unless we re-grid onto the
+    // "fast log grid"
     return std::pow(10., lx) - offset;
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
@@ -1220,40 +1234,67 @@ class EOSPAC : public EosBase<EOSPAC> {
 };
 #endif // SINGULARITY_USE_EOSPAC
 
-using EOS = Variant<
-    IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts, ScaledEOS<IdealGas>,
-    ShiftedEOS<IdealGas>, ShiftedEOS<ScaledEOS<IdealGas>>,
-    ScaledEOS<ShiftedEOS<IdealGas>>, RelativisticEOS<IdealGas>, ScaledEOS<Gruneisen>,
-    ShiftedEOS<Gruneisen>, ScaledEOS<ShiftedEOS<Gruneisen>>, ScaledEOS<JWL>,
-    ShiftedEOS<JWL>, ScaledEOS<ShiftedEOS<JWL>>, ScaledEOS<DavisReactants>,
-    ShiftedEOS<DavisReactants>, ScaledEOS<ShiftedEOS<DavisReactants>>,
-    ScaledEOS<DavisProducts>, ShiftedEOS<DavisProducts>,
-    ScaledEOS<ShiftedEOS<DavisProducts>>, UnitSystem<IdealGas>
+// recreate variadic list
+template <typename... Ts>
+using tl = singularity::detail::type_list<Ts...>;
+
+template <template <typename> typename... Ts>
+using al = singularity::detail::adapt_list<Ts...>;
+
+// transform variadic list: applies modifiers to eos's
+using singularity::detail::transform_variadic_list;
+
+// all eos's
+static constexpr const auto full_eos_list =
+    tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
 #ifdef SPINER_USE_HDF
-    ,
-    SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, ScaledEOS<SpinerEOSDependsRhoT>,
-    ScaledEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<SpinerEOSDependsRhoT>,
-    ShiftedEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoT>>,
-    ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoSie>>,
-    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoT>>,
-    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoSie>>, RelativisticEOS<SpinerEOSDependsRhoT>,
-    RelativisticEOS<SpinerEOSDependsRhoSie>, UnitSystem<SpinerEOSDependsRhoT>,
-    UnitSystem<SpinerEOSDependsRhoSie>,
-    // TODO(JMM): Might need shifted + relativistic
-    // for StellarCollapse. Might not. Negative
-    // energies can throw off normalization of cs2 by
-    // enthalpy weirdly.
-    StellarCollapse, ScaledEOS<StellarCollapse>, ShiftedEOS<StellarCollapse>,
-    ShiftedEOS<ScaledEOS<StellarCollapse>>, RelativisticEOS<StellarCollapse>,
-    UnitSystem<StellarCollapse>
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
 #endif // SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
-    ,
-    EOSPAC, ScaledEOS<EOSPAC>, ShiftedEOS<EOSPAC>, ShiftedEOS<ScaledEOS<EOSPAC>>,
-    ScaledEOS<ShiftedEOS<EOSPAC>>
+       ,
+       EOSPAC
 #endif // SINGULARITY_USE_EOSPAC
-    >;
+       >{};
+// eos's that get relativistic and unit system modifiers
+static constexpr const auto partial_eos_list =
+    tl<IdealGas
+#ifdef SPINER_USE_HDF
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+#endif // SPINER_USE_HDF
+       >{};
+// modifiers that get applied to all eos's
+static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
+// modifiers thet get applied to a subset of eos's
+static constexpr const auto apply_to_partial = al<UnitSystem, RelativisticEOS>{};
+// variadic list of eos's with shifted or scaled modifiers
+static constexpr const auto shifted =
+    transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
+static constexpr const auto scaled =
+    transform_variadic_list(full_eos_list, al<ScaledEOS>{});
+// variadic list of Scaled<Shifted<T>>'s
+static constexpr const auto scaled_of_shifted =
+    transform_variadic_list(shifted, al<ScaledEOS>{});
+// relativistic and unit system modifiers
+static constexpr const auto unit_or_rel =
+    transform_variadic_list(partial_eos_list, apply_to_partial);
+// create combined list
+static constexpr const auto combined_list = singularity::detail::concat(
+    full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel);
+// a function that returns a Variant from a typelist
+template <typename... Ts>
+struct tl_to_Variant_struct {
+  using vt = Variant<Ts...>;
+};
 
+template <typename... Ts>
+constexpr auto tl_to_Variant(tl<Ts...>) {
+  return tl_to_Variant_struct<Ts...>{};
+}
+
+// create the alias
+using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_EOS_HPP_
