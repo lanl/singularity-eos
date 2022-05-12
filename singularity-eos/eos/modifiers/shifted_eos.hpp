@@ -171,4 +171,4 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
 
 } // namespace singularity
 
-#endif _SINGULARITY_EOS_EOS_SHIFTED_EOS_
+#endif // _SINGULARITY_EOS_EOS_SHIFTED_EOS_
