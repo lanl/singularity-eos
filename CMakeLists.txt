@@ -60,6 +60,17 @@ execute_process(COMMAND patch -N -s -V never
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
 )
 
+# keep config data stored in easily accessable vars,
+# only attaching them to targets as late as possible.
+# this allows for easier handling and manipulating, as
+# well as later info printing and debugging
+set(TAR_PUBLIC_DEFINES "")  # list to `target_compile_definitions()`
+set(TAR_PRIVATE_DEFINES "") # """
+set(TAR_PUBLIC_LIB "")      # list to `target_link_libraries()`
+set(TAR_PRIVATE_LIB "")     # """
+set(TAR_COMPILEFLAGS "")    # TODO: actually use these
+set(TAR_LIB_DEPS "")        # a list of packages, used to generate import rules for installed targets. (may want to rename)
+
 #------------------------------------------------------------------------------#
 # Compiler & language setup
 #------------------------------------------------------------------------------#
@@ -112,25 +123,7 @@ endif()
 # Process some options
 #------------------------------------------------------------------------------#
 
-#TODO: process. i want to try to 'reduce' some of the boolean logic of before
-# to single T/F vars, e.g.
-#   before:
-#     if(SINGULARITY_BUILD_SESAME2SPINER)
-#       if(SINGULARITY_USE_EOSPAC)
-#         if(SINGULARITY_USE_HDF5)
-#           add_subdirectory(${PROJECT_SOURCE_DIR}/sesame2spiner)
-#   after:
-#   # in this section
-#     if(...) ...
-#       list(APPEND _subdirs2add sesame2spiner)
-#     ...
-#   # later...
-#     foreach(_sdir ${_subdirs2add})
-#       add_subdirectory(${_sdir})
-#     endforeach()
-# this way, we can decouple the input processing from the configuration 
-# execution. 
-
+# side-projects
 if(SINGULARITY_USE_HDF5)
   if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
     list(APPEND _subdirs2add stellarcollapse2spiner)
@@ -143,22 +136,25 @@ if(SINGULARITY_USE_HDF5)
   endif()
 endif()
 
+# fmath options
+set(SINGULARITY_USE_FMATH_ORDERS 7 5 4 0)
+if(NOT SINGULARITY_USE_FMATH_ORDER)
+    list(GET SINGULARITY_USE_FMATH_ORDERS 0 SINGULARITY_USE_FMATH_ORDER)
+endif()
+
+set(SINGULARITY_USE_FMATH_ORDER "${SINGULARITY_USE_FMATH_ORDER}" CACHE STRING "order interpolant for fast logs. Default is 7th order")
+set_property(CACHE SINGULARITY_USE_FMATH_ORDER PROPERTY STRINGS ${SINGULARITY_FMATH_ORDERS})
+list(APPEND TAR_PRIVATE_DEFINES SINGULARITY_USE_FMATH_ORDER=${SINGULARITY_USE_FMATH_ORDER})
+
+if (SINGULARITY_USE_SINGLE_LOGS)
+  list(APPEND TAR_DEFINES SINGULARITY_USE_SINGLE_LOGS)
+endif()
+
 #------------------------------------------------------------------------------#
 # Handle dependencies
 #------------------------------------------------------------------------------#
 
 include(cmake/dependency.cmake)
-
-# keep config data stored in easily accessable vars,
-# only attaching them to targets as late as possible.
-# this allows for easier handling and manipulating, as
-# well as later info printing and debugging
-set(TAR_PUBLIC_DEFINES "")  # list to `target_compile_definitions()`
-set(TAR_PRIVATE_DEFINES "") # """
-set(TAR_PUBLIC_LIB "")      # list to `target_link_libraries()`
-set(TAR_PRIVATE_LIB "")     # """
-set(TAR_COMPILEFLAGS "")    # TODO: actually use these
-set(TAR_LIB_DEPS "")        # a list of packages, used to generate import rules for installed targets. (may want to rename)
 
 if(SINGULARITY_USE_KOKKOS)
   list(APPEND TAR_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
@@ -339,35 +335,9 @@ if (SINGULARITY_USE_EOSPAC)
     SINGULARITY_USE_EOSPAC)
 endif ()
 
-# fast math
-if (SINGULARITY_USE_SINGLE_LOGS)
-  target_compile_definitions(singularity-eos PRIVATE
-      SINGULARITY_USE_SINGLE_LOGS)
-endif()
-if (SINGULARITY_FMATH_USE_ORDER_4 AND SINGULARITY_FMATH_USE_ORDER_5)
-  message(FATAL_ERROR "Order 4 and order 5 interpolation both specified. Please specify only one or zero. If no specification is made, order 7 will be used.")
-endif()
-if (SINGULARITY_FMATH_USE_ORDER_4)
-  target_compile_definitions(singularity-eos PRIVATE
-    SINGULARITY_FMATH_USE_ORDER_4)
-endif()
-if (SINGULARITY_FMATH_USE_ORDER_5)
-  target_compile_definitions(singularity-eos PRIVATE
-    SINGULAIRTY_FMATH_USE_ORDER_5)
-endif()
-
-if (SINGULARITY_USE_HDF5)
-  if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
-    add_subdirectory(stellarcollapse2spiner)
-  endif()
-  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
-    add_subdirectory(sesame2spiner)
-  endif()
-endif()
-
-if (SINGULARITY_BUILD_EXAMPLES)
-  add_subdirectory(example)
-endif()
+foreach(_sdir ${subdirs2add})
+  add_subdirectory(${_sdir})
+endforeach()
 
 
 #----------------------------------------------------------------------------#
