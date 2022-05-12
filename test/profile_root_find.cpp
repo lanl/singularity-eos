@@ -15,16 +15,16 @@
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
 
-#include <cstdlib>
 #include <chrono>
+#include <cstdlib>
 #include <iostream>
 #include <limits>
 #include <memory>
 #include <string>
 
-#include <spiner/databox.hpp>
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 
 using duration = std::chrono::nanoseconds;
@@ -35,7 +35,7 @@ class Bounds {
   Bounds() {}
 
   Bounds(Real min, Real max, int N, Real offset)
-	  : grid(Spiner::RegularGrid1D(min, max, N)), offset(offset) {}
+      : grid(Spiner::RegularGrid1D(min, max, N)), offset(offset) {}
 
   Bounds(Real min, Real max, int N) : offset(0) {
     constexpr Real epsilon = std::numeric_limits<float>::epsilon();
@@ -48,7 +48,9 @@ class Bounds {
     grid = Spiner::RegularGrid1D(min, max, N);
   }
 
-  PORTABLE_INLINE_FUNCTION Real log2lin(Real xl) const { return std::pow(10., xl) - offset; }
+  PORTABLE_INLINE_FUNCTION Real log2lin(Real xl) const {
+    return std::pow(10., xl) - offset;
+  }
   PORTABLE_INLINE_FUNCTION Real i2lin(int i) const { return log2lin(grid.x(i)); }
 
   friend std::ostream &operator<<(std::ostream &os, const Bounds &b) {
@@ -67,22 +69,21 @@ class Bounds {
 int main(int argc, char *argv[]) {
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-	Kokkos::initialize(argc, argv);
-#endif	
+  Kokkos::initialize(argc, argv);
+#endif
   {
-	if (argc < 5) {
-		std::cout << "Usage: " << argv[0]
-			  << " filename nfine matid {0,1}" << std::endl;
-		std::exit(1);
-	}
+    if (argc < 5) {
+      std::cout << "Usage: " << argv[0] << " filename nfine matid {0,1}" << std::endl;
+      std::exit(1);
+    }
 
-	const std::string filename = argv[1];
-	const int nFine = std::atoi(argv[2]);
-	const int matid = std::atoi(argv[3]);
-	const bool cache = std::atoi(argv[4]);
+    const std::string filename = argv[1];
+    const int nFine = std::atoi(argv[2]);
+    const int matid = std::atoi(argv[3]);
+    const bool cache = std::atoi(argv[4]);
 
-	const int nFineRho = nFine + 1;
-	const int nFineT = nFine - 1;
+    const int nFineRho = nFine + 1;
+    const int nFineT = nFine - 1;
 
     std::cout << "Profile root finding" << std::endl;
     std::cout << "\tLoading EOS..." << std::endl;
@@ -90,13 +91,18 @@ int main(int argc, char *argv[]) {
     auto eos_device = eos_host.GetOnDevice();
 
     std::cout << "\tallocating scratch memory..." << std::endl;
-    std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> plambda_host(new Spiner::DataBox(nFineRho, nFineT, eos_host.nlambda()));
+    std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> plambda_host(
+        new Spiner::DataBox(nFineRho, nFineT, eos_host.nlambda()));
     auto lambda_host = *plambda_host;
-    std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> plambda_device(new Spiner::DataBox(Spiner::AllocationTarget::Device, nFineRho, nFineT, eos_host.nlambda()));
+    std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> plambda_device(
+        new Spiner::DataBox(Spiner::AllocationTarget::Device, nFineRho, nFineT,
+                            eos_host.nlambda()));
     auto lambda_device = *plambda_device;
-    std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> presults_host(new Spiner::DataBox(nFineRho, nFineT));
+    std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> presults_host(
+        new Spiner::DataBox(nFineRho, nFineT));
     auto results_host = *presults_host;
-    std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> presults_device(new Spiner::DataBox(Spiner::AllocationTarget::Device, nFineRho, nFineT));
+    std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> presults_device(
+        new Spiner::DataBox(Spiner::AllocationTarget::Device, nFineRho, nFineT));
     auto results_device = *presults_device;
 
     std::cout << "Filling bounds arrays..." << std::endl;
@@ -109,28 +115,28 @@ int main(int argc, char *argv[]) {
     Spiner::DataBox rho_host(nFineRho);
     Spiner::DataBox sie_host(nFineRho, nFineT);
     for (int iRho = 0; iRho < nFineRho; ++iRho) {
-	    const Real rho = lRhoBounds.i2lin(iRho);
-	    rho_host(iRho) = rho;
-	    for (int iT = 0; iT < nFineT; ++iT) {
-		    const Real T = lTBounds.i2lin(iT);
-		    sie_host(iRho, iT) = eos_host.InternalEnergyFromDensityTemperature(rho,T);
-	    }
+      const Real rho = lRhoBounds.i2lin(iRho);
+      rho_host(iRho) = rho;
+      for (int iT = 0; iT < nFineT; ++iT) {
+        const Real T = lTBounds.i2lin(iT);
+        sie_host(iRho, iT) = eos_host.InternalEnergyFromDensityTemperature(rho, T);
+      }
     }
     auto rho_device = rho_host.getOnDevice();
     auto sie_device = sie_host.getOnDevice();
 
-
     std::cout << "\tProfiling on host..." << std::endl;
     auto start = std::chrono::high_resolution_clock::now();
-    for(int n = 0; n < NTIMES; ++n) {
-	    for (int j = 0; j < nFineRho; ++j) {
-		    Real rho = rho_host(j);
-		    for (int i = 0; i < nFineT; ++i) {
-			    Real sie = sie_host(j, i);
-			    Real *lambda = cache ? &(lambda_host(j, i, 0)) : nullptr;
-			    results_host(j, i) = eos_host.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-		    }
-	    }
+    for (int n = 0; n < NTIMES; ++n) {
+      for (int j = 0; j < nFineRho; ++j) {
+        Real rho = rho_host(j);
+        for (int i = 0; i < nFineT; ++i) {
+          Real sie = sie_host(j, i);
+          Real *lambda = cache ? &(lambda_host(j, i, 0)) : nullptr;
+          results_host(j, i) =
+              eos_host.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
+        }
+      }
     }
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration_host = std::chrono::duration_cast<duration>(stop - start);
@@ -138,13 +144,15 @@ int main(int argc, char *argv[]) {
     std::cout << "\tProfiling on device..." << std::endl;
     start = std::chrono::high_resolution_clock::now();
     for (int n = 0; n < NTIMES; ++n) {
-	    portableFor("sie from rho T", 0, nFineRho, 0, nFineT,
-			PORTABLE_LAMBDA(const int j, const int i) {
-				Real rho = rho_device(j);
-				Real sie = sie_device(j, i);
-				Real *lambda = cache ? &(lambda_device(j, i, 0)) : nullptr;
-				results_device(j, i) = eos_device.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-			});
+      portableFor(
+          "sie from rho T", 0, nFineRho, 0, nFineT,
+          PORTABLE_LAMBDA(const int j, const int i) {
+            Real rho = rho_device(j);
+            Real sie = sie_device(j, i);
+            Real *lambda = cache ? &(lambda_device(j, i, 0)) : nullptr;
+            results_device(j, i) =
+                eos_device.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
+          });
     }
     stop = std::chrono::high_resolution_clock::now();
     auto duration_device = std::chrono::duration_cast<duration>(stop - start);
@@ -152,29 +160,28 @@ int main(int argc, char *argv[]) {
     std::cout << "\tComputing error..." << std::endl;
     Real error = 0;
     for (int j = 0; j < nFineRho; ++j) {
-	    for (int i = 0; i < nFineT; ++i) {
-		    Real Troot = results_host(j, i);
-		    Real Ttrue = lTBounds.i2lin(i);
-		    Real diff = 2*(Troot - Ttrue) / (std::abs(Troot) + std::abs(Ttrue) + 1e-10);
-		    error += diff * diff;
-	    }
+      for (int i = 0; i < nFineT; ++i) {
+        Real Troot = results_host(j, i);
+        Real Ttrue = lTBounds.i2lin(i);
+        Real diff = 2 * (Troot - Ttrue) / (std::abs(Troot) + std::abs(Ttrue) + 1e-10);
+        error += diff * diff;
+      }
     }
     error = std::sqrt(error) / (nFineRho * nFineT);
 
     std::cout << "\t\tRoot finding:\n"
-	      << "\t\tits: counts\n";
+              << "\t\tits: counts\n";
     for (int i = 0; i < eos_host.counts.nBins(); i++) {
-	    std::cout << "\t\t\t" << i << ": "
-		      << 100. * eos_host.counts[i] / eos_host.counts.total() << "\n";
+      std::cout << "\t\t\t" << i << ": "
+                << 100. * eos_host.counts[i] / eos_host.counts.total() << "\n";
     }
     printf("Results:\n"
-	   "\terror = %.14e\n"
-	   "\ttime/point host = %.14e ns\n"
-	   "\ttime/point device = %.14e ns\n",
-	   error,
-	   duration_host.count() / static_cast<Real>(nFineRho*nFineT*NTIMES),
-	   duration_device.count() / static_cast<Real>(nFineRho*nFineT*NTIMES));
-    
+           "\terror = %.14e\n"
+           "\ttime/point host = %.14e ns\n"
+           "\ttime/point device = %.14e ns\n",
+           error, duration_host.count() / static_cast<Real>(nFineRho * nFineT * NTIMES),
+           duration_device.count() / static_cast<Real>(nFineRho * nFineT * NTIMES));
+
     free(rho_host);
     free(rho_device);
     free(sie_host);
@@ -184,7 +191,7 @@ int main(int argc, char *argv[]) {
   Kokkos::finalize();
 #endif
 
-	return 0;
+  return 0;
 }
 
 #endif // SINGULARITY_USE_EOSPAC
