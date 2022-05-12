@@ -487,13 +487,15 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   std::string filename() const { return std::string(filename_); }
   std::string materialName() const { return std::string(materialName_); }
   int matid() const { return matid_; }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real rhoMin() const { return rho_(lRhoMin_); }
-  Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_INLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
+  PORTABLE_INLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_INLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
+  PORTABLE_INLINE_FUNCTION Real TMax() const { return TMax_; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
-    static constexpr char s2[]{"depends on log_10(rho) and log_10(sie)"};
+    static constexpr char s2[]{"depends on log_10(rho) and log_10(temp)"};
     static constexpr char s3[]{"EOS file   = "};
     static constexpr char s4[]{"EOS mat ID = "};
     static constexpr char s5[]{"EOS name   = "};
