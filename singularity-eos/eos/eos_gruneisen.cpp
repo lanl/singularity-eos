@@ -21,7 +21,7 @@ PORTABLE_INLINE_FUNCTION Real square(const Real x) { return x * x; }
 PORTABLE_INLINE_FUNCTION Real cube(const Real x) { return x * x * x; }
 PORTABLE_INLINE_FUNCTION Real find_min_bounded_val(const Real root1, const Real root2,
                                                     const Real min, const Real max) {
-  // Try to find the minimum bounded root. If none exists, return a root less than the minimum
+  // Try to find the minimum bounded value. If none exists, return a value less than the minimum
   const Real minroot = std::min(root1, root2);
   const Real maxroot = std::max(root1, root2);
   if (minroot > min && minroot < max) {
@@ -66,13 +66,14 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho,
 PORTABLE_INLINE_FUNCTION Real Gruneisen::SetRhoMax() const {
   /*
   The Gruneisen EOS diverges at a specific compression. Ensure that the maximum density is below
-  the smallest pole in the pressure
+  the smallest singularity in the reference pressure curve
   */
+  // Polynomial from the denominator of the reference pressure curve:
+  auto poly = [=] (eta) {return 1 - _s1 * eta - _s2 * square(eta) - _s3 * cube(eta);}
+
+  // First find the eta root. A negative root indicates that there is no maximum density.
   Real root = 0; // Non-sensical root means a root hasn't been found yet
   Real discriminant, root1, root2;
-  // Polynomial:
-  auto poly = [=] (eta) {return 1 - _s1 * eta - _s2 * square(eta) - _s3 * cube(eta);}
-  // First find the eta root. A negative root indicates that there is no maximum density.
   if (_s2 == 0 && _s3 == 0 && _s1 > 0) {
     // Linear Us-up analytic root
     root = 1 / _s1;
@@ -127,22 +128,29 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::SetRhoMax() const {
           }
         }
       }
-      if (poly(minbound) * poly(maxbound) < 0) {
+      if (poly(minbound) * poly(maxbound) <= 0) {
         // Root is appropriately bounded
         using RootFinding1D::bisect;
         using RootFinding1D::RootCounts;
+        using RootFinding1D::Status;
         RootCounts counts;
-        Real xtol = 1e-08;
-        Real ytol = 1e-08;
-        status_ = bisect(func, 0, 0.001, minbound, maxbound, xtol, ytol, root, counts)
+        const Real xtol = 1.e-08;
+        const Real ytol = 1.e-08;
+        const Real eta_guess = 0.001;
+        auto status = bisect(func, 0., eta_guess, minbound, maxbound, xtol, ytol, root, counts)
+        if (status != Status::SUCCESS) {
+          // Root finder failed even though the solution was bracketed... this is an error
+          std::stringstream errorMessage;
+          errorMessage << "Gruneisen initialization: Cubic root find failed. Maximum density cannot be"
+                       << " automatically determined and must be manually specified." << std::endl;
+          EOS_ERROR(errorMessage.str().c_str());
+        }
       } else {
         // Root doesn't lie within physical bounds for eta so no maximum density exists
         root = -1.;
       }
-    } else {
-      // The root won't make sense so set a negative value to reflect this
-      root = -1;
-  }
+    } // Cubic discriminant >= 0
+  } // Linear/Quadratic/Cubic
   if (root > 0) {
     _rho_max = root;
   } else {
