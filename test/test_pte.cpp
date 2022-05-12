@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
     RView sie_v("sie", NPTS);
     RView temp_v("temp", NPTS);
     RView press_v("press", NPTS);
-    Rview scratch_v("scratch", NTRIAL * nscratch_vars);
+    RView scratch_v("scratch", NTRIAL * nscratch_vars);
     Kokkos::View<int *, atomic_view> hist_d("histogram", HIST_SIZE);
     auto rho_vh = Kokkos::create_mirror_view(rho_v);
     auto vfrac_vh = Kokkos::create_mirror_view(vfrac_v);
