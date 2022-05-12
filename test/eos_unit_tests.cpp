@@ -17,12 +17,39 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream> // debug
+#include <limits>
 
+#include <fast-math/logs.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <root-finding-1d/root_finding.hpp>
+
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
+
+// typename demangler
+#ifdef __GNUG__
+#include <cstdlib>
+#include <cxxabi.h>
+#include <memory>
+
+std::string demangle(const char *name) {
+
+  int status = -4; // some arbitrary value to eliminate the compiler warning
+
+  // enable c++11 by passing the flag -std=c++11 to g++
+  std::unique_ptr<char, void (*)(void *)> res{
+      abi::__cxa_demangle(name, NULL, NULL, &status), std::free};
+
+  return (status == 0) ? res.get() : name;
+}
+
+#else
+
+// does nothing if not g++
+std::string demangle(const char *name) { return name; }
+
+#endif
 
 #define CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
@@ -109,6 +136,45 @@ inline void compare_two_eoss(const EOS &test_e, const EOS &ref_e) {
   return;
 }
 
+SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
+  GIVEN("A set of values to invert over a large dynamic range") {
+    constexpr Real LXMIN = -20;
+    constexpr Real LXMAX = 32;
+    constexpr int NX = 1000;
+    constexpr Real DLX = (LXMAX - LXMIN) / (NX - 1);
+    Real *x = (Real *)PORTABLE_MALLOC(NX * sizeof(Real));
+    portableFor(
+        "Set x values", 0, NX, PORTABLE_LAMBDA(const int i) {
+          const Real lx = LXMIN + i * DLX;
+          x[i] = std::pow(10., lx);
+        });
+    THEN("The fast exp of the fast log returns the original") {
+      int nw_ie = 0;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
+      Kokkos::View<int, atomic_view> n_wrong_ie("wrong_ie");
+#else
+      PortableMDArray<int> n_wrong_ie(&nw_ie, 1);
+#endif
+      portableFor(
+          "try out the fast math", 0, NX, PORTABLE_LAMBDA(const int i) {
+            constexpr Real machine_eps = std::numeric_limits<Real>::epsilon();
+            constexpr Real acceptable_err = 100 * machine_eps;
+            const Real lx = singularity::FastMath::log10(x[i]);
+            const Real elx = singularity::FastMath::pow10(lx);
+            const Real rel_err = 2.0 * std::abs(x[i] - elx) /
+                                 (std::abs(x[i]) + std::abs(elx) + machine_eps);
+            n_wrong_ie() += (rel_err > acceptable_err);
+          });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::deep_copy(nw_ie, n_wrong_ie);
+#endif
+      REQUIRE(nw_ie == 0);
+    }
+    PORTABLE_FREE(x);
+  }
+}
+
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
 
   GIVEN("A root counts object") {
@@ -162,6 +228,11 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
   }
 }
 
+SCENARIO("EOS Variant Type", "[Variant][EOS]") {
+  // print out the eos type
+  std::cout << demangle(typeid(EOS).name()) << std::endl;
+}
+
 SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
 
   GIVEN("Parameters for a shifted and scaled ideal gas") {
@@ -173,11 +244,11 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
     constexpr Real sie = 0.5;
     WHEN("We construct a shifted, scaled IdealGas by hand") {
       IdealGas a = IdealGas(gm1, Cv);
-      ScaledEOS<IdealGas> b = ScaledEOS<IdealGas>(std::move(a), scale);
-      EOS eos = ShiftedEOS<ScaledEOS<IdealGas>>(std::move(b), shift);
+      ShiftedEOS<IdealGas> b = ShiftedEOS<IdealGas>(std::move(a), shift);
+      EOS eos = ScaledEOS<ShiftedEOS<IdealGas>>(std::move(b), scale);
       THEN("The shift and scale parameters pass through correctly") {
 
-        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.4);
+        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
     }
     WHEN("We use the EOSBuilder") {
@@ -192,7 +263,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
       EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
       THEN("The shift and scale parameters pass through correctly") {
-        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.4);
+        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
     }
     WHEN("We construct a non-modifying modifier") {

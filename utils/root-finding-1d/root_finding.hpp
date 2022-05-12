@@ -29,11 +29,10 @@
 #include <math.h>
 #include <stdio.h>
 
-#define ROOT_DEBUG (0)
-#define ROOT_VERBOSE (0)
-#define ROOT_NAN_OK (0)
+#define SINGULARITY_ROOT_DEBUG (0)
+#define SINGULARITY_ROOT_VERBOSE (0)
 
-#define MY_SIGN(x) (x > 0) - (x < 0)
+#define SINGULARITY_MY_SIGN(x) (x > 0) - (x < 0)
 
 namespace RootFinding1D {
 constexpr const int SECANT_NITER_MAX{1000};
@@ -141,14 +140,14 @@ PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xg
   status = secant(f, ytarget, xguess, xmin, xmax, xtol, ytol, xroot, counts);
   if (status == Status::SUCCESS) return status;
 
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
   if (isnan(xroot)) {
     fprintf(stderr, "xroot is nan after secant\n");
   }
 #endif
 
 // Secant failed. Try bisection.
-#if ROOT_VERBOSE
+#if SINGULARITY_ROOT_VERBOSE
   fprintf(stderr,
           "\n\nRoot finding. Secant failed. Trying bisection.\n"
           "\txguess  = %.10g\n"
@@ -161,7 +160,7 @@ PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xg
 
   // Check for something horrible happening
   if (isnan(xroot) || isinf(xroot)) {
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
     fprintf(stderr, "xroot is nan after bisection\n");
 #endif
     return Status::FAIL;
@@ -196,7 +195,7 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
     if (x > xmax) x = xmax;
     if (isnan(x) || isinf(x)) {
       // can't recover from this
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
       fprintf(stderr,
               "\n\n[secant]: NAN or out-of-bounds detected!\n"
               "\txguess  = %.10e\n"
@@ -215,7 +214,7 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
               "\titer    = %d\n"
               "\tsign x  = %d\n",
               xguess, ytarget, x, x_last, xmin, xmax, y, dx, yp, ym, dyNum, dyDen, dy,
-              iter, (int)MY_SIGN(x));
+              iter, (int)SINGULARITY_MY_SIGN(x));
 #endif
       counts.increment(counts.more());
       return Status::FAIL;
@@ -233,7 +232,7 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
 
   y = f(x);
   const Real frac_error = fabs(y - ytarget) / (fabs(y) + ytol);
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
   if (frac_error > ytol) {
     fprintf(stderr,
             "\n\n[secant]: Failed via too large yerror.\n"
@@ -293,7 +292,7 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
     grow *= 1.1;
     if (fl * fr < 0.0 || xl < xmin || xr > xmax) break;
     if (i > BISECT_REG_MAX - 2) {
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
       fprintf(stderr,
               "\n\n[Bisect]: expanding region failed\n"
               "\txl   = %.10g\n"
@@ -327,7 +326,7 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
       xr = xmax;
       fr = f(xr) - ytarget;
       if (fl * fr > 0) {
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
         Real il = f(xl);
         Real ir = f(xr);
         fprintf(stderr,
@@ -372,7 +371,7 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
   xroot = 0.5 * (xl + xr);
 
   if (isnan(xroot)) {
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
     Real il = f(xl);
     Real ir = f(xr);
     fprintf(stderr,
@@ -398,8 +397,8 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
 // ----------------------------------------------------------------------
 } // namespace RootFinding1D
 
-#undef ROOT_DEBUG
-#undef ROOT_VERBOSE
-#undef MY_SIGN
+#undef SINGULARITY_ROOT_DEBUG
+#undef SINGULARITY_ROOT_VERBOSE
+#undef SINGULARITY_MY_SIGN
 
 #endif // _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_

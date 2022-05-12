@@ -490,9 +490,96 @@ parameters with units related to their non-subscripted counterparts.
 Spiner EOS
 ````````````
 
+Spiner EOS is a tabulated reader for the `Sesame`_ database of material
+equations of state. Materials include things like water, dry air,
+iron, or steel. This model comes in two flavors:
+``SpinerEOSDependsRhoT`` and ``SpinerEOSDependsRhoSie``. The former
+tabulates all quantities of interest in terms of density and
+temperature. The latter also includes tables in terms of density and
+specific internal energy.
+
+Tabulating in terms of density and pressure means that computing,
+e.g., pressure in terms of density and internal energy requires
+solving the equation:
+
+.. math::
+
+   e_0 = e(\rho, T)
+
+for temperature :math:`T` given density :math:`\rho` and specific
+internal energy :math:`e_0`. This is in general not closed
+algebraically and must be solved using a
+root-find. ``SpinerEOSDependsRhoT`` performs this root find in-line,
+and the result is performant, thanks to library's ability to take and
+cache initial guesses. ``SpinerEOSDependsRhoSie`` circumvents this
+issue by tabulating in terms of both specific internal energy and
+temperature.
+
+Both models use (approximately) log-linear interpolation on a grid
+that is (approximately) uniformly spaced on a log scale. Thermodynamic
+derivatives are tabulated and interpolated, rather than computed from
+the interpolating function. This approach allows for significantly
+higher fidelity approximations of these derivatives.
+
 Stellar Collapse EOS
 ````````````````````
+
+This model provides finite temperature nuclear equations of state
+suitable for core collapse supernova and compact object (such as
+neutron star) simulations. These models assume nuclear statistical
+equilibrium (NSE). It reads tabulated data in the `Stellar Collapse`_
+format, as first presented by `O'Connor and Ott`_.
+
+Like ``SpinerEOSDependsRhoT``, ``StellarCollapse`` tabulateds all
+quantities in terms of density and temperature on a logarithmically
+spaced grid. And similarly, it requires an in-line root-find to
+compute quantities in terms of density and specific internal
+energy. Unlike most of the other models in ``singularity-eos``,
+``StellarCollapse`` also depends on a third quantity, the electron
+fraction,
+
+.. math::
+
+   Y_e = \frac{n_e}{n_p + n_n}
+
+which measures the number fraction of electrons to baryons. Symmetric
+matter has a :math:`Y_e` of 0.5, while cold neutron stars, have a
+:math:`Y_e` approximately less than 0.1.
+
+As with ``SpinerEOSDependsRhoT``, the Stellar Collapse tables tabulate
+thermodynamic derivatives separately, rather than reconstruct them
+from interpolants. However, the tabulated values can contain
+artifacts, such as unphysical spikes. To mitigate this issue, the
+thermodynamic derivatives are cleaned via a `median filter`_. The bulk
+modulus is then recomputed from these thermodynamic derivatives via:
+
+.. math::
+
+   B_S(\rho, T) = \rho \left(\frac{\partial P}{\partial\rho}\right)_e + \frac{P}{\rho} \left(\frac{\partial P}{\partial e}\right)_\rho
+
+Note that ``StellarCollapse`` is a relativistic model, and thus the
+sound speed is given by
+
+.. math::
+
+   c_s^2 = \frac{B_S}{w}
+
+where :math:`w = \rho h` for specific entalpy :math:`h` is the
+enthalpy by volume, rather than the density :math:`rho`. This ensures
+the sound speed is bounded from above by the speed of light.
+
+.. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
+
+.. _O'connor and Ott`: https://doi.org/10.1088/0264-9381/27/11/114103
+
+.. _median filter: https://en.wikipedia.org/wiki/Median_filter
 
 EOSPAC EOS
 ````````````
 
+This is a striaghtforward wrapper of the `EOSPAC`_ library for the
+`Sesame`_ database.
+
+.. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
+
+.. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
