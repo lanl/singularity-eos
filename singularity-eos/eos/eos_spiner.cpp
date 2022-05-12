@@ -461,8 +461,9 @@ void SpinerEOSDependsRhoT::setlTColdCrit_() {
       const callable_interp::r_interp sieFunc(sie_, lRho);
       Real lT;
       int ilast = crossings[last_pos_crossing];
-      Real lTlower = bMod_.range(0).x(ilast);
-      Real lTupper = bMod_.range(0).x(ilast + 1);
+      // expand bounds by +/- 1.e-14 to help with round-off
+      Real lTlower = bMod_.range(0).x(ilast) - 1.0e-14;
+      Real lTupper = bMod_.range(0).x(ilast + 1) + 1.0e-14;
       Real lTGuess = 0.5 * (lTlower + lTupper);
       auto status = regula_falsi(sieFunc, sieCold, lTGuess, lTlower, lTupper, ROOT_THRESH,
                                  ROOT_THRESH, lT, counts);
