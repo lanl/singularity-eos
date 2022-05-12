@@ -32,7 +32,10 @@ macro(singularity_cmake_config pkg)
     set(EIGEN_TEST_CXX11 OFF CACHE BOOL "" FORCE)
     set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
     set(EIGEN_BUILD_DOC OFF CACHE BOOL "" FORCE)
-    set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    #TODO: I don't like this as it can interfere with
+    #     other projects, but I don't have a great solution
+    #     to disable testing in here.
+    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
   else()
     set(_PKG_DEFAULT_CONFIGURED)
   endif()

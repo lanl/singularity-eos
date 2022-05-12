@@ -131,6 +131,18 @@ endif()
 # this way, we can decouple the input processing from the configuration 
 # execution. 
 
+if(SINGULARITY_USE_HDF5)
+  if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+    list(APPEND _subdirs2add stellarcollapse2spiner)
+  endif()
+  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
+    list(APPEND _subdirs2add sesame2spiner)
+  endif()
+  if(SINGULARITY_BUILD_EXAMPLES)
+    list(APPEND _subdirs2add example)
+  endif()
+endif()
+
 #------------------------------------------------------------------------------#
 # Handle dependencies
 #------------------------------------------------------------------------------#
