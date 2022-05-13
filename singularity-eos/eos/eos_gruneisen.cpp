@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#include <sstream>
+
 #include <singularity-eos/eos/eos.hpp>
 #include <root-finding-1d/root_finding.hpp>
 
@@ -32,74 +34,46 @@ PORTABLE_INLINE_FUNCTION Real find_min_bounded_val(const Real root1, const Real 
     return min - 1.;
   }
 }
-
-PORTABLE_INLINE_FUNCTION Gruneisen::Gruneisen(const Real C0, const Real s1, const Real s2,
-                                              const Real s3, const Real G0, const Real b,
-                                              const Real rho0, const Real T0, const Real P0,
-                                              const Real Cv)
-    : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0), _Cv(Cv) {
-  // Constructor when rho_max isn't specified automatically determines _rho_max
-  SetRhoMax();
-}
-PORTABLE_INLINE_FUNCTION Real Gruneisen::Gamma(const Real rho) const {
-  return rho < _rho0 ? _G0 : _G0 * _rho0 / rho + _b * (1 - _rho0 / rho);
-}
-PORTABLE_INLINE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho,
-                                                      const Real sie) const {
-  if (rho < _rho0) {
-    return square(_C0) + Gamma(rho) * sie;
-  } else {
-    const Real eta = 1 - _rho0 / rho;
-    const Real s = _s1 * eta + _s2 * square(eta) + _s3 * cube(eta);
-    const Real ds = _s1 + 2 * _s2 * eta + 3 * _s3 * square(eta);
-    const Real deta = _rho0 / square(rho);
-    const Real dGam = (_b - _G0) * deta;
-    const Real P_H = _P0 + square(_C0) * _rho0 * eta / square(1 - s);
-    const Real dP_H =
-        square(_C0) * _rho0 / square(1 - s) * deta * (1 + 2 * eta * ds / (1 - s));
-    const Real E_H = (P_H + _P0) * eta / _rho0 / 2.;
-    const Real dE_H = deta * (P_H + _P0) / _rho0 / 2. + eta / _rho0 / 2 * dP_H;
-    return dP_H + Gamma(rho) * (sie - E_H) + rho * dGam * (sie - E_H) -
-           rho * Gamma(rho) * dE_H;
-  }
-}
-PORTABLE_INLINE_FUNCTION Real Gruneisen::SetRhoMax() const {
-  /*
-  The Gruneisen EOS diverges at a specific compression. Ensure that the maximum density is below
-  the smallest singularity in the reference pressure curve
-  */
+/*
+The Gruneisen EOS diverges at a specific compression. Ensure that the maximum density is below
+the smallest singularity in the reference pressure curve
+*/
+PORTABLE_FUNCTION Real Gruneisen::GetRhoMax(const Real s1, const Real s2, const Real s3,
+                                            const Real rho0) {
   // Polynomial from the denominator of the reference pressure curve:
-  auto poly = [=] (eta) {return 1 - _s1 * eta - _s2 * square(eta) - _s3 * cube(eta);}
+  auto poly = [=] (Real eta) {return 1 - s1 * eta - s2 * square(eta) - s3 * cube(eta);};
 
   // First find the eta root. A negative root indicates that there is no maximum density.
   Real root = 0; // Non-sensical root means a root hasn't been found yet
   Real discriminant, root1, root2;
-  if (_s2 == 0 && _s3 == 0 && _s1 > 0) {
+  if (s2 == 0 && s3 == 0 && s1 > 0) {
     // Linear Us-up analytic root
-    root = 1 / _s1;
-  } else if (_s3 == 0 && _s2 != 0) {
+    root = 1 / s1;
+  } else if (s3 == 0 && s2 != 0) {
     // Quadratic Us-up
-    discriminant = square(_s1) + 4 * _s2;
+    discriminant = square(s1) + 4 * s2;
     if (discriminant < 0) {
       root = -1; // Imaginary roots, so no limit
     } else {
-      root1 = (_s1 + std::sqrt(square(_s1) + 4 * _s2)) / (-2 * _s2);
-      root2 = (_s1 - std::sqrt(square(_s1) + 4 * _s2)) / (-2 * _s2);
-      root = find_min_bounded_root(root1, root2, 0, 1);
+      root1 = (s1 + std::sqrt(square(s1) + 4 * s2)) / (-2 * s2);
+      root2 = (s1 - std::sqrt(square(s1) + 4 * s2)) / (-2 * s2);
+      root = find_min_bounded_val(root1, root2, 0, 1);
     }
   } else if (s3 != 0) {
     // Cubic Us-up
-    discriminant = square(_s2 * s_1) - 4 * _s3 * cube(_s1) - 4 * cube(_s2) - 27 * square(_s3) +
-        18 * _s3 * _s2 * _s1;
+    discriminant = square(s2 * s1) - 4 * s3 * cube(s1) - 4 * cube(s2) - 27 * square(s3) +
+        18 * s3 * s2 * s1;
     // Use discriminant to help find roots
     if (discriminant == 0) {
       // Easy analytical roots (probably not the case)
-      if (square(_s2) == 3 * _s3 * _s1) {
-        root = - _s2 / 3 / _s3;
-      } else if {
-        root1 = (9 * _s3 - _s2 * _s1) / 2 / (square(_s2) - 3 * _s3 * _s1);
-        root2 = (4 * _s3 * _s2 * _s1 - 9 * square(_s3) - cube(_s1)) /
-            (_s3 * (square(_s2) - 3 * _s3 * _s1))
+      if (square(s2) == 3 * s3 * s1) {
+        // Single root with multiplicity of 3 (inflection point is root)
+        root = - s2 / 3 / s3;
+      } else {
+        // One root has multiplicity of 2 (local extremum is a root)
+        root1 = (9 * s3 - s2 * s1) / 2 / (square(s2) - 3 * s3 * s1);
+        root2 = (4 * s3 * s2 * s1 - 9 * square(s3) - cube(s1)) /
+            (s3 * (square(s2) - 3 * s3 * s1));
         root = find_min_bounded_val(root1, root2, 0, 1);
       }
     } else {
@@ -109,13 +83,13 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::SetRhoMax() const {
       if (discriminant > 0) {
         // Three real roots. We need to use the extrema to ensure we have a proper bracket in which
         // to search for the root.
-        const Real extremum1 = (2 * _s2 + std::sqrt(square(2 * _s2) - 4 * 3 * _s3 * _s1)) /
-            (-2 * 2* _s2);
-        const Real extremum2 = (2 * _s2 - std::sqrt(square(2 * _s2) - 4 * 3 * _s3 * _s1)) /
-            (-2 * 2* _s2);
+        const Real extremum1 = (2 * s2 + std::sqrt(square(2 * s2) - 4 * 3 * s3 * s1)) /
+            (-2 * 2* s2);
+        const Real extremum2 = (2 * s2 - std::sqrt(square(2 * s2) - 4 * 3 * s3 * s1)) /
+            (-2 * 2* s2);
         const Real min_extremum = std::min(extremum1, extremum2);
         const Real max_extremum = std::max(extremum1, extremum2);
-        if (_s3 > 0) {
+        if (s3 > 0) {
           // Because poly(eta = 0) = 1, the only possible root for an increasing function will lie
           // between the etrema.
           minbound = std::min(std::fabs(min_extremum), minbound);
@@ -137,7 +111,7 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::SetRhoMax() const {
         const Real xtol = 1.e-08;
         const Real ytol = 1.e-08;
         const Real eta_guess = 0.001;
-        auto status = bisect(func, 0., eta_guess, minbound, maxbound, xtol, ytol, root, counts)
+        auto status = bisect(poly, 0., eta_guess, minbound, maxbound, xtol, ytol, root, counts);
         if (status != Status::SUCCESS) {
           // Root finder failed even though the solution was bracketed... this is an error
           std::stringstream errorMessage;
@@ -152,10 +126,32 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::SetRhoMax() const {
     } // Cubic discriminant >= 0
   } // Linear/Quadratic/Cubic
   if (root > 0) {
-    _rho_max = root;
+    return rho0 / (1 - root);
   } else {
     // No bounded root exists so there is no upper-limit on the compression
-    _rho_max = 1.e99;
+    return 1.e99;
+  }
+}
+PORTABLE_INLINE_FUNCTION Real Gruneisen::Gamma(const Real rho) const {
+  return rho < _rho0 ? _G0 : _G0 * _rho0 / rho + _b * (1 - _rho0 / rho);
+}
+PORTABLE_INLINE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho,
+                                                      const Real sie) const {
+  if (rho < _rho0) {
+    return square(_C0) + Gamma(rho) * sie;
+  } else {
+    const Real eta = 1 - _rho0 / rho;
+    const Real s = _s1 * eta + _s2 * square(eta) + _s3 * cube(eta);
+    const Real ds = _s1 + 2 * _s2 * eta + 3 * _s3 * square(eta);
+    const Real deta = _rho0 / square(rho);
+    const Real dGam = (_b - _G0) * deta;
+    const Real P_H = _P0 + square(_C0) * _rho0 * eta / square(1 - s);
+    const Real dP_H =
+        square(_C0) * _rho0 / square(1 - s) * deta * (1 + 2 * eta * ds / (1 - s));
+    const Real E_H = (P_H + _P0) * eta / _rho0 / 2.;
+    const Real dE_H = deta * (P_H + _P0) / _rho0 / 2. + eta / _rho0 / 2 * dP_H;
+    return dP_H + Gamma(rho) * (sie - E_H) + rho * dGam * (sie - E_H) -
+           rho * Gamma(rho) * dE_H;
   }
 }
 PORTABLE_FUNCTION Real Gruneisen::InternalEnergyFromDensityTemperature(
