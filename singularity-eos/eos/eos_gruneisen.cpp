@@ -132,10 +132,10 @@ PORTABLE_FUNCTION Real Gruneisen::GetRhoMax(const Real s1, const Real s2, const 
     return 1.e99;
   }
 }
-PORTABLE_INLINE_FUNCTION Real Gruneisen::Gamma(const Real rho) const {
+PORTABLE_FUNCTION Real Gruneisen::Gamma(const Real rho) const {
   return rho < _rho0 ? _G0 : _G0 * _rho0 / rho + _b * (1 - _rho0 / rho);
 }
-PORTABLE_INLINE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho,
+PORTABLE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho,
                                                       const Real sie) const {
   if (rho < _rho0) {
     return square(_C0) + Gamma(rho) * sie;

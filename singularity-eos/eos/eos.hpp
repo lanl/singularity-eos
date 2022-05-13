@@ -190,9 +190,9 @@ class Gruneisen : public EosBase<Gruneisen> {
  private:
   Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max;
   // static constexpr const char _eos_type[] = {"Gruneisen"};
-  PORTABLE_INLINE_FUNCTION
+  PORTABLE_FUNCTION
   Real Gamma(const Real rho) const;
-  PORTABLE_INLINE_FUNCTION
+  PORTABLE_FUNCTION
   Real dPres_drho_e(const Real rho, const Real sie) const;
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
