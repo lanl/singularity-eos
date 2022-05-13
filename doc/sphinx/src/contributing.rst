@@ -3,6 +3,44 @@
 Contributing
 =============
 
+If you have any trouble with the project, or are interested in
+participating, please contact us by creating an issue on the github
+repository, or submit a pull request!
+
+Pull request protocol
+----------------------
+
+There is a pull reuqest template that will be auto-populated when you
+submit a pull request. A pull request should have a summary of
+changes. You should also add tests for bugs fixed or new features you
+add.
+
+Before a pull request will be merged, the code should be formatted. We
+use clang-format for this, pinned to version 12. You can automatically
+trigger ``clang-format`` in two ways: first you can run the script
+``utils/scripts/format.sh``; second you can type ``make
+format_singularity`` after configuring the code with ``clang-format``
+discoverable by ``cmake``.
+
+Several sets of tests are triggered on a pull request: a static format
+check, a docs buld, and unit tests of analytic models and the stellar
+collapse model. These are run through github's CPU infrastructure. We
+have a second set of tests run on a wider set of architectures that
+also access the Sesame library, which we are not able to make public.
+
+The docs build will fail for forks, and the internal tests will not be
+run automatically, so when the code is ready for merge, you must ask a
+project maintainer to trigger the remaining tests for you.
+
+Interwoven Dependencies
+------------------------
+
+``singularity-eos`` depends on several other open-source, Los Alamos
+maintained, projects. In particular, ``spiner`` and
+``ports-of-call``. If you have issues with these projects, ideally
+submit issues on the relevant github pages. However, if you can't
+figure out where an issue belongs, no big deal. Submit where you can
+and we'll engage with you to figure out how to proceed.
 
 Fast Logs and Approximate Log Gridding
 ---------------------------------------
