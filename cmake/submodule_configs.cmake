@@ -1,5 +1,5 @@
 macro(singularity_cmake_config pkg)
-  if(${pkg} STREQUAL "Kokkos")
+  if(${pkg} STREQUAL "Kokkos" AND SINGULARITY_USE_CUDA)
     set(Kokkos_ENABLE_CUDA ON CACHE BOOL "" FORCE)
     set(Kokkos_ENABLE_SERIAL ON CACHE BOOL "" FORCE)
     set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "" FORCE)
