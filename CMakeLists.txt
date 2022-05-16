@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------#
-# © 2021. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -35,8 +35,7 @@ option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
 option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
 option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
-option (SINGULARITY_FMATH_USE_ORDER_4 "4th order interpolant for fast logs. Default is 7th order." OFF)
-option (SINGULARITY_FMATH_USE_ORDER_5 "5th order interpolant for fast logs. Default is 7th order." OFF)
+option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
 
 if (SINGULARITY_SUBMODULE_MODE)
   set(SINGULARITY_BETTER_DEBUG_FLAGS OFF CACHE BOOL "" FORCE)
@@ -154,7 +153,7 @@ if (SINGULARITY_USE_KOKKOS)
       list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_KOKKOS_INSTALL_DIR}")
       set(Kokkos_ROOT "${SINGULARITY_KOKKOS_INSTALL_DIR}/lib64/cmake/Kokkos")
     endif()
-    find_package(Kokkos REQUIRED)
+    find_package(Kokkos)
     if(NOT Kokkos_FOUND)
       if(SINGULARITY_USE_CUDA)
         set(Kokkos_ENABLE_CUDA ON CACHE BOOL "" FORCE)
@@ -276,16 +275,9 @@ if (SINGULARITY_USE_SINGLE_LOGS)
   target_compile_definitions(singularity-eos::flags INTERFACE
       SINGULARITY_USE_SINGLE_LOGS)
 endif()
-if (SINGULARITY_FMATH_USE_ORDER_4 AND SINGULARITY_FMATH_USE_ORDER_5)
-  message(FATAL_ERROR "Order 4 and order 5 interpolation both specified. Please specify only one or zero. If no specification is made, order 7 will be used.")
-endif()
-if (SINGULARITY_FMATH_USE_ORDER_4)
+if (SINGULARITY_USE_TRUE_LOG_GRIDDING)
   target_compile_definitions(singularity-eos::flags INTERFACE
-    SINGULARITY_FMATH_USE_ORDER_4)
-endif()
-if (SINGULARITY_FMATH_USE_ORDER_5)
-  target_compile_definitions(singularity-eos::flags INTERFACE
-    SINGULAIRTY_FMATH_USE_ORDER_5)
+      SINGULARITY_USE_TRUE_LOG_GRIDDING)
 endif()
 
 # required package ports of call

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------#
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -93,7 +93,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     if (relativistic) {
       return makeRelativistic(std::move(g), cl);
     }
-    return applyScaleAndShift(std::move(g), scaled, shifted, scale, shift);
+    return applyShiftAndScale(std::move(g), scaled, shifted, scale, shift);
   }
 #ifdef SPINER_USE_HDF
   if (type == EOSType::SpinerEOSDependsRhoT || type == EOSType::SpinerEOSDependsRhoSie) {
@@ -110,7 +110,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+        return applyShiftAndScale(std::move(s), scaled, shifted, scale, shift);
       } else {
         SpinerEOSDependsRhoSie s(filename, matid, reproducibility_mode);
         if (units) {
@@ -120,7 +120,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+        return applyShiftAndScale(std::move(s), scaled, shifted, scale, shift);
       }
     } else {
       string materialName = mpark::get<string>(base_params["materialName"]);
@@ -133,7 +133,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+        return applyShiftAndScale(std::move(s), scaled, shifted, scale, shift);
       } else {
         SpinerEOSDependsRhoSie s(filename, materialName, reproducibility_mode);
         if (units) {
@@ -143,7 +143,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+        return applyShiftAndScale(std::move(s), scaled, shifted, scale, shift);
       }
     }
   }
@@ -165,7 +165,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     if (relativistic) {
       return makeRelativistic(std::move(s), cl);
     }
-    return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+    return applyShiftAndScale(std::move(s), scaled, shifted, scale, shift);
   }
 #endif
   if (type == EOSType::Gruneisen) {
