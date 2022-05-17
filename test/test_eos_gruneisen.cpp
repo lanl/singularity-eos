@@ -26,6 +26,10 @@
 using singularity::EOS;
 using singularity::Gruneisen;
 
+PORTABLE_INLINE_FUNCTION Real QuadFormulaMinus(Real a, Real b, Real c) {
+  return (-b - std::sqrt(b*b - 4 * a * c)) / (2 * a);
+}
+
 SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
   GIVEN("Parameters for a Gruneisen EOS") {
     // Unit conversions
@@ -239,6 +243,279 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed Comparison", "[GruneisenEOS]") {
                            << " cm/us  Approximate sound speed: " << ss_approx
                            << " cm/us");
           REQUIRE(isClose(sound_speed, ss_approx, 1e-5));
+        }
+      }
+    }
+  }
+}
+
+SCENARIO("Gruneisen EOS density limit") {
+  /* These tests all test the functionality that finds the roots of the polynomial that
+     makes up the denominator of the reference pressure curve, i.e.
+     P(x) = 1 - s1 * x - s2 * x**2 - s3 * x**3,
+     in order to find the maximum compression allowed by the EOS.
+
+     It's very probable that many of these cases may not be physical because they produce
+     unstable shocks (i.e. Us - up < c) but we admit these cases for the moment since
+     a more comprehensive set of bounds on the EOS parameters is not currently available.
+     For a linear Us-up relationship, the point at which up > Us occurs also corresponds
+     to the singularity in the
+  */
+  GIVEN("Parameters for a Gruneisen EOS") {
+    // Unit conversions
+    constexpr Real mm = 10.;
+    constexpr Real cm = 1.;
+    constexpr Real us = 1.e-06;
+    constexpr Real Mbar = 1.e12;
+    constexpr Real Mbcc_per_g = 1e12;
+    // Gruneisen parameters for copper
+    constexpr Real C0 = 0.535 * cm / us;
+    constexpr Real Gamma0 = 1.97;
+    constexpr Real b = 0.;
+    constexpr Real rho0 = 2.714000;
+    constexpr Real T0 = 298.;
+    constexpr Real P0 = 1e-06 * Mbar;
+    constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
+    WHEN("A small rho_max parameter is provided") {
+      constexpr Real set_rho_max = 1.1 * rho0;
+      // Linear Hugoniot fit
+      constexpr Real S1 = 1.34;
+      constexpr Real S2 = 0.;
+      constexpr Real S3 = 0.;
+      // Create the EOS
+      Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+      auto eos = host_eos.GetOnDevice();
+      THEN("The provided rho_max parameter should be less than the calculated rho_max") {
+        const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+        INFO("Provided rho_max: " << set_rho_max << ", Calculated rho_max:" << rho_max);
+        REQUIRE(rho_max > set_rho_max);
+      }
+    }
+    WHEN("The rho_max parameter is not specified") {
+      WHEN("A linear Hugoniot fit is used") {
+        // Linear Hugoniot fit
+        constexpr Real S1 = 1.34;
+        constexpr Real S2 = 0.;
+        constexpr Real S3 = 0.;
+        // Create the EOS
+        Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+        auto eos = host_eos.GetOnDevice();
+        THEN("The generated rho_max parameter should be properly set") {
+          constexpr Real eta_max = 1 / S1;
+          const Real rho_max_true = rho0 / (1 - eta_max);
+          const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+          INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+          REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+        }
+      }
+      WHEN("A quadratic Hugoniot fit is used") {
+        WHEN("The fit is simple") {
+          // Quadratic Hugoniot fit
+          constexpr Real S1 = 2.0;
+          constexpr Real S2 = 0.1;
+          constexpr Real S3 = 0.;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            const Real eta_max = QuadFormulaMinus(-S2, -S1, 1.);
+            const Real rho_max_true = rho0 / (1 - eta_max);
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+          }
+        }
+        WHEN("The quadratic oot multiplicity is 2") {
+          // Quadratic Hugoniot fit
+          constexpr Real S1 = 3;
+          constexpr Real S2 = -2.25;
+          constexpr Real S3 = 0.;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            const Real eta_max = QuadFormulaMinus(-S2, -S1, 1.);
+            const Real rho_max_true = rho0 / (1 - eta_max);
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+          }
+        }
+        WHEN("No root exists") {
+          // Quadratic Hugoniot fit without a pressure singularity
+          constexpr Real S1 = 2;
+          constexpr Real S2 = -1.1;
+          constexpr Real S3 = 0.;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            constexpr Real rho_max_true = 1.e99;  // No maximum (see source)
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+          }
+        }
+        WHEN("The root is out of bounds") {
+          // Quadratic Hugoniot fit without a pressure singularity
+          // THIS ISN'T REAL... it might be better to specify what legal values
+          // for the parameters are...
+          constexpr Real S1 = 0.1;
+          constexpr Real S2 = 0.1;
+          constexpr Real S3 = 0.;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            constexpr Real rho_max_true = 1.e99;  // No maximum (see source)
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+          }
+        }
+      }
+      WHEN("A cubic Hugoniot fit is used") {
+        WHEN("Only one root exists") {
+          // Cubic Hugoniot fit
+          constexpr Real S1 = 2;
+          constexpr Real S2 = -1.1;
+          constexpr Real S3 = 0.2;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            constexpr Real eta_max = 0.8025706630669670284; // Wolfram alpha
+            constexpr Real rho_max_true = rho0 / (1 - eta_max);
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-8)); // root-find tolerance
+          }
+        }
+        WHEN("A single root of multiplicity 3 exists") {
+          // Cubic Hugoniot fit with a single root at 0.5 with multiplicity 3
+          constexpr Real S1 = 6;
+          constexpr Real S2 = -12;
+          constexpr Real S3 = 8;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            constexpr Real eta_max = 0.5;
+            constexpr Real rho_max_true = rho0 / (1 - eta_max);
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+          }
+        }
+        WHEN("Two roots exist") {
+          // Cubic Hugoniot fit with roots at 0.5 (multiplicy 2) and -1
+          constexpr Real S1 = 3;
+          constexpr Real S2 = 0;
+          constexpr Real S3 = -4;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            constexpr Real eta_max = 0.5;
+            constexpr Real rho_max_true = rho0 / (1 - eta_max);
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+          }
+        }
+        WHEN("The cubic is decreasing and two roots exist") {
+          // Cubic Hugoniot fit with roots at 0.8 and -0.4 (multiplicity 2)
+          constexpr Real S1 = -3.75;
+          constexpr Real S2 = 0;
+          constexpr Real S3 = 7.8125;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            constexpr Real eta_max = 0.8;
+            constexpr Real rho_max_true = rho0 / (1 - eta_max);
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+          }
+        }
+        WHEN("Three negative roots exist") {
+          // Cubic Hugoniot fit with roots at -0.5, -1, and -2
+          constexpr Real S1 = -3.5;
+          constexpr Real S2 = -3.5;
+          constexpr Real S3 = -1;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set (Cubic three negative roots)") {
+            constexpr Real rho_max_true = 1.e99;
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+          }
+        }
+        WHEN("One root of three is bounded") {
+          // Cubic Hugoniot fit with roots at 0.5, -1, and 2
+          constexpr Real S1 = 2.5;
+          constexpr Real S2 = -0.5;
+          constexpr Real S3 = -1;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set (Cubic one bounded root)") {
+            constexpr Real eta_max = 0.5;
+            constexpr Real rho_max_true = rho0 / (1 - eta_max);
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+          }
+        }
+        WHEN("Two roots of three are bounded") {
+          // Cubic Hugoniot fit with roots at 0.5, 0.8, and -2.5
+          constexpr Real S1 = 2.85;
+          constexpr Real S2 = -1.2;
+          constexpr Real S3 = -1;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set (Cubic two bounded roots)") {
+            constexpr Real eta_max = 0.5;
+            constexpr Real rho_max_true = rho0 / (1 - eta_max);
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+          }
+        }
+        WHEN("Two roots of three are bounded and the cubic is decreasing") {
+          // Cubic Hugoniot fit with roots at 0.2, 0.8, and 6.25
+          constexpr Real S1 = 3.65;
+          constexpr Real S2 = -3.8;
+          constexpr Real S3 = 1;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            constexpr Real eta_max = 0.5;
+            constexpr Real rho_max_true = rho0 / (1 - eta_max);
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+          }
+        }
+        WHEN("The three roots are all beyond 1") {
+          // Cubic Hugoniot fit with roots at 1.25, 1.5, and 1.6
+          constexpr Real S1 = 2.0916666667;
+          constexpr Real S2 = -1.45;
+          constexpr Real S3 = 1./3.;
+          // Create the EOS
+          Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+          auto eos = host_eos.GetOnDevice();
+          THEN("The generated rho_max parameter should be properly set") {
+            constexpr Real rho_max_true = 1.e99;
+            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
+            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+          }
         }
       }
     }
