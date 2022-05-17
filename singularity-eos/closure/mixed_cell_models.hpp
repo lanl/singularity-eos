@@ -211,11 +211,12 @@ class PTESolverBase {
   // guess, so all the initial, scaled material temperatures are = 1.
   PORTABLE_INLINE_FUNCTION
   void InitBase() {
-    Real Tguess = 0.0;
+    // guess some non-zero temperature to start
+    Real Tguess = 300.0;
     for (int m = 0; m < nmat; ++m)
       Tguess = std::max(Tguess, temp[m]);
     // check for sanity.  basically checks that the input temperatures weren't garbage
-    assert(Tguess >= 0.0 && Tguess < 1.0e15);
+    assert(Tguess < 1.0e15);
     Tnorm = Tguess;
 
     // rhobar is a fixed quantity: the average density of
@@ -293,7 +294,7 @@ class PTESolverBase {
     Asum *= u_total / Tnorm;
     rhoBsum /= Tnorm;
     Tideal = u_total / rhoBsum / Tnorm;
-    Pideal = Tideal * Asum / vfrac_total / u_total;
+    Pideal = Tnorm * Tideal * Asum / vfrac_total / u_total;
   }
 
   // Compute the ideal EOS PTE solution and replace the initial guess if it has a lower
@@ -311,7 +312,7 @@ class PTESolverBase {
     Real *res = jacobian + 4 * nmat;
     // copy out the initial guess
     for (int m = 0; m < nmat; ++m) {
-      etemp[m] = sie[m];
+      etemp[m] = u[m];
       ptemp[m] = press[m];
       vtemp[m] = vfrac[m];
       rtemp[m] = rho[m];
@@ -322,8 +323,9 @@ class PTESolverBase {
       res_norm_old += res[m] * res[m];
     }
     // check if the volume fractions are reasonable
+    const Real alpha = Pideal / Tideal;
     for (int m = 0; m < nmat; ++m) {
-      vfrac[m] *= press[m] / Pideal;
+      vfrac[m] *= press[m] / (temp[m] * alpha);
       if (rhobar[m] / vfrac[m] < eos[m].RhoPmin(Tnorm * Tideal)) {
         // abort because this is putting this material into a bad state
         for (int n = m; n >= 0; n--)
@@ -334,12 +336,13 @@ class PTESolverBase {
     // fill in the rest of the state
     for (int m = 0; m < nmat; ++m) {
       rho[m] = rhobar[m] / vfrac[m];
-      sie[m] =
+      const Real sie_m =
           eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * Tideal, Cache[m]);
+      u[m] = rhobar[m] * sie_m / u_total;
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
         press[m] =
-            eos[m].PressureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]) / u_total;
+            eos[m].PressureFromDensityInternalEnergy(rho[m], sie_m, Cache[m]) / u_total;
       } else if (eos[m].PreferredInput() ==
                  (thermalqs::density | thermalqs::temperature)) {
         press[m] =
@@ -358,16 +361,17 @@ class PTESolverBase {
       for (int m = 0; m < nmat; ++m) {
         vfrac[m] = vtemp[m];
         rho[m] = rtemp[m];
-        sie[m] = etemp[m];
+        u[m] = etemp[m];
         press[m] = ptemp[m];
       }
-      for (int m = 0; m < neq; ++m)
+      for (int m = 0; m < neq; ++m) {
         residual[m] = res[m];
+      }
     } else {
       // did work, fill in temp and energy density
       for (int m = 0; m < nmat; ++m) {
         temp[m] = Tideal;
-        u[m] = rhobar[m] * sie[m] / u_total;
+        sie[m] = u_total * u[m] / rhobar[m];
       }
     }
   }
@@ -459,7 +463,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     Residual();
     TryIdealPTE(this);
     // Set the current guess for the equilibrium temperature.  Note that this is already
-    // scaled, so really this could just be set to 1.
+    // scaled.
     Tequil = temp[0];
     return ResidualNorm();
   }
