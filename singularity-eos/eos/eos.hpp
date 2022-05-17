@@ -135,7 +135,7 @@ class Gruneisen : public EosBase<Gruneisen> {
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
       : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
-        _Cv(Cv), _rho_max(GetRhoMax(s1, s2, s3, rho0)){}
+        _Cv(Cv), _rho_max(0.99 * GetRhoMax(s1, s2, s3, rho0)) {}
   static PORTABLE_FUNCTION Real GetRhoMax(const Real s1, const Real s2, const Real s3,
                                           const Real rho0);
   Gruneisen GetOnDevice() { return *this; }
@@ -177,8 +177,8 @@ class Gruneisen : public EosBase<Gruneisen> {
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"Gruneisen Params: "};
-    printf("%sC0:%e s1:%e s2:%e\ns3:%e G0:%e b:%e\nrho0:%e T0:%e P0:%e\nCv:%E\n", s1, _C0,
-           _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv);
+    printf("%s C0:%e s1:%e s2:%e s3:%e\n  G0:%e b:%e rho0:%e T0:%e\n  P0:%eCv:%e rho_max:%e\n",
+           s1, _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max);
   }
   PORTABLE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
                                                               const Real temp,
