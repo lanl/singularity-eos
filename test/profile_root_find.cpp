@@ -104,6 +104,9 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> presults_device(
         new Spiner::DataBox(Spiner::AllocationTarget::Device, nFineRho, nFineT));
     auto results_device = *presults_device;
+    std::unique_ptr<Spiner::DataBox, Spiner::DBDeleter> presults_hm(
+        new Spiner::DataBox(nFineRho, nFineT));
+    auto results_hm = *presults_hm;
 
     std::cout << "Filling bounds arrays..." << std::endl;
     const int rhoMin = (1 + 1e-8) * eos_host.rhoMin();
@@ -142,6 +145,9 @@ int main(int argc, char *argv[]) {
     auto duration_host = std::chrono::duration_cast<duration>(stop - start);
 
     std::cout << "\tProfiling on device..." << std::endl;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+    Kokkos::fence();
+#endif
     start = std::chrono::high_resolution_clock::now();
     for (int n = 0; n < NTIMES; ++n) {
       portableFor(
@@ -160,17 +166,43 @@ int main(int argc, char *argv[]) {
     stop = std::chrono::high_resolution_clock::now();
     auto duration_device = std::chrono::duration_cast<duration>(stop - start);
 
-    std::cout << "\tComputing error..." << std::endl;
-    Real error = 0;
+    std::cout << "\tComputing error on host..." << std::endl;
+    Real error_host = 0;
     for (int j = 0; j < nFineRho; ++j) {
       for (int i = 0; i < nFineT; ++i) {
         Real Troot = results_host(j, i);
         Real Ttrue = lTBounds.i2lin(i);
         Real diff = 2 * (Troot - Ttrue) / (std::abs(Troot) + std::abs(Ttrue) + 1e-10);
-        error += diff * diff;
+        error_host += diff * diff;
       }
     }
-    error = std::sqrt(error) / (nFineRho * nFineT);
+    error_host = std::sqrt(error_host) / (nFineRho * nFineT);
+
+    std::cout << "\tCopying device results to host..." << std::endl;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+    {
+      using HS = Kokkos::HostSpace;
+      using DMS = Kokkos::DefaultExecutionSpace::memory_space;
+      using memUnmanaged = Kokkos::MemoryUnmanaged;
+      using HostView_t = Kokkos::View<Real *, HS, memUnmanaged>;
+      using DeviceView_t = Kokkos::View<Real *, memUnmanaged>;
+      DeviceView_t devView(results_device.data(), results_device.size());
+      HostView_t hostView(results_hm.data(), results_hm.size());
+      Kokkos::deep_copy(hostView, devView);
+    }
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+    std::cout << "\tComparing host to device results.." << std::endl;
+    Real diff_hd = 0;
+    for (int j = 0; j < nFineRho; ++j) {
+      for (int i = 0; i < nFineT; ++i) {
+        Real host = results_host(j, i);
+        Real device = results_hm(j, i);
+        Real diff = 2 * (host - device) / (std::abs(host) + std::abs(device) + 1e-10);
+        diff_hd += diff * diff;
+      }
+    }
+    diff_hd = std::sqrt(diff_hd) / (nFineRho * nFineT);
 
     std::cout << "\t\tRoot finding:\n"
               << "\t\tits: counts\n";
@@ -179,10 +211,12 @@ int main(int argc, char *argv[]) {
                 << 100. * eos_host.counts[i] / eos_host.counts.total() << "\n";
     }
     printf("Results:\n"
-           "\terror = %.14e\n"
+           "\terror on host = %.14e\n"
+           "\tdiff between host/device = %.14e\n"
            "\ttime/point host = %.14e ns\n"
            "\ttime/point device = %.14e ns\n",
-           error, duration_host.count() / static_cast<Real>(nFineRho * nFineT * NTIMES),
+           error_host, diff_hd,
+           duration_host.count() / static_cast<Real>(nFineRho * nFineT * NTIMES),
            duration_device.count() / static_cast<Real>(nFineRho * nFineT * NTIMES));
 
     free(rho_host);

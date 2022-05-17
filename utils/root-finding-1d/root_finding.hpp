@@ -153,22 +153,7 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
   auto func = [&](const Real x) { return f(x) - ytarget; };
   Real ya = func(a);
   Real yg = func(guess);
-  Real yb = func(b);
-
-  // Check that we're at the max or min values and if we are
-  // short-circuit the solver.
-  /*
-  if (std::abs(ya) / (std::abs(ytarget) + ytol) < ytol) {
-    xroot = a;
-    counts.increment(0);
-    return Status::SUCCESS;
-  }
-  if (std::abs(yb) / (std::abs(ytarget) + ytol) < ytol) {
-    xroot = b;
-    counts.increment(0);
-    return Status::SUCCESS;
-  }
-  */
+  Real yb;
 
   if (check_bracket(ya, yg)) {
     b = guess;
