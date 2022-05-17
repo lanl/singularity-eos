@@ -61,19 +61,20 @@ PORTABLE_FUNCTION Real Gruneisen::GetRhoMax(const Real s1, const Real s2, const 
     }
   } else if (s3 != 0) {
     // Cubic Us-up
-    discriminant = square(s2 * s1) - 4 * s3 * cube(s1) - 4 * cube(s2) - 27 * square(s3) +
-        18 * s3 * s2 * s1;
+    discriminant = -18 * s3 * s2 * s1 - 4 * cube(-s2) + square(s2) * square(s1) -
+        4 * s3 * cube(s1) - 27 * square(s3);
     // Use discriminant to help find roots
     if (discriminant == 0) {
       // Easy analytical roots (probably not the case)
       if (square(s2) == 3 * s3 * s1) {
         // Single root with multiplicity of 3 (inflection point is root)
+        // Also guards against divide by zero
         root = - s2 / 3 / s3;
       } else {
         // One root has multiplicity of 2 (local extremum is a root)
-        root1 = (9 * s3 - s2 * s1) / 2 / (square(s2) - 3 * s3 * s1);
-        root2 = (4 * s3 * s2 * s1 - 9 * square(s3) - cube(s1)) /
-            (s3 * (square(s2) - 3 * s3 * s1));
+        root1 = (-9 * s3 - s2 * s1) / 2 / (square(s2) - 3 * s3 * s1);
+        root2 = (-4 * s3 * s2 * s1 - 9 * square(s3) + cube(s2)) /
+            (-s3 * (square(s2) - 3 * s3 * s1));
         root = find_min_bounded_val(root1, root2, 0, 1);
       }
     } else {
@@ -83,22 +84,25 @@ PORTABLE_FUNCTION Real Gruneisen::GetRhoMax(const Real s1, const Real s2, const 
       if (discriminant > 0) {
         // Three real roots. We need to use the extrema to ensure we have a proper bracket in which
         // to search for the root.
-        const Real extremum1 = (2 * s2 + std::sqrt(square(2 * s2) - 4 * 3 * s3 * s1)) /
-            (-2 * 2* s2);
-        const Real extremum2 = (2 * s2 - std::sqrt(square(2 * s2) - 4 * 3 * s3 * s1)) /
-            (-2 * 2* s2);
+        const Real extremum1 = (2 * s2 + std::sqrt(square(-2 * s2) - 4 * 3 * s3 * s1)) /
+            (-2 * 3 * s3);
+        const Real extremum2 = (2 * s2 - std::sqrt(square(-2 * s2) - 4 * 3 * s3 * s1)) /
+            (-2 * 3 * s3);
         const Real min_extremum = std::min(extremum1, extremum2);
         const Real max_extremum = std::max(extremum1, extremum2);
-        if (s3 > 0) {
+        if (s3 < 0) {
+          // Cubic is *increasing*
           // Because poly(eta = 0) = 1, the only possible root for an increasing function will lie
           // between the etrema.
-          minbound = std::min(std::fabs(min_extremum), minbound);
-          maxbound = std::min(std::fabs(max_extremum), maxbound);
+          minbound = std::max(min_extremum, minbound);
+          maxbound = std::min(std::max(max_extremum, minbound), maxbound);
         } else {
-          // Because poly(eta = 0) = 1, the only possible root for a decreasing function will lie
-          // outside of the extrema
+          // Cubic is *decreasing*
+          // Because poly(eta = 0) = 1, the only possible root for a decreasing function
+          // will lie outside of the extrema. Further, the only possibility for multiple
+          // bound roots will occur when the extremum are both positive
           if (min_extremum > 0) {
-            maxbound = std::min(std::fabs(min_extremum), maxbound);
+            maxbound = std::min(min_extremum, maxbound);
           }
         }
       }
