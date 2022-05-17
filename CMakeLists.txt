@@ -366,6 +366,7 @@ endforeach()
 configure_file(${PROJECT_SOURCE_DIR}/config/singularity-eosConfig.cmake.in
   ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/singularity-eosConfig.cmake @ONLY)
 
+#TODO: nope, this is too hacky. redo.
 if(NOT SINGULARITY_SUBMODULE_MODE)
   include(cmake/install.cmake)
 endif()
