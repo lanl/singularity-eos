@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -322,7 +323,7 @@ herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str, hid_t 
         jmax = j;
       }
     }
-    if (jmax < 0) printf("Failed to find minimum pressure.  WTF!\n");
+    if (jmax < 0) printf("Failed to find minimum pressure.\n");
     rho_at_pmin_(i) = rho_(P_.range(1).x(jmax));
   }
 
@@ -814,11 +815,14 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
-      errorMessage << "inverting sie table for logT failed\n"
+      errorMessage << std::scientific << std::setprecision(14)
+                   << "inverting sie table for logT failed\n"
                    << "matid   = " << matid_ << "\n"
                    << "lRho    = " << lRho << "\n"
                    << "sie     = " << sie << "\n"
-                   << "lTGuess = " << lTGuess << std::endl;
+                   << "lTGuess = " << lTGuess << "\n"
+                   << "sielTMax = " << sielTMax_.interpToReal(lRho) << "\n"
+                   << "sieCold = " << sieCold_.interpToReal(lRho) << std::endl;
       EOS_ERROR(errorMessage.str().c_str());
 #endif // SPINER_EOS_VERBOSE
       lT = reproducible_ ? lTMin_ : lTGuess;
@@ -957,9 +961,12 @@ Real SpinerEOSDependsRhoT::bModFromRholRhoTlT_(const Real rho, const Real lRho,
 PORTABLE_FUNCTION TableStatus
 SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) const {
   TableStatus whereAmI;
-  if (sie >= sielTMax_.interpToReal(lRho)) {
+  const Real sielTMax = sielTMax_.interpToReal(lRho);
+  const Real sieCold = sieCold_.interpToReal(lRho);
+  // sie can be negative, so must make sign right
+  if (sie >= sielTMax - SOFT_THRESH * std::abs(sielTMax)) {
     whereAmI = TableStatus::OffTop;
-  } else if (sie <= sieCold_.interpToReal(lRho)) {
+  } else if (sie <= sieCold + SOFT_THRESH * std::abs(sieCold)) {
     whereAmI = TableStatus::OffBottom;
   } else {
     whereAmI = TableStatus::OnTable;
@@ -971,9 +978,9 @@ SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) cons
 PORTABLE_FUNCTION TableStatus
 SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
   TableStatus whereAmI;
-  if (lT <= lTMin_)
+  if (lT <= (1 + SOFT_THRESH) * lTMin_)
     whereAmI = TableStatus::OffBottom;
-  else if (lT >= lTMax_)
+  else if (lT >= (1 - SOFT_THRESH) * lTMax_)
     whereAmI = TableStatus::OffTop;
   else
     whereAmI = TableStatus::OnTable;

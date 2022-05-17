@@ -106,10 +106,10 @@ int main(int argc, char *argv[]) {
     auto results_device = *presults_device;
 
     std::cout << "Filling bounds arrays..." << std::endl;
-    const int rhoMin = eos_host.rhoMin();
-    const int rhoMax = eos_host.rhoMax();
-    const int TMin = eos_host.TMin();
-    const int TMax = eos_host.TMax();
+    const int rhoMin = (1 + 1e-8) * eos_host.rhoMin();
+    const int rhoMax = (1 - 1e-8) * eos_host.rhoMax();
+    const int TMin = (1 + 1e-8) * eos_host.TMin();
+    const int TMax = (1 - 1e-8) * eos_host.TMax();
     Bounds lRhoBounds(rhoMin, rhoMax, nFineRho);
     Bounds lTBounds(TMin, TMax, nFineT);
     Spiner::DataBox rho_host(nFineRho);
@@ -153,6 +153,9 @@ int main(int argc, char *argv[]) {
             results_device(j, i) =
                 eos_device.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
           });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::fence();
+#endif
     }
     stop = std::chrono::high_resolution_clock::now();
     auto duration_device = std::chrono::duration_cast<duration>(stop - start);

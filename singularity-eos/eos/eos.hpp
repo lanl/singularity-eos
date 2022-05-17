@@ -601,6 +601,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   mutable TableStatus whereAmI_ = TableStatus::OnTable;
   mutable RootFinding1D::Status status_ = RootFinding1D::Status::SUCCESS;
   static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
+  static constexpr const Real SOFT_THRESH = 1e-8;
   DataStatus memoryStatus_ = DataStatus::Deallocated;
   static constexpr const int _n_lambda = 2;
   static constexpr const char *_lambda_names[2] = {"log(rho)", "log(T)"};

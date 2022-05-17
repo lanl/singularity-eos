@@ -138,7 +138,8 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
     }
   }
   // if we get here then we failed to bracket a root
-  printf("set_bracket failed to bound a root!\n");
+  printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
+         guess, b, ya, yg, yb);
   return false;
 }
 
@@ -148,11 +149,27 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
                                              const Real guess, Real a, Real b,
                                              const Real xtol, const Real ytol,
                                              Real &xroot, const RootCounts &counts) {
-  constexpr int max_iter = 100;
+  constexpr int max_iter = SECANT_NITER_MAX;
   auto func = [&](const Real x) { return f(x) - ytarget; };
   Real ya = func(a);
   Real yg = func(guess);
-  Real yb;
+  Real yb = func(b);
+
+  // Check that we're at the max or min values and if we are
+  // short-circuit the solver.
+  /*
+  if (std::abs(ya) / (std::abs(ytarget) + ytol) < ytol) {
+    xroot = a;
+    counts.increment(0);
+    return Status::SUCCESS;
+  }
+  if (std::abs(yb) / (std::abs(ytarget) + ytol) < ytol) {
+    xroot = b;
+    counts.increment(0);
+    return Status::SUCCESS;
+  }
+  */
+
   if (check_bracket(ya, yg)) {
     b = guess;
     yb = yg;
@@ -164,7 +181,7 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
     } else {
       // ya, yg, and yb have the same sign
       if (!set_bracket(func, a, guess, b, ya, yg, yb)) {
-        printf("regula_falsi failed!\n");
+        printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
         return Status::FAIL;
       }
     }
@@ -210,7 +227,7 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
   auto status = Status::SUCCESS;
   if (iteration_count == max_iter) {
     printf(
-        "root finding reached the maximum number of iterations.  likely not converged");
+        "root finding reached the maximum number of iterations.  likely not converged\n");
     status = Status::FAIL;
   }
   if (iteration_count < counts.nBins()) {
@@ -230,8 +247,6 @@ PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xg
   Status status;
 
   // first check if we're at the max or min values
-  // TODO: these short-circuits almost never happen. Should they be removed?
-  // ~JMM
   const Real fmax = f(xmax);
   const Real errmax = fabs(fmax - ytarget) / (fabs(fmax) + ytol);
   if (errmax < ytol) {
