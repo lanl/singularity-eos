@@ -33,4 +33,5 @@ target_link_libraries(eospac-wrapper
 
 #TODO: should this be here? not sure what's appropriate 
 # (could put line in top-level CMakeLists.txt)
-install(TARGETS eospac-wrapper EXPORT singularity-eosTargets DESTINATION lib)
+#install(TARGETS eospac-wrapper EXPORT singularity-eosTargets DESTINATION lib)
+list(APPEND SINGULARITY_EXPORT_TARGETS eospac-wrapper)

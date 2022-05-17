@@ -21,7 +21,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 #------------------------------------------------------------------------------#
 # Use better messages
 #------------------------------------------------------------------------------#
-include(cmake/messageplus.cmake)
+include(cmake/singularity_utils.cmake)
 
 #------------------------------------------------------------------------------#
 # Options
@@ -64,12 +64,13 @@ execute_process(COMMAND patch -N -s -V never
 # only attaching them to targets as late as possible.
 # this allows for easier handling and manipulating, as
 # well as later info printing and debugging
-set(TAR_PUBLIC_DEFINES "")  # list to `target_compile_definitions()`
-set(TAR_PRIVATE_DEFINES "") # """
-set(TAR_PUBLIC_LIB "")      # list to `target_link_libraries()`
-set(TAR_PRIVATE_LIB "")     # """
-set(TAR_COMPILEFLAGS "")    # TODO: actually use these
-set(TAR_LIB_DEPS "")        # a list of packages, used to generate import rules for installed targets. (may want to rename)
+set(SINGULARITY_PUBLIC_DEFINES "")  # list to `target_compile_definitions()`
+set(SINGULARITY_PRIVATE_DEFINES "") # """
+set(SINGULARITY_PUBLIC_LIBS "")      # list to `target_link_libraries()`
+set(SINGULARITY_PRIVATE_LIBS "")     # """
+set(SINGULARITY_EXPORT_TARGETS "")
+set(SINGULARITY_COMPILEFLAGS "")    # TODO: actually use these
+set(SINGULARITY_DEP_PKGS "")        # a list of packages, used to generate import rules for installed targets. (may want to rename)
 
 #------------------------------------------------------------------------------#
 # Compiler & language setup
@@ -147,72 +148,78 @@ endif()
 include(cmake/dependency.cmake)
 
 if(SINGULARITY_USE_KOKKOS)
-  list(APPEND TAR_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
-  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+   import_dependency(
     PKG Kokkos
-    TARGETS Kokkos::kokkos
+    TARGET Kokkos::kokkos
     SUBDIR ${PROJECT_SOURCE_DIR}/utils/kokkos
     )
+  list(APPEND SINGULARITY_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
+
 endif() #SINGULARITY_USE_KOKKOS
 
-if(SINGULARITY_USE_KOKKOSKERNELS)
-  list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
-  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
-    PKG KokkosKernels
-    TARGETS Kokkos::kokkoskernels
-  )
-else()
-  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
-    PKG Eigen3
-    TARGETS Eigen3::Eigen
-    SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
-  )
-endif() #SINGULARITY_USE_KOKKOSKERNELS
+#if(SINGULARITY_USE_KOKKOSKERNELS)
+#  list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
+#  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+#    PKG KokkosKernels
+#    TARGETS Kokkos::kokkoskernels
+#  )
+#else()
+import_dependency(
+  PKG Eigen3
+  TARGET Eigen3::Eigen
+  SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
+)
 
-append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+#endif() #SINGULARITY_USE_KOKKOSKERNELS
+
+import_dependency(
   PKG mpark_variant
-  TARGETS mpark_variant
+  TARGET mpark_variant
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/variant
 )
 
-append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+import_dependency(
   PKG spiner
-  TARGETS spiner::spiner
+  TARGET spiner::spiner
+  SUBDIR ${PROJECT_SOURCE_DIR}/utils/spiner
 )
 
-append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+import_dependency(
   PKG ports-of-call
-  TARGETS ports-of-call::ports-of-call
+  TARGET ports-of-call::ports-of-call
+  SUBDIR ${PROJECT_SOURCE_DIR}/utils/ports-of-call
 )
 
 # only use hdf5 if spiner
 if (SINGULARITY_USE_HDF5)
-  list(APPEND TAR_PUBLIC_DEFINES SPINER_USE_HDF)
-  list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_USE_HDF)
-  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+  import_dependency(
     PKG HDF5
-    TARGETS HDF5::HDF5 hdf5::hdf5_hl
     COMPONENTS C HL
+    TARGETS HDF5::HDF5 hdf5::hdf5_hl
   )
   if(HDF5_IS_PARALLEL)
-    append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
+    import_dependency(
       PKG MPI
-      TARGETS MPI::MPI_CXX
       COMPONENTS CXX
+      TARGETS MPI::CXX
     )
   endif()
+  list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_HDF)
+  list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_HDF)
 endif()
+
 
 #TODO: this feels out-of-place here, though i haven't crawled into the source yet to see
 # what the point is.
 if (SINGULARITY_TEST_SESAME)
-  list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_TEST_SESAME)
+  list(APPEND SINGULARITY_PRIVATE_DEFINES SINGULARITY_TEST_SESAME)
 endif()
 
 message(STATUS "[== INFO: status so far ===============================")
-message(STATUS "[== dependency list: ${TAR_LIB_DEPS}")
-message(STATUS "[== library targets: ${TAR_PUBLIC_LIB} ${TAR_PRIVATE_LIB}")
-message(STATUS "[== compiler definitions: ${TAR_PUBLIC_DEFINES} ${TAR_PRIVATE_DEFINES}")
+message(STATUS "[== dependency list: ${SINGULARITY_DEP_PKGS}")
+message(STATUS "[== library targets: ${SINGULARITY_PUBLIC_LIBS} ${SINGULARITY_PRIVATE_LIBS}")
+message(STATUS "[== export list: ${SINGULARITY_EXPORT_TARGETS}")
+message(STATUS "[== compiler definitions: ${SINGULARITY_PUBLIC_DEFINES} ${SINGULARITY_PRIVATE_DEFINES}")
 message(STATUS "[======================================================")
 #==============================================================================#
 # singularity-eos library
@@ -256,16 +263,16 @@ target_include_directories(singularity-eos
 
 target_link_libraries(singularity-eos
   PUBLIC
-    ${TAR_PUBLIC_LIB}
+    ${SINGULARITY_PUBLIC_LIBS}
   PRIVATE
-    ${TAR_PRIVATE_LIB}
+    ${SINGULARITY_PRIVATE_LIBS}
 )
 
 target_compile_definitions(singularity-eos
   PUBLIC
-    ${TAR_PUBLIC_DEFINES}
+    ${SINGULARITY_PUBLIC_DEFINES}
   PRIVATE
-    ${TAR_PRIVATE_DEFINES}
+    ${SINGULARITY_PRIVATE_DEFINES}
 )
 
 #------------------------------------------------------------------------------#
@@ -352,10 +359,10 @@ endforeach()
 # if a package was consumed with `add_subdirectory` in configuration,
 # the downstream `find_package()` should find it's way to the consumed
 # package install path
-foreach(_depName ${TAR_LIB_DEPS})
+foreach(_depName ${SINGULARITY_DEPS_PKGS})
   set(_components "")
-  if(TAR_LIB_DEPS_${_depName})
-    set(_components "COMPONENTS ${TAR_LIB_DEPS_${_depName}}")
+  if(SINGULARITY_DEP_PKGS_${_depName})
+    set(_components "COMPONENTS ${SINGULARITY_DEP_PKGS_${_depName}}")
   endif()
   set(SINGULARITY_CONFIG_DEPENDENCIES
     "${SINGULARITY_CONFIG_DEPENDENCIES}\nfind_package(${_depName} ${_components} REQUIRED)")
@@ -367,9 +374,9 @@ configure_file(${PROJECT_SOURCE_DIR}/config/singularity-eosConfig.cmake.in
   ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/singularity-eosConfig.cmake @ONLY)
 
 #TODO: nope, this is too hacky. redo.
-if(NOT SINGULARITY_SUBMODULE_MODE)
-  include(cmake/install.cmake)
-endif()
+#if(NOT SINGULARITY_SUBMODULE_MODE)
+include(cmake/install.cmake)
+#endif()
 
 #----------------------------------------------------------------------------#
 # Testing

@@ -8,7 +8,7 @@ include(GNUInstallDirs)
 # NOTE: the `DESTINATION` here is the implicit default, tho I think we 
 # *have* to make it explicit since we (may) also install a fortran module.
 install(
-  TARGETS singularity-eos
+  TARGETS singularity-eos ${SINGULARITY_EXPORT_TARGETS}
   EXPORT singularity-eosTargets
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
