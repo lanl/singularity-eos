@@ -168,7 +168,7 @@ PORTABLE_FUNCTION Real Gruneisen::TemperatureFromDensityInternalEnergy(
 }
 PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie,
-    Real *lambda) const { // Will a compiler clean this up for me?
+    Real *lambda) const {
   Real P_H;
   Real E_H;
   if (rho >= _rho0) {
