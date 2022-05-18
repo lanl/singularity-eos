@@ -35,6 +35,12 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
                              ${CMAKE_SOURCE_DIR}/utils/spiner
                              ${CMAKE_SOURCE_DIR}/utils/ports-of-call
                              ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
+  add_executable(profile_root_find
+                 profile_root_find.cpp)
+  target_link_libraries(profile_root_find eos singularity-eos::libs singularity-eos::flags)
+  target_include_directories(profile_root_find PUBLIC
+                             ${CMAKE_SOURCE_DIR}/utils/spiner
+                             ${CMAKE_SOURCE_DIR}/utils/ports-of-call)
 endif()
 
 if (SINGULARITY_BUILD_CLOSURE)

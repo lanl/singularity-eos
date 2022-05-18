@@ -70,7 +70,7 @@ void set_eos(EOSIndexer &&eos) {
 
 template <typename RealIndexer, typename EOSIndexer>
 void set_state(RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
-               EOSIndexer &&eos) {
+               RealIndexer &&temp, EOSIndexer &&eos) {
 
   rho[0] = 8.93;
   rho[1] = 1.89;
@@ -78,7 +78,8 @@ void set_state(RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
 
   Real vsum = 0.;
   for (int i = 0; i < NMAT; i++) {
-    sie[i] = eos[i].InternalEnergyFromDensityTemperature(rho[i], 600.0);
+    temp[i] = 600.0;
+    sie[i] = eos[i].InternalEnergyFromDensityTemperature(rho[i], temp[i]);
     vfrac[i] = rand() / (1.0 * RAND_MAX);
     vsum += vfrac[i];
   }
@@ -112,7 +113,11 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(eos_v, eos_hv);
 #endif
 
-    LinearIndexer<decltype(eos_v)> eos(eos_v);
+    using EOSAccessor = LinearIndexer<decltype(eos_v)>;
+    EOSAccessor eos(eos_v);
+
+    // scratch required for PTE solver
+    auto nscratch_vars = PTESolverRhoTRequiredScratch(NMAT);
 
     // state vars
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -123,34 +128,40 @@ int main(int argc, char *argv[]) {
     RView sie_v("sie", NPTS);
     RView temp_v("temp", NPTS);
     RView press_v("press", NPTS);
+    RView scratch_v("scratch", NTRIAL * nscratch_vars);
     Kokkos::View<int *, atomic_view> hist_d("histogram", HIST_SIZE);
     auto rho_vh = Kokkos::create_mirror_view(rho_v);
     auto vfrac_vh = Kokkos::create_mirror_view(vfrac_v);
     auto sie_vh = Kokkos::create_mirror_view(sie_v);
     auto temp_vh = Kokkos::create_mirror_view(temp_v);
     auto press_vh = Kokkos::create_mirror_view(press_v);
+    auto scratch_vh = Kokkos::create_mirror_view(scratch_v);
     auto hist_vh = Kokkos::create_mirror_view(hist_d);
     DataBox rho_d(rho_v.data(), NTRIAL, NMAT);
     DataBox vfrac_d(vfrac_v.data(), NTRIAL, NMAT);
     DataBox sie_d(sie_v.data(), NTRIAL, NMAT);
     DataBox temp_d(temp_v.data(), NTRIAL, NMAT);
     DataBox press_d(press_v.data(), NTRIAL, NMAT);
+    DataBox scratch_d(scratch_v.data(), NTRIAL * nscratch_vars);
     DataBox rho_hm(rho_vh.data(), NTRIAL, NMAT);
     DataBox vfrac_hm(vfrac_vh.data(), NTRIAL, NMAT);
     DataBox sie_hm(sie_vh.data(), NTRIAL, NMAT);
     DataBox temp_hm(temp_vh.data(), NTRIAL, NMAT);
     DataBox press_hm(press_vh.data(), NTRIAL, NMAT);
+    DataBox scratch_hm(scratch_vh.data(), NTRIAL * nscratch_vars);
 #else
     DataBox rho_d(NTRIAL, NMAT);
     DataBox vfrac_d(NTRIAL, NMAT);
     DataBox sie_d(NTRIAL, NMAT);
     DataBox temp_d(NTRIAL, NMAT);
     DataBox press_d(NTRIAL, NMAT);
+    DataBox scratch_d(NTRIAL, nscratch_vars);
     DataBox rho_hm = rho_d.slice(2, 0, NTRIAL);
     DataBox vfrac_hm = vfrac_d.slice(2, 0, NTRIAL);
     DataBox sie_hm = sie_d.slice(2, 0, NTRIAL);
     DataBox temp_hm = temp_d.slice(2, 0, NTRIAL);
     DataBox press_hm = press_d.slice(2, 0, NTRIAL);
+    DataBox scratch_hm = scratch_d.slice(2, 0, NTRIAL);
     int hist_vh[HIST_SIZE];
     int *hist_d = hist_vh;
 #endif
@@ -161,7 +172,8 @@ int main(int argc, char *argv[]) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
       Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
       Indexer2D<decltype(sie_hm)> e(n, sie_hm);
-      set_state(r, vf, e, eos_h);
+      Indexer2D<decltype(temp_hm)> t(n, temp_hm);
+      set_state(r, vf, e, t, eos_h);
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;
@@ -207,13 +219,15 @@ int main(int argc, char *argv[]) {
           }
           sie_tot /= rho_tot;
 
-          int niter = 0;
-          bool success = pte_closure_josh(NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp,
-                                          press, lambda, niter);
+          auto method =
+              PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
+                  NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
+                  &scratch_d(t * nscratch_vars));
+          bool success = PTESolver(method);
           if (success) {
             nsuccess_d() += 1;
           }
-          hist_d[niter] += 1;
+          hist_d[method.Niter()] += 1;
         });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();

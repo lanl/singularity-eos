@@ -489,17 +489,23 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
+
+  PORTABLE_FUNCTION
+  Real RhoPmin(const Real temp) const;
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
   std::string materialName() const { return std::string(materialName_); }
   int matid() const { return matid_; }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real rhoMin() const { return rho_(lRhoMin_); }
-  Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_INLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
+  PORTABLE_INLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_INLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
+  PORTABLE_INLINE_FUNCTION Real TMax() const { return TMax_; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
-    static constexpr char s2[]{"depends on log_10(rho) and log_10(sie)"};
+    static constexpr char s2[]{"depends on log_10(rho) and log_10(temp)"};
     static constexpr char s3[]{"EOS file   = "};
     static constexpr char s4[]{"EOS mat ID = "};
     static constexpr char s5[]{"EOS name   = "};
@@ -589,6 +595,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Spiner::DataBox lTColdCrit_;
   Spiner::DataBox PCold_, sieCold_, bModCold_;
   Spiner::DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
+  Spiner::DataBox rho_at_pmin_;
   int numRho_, numT_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lRhoMinSearch_;
@@ -604,6 +611,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   mutable TableStatus whereAmI_ = TableStatus::OnTable;
   mutable RootFinding1D::Status status_ = RootFinding1D::Status::SUCCESS;
   static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
+  static constexpr const Real SOFT_THRESH = 1e-8;
   DataStatus memoryStatus_ = DataStatus::Deallocated;
   static constexpr const int _n_lambda = 2;
   static constexpr const char *_lambda_names[2] = {"log(rho)", "log(T)"};
