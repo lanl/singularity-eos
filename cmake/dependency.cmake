@@ -51,7 +51,7 @@ macro(singularity_import_dependency)
   cmake_parse_arguments(dep "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
   if(TARGET ${dep_TARGET})
-    singularity_msg(STATUS "Detected ${dep_TARGET} present, no further processing for this dependency.")
+    singularity_msg(STATUS "[IMPORT] Detected ${dep_TARGET} present, no further processing for this dependency.")
   else()
     if(dep_SUBMODULE_ONLY)
       singularity_import_submodule(
@@ -71,14 +71,14 @@ macro(singularity_import_dependency)
       )
       if (NOT ${dep_PKG}_FOUND)
         if(dep_NO_SUBMODULE)
-          message(FATAL_ERROR "Could not locate ${dep_PKG} outside of project, and `singularity_import_dependency()` was called with `NO_SUBMODULE` option")
+          message(FATAL_ERROR "[IMPORT] Could not locate ${dep_PKG} outside of project, and `singularity_import_dependency()` was called with `NO_SUBMODULE` option")
         endif()
         singularity_import_submodule(
           PKG ${dep_PKG}
           SUBDIR ${dep_SUBDIR}
         )
       else()
-        singularity_msg(STATUS "Found with find_package() [${${dep_PKG}_DIR}]")
+        singularity_msg(STATUS "[IMPORT] Found with find_package() [${${dep_PKG}_DIR}]")
       endif()
     endif()
   endif()
@@ -109,14 +109,16 @@ macro(singularity_import_user_install)
   string(TOUPPER ${ui_PKG} ui_VARCASE)
 
   if(SINGULARITY_${ui_VARCASE}_INSTALL_DIR)
-    find_path(ui_INSTALLCMAKE 
+    find_path(${ui_PKG}_ROOT 
       NAMES "${ui_PKG}Config.cmake"
       PATHS "${SINGULARITY_${ui_VARCASE}_INSTALL_DIR}"
+      PATH_SUFFIXES lib/cmake/${ui_PKG} lib64/cmake/${ui_PKG}
     )
-    if(ui_INSTALLCMAKE-NOTFOUND)
-      message(FATAL_ERROR "Could not find \"${ui_PKG}Config.cmake\" in \"SINGULARITY_${ui_VARCASE}_INSTALL_DIR}")
+    if(NOT ${ui_PKG}_ROOT)
+      singularity_msg(WARNING "[IMPORT:USER] SINGULARITY_${ui_PKG}_INSTALL_DIR [${SINGULARITY_${ui_PKG}_INSTALL_DIR}] set, but did not find \"${ui_PKG}Config.cmake\"")
+    else()
+      singularity_msg(STATUS "[IMPORT:USER] located cmake install, ${ui_PKG}_ROOT = ${${ui_PKG}_ROOT}")
     endif()
-    set(${ui_PKG}_ROOT "${ui_INSTALLCMAKE}")
   endif()
   
 endmacro()
@@ -137,18 +139,17 @@ macro(singularity_import_submodule)
   endif()
       
   if (NOT EXISTS ${submod_SUBDIR}/CMakeLists.txt)
-    singularity_msg(WARNING "submodendency directory ${submod_SUBDIR} does not contain a CMakeLists.txt file. No target information about ${submod_PKG} will be available")
+    singularity_msg(WARNING "[IMPORT:SUBMODULE] submodendency directory ${submod_SUBDIR} does not contain a CMakeLists.txt file. No target information about ${submod_PKG} will be available")
   endif()
       
   # if adding a subdirectory, set the config variables (if any) for the package
   singularity_cmake_config(${submod_PKG})
       
-  singularity_msg(STATUS "invoking \"add_subdirectory(${submod_SUBDIR}\", output supressed")
-  #  set(MESSAGE_QUIET ON)
+  #set(MESSAGE_QUIET ON)
   add_subdirectory(${submod_SUBDIR})
   #unset(MESSAGE_QUIET)
 
-  singularity_msg(STATUS "${submod_PKG} added from in-tree: ${submod_SUBDIR}")
+  singularity_msg(STATUS "[IMPORT:SUBMODULE] ${submod_PKG} added from in-tree: ${submod_SUBDIR}")
 endmacro()
 
 macro(singularity_import_system)
@@ -162,7 +163,7 @@ macro(singularity_import_system)
   )
   cmake_parse_arguments(sysinstall "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
-    singularity_msg(STATUS "Attempting \"find_package(${sysinstall_PKG})\"")
+    singularity_msg(STATUS "[IMPORT:SYSTEM] Attempting \"find_package(${sysinstall_PKG})\"")
     find_package(${sysinstall_PKG} QUIET COMPONENTS ${sysinstall_COMPONENTS})
 endmacro()
 
