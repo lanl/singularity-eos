@@ -33,8 +33,11 @@ include(cmake/submodule_configs.cmake)
 #     )
 #     # message("${DEPS_MPI}") will print "C;CXX"
 #------------------------------------------------------------------------------
-macro(import_dependency)
+macro(singularity_import_dependency)
   set(options
+    USER_INSTALL
+    SUBMODULE_ONLY
+    NO_SUBMODULE
   )
   set(one_value_args
     PKG
@@ -47,81 +50,119 @@ macro(import_dependency)
   )
   cmake_parse_arguments(dep "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
-  if(dep_TARGET AND dep_TARGETS)
-    message(FATAL_ERROR "Can only import a single target, or multiple")
-  endif()
-
-  if(dep_TARGETS AND NOT dep_COMPONENTS)
-    message(FATAL_ERROR "Need a target for each component")
-  endif()
-
   if(TARGET ${dep_TARGET})
     singularity_msg(STATUS "Detected ${dep_TARGET} present, no further processing for this dependency.")
   else()
-    singularity_msg(STATUS "Attempting \"find_package(${dep_PKG})\"")
-    find_package(${dep_PKG} QUIET COMPONENTS ${dep_COMPONENTS})
-    
-    if (NOT ${dep_PKG}_FOUND)
-    
-      singularity_msg(STATUS "\"find_package(${dep_PKG})\" returned not-found. Trying to locate submodule at")
-      
-      if (NOT EXISTS ${dep_SUBDIR})
-      
-        message(FATAL_ERROR "${dep_PKG} requested, but cannot the in-tree directory ${dep_SUBDIR} does not exist")
-      endif()
-      
-      if (NOT EXISTS ${dep_SUBDIR}/CMakeLists.txt)
-      
-        singularity_msg(WARNING "dependency directory ${dep_SUBDIR} does not contain a CMakeLists.txt file. No target information about ${dep_PKG} will be available")
-      endif()
-      
-      # if adding a subdirectory, set the config variables (if any) for the package
-      singularity_cmake_config(${dep_PKG})
-      
-      singularity_msg(STATUS "invoking \"add_subdirectory(${dep_SUBDIR}\", output supressed")
-      set(MESSAGE_QUIET ON)
-      add_subdirectory(${dep_SUBDIR})
-      unset(MESSAGE_QUIET)
-
-      #      get_target_property(_is_imported ${dep_TARGET} IMPORTED)
-      #      set(_lib_type "INTERFACE")
-      #      if(_is_imported)
-      #        set(_lib_type "IMPORTED")
-      #      endif()
-
-      singularity_msg(STATUS "dependency ${dep_PKG} added from in-tree: ${dep_SUBDIR}")
-
-      # anything with `add_subdirectory`...umm interface lib
-
-      # get de-aliased target
-      get_target_property(_taraliased ${dep_TARGET} ALIASED_TARGET)
-      # link libs added to export
-      get_target_property(_intflink ${dep_TARGET} INTERFACE_LINK_LIBRARIES)
-
-      if(_taraliased)
-        list(APPEND SINGULARITY_EXPORT_TARGETS ${_taraliased})
-      else()
-        list(APPEND SINGULARITY_EXPORT_TARGETS ${dep_TARGET})
-      endif()
-      if(_intflink)
-        list(APPEND SINGULARITY_EXPORT_TARGETS ${_intflink})
-      endif()
-
+    if(dep_SUBMODULE_ONLY)
+      singularity_import_submodule(
+        PKG ${dep_PKG}
+        SUBDIR ${dep_SUBDIR}
+      )
     else()
-      singularity_msg(STATUS "dependency ${dep_PKG} located: ${${dep_PKG}_DIR}")
+      if(dep_USER_INSTALL)
+        singularity_import_user_install(
+          PKG ${dep_PKG}
+        )
+      endif()
+      singularity_import_system(
+        PKG ${dep_PKG}
+        TARGETS ${dep_TARGETS}
+        COMPONENTS ${dep_COMPONENTS}
+      )
+      if (NOT ${dep_PKG}_FOUND)
+        if(dep_NO_SUBMODULE)
+          message(FATAL_ERROR "Could not locate ${dep_PKG} outside of project, and `singularity_import_dependency()` was called with `NO_SUBMODULE` option")
+        endif()
+        singularity_import_submodule(
+          PKG ${dep_PKG}
+          SUBDIR ${dep_SUBDIR}
+        )
+      else()
+        singularity_msg(STATUS "Found with find_package() [${${dep_PKG}_DIR}]")
+      endif()
     endif()
   endif()
 
-  if(dep_TARGETS)
-    list(APPEND SINGULARITY_PUBLIC_LIBS ${dep_TARGETS})
-  else()
-    list(APPEND SINGULARITY_PUBLIC_LIBS ${dep_TARGET})
-  endif()
+  list(APPEND SINGULARITY_PUBLIC_LIBS ${dep_TARGETS})
+  list(APPEND SINGULARITY_PUBLIC_LIBS ${dep_TARGET})
 
+  if(dep_TARGET)
+    #print_target_properties(${dep_TARGET})
+  endif()
   list(APPEND SINGULARITY_DEP_PKGS ${dep_PKG})
   if(dep_COMPONENTS)
-    list(APPEND SINGULARITY_DEP_PKGS_${dep_PKG} ${${dep_COMPONETNS}})
+    list(APPEND SINGULARITY_DEP_PKGS_${dep_PKG} "${dep_COMPONENTS}")
   endif()
 
+endmacro()
+
+macro(singularity_import_user_install)
+  set(options
+  )
+  set(one_value_args
+    PKG
+  )
+  set(multi_value_args
+  )
+  cmake_parse_arguments(ui "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+  string(TOUPPER ${ui_PKG} ui_VARCASE)
+
+  if(SINGULARITY_${ui_VARCASE}_INSTALL_DIR)
+    find_path(ui_INSTALLCMAKE 
+      NAMES "${ui_PKG}Config.cmake"
+      PATHS "${SINGULARITY_${ui_VARCASE}_INSTALL_DIR}"
+    )
+    if(ui_INSTALLCMAKE-NOTFOUND)
+      message(FATAL_ERROR "Could not find \"${ui_PKG}Config.cmake\" in \"SINGULARITY_${ui_VARCASE}_INSTALL_DIR}")
+    endif()
+    set(${ui_PKG}_ROOT "${ui_INSTALLCMAKE}")
+  endif()
+  
+endmacro()
+
+macro(singularity_import_submodule)
+  set(options
+  )
+  set(one_value_args
+    PKG
+    SUBDIR
+  )
+  set(multi_value_args
+  )
+  cmake_parse_arguments(submod "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+  if (NOT EXISTS ${submod_SUBDIR})      
+    message(FATAL_ERROR "${submod_PKG} requested, but cannot the in-tree directory ${submod_SUBDIR} does not exist")
+  endif()
+      
+  if (NOT EXISTS ${submod_SUBDIR}/CMakeLists.txt)
+    singularity_msg(WARNING "submodendency directory ${submod_SUBDIR} does not contain a CMakeLists.txt file. No target information about ${submod_PKG} will be available")
+  endif()
+      
+  # if adding a subdirectory, set the config variables (if any) for the package
+  singularity_cmake_config(${submod_PKG})
+      
+  singularity_msg(STATUS "invoking \"add_subdirectory(${submod_SUBDIR}\", output supressed")
+  #  set(MESSAGE_QUIET ON)
+  add_subdirectory(${submod_SUBDIR})
+  #unset(MESSAGE_QUIET)
+
+  singularity_msg(STATUS "${submod_PKG} added from in-tree: ${submod_SUBDIR}")
+endmacro()
+
+macro(singularity_import_system)
+  set(options
+  )
+  set(one_value_args
+    PKG
+  )
+  set(multi_value_args
+    COMPONENTS
+  )
+  cmake_parse_arguments(sysinstall "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+    singularity_msg(STATUS "Attempting \"find_package(${sysinstall_PKG})\"")
+    find_package(${sysinstall_PKG} QUIET COMPONENTS ${sysinstall_COMPONENTS})
 endmacro()
 

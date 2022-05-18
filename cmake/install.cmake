@@ -8,7 +8,7 @@ include(GNUInstallDirs)
 # NOTE: the `DESTINATION` here is the implicit default, tho I think we 
 # *have* to make it explicit since we (may) also install a fortran module.
 install(
-  TARGETS singularity-eos ${SINGULARITY_EXPORT_TARGETS}
+  TARGETS singularity-eos
   EXPORT singularity-eosTargets
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
@@ -61,6 +61,18 @@ export(
   FILE      ${CMAKE_CURRENT_BINARY_DIR}/cmake/singularity-eosTargets.cmake
   NAMESPACE singularity-eos::
 )
+  # NB: extra step b/c kokkos doesn't do this? seems weird
+  # to the best of my reading, this is just bookkeeping after
+  # configuration step, but without there is a conflict between
+  # export sets. I'm likely doing something incorrect.
+if(SINGULARITY_USE_KOKKOS AND NOT Kokkos_FOUND)
+  singularity_msg(STATUS "NOTE: we export `KokkosTargets` here, because the `Kokkos` package was imported through `add_subdirectory()`, and that does not export these on it's own")
+  export(
+    EXPORT KokkosTargets 
+    FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/KokkosTargets.cmake 
+    NAMESPACE Kokkos::
+  )
+endif()
 
 # apparently, this doesn't do anything anymore,
 # see https://cmake.org/cmake/help/latest/policy/CMP0090.html

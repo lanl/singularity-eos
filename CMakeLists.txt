@@ -144,69 +144,132 @@ endif()
 #------------------------------------------------------------------------------#
 # Handle dependencies
 #------------------------------------------------------------------------------#
+#need this for consistant Catch2 everywhere
+if(SINGULARITY_BUILD_TESTS)
+if (NOT TARGET Catch2::Catch2)
+  find_package(Catch2 QUIET)
+endif()
+
+if(NOT Catch2_FOUND)
+  message(STATUS "Fetching Catch2 as needed")
+  # idiomatic FetchContent
+  include(FetchContent)
+  FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v2.13.7)
+  FetchContent_MakeAvailable(Catch2)
+  list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
+endif()
+endif()
 
 include(cmake/dependency.cmake)
 
 if(SINGULARITY_USE_KOKKOS)
-   import_dependency(
+  # kokkos offloading
+  # type: soft submodule 
+  singularity_import_dependency(
+    USER_INSTALL
     PKG Kokkos
     TARGET Kokkos::kokkos
     SUBDIR ${PROJECT_SOURCE_DIR}/utils/kokkos
     )
+  set(PORTABILITY_STRATEGY "Kokkos")
+  set(SPINER_USE_KOKKOS ON)
   list(APPEND SINGULARITY_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
-
+  list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_KOKKOS)
+  # type: external
+  if(SINGULARITY_USE_KOKKOSKERNELS)
+    singularity_import_dependency(
+      USER_INSTALL NO_SUBMODULE
+      PKG KokkosKernels
+      TARGET Kokkos::kokkoskernels
+    )
+    list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
+  endif() #SINGULARITY_USE_KOKKOS_KERNELS
+# The preprocessor of singularity-eos does not 
+# want kokkos and eigen together. 
+else()
+  # type: soft submodule
+  singularity_import_dependency(
+    USER_INSTALL
+    PKG Eigen3
+    TARGET Eigen3::Eigen
+    SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
+  )
 endif() #SINGULARITY_USE_KOKKOS
 
-#if(SINGULARITY_USE_KOKKOSKERNELS)
-#  list(APPEND TAR_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
-#  append_target_dependency(TAR_PUBLIC_LIB TAR_LIB_DEPS
-#    PKG KokkosKernels
-#    TARGETS Kokkos::kokkoskernels
-#  )
-#else()
-import_dependency(
-  PKG Eigen3
-  TARGET Eigen3::Eigen
-  SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
-)
-
-#endif() #SINGULARITY_USE_KOKKOSKERNELS
-
-import_dependency(
+# variant for prior C++17
+# type: hard submodule
+singularity_import_dependency(
+  SUBMODULE_ONLY
   PKG mpark_variant
   TARGET mpark_variant
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/variant
 )
 
-import_dependency(
-  PKG spiner
-  TARGET spiner::spiner
-  SUBDIR ${PROJECT_SOURCE_DIR}/utils/spiner
-)
-
-import_dependency(
+# ports-of-call
+# type: ghost submodule
+singularity_import_dependency(
   PKG ports-of-call
   TARGET ports-of-call::ports-of-call
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/ports-of-call
 )
 
+
+# spiner
+# type: soft? submodule
+singularity_import_dependency(
+  PKG spiner
+  TARGET spiner::spiner
+  SUBDIR ${PROJECT_SOURCE_DIR}/utils/spiner
+)
+
 # only use hdf5 if spiner
 if (SINGULARITY_USE_HDF5)
-  import_dependency(
+  # hdf5, for data interopability
+  # type: external
+  singularity_import_dependency(
+    USER_INSTALL NO_SUBMODULE
     PKG HDF5
     COMPONENTS C HL
     TARGETS HDF5::HDF5 hdf5::hdf5_hl
   )
+  # make sure we use MPI,
+  # as this requirement is not
+  # transitive in hdf5
   if(HDF5_IS_PARALLEL)
-    import_dependency(
+    # Message passing interface
+    # type: external
+    singularity_import_dependency(
+      USER_INSTALL NO_SUBMODULE
       PKG MPI
       COMPONENTS CXX
-      TARGETS MPI::CXX
+      TARGETS MPI::MPI_CXX
     )
   endif()
   list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_HDF)
   list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_HDF)
-endif()
+endif() # SINGULARITY_USE_HDF5
+
+#NB: An edge-case (but an easy one), that doesn't slot
+#   easily into the `import_dependency()` setup.
+#   TODO: just do it correctly
+#TODO: Check: Does EOSPAC only pass into side-targets?
+if (SINGULARITY_USE_EOSPAC)
+  #TODO: should be strictly module mode
+  find_package(EOSPAC REQUIRED)
+  list(APPEND SINGULARITY_PUBLIC_LIBS EOSPAC)
+  list(APPEND SINGULARITY_DEPS_PKGS EOSPAC)
+
+  add_subdirectory(eospac-wrapper)
+  target_link_libraries(singularity-eos
+    PUBLIC
+    eospac-wrapper)
+  target_compile_definitions(singularity-eos
+    PUBLIC
+    SINGULARITY_USE_EOSPAC)
+endif ()
 
 
 #TODO: this feels out-of-place here, though i haven't crawled into the source yet to see
@@ -215,13 +278,14 @@ if (SINGULARITY_TEST_SESAME)
   list(APPEND SINGULARITY_PRIVATE_DEFINES SINGULARITY_TEST_SESAME)
 endif()
 
+singularity_msg(STATUS "Configuration")
 message(STATUS "[== INFO: status so far ===============================")
 message(STATUS "[== dependency list: ${SINGULARITY_DEP_PKGS}")
 message(STATUS "[== library targets: ${SINGULARITY_PUBLIC_LIBS} ${SINGULARITY_PRIVATE_LIBS}")
-message(STATUS "[== export list: ${SINGULARITY_EXPORT_TARGETS}")
 message(STATUS "[== compiler definitions: ${SINGULARITY_PUBLIC_DEFINES} ${SINGULARITY_PRIVATE_DEFINES}")
 message(STATUS "[======================================================")
-#==============================================================================#
+
+#------------------------------------------------------------------------------#
 # singularity-eos library
 #------------------------------------------------------------------------------#
 
@@ -240,6 +304,7 @@ foreach(_src ${EOS_SRCS})
   list(APPEND _srcs singularity-eos/${_src})
 endforeach()
 
+# define the 
 add_library(singularity-eos ${_srcs} ${_headers})
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
 
@@ -318,20 +383,6 @@ if(SINGULARITY_USE_CUDA)
   endif()
 endif()
 
-#TODO: Check: Does EOSPAC only pass into side-targets?
-if (SINGULARITY_USE_EOSPAC)
-  #TODO: should be strictly module mode
-  find_package(EOSPAC REQUIRED)
-  list(APPEND TAR_LIB_DEPS EOSPAC)
-
-  add_subdirectory(eospac-wrapper)
-  target_link_libraries(singularity-eos
-    PUBLIC
-    eospac-wrapper)
-  target_compile_definitions(singularity-eos
-    PUBLIC
-    SINGULARITY_USE_EOSPAC)
-endif ()
 
 foreach(_sdir ${subdirs2add})
   add_subdirectory(${_sdir})
@@ -359,7 +410,7 @@ endforeach()
 # if a package was consumed with `add_subdirectory` in configuration,
 # the downstream `find_package()` should find it's way to the consumed
 # package install path
-foreach(_depName ${SINGULARITY_DEPS_PKGS})
+foreach(_depName ${SINGULARITY_DEP_PKGS})
   set(_components "")
   if(SINGULARITY_DEP_PKGS_${_depName})
     set(_components "COMPONENTS ${SINGULARITY_DEP_PKGS_${_depName}}")
@@ -375,8 +426,8 @@ configure_file(${PROJECT_SOURCE_DIR}/config/singularity-eosConfig.cmake.in
 
 #TODO: nope, this is too hacky. redo.
 #if(NOT SINGULARITY_SUBMODULE_MODE)
-include(cmake/install.cmake)
-#endif()
+  include(cmake/install.cmake)
+  #endif()
 
 #----------------------------------------------------------------------------#
 # Testing
