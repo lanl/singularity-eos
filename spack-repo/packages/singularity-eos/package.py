@@ -35,8 +35,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     # include depedencies for automatic code formatting (i.e. clang-format)
     variant("format", default=False, description="Clang-Format Support")
 
-    # TODO: do we always depend on eospac? 
-    depends_on("eospac")
+    variant("eospac", default=True, description="Pull in EOSPAC")
 
     # building/testing/docs
     depends_on("cmake@3.14:")
@@ -50,6 +49,8 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # linear algebra when not using GPUs
     depends_on("eigen@3.3.8", when="~cuda")
+
+    depends_on("eospac", when="+eospac")
 
     # set up kokkos offloading dependencies
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):

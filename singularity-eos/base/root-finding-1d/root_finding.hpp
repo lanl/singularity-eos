@@ -107,7 +107,123 @@ class RootCounts {
   PORTABLE_INLINE_FUNCTION int more() const { return nbins_ - 1; }
 };
 
+PORTABLE_INLINE_FUNCTION bool check_bracket(const Real ya, const Real yb) {
+  return (ya * yb <= 0.0);
+}
+
+template <typename T>
+PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess, Real &b,
+                                          Real &ya, const Real yg, Real &yb) {
+  constexpr int max_search_depth = 6;
+  Real dx = b - a;
+  for (int level = 0; level < max_search_depth; level++) {
+    const int nlev = (1 << level);
+    for (int i = 0; i < nlev; i++) {
+      const Real x = a + (i + 0.5) * dx;
+      const Real yx = f(x);
+      if (check_bracket(yx, yg)) {
+        if (x < guess) {
+          a = x;
+          ya = yx;
+          b = guess;
+          yb = yg;
+        } else {
+          a = guess;
+          ya = guess;
+          b = x;
+          yb = yx;
+        }
+        return true;
+      }
+    }
+  }
+  // if we get here then we failed to bracket a root
+  printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
+         guess, b, ya, yg, yb);
+  return false;
+}
+
 // solves for f(x,params) - ytarget = 0
+template <typename T>
+PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
+                                             const Real guess, Real a, Real b,
+                                             const Real xtol, const Real ytol,
+                                             Real &xroot, const RootCounts &counts) {
+  constexpr int max_iter = SECANT_NITER_MAX;
+  auto func = [&](const Real x) { return f(x) - ytarget; };
+  Real ya = func(a);
+  Real yg = func(guess);
+  Real yb;
+
+  if (check_bracket(ya, yg)) {
+    b = guess;
+    yb = yg;
+  } else {
+    yb = func(b);
+    if (check_bracket(yg, yb)) {
+      a = guess;
+      ya = yg;
+    } else {
+      // ya, yg, and yb have the same sign
+      if (!set_bracket(func, a, guess, b, ya, yg, yb)) {
+        printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
+        return Status::FAIL;
+      }
+    }
+  }
+
+  Real sign = (ya < 0 ? 1.0 : -1.0);
+  ya *= sign;
+  yb *= sign;
+
+  int b1 = 0;
+  int b2 = 0;
+  int iteration_count = 0;
+  while (b - a > 2.0 * xtol && (std::abs(ya) > ytol || std::abs(yb) > ytol) &&
+         iteration_count < max_iter) {
+    Real c = (a * yb - b * ya) / (yb - ya);
+    // guard against roundoff because ya or yb is sufficiently close to zero
+    if (c == a) {
+      b = a;
+      continue;
+    } else if (c == b) {
+      a = b;
+      continue;
+    }
+    Real yc = sign * func(c);
+    if (yc > 0.0) {
+      b = c;
+      yb = yc;
+      b1++;
+      ya *= (b1 > 1 ? 0.5 : 1.0);
+      b2 = 0;
+    } else if (yc < 0.0) {
+      a = c;
+      ya = yc;
+      b2++;
+      yb *= (b2 > 1 ? 0.5 : 1.0);
+      b1 = 0;
+    } else {
+      a = c;
+      b = c;
+    }
+    iteration_count++;
+  }
+  auto status = Status::SUCCESS;
+  if (iteration_count == max_iter) {
+    printf(
+        "root finding reached the maximum number of iterations.  likely not converged\n");
+    status = Status::FAIL;
+  }
+  if (iteration_count < counts.nBins()) {
+    counts.increment(iteration_count);
+  } else {
+    counts.increment(counts.more());
+  }
+  xroot = 0.5 * (a + b);
+  return status;
+}
+
 template <typename T>
 PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xguess,
                                          const Real xmin, const Real xmax,
@@ -116,8 +232,6 @@ PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xg
   Status status;
 
   // first check if we're at the max or min values
-  // TODO: these short-circuits almost never happen. Should they be removed?
-  // ~JMM
   const Real fmax = f(xmax);
   const Real errmax = fabs(fmax - ytarget) / (fabs(fmax) + ytol);
   if (errmax < ytol) {

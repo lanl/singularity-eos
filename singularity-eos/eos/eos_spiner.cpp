@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -34,6 +35,7 @@
 #include <spiner/sp5.hpp>
 
 #define SPINER_EOS_VERBOSE (0)
+#define ROOT_FINDER (RootFinding1D::regula_falsi)
 
 namespace singularity {
 
@@ -198,6 +200,7 @@ SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
   other.dTdECold_ = Spiner::getOnDeviceDataBox(dTdECold_);
   other.dEdTCold_ = Spiner::getOnDeviceDataBox(dEdTCold_);
   other.lTColdCrit_ = Spiner::getOnDeviceDataBox(lTColdCrit_);
+  other.rho_at_pmin_ = Spiner::getOnDeviceDataBox(rho_at_pmin_);
   other.lRhoMin_ = lRhoMin_;
   other.lRhoMax_ = lRhoMax_;
   other.rhoMax_ = rhoMax_;
@@ -247,6 +250,7 @@ void SpinerEOSDependsRhoT::Finalize() {
   dEdTCold_.finalize();
   dTdECold_.finalize();
   lTColdCrit_.finalize();
+  rho_at_pmin_.finalize();
   memoryStatus_ = DataStatus::Deallocated;
 }
 
@@ -306,6 +310,23 @@ herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str, hid_t 
   // find critical temperature Tcrit(rho)
   // where sie(rho,Tcrit(rho)) = sieCold(rho)
   setlTColdCrit_();
+
+  // fill in minimum pressure as a function of temperature
+  rho_at_pmin_.resize(numT_);
+  // rho_at_pmin_.setRange(0, P_.range(0));
+  rho_at_pmin_.setRange(0, lTMin_, lTMax_, numT_);
+  for (int i = 0; i < numT_; i++) {
+    Real pmin = std::numeric_limits<Real>::max();
+    int jmax = -1;
+    for (int j = 0; j < numRho_; j++) {
+      if (P_(j, i) < pmin) {
+        pmin = P_(j, i);
+        jmax = j;
+      }
+    }
+    if (jmax < 0) printf("Failed to find minimum pressure.\n");
+    rho_at_pmin_(i) = rho_(P_.range(1).x(jmax));
+  }
 
   // fill in Gruneisen parameter and bulk modulus on cold curves
   // unfortunately, EOSPAC's output for these parameters appears
@@ -442,11 +463,12 @@ void SpinerEOSDependsRhoT::setlTColdCrit_() {
       const callable_interp::r_interp sieFunc(sie_, lRho);
       Real lT;
       int ilast = crossings[last_pos_crossing];
-      Real lTlower = bMod_.range(0).x(ilast);
-      Real lTupper = bMod_.range(0).x(ilast + 1);
+      // expand bounds by +/- 1.e-14 to help with round-off
+      Real lTlower = bMod_.range(0).x(ilast) - 1.0e-14;
+      Real lTupper = bMod_.range(0).x(ilast + 1) + 1.0e-14;
       Real lTGuess = 0.5 * (lTlower + lTupper);
-      auto status = findRoot(sieFunc, sieCold, lTGuess, lTlower, lTupper, ROOT_THRESH,
-                             ROOT_THRESH, lT, counts);
+      auto status = ROOT_FINDER(sieFunc, sieCold, lTGuess, lTlower, lTupper, ROOT_THRESH,
+                                ROOT_THRESH, lT, counts);
       if (status != RootFinding1D::Status::SUCCESS) {
         lT = lTGuess;
       }
@@ -687,6 +709,14 @@ void SpinerEOSDependsRhoT::ValuesAtReferenceState(Real &rho, Real &temp, Real &s
 }
 
 PORTABLE_FUNCTION
+Real SpinerEOSDependsRhoT::RhoPmin(const Real temp) const {
+  const Real lT = lT_(temp);
+  if (lT <= lTMin_) return rho_at_pmin_(0);
+  if (lT >= lTMax_) return 0.0;
+  return rho_at_pmin_.interpToReal(lT);
+}
+
+PORTABLE_FUNCTION
 void SpinerEOSDependsRhoT::getLogsRhoT_(const Real rho, const Real temperature,
                                         Real &lRho, Real &lT, Real *lambda) const {
   lRho = lRho_(rho);
@@ -700,7 +730,6 @@ void SpinerEOSDependsRhoT::getLogsRhoT_(const Real rho, const Real temperature,
 PORTABLE_FUNCTION
 Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
                                         TableStatus &whereAmI, Real *lambda) const {
-  using RootFinding1D::findRoot;
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
 
   Real lRho;
@@ -713,21 +742,24 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
   if (lT <= lTMin_) { // cold curve
     whereAmI = TableStatus::OffBottom;
     const callable_interp::interp PFunc(PCold_);
-    status = findRoot(PFunc, P, lRhoGuess,
-                      // lRhoMin_, lRhoMax_,
-                      lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
+    status =
+        ROOT_FINDER(PFunc, P, lRhoGuess,
+                    // lRhoMin_, lRhoMax_,
+                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
   } else if (lT >= lTMax_) { // ideal gas
     whereAmI = TableStatus::OffTop;
     const callable_interp::prod_interp_1d PFunc(gm1Max_, dEdTMax_, lT);
-    status = findRoot(PFunc, P, lRhoGuess,
-                      // lRhoMin_, lRhoMax_,
-                      lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
+    status =
+        ROOT_FINDER(PFunc, P, lRhoGuess,
+                    // lRhoMin_, lRhoMax_,
+                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
   } else { // on table
     whereAmI = TableStatus::OnTable;
     const callable_interp::l_interp PFunc(P_, lT);
-    status = findRoot(PFunc, P, lRhoGuess,
-                      // lRhoMin_, lRhoMax_,
-                      lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
+    status =
+        ROOT_FINDER(PFunc, P, lRhoGuess,
+                    // lRhoMin_, lRhoMax_,
+                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
   }
   if (status_ != RootFinding1D::Status::SUCCESS) {
 #if EPINER_EOS_VERBOSE
@@ -755,7 +787,6 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
                                           TableStatus &whereAmI, Real *lambda) const {
 
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
-  using RootFinding1D::findRoot;
   Real lT;
 
   whereAmI = getLocDependsRhoSie_(lRho, sie);
@@ -777,17 +808,20 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
       lTGuess = lambda[Lambda::lT];
     }
     const callable_interp::r_interp sieFunc(sie_, lRho);
-    status = findRoot(sieFunc, sie, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH, lT,
-                      counts);
+    status = ROOT_FINDER(sieFunc, sie, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
+                         lT, counts);
 
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
-      errorMessage << "inverting sie table for logT failed\n"
+      errorMessage << std::scientific << std::setprecision(14)
+                   << "inverting sie table for logT failed\n"
                    << "matid   = " << matid_ << "\n"
                    << "lRho    = " << lRho << "\n"
                    << "sie     = " << sie << "\n"
-                   << "lTGuess = " << lTGuess << std::endl;
+                   << "lTGuess = " << lTGuess << "\n"
+                   << "sielTMax = " << sielTMax_.interpToReal(lRho) << "\n"
+                   << "sieCold = " << sieCold_.interpToReal(lRho) << std::endl;
       EOS_ERROR(errorMessage.str().c_str());
 #endif // SPINER_EOS_VERBOSE
       lT = reproducible_ ? lTMin_ : lTGuess;
@@ -806,7 +840,6 @@ PORTABLE_FUNCTION
 Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
                                         TableStatus &whereAmI, Real *lambda) const {
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
-  using RootFinding1D::findRoot;
   Real lT, lTGuess;
 
   // Assumes P is monotone in T
@@ -829,8 +862,8 @@ Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
       lTGuess = 0.5 * (lTMin_ + lTMax_);
     }
     const callable_interp::r_interp PFunc(P_, lRho);
-    status = findRoot(PFunc, press, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH, lT,
-                      counts);
+    status = ROOT_FINDER(PFunc, press, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
+                         lT, counts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
@@ -926,9 +959,12 @@ Real SpinerEOSDependsRhoT::bModFromRholRhoTlT_(const Real rho, const Real lRho,
 PORTABLE_FUNCTION TableStatus
 SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) const {
   TableStatus whereAmI;
-  if (sie >= sielTMax_.interpToReal(lRho)) {
+  const Real sielTMax = sielTMax_.interpToReal(lRho);
+  const Real sieCold = sieCold_.interpToReal(lRho);
+  // sie can be negative, so must make sign right
+  if (sie >= sielTMax - SOFT_THRESH * std::abs(sielTMax)) {
     whereAmI = TableStatus::OffTop;
-  } else if (sie <= sieCold_.interpToReal(lRho)) {
+  } else if (sie <= sieCold + SOFT_THRESH * std::abs(sieCold)) {
     whereAmI = TableStatus::OffBottom;
   } else {
     whereAmI = TableStatus::OnTable;
@@ -940,9 +976,9 @@ SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) cons
 PORTABLE_FUNCTION TableStatus
 SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
   TableStatus whereAmI;
-  if (lT <= lTMin_)
+  if (lT <= (1 + SOFT_THRESH) * lTMin_)
     whereAmI = TableStatus::OffBottom;
-  else if (lT >= lTMax_)
+  else if (lT >= (1 - SOFT_THRESH) * lTMax_)
     whereAmI = TableStatus::OffTop;
   else
     whereAmI = TableStatus::OnTable;
@@ -1369,8 +1405,6 @@ Real SpinerEOSDependsRhoSie::interpRhoSie_(const Real rho, const Real sie,
 PORTABLE_FUNCTION
 Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
                                           Real *lambda) const {
-  using RootFinding1D::findRoot;
-
   Real lRho;
   Real dPdRhoMax = dPdRhoMax_.interpToReal(lT);
   Real PMax = PlRhoMax_.interpToReal(lT);
@@ -1384,7 +1418,8 @@ Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
       lRhoGuess = *lambda;
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
-    status_ = findRoot(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, EPS, EPS, lRho, counts);
+    status_ =
+        ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, EPS, EPS, lRho, counts);
 
     if (status_ != RootFinding1D::Status::SUCCESS) {
 #if EPINER_EOS_VERBOSE
