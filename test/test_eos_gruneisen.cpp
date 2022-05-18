@@ -174,7 +174,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
   }
 }
 
-SCENARIO("Aluminum Gruneisen EOS Sound Speed Comparison", "[GruneisenEOS]") {
+SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[GruneisenEOS]") {
   GIVEN("Parameters for a Gruneisen EOS") {
     // Unit conversions
     constexpr Real mm = 10.;
@@ -243,6 +243,27 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed Comparison", "[GruneisenEOS]") {
                            << " cm/us  Approximate sound speed: " << ss_approx
                            << " cm/us");
           REQUIRE(isClose(sound_speed, ss_approx, 1e-5));
+        }
+      }
+    }
+    GIVEN("A particle velocity and the same Hugoniot fit used in the EOS") {
+      // Use Rankine-Hugoniot jump conditions to calculate a consistent point on the EOS
+      constexpr Real up = 0.1 * cm / us;
+      constexpr Real Us = C0 + S1 * up;
+      constexpr Real e0 = 0;
+      THEN("We have the density, energy, and pressure at this point") {
+        constexpr Real density = Us * rho0 / (Us - up);
+        constexpr Real true_pres = P0 + rho0 * Us * up;
+        constexpr Real energy = e0 + 1. / 2. * Us * up * (1 - rho0 / density) +
+            P0 * (1 / rho0 - 1 / density);
+        WHEN("A P(rho, e) lookup is performed for the Hugoniot energy and density") {
+          const Real pres = eos.PressureFromDensityInternalEnergy(density, energy);
+          THEN("The pressure should agree with that given by the jump conditions") {
+            INFO("Density: " << density << "  Energy: " << energy << "  Pressure: "
+                             << pres / Mbar << " Mbar  True pressure: "
+                             << true_pres / Mbar << " Mbar");
+            REQUIRE(isClose(pres, true_pres, 1e-12));
+          }
         }
       }
     }
