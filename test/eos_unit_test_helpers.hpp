@@ -15,10 +15,10 @@
 #ifndef _SINGULARITY_EOS_TEST_TEST_HELPERS_
 #define _SINGULARITY_EOS_TEST_TEST_HELPERS_
 
+#include "catch2/catch.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include "catch2/catch.hpp"
 
 // typename demangler
 #ifdef __GNUG__

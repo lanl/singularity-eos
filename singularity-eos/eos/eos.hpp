@@ -177,7 +177,8 @@ class Gruneisen : public EosBase<Gruneisen> {
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"Gruneisen Params: "};
-    printf("%s C0:%e s1:%e s2:%e s3:%e\n  G0:%e b:%e rho0:%e T0:%e\n  P0:%eCv:%e rho_max:%e\n",
+    printf("%s C0:%e s1:%e s2:%e s3:%e\n  G0:%e b:%e rho0:%e T0:%e\n  P0:%eCv:%e "
+           "rho_max:%e\n",
            s1, _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max);
   }
   PORTABLE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,

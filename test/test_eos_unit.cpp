@@ -31,7 +31,6 @@
 #include "catch2/catch.hpp"
 #endif
 
-
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::EOS;
