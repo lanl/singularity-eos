@@ -12,22 +12,6 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
-if (NOT TARGET Catch2::Catch2)
-  find_package(Catch2 QUIET)
-endif()
-
-if(NOT Catch2_FOUND)
-  message(STATUS "Fetching Catch2 as needed")
-  # idiomatic FetchContent
-  include(FetchContent)
-  FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG        v2.13.7)
-  FetchContent_MakeAvailable(Catch2)
-  list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
-endif()
-
 add_executable(eos_unit_tests
                  eos_unit_tests.cpp)
 
