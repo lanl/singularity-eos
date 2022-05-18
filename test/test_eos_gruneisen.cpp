@@ -248,7 +248,7 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[Gruneis
     }
     GIVEN("A particle velocity and the same Hugoniot fit used in the EOS") {
       // Use Rankine-Hugoniot jump conditions to calculate a consistent point on the EOS
-      constexpr Real up = 0.1 * cm / us;
+      constexpr Real up = 2 * cm / us; // 20 km/s is a pretty strong shock
       constexpr Real Us = C0 + S1 * up;
       constexpr Real e0 = 0;
       THEN("We have the density, energy, and pressure at this point") {
