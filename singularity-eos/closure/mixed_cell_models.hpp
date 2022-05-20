@@ -211,13 +211,6 @@ class PTESolverBase {
   // guess, so all the initial, scaled material temperatures are = 1.
   PORTABLE_INLINE_FUNCTION
   void InitBase() {
-    // guess some non-zero temperature to start
-    Real Tguess = 300.0;
-    for (int m = 0; m < nmat; ++m)
-      Tguess = std::max(Tguess, temp[m]);
-    // check for sanity.  basically checks that the input temperatures weren't garbage
-    assert(Tguess < 1.0e15);
-    Tnorm = Tguess;
 
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
@@ -228,26 +221,47 @@ class PTESolverBase {
     }
     u_total = rho_total * sie_total;
 
-    Real vsum = 0.0;
-    // set volume fractions
-    for (int m = 0; m < nmat; ++m) {
-      const Real rho_min = eos[m].RhoPmin(Tguess);
-      const Real vmax = std::min(0.9 * rhobar[m] / rho_min, 1.0);
-      vfrac[m] = (vfrac[m] > 0.0 ? std::min(vmax, vfrac[m]) : vmax);
-      vsum += vfrac[m];
-    }
-    // Normalize vfrac
-    for (int m = 0; m < nmat; ++m) {
-      vfrac[m] *= vfrac_total / vsum;
-    }
-    // check to make sure the normalization didn't put us below rho_at_pmin
-    for (int m = 0; m < nmat; ++m) {
-      const Real rho_min = eos[m].RhoPmin(Tguess);
-      rho[m] = rhobar[m] / vfrac[m];
-      if (rho[m] < rho_min) {
-        printf("rho < rho_min in PTE initialization!  Solver may not converge.");
+    // guess some non-zero temperature to start
+    Real Tguess = 300.0;
+    for (int m = 0; m < nmat; ++m)
+      Tguess = std::max(Tguess, temp[m]);
+    // check for sanity.  basically checks that the input temperatures weren't garbage
+    assert(Tguess < 1.0e15);
+    // iteratively increase temperature guess until all rho's are above rho_at_pmin
+    const Real Tfactor = 3.0;
+    bool rho_fail;
+    for (int i = 0; i < 6; i++) {
+      Real vsum = 0.0;
+      // set volume fractions
+      for (int m = 0; m < nmat; ++m) {
+        const Real rho_min = eos[m].RhoPmin(Tguess);
+        const Real vmax = std::min(0.9 * rhobar[m] / rho_min, 1.0);
+        vfrac[m] = (vfrac[m] > 0.0 ? std::min(vmax, vfrac[m]) : vmax);
+        vsum += vfrac[m];
       }
+      // Normalize vfrac
+      for (int m = 0; m < nmat; ++m) {
+        vfrac[m] *= vfrac_total / vsum;
+      }
+      // check to make sure the normalization didn't put us below rho_at_pmin
+      rho_fail = false;
+      for (int m = 0; m < nmat; ++m) {
+        const Real rho_min = eos[m].RhoPmin(Tguess);
+        rho[m] = rhobar[m] / vfrac[m];
+        if (rho[m] < rho_min) {
+          rho_fail = true;
+          Tguess *= Tfactor;
+          break;
+        }
+      }
+      if (!rho_fail) break;
     }
+
+    if (rho_fail) {
+      printf("rho < rho_min in PTE initialization!  Solver may not converge.");
+    }
+    // set the temperature normalization
+    Tnorm = Tguess;
 
     for (int m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
