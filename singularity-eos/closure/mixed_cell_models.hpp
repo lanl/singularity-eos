@@ -228,9 +228,9 @@ class PTESolverBase {
     // check for sanity.  basically checks that the input temperatures weren't garbage
     assert(Tguess < 1.0e15);
     // iteratively increase temperature guess until all rho's are above rho_at_pmin
-    const Real Tfactor = 3.0;
+    const Real Tfactor = 10.0;
     bool rho_fail;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 3; i++) {
       Real vsum = 0.0;
       // set volume fractions
       for (int m = 0; m < nmat; ++m) {
