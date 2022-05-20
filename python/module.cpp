@@ -27,19 +27,19 @@ Real two_params(const T& obj, const Real a, const Real b, py::array_t<double> la
   return (obj.*Func)(a, b, lambda_ptr);
 }
 
-PYBIND11_MODULE(singularity_eos, m) {
-  py::class_<IdealGas>(m, "IdealGas")
-    .def(py::init<Real, Real>())
-    .def("TemperatureFromDensityInternalEnergy", &two_params<IdealGas, &IdealGas::TemperatureFromDensityInternalEnergy>)
-    .def("InternalEnergyFromDensityTemperature", &two_params<IdealGas, &IdealGas::InternalEnergyFromDensityTemperature>)
-    .def("PressureFromDensityTemperature", &two_params<IdealGas, &IdealGas::PressureFromDensityTemperature>)
-    .def("PressureFromDensityInternalEnergy", &two_params<IdealGas, &IdealGas::PressureFromDensityInternalEnergy>)
-    .def("SpecificHeatFromDensityTemperature", &two_params<IdealGas, &IdealGas::SpecificHeatFromDensityTemperature>)
-    .def("SpecificHeatFromDensityInternalEnergy", &two_params<IdealGas, &IdealGas::SpecificHeatFromDensityInternalEnergy>)
-    .def("BulkModulusFromDensityTemperature", &two_params<IdealGas, &IdealGas::BulkModulusFromDensityTemperature>)
-    .def("BulkModulusFromDensityInternalEnergy", &two_params<IdealGas, &IdealGas::BulkModulusFromDensityInternalEnergy>)
-    .def("GruneisenParamFromDensityTemperature", &two_params<IdealGas, &IdealGas::GruneisenParamFromDensityTemperature>)
-    .def("GruneisenParamFromDensityInternalEnergy", &two_params<IdealGas, &IdealGas::GruneisenParamFromDensityInternalEnergy>)
+template<typename T>
+py::class_<T> eos_class(py::module_ & m, const char * name) {
+  return py::class_<T>(m, name)
+    .def("TemperatureFromDensityInternalEnergy", &two_params<T, &T::TemperatureFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lambda"))
+    .def("InternalEnergyFromDensityTemperature", &two_params<T, &T::InternalEnergyFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lambda"))
+    .def("PressureFromDensityTemperature", &two_params<T, &T::PressureFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lambda"))
+    .def("PressureFromDensityInternalEnergy", &two_params<T, &T::PressureFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lambda"))
+    .def("SpecificHeatFromDensityTemperature", &two_params<T, &T::SpecificHeatFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lambda"))
+    .def("SpecificHeatFromDensityInternalEnergy", &two_params<T, &T::SpecificHeatFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lambda"))
+    .def("BulkModulusFromDensityTemperature", &two_params<T, &T::BulkModulusFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lambda"))
+    .def("BulkModulusFromDensityInternalEnergy", &two_params<T, &T::BulkModulusFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lambda"))
+    .def("GruneisenParamFromDensityTemperature", &two_params<T, &T::GruneisenParamFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lambda"))
+    .def("GruneisenParamFromDensityInternalEnergy", &two_params<T, &T::GruneisenParamFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lambda"))
 
     // TODO .def("GetOnDevice")
     // TODO .def("FillEos")  what are the call semantics, since it uses references? return dict?
@@ -47,13 +47,50 @@ PYBIND11_MODULE(singularity_eos, m) {
 
     // Generic functions provided by the base class. These contain e.g. the vector
     // overloads that use the scalar versions declared here
-    // TODO  SG_ADD_BASE_CLASS_USINGS(IdealGas)
-    .def("nlambda", &IdealGas::nlambda)
-    .def_static("PreferredInput", &IdealGas::PreferredInput)
-    .def("PrintParams", &IdealGas::PrintParams)
+    // TODO  SG_ADD_BASE_CLASS_USINGS(T)
+    .def("nlambda", &T::nlambda)
+    .def_static("PreferredInput", &T::PreferredInput)
+    .def("PrintParams", &T::PrintParams)
     // TODO .def("DensityEnergyFromPressureTemperature") reference semantics
-    .def("Finalize", &IdealGas::Finalize)
-    .def_static("EosType", &IdealGas::EosType);
+    .def("Finalize", &T::Finalize)
+    .def_static("EosType", &T::EosType);
+}
+
+PYBIND11_MODULE(singularity_eos, m) {
+  eos_class<IdealGas>(m, "IdealGas")
+    .def(
+      py::init<Real, Real>(),
+      py::arg("gm1"), py::arg("Cv")
+    );
+
+  eos_class<Gruneisen>(m, "Gruneisen")
+    .def(
+      py::init<Real, Real, Real, Real, Real, Real, Real, Real, Real, Real>(),
+      py::arg("C0"), py::arg("s1"), py::arg("s2"), py::arg("s3"), py::arg("G0"),
+      py::arg("b"), py::arg("rho0"), py::arg("T0"), py::arg("P0"), py::arg("Cv")
+    );
+
+  eos_class<JWL>(m, "JWL")
+    .def(
+      py::init<Real, Real, Real, Real, Real, Real, Real>(),
+      py::arg("A"), py::arg("B"), py::arg("R1"), py::arg("R2"),
+      py::arg("w"), py::arg("rho0"), py::arg("Cv")
+    );
+
+  eos_class<DavisReactants>(m, "DavisReactants")
+    .def(
+      py::init<Real, Real, Real, Real, Real, Real, Real, Real, Real, Real, Real>(),
+      py::arg("rho0"), py::arg("e0"), py::arg("P0"), py::arg("T0"),
+      py::arg("A"), py::arg("B"), py::arg("C"), py::arg("G0"), py::arg("Z"),
+      py::arg("alpha"), py::arg("Cv0")
+    );
+
+  eos_class<DavisProducts>(m, "DavisProducts")
+    .def(
+      py::init<Real, Real, Real, Real, Real, Real, Real, Real>(),
+      py::arg("a"), py::arg("b"), py::arg("k"), py::arg("n"), py::arg("vc"),
+      py::arg("pc"), py::arg("Cv"), py::arg("E0")
+    );
 
   m.doc() = "Singularity EOS Python Bindings";
 }
