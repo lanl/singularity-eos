@@ -272,14 +272,14 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[Gruneis
 SCENARIO("Gruneisen EOS density limit") {
   /* These tests all test the functionality that finds the roots of the polynomial that
      makes up the denominator of the reference pressure curve, i.e.
-     P(x) = 1 - s1 * x - s2 * x**2 - s3 * x**3,
+      P(x) = 1 - s1 * x - s2 * x**2 - s3 * x**3,
      in order to find the maximum compression allowed by the EOS.
 
      It's very probable that many of these cases may not be physical because they produce
-     unstable shocks (i.e. Us - up < c) but we admit these cases for the moment since
-     a more comprehensive set of bounds on the EOS parameters is not currently available.
-     For a linear Us-up relationship, the point at which up > Us occurs also corresponds
-     to the singularity in the
+     unstable shocks (i.e. Us - up < c) or cannot propagate shocks (Us - up < 0) but we 
+     admit these cases for the moment since a more comprehensive set of bounds on the EOS
+     parameters is not currently available. For a linear Us-up relationship, the point at
+     which up > Us occurs also corresponds to the singularity in the reference pressure.
   */
   GIVEN("Parameters for a Gruneisen EOS") {
     // Unit conversions
@@ -306,7 +306,7 @@ SCENARIO("Gruneisen EOS density limit") {
       Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
       auto eos = host_eos.GetOnDevice();
       THEN("The provided rho_max parameter should be less than the calculated rho_max") {
-        const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+        const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
         INFO("Provided rho_max: " << set_rho_max << ", Calculated rho_max:" << rho_max);
         REQUIRE(rho_max > set_rho_max);
       }
@@ -323,7 +323,7 @@ SCENARIO("Gruneisen EOS density limit") {
         THEN("The generated rho_max parameter should be properly set") {
           constexpr Real eta_max = 1 / S1;
           const Real rho_max_true = rho0 / (1 - eta_max);
-          const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+          const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
           INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
           REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
         }
@@ -340,7 +340,7 @@ SCENARIO("Gruneisen EOS density limit") {
           THEN("The generated rho_max parameter should be properly set") {
             const Real eta_max = QuadFormulaMinus(-S2, -S1, 1.);
             const Real rho_max_true = rho0 / (1 - eta_max);
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
           }
@@ -356,7 +356,7 @@ SCENARIO("Gruneisen EOS density limit") {
           THEN("The generated rho_max parameter should be properly set") {
             const Real eta_max = QuadFormulaMinus(-S2, -S1, 1.);
             const Real rho_max_true = rho0 / (1 - eta_max);
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
           }
@@ -371,7 +371,7 @@ SCENARIO("Gruneisen EOS density limit") {
           auto eos = host_eos.GetOnDevice();
           THEN("The generated rho_max parameter should be properly set") {
             constexpr Real rho_max_true = 1.e99; // No maximum (see source)
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
           }
@@ -388,7 +388,7 @@ SCENARIO("Gruneisen EOS density limit") {
           auto eos = host_eos.GetOnDevice();
           THEN("The generated rho_max parameter should be properly set") {
             constexpr Real rho_max_true = 1.e99; // No maximum (see source)
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
           }
@@ -406,7 +406,7 @@ SCENARIO("Gruneisen EOS density limit") {
           THEN("The generated rho_max parameter should be properly set") {
             constexpr Real eta_max = 0.8025706630669670284; // Wolfram alpha
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-8)); // root-find tolerance
           }
@@ -422,7 +422,7 @@ SCENARIO("Gruneisen EOS density limit") {
           THEN("The generated rho_max parameter should be properly set") {
             constexpr Real eta_max = 0.5;
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
           }
@@ -438,7 +438,7 @@ SCENARIO("Gruneisen EOS density limit") {
           THEN("The generated rho_max parameter should be properly set") {
             constexpr Real eta_max = 0.5;
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
           }
@@ -454,7 +454,7 @@ SCENARIO("Gruneisen EOS density limit") {
           THEN("The generated rho_max parameter should be properly set") {
             constexpr Real eta_max = 0.8;
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
           }
@@ -470,7 +470,7 @@ SCENARIO("Gruneisen EOS density limit") {
           THEN("The generated rho_max parameter should be properly set (Cubic three "
                "negative roots)") {
             constexpr Real rho_max_true = 1.e99;
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
           }
@@ -487,7 +487,7 @@ SCENARIO("Gruneisen EOS density limit") {
                "bounded root)") {
             constexpr Real eta_max = 0.5;
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
           }
@@ -504,7 +504,7 @@ SCENARIO("Gruneisen EOS density limit") {
                "bounded roots)") {
             constexpr Real eta_max = 0.5;
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
           }
@@ -520,7 +520,7 @@ SCENARIO("Gruneisen EOS density limit") {
           THEN("The generated rho_max parameter should be properly set") {
             constexpr Real eta_max = 0.5;
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
           }
@@ -535,7 +535,7 @@ SCENARIO("Gruneisen EOS density limit") {
           auto eos = host_eos.GetOnDevice();
           THEN("The generated rho_max parameter should be properly set") {
             constexpr Real rho_max_true = 1.e99;
-            const Real rho_max = eos.GetRhoMax(S1, S2, S3, rho0);
+            const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
             REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
           }
