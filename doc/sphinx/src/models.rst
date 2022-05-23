@@ -230,25 +230,29 @@ The user should note that this implies that :math:`e=0` at the reference
 temperature, :math:`T_0`. Given this simple relationship, the user should
 treat the temperature from this EOS as only a rough estimate.
 
-First defining the compression as
+Given a reference density, :math:`\rho_0`, we first parameterize the EOS using
+:math:`\eta` as a measure of compression given by
 
 .. math::
 
-    \eta = 1 - \frac{\rho_0}{\rho},
+    \eta = 1 - \frac{\rho_0}{\rho}.
 
-where :math:`\rho_0` is the reference density, the Grunesien parameter is given
-by
+This is convenient because :math:`eta = 0` when :math:`\rho = \rho_0`,
+:math:`\eta = 1` at the infinite density limit, and :math:`\eta = -\infty` at
+the zero density limit. The Gruneisen parameter, :math:`\Gamma` can be expressed
+in terms of :math:`\eta` as
 
 .. math::
 
     \Gamma(\rho) =
       \begin{cases}
-        \Gamma_0                                          & \rho < \rho_0 \\
-        \Gamma_0 (1 - \eta) + b\eta                       & \rho \geq \rho_0
+        \Gamma_0                                          & \eta \leq 0 \\
+        \Gamma_0 (1 - \eta) + b\eta                       & 0 \leq \eta < 1 
       \end{cases}
 
-When the unitless user parameter :math:`b=0`, this ensures the the Gruneisen
-parameter is of a form where :math:`\rho\Gamma =` constant in compression.
+When the unitless user parameter :math:`b=0`, the Gruneisen parameter is of a
+form where :math:`\rho\Gamma =` constant in compression, i.e. when
+:math:`\eta > 0`.
 
 The reference pressure along the Hugoniot is determined by
 
