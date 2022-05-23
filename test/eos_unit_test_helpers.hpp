@@ -15,7 +15,9 @@
 #ifndef _SINGULARITY_EOS_TEST_TEST_HELPERS_
 #define _SINGULARITY_EOS_TEST_TEST_HELPERS_
 
+#ifndef CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
+#endif
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
