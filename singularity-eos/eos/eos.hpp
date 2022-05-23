@@ -135,9 +135,9 @@ class Gruneisen : public EosBase<Gruneisen> {
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
       : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
-        _Cv(Cv), _rho_max(RHOMAX_SAFETY * GetRhoMax(s1, s2, s3, rho0)) {}
-  static PORTABLE_FUNCTION Real GetRhoMax(const Real s1, const Real s2, const Real s3,
-                                          const Real rho0);
+        _Cv(Cv), _rho_max(RHOMAX_SAFETY * ComputeRhoMax(s1, s2, s3, rho0)) {}
+  static PORTABLE_FUNCTION Real ComputeRhoMax(const Real s1, const Real s2, const Real s3,
+                                              const Real rho0);
   Gruneisen GetOnDevice() { return *this; }
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
