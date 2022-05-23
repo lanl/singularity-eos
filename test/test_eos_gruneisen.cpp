@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <limits>
 #ifndef CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
 #endif
@@ -296,6 +297,8 @@ SCENARIO("Gruneisen EOS density limit") {
     constexpr Real T0 = 298.;
     constexpr Real P0 = 1e-06 * Mbar;
     constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
+    // No density limit
+    constexpr Real no_rho_max = std::numeric_limits<Real>::infinity();
     WHEN("A small rho_max parameter is provided") {
       constexpr Real set_rho_max = 1.1 * rho0;
       // Linear Hugoniot fit
@@ -370,10 +373,10 @@ SCENARIO("Gruneisen EOS density limit") {
           Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
           auto eos = host_eos.GetOnDevice();
           THEN("The generated rho_max parameter should be properly set") {
-            constexpr Real rho_max_true = 1.e99; // No maximum (see source)
+            constexpr Real rho_max_true = no_rho_max; // No maximum (see source)
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+            REQUIRE(rho_max == rho_max_true);
           }
         }
         WHEN("The root is out of bounds") {
@@ -387,10 +390,10 @@ SCENARIO("Gruneisen EOS density limit") {
           Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
           auto eos = host_eos.GetOnDevice();
           THEN("The generated rho_max parameter should be properly set") {
-            constexpr Real rho_max_true = 1.e99; // No maximum (see source)
+            constexpr Real rho_max_true = no_rho_max; // No maximum (see source)
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+            REQUIRE(rho_max == rho_max_true);
           }
         }
       }
@@ -469,10 +472,10 @@ SCENARIO("Gruneisen EOS density limit") {
           auto eos = host_eos.GetOnDevice();
           THEN("The generated rho_max parameter should be properly set (Cubic three "
                "negative roots)") {
-            constexpr Real rho_max_true = 1.e99;
+            constexpr Real rho_max_true = no_rho_max; // No maximum (see source)
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+            REQUIRE(rho_max == rho_max_true);
           }
         }
         WHEN("One root of three is bounded") {
@@ -534,10 +537,10 @@ SCENARIO("Gruneisen EOS density limit") {
           Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
           auto eos = host_eos.GetOnDevice();
           THEN("The generated rho_max parameter should be properly set") {
-            constexpr Real rho_max_true = 1.e99;
+            constexpr Real rho_max_true = no_rho_max; // No maximum (see source)
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+            REQUIRE(rho_max == rho_max_true);
           }
         }
       }
