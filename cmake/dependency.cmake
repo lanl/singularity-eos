@@ -10,28 +10,47 @@
 include(cmake/submodule_configs.cmake)
 
 #------------------------------------------------------------------------------
-# append_target_dependency
+# singularity_import_dependency
 #------------------------------------------------------------------------------
-#   positional arguments:
-#     - targetlist(in/out): a list of targets that have been added by this function
-#     - deplist(in/out): a list of dependencies this function has added
-#   keyword arguments:
-#     - PKG: the name of the package (e.g. `find_package()`)
-#     - SUBDIR (optional): directory of submodule where to find package source tree
-#     - TARGETS: list of targets to use from PKG
-#     - COMPONENTS (optional): the components of PKG to require
+#   optional arguments:
+#     - USER_INSTALL:       look for a cmake configuration file located in
+#                           `SINGULARITY_${PKG_UPPERCASE}_INSTALL_DIR`. The package
+#                           search will continue if not found.
+#     - SUBMODULE_ONLY:     only use the submodule, do not use `find_package` 
+#                           or other
+#     - NO_SUBMODULE:       run the different package import modes, except 
+#                           for looking for a submodule
+#   keyword arguments, single-value:
+#     - PKG:                the name of the package (e.g. `find_package()`)
+#     - SUBDIR (optional):  directory of submodule where to find package 
+#                           source tree
+#     - TARGET:             the target to import(/export later mayber).
+#                           CANNOT be used with `TARGETS`
+#   keyword arguments, multi-values:
+#     - TARGETS:            list of targets to import(/export later mayber).
+#                           CANNOT be used with `TARGET`
+#     - COMPONENTS:         the components of PKG to require
 #
-#   the function takes a list of targets and package names from the caller, 
+#   the function takes a target/list of targets and package names from the caller, 
 #   and trys to find the package, either using `find_package()` or using 
-#   `add_subdirectory()`. The targets and package names are updated and passed
-#   back to the caller. if any components were requested, these are returned as 
-#   the list `${deplist}_${dep_PKG}`. for example:
-#     append_target_dependency(TARS, DEPS
-#       PKG MPI
-#       TARGETS MPI::MPI MPI::CXX
-#       COMPONENTS C CXX
-#     )
-#     # message("${DEPS_MPI}") will print "C;CXX"
+#   `add_subdirectory()`.
+#
+#   users may ask for `find_package()` to search a particular directory path
+#   by setting the CMake variable `SINGULARITY_${PKG_UPPERCASE}_INSTALL_DIR` 
+#   prior to configuration. By default, only some packages are given then option 
+#   (see ${PROJECT_SOURCE_DIR}/CMakeList.txt). For example, to use the `Kokkos` 
+#   package:
+#   
+#     $> cmake -DSINGULARITY_USE_KOKKOS=ON -DSINGULARITY_KOKKOS_INSTALL_DIR=<...>
+#
+#   NB: this does procedure will NOT fail if `Kokkos` is not found in the provided 
+#   directory, and will continue to the next step to search either a submodule or
+#   through `find_package()`, depending on the other options provided in the call.
+#
+#   some packages (e.g. `HDF5`, `MPI`) are are designed to provide `COMPONENTS` 
+#   as seperate targets. These should always use the `TARGETS` and `COMPONENTS` 
+#   keyword arguments in tandem, so that it is possible to export/install these
+#   requirements later on.
 #------------------------------------------------------------------------------
 macro(singularity_import_dependency)
   set(options
@@ -50,51 +69,63 @@ macro(singularity_import_dependency)
   )
   cmake_parse_arguments(dep "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
+  # first, if this target is already defined, then ignore figuring out imports
   if(TARGET ${dep_TARGET})
     singularity_msg(STATUS "[IMPORT] Detected ${dep_TARGET} present, no further processing for this dependency.")
   else()
+    # only use a submodule provided by `SUBDIR`
     if(dep_SUBMODULE_ONLY)
       singularity_import_submodule(
         PKG ${dep_PKG}
         SUBDIR ${dep_SUBDIR}
       )
     else()
+      # if option set, try to find the a pre-existing configuration of `PKG`
+      # NB: if successful, then `${PKG}_ROOT` is set, and `find_package()` will
+      #     first pick up the configuration in `${PKG}_ROOT`.
       if(dep_USER_INSTALL)
         singularity_import_user_install(
           PKG ${dep_PKG}
         )
-      endif()
+      endif() # dep_USER_INSTALL
+
+      # proceed with simple `find_package()` search
       singularity_import_system(
         PKG ${dep_PKG}
         TARGETS ${dep_TARGETS}
         COMPONENTS ${dep_COMPONENTS}
       )
+      # if we fail to find the package, try a submodule
       if (NOT ${dep_PKG}_FOUND)
+        # if `NO_SUBMODULE` set, emit an error and stop
         if(dep_NO_SUBMODULE)
           message(FATAL_ERROR "[IMPORT] Could not locate ${dep_PKG} outside of project, and `singularity_import_dependency()` was called with `NO_SUBMODULE` option")
         endif()
+        # does `add_subdirectory` with ${SUBDIR}
         singularity_import_submodule(
           PKG ${dep_PKG}
           SUBDIR ${dep_SUBDIR}
         )
       else()
         singularity_msg(STATUS "[IMPORT] Found with find_package() [${${dep_PKG}_DIR}]")
-      endif()
-    endif()
-  endif()
+      endif() # NOT FOUND
+    endif() # SUBMODULE ONLY
+  endif() # TARGET
 
+  # if we made it hear, there should be valid imports available.
+  # we record these to the global scope for later use and processing
+  # TODO: split out public/private libs
   list(APPEND SINGULARITY_PUBLIC_LIBS ${dep_TARGETS})
   list(APPEND SINGULARITY_PUBLIC_LIBS ${dep_TARGET})
-
-  if(dep_TARGET)
-    #print_target_properties(${dep_TARGET})
-  endif()
   list(APPEND SINGULARITY_DEP_PKGS ${dep_PKG})
   if(dep_COMPONENTS)
     list(APPEND SINGULARITY_DEP_PKGS_${dep_PKG} "${dep_COMPONENTS}")
   endif()
+endmacro() # singularity_import_dependency
 
-endmacro()
+#------------------------------------------------------------------------------
+# Helper functions
+#------------------------------------------------------------------------------
 
 macro(singularity_import_user_install)
   set(options

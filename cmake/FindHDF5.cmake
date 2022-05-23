@@ -1,3 +1,24 @@
+#------------------------------------------------------------------------------
+# placeholder
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# MAUNEYC
+# NB: This is directory from the latest CMake off the KitWare github
+#
+#   https://github.com/Kitware/CMake/blob/846e2a2b5bc8cf3421494ebbdbf9abbed512732a/Modules/FindHDF5.cmake
+#
+# the reason being that this addresses the issues of old CMake-provided find 
+# modules not processing `HDF5` in the "modern" style (e.g. no library targets)
+# I believe this is present in CMake3.20 or later, but having to for prior 
+# versions is useful.
+# 
+# If there are licence issues with this, it can be easily re-created or reverted
+# with simple modifications to the prior version.
+#------------------------------------------------------------------------------
+
+
+
 # Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
 # file Copyright.txt or https://cmake.org/licensing for details.
 

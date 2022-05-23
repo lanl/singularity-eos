@@ -1,3 +1,7 @@
+#------------------------------------------------------------------------------
+# placeholder
+#------------------------------------------------------------------------------
+
 #----------------------------------------------------------------------------#
 # Install library
 #----------------------------------------------------------------------------#
@@ -33,7 +37,7 @@ foreach(file ${_install_headers})
     FILES singularity-eos/${file}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/${DIR}
   )
-endforeach()
+endforeach() # file
 
 # install the generated config file
 install(
@@ -61,10 +65,13 @@ export(
   FILE      ${CMAKE_CURRENT_BINARY_DIR}/cmake/singularity-eosTargets.cmake
   NAMESPACE singularity-eos::
 )
+  # MAUNEYC
   # NB: extra step b/c kokkos doesn't do this? seems weird
   # to the best of my reading, this is just bookkeeping after
-  # configuration step, but without there is a conflict between
+  # configuration step, but without it, there is a conflict between
   # export sets. I'm likely doing something incorrect.
+
+  # if we are using Kokkos as a submodule
 if(SINGULARITY_USE_KOKKOS AND NOT Kokkos_FOUND)
   singularity_msg(STATUS "NOTE: we export `KokkosTargets` here, because the `Kokkos` package was imported through `add_subdirectory()`, and that does not export these on it's own")
   export(
@@ -72,7 +79,7 @@ if(SINGULARITY_USE_KOKKOS AND NOT Kokkos_FOUND)
     FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/KokkosTargets.cmake 
     NAMESPACE Kokkos::
   )
-endif()
+endif() # USE_KOKKOS AND NOT Kokkos_FOUND
 
 # apparently, this doesn't do anything anymore,
 # see https://cmake.org/cmake/help/latest/policy/CMP0090.html
