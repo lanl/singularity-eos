@@ -13,6 +13,7 @@
 //------------------------------------------------------------------------------
 
 #include <sstream>
+#include <limits>
 
 #include <root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos.hpp>
@@ -21,26 +22,29 @@ namespace singularity {
 
 PORTABLE_INLINE_FUNCTION Real square(const Real x) { return x * x; }
 PORTABLE_INLINE_FUNCTION Real cube(const Real x) { return x * x * x; }
-PORTABLE_INLINE_FUNCTION Real find_min_bounded_val(const Real root1, const Real root2,
+PORTABLE_INLINE_FUNCTION Real find_min_bounded_val(const Real val1, const Real val2,
                                                    const Real min, const Real max) {
-  // Try to find the minimum bounded value. If none exists, return a value less than the
-  // minimum
-  const Real minroot = std::min(root1, root2);
-  const Real maxroot = std::max(root1, root2);
-  if (minroot > min && minroot < max) {
-    return minroot;
-  } else if (maxroot > min && maxroot < max) {
-    return maxroot;
+  // Try to find the minimum bounded value. If none exists, returns negative infinity
+  const Real minval = std::min(val1, val2);
+  const Real maxval = std::max(val1, val2);
+  if (minval > min && minval < max) {
+    // Minimum of two values is bounded so return it
+    return minval;
+  } else if (maxval > min && maxval < max) {
+    // Minimum isn't bounded but maximum is so return that
+    return maxval;
   } else {
-    return min - 1.;
+    // Neither value is bounded so just return negative infinity to clearly show that the
+    // value is out of bounds
+    return -std::numeric_limits<Real>::infinity();
   }
 }
 /*
 The Gruneisen EOS diverges at a specific compression. Ensure that the maximum density is
 below the smallest singularity in the reference pressure curve
 */
-PORTABLE_FUNCTION Real Gruneisen::GetRhoMax(const Real s1, const Real s2, const Real s3,
-                                            const Real rho0) {
+PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, const Real s3,
+                                            const Real rho_in0) {
   // Polynomial from the denominator of the reference pressure curve:
   auto poly = [=](Real eta) { return 1 - s1 * eta - s2 * square(eta) - s3 * cube(eta); };
 
@@ -133,17 +137,20 @@ PORTABLE_FUNCTION Real Gruneisen::GetRhoMax(const Real s1, const Real s2, const 
       }
     } // Cubic discriminant >= 0
   }   // Linear/Quadratic/Cubic
+  // `root` is a value of eta so it should be greater than zero
   if (root > 0) {
     return rho0 / (1 - root);
   } else {
     // No bounded root exists so there is no upper-limit on the compression
-    return 1.e99;
+    return std::numeric_limits<Real>::infinity();
   }
 }
-PORTABLE_FUNCTION Real Gruneisen::Gamma(const Real rho) const {
+PORTABLE_FUNCTION Real Gruneisen::Gamma(const Real rho_in) const {
+  const real rho = std::min(rho_in, _rho_max)
   return rho < _rho0 ? _G0 : _G0 * _rho0 / rho + _b * (1 - _rho0 / rho);
 }
-PORTABLE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho, const Real sie) const {
+PORTABLE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho_in, const Real sie) const {
+  const real rho = std::min(rho_in, _rho_max)
   if (rho < _rho0) {
     return square(_C0) + Gamma(rho) * sie;
   } else {
@@ -162,16 +169,19 @@ PORTABLE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho, const Real sie) c
   }
 }
 PORTABLE_FUNCTION Real Gruneisen::InternalEnergyFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho_in, const Real temp, Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   return _Cv * (temp - _T0);
 }
 PORTABLE_FUNCTION Real Gruneisen::TemperatureFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho_in, const Real sie, Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   return _T0 + sie / _Cv;
 }
-PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(const Real rho,
+PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(const Real rho_in,
                                                                     const Real sie,
                                                                     Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   Real P_H;
   Real E_H;
   if (rho >= _rho0) {
@@ -187,11 +197,13 @@ PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(const Real r
   return P_H + Gamma(rho) * rho * (sie - E_H);
 }
 PORTABLE_FUNCTION Real Gruneisen::SpecificHeatFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho_in, const Real sie, Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   return _Cv;
 }
 PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho_in, const Real sie, Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   // The if statement exists here to avoid the divide by zero
   if (rho < _rho0) {
     return rho * square(_C0) +
@@ -204,32 +216,37 @@ PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
   }
 }
 PORTABLE_FUNCTION
-Real Gruneisen::GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
+Real Gruneisen::GruneisenParamFromDensityInternalEnergy(const Real rho_in, const Real sie,
                                                         Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   return Gamma(rho);
 }
 // Below are "unimplemented" routines
-PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityTemperature(const Real rho,
+PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityTemperature(const Real rho_in,
                                                                  const Real temp,
                                                                  Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION Real Gruneisen::SpecificHeatFromDensityTemperature(const Real rho,
+PORTABLE_FUNCTION Real Gruneisen::SpecificHeatFromDensityTemperature(const Real rho_in,
                                                                      const Real temp,
                                                                      Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   return SpecificHeatFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityTemperature(const Real rho,
+PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityTemperature(const Real rho_in,
                                                                     const Real temp,
                                                                     Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   return BulkModulusFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
 PORTABLE_FUNCTION
-Real Gruneisen::GruneisenParamFromDensityTemperature(const Real rho, const Real temp,
+Real Gruneisen::GruneisenParamFromDensityTemperature(const Real rho_in, const Real temp,
                                                      Real *lambda) const {
+  const real rho = std::min(rho_in, _rho_max)
   return Gamma(rho);
 }
 PORTABLE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
@@ -261,11 +278,24 @@ PORTABLE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     rho = rhom;
   }
 }
-PORTABLE_FUNCTION void Gruneisen::FillEos(Real &rho, Real &temp, Real &sie, Real &press,
+PORTABLE_FUNCTION void Gruneisen::FillEos(Real &rho_in, Real &temp, Real &sie, Real &press,
                                           Real &cv, Real &bmod,
                                           const unsigned long output,
                                           Real *lambda) const {
   // The following could be sped up with work!
+  const unsigned long input = ~output;
+  if (thermalqs::temperature & input && thermalqs::pressure & input) {
+    DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
+  }
+  else if (thermalqs::density & output || thermalqs::energy & output) {
+    // Error out on density or energy output because they're currently required as inputs
+    std::stringstream errorMessage;
+    errorMessage << "Gruneisen FillEos: Density and energy are currently required inputs "
+                 << "except when pressure and temperature are inputs"
+                 << std::endl;
+    EOS_ERROR(errorMessage.str().c_str());
+  }
+  const real rho = std::min(rho_in, _rho_max)
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::temperature)
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
