@@ -140,7 +140,7 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
   }   // Linear/Quadratic/Cubic
   // `root` is a value of eta so it should be greater than zero
   if (root > 0) {
-    return rho0 / (1 - root); // convert from eta to compression
+    return rho0 / ((1 - root) + EPS); // convert from eta to compression
   } else {
     // No bounded root exists so there is no upper-limit on the compression
     return std::numeric_limits<Real>::infinity();
