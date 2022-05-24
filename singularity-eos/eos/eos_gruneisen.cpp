@@ -129,9 +129,9 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
                      << std::endl;
         EOS_ERROR(errorMessage.str().c_str());
       }
-    } else if (is_near_zero(poly(minbound))) {
+    } else if (is_near_zero(poly(minbound), EPS)) {
       root = minbound;
-    } else if (is_near_zero(poly(maxbound))) {
+    } else if (is_near_zero(poly(maxbound), EPS)) {
       root = maxbound;
     } else {
       // Root doesn't lie within physical bounds for eta so no maximum density exists
