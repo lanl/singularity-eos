@@ -40,6 +40,9 @@ PORTABLE_INLINE_FUNCTION Real find_min_bounded_val(const Real val1, const Real v
     return -std::numeric_limits<Real>::infinity();
   }
 }
+PORTABLE_INLINE_FUNCTION bool is_near_zero(const Real val, const Real tol) {
+  return std::abs(val) < tol;
+}
 /*
 The Gruneisen EOS diverges at a specific compression. Ensure that the maximum density is
 below the smallest singularity in the reference pressure curve
@@ -49,45 +52,48 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
   // Polynomial from the denominator of the reference pressure curve:
   auto poly = [=](Real eta) { return 1 - s1 * eta - s2 * square(eta) - s3 * cube(eta); };
 
+  // Comparisons to zero are actually made to
+  static constexpr Real EPS = std::numeric_limits<Real>::epsilon();
+
   // First find the eta root. A negative root indicates that there is no maximum density.
-  Real root = 0; // Non-sensical root means a root hasn't been found yet
+  Real root = -1.; // Non-sensical root means none exists
   Real discriminant, root1, root2;
-  if (s2 == 0 && s3 == 0 && s1 > 0) {
+  if (is_near_zero(s2, EPS) && is_near_zero(s3, EPS) && s1 > EPS) {
     // Linear Us-up analytic root
-    root = 1 / s1;
-  } else if (s3 == 0 && s2 != 0) {
+    root = 1. / s1;
+  } else if (is_near_zero(s3, EPS) && !is_near_zero(s2, EPS)) {
     // Quadratic Us-up
-    discriminant = square(s1) + 4 * s2;
-    if (discriminant < 0) {
-      root = -1; // Imaginary roots, so no limit
+    discriminant = square(s1) + 4. * s2;
+    if (discriminant < 0.) {
+      root = -1.; // Imaginary roots, so no limit
     } else {
-      root1 = (s1 + std::sqrt(discriminant)) / (-2 * s2);
-      root2 = (s1 - std::sqrt(discriminant)) / (-2 * s2);
-      root = find_min_bounded_val(root1, root2, 0, 1);
+      root1 = (s1 + std::sqrt(discriminant)) / (-2. * s2);
+      root2 = (s1 - std::sqrt(discriminant)) / (-2. * s2);
+      root = find_min_bounded_val(root1, root2, 0., 1.);
     }
-  } else if (s3 != 0) {
+  } else if (!is_near_zero(s3, EPS)) {
     // Cubic Us-up: we'll use an iterative method to search for the minimum bounded root
     // Note: when the discriminant of a cubic is less than zero, only one real root exists
     //       so we don't need anything fancy to find the root.
-    discriminant = -18 * s3 * s2 * s1 - 4 * cube(-s2) + square(s2) * square(s1) -
-                   4 * s3 * cube(s1) - 27 * square(s3);
-    Real minbound = 0;
-    Real maxbound = 1;
-    if (discriminant >= 0) {
+    discriminant = -18. * s3 * s2 * s1 - 4. * cube(-s2) + square(s2) * square(s1) -
+                   4. * s3 * cube(s1) - 27. * square(s3);
+    Real minbound = 0.;
+    Real maxbound = 1.;
+    if (discriminant >= 0.) {
       // Three real roots (roots may have multiplicity). We need to use the extrema to
       // ensure we have a proper bracket in which to search for the root (if they exist).
       // Note: If the discriminant is positive, then `square(s2) - 3 * s3 * s1` must
       //       necessarily be positive (the reverse does not hold). Thus the extrema below
       //       are not imaginary.
       const Real extremum1 =
-          (2 * s2 + std::sqrt(square(-2 * s2) - 4 * 3 * s3 * s1)) / (-2 * 3 * s3);
+          (2. * s2 + std::sqrt(square(-2. * s2) - 4. * 3. * s3 * s1)) / (-2. * 3. * s3);
       const Real extremum2 =
-          (2 * s2 - std::sqrt(square(-2 * s2) - 4 * 3 * s3 * s1)) / (-2 * 3 * s3);
+          (2. * s2 - std::sqrt(square(-2 * s2) - 4. * 3. * s3 * s1)) / (-2. * 3. * s3);
       const Real min_extremum = std::min(extremum1, extremum2);
       const Real max_extremum = std::max(extremum1, extremum2);
       // Because poly(eta = 0) = 1, the only possible root will lie in an area of the
       // cubic that has negative slope. That area is determined by the extrema.
-      if (s3 < 0) {
+      if (s3 < 0.) {
         // Cubic is *increasing*
         // The only place with negative slope is between the extrema so that's where the
         // relevant root will be.
@@ -123,9 +129,9 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
                      << std::endl;
         EOS_ERROR(errorMessage.str().c_str());
       }
-    } else if (poly(minbound) == 0) {
+    } else if (is_near_zero(poly(minbound))) {
       root = minbound;
-    } else if (poly(maxbound) == 0) {
+    } else if (is_near_zero(poly(maxbound))) {
       root = maxbound;
     } else {
       // Root doesn't lie within physical bounds for eta so no maximum density exists
@@ -134,7 +140,7 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
   }   // Linear/Quadratic/Cubic
   // `root` is a value of eta so it should be greater than zero
   if (root > 0) {
-    return rho0 / (1 - root);
+    return rho0 / (1 - root); // convert from eta to compression
   } else {
     // No bounded root exists so there is no upper-limit on the compression
     return std::numeric_limits<Real>::infinity();
