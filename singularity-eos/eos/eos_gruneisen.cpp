@@ -60,82 +60,76 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
     if (discriminant < 0) {
       root = -1; // Imaginary roots, so no limit
     } else {
-      root1 = (s1 + std::sqrt(square(s1) + 4 * s2)) / (-2 * s2);
-      root2 = (s1 - std::sqrt(square(s1) + 4 * s2)) / (-2 * s2);
+      root1 = (s1 + std::sqrt(discriminant)) / (-2 * s2);
+      root2 = (s1 - std::sqrt(discriminant)) / (-2 * s2);
       root = find_min_bounded_val(root1, root2, 0, 1);
     }
   } else if (s3 != 0) {
-    // Cubic Us-up
+    // Cubic Us-up: we'll use an iterative method to search for the minimum bounded root
+    // Note: when the discriminant of a cubic is less than zero, only one real root exists
+    //       so we don't need anything fancy to find the root.
     discriminant = -18 * s3 * s2 * s1 - 4 * cube(-s2) + square(s2) * square(s1) -
                    4 * s3 * cube(s1) - 27 * square(s3);
-    // Use discriminant to help find roots
-    if (discriminant == 0) {
-      // Easy analytical roots (probably not the case)
-      if (square(s2) == 3 * s3 * s1) {
-        // Single root with multiplicity of 3 (inflection point is root)
-        // Also guards against divide by zero
-        root = -s2 / 3 / s3;
+    Real minbound = 0;
+    Real maxbound = 1;
+    if (discriminant >= 0) {
+      // Three real roots (roots may have multiplicity). We need to use the extrema to
+      // ensure we have a proper bracket in which to search for the root (if they exist).
+      // Note: If the discriminant is positive, then `square(s2) - 3 * s3 * s1` must
+      //       necessarily be positive (the reverse does not hold). Thus the extrema below
+      //       are not imaginary.
+      const Real extremum1 =
+          (2 * s2 + std::sqrt(square(-2 * s2) - 4 * 3 * s3 * s1)) / (-2 * 3 * s3);
+      const Real extremum2 =
+          (2 * s2 - std::sqrt(square(-2 * s2) - 4 * 3 * s3 * s1)) / (-2 * 3 * s3);
+      const Real min_extremum = std::min(extremum1, extremum2);
+      const Real max_extremum = std::max(extremum1, extremum2);
+      // Because poly(eta = 0) = 1, the only possible root will lie in an area of the
+      // cubic that has negative slope. That area is determined by the extrema.
+      if (s3 < 0) {
+        // Cubic is *increasing*
+        // The only place with negative slope is between the extrema so that's where the
+        // relevant root will be.
+        minbound = std::max(min_extremum, minbound);
+        maxbound = std::min(std::max(max_extremum, minbound), maxbound);
       } else {
-        // One root has multiplicity of 2 (local extremum is a root)
-        root1 = (-9 * s3 - s2 * s1) / 2 / (square(s2) - 3 * s3 * s1);
-        root2 = (-4 * s3 * s2 * s1 - 9 * square(s3) + cube(s2)) /
-                (-s3 * (square(s2) - 3 * s3 * s1));
-        root = find_min_bounded_val(root1, root2, 0, 1);
+        // Cubic is *decreasing*
+        // The only place with negative slope is outside the extrema. Further, the only
+        // possibility for multiple bound roots will occur when the extremum are both
+        // positive, this is the only case we need to focus on.
+        if (min_extremum > 0) {
+          maxbound = std::min(min_extremum, maxbound);
+        }
+      } // s3 > 0 ; else
+    } // discriminant >= 0
+    if (poly(minbound) * poly(maxbound) < 0) {
+      // Root is appropriately bounded
+      using RootFinding1D::regula_falsi;
+      using RootFinding1D::RootCounts;
+      using RootFinding1D::Status;
+      RootCounts counts;
+      const Real xtol = 1.e-08;
+      const Real ytol = 1.e-08;
+      const Real eta_guess = 0.001;
+      auto status =
+          regula_falsi(poly, 0., eta_guess, minbound, maxbound, xtol, ytol, root, counts);
+      if (status != Status::SUCCESS) {
+        // Root finder failed even though the solution was bracketed... this is an error
+        std::stringstream errorMessage;
+        errorMessage << "Gruneisen initialization: Cubic root find failed. Maximum "
+                        "density cannot be"
+                     << " automatically determined and must be manually specified."
+                     << std::endl;
+        EOS_ERROR(errorMessage.str().c_str());
       }
+    } else if (poly(minbound) == 0) {
+      root = minbound;
+    } else if (poly(maxbound) == 0) {
+      root = maxbound;
     } else {
-      // We'll need an iterative method to search for the minimum bounded root
-      Real minbound = 0;
-      Real maxbound = 1;
-      if (discriminant > 0) {
-        // Three real roots. We need to use the extrema to ensure we have a proper bracket
-        // in which to search for the root.
-        const Real extremum1 =
-            (2 * s2 + std::sqrt(square(-2 * s2) - 4 * 3 * s3 * s1)) / (-2 * 3 * s3);
-        const Real extremum2 =
-            (2 * s2 - std::sqrt(square(-2 * s2) - 4 * 3 * s3 * s1)) / (-2 * 3 * s3);
-        const Real min_extremum = std::min(extremum1, extremum2);
-        const Real max_extremum = std::max(extremum1, extremum2);
-        if (s3 < 0) {
-          // Cubic is *increasing*
-          // Because poly(eta = 0) = 1, the only possible root for an increasing function
-          // will lie between the etrema.
-          minbound = std::max(min_extremum, minbound);
-          maxbound = std::min(std::max(max_extremum, minbound), maxbound);
-        } else {
-          // Cubic is *decreasing*
-          // Because poly(eta = 0) = 1, the only possible root for a decreasing function
-          // will lie outside of the extrema. Further, the only possibility for multiple
-          // bound roots will occur when the extremum are both positive
-          if (min_extremum > 0) {
-            maxbound = std::min(min_extremum, maxbound);
-          }
-        }
-      }
-      if (poly(minbound) * poly(maxbound) <= 0) {
-        // Root is appropriately bounded
-        using RootFinding1D::bisect;
-        using RootFinding1D::RootCounts;
-        using RootFinding1D::Status;
-        RootCounts counts;
-        const Real xtol = 1.e-08;
-        const Real ytol = 1.e-08;
-        const Real eta_guess = 0.001;
-        auto status =
-            bisect(poly, 0., eta_guess, minbound, maxbound, xtol, ytol, root, counts);
-        if (status != Status::SUCCESS) {
-          // Root finder failed even though the solution was bracketed... this is an error
-          std::stringstream errorMessage;
-          errorMessage << "Gruneisen initialization: Cubic root find failed. Maximum "
-                          "density cannot be"
-                       << " automatically determined and must be manually specified."
-                       << std::endl;
-          EOS_ERROR(errorMessage.str().c_str());
-        }
-      } else {
-        // Root doesn't lie within physical bounds for eta so no maximum density exists
-        root = -1.;
-      }
-    } // Cubic discriminant >= 0
+      // Root doesn't lie within physical bounds for eta so no maximum density exists
+      root = -1.;
+    }
   }   // Linear/Quadratic/Cubic
   // `root` is a value of eta so it should be greater than zero
   if (root > 0) {
