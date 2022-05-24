@@ -58,7 +58,7 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
   // First find the eta root. A negative root indicates that there is no maximum density.
   Real root = -1.; // Non-sensical root means none exists
   Real discriminant, root1, root2;
-  if (is_near_zero(s2, EPS) && is_near_zero(s3, EPS) && s1 > EPS) {
+  if (is_near_zero(s2, EPS) && is_near_zero(s3, EPS) && s1 > 1.) {
     // Linear Us-up analytic root
     root = 1. / s1;
   } else if (is_near_zero(s3, EPS) && !is_near_zero(s2, EPS)) {
@@ -79,16 +79,16 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
                    4. * s3 * cube(s1) - 27. * square(s3);
     Real minbound = 0.;
     Real maxbound = 1.;
-    if (discriminant >= 0.) {
+    if (discriminant >= EPS) {
       // Three real roots (roots may have multiplicity). We need to use the extrema to
       // ensure we have a proper bracket in which to search for the root (if they exist).
       // Note: If the discriminant is positive, then `square(s2) - 3 * s3 * s1` must
       //       necessarily be positive (the reverse does not hold). Thus the extrema below
       //       are not imaginary.
       const Real extremum1 =
-          (2. * s2 + std::sqrt(square(-2. * s2) - 4. * 3. * s3 * s1)) / (-2. * 3. * s3);
+          (2. * s2 + std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
       const Real extremum2 =
-          (2. * s2 - std::sqrt(square(-2 * s2) - 4. * 3. * s3 * s1)) / (-2. * 3. * s3);
+          (2. * s2 - std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
       const Real min_extremum = std::min(extremum1, extremum2);
       const Real max_extremum = std::max(extremum1, extremum2);
       // Because poly(eta = 0) = 1, the only possible root will lie in an area of the
