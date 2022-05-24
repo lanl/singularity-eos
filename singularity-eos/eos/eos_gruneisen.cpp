@@ -86,9 +86,9 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
       //       necessarily be positive (the reverse does not hold). Thus the extrema below
       //       are not imaginary.
       const Real extremum1 =
-          (2. * s2 + std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
+          (s2 + std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
       const Real extremum2 =
-          (2. * s2 - std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
+          (s2 - std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
       const Real min_extremum = std::min(extremum1, extremum2);
       const Real max_extremum = std::max(extremum1, extremum2);
       // Because poly(eta = 0) = 1, the only possible root will lie in an area of the
@@ -109,7 +109,7 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
         }
       } // s3 > 0 ; else
     } // discriminant >= 0
-    if (poly(minbound) * poly(maxbound) < 0) {
+    if (poly(minbound) * poly(maxbound) < 0.) {
       // Root is appropriately bounded
       using RootFinding1D::regula_falsi;
       using RootFinding1D::RootCounts;
