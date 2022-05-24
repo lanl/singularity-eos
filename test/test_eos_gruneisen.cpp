@@ -398,6 +398,7 @@ SCENARIO("Gruneisen EOS density limit") {
         }
       }
       WHEN("A cubic Hugoniot fit is used") {
+        constexpr Real root_find_tol = 1e-08;
         WHEN("Only one root exists") {
           // Cubic Hugoniot fit
           constexpr Real S1 = 2;
@@ -411,7 +412,7 @@ SCENARIO("Gruneisen EOS density limit") {
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-8)); // root-find tolerance
+            REQUIRE(isClose(rho_max, rho_max_true, root_find_tol));
           }
         }
         WHEN("A single root of multiplicity 3 exists") {
@@ -427,7 +428,7 @@ SCENARIO("Gruneisen EOS density limit") {
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+            REQUIRE(isClose(rho_max, rho_max_true, root_find_tol));
           }
         }
         WHEN("Two roots exist") {
@@ -443,7 +444,7 @@ SCENARIO("Gruneisen EOS density limit") {
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+            REQUIRE(isClose(rho_max, rho_max_true, root_find_tol));
           }
         }
         WHEN("The cubic is decreasing and two roots exist") {
@@ -459,7 +460,7 @@ SCENARIO("Gruneisen EOS density limit") {
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+            REQUIRE(isClose(rho_max, rho_max_true, root_find_tol));
           }
         }
         WHEN("Three negative roots exist") {
@@ -492,7 +493,7 @@ SCENARIO("Gruneisen EOS density limit") {
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+            REQUIRE(isClose(rho_max, rho_max_true, root_find_tol));
           }
         }
         WHEN("Two roots of three are bounded") {
@@ -509,7 +510,7 @@ SCENARIO("Gruneisen EOS density limit") {
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+            REQUIRE(isClose(rho_max, rho_max_true, root_find_tol));
           }
         }
         WHEN("Two roots of three are bounded and the cubic is decreasing") {
@@ -525,7 +526,7 @@ SCENARIO("Gruneisen EOS density limit") {
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-8));
+            REQUIRE(isClose(rho_max, rho_max_true, root_find_tol));
           }
         }
         WHEN("The three roots are all beyond 1") {
