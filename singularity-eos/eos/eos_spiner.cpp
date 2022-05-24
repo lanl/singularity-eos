@@ -457,7 +457,9 @@ void SpinerEOSDependsRhoT::setlTColdCrit_() {
     // there's no good uniquely defined solution.
     // We choose the highest-temperature crossing,
     // which results in the least code. But this may be wrong.
-    if (last_pos_crossing < 0) { // off the grid
+    // JMM: <= 0 required here so that a cold curve on the min T
+    // isotherm doesn't trigger a root find.
+    if (last_pos_crossing <= 0) { // off the grid
       lTColdCrit_(j) = lTMin_;
     } else { // at least one pos crossing. Use last one.
       const callable_interp::r_interp sieFunc(sie_, lRho);
