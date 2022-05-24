@@ -79,16 +79,14 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
                    4. * s3 * cube(s1) - 27. * square(s3);
     Real minbound = 0.;
     Real maxbound = 1.;
-    if (discriminant >= EPS) {
+    if (discriminant >= 0) {
       // Three real roots (roots may have multiplicity). We need to use the extrema to
       // ensure we have a proper bracket in which to search for the root (if they exist).
       // Note: If the discriminant is positive, then `square(s2) - 3 * s3 * s1` must
       //       necessarily be positive (the reverse does not hold). Thus the extrema below
       //       are not imaginary.
-      const Real extremum1 =
-          (s2 + std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
-      const Real extremum2 =
-          (s2 - std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
+      const Real extremum1 = (s2 + std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
+      const Real extremum2 = (s2 - std::sqrt(square(s2) - 3. * s3 * s1)) / (-3. * s3);
       const Real min_extremum = std::min(extremum1, extremum2);
       const Real max_extremum = std::max(extremum1, extremum2);
       // Because poly(eta = 0) = 1, the only possible root will lie in an area of the
@@ -137,9 +135,9 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
       // Root doesn't lie within physical bounds for eta so no maximum density exists
       root = -1.;
     }
-  }   // Linear/Quadratic/Cubic
-  // `root` is a value of eta so it should be greater than zero
-  if (root > 0) {
+  } // Linear/Quadratic/Cubic
+  // `root` is a value of eta so it should be greater than zero and less than 1
+  if (root > 0. && root < 1.) {
     return rho0 / ((1 - root) + EPS); // convert from eta to compression
   } else {
     // No bounded root exists so there is no upper-limit on the compression
