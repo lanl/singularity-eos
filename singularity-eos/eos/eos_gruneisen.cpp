@@ -12,12 +12,12 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <sstream>
 #include <limits>
+#include <sstream>
 
 #include <root-finding-1d/root_finding.hpp>
-#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/eos/eos.hpp>
 
 namespace singularity {
 
@@ -47,8 +47,8 @@ PORTABLE_INLINE_FUNCTION bool is_near_zero(const Real val, const Real tol) {
 The Gruneisen EOS diverges at a specific compression. Ensure that the maximum density is
 below the smallest singularity in the reference pressure curve
 */
-PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, const Real s3,
-                                            const Real rho0) {
+PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2,
+                                                const Real s3, const Real rho0) {
   // Polynomial from the denominator of the reference pressure curve:
   auto poly = [=](Real eta) { return 1 - s1 * eta - s2 * square(eta) - s3 * cube(eta); };
 
@@ -106,7 +106,7 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2, co
           maxbound = std::min(min_extremum, maxbound);
         }
       } // s3 > 0 ; else
-    } // discriminant >= 0
+    }   // discriminant >= 0
     if (poly(minbound) * poly(maxbound) < 0.) {
       // Root is appropriately bounded
       using RootFinding1D::regula_falsi;
@@ -274,21 +274,20 @@ PORTABLE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     rho = rhom;
   }
 }
-PORTABLE_FUNCTION void Gruneisen::FillEos(Real &rho_in, Real &temp, Real &sie, Real &press,
-                                          Real &cv, Real &bmod,
+PORTABLE_FUNCTION void Gruneisen::FillEos(Real &rho_in, Real &temp, Real &sie,
+                                          Real &press, Real &cv, Real &bmod,
                                           const unsigned long output,
                                           Real *lambda) const {
   // The following could be sped up with work!
   const unsigned long input = ~output;
   if (thermalqs::temperature & input && thermalqs::pressure & input) {
     DensityEnergyFromPressureTemperature(press, temp, lambda, rho_in, sie);
-  }
-  else if (thermalqs::density & output || thermalqs::specific_internal_energy & output) {
+  } else if (thermalqs::density & output ||
+             thermalqs::specific_internal_energy & output) {
     // Error out on density or energy output because they're currently required as inputs
     std::stringstream errorMessage;
     errorMessage << "Gruneisen FillEos: Density and energy are currently required inputs "
-                 << "except when pressure and temperature are inputs"
-                 << std::endl;
+                 << "except when pressure and temperature are inputs" << std::endl;
     EOS_ERROR(errorMessage.str().c_str());
   }
   const Real rho = std::min(rho_in, _rho_max);
