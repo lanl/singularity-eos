@@ -22,6 +22,7 @@
 
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
+#include <singularity-eos/base/constants.hpp>
 
 using singularity::EOS;
 using singularity::Gruneisen;
@@ -323,12 +324,76 @@ SCENARIO("Gruneisen EOS density limit") {
         // Create the EOS
         Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
         auto eos = host_eos.GetOnDevice();
+        constexpr Real eta_max = 1 / S1;
+        constexpr Real rho_max_true = rho0 / (1 - eta_max);
         THEN("The generated rho_max parameter should be properly set") {
-          constexpr Real eta_max = 1 / S1;
-          const Real rho_max_true = rho0 / (1 - eta_max);
           const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
           INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
           REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+        }
+        WHEN("Lookups are performed beyond the maximum density") {
+          // Note: there is a small safety factor to prevent us from hitting the 
+          // singularity in the reference pressure directly in the EOS lookups so the true
+          // density will be slightly less than rho_max. The lookup results should all be
+          // the same beyond the maximum density since the same input will be used in the
+          // lookups
+          const Real rho = rho_max_true;
+          const Real temperature = 298.;
+          constexpr Real sie = 0.; // T = T0
+          THEN("The returned P(rho, e) is always the same") {
+            const Real at_max = eos.PressureFromDensityInternalEnergy(rho, sie);
+            const Real beyond_max = eos.PressureFromDensityInternalEnergy(1.5 * rho, sie);
+            INFO("Energy at rho_max: " << at_max << ", Energy beyond rho_max" << beyond_max);
+            REQUIRE(at_max == beyond_max);
+          }
+          THEN("The returned P(rho, T) is always the same") {
+            const Real at_max = eos.PressureFromDensityTemperature(rho, temperature);
+            const Real beyond_max = eos.PressureFromDensityTemperature(1.5 * rho,
+                                                                         temperature);
+            INFO("Pressure at rho_max: " << at_max << ", Pressure beyond rho_max" << beyond_max);
+            REQUIRE(at_max == beyond_max);
+          }
+          THEN("The returned B_S(rho, e) is always the same") {
+            const Real at_max = eos.BulkModulusFromDensityInternalEnergy(rho, sie);
+            const Real beyond_max = eos.BulkModulusFromDensityInternalEnergy(1.5 * rho, sie);
+            INFO("Energy at rho_max: " << at_max << ", Energy beyond rho_max" << beyond_max);
+            REQUIRE(at_max == beyond_max);
+          }
+          THEN("The returned B_S(rho, T) is always the same") {
+            const Real at_max = eos.BulkModulusFromDensityInternalEnergy(rho, temperature);
+            const Real beyond_max = eos.BulkModulusFromDensityInternalEnergy(1.5 * rho, temperature);
+            INFO("Energy at rho_max: " << at_max << ", Energy beyond rho_max" << beyond_max);
+            REQUIRE(at_max == beyond_max);
+          }
+          THEN("The returned Gamma(rho, e) is always the same") {
+            const Real at_max = eos.GruneisenParamFromDensityInternalEnergy(rho, sie);
+            const Real beyond_max = eos.GruneisenParamFromDensityInternalEnergy(1.5 * rho, sie);
+            INFO("Energy at rho_max: " << at_max << ", Energy beyond rho_max" << beyond_max);
+            REQUIRE(at_max == beyond_max);
+          }
+          THEN("The returned Gamma(rho, T) is always the same") {
+            const Real at_max = eos.GruneisenParamFromDensityTemperature(rho, temperature);
+            const Real beyond_max = eos.GruneisenParamFromDensityTemperature(1.5 * rho, temperature);
+            INFO("Energy at rho_max: " << at_max << ", Energy beyond rho_max" << beyond_max);
+            REQUIRE(at_max == beyond_max);
+          }
+          THEN("FillEos should return the same as the individual lookups for rho-e input") {
+            const auto input = singularity::thermalqs::specific_internal_energy |
+                                        singularity::thermalqs::density;
+            const auto output = singularity::thermalqs::all_values - input;
+            Real P, temp, cv, bmod; // outputs
+            Real lambda;
+            Real rho_use = 1.5 * rho;
+            Real sie_use = sie; // remove const
+            eos.FillEos(rho_use, temp, sie_use, P, cv, bmod, output, &lambda);
+            // Get the individual lookups for those that acutally utilize density
+            const Real pres_true = eos.PressureFromDensityInternalEnergy(rho_use, sie_use);
+            const Real bmod_true = eos.BulkModulusFromDensityInternalEnergy(rho_use, sie_use);
+            INFO("FillEos bmod: " << bmod << ", Lookup bmod: " << bmod_true);
+            CHECK(bmod == bmod_true);
+            INFO("FillEos pressure: " << P << ", Lookup pressure: " << pres_true);
+            CHECK(P == pres_true);
+          }
         }
       }
       WHEN("A quadratic Hugoniot fit is used") {
