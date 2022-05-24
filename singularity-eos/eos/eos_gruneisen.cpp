@@ -17,6 +17,7 @@
 
 #include <root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/base/constants.hpp>
 
 namespace singularity {
 
@@ -164,12 +165,10 @@ PORTABLE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho_in, const Real sie
 }
 PORTABLE_FUNCTION Real Gruneisen::InternalEnergyFromDensityTemperature(
     const Real rho_in, const Real temp, Real *lambda) const {
-  const Real rho = std::min(rho_in, _rho_max);
   return _Cv * (temp - _T0);
 }
 PORTABLE_FUNCTION Real Gruneisen::TemperatureFromDensityInternalEnergy(
     const Real rho_in, const Real sie, Real *lambda) const {
-  const Real rho = std::min(rho_in, _rho_max);
   return _T0 + sie / _Cv;
 }
 PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(const Real rho_in,
@@ -192,7 +191,6 @@ PORTABLE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(const Real r
 }
 PORTABLE_FUNCTION Real Gruneisen::SpecificHeatFromDensityInternalEnergy(
     const Real rho_in, const Real sie, Real *lambda) const {
-  const Real rho = std::min(rho_in, _rho_max);
   return _Cv;
 }
 PORTABLE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
