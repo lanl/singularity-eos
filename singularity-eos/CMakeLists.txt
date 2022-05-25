@@ -27,7 +27,6 @@ set(EOS_HEADERS
 )
 
 set(EOS_SRCS
-    eos/singularity_eos.cpp
     eos/eos_spiner.cpp
     eos/eos_jwl.cpp
     eos/eos_builder.cpp
