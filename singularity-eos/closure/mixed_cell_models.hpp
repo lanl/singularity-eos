@@ -120,7 +120,7 @@ bool solve_Ax_b_wscr(const int n, Real *a, Real *b, Real *scr) {
   InvertR::invoke(1.0, A, B);
 #else
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-#error "Eigen should not be used with Kokkos."
+#warning "Eigen should not be used with Kokkos."
 #endif
   // Eigen VERSION
   Eigen::Map<Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> A(a, n,
