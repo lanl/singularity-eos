@@ -15,6 +15,8 @@
 #ifndef SINGULARITY_EOS_BASE_CONSTANTS_HPP_
 #define SINGULARITY_EOS_BASE_CONSTANTS_HPP_
 
+#include <ports-of-call/portability.hpp>
+
 namespace singularity {
 
 namespace thermalqs {
