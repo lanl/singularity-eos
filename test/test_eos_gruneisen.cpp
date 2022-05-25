@@ -20,9 +20,9 @@
 #include "catch2/catch.hpp"
 #endif
 
-#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
+#include <singularity-eos/base/constants.hpp>
 
 using singularity::EOS;
 using singularity::Gruneisen;
