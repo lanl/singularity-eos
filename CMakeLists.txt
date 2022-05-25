@@ -107,8 +107,13 @@ if(SINGULARITY_USE_KOKKOSKERNELS AND NOT SINGULARITY_USE_KOKKOS)
   message(FATAL_ERROR "Kokkos is required for KokkosKernels.")
 endif()
 
-if(SINGULARITY_USE_CUDA AND NOT SINGULARITY_USE_KOKKOS)
-  message(FATAL_ERROR "Cuda without kokkos is not currently supported")
+if(SINGULARITY_USE_CUDA)
+  if(NOT SINGULARITY_USE_KOKKOS)
+    message(FATAL_ERROR "CUDA without Kokkos is not currently supported. If available, reconfigure with '-DSINGULARITY_USE_KOKKOS=ON'. Otherwise, disable CUDA offloading '-DSINGULARITY_USE_CUDA=OFF'")
+  endif()
+  if(NOT SINGULARITY_USE_KOKKOSKERNELS)
+    message(FATAL_ERROR "Kokkos with CUDA offload must use KokkosKernels. If available, reconfigure with '-DSINGULARITY_USE_KOKKOSKERNELS=ON'. Otherwise, disable CUDA offloading '-DSINGULARITY_USE_CUDA=OFF'")
+  endif()
 endif()
 
 if (SINGULARITY_USE_EOSPAC)
@@ -185,17 +190,16 @@ if(SINGULARITY_USE_KOKKOS)
   set(SPINER_USE_KOKKOS ON)
   list(APPEND SINGULARITY_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
   list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_KOKKOS)
+endif() #SINGULARITY_USE_KOKKOS
+
+if(SINGULARITY_USE_KOKKOSKERNELS)
   # type: external
-  if(SINGULARITY_USE_KOKKOSKERNELS)
-    singularity_import_dependency(
-      USER_INSTALL NO_SUBMODULE
-      PKG KokkosKernels
-      TARGET Kokkos::kokkoskernels
-    )
-    list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
-  endif() #SINGULARITY_USE_KOKKOS_KERNELS
-# The preprocessor of singularity-eos does not 
-# want kokkos and eigen together. 
+  singularity_import_dependency(
+    USER_INSTALL NO_SUBMODULE
+    PKG KokkosKernels
+    TARGET Kokkos::kokkoskernels
+  )
+  list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
 else()
   # type: soft submodule
   singularity_import_dependency(
@@ -204,7 +208,7 @@ else()
     TARGET Eigen3::Eigen
     SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
   )
-endif() #SINGULARITY_USE_KOKKOS
+endif() #SINGULARITY_USE_KOKKOS_KERNELS
 
 # variant for prior C++17
 # type: hard submodule
@@ -222,7 +226,6 @@ singularity_import_dependency(
   TARGET ports-of-call::ports-of-call
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/ports-of-call
 )
-
 
 # spiner
 # type: soft? submodule
@@ -266,16 +269,12 @@ endif() # SINGULARITY_USE_HDF5
 if (SINGULARITY_USE_EOSPAC)
   #TODO: should be strictly module mode
   find_package(EOSPAC REQUIRED)
-  list(APPEND SINGULARITY_PUBLIC_LIBS EOSPAC)
+  list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_EOSPAC)
+  list(APPEND SINGULARITY_PUBLIC_LIBS EOSPAC::eospac)
+  list(APPEND SINGULARITY_PUBLIC_LIBS eospac-wrapper)
   list(APPEND SINGULARITY_DEPS_PKGS EOSPAC)
 
   add_subdirectory(eospac-wrapper)
-  target_link_libraries(singularity-eos
-    PUBLIC
-    eospac-wrapper)
-  target_compile_definitions(singularity-eos
-    PUBLIC
-    SINGULARITY_USE_EOSPAC)
 endif ()
 
 
@@ -285,6 +284,9 @@ if (SINGULARITY_TEST_SESAME)
   list(APPEND SINGULARITY_PRIVATE_DEFINES SINGULARITY_TEST_SESAME)
 endif()
 
+# this was mostly for debugging, but i've found it useful.
+# in future this can be extended a bit to include compiler flags 
+# and other info
 singularity_msg(STATUS "Configuration")
 message(STATUS "[== INFO: status so far ===============================")
 message(STATUS "[== dependency list: ${SINGULARITY_DEP_PKGS}")
@@ -431,10 +433,15 @@ endforeach()
 configure_file(${PROJECT_SOURCE_DIR}/config/singularity-eosConfig.cmake.in
   ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/singularity-eosConfig.cmake @ONLY)
 
-#TODO: nope, this is too hacky. redo.
-#if(NOT SINGULARITY_SUBMODULE_MODE)
-  include(cmake/install.cmake)
-  #endif()
+#----------------------------------------------------------------------------#
+# Testing
+#----------------------------------------------------------------------------#
+
+# placed into a module file.
+# NB: exporting is done too, so 
+#     even submodule mode should
+#     include this file.
+include(cmake/install.cmake)
 
 #----------------------------------------------------------------------------#
 # Testing
