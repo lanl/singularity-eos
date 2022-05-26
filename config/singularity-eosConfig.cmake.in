@@ -1,0 +1,15 @@
+@SINGULARITY_CONFIG_CODE@
+
+#------------------------------------------------------------------------------#
+# library dependencies
+#------------------------------------------------------------------------------#
+
+list(APPEND CMAKE_MODULE_PATH @CMAKE_INSTALL_FULL_LIBDIR@/cmake/singularity-eos)
+
+@SINGULARITY_CONFIG_DEPENDENCIES@
+
+if(NOT TARGET singularity-eos AND NOT singularity-eos_BINARY_DIR)
+  include(@CMAKE_INSTALL_FULL_LIBDIR@/cmake/singularity-eos/singularity-eosTargets.cmake)
+endif()
+
+

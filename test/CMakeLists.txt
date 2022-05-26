@@ -14,29 +14,32 @@
 
 add_executable(eos_unit_tests
                  eos_unit_tests.cpp)
-if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
-  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+
+if(SINGULARITY_USE_HDF5)
+  if(SINGULARITY_TEST_SESAME)
+    target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+  endif()
+  if(SINGULARITY_TEST_STELLAR_COLLAPSE)
+    target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
+  endif()
 endif()
-if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
-  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
-endif()
-target_link_libraries(eos_unit_tests Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
+
+target_link_libraries(eos_unit_tests 
+  PRIVATE
+    Catch2::Catch2
+    singularity-eos::singularity-eos
+)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
                  compare_to_eospac.cpp)
-  target_link_libraries(compare_to_eospac Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
-  target_include_directories(compare_to_eospac PUBLIC
-                             ${CMAKE_SOURCE_DIR}/utils/spiner
-                             ${CMAKE_SOURCE_DIR}/utils/ports-of-call
-                             ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
-  add_executable(profile_root_find
-                 profile_root_find.cpp)
-  target_link_libraries(profile_root_find eos singularity-eos::libs singularity-eos::flags)
-  target_include_directories(profile_root_find PUBLIC
-                             ${CMAKE_SOURCE_DIR}/utils/spiner
-                             ${CMAKE_SOURCE_DIR}/utils/ports-of-call)
+  target_link_libraries(compare_to_eospac
+    PRIVATE
+      Catch2::Catch2
+      singularity-eos::singularity-eos
+  )
 endif()
+include(Catch)
 catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
 
 if (SINGULARITY_BUILD_CLOSURE)
@@ -44,16 +47,14 @@ if (SINGULARITY_BUILD_CLOSURE)
                  test_pte.cpp)
   target_link_libraries(test_pte PRIVATE
                         Catch2::Catch2
-                        eos
-                        singularity-eos::libs
-                        singularity-eos::flags)
+                        singularity-eos::singularity-eos)
   add_test(pte test_pte)
 endif()
 
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   add_executable(profile_stellar_collapse
                  profile_stellar_collapse.cpp)
-  target_link_libraries(profile_stellar_collapse eos singularity-eos::libs singularity-eos::flags)
+  target_link_libraries(profile_stellar_collapse singularity-eos::singularity-eos)
 
   message(STATUS "Generating stellar collapse table for tests using Python script")
   include(FindPythonInterp)

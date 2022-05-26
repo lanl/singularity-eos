@@ -1,0 +1,2 @@
+
+set(singularity-eosCMake_PREFIX @CMAKE_INSTALL_PREFIX@/share/singularity-eos/cmake)

@@ -1,0 +1,24 @@
+#
+# spack config for environment [singularity_eos-env]
+#
+spack:
+  definitions:
+  - compiler: [gcc]
+  - math: [openblas]
+  - packages: [eigen@3.3.9]
+  - packages: [hdf5~mpi+cxx+hl~tools]
+  - packages: [kokkos+aggressive_vectorization]
+  - packages: [catch2]
+  - packages: [cmake@3.21.2]
+  - packages: [ninja]
+  - packages: [boost@1.74.0]
+  - packages: [eospac]
+  specs:
+  - matrix:
+    - [$packages]
+    - [$^math]
+    - [$%compiler]
+  concretization: together
+  view: true
+  mirrors:
+    lanl_spack_mirror: https://pe-serve.lanl.gov/spack-mirror/
