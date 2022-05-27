@@ -12,7 +12,7 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
-from singularity_eos import IdealGas
+from singularity_eos import IdealGas, thermalqs
 import numpy as np
 import math
 
@@ -58,6 +58,19 @@ def PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos, # inputs
     print("Results from Option 2 (two vector function calls):")
     print_results()
   
+    # Option 3: Loop through the cells and use FillEos call
+    for i in range(Ncells):
+      sie = uu[i] / (rho[i] + SMALL) # convert to specific internal energy
+      # FillEos is very general. All arguments are considered inputs, the remaining are outputs.
+      # If this auto-detection is not what is needed, you can specify a limited number of outputs with the output bitmask.
+      # Note that in this case any output not set will be returned as NaN.
+      # FillEos is often more performant than making individual function calls.
+      state = eos.FillEos(rho=rho[i], sie=sie, output=(thermalqs.temperature | thermalqs.pressure | thermalqs.bulk_modulus), lmbda=lmbda);
+      # convert bulk modulus to cs
+      cs[i] = math.sqrt(state.bulk_modulus / (state.density + SMALL))
+
+    print("Results from Option 3 (loop with FillEos call):")
+    print_results()
 
 # Parameters for ideal gas
 gm1 = 0.6

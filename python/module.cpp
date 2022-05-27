@@ -15,6 +15,11 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <singularity-eos/eos/eos.hpp>
+#include <map>
+#include <string>
+#include <ostream>
+#include <sstream>
+#include <limits>
 
 namespace py = pybind11;
 using namespace singularity;
@@ -22,8 +27,8 @@ using namespace singularity;
 // Helper function to convert lambda numpy array to double* buffer
 // With std::optional we would add support for a default value of lambda=None
 template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*) const>
-Real two_params(const T& obj, const Real a, const Real b, py::array_t<Real> lambda) {
-  return (obj.*Func)(a, b, lambda.mutable_data());
+Real two_params(const T& self, const Real a, const Real b, py::array_t<Real> lambda) {
+  return (self.*Func)(a, b, lambda.mutable_data());
 }
 
 class LambdaHelper {
@@ -46,16 +51,16 @@ public:
 // to generalize this without the preprocessor.
 #define EOS_VEC_FUNC_TMPL(func, a, b, out)                                        \
 template<typename T>                                                              \
-void func(const T & obj, py::array_t<Real> a, py::array_t<Real> b,                \
+void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,                \
           py::array_t<Real> out, const int num, py::array_t<Real> lambdas){       \
   py::buffer_info lambdas_info = lambdas.request();                               \
   if (lambdas_info.ndim != 2)                                                     \
       throw std::runtime_error("lambdas dimension must be 2!");                   \
                                                                                   \
   if(lambdas_info.shape[1] > 0) {                                                 \
-    obj.func(a.data(), b.data(), out.mutable_data(), num, LambdaHelper(lambdas)); \
+    self.func(a.data(), b.data(), out.mutable_data(), num, LambdaHelper(lambdas)); \
   } else {                                                                        \
-    obj.func(a.data(), b.data(), out.mutable_data(), num, NoLambdaHelper());      \
+    self.func(a.data(), b.data(), out.mutable_data(), num, NoLambdaHelper());      \
   }                                                                               \
 }
 
@@ -69,6 +74,26 @@ EOS_VEC_FUNC_TMPL(BulkModulusFromDensityTemperature, rhos, temperatures, bmods)
 EOS_VEC_FUNC_TMPL(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods)
 EOS_VEC_FUNC_TMPL(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s)
 EOS_VEC_FUNC_TMPL(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
+
+struct EOSState {
+  Real density;
+  Real specific_internal_energy;
+  Real pressure;
+  Real temperature;
+  Real specific_heat;
+  Real bulk_modulus;
+
+  std::string to_string() const {
+    std::stringstream ss;
+    ss << "density: " << density << std::endl;
+    ss << "specific_internal_energy: " << specific_internal_energy << std::endl;
+    ss << "pressure: " << pressure << std::endl;
+    ss << "temperature: " << temperature << std::endl;
+    ss << "specific_heat: " << specific_heat << std::endl;
+    ss << "bulk_modulus: " << bulk_modulus;
+    return ss.str();
+  }
+};
 
 template<typename T>
 py::class_<T> eos_class(py::module_ & m, const char * name) {
@@ -86,7 +111,42 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
 
 
     // TODO .def("GetOnDevice")
-    // TODO .def("FillEos")  what are the call semantics, since it uses references? return dict?
+    .def("FillEos", [](const T & self, const py::kwargs& kwargs) {
+      unsigned long output = thermalqs::none;
+      Real rho, temp, sie, press, cv, bmod;
+      rho = temp = sie = press = cv = bmod = std::numeric_limits<double>::quiet_NaN();
+      std::map<std::string, std::pair<unsigned long,Real*>> param_mapping {
+        {"rho", {thermalqs::density, &rho}},
+        {"sie", {thermalqs::specific_internal_energy, &sie}},
+        {"press", {thermalqs::pressure, &press}},
+        {"temp", {thermalqs::temperature, &temp}},
+        {"cv", {thermalqs::specific_heat, &cv}},
+        {"bmod", {thermalqs::bulk_modulus, &bmod}},
+      };
+
+      for(auto const & it : param_mapping) {
+        auto param = it.first.c_str();
+        if(kwargs.contains(param)) {
+          auto param_bitmask = it.second.first;
+          auto param_ptr = it.second.second;
+          output |= param_bitmask;
+          *param_ptr = kwargs[param].cast<Real>();
+        }
+      }
+
+      // override auto-detection
+      if(kwargs.contains("output")) {
+        output = kwargs["output"].cast<unsigned long>();
+      }
+
+      if(kwargs.contains("lmbda")) {
+        auto lambda = kwargs["lmbda"].cast<py::array_t<Real>>();
+        self.FillEos(rho, temp, sie, press, cv, bmod, output, lambda.mutable_data());
+      } else {
+        self.FillEos(rho, temp, sie, press, cv, bmod, output, nullptr);
+      }
+      return EOSState {rho, sie, press, temp, cv, bmod};
+    })
     // TODO .def("ValuesAtReferenceState")
 
     // Generic functions provided by the base class. These contain e.g. the vector
@@ -111,6 +171,15 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
 }
 
 PYBIND11_MODULE(singularity_eos, m) {
+  py::class_<EOSState>(m, "EOSState")
+    .def_readwrite("density", &EOSState::density)
+    .def_readwrite("specific_internal_energy", &EOSState::specific_internal_energy)
+    .def_readwrite("pressure", &EOSState::pressure)
+    .def_readwrite("temperature", &EOSState::temperature)
+    .def_readwrite("specific_heat", &EOSState::specific_heat)
+    .def_readwrite("bulk_modulus", &EOSState::bulk_modulus)
+    .def("__str__", &EOSState::to_string);
+
   eos_class<IdealGas>(m, "IdealGas")
     .def(
       py::init<Real, Real>(),
