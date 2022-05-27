@@ -18,22 +18,6 @@ import math
 
 SMALL = 1e-20 # to avoid dividing by zero
 
-#class IdealGas(object):
-#    def __init__(self, gm1, Cv):
-#        pass
-#
-#    def PressureFromDensityInternalEnergy(self, rho, sie, lmbda):
-#        return 0.0
-#
-#    def BulkModulusFromDensityInternalEnergy(self, rho, sie, lmbda):
-#        return 0.0
-#
-#    def Finalize(self):
-#        pass
-#
-#    def nlambda(self):
-#        return 1
-
 def PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos, # inputs
                                                P, cs, Ncells # outputs
                                                ):
@@ -53,12 +37,26 @@ def PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos, # inputs
     nlambda = eos.nlambda() # get number of elements per lambda
     lmbda = np.zeros(nlambda, dtype=np.double)
 
-    # Loop through the cells and use the two function calls
+    # Option 1: Loop through the cells and use the two function calls
     for i in range(Ncells):
       sie = uu[i] / (rho[i] + SMALL) # convert to specific internal energy
       P[i] = eos.PressureFromDensityInternalEnergy(rho[i], sie, lmbda)
       bmod = eos.BulkModulusFromDensityInternalEnergy(rho[i], sie, lmbda)
       cs[i] = math.sqrt(bmod / (rho[i] + SMALL))
+
+    print("Results from Option 1 (loop with two calls):")
+    print_results()
+
+    # Option 2: use vector functions to work on entire arrays
+    lmbda = np.zeros((Ncells,nlambda), dtype=np.double)
+    sie = uu / (rho + SMALL)
+    bmod = np.zeros(Ncells, dtype=np.double)
+    eos.PressureFromDensityInternalEnergy(rho, sie, P, Ncells, lmbda)
+    eos.BulkModulusFromDensityInternalEnergy(rho, sie, bmod, Ncells, lmbda)
+    cs[:] = np.sqrt(bmod / (rho + SMALL))
+
+    print("Results from Option 2 (two vector function calls):")
+    print_results()
   
 
 # Parameters for ideal gas
@@ -82,6 +80,13 @@ uu  = np.zeros(N, dtype=np.double)
 P   = np.zeros(N, dtype=np.double)
 cs  = np.zeros(N, dtype=np.double)
 
+def print_results():
+  print("rho =", rho[N - 1])
+  print("uu  =", uu[N - 1])
+  print("P   =", P[N - 1])
+  print("cs  =", cs[N - 1])
+  print()
+
 # Here we fill the rho and uu arrays with something sensible.
 for i in range(N):
     rho[i] = 1 + 0.1 * math.sin((2 * math.pi * i) / N)
@@ -92,10 +97,7 @@ PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos1, P, cs, N)
 
 # And let's print out the final value just for fun
 print("The final values are:")
-print("rho =", rho[N - 1])
-print("uu  =", uu[N - 1])
-print("P   =", P[N - 1])
-print("cs  =", cs[N - 1])
+print_results()
 
 # It's good practice to call Finalize() after you're done using an EOS.
 # This usually only does anything if you're on device, but for GPU-data it

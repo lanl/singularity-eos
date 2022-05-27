@@ -11,6 +11,7 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
+// clang-format off
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <singularity-eos/eos/eos.hpp>
@@ -21,14 +22,57 @@ using namespace singularity;
 // Helper function to convert lambda numpy array to double* buffer
 // With std::optional we would add support for a default value of lambda=None
 template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*) const>
-Real two_params(const T& obj, const Real a, const Real b, py::array_t<double> lambda) {
-  py::buffer_info lambda_info = lambda.request();
-  auto lambda_ptr = static_cast<double *>(lambda_info.ptr);
-  return (obj.*Func)(a, b, lambda_ptr);
+Real two_params(const T& obj, const Real a, const Real b, py::array_t<Real> lambda) {
+  return (obj.*Func)(a, b, lambda.mutable_data());
 }
+
+class LambdaHelper {
+  py::array_t<Real> & lambdas;
+public:
+  LambdaHelper(py::array_t<Real> & lambdas) : lambdas(lambdas) {}
+  Real * operator[](const int i) const {
+    return lambdas.mutable_data(i,0);
+  }
+};
+
+class NoLambdaHelper {
+public:
+  Real * operator[](const int i) const {
+    return nullptr;
+  }
+};
+
+// so far didn't find a good way of working with template member function pointers
+// to generalize this without the preprocessor.
+#define EOS_VEC_FUNC_TMPL(func, a, b, out)                                        \
+template<typename T>                                                              \
+void func(const T & obj, py::array_t<Real> a, py::array_t<Real> b,                \
+          py::array_t<Real> out, const int num, py::array_t<Real> lambdas){       \
+  py::buffer_info lambdas_info = lambdas.request();                               \
+  if (lambdas_info.ndim != 2)                                                     \
+      throw std::runtime_error("lambdas dimension must be 2!");                   \
+                                                                                  \
+  if(lambdas_info.shape[1] > 0) {                                                 \
+    obj.func(a.data(), b.data(), out.mutable_data(), num, LambdaHelper(lambdas)); \
+  } else {                                                                        \
+    obj.func(a.data(), b.data(), out.mutable_data(), num, NoLambdaHelper());      \
+  }                                                                               \
+}
+
+EOS_VEC_FUNC_TMPL(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
+EOS_VEC_FUNC_TMPL(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
+EOS_VEC_FUNC_TMPL(PressureFromDensityTemperature, rhos, temperatures, pressures)
+EOS_VEC_FUNC_TMPL(PressureFromDensityInternalEnergy, rhos, sies, pressures)
+EOS_VEC_FUNC_TMPL(SpecificHeatFromDensityTemperature, rhos, temperatures, cvs)
+EOS_VEC_FUNC_TMPL(SpecificHeatFromDensityInternalEnergy, rhos, sies, cvs)
+EOS_VEC_FUNC_TMPL(BulkModulusFromDensityTemperature, rhos, temperatures, bmods)
+EOS_VEC_FUNC_TMPL(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods)
+EOS_VEC_FUNC_TMPL(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s)
+EOS_VEC_FUNC_TMPL(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
 
 template<typename T>
 py::class_<T> eos_class(py::module_ & m, const char * name) {
+
   return py::class_<T>(m, name)
     .def("TemperatureFromDensityInternalEnergy", &two_params<T, &T::TemperatureFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lambda"))
     .def("InternalEnergyFromDensityTemperature", &two_params<T, &T::InternalEnergyFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lambda"))
@@ -41,13 +85,24 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def("GruneisenParamFromDensityTemperature", &two_params<T, &T::GruneisenParamFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lambda"))
     .def("GruneisenParamFromDensityInternalEnergy", &two_params<T, &T::GruneisenParamFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lambda"))
 
+
     // TODO .def("GetOnDevice")
     // TODO .def("FillEos")  what are the call semantics, since it uses references? return dict?
     // TODO .def("ValuesAtReferenceState")
 
     // Generic functions provided by the base class. These contain e.g. the vector
     // overloads that use the scalar versions declared here
-    // TODO  SG_ADD_BASE_CLASS_USINGS(T)
+    .def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("num"), py::arg("lambdas"))
+    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("num"), py::arg("lambdas"))
+    .def("PressureFromDensityTemperature", &PressureFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("num"), py::arg("lambdas"))
+    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("num"), py::arg("lambdas"))
+    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("num"), py::arg("lambdas"))
+    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("num"), py::arg("lambdas"))
+    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("num"), py::arg("lambdas"))
+    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("num"), py::arg("lambdas"))
+    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("num"), py::arg("lambdas"))
+    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("num"), py::arg("lambdas"))
+
     .def("nlambda", &T::nlambda)
     .def_static("PreferredInput", &T::PreferredInput)
     .def("PrintParams", &T::PrintParams)
