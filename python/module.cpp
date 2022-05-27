@@ -147,5 +147,15 @@ PYBIND11_MODULE(singularity_eos, m) {
       py::arg("pc"), py::arg("Cv"), py::arg("E0")
     );
 
+  py::module thermalqs = m.def_submodule("thermalqs");
+  thermalqs.attr("none") = pybind11::int_(thermalqs::none);
+  thermalqs.attr("density") = pybind11::int_(thermalqs::density);
+  thermalqs.attr("specific_internal_energy") = pybind11::int_(thermalqs::specific_internal_energy);
+  thermalqs.attr("pressure") = pybind11::int_(thermalqs::pressure);
+  thermalqs.attr("temperature") = pybind11::int_(thermalqs::temperature);
+  thermalqs.attr("specific_heat") = pybind11::int_(thermalqs::specific_heat);
+  thermalqs.attr("bulk_modulus") = pybind11::int_(thermalqs::bulk_modulus);
+  thermalqs.attr("all_values") = pybind11::int_(thermalqs::all_values);
+
   m.doc() = "Singularity EOS Python Bindings";
 }
