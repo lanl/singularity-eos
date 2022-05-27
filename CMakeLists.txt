@@ -45,6 +45,7 @@ option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
 option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
 option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
 option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
+option (SINGULARITY_TEST_PYTHON "Test the Python bindings" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
 

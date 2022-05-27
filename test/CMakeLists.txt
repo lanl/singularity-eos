@@ -72,3 +72,12 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
       -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
   endif()
 endif()
+
+if (SINGULARITY_BUILD_PYTHON AND SINGULARITY_TEST_PYTHON)
+  find_package(Python COMPONENTS Interpreter Development REQUIRED)
+  set(PYTHON_TEST_ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/python)
+
+  add_test(NAME PythonBindings
+           COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python_bindings.py -v)
+  set_tests_properties(PythonBindings PROPERTIES ENVIRONMENT "${PYTHON_TEST_ENVIRONMENT}")
+endif()
