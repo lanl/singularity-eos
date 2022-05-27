@@ -428,6 +428,7 @@ foreach(_depName ${SINGULARITY_DEP_PKGS})
     "${SINGULARITY_CONFIG_DEPENDENCIES}\nfind_package(${_depName} ${_components} REQUIRED)")
 endforeach()
 
+include(GNUInstallDirs)
 # generate the configuration file
 # NOTE: for some lunatic reason, `CMAKE_FILES_DIRECTORY` is set with a leading `/`
 configure_file(${PROJECT_SOURCE_DIR}/config/singularity-eosConfig.cmake.in
