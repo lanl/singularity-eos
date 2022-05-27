@@ -161,6 +161,10 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("num"), py::arg("lmbdas"))
     .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("num"), py::arg("lmbdas"))
     .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("num"), py::arg("lmbdas"))
+    .def("MinimumDensity", &T::MinimumDensity)
+    .def("MinimumTemperature", &T::MinimumTemperature)
+    // TODO .def("PTofRE")                                                     \
+    // TODO .def("FillEos")
 
     .def("nlambda", &T::nlambda)
     .def_static("PreferredInput", &T::PreferredInput)
