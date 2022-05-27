@@ -72,6 +72,18 @@ def PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos, # inputs
     print("Results from Option 3 (loop with FillEos call):")
     print_results()
 
+    # Option 4: use vector FillEos function to update entire arrays
+    lmbda = np.zeros((Ncells,nlambda), dtype=np.double)
+    sie = uu / (rho + SMALL)
+    bmod = np.zeros(Ncells, dtype=np.double)
+    temp = np.zeros(Ncells, dtype=np.double)
+    cv = np.zeros(Ncells, dtype=np.double)
+    eos.FillEos(rho, temp, sie, P, cv, bmod, Ncells, (thermalqs.temperature | thermalqs.pressure | thermalqs.bulk_modulus), lmbda)
+    cs[:] = np.sqrt(bmod / (rho + SMALL))
+
+    print("Results from Option 4 (vector FillEos call):")
+    print_results()
+
 # Parameters for ideal gas
 gm1 = 0.6
 Cv = 2

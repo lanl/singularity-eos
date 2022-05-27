@@ -163,8 +163,20 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("num"), py::arg("lmbdas"))
     .def("MinimumDensity", &T::MinimumDensity)
     .def("MinimumTemperature", &T::MinimumTemperature)
-    // TODO .def("PTofRE")                                                     \
-    // TODO .def("FillEos")
+    // TODO .def("PTofRE")
+    .def("FillEos", [](const T & self, py::array_t<Real> rhos, py::array_t<Real> temperatures, py::array_t<Real> sies, py::array_t<Real> pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
+                      const int num, const unsigned long output,
+                      py::array_t<Real> lambdas) {
+      py::buffer_info lambdas_info = lambdas.request();
+      if (lambdas_info.ndim != 2)
+        throw std::runtime_error("lambdas dimension must be 2!");
+
+      if(lambdas_info.shape[1] > 0) {
+        self.FillEos(rhos.mutable_data(), temperatures.mutable_data(), sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(), bmods.mutable_data(), num, output, LambdaHelper(lambdas));
+      } else {
+        self.FillEos(rhos.mutable_data(), temperatures.mutable_data(), sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(), bmods.mutable_data(), num, output, NoLambdaHelper());
+      }
+    }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("num"), py::arg("output"), py::arg("lmbdas"))
 
     .def("nlambda", &T::nlambda)
     .def_static("PreferredInput", &T::PreferredInput)
