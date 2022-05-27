@@ -42,6 +42,9 @@ class SingularityEos(CMakePackage, CudaPackage):
     # build the fortran interface
     variant("fortran", default=True, description="Enable building fortran interface")
 
+    # build the Python bindings
+    variant("python", default=False, description="Enable building Python bindings")
+
     # build the documentation
     variant("doc", default=False, description="Sphinx Documentation Support")
 
@@ -107,11 +110,13 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_USE_KOKKOSKERNELS", "kokkos-kernels"),
             self.define_from_variant("SINGULARITY_USE_FORTRAN", "fortran"),
             self.define_from_variant("SINGULARITY_BUILD_CLOSURE", "fortran"),
+            self.define_from_variant("SINGULARITY_BUILD_PYTHON", "python"),
             self.define_from_variant("SINGULARITY_BUILD_TESTS", "tests"),
             self.define("SINGULARITY_BUILD_SESAME2SPINER", "sesame" in self.spec.variants["build_extra"]),
             self.define("SINGULARITY_TEST_SESAME", ("sesame" in self.spec.variants["build_extra"] and "tests" in self.spec)),
             self.define("SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER", "stellarcollapse" in self.spec.variants["build_extra"]),
             self.define("SINGULARITY_TEST_STELLARCOLLAPSE2SPINER", ("stellarcollapse" in self.spec.variants["build_extra"] and "tests" in self.spec)),
+            self.define("SINGULARITY_TEST_PYTHON", ("python" in self.spec and "tests" in self.spec)),
             self.define("SINGULARITY_USE_HDF5", "^hdf5" in self.spec),
             self.define("SINGULARITY_USE_EOSPAC", "^eospac" in self.spec)
         ]
