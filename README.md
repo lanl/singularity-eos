@@ -54,8 +54,10 @@ A number of options are avaialable for compiling:
 | SINGULARITY_USE_KOKKOSKERNELS     | OFF     | Use Kokkos Kernels for linear algebra. Needed for mixed cell closure models on GPU   |
 | SINGULARITY_BUILD_CLOSURE         | ON      | Builds mixed cell closure machinery for multi-material problems                      |
 | SINGULARITY_BUILD_TESTS           | OFF     | Build test infrastructure.                                                           |
+| SINGULARITY_BUILD_PYTHON          | OFF     | Build Python bindings                                                                |
 | SINGULARITY_TEST_SESAME           | OFF     | Test the Sesame table readers                                                        |
 | SINGULARITY_TEST_STELLAR_COLLAPSE | OFF     | Test the Stellar Collapse table readers                                              |
+| SINGULARITY_TEST_PYTHON           | OFF     | Test the Python bindings                                                             |
 | SINGULARITY_BUILD_SESAME2SPINER   | OFF     | Builds the conversion tool sesame2spiner which makes files readable by SpinerEOS     |
 | SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER | OFF     | Builds the conversion tool stellarcollapse2spiner which optionally makes stellar collapse files faster to read |
 | SINGULARITY_INVERT_AT_SETUP       | OFF     | For tests, pre-invert eospac tables.                                                 |
