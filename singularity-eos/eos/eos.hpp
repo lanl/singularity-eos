@@ -129,7 +129,18 @@ class Gruneisen : public EosBase<Gruneisen> {
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv,
             const Real rho_max)
       : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
-        _Cv(Cv), _rho_max(rho_max) {}
+        _Cv(Cv), _rho_max(rho_max) {
+    // Warn user when provided rho_max is greater than the computed rho_max
+#ifndef NDEBUG
+    const Real computed_rho_max = ComputeRhoMax(s1, s2, s3, rho0);
+    if (rho_max > RHOMAX_SAFETY * computed_rho_max) {
+      std::cout << "WARNING: Provided rho_max, " << rho_max << ", is greater than the computed "
+                << "rho_max of " << computed_rho_max << ". States beyond a density of "
+                << computed_rho_max << " are unphysical (i.e. imaginary sound speeds)."
+                << std::endl;
+    }
+#endif
+  }
   // Constructor when rho_max isn't specified automatically determines _rho_max
   PORTABLE_INLINE_FUNCTION
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
