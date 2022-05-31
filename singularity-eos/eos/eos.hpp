@@ -134,7 +134,8 @@ class Gruneisen : public EosBase<Gruneisen> {
 #ifndef NDEBUG
     const Real computed_rho_max = ComputeRhoMax(s1, s2, s3, rho0);
     if (rho_max > RHOMAX_SAFETY * computed_rho_max) {
-      std::cout << "WARNING: Provided rho_max, " << rho_max << ", is greater than the computed "
+      std::cout << "WARNING: Provided rho_max, " << rho_max
+                << ", is greater than the computed "
                 << "rho_max of " << computed_rho_max << ". States beyond a density of "
                 << computed_rho_max << " are unphysical (i.e. imaginary sound speeds)."
                 << std::endl;
