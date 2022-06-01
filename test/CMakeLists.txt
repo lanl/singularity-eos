@@ -13,7 +13,11 @@
 #------------------------------------------------------------------------------
 
 add_executable(eos_unit_tests
-                 eos_unit_tests.cpp)
+  catch2_define.cpp
+  eos_unit_test_helpers.hpp
+  test_eos_unit.cpp
+  test_eos_gruneisen.cpp
+)
 
 if(SINGULARITY_USE_HDF5)
   if(SINGULARITY_TEST_SESAME)
@@ -29,6 +33,8 @@ target_link_libraries(eos_unit_tests
     Catch2::Catch2
     singularity-eos::singularity-eos
 )
+include(Catch)
+catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
@@ -39,7 +45,6 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
       singularity-eos::singularity-eos
   )
 endif()
-include(Catch)
 catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
 
 if (SINGULARITY_BUILD_CLOSURE)
