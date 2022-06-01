@@ -128,7 +128,6 @@ macro(singularity_import_check_user_override)
   endif()
 
   if(SINGULARITY_${dep_CAP}_INSTALL_DIR)
-    message("id: ${SINGULARITY_${dep_CAP}_INSTALL_DIR}")
     find_path(${dep_PKG}_ROOT 
       NAMES "${dep_PKG}Config.cmake"
       PATHS "${SINGULARITY_${dep_CAP}_INSTALL_DIR}"
@@ -142,7 +141,6 @@ macro(singularity_import_check_user_override)
     endif()
   endif()
   if(SINGULARITY_${dep_CAP}_IMPORT_DIR)
-    message("imd: ${SINGULARITY_${dep_CAP}_IMPORT_DIR}")
     singularity_msg(STATUS "[IMPORT ${dep_PKG}::USER] SINGULARITY_${dep_CAP}_IMPORT_DIR is set. I will assume you know what you are doing. Overriding default path [${dep_SUBDIR}] to ${SINGULARITY_${dep_CAP}_IMPORT_DIR} and skipping find logic")
     set(dep_SUBDIR "${SINGULARITY_${dep_CAP}_IMPORT_DIR}")
     set(SINGULARITY_IMPORT_USER_OVERRIDE_${dep_PKG} ON)
