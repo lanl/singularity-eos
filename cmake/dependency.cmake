@@ -13,13 +13,8 @@ include(cmake/submodule_configs.cmake)
 # singularity_import_dependency
 #------------------------------------------------------------------------------
 #   optional arguments:
-#     - USER_INSTALL:       look for a cmake configuration file located in
-#                           `SINGULARITY_${PKG_UPPERCASE}_INSTALL_DIR`. The package
-#                           search will continue if not found.
 #     - SUBMODULE_ONLY:     only use the submodule, do not use `find_package` 
 #                           or other
-#     - NO_SUBMODULE:       run the different package import modes, except 
-#                           for looking for a submodule
 #   keyword arguments, single-value:
 #     - PKG:                the name of the package (e.g. `find_package()`)
 #     - SUBDIR (optional):  directory of submodule where to find package 
@@ -41,11 +36,21 @@ include(cmake/submodule_configs.cmake)
 #   (see ${PROJECT_SOURCE_DIR}/CMakeList.txt). For example, to use the `Kokkos` 
 #   package:
 #   
-#     $> cmake -DSINGULARITY_USE_KOKKOS=ON -DSINGULARITY_KOKKOS_INSTALL_DIR=<...>
+#     $> cmake -DSINGULARITY_USE_KOKKOS=ON \
+#       -DSINGULARITY_KOKKOS_INSTALL_DIR=<...>
 #
-#   NB: this does procedure will NOT fail if `Kokkos` is not found in the provided 
-#   directory, and will continue to the next step to search either a submodule or
-#   through `find_package()`, depending on the other options provided in the call.
+#   If CMake cannot find the expected configuration files in the provided path,
+#   an error will be generated and processing will stop.
+#
+#   users may also specify a source directory to "attach" to the build tree with
+#   `SINGULARITY_${PKG_UPPERCASE}_IMPORT_DIR`. This is not recommended.
+#
+#     $> cmake -DSINGULARITY_USE_KOKKOSKERNELS=ON \
+#       -DSINGULARITY_KOKKOSKERNELS_IMPORT_DIR=<...>
+#
+#   if both `SINGULARITY_${PKG_UPPERCASE}_INSTALL_DIR` and 
+#   `SINGULARITY_${PKG_UPPERCASE}_IMPORT_DIR` are both given, an error will be
+#   generated and processing will stop
 #
 #   some packages (e.g. `HDF5`, `MPI`) are are designed to provide `COMPONENTS` 
 #   as seperate targets. These should always use the `TARGETS` and `COMPONENTS` 
@@ -54,9 +59,7 @@ include(cmake/submodule_configs.cmake)
 #------------------------------------------------------------------------------
 macro(singularity_import_dependency)
   set(options
-    USER_INSTALL
     SUBMODULE_ONLY
-    NO_SUBMODULE
   )
   set(one_value_args
     PKG
@@ -71,25 +74,19 @@ macro(singularity_import_dependency)
 
   # first, if this target is already defined, then ignore figuring out imports
   if(TARGET ${dep_TARGET})
-    singularity_msg(STATUS "[IMPORT] Detected ${dep_TARGET} present, no further processing for this dependency.")
+    singularity_msg(STATUS "[IMPORT ${dep_PKG}] Detected ${dep_TARGET} present, no further processing for this dependency.")
   else()
-    # only use a submodule provided by `SUBDIR`
-    if(dep_SUBMODULE_ONLY)
+    singularity_import_check_user_override(
+      PKG ${dep_PKG}
+      SUBDIR ${dep_SUBDIR}
+    )
+
+    if(dep_SUBMODULE_ONLY OR SINGULARITY_IMPORT_USER_OVERRIDE_${dep_PKG})
       singularity_import_submodule(
         PKG ${dep_PKG}
         SUBDIR ${dep_SUBDIR}
       )
     else()
-      # if option set, try to find the a pre-existing configuration of `PKG`
-      # NB: if successful, then `${PKG}_ROOT` is set, and `find_package()` will
-      #     first pick up the configuration in `${PKG}_ROOT`.
-      if(dep_USER_INSTALL)
-        singularity_import_user_install(
-          PKG ${dep_PKG}
-        )
-      endif() # dep_USER_INSTALL
-
-      # proceed with simple `find_package()` search
       singularity_import_system(
         PKG ${dep_PKG}
         TARGETS ${dep_TARGETS}
@@ -97,17 +94,13 @@ macro(singularity_import_dependency)
       )
       # if we fail to find the package, try a submodule
       if (NOT ${dep_PKG}_FOUND)
-        # if `NO_SUBMODULE` set, emit an error and stop
-        if(dep_NO_SUBMODULE)
-          message(FATAL_ERROR "[IMPORT] Could not locate ${dep_PKG} outside of project, and `singularity_import_dependency()` was called with `NO_SUBMODULE` option")
-        endif()
         # does `add_subdirectory` with ${SUBDIR}
         singularity_import_submodule(
           PKG ${dep_PKG}
           SUBDIR ${dep_SUBDIR}
         )
       else()
-        singularity_msg(STATUS "[IMPORT] Found with find_package() [${${dep_PKG}_DIR}]")
+        singularity_msg(STATUS "[IMPORT ${dep_PKG}] Found with find_package() [${${dep_PKG}_DIR}]")
       endif() # NOT FOUND
     endif() # SUBMODULE ONLY
   endif() # TARGET
@@ -127,74 +120,55 @@ endmacro() # singularity_import_dependency
 # Helper functions
 #------------------------------------------------------------------------------
 
-macro(singularity_import_user_install)
-  set(options
-  )
-  set(one_value_args
-    PKG
-  )
-  set(multi_value_args
-  )
-  cmake_parse_arguments(ui "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+macro(singularity_import_check_user_override)
+  string(TOUPPER ${dep_PKG} dep_CAP)
 
-  string(TOUPPER ${ui_PKG} ui_VARCASE)
+  if(SINGULARITY_${dep_CAP}_INSTALL_DIR AND SINGULARITY_${dep_CAP}_IMPORT_DIR)
+    singularity_msg(FATAL_ERROR "Cannot set INSTALL_DIR and IMPORT_DIR for the same package")
+  endif()
 
-  if(SINGULARITY_${ui_VARCASE}_INSTALL_DIR)
-    find_path(${ui_PKG}_ROOT 
-      NAMES "${ui_PKG}Config.cmake"
-      PATHS "${SINGULARITY_${ui_VARCASE}_INSTALL_DIR}"
-      PATH_SUFFIXES lib/cmake/${ui_PKG} lib64/cmake/${ui_PKG}
+  if(SINGULARITY_${dep_CAP}_INSTALL_DIR)
+    message("id: ${SINGULARITY_${dep_CAP}_INSTALL_DIR}")
+    find_path(${dep_PKG}_ROOT 
+      NAMES "${dep_PKG}Config.cmake"
+      PATHS "${SINGULARITY_${dep_CAP}_INSTALL_DIR}"
+      PATH_SUFFIXES lib/cmake/${dep_PKG} lib64/cmake/${dep_PKG}
+      NO_DEFAULT_PATH
     )
-    if(NOT ${ui_PKG}_ROOT)
-      singularity_msg(WARNING "[IMPORT:USER] SINGULARITY_${ui_PKG}_INSTALL_DIR [${SINGULARITY_${ui_PKG}_INSTALL_DIR}] set, but did not find \"${ui_PKG}Config.cmake\"")
+    if(NOT ${dep_PKG}_ROOT)
+      singularity_msg(FATAL_ERROR "SINGULARITY_${dep_VARCASE}_INSTALL_DIR [${SINGULARITY_${dep_CAP}_INSTALL_DIR}] set, but did not find an installed CMake package. Use a valid install path or unset this variable")
     else()
-      singularity_msg(STATUS "[IMPORT:USER] located cmake install, ${ui_PKG}_ROOT = ${${ui_PKG}_ROOT}")
+      singularity_msg(STATUS "[IMPORT ${dep_PKG}::USER] located cmake install, ${dep_PKG}_ROOT = ${${dep_PKG}_ROOT}")
     endif()
+  endif()
+  if(SINGULARITY_${dep_CAP}_IMPORT_DIR)
+    message("imd: ${SINGULARITY_${dep_CAP}_IMPORT_DIR}")
+    singularity_msg(STATUS "[IMPORT ${dep_PKG}::USER] SINGULARITY_${dep_CAP}_IMPORT_DIR is set. I will assume you know what you are doing. Overriding default path [${dep_SUBDIR}] to ${SINGULARITY_${dep_CAP}_IMPORT_DIR} and skipping find logic")
+    set(dep_SUBDIR "${SINGULARITY_${dep_CAP}_IMPORT_DIR}")
+    set(SINGULARITY_IMPORT_USER_OVERRIDE_${dep_PKG} ON)
   endif()
   
 endmacro()
 
 macro(singularity_import_submodule)
-  set(options
-  )
-  set(one_value_args
-    PKG
-    SUBDIR
-  )
-  set(multi_value_args
-  )
-  cmake_parse_arguments(submod "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
-
-  if (NOT EXISTS ${submod_SUBDIR})      
-    message(FATAL_ERROR "${submod_PKG} requested, but cannot the in-tree directory ${submod_SUBDIR} does not exist")
+  if (NOT EXISTS ${dep_SUBDIR})      
+    message(FATAL_ERROR "${dep_PKG} requested, but the in-tree directory \"${dep_SUBDIR}\" does not exist")
   endif()
       
-  if (NOT EXISTS ${submod_SUBDIR}/CMakeLists.txt)
-    singularity_msg(WARNING "[IMPORT:SUBMODULE] submodendency directory ${submod_SUBDIR} does not contain a CMakeLists.txt file. No target information about ${submod_PKG} will be available")
+  if (NOT EXISTS ${dep_SUBDIR}/CMakeLists.txt)
+    singularity_msg(WARNING "[IMPORT ${dep_PKG}::SUBMODULE] submodendency directory ${dep_SUBDIR} does not contain a CMakeLists.txt file. No target information about ${dep_PKG} will be available")
   endif()
       
   # if adding a subdirectory, set the config variables (if any) for the package
-  singularity_cmake_config(${submod_PKG})
+  singularity_cmake_config(${dep_PKG})
       
-  #set(MESSAGE_QUIET ON)
-  add_subdirectory(${submod_SUBDIR})
-  #unset(MESSAGE_QUIET)
+  add_subdirectory(${dep_SUBDIR} "${CMAKE_CURRENT_BINARY_DIR}/extern/${dep_PKG}")
 
-  singularity_msg(STATUS "[IMPORT:SUBMODULE] ${submod_PKG} added from in-tree: ${submod_SUBDIR}")
+  singularity_msg(STATUS "[IMPORT ${dep_PKG}::SUBMODULE] ${dep_PKG} added from: ${dep_SUBDIR}")
 endmacro()
 
 macro(singularity_import_system)
-  set(options
-  )
-  set(one_value_args
-    PKG
-  )
-  set(multi_value_args
-    COMPONENTS
-  )
-  cmake_parse_arguments(sysinstall "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
-
-    singularity_msg(STATUS "[IMPORT:SYSTEM] Attempting \"find_package(${sysinstall_PKG})\"")
-    find_package(${sysinstall_PKG} QUIET COMPONENTS ${sysinstall_COMPONENTS})
+    singularity_msg(STATUS "[IMPORT ${dep_PKG}::SYSTEM] Attempting \"find_package(${dep_PKG})\"")
+    find_package(${dep_PKG} QUIET COMPONENTS ${dep_COMPONENTS})
 endmacro()
 

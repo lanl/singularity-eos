@@ -65,18 +65,25 @@ export(
   FILE      ${CMAKE_CURRENT_BINARY_DIR}/cmake/singularity-eosTargets.cmake
   NAMESPACE singularity-eos::
 )
-  # MAUNEYC
-  # NB: extra step b/c kokkos doesn't do this? seems weird
-  # to the best of my reading, this is just bookkeeping after
-  # configuration step, but without it, there is a conflict between
-  # export sets. I'm likely doing something incorrect.
 
-  # if we are using Kokkos as a submodule
+# MAUNEYC
+# NB: extra step b/c kokkos doesn't do this? seems weird
+# to the best of my reading, this is just bookkeeping after
+# configuration step, but without it, there is a conflict between
+# export sets. I'm likely doing something incorrect.
+# if we are using Kokkos as a submodule
 if(SINGULARITY_USE_KOKKOS AND NOT Kokkos_FOUND)
-  singularity_msg(STATUS "NOTE: we export `KokkosTargets` here, because the `Kokkos` package was imported through `add_subdirectory()`, and that does not export these on it's own")
   export(
     EXPORT KokkosTargets 
     FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/KokkosTargets.cmake 
+    NAMESPACE Kokkos::
+  )
+endif() # USE_KOKKOS AND NOT Kokkos_FOUND
+
+if(SINGULARITY_USE_KOKKOSKERNELS AND NOT KokkosKernels_FOUND)
+  export(
+    EXPORT KokkosKernelsTargets 
+    FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/KokkosKernelsTargets.cmake 
     NAMESPACE Kokkos::
   )
 endif() # USE_KOKKOS AND NOT Kokkos_FOUND

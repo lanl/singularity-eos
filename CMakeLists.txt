@@ -181,7 +181,6 @@ if(SINGULARITY_USE_KOKKOS)
   # kokkos offloading
   # type: soft submodule 
   singularity_import_dependency(
-    USER_INSTALL
     PKG Kokkos
     TARGET Kokkos::kokkos
     SUBDIR ${PROJECT_SOURCE_DIR}/utils/kokkos
@@ -195,7 +194,6 @@ endif() #SINGULARITY_USE_KOKKOS
 if(SINGULARITY_USE_KOKKOSKERNELS)
   # type: external
   singularity_import_dependency(
-    USER_INSTALL NO_SUBMODULE
     PKG KokkosKernels
     TARGET Kokkos::kokkoskernels
   )
@@ -203,7 +201,6 @@ if(SINGULARITY_USE_KOKKOSKERNELS)
 else()
   # type: soft submodule
   singularity_import_dependency(
-    USER_INSTALL
     PKG Eigen3
     TARGET Eigen3::Eigen
     SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
@@ -240,7 +237,6 @@ if (SINGULARITY_USE_HDF5)
   # hdf5, for data interopability
   # type: external
   singularity_import_dependency(
-    USER_INSTALL NO_SUBMODULE
     PKG HDF5
     COMPONENTS C HL
     TARGETS HDF5::HDF5 hdf5::hdf5_hl
@@ -252,7 +248,6 @@ if (SINGULARITY_USE_HDF5)
     # Message passing interface
     # type: external
     singularity_import_dependency(
-      USER_INSTALL NO_SUBMODULE
       PKG MPI
       COMPONENTS CXX
       TARGETS MPI::MPI_CXX
