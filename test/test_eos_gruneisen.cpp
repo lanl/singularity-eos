@@ -12,11 +12,11 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-#include <array>
 #ifndef CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
 #endif
