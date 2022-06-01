@@ -45,7 +45,6 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
       singularity-eos::singularity-eos
   )
 endif()
-catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
 
 if (SINGULARITY_BUILD_CLOSURE)
   add_executable(test_pte

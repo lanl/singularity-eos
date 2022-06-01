@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
+#include <array>
 #ifndef CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
 #endif
