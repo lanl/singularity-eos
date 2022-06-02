@@ -9,7 +9,7 @@ stages:
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
-  SINGULARITY_EOS_OPENMPI_VERSION: "3.1.6"
+  SINGULARITY_EOS_OPENMPI_VERSION: "4.0.5"
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 before_script:
@@ -31,7 +31,6 @@ before_script:
   - rm ${CI_PROJECT_DIR}/spack/etc/spack/repos.yaml ${CI_PROJECT_DIR}/spack/etc/spack/packages.yaml
   - cp ${XCAP_OSS_SPACK_DIR}/etc/spack/${PLATFORM}/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}/
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-  - module load gcc/${SINGULARITY_EOS_GCC_VERSION} openmpi/${SINGULARITY_EOS_OPENMPI_VERSION}-gcc_${SINGULARITY_EOS_GCC_VERSION}
   - spack compiler list
   - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
   - spack repo list
@@ -122,7 +121,7 @@ before_script:
     - mkdir sphinx_doc_env
     - spack env create --without-view -d ${CI_PROJECT_DIR}/sphinx_doc_env
     - spack env activate -d ${CI_PROJECT_DIR}/sphinx_doc_env
-    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
+    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
     - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
     - spack module tcl refresh -y
     - spack env loads -r -x singularity-eos
@@ -147,7 +146,7 @@ before_script:
     - spack module tcl refresh -y
     - spack env loads -r -x singularity-eos
     - export modName="${CI_PROJECT_DIR}/spack_env/loads"
-    - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION} openmpi/${SINGULARITY_EOS_OPENMPI_VERSION}\n;" ${modName}
+    - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION}\n;" ${modName}
     - sed -i "1s;^;#%Module\n;" ${modName}
     - module use ${CI_PROJECT_DIR}/spack_env
     - module load loads # module load compiler, deps, etc.
