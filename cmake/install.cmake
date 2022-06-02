@@ -2,11 +2,46 @@
 # placeholder
 #------------------------------------------------------------------------------
 
+include(GNUInstallDirs)
+
 #----------------------------------------------------------------------------#
-# Install library
+# Generate config file
 #----------------------------------------------------------------------------#
 
-include(GNUInstallDirs)
+# get all available `SINGULARITY_` cmake variables set during configuration
+get_cmake_property(_variableNames VARIABLES)
+string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
+  _matchedVars "${_variableNames}")
+
+# use config template to generate the configuration of the build
+# not sure why CMake doesn't do this automatically, but w/e
+foreach(_variableName ${_matchedVars})
+  set(SINGULARITY_CONFIG_CODE
+    "${SINGULARITY_CONFIG_CODE}\nset(${_variableName} \"${${_variableName}}\")")
+endforeach()
+
+# for all the upstream packages collected in the configuration, replicate
+# the `find_package()` in the install configuration. note that
+# if a package was consumed with `add_subdirectory` in configuration,
+# the downstream `find_package()` should find it's way to the consumed
+# package install path
+foreach(_depName ${SINGULARITY_DEP_PKGS})
+  set(_components "")
+  if(SINGULARITY_DEP_PKGS_${_depName})
+    set(_components "COMPONENTS ${SINGULARITY_DEP_PKGS_${_depName}}")
+  endif()
+  set(SINGULARITY_CONFIG_DEPENDENCIES
+    "${SINGULARITY_CONFIG_DEPENDENCIES}\nfind_package(${_depName} ${_components} REQUIRED)")
+endforeach()
+
+# generate the configuration file
+# NOTE: for some lunatic reason, `CMAKE_FILES_DIRECTORY` is set with a leading `/`
+configure_file(${PROJECT_SOURCE_DIR}/config/singularity-eosConfig.cmake.in
+  ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/singularity-eosConfig.cmake @ONLY)
+
+#----------------------------------------------------------------------------#
+# Install library + attach to export
+#----------------------------------------------------------------------------#
 
 # declare library install, and associate it with the export targets.
 # NOTE: the `DESTINATION` here is the implicit default, tho I think we 

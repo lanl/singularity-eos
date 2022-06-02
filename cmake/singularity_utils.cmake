@@ -8,7 +8,7 @@
 #------------------------------------------------------------------------------
 
 function(singularity_msg stat msg)
-  set(_output "[SINGULARITY] - ${msg}")
+  set(_output "[SINGULARITY]${_SMSG_PREFIX} - ${msg}")
   message(${stat} ${_output})
 endfunction()
 

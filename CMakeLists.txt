@@ -279,16 +279,6 @@ if (SINGULARITY_TEST_SESAME)
   list(APPEND SINGULARITY_PRIVATE_DEFINES SINGULARITY_TEST_SESAME)
 endif()
 
-# this was mostly for debugging, but i've found it useful.
-# in future this can be extended a bit to include compiler flags 
-# and other info
-singularity_msg(STATUS "Configuration")
-message(STATUS "[== INFO: status so far ===============================")
-message(STATUS "[== dependency list: ${SINGULARITY_DEP_PKGS}")
-message(STATUS "[== library targets: ${SINGULARITY_PUBLIC_LIBS} ${SINGULARITY_PRIVATE_LIBS}")
-message(STATUS "[== compiler definitions: ${SINGULARITY_PUBLIC_DEFINES} ${SINGULARITY_PRIVATE_DEFINES}")
-message(STATUS "[======================================================")
-
 #------------------------------------------------------------------------------#
 # singularity-eos library
 #------------------------------------------------------------------------------#
@@ -345,92 +335,62 @@ target_compile_definitions(singularity-eos
 )
 
 #------------------------------------------------------------------------------#
-# "Unincorperated real-estate"
-# this section includes cmake that hasn't been reworked, and is largely 
-# unmodified at present.
-# TODO: for the sake of harmony, these bits could be given a polish. however,
-# not much would functionally change.
+# build flags
 #------------------------------------------------------------------------------#
 
-# xl fix
-#TODO: should these be private? I think so, but not sure
+set(with_cxx "$<COMPILE_LANGUAGE:CXX>")
+set(with_xlcxx  "$<COMPILE_LANG_AND_ID:CXX,XL>")
+set(build_debug "$<CONFIG:Debug>")
+set(build_release "$<CONFIG:Release>")
+set(with_cuda "$<BOOL:${SINGULARITY_USE_CUDA}>")
+set(with_warnings "$<NOT:$<BOOL:${SINGULARITY_HIDE_MORE_WARNINGS}>>")
+set(with_better_flags "$<BOOL:${SINGULARITY_BETTER_DEBUG_FLAGS}>")
+
+set(xlfix "$<${with_xlcxx}:-std=c++1y;-qxflag=disable__cplusplusOverride>")
+
 target_compile_options(singularity-eos
   PRIVATE
-    $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
+    ${xlfix}
+  PUBLIC
+    $<${with_cuda}:
+      $<${with_cxx}:
+        --expt-relaxed-constexpr
+        $<${with_warnings}:
+          -Xcudafe;--diag_suppress=esa_on_defaulted_function_ignored
+        > #with_warnings
+        $<${build_debug}:
+          $<${with_better_flags}:
+            -G;-lineinfo
+          > #better_flags
+        > #debug
+      > #cxx
+      $<${build_release}:
+        -use_fast_math
+      > #release
+    > #cuda
+)
+
 target_link_options(singularity-eos
   PRIVATE
-  $<$<COMPILE_LANG_AND_ID:CXX,XL>:-std=c++1y;-qxflag=disable__cplusplusOverride>)
-
-# cuda specific flags
-if(SINGULARITY_USE_CUDA)
-  if(SINGULARITY_HIDE_MORE_WARNINGS)
-    target_compile_options(singularity-eos
-       PUBLIC # Generator expression shamelessly copied from EAP
-         "$<$<COMPILE_LANGUAGE:CXX>:--expt-relaxed-constexpr;>"
-    )
-  else()
-    target_compile_options(singularity-eos
-       PUBLIC # Generator expression shamelessly copied from EAP
-         "$<$<COMPILE_LANGUAGE:CXX>:--expt-relaxed-constexpr;-Xcudafe;--diag_suppress=esa_on_defaulted_function_ignored;>"
-    )
-  endif()
-  if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(singularity-eos
-      PUBLIC
-        -use_fast_math
-    )
-  elseif(CMAKE_BUILD_TYPE STREQUAL "Debug" AND SINGULARITY_BETTER_DEBUG_FLAGS)
-    target_compile_options(singularity-eos
-      PUBLIC
-        "$<$<COMPILE_LANGUAGE:CXX>:-G;-lineinfo;>"
-    )
-  endif()
-endif()
-
+    ${xlfix}
+)
 
 foreach(_sdir ${subdirs2add})
   add_subdirectory(${_sdir})
 endforeach()
 
 
-#----------------------------------------------------------------------------#
-# Generate config file
-#----------------------------------------------------------------------------#
 
-# get all available `SINGULARITY_` cmake variables set during configuration
-get_cmake_property(_variableNames VARIABLES)
-string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
-  _matchedVars "${_variableNames}")
+#singularity_msg(STATUS "Configuration")
+#message(STATUS "[== INFO: status so far ===============================")
+#message(STATUS "[== dependency list: ${SINGULARITY_DEP_PKGS}")
+#message(STATUS "[== library targets: ${SINGULARITY_PUBLIC_LIBS} ${SINGULARITY_PRIVATE_LIBS}")
+#message(STATUS "[== compiler definitions: ${SINGULARITY_PUBLIC_DEFINES} ${SINGULARITY_PRIVATE_DEFINES}")
+#message(STATUS "[======================================================")
 
-# use config template to generate the configuration of the build
-# not sure why CMake doesn't do this automatically, but w/e
-foreach(_variableName ${_matchedVars})
-  set(SINGULARITY_CONFIG_CODE
-    "${SINGULARITY_CONFIG_CODE}\nset(${_variableName} \"${${_variableName}}\")")
-endforeach()
-
-# for all the upstream packages collected in the configuration, replicate
-# the `find_package()` in the install configuration. note that
-# if a package was consumed with `add_subdirectory` in configuration,
-# the downstream `find_package()` should find it's way to the consumed
-# package install path
-foreach(_depName ${SINGULARITY_DEP_PKGS})
-  set(_components "")
-  if(SINGULARITY_DEP_PKGS_${_depName})
-    set(_components "COMPONENTS ${SINGULARITY_DEP_PKGS_${_depName}}")
-  endif()
-  set(SINGULARITY_CONFIG_DEPENDENCIES
-    "${SINGULARITY_CONFIG_DEPENDENCIES}\nfind_package(${_depName} ${_components} REQUIRED)")
-endforeach()
-
-include(GNUInstallDirs)
-# generate the configuration file
-# NOTE: for some lunatic reason, `CMAKE_FILES_DIRECTORY` is set with a leading `/`
-configure_file(${PROJECT_SOURCE_DIR}/config/singularity-eosConfig.cmake.in
-  ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/singularity-eosConfig.cmake @ONLY)
 
 #----------------------------------------------------------------------------#
-# Testing
+# Export/install
 #----------------------------------------------------------------------------#
 
 # placed into a module file.
@@ -457,3 +417,15 @@ endif()
 
 # clang format
 include(cmake/Format.cmake)
+
+
+file(
+  GENERATE OUTPUT "singularity_configure-summary.txt"
+  CONTENT "\
+compiler flags: [$<TARGET_PROPERTY:singularity-eos,COMPILE_OPTIONS>]\n\
+compiler defs:  [$<TARGET_PROPERTY:singularity-eos,COMPILE_DEFINITIONS>]\n\
+link flags:     [$<TARGET_PROPERTY:singularity-eos,LINK_FLAGS>]\n\
+libraries:      [$<TARGET_PROPERTY:singularity-eos,LINK_LIBRARIES>]\n"
+  CONDITION $<BOOL:$<TARGET_PROPERTY:singularity-eos,COMPILE_OPTIONS>>
+)
+

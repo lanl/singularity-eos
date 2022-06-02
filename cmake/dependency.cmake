@@ -2,8 +2,6 @@
 # placeholder
 #------------------------------------------------------------------------------
 
-
-
 #------------------------------------------------------------------------------
 # including manually written submodule configs
 #------------------------------------------------------------------------------
@@ -72,26 +70,30 @@ macro(singularity_import_dependency)
   )
   cmake_parse_arguments(dep "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
+  set(_SMSG_PREFIX "[IMPORT ${dep_PKG}]")
+
   # first, if this target is already defined, then ignore figuring out imports
   if(TARGET ${dep_TARGET})
-    singularity_msg(STATUS "[IMPORT ${dep_PKG}] Detected ${dep_TARGET} present, no further processing for this dependency.")
+    singularity_msg(STATUS "Detected ${dep_TARGET} present, no further processing for this dependency.")
   else()
+    # check for user overrides
     singularity_import_check_user_override(
       PKG ${dep_PKG}
       SUBDIR ${dep_SUBDIR}
     )
 
+    # if only use submodule, or user requests import of external source
     if(dep_SUBMODULE_ONLY OR SINGULARITY_IMPORT_USER_OVERRIDE_${dep_PKG})
       singularity_import_submodule(
         PKG ${dep_PKG}
         SUBDIR ${dep_SUBDIR}
       )
     else()
-      singularity_import_system(
-        PKG ${dep_PKG}
-        TARGETS ${dep_TARGETS}
-        COMPONENTS ${dep_COMPONENTS}
-      )
+      # the standard path of dependency importing.
+      # check if pkg can be found in environment
+      singularity_msg(STATUS "Attempting \"find_package(${dep_PKG})\"")
+      find_package(${dep_PKG} QUIET COMPONENTS ${dep_COMPONENTS})
+
       # if we fail to find the package, try a submodule
       if (NOT ${dep_PKG}_FOUND)
         # does `add_subdirectory` with ${SUBDIR}
@@ -100,7 +102,7 @@ macro(singularity_import_dependency)
           SUBDIR ${dep_SUBDIR}
         )
       else()
-        singularity_msg(STATUS "[IMPORT ${dep_PKG}] Found with find_package() [${${dep_PKG}_DIR}]")
+        singularity_msg(STATUS "Found with find_package() [${${dep_PKG}_DIR}]")
       endif() # NOT FOUND
     endif() # SUBMODULE ONLY
   endif() # TARGET
@@ -114,17 +116,25 @@ macro(singularity_import_dependency)
   if(dep_COMPONENTS)
     list(APPEND SINGULARITY_DEP_PKGS_${dep_PKG} "${dep_COMPONENTS}")
   endif()
+  unset(_SMSG_PREFIX)
 endmacro() # singularity_import_dependency
 
 #------------------------------------------------------------------------------
 # Helper functions
+#
+# These 'cheat' scoping by assuming ${dep_*} is available, which can be 
+# done becuase `macro` doesn't introduce a new scope, it just "injects"
+# the body of the macro code at the callsite. As a result, they only can 
+# be validly invoked within `singularity_import_dependency`.
+# I do this for simplicity, passing around variables references is
+# already a pain in CMake.
 #------------------------------------------------------------------------------
 
 macro(singularity_import_check_user_override)
   string(TOUPPER ${dep_PKG} dep_CAP)
 
   if(SINGULARITY_${dep_CAP}_INSTALL_DIR AND SINGULARITY_${dep_CAP}_IMPORT_DIR)
-    singularity_msg(FATAL_ERROR "Cannot set INSTALL_DIR and IMPORT_DIR for the same package")
+    singularity_msg(FATAL_ERROR "Cannot set INSTALL_DIR and IMPORT_DIR for the same package. You may have a stale cache varaible.")
   endif()
 
   if(SINGULARITY_${dep_CAP}_INSTALL_DIR)
@@ -135,13 +145,13 @@ macro(singularity_import_check_user_override)
       NO_DEFAULT_PATH
     )
     if(NOT ${dep_PKG}_ROOT)
-      singularity_msg(FATAL_ERROR "SINGULARITY_${dep_VARCASE}_INSTALL_DIR [${SINGULARITY_${dep_CAP}_INSTALL_DIR}] set, but did not find an installed CMake package. Use a valid install path or unset this variable")
+      singularity_msg(FATAL_ERROR "SINGULARITY_${dep_VARCASE}_INSTALL_DIR [${SINGULARITY_${dep_CAP}_INSTALL_DIR}] set, but did not find an installed CMake package. Use a valid install path or unset this variable.")
     else()
-      singularity_msg(STATUS "[IMPORT ${dep_PKG}::USER] located cmake install, ${dep_PKG}_ROOT = ${${dep_PKG}_ROOT}")
+      singularity_msg(STATUS "located user-provided install, ${dep_PKG}_ROOT = ${${dep_PKG}_ROOT}")
     endif()
   endif()
   if(SINGULARITY_${dep_CAP}_IMPORT_DIR)
-    singularity_msg(STATUS "[IMPORT ${dep_PKG}::USER] SINGULARITY_${dep_CAP}_IMPORT_DIR is set. I will assume you know what you are doing. Overriding default path [${dep_SUBDIR}] to ${SINGULARITY_${dep_CAP}_IMPORT_DIR} and skipping find logic")
+    singularity_msg(STATUS "SINGULARITY_${dep_CAP}_IMPORT_DIR is set. I will assume you know what you are doing. Overriding default path [${dep_SUBDIR}] to ${SINGULARITY_${dep_CAP}_IMPORT_DIR} and skipping find logic")
     set(dep_SUBDIR "${SINGULARITY_${dep_CAP}_IMPORT_DIR}")
     set(SINGULARITY_IMPORT_USER_OVERRIDE_${dep_PKG} ON)
   endif()
@@ -150,11 +160,11 @@ endmacro()
 
 macro(singularity_import_submodule)
   if (NOT EXISTS ${dep_SUBDIR})      
-    message(FATAL_ERROR "${dep_PKG} requested, but the in-tree directory \"${dep_SUBDIR}\" does not exist")
+    singularity_msg(FATAL_ERROR "${dep_PKG} requested, but the in-tree directory \"${dep_SUBDIR}\" does not exist")
   endif()
       
   if (NOT EXISTS ${dep_SUBDIR}/CMakeLists.txt)
-    singularity_msg(WARNING "[IMPORT ${dep_PKG}::SUBMODULE] submodendency directory ${dep_SUBDIR} does not contain a CMakeLists.txt file. No target information about ${dep_PKG} will be available")
+    singularity_msg(WARNING "submodendency directory ${dep_SUBDIR} does not contain a CMakeLists.txt file. No target information about ${dep_PKG} will be available")
   endif()
       
   # if adding a subdirectory, set the config variables (if any) for the package
@@ -162,11 +172,5 @@ macro(singularity_import_submodule)
       
   add_subdirectory(${dep_SUBDIR} "${CMAKE_CURRENT_BINARY_DIR}/extern/${dep_PKG}")
 
-  singularity_msg(STATUS "[IMPORT ${dep_PKG}::SUBMODULE] ${dep_PKG} added from: ${dep_SUBDIR}")
+  singularity_msg(STATUS "${dep_PKG} added from: ${dep_SUBDIR}")
 endmacro()
-
-macro(singularity_import_system)
-    singularity_msg(STATUS "[IMPORT ${dep_PKG}::SYSTEM] Attempting \"find_package(${dep_PKG})\"")
-    find_package(${dep_PKG} QUIET COMPONENTS ${dep_COMPONENTS})
-endmacro()
-
