@@ -307,12 +307,27 @@ SCENARIO("Gruneisen EOS density limit") {
       constexpr Real S2 = 0.;
       constexpr Real S3 = 0.;
       // Create the EOS
-      Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+      Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv, set_rho_max};
       auto eos = host_eos.GetOnDevice();
       THEN("The provided rho_max parameter should be less than the calculated rho_max") {
         const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
         INFO("Provided rho_max: " << set_rho_max << ", Calculated rho_max:" << rho_max);
         REQUIRE(rho_max > set_rho_max);
+      }
+    }
+    WHEN("A large rho_max parameter is provided") {
+      constexpr Real set_rho_max = 10 * rho0;
+      // Linear Hugoniot fit
+      constexpr Real S1 = 1.34;
+      constexpr Real S2 = 0.;
+      constexpr Real S3 = 0.;
+      // Create the EOS
+      Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv, set_rho_max};
+      auto eos = host_eos.GetOnDevice();
+      THEN("The provided rho_max parameter should be greater than the calculated rho_max") {
+        const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
+        INFO("Provided rho_max: " << set_rho_max << ", Calculated rho_max:" << rho_max);
+        REQUIRE(rho_max < set_rho_max);
       }
     }
     WHEN("The rho_max parameter is not specified") {
