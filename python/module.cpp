@@ -181,7 +181,11 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def("nlambda", &T::nlambda)
     .def_static("PreferredInput", &T::PreferredInput)
     .def("PrintParams", &T::PrintParams)
-    // TODO .def("DensityEnergyFromPressureTemperature") reference semantics
+    .def("DensityEnergyFromPressureTemperature", [](const T & self, const Real press, const Real temp, py::array_t<Real> lambda) {
+      Real rho, sie;
+      self.DensityEnergyFromPressureTemperature(press, temp, lambda.mutable_data(), rho, sie);
+      return std::pair<Real, Real>(rho, sie);
+    }, py::arg("press"), py::arg("temp"), py::arg("lmbda"))
     .def("Finalize", &T::Finalize)
     .def_static("EosType", &T::EosType);
 }
