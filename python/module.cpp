@@ -20,6 +20,7 @@
 #include <ostream>
 #include <sstream>
 #include <limits>
+#include <cmath>
 
 namespace py = pybind11;
 using namespace singularity;
@@ -82,15 +83,39 @@ struct EOSState {
   Real temperature;
   Real specific_heat;
   Real bulk_modulus;
+  Real dpde;
+  Real dvdt;
+  Real dpdr;
+  Real dtdr;
+  Real dtde;
+
+  EOSState() :
+    density(std::numeric_limits<Real>::quiet_NaN()),
+    specific_internal_energy(std::numeric_limits<Real>::quiet_NaN()),
+    pressure(std::numeric_limits<Real>::quiet_NaN()),
+    temperature(std::numeric_limits<Real>::quiet_NaN()),
+    specific_heat(std::numeric_limits<Real>::quiet_NaN()),
+    bulk_modulus(std::numeric_limits<Real>::quiet_NaN()),
+    dpde(std::numeric_limits<Real>::quiet_NaN()),
+    dvdt(std::numeric_limits<Real>::quiet_NaN()),
+    dpdr(std::numeric_limits<Real>::quiet_NaN()),
+    dtdr(std::numeric_limits<Real>::quiet_NaN()),
+    dtde(std::numeric_limits<Real>::quiet_NaN()) {
+  }
 
   std::string to_string() const {
     std::stringstream ss;
-    ss << "density: " << density << std::endl;
-    ss << "specific_internal_energy: " << specific_internal_energy << std::endl;
-    ss << "pressure: " << pressure << std::endl;
-    ss << "temperature: " << temperature << std::endl;
-    ss << "specific_heat: " << specific_heat << std::endl;
-    ss << "bulk_modulus: " << bulk_modulus;
+    if(!std::isnan(density)) ss << "density: " << density << std::endl;
+    if(!std::isnan(specific_internal_energy)) ss << "specific_internal_energy: " << specific_internal_energy << std::endl;
+    if(!std::isnan(pressure)) ss << "pressure: " << pressure << std::endl;
+    if(!std::isnan(temperature)) ss << "temperature: " << temperature << std::endl;
+    if(!std::isnan(specific_heat)) ss << "specific_heat: " << specific_heat << std::endl;
+    if(!std::isnan(bulk_modulus)) ss << "bulk_modulus: " << bulk_modulus << std::endl;
+    if(!std::isnan(dpde)) ss << "dpde:" << dpde << std::endl;
+    if(!std::isnan(dvdt)) ss << "dvdt:" << dvdt << std::endl;
+    if(!std::isnan(dpdr)) ss << "dpdr:" << dpdr << std::endl;
+    if(!std::isnan(dtdr)) ss << "dtdr:" << dtdr << std::endl;
+    if(!std::isnan(dtde)) ss << "dtde:" << dtde << std::endl;
     return ss.str();
   }
 };
@@ -110,18 +135,17 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def("GruneisenParamFromDensityInternalEnergy", &two_params<T, &T::GruneisenParamFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lmbda"))
 
 
-    // TODO .def("GetOnDevice")
+    .def("GetOnDevice", &T::GetOnDevice)
     .def("FillEos", [](const T & self, const py::kwargs& kwargs) {
       unsigned long output = thermalqs::none;
-      Real rho, temp, sie, press, cv, bmod;
-      rho = temp = sie = press = cv = bmod = std::numeric_limits<double>::quiet_NaN();
+      EOSState s;
       std::map<std::string, std::pair<unsigned long,Real*>> param_mapping {
-        {"rho", {thermalqs::density, &rho}},
-        {"sie", {thermalqs::specific_internal_energy, &sie}},
-        {"press", {thermalqs::pressure, &press}},
-        {"temp", {thermalqs::temperature, &temp}},
-        {"cv", {thermalqs::specific_heat, &cv}},
-        {"bmod", {thermalqs::bulk_modulus, &bmod}},
+        {"rho", {thermalqs::density, &s.density}},
+        {"sie", {thermalqs::specific_internal_energy, &s.specific_internal_energy}},
+        {"press", {thermalqs::pressure, &s.pressure}},
+        {"temp", {thermalqs::temperature, &s.temperature}},
+        {"cv", {thermalqs::specific_heat, &s.specific_heat}},
+        {"bmod", {thermalqs::bulk_modulus, &s.bulk_modulus}},
       };
 
       for(auto const & it : param_mapping) {
@@ -141,13 +165,22 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
 
       if(kwargs.contains("lmbda")) {
         auto lambda = kwargs["lmbda"].cast<py::array_t<Real>>();
-        self.FillEos(rho, temp, sie, press, cv, bmod, output, lambda.mutable_data());
+        self.FillEos(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, output, lambda.mutable_data());
       } else {
-        self.FillEos(rho, temp, sie, press, cv, bmod, output, nullptr);
+        self.FillEos(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, output, nullptr);
       }
-      return EOSState {rho, sie, press, temp, cv, bmod};
+      return s;
     })
-    // TODO .def("ValuesAtReferenceState")
+    .def("ValuesAtReferenceState", [](const T & self, py::array_t<Real> lambda){
+      EOSState s;
+      self.ValuesAtReferenceState(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, s.dpde, s.dvdt, lambda.mutable_data());
+      return s;
+    })
+    .def("ValuesAtReferenceState", [](const T & self){
+      EOSState s;
+      self.ValuesAtReferenceState(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, s.dpde, s.dvdt, nullptr);
+      return s;
+    })
 
     // Generic functions provided by the base class. These contain e.g. the vector
     // overloads that use the scalar versions declared here
@@ -163,7 +196,38 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("num"), py::arg("lmbdas"))
     .def("MinimumDensity", &T::MinimumDensity)
     .def("MinimumTemperature", &T::MinimumTemperature)
-    // TODO .def("PTofRE")
+
+    .def("PTofRE", [](const T & self, Real rho, Real sie, py::array_t<Real> lambda) {
+      EOSState s;
+      s.density = rho;
+      s.specific_internal_energy = sie;
+      self.PTofRE(s.density, s.specific_internal_energy, lambda.mutable_data(), s.pressure, s.temperature, s.dpdr, s.dpde, s.dtdr, s.dtde);
+      return s;
+    }, py::arg("rho"), py::arg("sie"), py::arg("lmbda"))
+    .def("PTofRE", [](const T & self, Real rho, Real sie) {
+      EOSState s;
+      s.density = rho;
+      s.specific_internal_energy = sie;
+      self.PTofRE(s.density, s.specific_internal_energy, nullptr, s.pressure, s.temperature, s.dpdr, s.dpde, s.dtdr, s.dtde);
+      return s;
+    }, py::arg("rho"), py::arg("sie"))
+    .def("PTofRE", [](const T & self, py::array_t<Real> rhos, py::array_t<Real> sies, py::array_t<Real> pressures, py::array_t<Real> temperatures, py::array_t<Real> dpdrs, py::array_t<Real> dpdes, py::array_t<Real> dtdrs, py::array_t<Real> dtdes,
+                      const int num, py::array_t<Real> lambdas) {
+      py::buffer_info lambdas_info = lambdas.request();
+      if (lambdas_info.ndim != 2)
+        throw std::runtime_error("lambdas dimension must be 2!");
+
+      if(lambdas_info.shape[1] > 0) {
+        self.PTofRE(rhos.mutable_data(), sies.mutable_data(), pressures.mutable_data(), temperatures.mutable_data(), dpdrs.mutable_data(), dpdes.mutable_data(), dtdrs.mutable_data(), dtdes.mutable_data(), num, LambdaHelper(lambdas));
+      } else {
+        self.PTofRE(rhos.mutable_data(), sies.mutable_data(), pressures.mutable_data(), temperatures.mutable_data(), dpdrs.mutable_data(), dpdes.mutable_data(), dtdrs.mutable_data(), dtdes.mutable_data(), num, NoLambdaHelper());
+      }
+    }, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("temperatures"), py::arg("dpdrs"), py::arg("dpdes"), py::arg("dtdrs"), py::arg("dtdes"), py::arg("num"), py::arg("lmbdas"))
+    .def("PTofRE", [](const T & self, py::array_t<Real> rhos, py::array_t<Real> sies, py::array_t<Real> pressures, py::array_t<Real> temperatures, py::array_t<Real> dpdrs, py::array_t<Real> dpdes, py::array_t<Real> dtdrs, py::array_t<Real> dtdes,
+                      const int num) {
+      self.PTofRE(rhos.mutable_data(), sies.mutable_data(), pressures.mutable_data(), temperatures.mutable_data(), dpdrs.mutable_data(), dpdes.mutable_data(), dtdrs.mutable_data(), dtdes.mutable_data(), num, NoLambdaHelper());
+    }, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("temperatures"), py::arg("dpdrs"), py::arg("dpdes"), py::arg("dtdrs"), py::arg("dtdes"), py::arg("num"))
+
     .def("FillEos", [](const T & self, py::array_t<Real> rhos, py::array_t<Real> temperatures, py::array_t<Real> sies, py::array_t<Real> pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
                       const int num, const unsigned long output,
                       py::array_t<Real> lambdas) {
@@ -177,6 +241,10 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
         self.FillEos(rhos.mutable_data(), temperatures.mutable_data(), sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(), bmods.mutable_data(), num, output, NoLambdaHelper());
       }
     }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("num"), py::arg("output"), py::arg("lmbdas"))
+    .def("FillEos", [](const T & self, py::array_t<Real> rhos, py::array_t<Real> temperatures, py::array_t<Real> sies, py::array_t<Real> pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
+                      const int num, const unsigned long output) {
+      self.FillEos(rhos.mutable_data(), temperatures.mutable_data(), sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(), bmods.mutable_data(), num, output, NoLambdaHelper());
+    }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("num"), py::arg("output"))
 
     .def("nlambda", &T::nlambda)
     .def_static("PreferredInput", &T::PreferredInput)
@@ -192,13 +260,14 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
 
 PYBIND11_MODULE(singularity_eos, m) {
   py::class_<EOSState>(m, "EOSState")
+    .def(py::init())
     .def_readwrite("density", &EOSState::density)
     .def_readwrite("specific_internal_energy", &EOSState::specific_internal_energy)
     .def_readwrite("pressure", &EOSState::pressure)
     .def_readwrite("temperature", &EOSState::temperature)
     .def_readwrite("specific_heat", &EOSState::specific_heat)
     .def_readwrite("bulk_modulus", &EOSState::bulk_modulus)
-    .def("__str__", &EOSState::to_string);
+    .def("__repr__", &EOSState::to_string);
 
   eos_class<IdealGas>(m, "IdealGas")
     .def(
