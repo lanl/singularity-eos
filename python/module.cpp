@@ -362,7 +362,9 @@ PYBIND11_MODULE(singularity_eos, m) {
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
-  // TODO EOSPAC
+  eos_class<EOSPAC>(m, "EOSPAC")
+    .def(py::init())
+    .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
 #endif
 
   py::module thermalqs = m.def_submodule("thermalqs");
