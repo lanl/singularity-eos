@@ -422,6 +422,13 @@ include(cmake/Format.cmake)
 file(
   GENERATE OUTPUT "singularity_configure-summary.txt"
   CONTENT "\
+CMAKE config (these are passed to the compiler _before_ any `*_compile_options()`)\n\
+----------------------\n\
+CMAKE_CXX_FLAGS:      ${CMAKE_CXX_FLAGS}\n\
+CMAKE_Fortran_FLAGS:  ${CMAKE_Fortran_FLAGS}\n\
+LINK_OPTIONS:         ${LINK_OPTIONS}\n\n\
+singularity-eos config (target specific)\n\
+----------------------\n\
 compiler flags: [$<TARGET_PROPERTY:singularity-eos,COMPILE_OPTIONS>]\n\
 compiler defs:  [$<TARGET_PROPERTY:singularity-eos,COMPILE_DEFINITIONS>]\n\
 link flags:     [$<TARGET_PROPERTY:singularity-eos,LINK_FLAGS>]\n\
