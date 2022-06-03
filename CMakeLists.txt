@@ -419,14 +419,16 @@ endif()
 include(cmake/Format.cmake)
 
 
+string(TOUPPER ${CMAKE_BUILD_TYPE} bt)
 file(
   GENERATE OUTPUT "singularity_configure-summary.txt"
   CONTENT "\
+CMAKE_BUILD_TYPE: [${bt}]\n\n\
 CMAKE config (these are passed to the compiler _before_ any `*_compile_options()`)\n\
 ----------------------\n\
-CMAKE_CXX_FLAGS:      ${CMAKE_CXX_FLAGS}\n\
-CMAKE_Fortran_FLAGS:  ${CMAKE_Fortran_FLAGS}\n\
-LINK_OPTIONS:         ${LINK_OPTIONS}\n\n\
+CMAKE_CXX_FLAGS:      [${CMAKE_CXX_FLAGS_${bt}}]\n\
+CMAKE_Fortran_FLAGS:  [${CMAKE_Fortran_FLAGS_${bt}}]\n\
+LINK_OPTIONS:         [${LINK_OPTIONS}]\n\n\
 singularity-eos config (target specific)\n\
 ----------------------\n\
 compiler flags: [$<TARGET_PROPERTY:singularity-eos,COMPILE_OPTIONS>]\n\
