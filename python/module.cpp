@@ -304,6 +304,16 @@ PYBIND11_MODULE(singularity_eos, m) {
       py::arg("pc"), py::arg("Cv"), py::arg("E0")
     );
 
+#ifdef SPINER_USE_HDF
+  // TODO SpinerEOSDependsRhoT
+  // TODO SpinerEOSDependsRhoSie
+  // TODO StellarCollapse
+#endif
+
+#ifdef SINGULARITY_USE_EOSPAC
+  // TODO EOSPAC
+#endif
+
   py::module thermalqs = m.def_submodule("thermalqs");
   thermalqs.attr("none") = pybind11::int_(thermalqs::none);
   thermalqs.attr("density") = pybind11::int_(thermalqs::density);
