@@ -246,8 +246,8 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
       self.FillEos(rhos.mutable_data(), temperatures.mutable_data(), sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(), bmods.mutable_data(), num, output, NoLambdaHelper());
     }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("num"), py::arg("output"))
 
-    .def("nlambda", &T::nlambda)
-    .def_static("PreferredInput", &T::PreferredInput)
+    .def_property_readonly("nlambda", &T::nlambda)
+    .def_property_readonly_static("PreferredInput", &T::PreferredInput)
     .def("PrintParams", &T::PrintParams)
     .def("DensityEnergyFromPressureTemperature", [](const T & self, const Real press, const Real temp, py::array_t<Real> lambda) {
       Real rho, sie;
@@ -255,7 +255,7 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
       return std::pair<Real, Real>(rho, sie);
     }, py::arg("press"), py::arg("temp"), py::arg("lmbda"))
     .def("Finalize", &T::Finalize)
-    .def_static("EosType", &T::EosType);
+    .def_property_readonly_static("EosType", &T::EosType);
 }
 
 PYBIND11_MODULE(singularity_eos, m) {
@@ -270,12 +270,14 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def("__repr__", &EOSState::to_string);
 
   eos_class<IdealGas>(m, "IdealGas")
+    .def(py::init())
     .def(
       py::init<Real, Real>(),
       py::arg("gm1"), py::arg("Cv")
     );
 
   eos_class<Gruneisen>(m, "Gruneisen")
+    .def(py::init())
     .def(
       py::init<Real, Real, Real, Real, Real, Real, Real, Real, Real, Real>(),
       py::arg("C0"), py::arg("s1"), py::arg("s2"), py::arg("s3"), py::arg("G0"),
@@ -283,6 +285,7 @@ PYBIND11_MODULE(singularity_eos, m) {
     );
 
   eos_class<JWL>(m, "JWL")
+    .def(py::init())
     .def(
       py::init<Real, Real, Real, Real, Real, Real, Real>(),
       py::arg("A"), py::arg("B"), py::arg("R1"), py::arg("R2"),
@@ -290,6 +293,7 @@ PYBIND11_MODULE(singularity_eos, m) {
     );
 
   eos_class<DavisReactants>(m, "DavisReactants")
+    .def(py::init())
     .def(
       py::init<Real, Real, Real, Real, Real, Real, Real, Real, Real, Real, Real>(),
       py::arg("rho0"), py::arg("e0"), py::arg("P0"), py::arg("T0"),
@@ -298,6 +302,7 @@ PYBIND11_MODULE(singularity_eos, m) {
     );
 
   eos_class<DavisProducts>(m, "DavisProducts")
+    .def(py::init())
     .def(
       py::init<Real, Real, Real, Real, Real, Real, Real, Real>(),
       py::arg("a"), py::arg("b"), py::arg("k"), py::arg("n"), py::arg("vc"),
@@ -305,9 +310,55 @@ PYBIND11_MODULE(singularity_eos, m) {
     );
 
 #ifdef SPINER_USE_HDF
-  // TODO SpinerEOSDependsRhoT
-  // TODO SpinerEOSDependsRhoSie
-  // TODO StellarCollapse
+  eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT")
+    .def(py::init())
+    .def(py::init<const std::string&,int,bool>(), py::arg("filename"), py::arg("matid"), py::arg("reproduciblity_mode")=false)
+    .def(py::init<const std::string&,const std::string&,bool>(), py::arg("filename"), py::arg("materialName"), py::arg("reproduciblity_mode")=false)
+    .def_property_readonly("filename", &SpinerEOSDependsRhoT::filename)
+    .def_property_readonly("materialName", &SpinerEOSDependsRhoT::materialName)
+    .def_property_readonly("matid", &SpinerEOSDependsRhoT::matid)
+    .def_property_readonly("lRhoOffset", &SpinerEOSDependsRhoT::lRhoOffset)
+    .def_property_readonly("lTOffset", &SpinerEOSDependsRhoT::lTOffset)
+    .def_property_readonly("rhoMin", &SpinerEOSDependsRhoT::rhoMin)
+    .def_property_readonly("rhoMax", &SpinerEOSDependsRhoT::rhoMax);
+
+  eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie")
+    .def(py::init())
+    .def(py::init<const std::string&,int,bool>(), py::arg("filename"), py::arg("matid"), py::arg("reproduciblity_mode")=false)
+    .def(py::init<const std::string&,const std::string&,bool>(), py::arg("filename"), py::arg("materialName"), py::arg("reproduciblity_mode")=false)
+    .def_property_readonly("filename", &SpinerEOSDependsRhoSie::filename)
+    .def_property_readonly("materialName", &SpinerEOSDependsRhoSie::materialName)
+    .def_property_readonly("matid", &SpinerEOSDependsRhoSie::matid)
+    .def_property_readonly("lRhoOffset", &SpinerEOSDependsRhoSie::lRhoOffset)
+    .def_property_readonly("lTOffset", &SpinerEOSDependsRhoSie::lTOffset)
+    .def_property_readonly("lEOffset", &SpinerEOSDependsRhoSie::lEOffset)
+    .def_property_readonly("rhoMin", &SpinerEOSDependsRhoSie::rhoMin)
+    .def_property_readonly("rhoMax", &SpinerEOSDependsRhoSie::rhoMax)
+    .def_property_readonly("TMin", &SpinerEOSDependsRhoSie::TMin)
+    .def_property_readonly("TMax", &SpinerEOSDependsRhoSie::TMax)
+    .def_property_readonly("sieMin", &SpinerEOSDependsRhoSie::sieMin)
+    .def_property_readonly("sieMax", &SpinerEOSDependsRhoSie::sieMax);
+
+  eos_class<StellarCollapse>(m, "StellarCollapse")
+    .def(py::init())
+    .def(py::init<const std::string&, bool, bool>(), py::arg("filename"), py::arg("use_sp5")=false, py::arg("filter_bmod")=true)
+    .def("Save", &StellarCollapse::Save, py::arg("filename"))
+    .def_property_readonly("filename", &StellarCollapse::filename)
+    .def_property_readonly("lRhoOffset", &StellarCollapse::lRhoOffset)
+    .def_property_readonly("lTOffset", &StellarCollapse::lTOffset)
+    .def_property_readonly("lEOffset", &StellarCollapse::lEOffset)
+    .def_property_readonly("lRhoMin", &StellarCollapse::lRhoMin)
+    .def_property_readonly("lRhoMax", &StellarCollapse::lRhoMax)
+    .def_property_readonly("rhoMin", &StellarCollapse::rhoMin)
+    .def_property_readonly("rhoMax", &StellarCollapse::rhoMax)
+    .def_property_readonly("lTMin", &StellarCollapse::lTMin)
+    .def_property_readonly("lTMax", &StellarCollapse::lTMax)
+    .def_property_readonly("TMin", &StellarCollapse::TMin)
+    .def_property_readonly("TMax", &StellarCollapse::TMax)
+    .def_property_readonly("YeMin", &StellarCollapse::YeMin)
+    .def_property_readonly("YeMax", &StellarCollapse::YeMax)
+    .def_property_readonly("sieMin", &StellarCollapse::sieMin)
+    .def_property_readonly("sieMax", &StellarCollapse::sieMax);
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
