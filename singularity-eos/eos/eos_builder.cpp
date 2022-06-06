@@ -27,8 +27,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
   bool shifted = (modifiers.count(EOSModifier::Shifted) > 0);
   bool relativistic = (modifiers.count(EOSModifier::Relativistic) > 0);
   bool units = (modifiers.count(EOSModifier::UnitSystem) > 0);
-  bool ramp = (modifiers.count(EOSModifier::SAPRamp) > 0);
-  if ((shifted || scaled || relativistic || units || ramp) && !(isModifiable(type))) {
+  bool ramped = (modifiers.count(EOSModifier::SAPRamp) > 0);
+  if ((shifted || scaled || relativistic || units || ramped) && !(isModifiable(type))) {
     EOS_ERROR("Modifiers not supported for this EOS");
   }
   if (relativistic && (shifted || scaled || units)) {
@@ -58,7 +58,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
   Real a = 1;
   Real b = 0;
   Real c = 0;
-  if (ramp) {
+  if (ramped) {
     r0 = mpark::get<Real>(modifiers[EOSModifier::SAPRamp]["r0"]);
     a = mpark::get<Real>(modifiers[EOSModifier::SAPRamp]["a"]);
     b = mpark::get<Real>(modifiers[EOSModifier::SAPRamp]["b"]);
@@ -104,7 +104,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     if (relativistic) {
       return makeRelativistic(std::move(g), cl);
     }
-    return appyShiftAndScaleAndSapRamp(std::move(g), scaled, shifted, ramped, scale, shift, r0, a, b, c);
+    return applyShiftAndScaleAndSAPRamp(std::move(g), scaled, shifted, ramped, scale, shift, r0, a, b, c);
   }
 #ifdef SPINER_USE_HDF
   if (type == EOSType::SpinerEOSDependsRhoT || type == EOSType::SpinerEOSDependsRhoSie) {
@@ -131,7 +131,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return appyShiftAndScaleAndSapRamp(std::move(s), scaled, shifted, ramped, scale, shift, r0, a, b, c);
+        return applyShiftAndScaleAndSAPRamp(std::move(s), scaled, shifted, ramped, scale, shift, r0, a, b, c);
       }
     } else {
       string materialName = mpark::get<string>(base_params["materialName"]);
@@ -154,7 +154,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return appyShiftAndScaleAndSapRamp(std::move(s), scaled, shifted, ramped, scale, shift, r0, a, b, c);
+        return applyShiftAndScaleAndSAPRamp(std::move(s), scaled, shifted, ramped, scale, shift, r0, a, b, c);
       }
     }
   }
@@ -176,7 +176,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     if (relativistic) {
       return makeRelativistic(std::move(s), cl);
     }
-    return appyShiftAndScaleAndSapRamp(std::move(s), scaled, shifted, ramped, scale, shift, r0, a, b, c);
+    return applyShiftAndScaleAndSAPRamp(std::move(s), scaled, shifted, ramped, scale, shift, r0, a, b, c);
   }
 #endif
   if (type == EOSType::Gruneisen) {

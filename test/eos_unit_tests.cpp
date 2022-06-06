@@ -266,6 +266,21 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       THEN("The shift and scale parameters pass through correctly") {
         REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
+      WHEN("We add a ramp") {
+        EOSBuilder::params_t ramp_params;
+        Real r0 = 1;
+        Real a = 1;
+        Real b = 0;
+        Real c = 0;
+        ramp_params["r0"] = r0;
+        ramp_params["a"] = a;
+        ramp_params["b"] = b;
+        ramp_params["c"] = c;
+        modifiers[EOSBuilder::EOSModifier::SAPRamp] = ramp_params;
+        THEN("The EOS is constructed correctly") {
+          auto eos_ramped = EOSBuilder::buildEOS(type, base_params, modifiers);
+        }
+      }
     }
     WHEN("We construct a non-modifying modifier") {
       EOS ig = IdealGas(gm1, Cv);

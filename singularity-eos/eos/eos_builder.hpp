@@ -51,6 +51,7 @@ using params_t = std::map<std::string, param_t>;
 using modifiers_t = std::map<EOSModifier, params_t>;
 const params_t NO_PARAMS;
 
+// TODO: Extend if needed
 const std::unordered_set<EOSType> modifiable({EOSType::IdealGas
 #ifdef SPINER_USE_HDF
                                               ,
