@@ -26,6 +26,7 @@
 
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
+#include <singularity-eos/eos/singularity_eos.hpp>
 
 // typename demangler
 #ifdef __GNUG__
@@ -271,7 +272,26 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       EOS ig = IdealGas(gm1, Cv);
       EOS igsh = ScaledEOS<IdealGas>(IdealGas(gm1, Cv), 1.0);
       EOS igsc = ShiftedEOS<IdealGas>(IdealGas(gm1, Cv), 0.0);
-      auto igra = SAPRampEOS<IdealGas>(IdealGas(gm1, Cv), 1.e9, 1.0, 2.0, 1.0);
+      EOS igra;// = SAPRampEOS<IdealGas>(IdealGas(gm1, Cv), 1.e9, 1.0, 2.0, 1.0);
+      // test out the c interface
+      int enabled[4] = {0, 0, 1, 0};
+      Real vals[6] = {0.0, 0.0, 1.e9, 1.0, 2.0, 1.0};
+      Real rho0 = 1.e6 / (gm1*Cv*293.0);
+      init_sg_IdealGas(0, &igra, gm1, Cv, enabled, vals);
+      EOS igra2;
+      enabled[2] = 0;
+      enabled[3] = 1;
+      Real Pe = 2.e6, Pc = 1.e7;
+      Real alpha0 = 0.98;
+      vals[2] = alpha0;
+      vals[3] = Pe;
+      vals[4] = Pc;
+      vals[5] = 0.0;
+      Real r1 = Pc / (gm1*Cv*293.0);
+      Real rmid = Pe / (gm1*Cv*293.0*alpha0);
+      init_sg_IdealGas(0, &igra2, gm1, Cv, enabled, vals);
+      REQUIRE(isClose(Pe, igra2.PressureFromDensityTemperature(alpha0*rmid, 293.0), 1.e-12));
+      REQUIRE(isClose(Pc, igra2.PressureFromDensityTemperature(r1, 293.0), 1.e-12));
       THEN("The modified EOS should produce equivalent results") {
         compare_two_eoss(igsh, ig);
         compare_two_eoss(igsc, ig);

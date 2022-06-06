@@ -32,6 +32,43 @@ namespace singularity {
 
 using namespace eos_base;
 
+template<typename T>
+void pAlpha2SAPRampParams(const T& eos,
+			  const Real alpha0, const Real Pe, const Real Pc,
+			  Real& r0, Real& a, Real& b, Real& c) {
+  // get reference conditions
+  Real rho0, T0, sie0, P0, cv0, bmod0, dpde0, dvdt0;
+  Real rmid, r1;
+  eos.ValuesAtReferenceState(rho0, T0, sie0, P0, cv0, bmod0, dpde0, dvdt0);
+  // calculate r0
+  r0 = rho0 / alpha0;
+  // calculate rmid
+  auto rmid_func = [&] (const Real x) {
+    return eos.PressureFromDensityTemperature(alpha0*x, T0);
+  };
+  RootFinding1D::RootCounts co{};
+  // get upper bound to density informed by the reference
+  // bulk modulus
+  const Real max_exp_arg = std::log(std::numeric_limits<Real>::max()*0.99);
+  const Real exp_arg = std::min(max_exp_arg, (2.0*Pc - P0) / bmod0);
+  const Real rho_ub = rho0*std::exp(exp_arg);
+  // finds where rmid_func = Pe
+  RootFinding1D::findRoot(rmid_func, Pe, rho0, r0, rho_ub, 1.e-12, 1.e-12, rmid, co);
+  // calculate r1
+  auto r1_func = [&] (const Real x) {
+    return eos.PressureFromDensityTemperature(x, T0);
+  };
+  // finds where r1_func = Pc
+  RootFinding1D::findRoot(r1_func, Pc, rmid, r0, rho_ub, 1.e-12, 1.e-12, r1, co);
+  // a
+  a = r0 * Pe / (rmid - r0);
+  // b
+  b = r0 * (Pc - Pe) / (r1 - rmid);
+  // c
+  c = (Pc * rmid - Pe * r1) / (r0 * (Pc - Pe) );
+  return;
+}
+
 template <typename T>
 class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
  public:

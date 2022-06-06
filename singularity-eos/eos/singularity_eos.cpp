@@ -35,17 +35,30 @@ int init_sg_eos(const int nmat, EOS *&eos) {
   return 0;
 }
 
+// apply everything but ramp in order to possibly calculate the 
+// SAP ramp parameters from p-alhpa ramp parameters
+#define SGAPPLYMODSIMPLE(A) \
+  EOSBuilder::applyShiftAndScale(A, enabled[0] == 1, enabled[1] == 1, \
+				 vals[0], vals[1])
+
 #define SGAPPLYMOD(A) \
   EOSBuilder::applyShiftAndScaleAndSAPRamp(A, enabled[0] == 1, enabled[1] == 1, \
-                                           enabled[2] == 1, vals[0], vals[1], \
-					   vals[2], vals[3], vals[4], vals[5])
+                                           enabled[2] == 1 || enabled[3] == 1, \
+					   vals[0], vals[1], vals[2], vals[3], \
+					   vals[4], vals[5])
 
-constexpr const int def_en[3] = {0, 0, 0};
+constexpr const int def_en[4] = {0, 0, 0, 0};
 constexpr const double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const double Cv,
-                     int const *const enabled, double const *const vals) {
+                     int const *const enabled, double const *const vals_i) {
   assert(matindex >= 0);
+  Real vals[6] = {vals_i[0], vals_i[1], vals_i[2], vals_i[3], vals_i[4], vals_i[5]};
+  EOS eosi = SGAPPLYMODSIMPLE(IdealGas(gm1, Cv));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2SAPRampParams(eosi, vals_i[2], vals_i[3], vals_i[4], vals[2],
+				      vals[3], vals[4], vals[5]);
+  }
   EOS eos_ = SGAPPLYMOD(IdealGas(gm1, Cv));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
