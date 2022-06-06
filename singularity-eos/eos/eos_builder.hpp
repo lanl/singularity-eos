@@ -43,7 +43,7 @@ enum class EOSType {
   StellarCollapse
 #endif
 };
-enum class EOSModifier { Scaled, Shifted, Relativistic, UnitSystem };
+enum class EOSModifier { Scaled, Shifted, Relativistic, UnitSystem, SAPRamp };
 
 // evil type erasure
 using param_t = mpark::variant<bool, int, Real, std::string>;
