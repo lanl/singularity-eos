@@ -307,12 +307,51 @@ SCENARIO("Gruneisen EOS density limit") {
       constexpr Real S2 = 0.;
       constexpr Real S3 = 0.;
       // Create the EOS
-      Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
+      Gruneisen host_eos =
+          Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv, set_rho_max};
       auto eos = host_eos.GetOnDevice();
+      // Computed rho_max
+      const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
       THEN("The provided rho_max parameter should be less than the calculated rho_max") {
-        const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
         INFO("Provided rho_max: " << set_rho_max << ", Calculated rho_max:" << rho_max);
         REQUIRE(rho_max > set_rho_max);
+      }
+      THEN("A lookup between the computed and set rho_max should return the value at the "
+           "set rho_max") {
+        const Real rho = (set_rho_max + rho_max) / 2.;
+        const Real temperature = 298.;
+        const Real at_max = eos.PressureFromDensityTemperature(set_rho_max, temperature);
+        const Real beyond_max = eos.PressureFromDensityTemperature(rho, temperature);
+        INFO("Pressure at rho_max: " << at_max << ", Pressure beyond rho_max"
+                                     << beyond_max);
+        REQUIRE(at_max == beyond_max);
+      }
+    }
+    WHEN("A large rho_max parameter is provided") {
+      constexpr Real set_rho_max = 10 * rho0;
+      // Linear Hugoniot fit
+      constexpr Real S1 = 1.34;
+      constexpr Real S2 = 0.;
+      constexpr Real S3 = 0.;
+      // Create the EOS
+      Gruneisen host_eos =
+          Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv, set_rho_max};
+      auto eos = host_eos.GetOnDevice();
+      // Computed rho_max
+      const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
+      THEN("The provided rho_max parameter should be greater than the calculated "
+           "rho_max") {
+        INFO("Provided rho_max: " << set_rho_max << ", Calculated rho_max:" << rho_max);
+        REQUIRE(rho_max < set_rho_max);
+      }
+      THEN("A lookup beyond the set rho_max should return the value at rho_max") {
+        const Real rho = 1.1 * set_rho_max;
+        const Real temperature = 298.;
+        const Real at_max = eos.PressureFromDensityTemperature(set_rho_max, temperature);
+        const Real beyond_max = eos.PressureFromDensityTemperature(rho, temperature);
+        INFO("Pressure at rho_max: " << at_max << ", Pressure beyond rho_max"
+                                     << beyond_max);
+        REQUIRE(at_max == beyond_max);
       }
     }
     WHEN("The rho_max parameter is not specified") {
