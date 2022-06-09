@@ -95,6 +95,14 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
     return p_ramp;
   }
 
+  PORTABLE_INLINE_FUNCTION
+  Real get_ramp_dpdrho(Real rho) const {
+    const Real dpdr{rho < r0_     ? 0.0
+                    : rho < rmid_ ? a_ / r0_
+                                  : b_ / r0_};
+    return dpdr;
+  }
+
   PORTABLE_FUNCTION
   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {
@@ -123,7 +131,12 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
   PORTABLE_FUNCTION
   Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {
-    return t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
+    const Real p_ramp{get_ramp_pressure(rho)};
+    const Real p_eos{t_.PressureFromDensityInternalEnergy(rho, sie, lambda)};
+    
+    return
+      p_eos < p_ramp ? rho*get_ramp_dpdrho(rho)
+                     : t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -145,7 +158,11 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
   PORTABLE_FUNCTION
   Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
                                          Real *lambda = nullptr) const {
-    return t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
+    const Real p_ramp{get_ramp_pressure(rho)};
+    const Real p_eos{t_.PressureFromDensityTemperature(rho, temperature, lambda)};
+    return
+      p_eos < p_ramp ? rho*get_ramp_dpdrho(rho)
+	             : t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
