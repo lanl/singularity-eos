@@ -135,7 +135,6 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def("GruneisenParamFromDensityInternalEnergy", &two_params<T, &T::GruneisenParamFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lmbda"))
 
 
-    .def("GetOnDevice", &T::GetOnDevice)
     .def("FillEos", [](const T & self, const py::kwargs& kwargs) {
       unsigned long output = thermalqs::none;
       EOSState s;
