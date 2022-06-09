@@ -52,7 +52,7 @@ public:
 // to generalize this without the preprocessor.
 #define EOS_VEC_FUNC_TMPL(func, a, b, out)                                        \
 template<typename T>                                                              \
-void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,                \
+void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,               \
           py::array_t<Real> out, const int num, py::array_t<Real> lambdas){       \
   py::buffer_info lambdas_info = lambdas.request();                               \
   if (lambdas_info.ndim != 2)                                                     \
@@ -65,6 +65,13 @@ void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,             
   }                                                                               \
 }
 
+#define EOS_VEC_FUNC_NO_LAMBDA_TMPL(func, a, b, out)                              \
+template<typename T>                                                              \
+void func####NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,               \
+          py::array_t<Real> out, const int num){                                  \
+  self.func(a.data(), b.data(), out.mutable_data(), num, NoLambdaHelper());       \
+}
+
 EOS_VEC_FUNC_TMPL(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
 EOS_VEC_FUNC_TMPL(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
 EOS_VEC_FUNC_TMPL(PressureFromDensityTemperature, rhos, temperatures, pressures)
@@ -75,6 +82,17 @@ EOS_VEC_FUNC_TMPL(BulkModulusFromDensityTemperature, rhos, temperatures, bmods)
 EOS_VEC_FUNC_TMPL(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods)
 EOS_VEC_FUNC_TMPL(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s)
 EOS_VEC_FUNC_TMPL(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
+
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(PressureFromDensityTemperature, rhos, temperatures, pressures)
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(PressureFromDensityInternalEnergy, rhos, sies, pressures)
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(SpecificHeatFromDensityTemperature, rhos, temperatures, cvs)
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(SpecificHeatFromDensityInternalEnergy, rhos, sies, cvs)
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(BulkModulusFromDensityTemperature, rhos, temperatures, bmods)
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods)
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s)
+EOS_VEC_FUNC_NO_LAMBDA_TMPL(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
 
 struct EOSState {
   Real density;
@@ -193,6 +211,18 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("num"), py::arg("lmbdas"))
     .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("num"), py::arg("lmbdas"))
     .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("num"), py::arg("lmbdas"))
+
+    .def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("num"))
+    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("num"))
+    .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("num"))
+    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("num"))
+    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("num"))
+    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("num"))
+    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("num"))
+    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("num"))
+    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("num"))
+    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("num"))
+
     .def("MinimumDensity", &T::MinimumDensity)
     .def("MinimumTemperature", &T::MinimumTemperature)
 
