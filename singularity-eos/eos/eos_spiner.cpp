@@ -1424,7 +1424,7 @@ Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
         ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, EPS, EPS, lRho, counts);
 
     if (status_ != RootFinding1D::Status::SUCCESS) {
-#if EPINER_EOS_VERBOSE
+#if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
       errorMessage << "inverting P table for logRho failed\n"
                    << "matid     = " << matid_ << "\n"
