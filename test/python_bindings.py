@@ -87,6 +87,62 @@ class VectorEOS_IdealGas_Given_Rho_Sie(unittest.TestCase):
         self.eos.GruneisenParamFromDensityInternalEnergy(self.density, self.energy, self.gruneisen, self.num)
         assert_allclose(self.gruneisen, self.gruneisen_true, rtol=1e-12)
 
+class VectorEOS_IdealGas_Given_Rho_Temp(unittest.TestCase):
+    def setUp(self):
+        Cv = 5.0;
+        gm1 = 0.4;
+        self.eos = singularity_eos.IdealGas(gm1, Cv)
+
+        self.num = 3
+        self.density = np.zeros(self.num)
+        self.temperature = np.zeros(self.num)
+
+        # Populate the input arrays
+        self.density[0] = 1.0
+        self.density[1] = 2.0
+        self.density[2] = 5.0
+        self.temperature[0] = 50.0
+        self.temperature[1] = 100.0
+        self.temperature[2] = 150.0
+
+        # Gold standard values
+        self.energy_true = np.array((250., 500., 750.))
+        self.pressure_true = np.array((100., 400., 1500.));
+        self.bulkmodulus_true = np.array((140., 560., 2100.));
+        self.heatcapacity_true = np.array((Cv, Cv, Cv))
+        self.gruneisen_true = np.array((gm1, gm1, gm1))
+
+        # Create arrays for the outputs
+        self.energy = np.zeros(self.num)
+        self.pressure = np.zeros(self.num)
+        self.heatcapacity = np.zeros(self.num)
+        self.bulkmodulus = np.zeros(self.num)
+        self.gruneisen = np.zeros(self.num)
+
+    def test_energy(self):
+        """[Vector EOS][IdealGas][Densities and temperatures] A e(rho, T) lookup is performed"""
+        self.eos.InternalEnergyFromDensityTemperature(self.density, self.temperature, self.energy, self.num)
+        assert_allclose(self.energy, self.energy_true, rtol=1e-12)
+
+    def test_pressure(self):
+        """[Vector EOS][IdealGas][Densities and temperatures] A P(rho, T) lookup is performed"""
+        self.eos.PressureFromDensityTemperature(self.density, self.temperature, self.pressure, self.num)
+        assert_allclose(self.pressure, self.pressure_true, rtol=1e-12)
+
+    def test_cv(self):
+        """[Vector EOS][IdealGas][Densities and temperatures] A C_v(rho, T) lookup is performed"""
+        self.eos.SpecificHeatFromDensityTemperature(self.density, self.temperature, self.heatcapacity, self.num)
+        assert_allclose(self.heatcapacity, self.heatcapacity_true, rtol=1e-12)
+
+    def test_bmod(self):
+        """[Vector EOS][IdealGas][Densities and temperatures] A B_S(rho, T) lookup is performed"""
+        self.eos.BulkModulusFromDensityTemperature(self.density, self.temperature, self.bulkmodulus, self.num)
+        assert_allclose(self.bulkmodulus, self.bulkmodulus_true, rtol=1e-12)
+
+    def test_gamma(self):
+        """[Vector EOS][IdealGas][Densities and temperatures] A Gamma(rho, T) lookup is performed"""
+        self.eos.GruneisenParamFromDensityTemperature(self.density, self.temperature, self.gruneisen, self.num)
+        assert_allclose(self.gruneisen, self.gruneisen_true, rtol=1e-12)
 
 if __name__ == "__main__":
     unittest.main()
