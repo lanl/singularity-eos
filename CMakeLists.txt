@@ -64,13 +64,15 @@ execute_process(COMMAND patch -N -s -V never
 # only attaching them to targets as late as possible.
 # this allows for easier handling and manipulating, as
 # well as later info printing and debugging
-set(SINGULARITY_PUBLIC_DEFINES "")  # list to `target_compile_definitions()`
-set(SINGULARITY_PRIVATE_DEFINES "") # """
-set(SINGULARITY_PUBLIC_LIBS "")      # list to `target_link_libraries()`
-set(SINGULARITY_PRIVATE_LIBS "")     # """
-set(SINGULARITY_EXPORT_TARGETS "")
-set(SINGULARITY_COMPILEFLAGS "")    # TODO: actually use these
-set(SINGULARITY_DEP_PKGS "")        # a list of packages, used to generate import rules for installed targets. (may want to rename)
+set(SINGULARITY_PUBLIC_DEFINES "")    # list to `target_compile_definitions()`
+set(SINGULARITY_PRIVATE_DEFINES "")   # """
+set(SINGULARITY_PUBLIC_INCS "")       # list to `target_include_directories()`
+set(SINGULARITY_PRIVATE_INCS "")      # """ 
+set(SINGULARITY_PUBLIC_LIBS "")       # list to `target_link_libraries()`
+set(SINGULARITY_PRIVATE_LIBS "")      # """
+set(SINGULARITY_EXPORT_TARGETS "")    # probably not useful
+set(SINGULARITY_COMPILEFLAGS "")      # TODO: actually use these
+set(SINGULARITY_DEP_PKGS "")          # a list of packages, used to generate import rules for installed targets. (may want to rename)
 
 #------------------------------------------------------------------------------#
 # Compiler & language setup
@@ -239,8 +241,17 @@ if (SINGULARITY_USE_HDF5)
   singularity_import_dependency(
     PKG HDF5
     COMPONENTS C HL
-    TARGETS HDF5::HDF5 hdf5::hdf5_hl
+    #NB: 'newer' CMake versions, HDF5s will
+    #    do the `idiomatic` cmake setup,
+    #    and `find_package(HDF5)` will define
+    #    these targets.
+    #    however, some downstream codes
+    #    are still struggling through the
+    #    dark times, so we use the 
+    #    'standard' hack for now
+    #    TARGETS HDF5::HDF5 hdf5::hdf5_hl
   )
+
   # make sure we use MPI,
   # as this requirement is not
   # transitive in hdf5
@@ -253,6 +264,13 @@ if (SINGULARITY_USE_HDF5)
       TARGETS MPI::MPI_CXX
     )
   endif()
+  ####
+  #TODO: when downstream is rescued,
+  #      we can discard these
+  list(APPEND SINGULARITY_PUBLIC_LIBS ${HDF5_LIBRARIES})
+  list(APPEND SINGULARITY_PUBLIC_LIBS ${HDF5_HL_LIBRARIES})
+  list(APPEND SINGULARITY_PUBLIC_INCS ${HDF5_INCLUDE_DIRS})
+  ####
   list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_HDF)
   list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_HDF)
 endif() # SINGULARITY_USE_HDF5
@@ -319,6 +337,13 @@ target_include_directories(singularity-eos
 )
 
 # plug in collected includes/libs/definitions
+
+target_include_directories(singularity-eos
+  PUBLIC
+    ${SINGULARITY_PUBLIC_INCS}
+  PRIVATE
+    ${SINGULARITY_PRIVATE_INCS}
+)
 
 target_link_libraries(singularity-eos
   PUBLIC
