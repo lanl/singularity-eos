@@ -191,6 +191,29 @@ if(SINGULARITY_USE_KOKKOS)
   set(SPINER_USE_KOKKOS ON)
   list(APPEND SINGULARITY_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
   list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_KOKKOS)
+  ####
+  # TODO: Once it's oppurtune, we will
+  #       not support Kokkos < 3.3
+  if(Kokkos_VERSION_MAJOR VERSION_LESS "3.3")
+    message(WARNING "`Kokkos` version [${Kokkos_VERSION_MAJOR}] is DEPRECATED, and `singularity-eos` will not support versions < '3.3' in the very near future.")
+    if(SINGULARITY_USE_CUDA)
+      if(NOT "$ENV{CXX}x" STREQUAL "x" AND
+          "$ENV{NVCC_WRAPPER_DEFAULT_COMPILER}x" STREQUAL "x")
+        set(ENV{NVCC_WRAPPER_DEFAULT_COMPILER} "$ENV{CXX}")
+      endif()
+      find_program(SINGULARITY_NVCC_WRAPPER
+        NAMES           nvcc_wrapper
+        HINTS           "${Kokkos_DIR};${Kokkos_SOURCE_DIR}"
+        PATHS           "${Kokkos_DIR};${Kokkos_SOURCE_DIR}"
+        PATH_SUFFIXES   bin)
+      # fatal if we can't nvcc_wrapper
+      if(NOT SINGULARITY_NVCC_WRAPPER)
+        message(FATAL_ERROR "Could not find nvcc_wrapper.")
+      endif()
+      set(CMAKE_CXX_COMPILER ${SINGULARITY_NVCC_WRAPPER CACHE STRING "")
+    endif() #SINGULARITY_USE_CUDA
+  endif() #Kokkos_VERSION_MAJOR
+  ####
 endif() #SINGULARITY_USE_KOKKOS
 
 if(SINGULARITY_USE_KOKKOSKERNELS)
