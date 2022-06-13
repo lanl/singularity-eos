@@ -251,6 +251,7 @@ singularity_import_dependency(
 # ports-of-call
 # type: ghost submodule
 singularity_import_dependency(
+  SUBMODULE_ONLY
   PKG ports-of-call
   TARGET ports-of-call::ports-of-call
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/ports-of-call
