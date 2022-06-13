@@ -113,8 +113,8 @@ if(SINGULARITY_USE_CUDA)
   if(NOT SINGULARITY_USE_KOKKOS)
     message(FATAL_ERROR "CUDA without Kokkos is not currently supported. If available, reconfigure with '-DSINGULARITY_USE_KOKKOS=ON'. Otherwise, disable CUDA offloading '-DSINGULARITY_USE_CUDA=OFF'")
   endif()
-  if(NOT SINGULARITY_USE_KOKKOSKERNELS)
-    message(FATAL_ERROR "Kokkos with CUDA offload must use KokkosKernels. If available, reconfigure with '-DSINGULARITY_USE_KOKKOSKERNELS=ON'. Otherwise, disable CUDA offloading '-DSINGULARITY_USE_CUDA=OFF'")
+  if(SINGULARITY_BUILD_CLOSURE AND NOT SINGULARITY_USE_KOKKOSKERNELS)
+    message(FATAL_ERROR "Mixed cell closures require linear algebra. With CUDA offload, this must must utilize KokkosKernels. If available, reconfigure with '-DSINGULARITY_USE_KOKKOSKERNELS=ON'. Otherwise, disable CUDA offloading '-DSINGULARITY_USE_CUDA=OFF' or disable mixed cell closures with '-DSINGULARITY_BUILD_CLOSURE=OFF'.")
   endif()
 endif()
 
@@ -196,41 +196,47 @@ if(SINGULARITY_USE_KOKKOS)
   #       not support Kokkos < 3.3
   if(Kokkos_VERSION_MAJOR VERSION_LESS "3.3")
     message(WARNING "`Kokkos` version [${Kokkos_VERSION_MAJOR}] is DEPRECATED, and `singularity-eos` will not support versions < '3.3' in the very near future.")
+    message(WARNING "You may need to set `-DCMAKE_CXX_COMPILER=/path/to/nvcc_wrapper` by hand. You may also need to set a Kokkos target architecture via: https://github.com/kokkos/kokkos/wiki/Compiling")
     if(SINGULARITY_USE_CUDA)
       if(NOT "$ENV{CXX}x" STREQUAL "x" AND
           "$ENV{NVCC_WRAPPER_DEFAULT_COMPILER}x" STREQUAL "x")
         set(ENV{NVCC_WRAPPER_DEFAULT_COMPILER} "$ENV{CXX}")
       endif()
+      message(STATUS "Looking for nvcc_wrapper in ${Kokkos_DIR} and ${Kokkos_SOURCE_DIR}")
       find_program(SINGULARITY_NVCC_WRAPPER
         NAMES           nvcc_wrapper
-        HINTS           "${Kokkos_DIR};${Kokkos_SOURCE_DIR}"
-        PATHS           "${Kokkos_DIR};${Kokkos_SOURCE_DIR}"
+        HINTS           "${Kokkos_DIR}" "${Kokkos_SOURCE_DIR}"
+        PATHS           "${Kokkos_DIR}" "${Kokkos_SOURCE_DIR}"
         PATH_SUFFIXES   bin)
       # fatal if we can't nvcc_wrapper
       if(NOT SINGULARITY_NVCC_WRAPPER)
         message(FATAL_ERROR "Could not find nvcc_wrapper.")
       endif()
-      set(CMAKE_CXX_COMPILER ${SINGULARITY_NVCC_WRAPPER CACHE STRING "")
+      set(CMAKE_CXX_COMPILER ${SINGULARITY_NVCC_WRAPPER} CACHE STRING "")
     endif() #SINGULARITY_USE_CUDA
   endif() #Kokkos_VERSION_MAJOR
   ####
 endif() #SINGULARITY_USE_KOKKOS
 
-if(SINGULARITY_USE_KOKKOSKERNELS)
-  # type: external
-  singularity_import_dependency(
-    PKG KokkosKernels
-    TARGET Kokkos::kokkoskernels
-  )
-  list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
-else()
-  # type: soft submodule
-  singularity_import_dependency(
-    PKG Eigen3
-    TARGET Eigen3::Eigen
-    SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
-  )
-endif() #SINGULARITY_USE_KOKKOS_KERNELS
+# TODO(JMM): If linear algebra needs grow beyond mixed cell closures,
+# we may need to rename this variable.
+if (SINGULARITY_BUILD_CLOSURE)
+  if(SINGULARITY_USE_KOKKOSKERNELS)
+    # type: external
+    singularity_import_dependency(
+      PKG KokkosKernels
+      TARGET Kokkos::kokkoskernels
+      )
+    list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
+  else()
+    # type: soft submodule
+    singularity_import_dependency(
+      PKG Eigen3
+      TARGET Eigen3::Eigen
+      SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
+      )
+  endif() #SINGULARITY_USE_KOKKOS_KERNELS
+endif() #SINGULARITY_BUILD_CLOSURE
 
 # variant for prior C++17
 # type: hard submodule
