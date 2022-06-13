@@ -48,6 +48,7 @@ option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accurac
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
 
 if (SINGULARITY_SUBMODULE_MODE)
+  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
   set(CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY OFF CACHE BOOL "" FORCE)
   set(SINGULARITY_BETTER_DEBUG_FLAGS OFF CACHE BOOL "" FORCE)
   set(SINGULARITY_HIDE_MORE_WARNINGS ON CACHE BOOL "" FORCE)
@@ -59,7 +60,7 @@ message(STATUS "Patching mpark::variant to support GPUs")
 execute_process(COMMAND patch -N -s -V never
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
-)
+                )
 
 # keep config data stored in easily accessable vars,
 # only attaching them to targets as late as possible.
