@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
       std::cout << "\t\tsie bounds = [" << sieMin << ", " << sieMax << "]" << std::endl;
 
       EOS_INTEGER tableHandle[NT];
-      EOS_INTEGER eospacPofRT, eospacTofRE, eospacEofRT;
+      EOS_INTEGER eospacPofRT, eospacTofRE;
       EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT};
       eosSafeLoad(NT, matid, tableType, tableHandle, Verbosity::Debug);
       eospacPofRT = tableHandle[0];
