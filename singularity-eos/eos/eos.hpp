@@ -730,15 +730,15 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   std::string filename() const { return std::string(filename_); }
   std::string materialName() const { return std::string(materialName_); }
   int matid() const { return matid_; }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real lEOffset() const { return lEOffset_; }
-  Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
-  Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
-  Real TMin() const { return fromLog_(T_.range(0).min(), lTOffset_); }
-  Real TMax() const { return fromLog_(T_.range(0).max(), lTOffset_); }
-  Real sieMin() const { return fromLog_(sie_.range(0).min(), lEOffset_); }
-  Real sieMax() const { return fromLog_(sie_.range(0).max(), lEOffset_); }
+  PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_INLINE_FUNCTION Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
+  PORTABLE_INLINE_FUNCTION Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
+  PORTABLE_INLINE_FUNCTION Real TMin() const { return fromLog_(T_.range(0).min(), lTOffset_); }
+  PORTABLE_INLINE_FUNCTION Real TMax() const { return fromLog_(T_.range(0).max(), lTOffset_); }
+  PORTABLE_INLINE_FUNCTION Real sieMin() const { return fromLog_(sie_.range(0).min(), lEOffset_); }
+  PORTABLE_INLINE_FUNCTION Real sieMax() const { return fromLog_(sie_.range(0).max(), lEOffset_); }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
@@ -1227,7 +1227,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 0; }
   inline void Finalize() {}
   static std::string EosType() { return std::string("EOSPAC"); }
-  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+  inline void PrintParams() const {
     printf("EOSPAC parameters:\nmatid = %s\n", matid_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }

@@ -262,7 +262,6 @@ int main(int argc, char *argv[]) {
       eosSafeLoad(NT, matid, tableType, tableHandle, Verbosity::Debug);
       eospacPofRT = tableHandle[0];
       eospacTofRE = tableHandle[1];
-      eospacEofRT = tableHandle[2];
 
       std::cout << "\t\tGenerating interpolation points for rho-T tables" << std::endl;
       start = std::chrono::high_resolution_clock::now();

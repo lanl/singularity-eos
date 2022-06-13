@@ -179,7 +179,7 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
 SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[GruneisenEOS]") {
   GIVEN("Parameters for a Gruneisen EOS") {
     // Unit conversions
-    constexpr Real mm = 10.;
+    // constexpr Real mm = 10.;
     constexpr Real cm = 1.;
     constexpr Real us = 1.e-06;
     constexpr Real Mbar = 1.e12;
@@ -286,7 +286,7 @@ SCENARIO("Gruneisen EOS density limit") {
   */
   GIVEN("Parameters for a Gruneisen EOS") {
     // Unit conversions
-    constexpr Real mm = 10.;
+    // constexpr Real mm = 10.;
     constexpr Real cm = 1.;
     constexpr Real us = 1.e-06;
     constexpr Real Mbar = 1.e12;
