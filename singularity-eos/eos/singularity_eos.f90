@@ -282,8 +282,8 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: gm1, Cv
-    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
     err = init_sg_IdealGas(matindex-1, eos%ptr, gm1, Cv, &
                            c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_IdealGas_f
@@ -296,8 +296,8 @@ contains
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: C0, s1, s2, s3, G0, b, rho0
     real(kind=8), value, intent(in)   :: T0, P0, Cv
-    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
     err = init_sg_Gruneisen(matindex-1, eos%ptr, C0, s1, s2, s3, G0, b, rho0,&
                             T0, P0, Cv, c_loc(sg_mods_enabled), &
                             c_loc(sg_mods_values))
@@ -309,8 +309,8 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: A, B, R1, R2, w, rho0, Cv
-    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
     err = init_sg_JWL(matindex-1, eos%ptr, A, B, R1, R2, w, rho0, Cv, &
                       c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_JWL_f
@@ -322,8 +322,8 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: a, b, k, n, vc, pc, Cv, E0
-    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
     err = init_sg_DavisProducts(matindex-1, eos%ptr, a, b, k, n, vc, pc, Cv, &
                                 E0, c_loc(sg_mods_enabled), &
                                 c_loc(sg_mods_values))
@@ -337,8 +337,8 @@ contains
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: rho0, e0, P0, T0, A, B, C, G0, Z
     real(kind=8), value, intent(in)   :: alpha, Cv0
-    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
     err = init_sg_DavisReactants(matindex-1, eos%ptr, rho0, e0, P0, T0, A, B, &
                                  C, G0, Z, alpha, Cv0, c_loc(sg_mods_enabled), &
                                  c_loc(sg_mods_values))
@@ -352,8 +352,8 @@ contains
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
     integer(c_int), intent(inout)             :: id
-    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
     err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
                                     trim(filename)//C_NULL_CHAR, id, &
                                     c_loc(sg_mods_enabled), &
@@ -367,8 +367,8 @@ contains
     integer(c_int), value, intent(in)         :: matindex, id
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
-    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
     err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
                                       trim(filename)//C_NULL_CHAR, id, &
                                       c_loc(sg_mods_enabled), &
@@ -380,8 +380,8 @@ contains
     result(err)
     integer(c_int), value, intent(in) :: matindex, id
     type(sg_eos_ary_t), intent(in)    :: eos
-    integer(kind=c_int), dimension(:), target, intent(in) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(in)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
     err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled), &
                          c_loc(sg_mods_values))
   end function init_sg_eospac_f
