@@ -47,11 +47,6 @@ option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table reade
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
 
-if (SINGULARITY_SUBMODULE_MODE)
-  set(CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY OFF CACHE BOOL "" FORCE)
-  set(SINGULARITY_BETTER_DEBUG_FLAGS OFF CACHE BOOL "" FORCE)
-  set(SINGULARITY_HIDE_MORE_WARNINGS ON CACHE BOOL "" FORCE)
-endif()
 
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
@@ -81,10 +76,17 @@ set(SINGULARITY_DEP_PKGS "")          # a list of packages, used to generate imp
 
 # checks if this is our build, or we've 
 # been imported via `add_subdirectory`
+# NB: this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(CMAKE_CXX_STANDARD 14)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
+else()
+  if(NOT SINGULARITY_SUBMODULE_MODE)
+    message(WARNING "Detected that `singularity-eos` is a subproject, but `SINGULARITY_SUBMODULE_MODE` is not set or \
+    is set to OFF. We will force this option on.")
+    set(SINGULARITY_SUBMODULE_MODE ON CACHE BOOL "" FORCE)
+  endif()
 endif()
 
 enable_language(CXX)
@@ -93,12 +95,6 @@ if(SINGULARITY_USE_FORTRAN)
   enable_language(Fortran)
   include(CMakeDetermineFortranCompiler)
 endif()
-
-# NOTE: this may not work with kokkos, we'll see.
-#if(SINGULARITY_USE_CUDA)
-#  enable_language(CUDA)
-#  include(CMakeDetermineCUDACompiler)
-#endif()
 
 #------------------------------------------------------------------------------#
 # De-thaw some options
@@ -112,10 +108,13 @@ endif()
 
 if(SINGULARITY_USE_CUDA)
   if(NOT SINGULARITY_USE_KOKKOS)
-    message(FATAL_ERROR "CUDA without Kokkos is not currently supported. If available, reconfigure with '-DSINGULARITY_USE_KOKKOS=ON'. Otherwise, disable CUDA offloading '-DSINGULARITY_USE_CUDA=OFF'")
+    message(FATAL_ERROR "CUDA without Kokkos is not currently supported.\n\
+    If available, reconfigure with '-DSINGULARITY_USE_KOKKOS=ON'. Otherwise, disable CUDA offloading '-DSINGULARITY_USE_CUDA=OFF'")
   endif()
   if(SINGULARITY_BUILD_CLOSURE AND NOT SINGULARITY_USE_KOKKOSKERNELS)
-    message(FATAL_ERROR "Mixed cell closures require linear algebra. With CUDA offload, this must must utilize KokkosKernels. If available, reconfigure with '-DSINGULARITY_USE_KOKKOSKERNELS=ON'. Otherwise, disable CUDA offloading '-DSINGULARITY_USE_CUDA=OFF' or disable mixed cell closures with '-DSINGULARITY_BUILD_CLOSURE=OFF'.")
+    message(FATAL_ERROR "Mixed cell closures require linear algebra. With CUDA offload, this must must utilize KokkosKernels.\n\
+    If available, reconfigure with '-DSINGULARITY_USE_KOKKOSKERNELS=ON'.\n\
+    Otherwise, disable CUDA offloading '-DSINGULARITY_USE_CUDA=OFF' or disable mixed cell closures with '-DSINGULARITY_BUILD_CLOSURE=OFF'.")
   endif()
 endif()
 
@@ -131,6 +130,12 @@ endif()
 #------------------------------------------------------------------------------#
 # Process some options
 #------------------------------------------------------------------------------#
+
+if (SINGULARITY_SUBMODULE_MODE)
+  set(CMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY OFF CACHE BOOL "" FORCE)
+  set(SINGULARITY_BETTER_DEBUG_FLAGS OFF CACHE BOOL "" FORCE)
+  set(SINGULARITY_HIDE_MORE_WARNINGS ON CACHE BOOL "" FORCE)
+endif()
 
 # side-projects
 if(SINGULARITY_USE_HDF5)
@@ -436,7 +441,7 @@ foreach(_sdir ${subdirs2add})
 endforeach()
 
 
-
+# TODO either expand this or do feature_summary
 #singularity_msg(STATUS "Configuration")
 #message(STATUS "[== INFO: status so far ===============================")
 #message(STATUS "[== dependency list: ${SINGULARITY_DEP_PKGS}")

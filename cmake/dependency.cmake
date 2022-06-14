@@ -48,7 +48,10 @@ include(cmake/submodule_configs.cmake)
 #
 #   if both `SINGULARITY_${PKG_UPPERCASE}_INSTALL_DIR` and 
 #   `SINGULARITY_${PKG_UPPERCASE}_IMPORT_DIR` are both given, an error will be
-#   generated and processing will stop
+#   generated and processing will stop.
+#
+#   should `${PKG}` contain dashes ("-"), ${PKG_UPPERCASE} should use underscores
+#   ("_"), e.g. for `ports-of-call` use `-DSINGULARITY_PORTS_OF_CALL_IMPORT_DIR=<...>`
 #
 #   some packages (e.g. `HDF5`, `MPI`) are are designed to provide `COMPONENTS` 
 #   as seperate targets. These should always use the `TARGETS` and `COMPONENTS` 
@@ -77,6 +80,8 @@ macro(singularity_import_dependency)
     singularity_msg(STATUS "Detected ${dep_TARGET} present, no further processing for this dependency.")
   else()
     # check for user overrides
+    # sets `SINGULARITY_IMPORT_USER_OVERRIDE_${dep_PKG}`
+    # if that user requests import
     singularity_import_check_user_override(
       PKG ${dep_PKG}
       SUBDIR ${dep_SUBDIR}
@@ -132,6 +137,7 @@ endmacro() # singularity_import_dependency
 
 macro(singularity_import_check_user_override)
   string(TOUPPER ${dep_PKG} dep_CAP)
+  string(REPLACE "-" "_" dep_CAP "${dep_CAP}")
 
   if(SINGULARITY_${dep_CAP}_INSTALL_DIR AND SINGULARITY_${dep_CAP}_IMPORT_DIR)
     singularity_msg(FATAL_ERROR "Cannot set INSTALL_DIR and IMPORT_DIR for the same package. You may have a stale cache varaible.")
