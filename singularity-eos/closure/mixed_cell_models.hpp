@@ -931,7 +931,7 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
 
     // possibly scale the update to stay within reasonable bounds
     Real scale = s.ScaleDx();
-    const Real scale_save = scale;
+    // const Real scale_save = scale;
 
     // Line search
     Real gradfdx = -2.0 * scale * err;
