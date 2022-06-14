@@ -28,34 +28,14 @@
 #include <singularity-eos/eos/eos_builder.hpp>
 #include <singularity-eos/eos/singularity_eos.hpp>
 
-// typename demangler
-#ifdef __GNUG__
-#include <cstdlib>
-#include <cxxabi.h>
-#include <memory>
-
-std::string demangle(const char *name) {
-
-  int status = -4; // some arbitrary value to eliminate the compiler warning
-
-  // enable c++11 by passing the flag -std=c++11 to g++
-  std::unique_ptr<char, void (*)(void *)> res{
-      abi::__cxa_demangle(name, NULL, NULL, &status), std::free};
-
-  return (status == 0) ? res.get() : name;
-}
-
-#else
-
-// does nothing if not g++
-std::string demangle(const char *name) { return name; }
-
+#ifndef CATCH_CONFIG_RUNNER
+#include "catch2/catch.hpp"
 #endif
 
-#define CATCH_CONFIG_RUNNER
-#include "catch2/catch.hpp"
+#include <test/eos_unit_test_helpers.hpp>
 
 using singularity::EOS;
+using singularity::Gruneisen;
 using singularity::IdealGas;
 using singularity::SAPRampEOS;
 using singularity::ScaledEOS;
@@ -86,25 +66,6 @@ constexpr int gID = 2700;
 constexpr Real ev2k = 1.160451812e4;
 #endif // SINGULARITY_TEST_SESAME
 #endif // SPINER_USE_HDF
-
-PORTABLE_INLINE_FUNCTION bool isClose(Real a, Real b, Real eps = 5e-2) {
-  return fabs(b - a) / (fabs(a + b) + 1e-20) <= eps;
-}
-
-PORTABLE_INLINE_FUNCTION Real myAtan(Real x, Real shift, Real scale, Real offset) {
-  return scale * atan(x - shift) + offset;
-}
-
-// Function for comparing arrays and outputting the important information
-template <typename X, typename Y, typename Z, typename ZT, typename XN, typename YN>
-inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN yname,
-                          Real tol = 1e-12) {
-  for (int i = 0; i < num; i++) {
-    INFO("i: " << i << ", " << xname << ": " << x[i] << ", " << yname << ": " << y[i]
-               << ", Value: " << z[i] << ", True Value: " << ztrue[i]);
-    REQUIRE(isClose(z[i], ztrue[i], 1e-12));
-  }
-}
 
 template <typename E1, typename E2>
 inline void compare_two_eoss(E1 &&test_e, E2 &&ref_e) {
@@ -1099,16 +1060,3 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 }
 #endif // SINGULARITY_TEST_STELLAR_COLLAPSE
 #endif // USE_HDF5
-
-int main(int argc, char *argv[]) {
-
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-  Kokkos::initialize();
-#endif
-  int result;
-  { result = Catch::Session().run(argc, argv); }
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-  Kokkos::finalize();
-#endif
-  return result;
-}

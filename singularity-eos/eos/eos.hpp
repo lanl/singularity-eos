@@ -127,9 +127,31 @@ class Gruneisen : public EosBase<Gruneisen> {
   Gruneisen() = default;
   PORTABLE_INLINE_FUNCTION
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
+            const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv,
+            const Real rho_max)
+      : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
+        _Cv(Cv), _rho_max(rho_max) {
+    // Warn user when provided rho_max is greater than the computed rho_max
+#ifndef NDEBUG
+    const Real computed_rho_max = ComputeRhoMax(s1, s2, s3, rho0);
+    if (rho_max > RHOMAX_SAFETY * computed_rho_max) {
+      printf(
+          "WARNING: Provided rho_max, %g, is greater than the computed rho_max of %g.\n",
+          rho_max, computed_rho_max);
+      printf("         States beyond %g g/cm^3 are unphysical (i.e. imaginary sound "
+             "speeds).\n",
+             computed_rho_max);
+    }
+#endif
+  }
+  // Constructor when rho_max isn't specified automatically determines _rho_max
+  PORTABLE_INLINE_FUNCTION
+  Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
       : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
-        _Cv(Cv) {}
+        _Cv(Cv), _rho_max(RHOMAX_SAFETY * ComputeRhoMax(s1, s2, s3, rho0)) {}
+  static PORTABLE_FUNCTION Real ComputeRhoMax(const Real s1, const Real s2, const Real s3,
+                                              const Real rho0);
   Gruneisen GetOnDevice() { return *this; }
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
@@ -169,8 +191,9 @@ class Gruneisen : public EosBase<Gruneisen> {
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"Gruneisen Params: "};
-    printf("%sC0:%e s1:%e s2:%e\ns3:%e G0:%e b:%e\nrho0:%e T0:%e P0:%e\nCv:%E\n", s1, _C0,
-           _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv);
+    printf("%s C0:%e s1:%e s2:%e s3:%e\n  G0:%e b:%e rho0:%e T0:%e\n  P0:%eCv:%e "
+           "rho_max:%e\n",
+           s1, _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max);
   }
   PORTABLE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
                                                               const Real temp,
@@ -180,14 +203,17 @@ class Gruneisen : public EosBase<Gruneisen> {
   static std::string EosType() { return std::string("Gruneisen"); }
 
  private:
-  Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv;
+  Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max;
   // static constexpr const char _eos_type[] = {"Gruneisen"};
-  PORTABLE_INLINE_FUNCTION
-  Real Gamma(const Real rho) const {
-    return rho < _rho0 ? _G0 : _G0 * _rho0 / rho + _b * (1 - _rho0 / rho);
-  }
+  PORTABLE_FUNCTION
+  Real Gamma(const Real rho) const;
+  PORTABLE_FUNCTION
+  Real dPres_drho_e(const Real rho, const Real sie) const;
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
+  // Scaling factor for density singularity (reference pressure blows up). Consistent with
+  // Pagosa implementation
+  static constexpr Real RHOMAX_SAFETY = 0.99;
 };
 
 // COMMENT: This is meant to be an implementation of the "standard" JWL as
