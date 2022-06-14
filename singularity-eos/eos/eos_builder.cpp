@@ -104,7 +104,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     if (relativistic) {
       return makeRelativistic(std::move(g), cl);
     }
-    return applyShiftAndScaleAndSAPRamp(std::move(g), scaled, shifted, ramped, scale, shift, r0, a, b, c);
+    return applyShiftAndScaleAndSAPRamp(std::move(g), scaled, shifted, ramped, scale,
+                                        shift, r0, a, b, c);
   }
 #ifdef SPINER_USE_HDF
   if (type == EOSType::SpinerEOSDependsRhoT || type == EOSType::SpinerEOSDependsRhoSie) {
@@ -131,7 +132,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyShiftAndScaleAndSAPRamp(std::move(s), scaled, shifted, ramped, scale, shift, r0, a, b, c);
+        return applyShiftAndScaleAndSAPRamp(std::move(s), scaled, shifted, ramped, scale,
+                                            shift, r0, a, b, c);
       }
     } else {
       string materialName = mpark::get<string>(base_params["materialName"]);
@@ -154,7 +156,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyShiftAndScaleAndSAPRamp(std::move(s), scaled, shifted, ramped, scale, shift, r0, a, b, c);
+        return applyShiftAndScaleAndSAPRamp(std::move(s), scaled, shifted, ramped, scale,
+                                            shift, r0, a, b, c);
       }
     }
   }
@@ -176,7 +179,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     if (relativistic) {
       return makeRelativistic(std::move(s), cl);
     }
-    return applyShiftAndScaleAndSAPRamp(std::move(s), scaled, shifted, ramped, scale, shift, r0, a, b, c);
+    return applyShiftAndScaleAndSAPRamp(std::move(s), scaled, shifted, ramped, scale,
+                                        shift, r0, a, b, c);
   }
 #endif
   if (type == EOSType::Gruneisen) {

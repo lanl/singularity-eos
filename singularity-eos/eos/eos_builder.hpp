@@ -105,8 +105,9 @@ EOS applyShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shif
   return eos;
 }
 
-template <typename T, template <typename> class W, typename ... ARGS>
-EOS applyWrappedShiftAndScale(T&& eos, bool scaled, bool shifted, Real scale, Real shift, ARGS ... args) {
+template <typename T, template <typename> class W, typename... ARGS>
+EOS applyWrappedShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shift,
+                              ARGS... args) {
   if (shifted && scaled) {
     ShiftedEOS<T> a(std::forward<T>(eos), shift);
     ScaledEOS<ShiftedEOS<T>> b(std::move(a), scale);
@@ -125,9 +126,12 @@ EOS applyWrappedShiftAndScale(T&& eos, bool scaled, bool shifted, Real scale, Re
 }
 
 template <typename T>
-EOS applyShiftAndScaleAndSAPRamp(T&& eos, bool scaled, bool shifted, bool ramped, Real scale, Real shift, Real r0, Real a, Real b, Real c) {
+EOS applyShiftAndScaleAndSAPRamp(T &&eos, bool scaled, bool shifted, bool ramped,
+                                 Real scale, Real shift, Real r0, Real a, Real b,
+                                 Real c) {
   if (ramped) {
-    return applyWrappedShiftAndScale<T, SAPRampEOS>(std::forward<T>(eos), scaled, shifted, scale, shift, r0, a, b, c);
+    return applyWrappedShiftAndScale<T, SAPRampEOS>(std::forward<T>(eos), scaled, shifted,
+                                                    scale, shift, r0, a, b, c);
   } else {
     return applyShiftAndScale(std::forward<T>(eos), scaled, shifted, scale, shift);
   }

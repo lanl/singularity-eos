@@ -32,10 +32,9 @@ namespace singularity {
 
 using namespace eos_base;
 
-template<typename T>
-void pAlpha2SAPRampParams(const T& eos,
-			  const Real alpha0, const Real Pe, const Real Pc,
-			  Real& r0, Real& a, Real& b, Real& c) {
+template <typename T>
+void pAlpha2SAPRampParams(const T &eos, const Real alpha0, const Real Pe, const Real Pc,
+                          Real &r0, Real &a, Real &b, Real &c) {
   // get reference conditions
   Real rho0, T0, sie0, P0, cv0, bmod0, dpde0, dvdt0;
   Real rmid, r1;
@@ -43,21 +42,19 @@ void pAlpha2SAPRampParams(const T& eos,
   // calculate r0
   r0 = rho0 / alpha0;
   // calculate rmid
-  auto rmid_func = [&] (const Real x) {
-    return eos.PressureFromDensityTemperature(alpha0*x, T0);
+  auto rmid_func = [&](const Real x) {
+    return eos.PressureFromDensityTemperature(alpha0 * x, T0);
   };
   RootFinding1D::RootCounts co{};
   // get upper bound to density informed by the reference
   // bulk modulus
-  const Real max_exp_arg = std::log(std::numeric_limits<Real>::max()*0.99);
-  const Real exp_arg = std::min(max_exp_arg, (2.0*Pc - P0) / bmod0);
-  const Real rho_ub = rho0*std::exp(exp_arg);
+  const Real max_exp_arg = std::log(std::numeric_limits<Real>::max() * 0.99);
+  const Real exp_arg = std::min(max_exp_arg, (2.0 * Pc - P0) / bmod0);
+  const Real rho_ub = rho0 * std::exp(exp_arg);
   // finds where rmid_func = Pe
   RootFinding1D::findRoot(rmid_func, Pe, rho0, r0, rho_ub, 1.e-12, 1.e-12, rmid, co);
   // calculate r1
-  auto r1_func = [&] (const Real x) {
-    return eos.PressureFromDensityTemperature(x, T0);
-  };
+  auto r1_func = [&](const Real x) { return eos.PressureFromDensityTemperature(x, T0); };
   // finds where r1_func = Pc
   RootFinding1D::findRoot(r1_func, Pc, rmid, r0, rho_ub, 1.e-12, 1.e-12, r1, co);
   // a
@@ -65,7 +62,7 @@ void pAlpha2SAPRampParams(const T& eos,
   // b
   b = r0 * (Pc - Pe) / (r1 - rmid);
   // c
-  c = (Pc * rmid - Pe * r1) / (r0 * (Pc - Pe) );
+  c = (Pc * rmid - Pe * r1) / (r0 * (Pc - Pe));
   return;
 }
 
@@ -97,9 +94,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
 
   PORTABLE_INLINE_FUNCTION
   Real get_ramp_dpdrho(Real rho) const {
-    const Real dpdr{rho < r0_     ? 0.0
-                    : rho < rmid_ ? a_ / r0_
-                                  : b_ / r0_};
+    const Real dpdr{rho < r0_ ? 0.0 : rho < rmid_ ? a_ / r0_ : b_ / r0_};
     return dpdr;
   }
 
@@ -133,10 +128,9 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
                                             Real *lambda = nullptr) const {
     const Real p_ramp{get_ramp_pressure(rho)};
     const Real p_eos{t_.PressureFromDensityInternalEnergy(rho, sie, lambda)};
-    
-    return
-      p_eos < p_ramp ? rho*get_ramp_dpdrho(rho)
-                     : t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
+
+    return p_eos < p_ramp ? rho * get_ramp_dpdrho(rho)
+                          : t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -160,9 +154,9 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
                                          Real *lambda = nullptr) const {
     const Real p_ramp{get_ramp_pressure(rho)};
     const Real p_eos{t_.PressureFromDensityTemperature(rho, temperature, lambda)};
-    return
-      p_eos < p_ramp ? rho*get_ramp_dpdrho(rho)
-	             : t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
+    return p_eos < p_ramp
+               ? rho * get_ramp_dpdrho(rho)
+               : t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,

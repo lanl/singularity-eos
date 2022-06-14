@@ -35,17 +35,15 @@ int init_sg_eos(const int nmat, EOS *&eos) {
   return 0;
 }
 
-// apply everything but ramp in order to possibly calculate the 
+// apply everything but ramp in order to possibly calculate the
 // SAP ramp parameters from p-alhpa ramp parameters
-#define SGAPPLYMODSIMPLE(A) \
-  EOSBuilder::applyShiftAndScale(A, enabled[0] == 1, enabled[1] == 1, \
-				 vals[0], vals[1])
+#define SGAPPLYMODSIMPLE(A)                                                              \
+  EOSBuilder::applyShiftAndScale(A, enabled[0] == 1, enabled[1] == 1, vals[0], vals[1])
 
-#define SGAPPLYMOD(A) \
-  EOSBuilder::applyShiftAndScaleAndSAPRamp(A, enabled[0] == 1, enabled[1] == 1, \
-                                           enabled[2] == 1 || enabled[3] == 1, \
-					   vals[0], vals[1], vals[2], vals[3], \
-					   vals[4], vals[5])
+#define SGAPPLYMOD(A)                                                                    \
+  EOSBuilder::applyShiftAndScaleAndSAPRamp(A, enabled[0] == 1, enabled[1] == 1,          \
+                                           enabled[2] == 1 || enabled[3] == 1, vals[0],  \
+                                           vals[1], vals[2], vals[3], vals[4], vals[5])
 
 int def_en[4] = {0, 0, 0, 0};
 double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -55,8 +53,8 @@ int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const doubl
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(IdealGas(gm1, Cv));
   if (enabled[3] == 1) {
-    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-				      vals[3], vals[4], vals[5]);
+    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2], vals[3],
+                                      vals[4], vals[5]);
   }
   EOS eos_ = SGAPPLYMOD(IdealGas(gm1, Cv));
   eos[matindex] = eos_.GetOnDevice();
@@ -70,13 +68,12 @@ int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const doubl
 int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const double s1,
                       const double s2, const double s3, const double G0, const double b,
                       const double rho0, const double T0, const double P0,
-                      const double Cv, int const *const enabled,
-                      double *const vals) {
+                      const double Cv, int const *const enabled, double *const vals) {
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(Gruneisen(C0, s1, s2, s3, G0, b, rho0, T0, P0, Cv));
   if (enabled[3] == 1) {
-    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-				      vals[3], vals[4], vals[5]);
+    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2], vals[3],
+                                      vals[4], vals[5]);
   }
   EOS eos_ = SGAPPLYMOD(Gruneisen(C0, s1, s2, s3, G0, b, rho0, T0, P0, Cv));
   eos[matindex] = eos_.GetOnDevice();
@@ -97,8 +94,8 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(JWL(A, B, R1, R2, w, rho0, Cv));
   if (enabled[3] == 1) {
-    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-				      vals[3], vals[4], vals[5]);
+    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2], vals[3],
+                                      vals[4], vals[5]);
   }
   EOS eos_ = SGAPPLYMOD(JWL(A, B, R1, R2, w, rho0, Cv));
   eos[matindex] = eos_.GetOnDevice();
@@ -118,8 +115,8 @@ int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const do
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(DavisProducts(a, b, k, n, vc, pc, Cv, E0));
   if (enabled[3] == 1) {
-    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-				      vals[3], vals[4], vals[5]);
+    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2], vals[3],
+                                      vals[4], vals[5]);
   }
   EOS eos_ = SGAPPLYMOD(DavisProducts(a, b, k, n, vc, pc, Cv, E0));
   eos[matindex] = eos_.GetOnDevice();
@@ -139,10 +136,11 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                            const double Cv0, int const *const enabled,
                            double *const vals) {
   assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(DavisReactants(rho0, e0, P0, T0, A, B, C, G0, Z, alpha, Cv0));
+  EOS eosi =
+      SGAPPLYMODSIMPLE(DavisReactants(rho0, e0, P0, T0, A, B, C, G0, Z, alpha, Cv0));
   if (enabled[3] == 1) {
-    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-				      vals[3], vals[4], vals[5]);
+    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2], vals[3],
+                                      vals[4], vals[5]);
   }
   EOS eos_ = SGAPPLYMOD(DavisReactants(rho0, e0, P0, T0, A, B, C, G0, Z, alpha, Cv0));
   eos[matindex] = eos_.GetOnDevice();
@@ -165,8 +163,8 @@ int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(SpinerEOSDependsRhoT(std::string(filename), matid));
   if (enabled[3] == 1) {
-    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-				      vals[3], vals[4], vals[5]);
+    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2], vals[3],
+                                      vals[4], vals[5]);
   }
   EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoT(std::string(filename), matid));
   eos[matindex] = eos_.GetOnDevice();
@@ -184,8 +182,8 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(SpinerEOSDependsRhoSie(std::string(filename), matid));
   if (enabled[3] == 1) {
-    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-				      vals[3], vals[4], vals[5]);
+    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2], vals[3],
+                                      vals[4], vals[5]);
   }
   EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoSie(std::string(filename), matid));
   eos[matindex] = eos_.GetOnDevice();
@@ -203,8 +201,8 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const 
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(EOSPAC(id));
   if (enabled[3] == 1) {
-    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-				      vals[3], vals[4], vals[5]);
+    singularity::pAlpha2SAPRampParams(eosi, vals[2], vals[3], vals[4], vals[2], vals[3],
+                                      vals[4], vals[5]);
   }
   EOS eos_ = SGAPPLYMOD(EOSPAC(id));
   eos[matindex] = eos_.GetOnDevice();
