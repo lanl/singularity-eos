@@ -54,8 +54,8 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # set up kokkos offloading dependencies
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
-        depends_on("kokkos@3.5.00 ~shared" +_flag, when="+kokkos" + _flag)
-        depends_on("kokkos-kernels@3.5.00" + _flag, when="+kokkos-kernels" + _flag)
+        depends_on("kokkos@3.2: ~shared" +_flag, when="+kokkos" + _flag)
+        depends_on("kokkos-kernels@3.2:" + _flag, when="+kokkos-kernels" + _flag)
 
     # specfic specs when using GPU/cuda offloading
     depends_on("kokkos +wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
