@@ -95,7 +95,6 @@ install(
 install(
   FILES 
     ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
-    ${PROJECT_SOURCE_DIR}/cmake/FindHDF5.cmake
   DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/singularity-eos
 )
 
