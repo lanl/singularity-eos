@@ -72,7 +72,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
   // move semantics ensures dynamic memory comes along for the ride
   SAPRampEOS(T &&t, const Real r0, const Real a, const Real b, const Real c)
       : t_(std::forward<T>(t)), r0_(r0), a_(a), b_(b), c_(c),
-        rmid_(r0 * (a - b * c) / (a - b)) {
+        rmid_(r0 * (a - b * c) / (a - b)), Pmid_(a * (rmid_ / r0 - 1.0)) {
     // add input parameter checks to ensure validity of the ramp
     assert(r0 >= 0.0);
     assert(a > 0.0);
@@ -90,6 +90,13 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
                       : rho < rmid_ ? a_ * (rho / r0_ - 1.0)
                                     : b_ * (rho / r0_ - c_)};
     return p_ramp;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real get_ramp_density(Real P) const {
+    const Real rho_ramp{P < Pmid_ ? r0_ * (P / a_ + 1.0)
+			         : r0_ * (P / b_ + c_)};
+    return rho_ramp;
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -166,8 +173,6 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
   PORTABLE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
                const unsigned long output, Real *lambda = nullptr) const {
-    // density must be an input
-    assert(!(output & thermalqs::density));
     // output passed into internal filleos can't include pressure
     const unsigned long ramp_out = output & ~thermalqs::pressure;
     // if pressure is output, calculate it first
@@ -182,6 +187,16 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
     }
     // call internal filleos
     t_.FillEos(rho, temp, energy, press, cv, bmod, ramp_out, lambda);
+    // fill ramp density
+    Real rho_ramp {rho};
+    if (output & thermalqs::density) {
+      assert(!(output & thermalqs::pressure));
+      rho_ramp = get_ramp_density(press);
+    }
+    rho = rho_ramp > rho ? rho_ramp : rho;
+    // bulk modulus
+    bmod = BulkModulusFromDensityInternalEnergy(rho, energy, lambda);
+    return;
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -217,6 +232,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
   Real b_;
   Real c_;
   Real rmid_;
+  Real Pmid_;
 };
 
 } // namespace singularity
