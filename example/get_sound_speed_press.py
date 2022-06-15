@@ -65,7 +65,7 @@ def PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos, # inputs
       # If this auto-detection is not what is needed, you can specify a limited number of outputs with the output bitmask.
       # Note that in this case any output not set will be returned as NaN.
       # FillEos is often more performant than making individual function calls.
-      state = eos.FillEos(rho=rho[i], sie=sie, output=(thermalqs.temperature | thermalqs.pressure | thermalqs.bulk_modulus), lmbda=lmbda);
+      state = eos.FillEos(rho=rho[i], sie=sie, output=(thermalqs.temperature | thermalqs.pressure | thermalqs.bulk_modulus), lmbda=lmbda)
       # convert bulk modulus to cs
       cs[i] = math.sqrt(state.bulk_modulus / (state.density + SMALL))
 
@@ -92,11 +92,6 @@ Cv = 2
 # First initialize the EOS the "easy" way:
 eos1 = IdealGas(gm1, Cv)
 
-
-# If you're on device, you need to call
-# eos1.GetOnDevice();
-# to call the EOS on device
-# However, since we're doing everything on host here, we don't make this call
 
 # Make some arrays
 N = 50
