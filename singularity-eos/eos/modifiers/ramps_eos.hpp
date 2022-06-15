@@ -94,8 +94,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
 
   PORTABLE_INLINE_FUNCTION
   Real get_ramp_density(Real P) const {
-    const Real rho_ramp{P < Pmid_ ? r0_ * (P / a_ + 1.0)
-			         : r0_ * (P / b_ + c_)};
+    const Real rho_ramp{P < Pmid_ ? r0_ * (P / a_ + 1.0) : r0_ * (P / b_ + c_)};
     return rho_ramp;
   }
 
@@ -188,7 +187,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
     // call internal filleos
     t_.FillEos(rho, temp, energy, press, cv, bmod, ramp_out, lambda);
     // fill ramp density
-    Real rho_ramp {rho};
+    Real rho_ramp{rho};
     if (output & thermalqs::density) {
       assert(!(output & thermalqs::pressure));
       rho_ramp = get_ramp_density(press);
