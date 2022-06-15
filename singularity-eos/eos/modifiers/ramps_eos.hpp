@@ -192,7 +192,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
       assert(!(output & thermalqs::pressure));
       rho_ramp = get_ramp_density(press);
     }
-    rho = rho_ramp > rho ? rho_ramp : rho;
+    rho = rho_ramp < rho ? rho_ramp : rho;
     // bulk modulus
     bmod = BulkModulusFromDensityInternalEnergy(rho, energy, lambda);
     return;
