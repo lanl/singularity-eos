@@ -61,13 +61,13 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_link_libraries(profile_stellar_collapse singularity-eos::singularity-eos)
 
   message(STATUS "Generating stellar collapse table for tests using Python script")
-  include(FindPythonInterp)
+  find_package(Python COMPONENTS Interpreter REQUIRED)
   if (HDF5_IS_PARALLEL)
-    execute_process(COMMAND mpirun -n 1 ${PYTHON_EXECUTABLE}
+    execute_process(COMMAND mpirun -n 1 ${Python_EXECUTABLE}
       ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_ideal_sc.py
       -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
   else()
-    execute_process(COMMAND ${PYTHON_EXECUTABLE}
+    execute_process(COMMAND ${Python_EXECUTABLE}
       ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_ideal_sc.py
       -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
   endif()
@@ -75,7 +75,7 @@ endif()
 
 if (SINGULARITY_BUILD_PYTHON AND SINGULARITY_TEST_PYTHON)
   find_package(Python COMPONENTS Interpreter Development REQUIRED)
-  set(PYTHON_TEST_ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/python)
+  set(PYTHON_TEST_ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH})
 
   add_test(NAME PythonBindings
            COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python_bindings.py -v)
