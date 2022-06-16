@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 
 class EOSTestBase(object):
-    def assertIsClose(a, b, eps=5e-2):
+    def assertIsClose(self, a, b, eps=5e-2):
         rel = abs(b - a) / (abs(a + b) + 1e-20)
         if rel > eps:
             raise AssertionError("{} > {}".format(rel, eps))
@@ -275,8 +275,8 @@ class EOS_init_with_matid(unittest.TestCase, EOSTestBase):
         P = 1e6          # cgs
         T = 0.025 / ev2k # K
         lmbda = np.zeros(self.eos_spiner.nlambda, dtype=np.double)
-        rho, sie = self.eos_spiner.DensityEnergyFromPressureTemperature(P, T, lmbda.data())
-        rho_pac, sie_pac = self.eos_eospac.DensityEnergyFromPressureTemperature(P, T, lmbda.data())
+        rho, sie = self.eos_spiner.DensityEnergyFromPressureTemperature(P, T, lmbda)
+        rho_pac, sie_pac = self.eos_eospac.DensityEnergyFromPressureTemperature(P, T, lmbda)
         self.assertIsClose(rho, rho_pac)
 
     def tearDown(self):
