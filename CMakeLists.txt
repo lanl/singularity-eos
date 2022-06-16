@@ -72,6 +72,12 @@ set(SINGULARITY_DEP_PKGS "")          # a list of packages, used to generate imp
 #------------------------------------------------------------------------------#
 # Compiler & language setup
 #------------------------------------------------------------------------------#
+enable_language(CXX)
+include(CMakeDetermineCXXCompiler)
+if(SINGULARITY_USE_FORTRAN)
+  enable_language(Fortran)
+  include(CMakeDetermineFortranCompiler)
+endif()
 
 # checks if this is our build, or we've 
 # been imported via `add_subdirectory`
@@ -322,14 +328,6 @@ endif()
 # this subdirectory populates `EOS_HEADERS/EOS_SRCS`
 # NOTE: these include path prefixes of subdirectories on files (e.g. eos/eos.hpp)
 # see singularity-eos/CMakeLists.txt
-
-enable_language(CXX)
-include(CMakeDetermineCXXCompiler)
-if(SINGULARITY_USE_FORTRAN)
-  enable_language(Fortran)
-  include(CMakeDetermineFortranCompiler)
-endif()
-
 
 add_subdirectory(singularity-eos)
 
