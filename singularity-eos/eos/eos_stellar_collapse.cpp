@@ -62,9 +62,7 @@ namespace singularity {
 constexpr char METADATA_NAME[] = "Metadata";
 
 StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp5,
-                                 bool filter_bmod)
-{
-
+                                 bool filter_bmod) {
   if (use_sp5) {
     LoadFromSP5File_(filename);
   } else {
