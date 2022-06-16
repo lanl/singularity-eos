@@ -528,7 +528,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
-  static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
+  int nlambda() const noexcept { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }
   inline TableStatus tableStatus() const { return whereAmI_; }
   RootFinding1D::RootCounts counts;
@@ -744,7 +744,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
 
-  static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
+  int nlambda() const noexcept { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
     static constexpr char s2[]{"depends on log_10(rho) and log_10(sie)"};
