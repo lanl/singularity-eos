@@ -1,3 +1,4 @@
+import math
 import unittest
 import singularity_eos
 import numpy as np
@@ -182,7 +183,7 @@ class SpinerEOSdependsOnRhoT_Steel(unittest.TestCase):
         "rho(P,T) correct for P=1atm, T=freezing"
         T = 273  # Kelvin
         P = 1e6  # barye
-        lmbda = np.zeros(self.steelEOS_host.nlambda(), dtype=np.double)
+        lmbda = np.zeros(self.steelEOS_host.nlambda, dtype=np.double)
         rho, sie = self.steelEOS_host.DensityEnergyFromPressureTemperature(P, T, lmbda)
         rho_pac, sie_pac = self.eospac.DensityEnergyFromPressureTemperature(P, T)
         self.assertTrue(math.isclose(rho, rho_pac, rtol=1e-12))
@@ -266,7 +267,7 @@ class EOS_init_with_matid(unittest.TestCase):
         ev2k = 1.160451812e4
         P = 1e6          # cgs
         T = 0.025 / ev2k # K
-        lmbda = np.zeros(eos_spiner.nlambda(), dtype=np.double)
+        lmbda = np.zeros(eos_spiner.nlambda, dtype=np.double)
         rho, sie = self.eos_spiner.DensityEnergyFromPressureTemperature(P, T, lmbda.data())
         rho_pac, sie_pac = self.eos_eospac.DensityEnergyFromPressureTemperature(P, T, lmbda.data())
         self.assertTrue(math.isclose(rho, rho_pac))

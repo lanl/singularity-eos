@@ -34,7 +34,7 @@ def PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos, # inputs
     #
     # For parallel execution, you need one lambda vector per thread.
     # Since we're running in serial, we'll just use one.
-    nlambda = eos.nlambda() # get number of elements per lambda
+    nlambda = eos.nlambda # get number of elements per lambda
     lmbda = np.zeros(nlambda, dtype=np.double)
 
     # Option 1: Loop through the cells and use the two function calls
