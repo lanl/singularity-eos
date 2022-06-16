@@ -4,6 +4,12 @@ import singularity_eos
 import numpy as np
 from numpy.testing import assert_allclose
 
+class EOSTestBase(object):
+    def assertIsClose(a, b, eps=5e-2):
+        rel = abs(b - a) / (abs(a + b) + 1e-20)
+        if rel > eps:
+            raise AssertionError("{} > {}".format(rel, eps))
+
 class EOS(unittest.TestCase):
     def testConstants(self):
         from singularity_eos import thermalqs
@@ -148,7 +154,7 @@ class VectorEOS_IdealGas_Given_Rho_Temp(unittest.TestCase):
 
 
 @unittest.skipIf('SpinerEOSDependsRhoT' not in dir(singularity_eos) or 'EOSPAC' not in dir(singularity_eos), "No Spiner or EOSPAC support")
-class SpinerEOSdependsOnRhoT_Steel(unittest.TestCase):
+class SpinerEOSdependsOnRhoT_Steel(unittest.TestCase, EOSTestBase):
     "[SpinerEOS],[DependsRhoT][EOSPAC]"
 
     def setUp(self):
@@ -168,15 +174,15 @@ class SpinerEOSdependsOnRhoT_Steel(unittest.TestCase):
         "We can get a reference density and temperature"
         state = self.steelEOS_host.ValuesAtReferenceState()
         state_pac = self.eospac.ValuesAtReferenceState()
-        self.assertTrue(math.isclose(state.density, state_pac.density, rel_tol=1e-12))
-        self.assertTrue(math.isclose(state.temperature, state_pac.temperature, rel_tol=1e-12))
+        self.assertIsClose(state.density, state_pac.density)
+        self.assertIsClose(state.temperature, state_pac.temperature)
 
     # TODO: this needs to be a much more rigorous test
     def test_quantities_from_rho_temp(self):
         "Quantities can be read from density and temperature"
         sie_pac = self.eospac.InternalEnergyFromDensityTemperature(1e0, 1e6)
         ie = self.steelEOS_host.InternalEnergyFromDensityTemperature(1e0, 1e6)
-        self.assertTrue(math.isclose(ie, sie_pac, rel_tol=1e-12))
+        self.assertIsClose(ie, sie_pac)
 
     def test_rho_of_P_T(self):
         "rho(P,T) correct for P=1atm, T=freezing"
@@ -185,7 +191,7 @@ class SpinerEOSdependsOnRhoT_Steel(unittest.TestCase):
         lmbda = np.zeros(self.steelEOS_host.nlambda, dtype=np.double)
         rho, sie = self.steelEOS_host.DensityEnergyFromPressureTemperature(P, T, lmbda)
         rho_pac, sie_pac = self.eospac.DensityEnergyFromPressureTemperature(P, T)
-        self.assertTrue(math.isclose(rho, rho_pac, rel_tol=1e-12))
+        self.assertIsClose(rho, rho_pac)
 
     def tearDown(self):
         # Failing to call finalize leads to a memory leak,
@@ -198,7 +204,7 @@ class SpinerEOSdependsOnRhoT_Steel(unittest.TestCase):
 
 
 @unittest.skipIf('SpinerEOSDependsRhoT' not in dir(singularity_eos) or 'EOSPAC' not in dir(singularity_eos), "No Spiner or EOSPAC support")
-class SpinerEOSdependsOnRhoT_Air(unittest.TestCase):
+class SpinerEOSdependsOnRhoT_Air(unittest.TestCase, EOSTestBase):
     "SpinerEOS and EOSPAC for air can be initialized with matid"
 
     def setUp(self):
@@ -211,8 +217,8 @@ class SpinerEOSdependsOnRhoT_Air(unittest.TestCase):
         "We can get a reference state"
         state = self.airEOS_host.ValuesAtReferenceState()
         state_pac = self.eospac.ValuesAtReferenceState()
-        self.assertTrue(math.isclose(state.density, state_pac.density, rel_tol=1e-12))
-        self.assertTrue(math.isclose(state.temperature, state_pac.temperature, rel_tol=1e-12))
+        self.assertIsClose(state.density, state_pac.density)
+        self.assertIsClose(state.temperature, state_pac.temperature)
    
     def test_P_from_rho_sie(self): 
         "P(rho, sie) correct for extrapolation regime"
@@ -220,14 +226,14 @@ class SpinerEOSdependsOnRhoT_Air(unittest.TestCase):
         sie = 2.43e16
         P_pac = self.eospac.PressureFromDensityInternalEnergy(rho, sie)
         P_spi = self.airEOS_host.PressureFromDensityInternalEnergy(rho, sie)
-        self.assertTrue(math.isclose(P_pac, P_spi, rel_tol=1e-12))
+        self.assertIsClose(P_pac, P_spi)
     
     def tearDown(self):
         self.airEOS_host.Finalize()
 
 
 @unittest.skipIf('SpinerEOSDependsRhoT' not in dir(singularity_eos) or 'EOSPAC' not in dir(singularity_eos), "No Spiner or EOSPAC support")
-class EOS_init_with_matid2(unittest.TestCase):
+class EOS_init_with_matid2(unittest.TestCase, EOSTestBase):
     "EOS initialized with matid"
 
     def setUp(self):
@@ -244,9 +250,9 @@ class EOS_init_with_matid2(unittest.TestCase):
         output = (thermalqs.temperature | thermalqs.specific_internal_energy | thermalqs.specific_heat | thermalqs.bulk_modulus)
         state = self.eos_spiner.FillEos(rho=rho, press=P, output=output)
         state_pac = self.eos_eospac.FillEos(rho=rho, press=P, output=output)
-        self.assertTrue(math.isclose(state.temperature, state_pac.temperature, rel_tol=1e-12))
-        self.assertTrue(math.isclose(state.specific_internal_energy, state_pac.specific_internal_energy, rel_tol=1e-12))
-        self.assertTrue(math.isclose(state.specific_heat, state_pac.specific_heat, rel_tol=1e-12))
+        self.assertIsClose(state.temperature, state_pac.temperature)
+        self.assertIsClose(state.specific_internal_energy, state_pac.specific_internal_energy)
+        self.assertIsClose(state.specific_heat, state_pac.specific_heat)
     
     def tearDown(self):
         self.eos_spiner.Finalize()
@@ -254,7 +260,7 @@ class EOS_init_with_matid2(unittest.TestCase):
 
 
 @unittest.skipIf('SpinerEOSDependsRhoT' not in dir(singularity_eos) or 'EOSPAC' not in dir(singularity_eos), "No Spiner or EOSPAC support")
-class EOS_init_with_matid(unittest.TestCase):
+class EOS_init_with_matid(unittest.TestCase, EOSTestBase):
     "EOS initialized with matid"
 
     def setUp(self):
@@ -271,7 +277,7 @@ class EOS_init_with_matid(unittest.TestCase):
         lmbda = np.zeros(self.eos_spiner.nlambda, dtype=np.double)
         rho, sie = self.eos_spiner.DensityEnergyFromPressureTemperature(P, T, lmbda.data())
         rho_pac, sie_pac = self.eos_eospac.DensityEnergyFromPressureTemperature(P, T, lmbda.data())
-        self.assertTrue(math.isclose(rho, rho_pac))
+        self.assertIsClose(rho, rho_pac)
 
     def tearDown(self):
         self.eos_spiner.Finalize()
