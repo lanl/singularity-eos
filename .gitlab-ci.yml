@@ -154,7 +154,7 @@ before_script:
     - |
       if [[ -n ${SINGULARITY_USE_CUDA} ]];
       then
-        export SINGULARITY_NVCC_WRAPPER="$(module show `cat ${modName} | grep "load kokkos-nvcc" | awk '{print $3}'` 2>&1 > /dev/null | sed -n -e 's/^.* PATH //p' | xargs)/nvcc_wrapper";
+        export SINGULARITY_NVCC_WRAPPER="$(which nvcc_wrapper)";
         export SINGULARITY_CMAKE_CXX_COMPILER_FLAG="-DCMAKE_CXX_COMPILER=${SINGULARITY_NVCC_WRAPPER}";
         echo "passing '${SINGULARITY_CMAKE_CXX_COMPILER_FLAG}' to cmake"
       fi
