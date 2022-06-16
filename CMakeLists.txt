@@ -14,7 +14,7 @@
 
 cmake_minimum_required(VERSION 3.14)
 
-project(singularity-eos VERSION 1.5.0)
+project(singularity-eos VERSION 1.5.0 LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -86,13 +86,6 @@ else()
     is set to OFF. We will force this option on.")
     set(SINGULARITY_SUBMODULE_MODE ON CACHE BOOL "" FORCE)
   endif()
-endif()
-
-enable_language(CXX)
-include(CMakeDetermineCXXCompiler)
-if(SINGULARITY_USE_FORTRAN)
-  enable_language(Fortran)
-  include(CMakeDetermineFortranCompiler)
 endif()
 
 #------------------------------------------------------------------------------#
@@ -203,24 +196,12 @@ if(SINGULARITY_USE_KOKKOS)
   #       not support Kokkos < 3.3
   if(Kokkos_VERSION_MAJOR VERSION_LESS "3.3")
     message(WARNING "`Kokkos` version [${Kokkos_VERSION_MAJOR}] is DEPRECATED, and `singularity-eos` will not support versions < '3.3' in the very near future.")
-    message(WARNING "You may need to set `-DCMAKE_CXX_COMPILER=/path/to/nvcc_wrapper` by hand. You may also need to set a Kokkos target architecture via: https://github.com/kokkos/kokkos/wiki/Compiling")
     if(SINGULARITY_USE_CUDA)
-      if(NOT "$ENV{CXX}x" STREQUAL "x" AND
-          "$ENV{NVCC_WRAPPER_DEFAULT_COMPILER}x" STREQUAL "x")
-        set(ENV{NVCC_WRAPPER_DEFAULT_COMPILER} "$ENV{CXX}")
+      get_filename_component(_compiler_exe ${CMAKE_CXX_COMPILER} NAME)
+      if(NOT _compiler_exe STREQUAL "nvcc_wrapper")
+        message(FATAL_ERROR "To use CUDA offloading with `Kokkos` version <= 3.2, you must use `-DCMAKE_CXX_COMPILER=${Kokkos_DIR}/bin/nvcc_wrapper` when invoking `cmake`. You may also need to set a Kokkos target architecture via: https://github.com/kokkos/kokkos/wiki/Compiling.")
       endif()
-      message(STATUS "Looking for nvcc_wrapper in ${Kokkos_DIR} and ${Kokkos_SOURCE_DIR}")
-      find_program(SINGULARITY_NVCC_WRAPPER
-        NAMES           nvcc_wrapper
-        HINTS           "${Kokkos_DIR}" "${Kokkos_SOURCE_DIR}"
-        PATHS           "${Kokkos_DIR}" "${Kokkos_SOURCE_DIR}"
-        PATH_SUFFIXES   bin)
-      # fatal if we can't nvcc_wrapper
-      if(NOT SINGULARITY_NVCC_WRAPPER)
-        message(FATAL_ERROR "Could not find nvcc_wrapper.")
-      endif()
-      set(CMAKE_CXX_COMPILER ${SINGULARITY_NVCC_WRAPPER} CACHE STRING "")
-    endif() #SINGULARITY_USE_CUDA
+   endif() #SINGULARITY_USE_CUDA
   endif() #Kokkos_VERSION_MAJOR
   ####
 endif() #SINGULARITY_USE_KOKKOS
@@ -341,6 +322,14 @@ endif()
 # this subdirectory populates `EOS_HEADERS/EOS_SRCS`
 # NOTE: these include path prefixes of subdirectories on files (e.g. eos/eos.hpp)
 # see singularity-eos/CMakeLists.txt
+
+enable_language(CXX)
+include(CMakeDetermineCXXCompiler)
+if(SINGULARITY_USE_FORTRAN)
+  enable_language(Fortran)
+  include(CMakeDetermineFortranCompiler)
+endif()
+
 
 add_subdirectory(singularity-eos)
 
