@@ -282,5 +282,154 @@ class EOS_init_with_matid(unittest.TestCase, EOSTestBase):
     def tearDown(self):
         self.eos_spiner.Finalize()
 
+
+class VectorEOS_Gruneisen_Given_Rho_Sie(unittest.TestCase):
+    def setUp(self):
+        """Parameters for a Gruneisen EOS"""
+
+        # Unit conversions
+        cm = 1.
+        us = 1e-06
+        Mbcc_per_g = 1e12
+
+        # Gruneisen parameters for copper
+        C0 = 0.394 * cm / us
+        S1 = 1.489
+        S2 = 0.
+        S3 = 0.
+        Gamma0 = 2.02
+        b = 0.47
+        rho0 = 8.93
+        T0 = 298.
+        P0 = 0.
+        Cv = 0.383e-05 * Mbcc_per_g
+
+        # Create the EOS
+        self.eos = singularity_eos.Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv)
+
+        # Densities and energies
+        self.num = 4
+        self.density = np.zeros(self.num, dtype=np.double)
+        self.energy = np.zeros(self.num, dtype=np.double)
+
+        # Populate the input arrays
+        self.density[0] = 8.0
+        self.density[1] = 9.0
+        self.density[2] = 9.5
+        self.density[3] = 0.
+        self.energy[0] = 1.e9
+        self.energy[1] = 5.e8
+        self.energy[2] = 1.e8
+        self.energy[3] = 0.
+
+        # Gold standard values for a subset of lookups
+        self.pressure_true = np.array((-1.282094800000000e+11, 1.998504088912181e+10, 9.595823319513451e+10, P0 - C0 * C0 * rho0))
+        self.bulkmodulus_true = np.array((9.990648504000005e+11, 1.460692677162573e+12, 1.851227213843747e+12, Gamma0 * (P0 - C0 * C0 * rho0)))
+        self.temperature_true = np.array((5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02, T0))
+        self.gruneisen_true = np.array((Gamma0, 2.007944444444444e+00, 1.927000000000000e+00, Gamma0))
+
+        self.temperature = np.zeros(self.num, dtype=np.double)
+        self.pressure = np.zeros(self.num, dtype=np.double)
+        self.bulkmodulus = np.zeros(self.num, dtype=np.double)
+        self.gruneisen = np.zeros(self.num, dtype=np.double)
+
+    def test_pressure(self):
+        """[VectorEOS][GruneisenEOS][Densities and Energies] A P(rho, e) lookup is performed"""
+        self.eos.PressureFromDensityInternalEnergy(self.density, self.energy, self.pressure, self.num)
+        assert_allclose(self.pressure, self.pressure_true, rtol=1e-12)
+
+    def test_bmod(self):
+        """[VectorEOS][GruneisenEOS][Densities and Energies] A B_S(rho, e) lookup is performed"""
+        self.eos.BulkModulusFromDensityInternalEnergy(self.density, self.energy, self.bulkmodulus, self.num)
+        assert_allclose(self.bulkmodulus, self.bulkmodulus_true, rtol=1e-12)
+
+    def test_temp(self):
+        """[Vector EOS][GruneisenEOS][Densities and Energies] A T(rho, e) lookup is performed"""
+        self.eos.TemperatureFromDensityInternalEnergy(self.density, self.energy, self.temperature, self.num)
+        assert_allclose(self.temperature, self.temperature_true, rtol=1e-12)
+
+    def test_gamma(self):
+        """[Vector EOS][GruneisenEOS][Densities and Energies] A Gamma(rho, e) lookup is performed"""
+        self.eos.GruneisenParamFromDensityInternalEnergy(self.density, self.energy, self.gruneisen, self.num)
+        assert_allclose(self.gruneisen, self.gruneisen_true, rtol=1e-12)
+
+
+class AluminumGruneisenEOS_SoundSpeedAndPressureComp(unittest.TestCase, EOSTestBase):
+    "Aluminum Gruneisen EOS Sound Speed and Pressure Comparison"
+
+    def setUp(self):
+        """Parameters for a Gruneisen EOS"""
+
+        # Unit conversions
+        self.mm = 10.
+        self.cm = 1.
+        self.us = 1.e-06
+        self.Mbar = 1.e12
+        self.Mbcc_per_g = 1e12
+    
+        # Gruneisen parameters for copper
+        self.C0 = 0.535 * self.cm / self.us
+        self.S1 = 1.34
+        self.S2 = 0.
+        self.S3 = 0.
+        self.Gamma0 = 1.97
+        self.b = 0.
+        self.rho0 = 2.714000
+        self.T0 = 298.
+        self.P0 = 1e-06 * self.Mbar
+        self.Cv = 0.383e-05 * self.Mbcc_per_g
+    
+        # Create the EOS
+        self.eos = singularity_eos.Gruneisen(self.C0, self.S1, self.S2, self.S3, self.Gamma0, self.b, self.rho0, self.T0, self.P0, self.Cv)
+    
+        self.density = 5.92418956756592            # g/cm^3
+        self.energy = 792486007.804619             # erg/g
+        self.true_pres = 2.620656373250729         # Mbar
+        self.true_sound_speed = 1.5247992468363685 # cm/us
+
+    def test_pressure(self):
+        "[GruneisenEOS] A P(rho, e) lookup is performed"
+        pres = self.eos.PressureFromDensityInternalEnergy(self.density, self.energy)
+        pres = pres / self.Mbar;
+        self.assertIsClose(pres, self.true_pres, 1e-12)
+
+    def test_bmod(self):
+        "[GruneisenEOS] A B_S(rho, e) lookup is performed"
+        bulk_modulus =  self.eos.BulkModulusFromDensityInternalEnergy(self.density, self.energy)
+        sound_speed = math.sqrt(bulk_modulus / self.density) / (self.cm / self.us)
+        self.assertIsClose(sound_speed, self.true_sound_speed, 1e-12)
+    
+    def test_bmod_approx(self):
+        """A finite difference approximation is used for the bulk modulus"""
+        # Bulk modulus approximation:
+        #  B_S = rho * dPdr_e + P / rho * dPde_r
+        drho = 1e-06 * self.density
+        de = 1e-06 * self.energy
+        P1 = self.eos.PressureFromDensityInternalEnergy(self.density, self.energy)
+        P2 = self.eos.PressureFromDensityInternalEnergy(self.density + drho, self.energy)
+        dPdr_e = (P2 - P1) / drho
+        P2 = self.eos.PressureFromDensityInternalEnergy(self.density, self.energy + de)
+        dPde_r = (P2 - P1) / de
+        bmod_approx = self.density * dPdr_e + P1 / self.density * dPde_r
+        # The finite difference solution should approximate the exact solution
+        bulk_modulus = self.eos.BulkModulusFromDensityInternalEnergy(self.density, self.energy)
+        ss_approx = math.sqrt(bmod_approx / self.density)
+        sound_speed = math.sqrt(bulk_modulus / self.density)
+        self.assertIsClose(sound_speed, ss_approx, 1e-5)
+
+    def test_particle_vel_and_hugoniot(self):    
+        """A particle velocity and the same Hugoniot fit used in the EOS"""
+        # Use Rankine-Hugoniot jump conditions to calculate a consistent point on the EOS
+        up = 2 * self.cm / self.us # 20 km/s is a pretty strong shock
+        Us = self.C0 + self.S1 * up
+        e0 = 0
+        # We have the density, energy, and pressure at this point") {
+        density = Us * self.rho0 / (Us - up)
+        true_pres = self.P0 + self.rho0 * Us * up
+        energy =  e0 + 1. / 2. * Us * up * (1 - self.rho0 / density) + self.P0 * (1 / self.rho0 - 1 / density)
+        # A P(rho, e) lookup is performed for the Hugoniot energy and density
+        pres = self.eos.PressureFromDensityInternalEnergy(density, energy)
+        self.assertIsClose(pres, true_pres, 1e-12)
+
 if __name__ == "__main__":
     unittest.main()
