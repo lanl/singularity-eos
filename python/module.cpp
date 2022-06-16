@@ -32,6 +32,11 @@ Real two_params(const T& self, const Real a, const Real b, py::array_t<Real> lam
   return (self.*Func)(a, b, lambda.mutable_data());
 }
 
+template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*) const>
+Real two_params_no_lambda(const T& self, const Real a, const Real b) {
+  return (self.*Func)(a, b, nullptr);
+}
+
 class LambdaHelper {
   py::array_t<Real> & lambdas;
 public:
@@ -152,6 +157,16 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def("GruneisenParamFromDensityTemperature", &two_params<T, &T::GruneisenParamFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lmbda"))
     .def("GruneisenParamFromDensityInternalEnergy", &two_params<T, &T::GruneisenParamFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lmbda"))
 
+    .def("TemperatureFromDensityInternalEnergy", &two_params_no_lambda<T, &T::TemperatureFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"))
+    .def("InternalEnergyFromDensityTemperature", &two_params_no_lambda<T, &T::InternalEnergyFromDensityTemperature>, py::arg("rho"), py::arg("temperature"))
+    .def("PressureFromDensityTemperature", &two_params_no_lambda<T, &T::PressureFromDensityTemperature>, py::arg("rho"), py::arg("temperature"))
+    .def("PressureFromDensityInternalEnergy", &two_params_no_lambda<T, &T::PressureFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"))
+    .def("SpecificHeatFromDensityTemperature", &two_params_no_lambda<T, &T::SpecificHeatFromDensityTemperature>, py::arg("rho"), py::arg("temperature"))
+    .def("SpecificHeatFromDensityInternalEnergy", &two_params_no_lambda<T, &T::SpecificHeatFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"))
+    .def("BulkModulusFromDensityTemperature", &two_params_no_lambda<T, &T::BulkModulusFromDensityTemperature>, py::arg("rho"), py::arg("temperature"))
+    .def("BulkModulusFromDensityInternalEnergy", &two_params_no_lambda<T, &T::BulkModulusFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"))
+    .def("GruneisenParamFromDensityTemperature", &two_params_no_lambda<T, &T::GruneisenParamFromDensityTemperature>, py::arg("rho"), py::arg("temperature"))
+    .def("GruneisenParamFromDensityInternalEnergy", &two_params_no_lambda<T, &T::GruneisenParamFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"))
 
     .def("FillEos", [](const T & self, const py::kwargs& kwargs) {
       unsigned long output = thermalqs::none;
