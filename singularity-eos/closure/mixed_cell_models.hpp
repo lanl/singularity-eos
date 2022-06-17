@@ -140,7 +140,6 @@ struct NullPtrIndexer {
 
 class CacheAccessor {
  public:
-  PORTABLE_INLINE_FUNCTION
   CacheAccessor() = default;
   PORTABLE_INLINE_FUNCTION
   explicit CacheAccessor(Real *scr) : cache_(scr) {}
