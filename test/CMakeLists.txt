@@ -13,7 +13,11 @@
 #------------------------------------------------------------------------------
 
 add_executable(eos_unit_tests
-                 eos_unit_tests.cpp)
+               catch2_define.cpp
+               eos_unit_test_helpers.hpp
+               test_eos_unit.cpp
+               test_eos_gruneisen.cpp
+               )
 if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
 endif()
@@ -21,6 +25,7 @@ if(SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
 target_link_libraries(eos_unit_tests Catch2::Catch2 eos singularity-eos::libs singularity-eos::flags)
+catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
@@ -30,8 +35,13 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
                              ${CMAKE_SOURCE_DIR}/utils/spiner
                              ${CMAKE_SOURCE_DIR}/utils/ports-of-call
                              ${CMAKE_SOURCE_DIR}/utils/sesame2spiner)
+  add_executable(profile_root_find
+                 profile_root_find.cpp)
+  target_link_libraries(profile_root_find eos singularity-eos::libs singularity-eos::flags)
+  target_include_directories(profile_root_find PUBLIC
+                             ${CMAKE_SOURCE_DIR}/utils/spiner
+                             ${CMAKE_SOURCE_DIR}/utils/ports-of-call)
 endif()
-catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
 
 if (SINGULARITY_BUILD_CLOSURE)
   add_executable(test_pte

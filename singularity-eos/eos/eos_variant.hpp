@@ -224,6 +224,11 @@ class Variant {
         eos_);
   }
 
+  PORTABLE_INLINE_FUNCTION
+  Real RhoPmin(const Real temp) const {
+    return mpark::visit([&temp](const auto &eos) { return eos.RhoPmin(temp); }, eos_);
+  }
+
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const {
     return mpark::visit([](const auto &eos) { return eos.MinimumDensity(); }, eos_);
