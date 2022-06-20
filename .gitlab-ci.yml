@@ -14,8 +14,6 @@ variables:
 
 before_script:
   - export HOME=${CI_PROJECT_DIR}
-  - export TMPDIR=${CI_PROJECT_DIR}
-  - cd ${CI_PROJECT_DIR}
   - unset SPACK_ROOT
   - echo "Spack Version:" ${XCAP_OSS_SPACK_REF}
   - cd ${TMPDIR} && git clone https://github.com/spack/spack.git
