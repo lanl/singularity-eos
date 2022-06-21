@@ -121,7 +121,7 @@ before_script:
     - mkdir -p ${TMPDIR}/sphinx_doc_env
     - spack env create --without-view -d ${TMPDIR}/sphinx_doc_env
     - spack env activate -d ${TMPDIR}/sphinx_doc_env
-    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
+    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+python+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION}^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
     - source ${TMPDIR}/spack/share/spack/setup-env.sh
     - spack module tcl refresh -y
     - spack env loads -r -x singularity-eos
