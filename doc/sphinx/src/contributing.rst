@@ -28,9 +28,10 @@ collapse model. These are run through github's CPU infrastructure. We
 have a second set of tests run on a wider set of architectures that
 also access the Sesame library, which we are not able to make public.
 
-The docs build will fail for forks, and the internal tests will not be
-run automatically, so when the code is ready for merge, you must ask a
-project maintainer to trigger the remaining tests for you.
+The docs are built but not deployed on PRs from forks, and the
+internal tests will not be run automatically. So when the code is
+ready for merge, you must ask a project maintainer to trigger the
+remaining tests for you.
 
 Interwoven Dependencies
 ------------------------
@@ -42,8 +43,11 @@ submit issues on the relevant github pages. However, if you can't
 figure out where an issue belongs, no big deal. Submit where you can
 and we'll engage with you to figure out how to proceed.
 
-Fast Logs and Approximate Log Gridding
+Notes for Contribuors
 ---------------------------------------
+
+Fast Logs and Approximate Log Gridding
+```````````````````````````````````````
 
 When spanning many orders of magnitude, Logarithmic grids are a
 natural choice. Even spacing in log space corresponds to exponential
