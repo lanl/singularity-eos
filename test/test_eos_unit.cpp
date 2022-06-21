@@ -575,7 +575,6 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
 
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
-      REQUIRE(steelEOS_host.filename() == eosName);
 
       AND_THEN("We can get a reference density and temperature") {
         Real rho, T, sie, P, cv, bmod, dpde, dvdt;
@@ -731,7 +730,6 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]") {
     EOS steelEOS = steelEOS_host.GetOnDevice();
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
-      REQUIRE(steelEOS_host.filename() == eosName);
 
       int nw_ie2{0}, nw_te2{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS

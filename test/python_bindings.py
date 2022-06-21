@@ -163,7 +163,6 @@ class SpinerEOSdependsOnRhoT_Steel(unittest.TestCase):
     def test_metadata(self):
         "The correct metadata is read in"
         self.assertEqual(self.steelEOS_host.matid, self.steelID)
-        self.assertEqual(self.steelEOS_host.filename, self.eosName)
 
     def test_reference(self):
         "We can get a reference density and temperature"

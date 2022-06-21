@@ -63,7 +63,7 @@ constexpr char METADATA_NAME[] = "Metadata";
 
 StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp5,
                                  bool filter_bmod)
-    : filename_(filename.c_str()) {
+{
 
   if (use_sp5) {
     LoadFromSP5File_(filename);
