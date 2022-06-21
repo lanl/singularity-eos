@@ -60,7 +60,7 @@ before_script:
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=power9"
 
 .x86volta: &x86volta
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86"
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86 -C cpu_family:haswell"
 
 #################
 # General Setup #
