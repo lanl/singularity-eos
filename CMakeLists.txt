@@ -33,6 +33,7 @@ option (SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
 option (SINGULARITY_USE_CUDA "Enable cuda support" OFF)
 option (SINGULARITY_USE_KOKKOSKERNELS
   "Use kokkos-kernels for linear algebra" OFF)
+option (SINGULARITY_BUILD_PYTHON "Compile Python bindings" OFF)
 option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
 option (SINGULARITY_BUILD_EXAMPLES "Compile examples" OFF)
 option (SINGULARITY_BUILD_SESAME2SPINER "Compile sesame2spiner" OFF)
@@ -354,11 +355,20 @@ if (SINGULARITY_USE_FORTRAN)
   )
 endif() # SINGULARITY_USE_FORTRAN
 
+
 target_include_directories(singularity-eos
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
+
+
+#------------------------------------------------------------------------------#
+# Python bindings
+#------------------------------------------------------------------------------#
+if (SINGULARITY_BUILD_PYTHON)
+  add_subdirectory(${PROJECT_SOURCE_DIR}/python)
+endif()
 
 # plug in collected includes/libs/definitions
 
