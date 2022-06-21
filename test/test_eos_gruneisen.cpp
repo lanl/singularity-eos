@@ -520,15 +520,16 @@ SCENARIO("Gruneisen EOS density limit") {
       WHEN("A cubic Hugoniot fit is used") {
         constexpr Real root_find_tol = 1e-08;
         WHEN("Only one root exists") {
-          // Cubic Hugoniot fit
-          constexpr Real S1 = 2;
-          constexpr Real S2 = -1.1;
-          constexpr Real S3 = 0.2;
+          // Cubic Hugoniot fit with a single real root at 0.5 (imaginary roots at (1 + i)
+          // and (1 - i))
+          constexpr Real S1 = 3;
+          constexpr Real S2 = -2.5;
+          constexpr Real S3 = 1;
           // Create the EOS
           Gruneisen host_eos = Gruneisen{C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv};
           auto eos = host_eos.GetOnDevice();
           THEN("The generated rho_max parameter should be properly set") {
-            constexpr Real eta_max = 0.8025706630669670284; // Wolfram alpha
+            constexpr Real eta_max = 0.5; // Wolfram alpha
             constexpr Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);

@@ -112,9 +112,10 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2,
       using RootFinding1D::RootCounts;
       using RootFinding1D::Status;
       RootCounts counts;
-      const Real xtol = 1.e-08;
-      const Real ytol = 1.e-08;
-      const Real eta_guess = 0.001;
+      static constexpr Real factor = 100;
+      static constexpr Real xtol = factor * EPS;
+      static constexpr Real ytol = factor / 10 * EPS;
+      static constexpr Real eta_guess = 0.001;
       auto status =
           regula_falsi(poly, 0., eta_guess, minbound, maxbound, xtol, ytol, root, counts);
       if (status != Status::SUCCESS) {
