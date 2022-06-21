@@ -9,6 +9,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     git         = "http://github.com/lanl/singularity-eos.git"
 
     version("main", branch="main", submodules=True)
+    version("develop", branch="mauneyc/update/cmake-idiomatic-install", submodules=True)
 
     # build with kokkos, kokkos-kernels for offloading support
     variant("kokkos", default=False, description="Enable kokkos")
@@ -34,14 +35,12 @@ class SingularityEos(CMakePackage, CudaPackage):
     # include depedencies for automatic code formatting (i.e. clang-format)
     variant("format", default=False, description="Clang-Format Support")
 
-    # TODO: decide if this should stay in the source tree, or split out a seperate dependency build
-    #depends_on("mpark-variant")
-
     variant("eospac", default=True, description="Pull in EOSPAC")
 
     # building/testing/docs
     depends_on("cmake@3.14:")
-    depends_on("catch2@2.12.3", when="+tests")
+    depends_on("catch2@2.13.7", when="+tests")
+#    depends_on("py-h5py", when="+tests build_extra=stellarcollapse")
     depends_on("py-sphinx", when="+doc")
     depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
     depends_on("py-sphinx-multiversion", when="+doc")
@@ -55,8 +54,8 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # set up kokkos offloading dependencies
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
-        depends_on("kokkos@3.2.00 ~shared" +_flag, when="+kokkos" + _flag)
-        depends_on("kokkos-kernels@3.2.00" + _flag, when="+kokkos-kernels" + _flag)
+        depends_on("kokkos@3.2: ~shared" +_flag, when="+kokkos" + _flag)
+        depends_on("kokkos-kernels@3.2:" + _flag, when="+kokkos-kernels" + _flag)
 
     # specfic specs when using GPU/cuda offloading
     depends_on("kokkos +wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
@@ -81,7 +80,9 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # NOTE: these are set so that dependencies in downstream projects share common MPI dependence
     for _flag in ("~mpi", "+mpi"):
-        depends_on("hdf5+hl" + _flag, when=_flag)
+        depends_on("hdf5~cxx+hl" + _flag, when=_flag)
+        depends_on("py-h5py" + _flag, when="+tests build_extra=stellarcollapse "+_flag)
+#        depends_on("hdf5+hl" + _flag, when=_flag)
         depends_on("py-h5py" + _flag, when=_flag)
         depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos"+_flag)
 

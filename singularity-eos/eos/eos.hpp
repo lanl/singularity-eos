@@ -28,10 +28,10 @@
 #include <singularity-eos/eos/eos_variant.hpp>
 
 #ifdef SPINER_USE_HDF
-#include <fast-math/logs.hpp>
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include <root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/spiner_types.hpp>
 #endif // SPINER_USE_HDF
@@ -730,15 +730,23 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   std::string filename() const { return std::string(filename_); }
   std::string materialName() const { return std::string(materialName_); }
   int matid() const { return matid_; }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real lEOffset() const { return lEOffset_; }
-  Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
-  Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
-  Real TMin() const { return fromLog_(T_.range(0).min(), lTOffset_); }
-  Real TMax() const { return fromLog_(T_.range(0).max(), lTOffset_); }
-  Real sieMin() const { return fromLog_(sie_.range(0).min(), lEOffset_); }
-  Real sieMax() const { return fromLog_(sie_.range(0).max(), lEOffset_); }
+  PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_INLINE_FUNCTION Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
+  PORTABLE_INLINE_FUNCTION Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
+  PORTABLE_INLINE_FUNCTION Real TMin() const {
+    return fromLog_(T_.range(0).min(), lTOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real TMax() const {
+    return fromLog_(T_.range(0).max(), lTOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real sieMin() const {
+    return fromLog_(sie_.range(0).min(), lEOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real sieMax() const {
+    return fromLog_(sie_.range(0).max(), lEOffset_);
+  }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
@@ -893,21 +901,21 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // overloads that use the scalar versions declared here
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   std::string filename() const { return std::string(filename_); }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real lEOffset() const { return lEOffset_; }
-  Real lRhoMin() const { return lRhoMin_; }
-  Real lRhoMax() const { return lRhoMax_; }
-  Real rhoMin() const { return rho_(lRhoMin_); }
-  Real rhoMax() const { return rho_(lRhoMax_); }
-  Real lTMin() const { return lTMin_; }
-  Real lTMax() const { return lTMax_; }
-  Real TMin() const { return T_(lTMin_); }
-  Real TMax() const { return T_(lTMax_); }
-  Real YeMin() const { return YeMin_; }
-  Real YeMax() const { return YeMax_; }
-  Real sieMin() const { return sieMin_; }
-  Real sieMax() const { return sieMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMin() const { return lRhoMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMax() const { return lRhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTMin() const { return lTMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTMax() const { return lTMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMax() const { return T_(lTMax_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real YeMin() const { return YeMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real YeMax() const { return YeMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const { return sieMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const { return sieMax_; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("StellarCollapse parameters:\n"
            "depends on log10(rho), log10(T), Ye\n"
@@ -1224,12 +1232,10 @@ class EOSPAC : public EosBase<EOSPAC> {
   //              const int num, const unsigned long output,
   //              LambdaIndexer &&lambdas) const;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  int nlambda() const noexcept { return 0; }
+  PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 0; }
   inline void Finalize() {}
   static std::string EosType() { return std::string("EOSPAC"); }
-  PORTABLE_INLINE_FUNCTION void PrintParams() const {
-    printf("EOSPAC parameters:\nmatid = %s\n", matid_);
-  }
+  inline void PrintParams() const { printf("EOSPAC parameters:\nmatid = %s\n", matid_); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
 

@@ -16,11 +16,11 @@
 #define _SINGULARITY_EOS_EOS_EOS_BUILDER_HPP_
 
 #include <map>
+#include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <string>
 #include <unordered_set>
-#include <variant/include/mpark/variant.hpp>
 
 namespace singularity {
 

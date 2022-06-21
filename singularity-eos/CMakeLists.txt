@@ -12,41 +12,40 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
-if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_CLOSURE)
-  add_library(eos_f OBJECT singularity_eos.f90)
-endif()
+set(EOS_HEADERS
+    base/constants.hpp
+    base/eos_error.hpp
+    base/fast-math/logs.hpp
+    base/root-finding-1d/root_finding.hpp
+    eos/eos.hpp
+    eos/eos_builder.hpp
+    eos/eos_variant.hpp
+    eos/modifiers/eos_unitsystem.hpp
+    eos/modifiers/scaled_eos.hpp
+    eos/modifiers/shifted_eos.hpp
+    eos/modifiers/relativistic_eos.hpp
+)
 
 set(EOS_SRCS
-    eos.hpp
-    eos_base.hpp
-    modifiers/eos_unitsystem.hpp
-    modifiers/scaled_eos.hpp
-    modifiers/shifted_eos.hpp
-    modifiers/relativistic_eos.hpp
-    eos_spiner.cpp
-    eos_jwl.cpp
-    eos_builder.cpp
-    eos_ideal.cpp
-    eos_gruneisen.cpp
-    eos_davis.cpp
-    eos_stellar_collapse.cpp
-    eos_eospac.cpp
-    )
+    eos/eos_spiner.cpp
+    eos/eos_jwl.cpp
+    eos/eos_builder.cpp
+    eos/eos_ideal.cpp
+    eos/eos_gruneisen.cpp
+    eos/eos_davis.cpp
+    eos/eos_stellar_collapse.cpp
+    eos/eos_eospac.cpp
+)
+
 if (SINGULARITY_BUILD_CLOSURE)
-  list(APPEND EOS_SRCS singularity_eos.cpp)
+  list(APPEND EOS_SRCS eos/singularity_eos.cpp)
+  list(APPEND EOS_HEADERS eos/singularity_eos.hpp closure/mixed_cell_models.hpp)
 endif()
 
-add_library(eos_objs OBJECT ${EOS_SRCS})
-
-target_include_directories(eos_objs PUBLIC
-            ${CMAKE_CURRENT_BINARY_DIR}
-            ${CMAKE_CURRENT_SOURCE_DIR}
-            )
-
-target_link_libraries(eos_objs singularity-eos::libs singularity-eos::flags)
-
-if(SINGULARITY_USE_FORTRAN AND SINGULARITY_BUILD_CLOSURE)
-  add_library(eos $<TARGET_OBJECTS:eos_objs> $<TARGET_OBJECTS:eos_f>)
-else()
-  add_library(eos $<TARGET_OBJECTS:eos_objs>)
+if (SINGULARITY_USE_FORTRAN)
+  list(APPEND EOS_SRCS eos/singularity_eos.f90)
 endif()
+
+# export to parent scope
+set(EOS_HEADERS ${EOS_HEADERS} PARENT_SCOPE)
+set(EOS_SRCS ${EOS_SRCS} PARENT_SCOPE)

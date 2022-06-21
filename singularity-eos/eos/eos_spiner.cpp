@@ -27,9 +27,9 @@
 #include <hdf5_hl.h>
 
 #include <ports-of-call/portability.hpp>
-#include <root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <singularity-eos/eos/eos.hpp>
-#include <sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>

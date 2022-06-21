@@ -148,10 +148,17 @@ before_script:
     - module use ${TMPDIR}/spack_env
     - module load loads # module load compiler, deps, etc.
     - module list
+    - |
+      if [[ -n ${SINGULARITY_USE_CUDA} ]];
+      then
+        export SINGULARITY_NVCC_WRAPPER="$(which nvcc_wrapper)";
+        export SINGULARITY_CMAKE_CXX_COMPILER_FLAG="-DCMAKE_CXX_COMPILER=${SINGULARITY_NVCC_WRAPPER}";
+        echo "passing '${SINGULARITY_CMAKE_CXX_COMPILER_FLAG}' to cmake"
+      fi
     - mkdir -p build install
     - cd build
     - |
-      cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install \
+      cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install ${SINGULARITY_CMAKE_CXX_COMPILER_FLAG} \
             -DSINGULARITY_USE_EOSPAC=ON \
             -DSINGULARITY_USE_HDF5=ON \
             -DSINGULARITY_BUILD_SESAME2SPINER=ON \

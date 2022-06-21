@@ -13,10 +13,9 @@
 //------------------------------------------------------------------------------
 
 #include <limits>
-#include <sstream>
 
-#include <root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 namespace singularity {
@@ -121,12 +120,9 @@ PORTABLE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real s2,
           regula_falsi(poly, 0., eta_guess, minbound, maxbound, xtol, ytol, root, counts);
       if (status != Status::SUCCESS) {
         // Root finder failed even though the solution was bracketed... this is an error
-        std::stringstream errorMessage;
-        errorMessage << "Gruneisen initialization: Cubic root find failed. Maximum "
-                        "density cannot be"
-                     << " automatically determined and must be manually specified."
-                     << std::endl;
-        EOS_ERROR(errorMessage.str().c_str());
+        EOS_ERROR("Gruneisen initialization: Cubic root find failed. Maximum "
+                  "density cannot be"
+                  " automatically determined and must be manually specified\n.");
       }
     } else if (is_near_zero(poly(minbound), EPS)) {
       root = minbound;
@@ -286,10 +282,8 @@ PORTABLE_FUNCTION void Gruneisen::FillEos(Real &rho_in, Real &temp, Real &sie,
   } else if (thermalqs::density & output ||
              thermalqs::specific_internal_energy & output) {
     // Error out on density or energy output because they're currently required as inputs
-    std::stringstream errorMessage;
-    errorMessage << "Gruneisen FillEos: Density and energy are currently required inputs "
-                 << "except when pressure and temperature are inputs" << std::endl;
-    EOS_ERROR(errorMessage.str().c_str());
+    EOS_ERROR("Gruneisen FillEos: Density and energy are currently required inputs "
+              "except when pressure and temperature are inputs.\n");
   }
   const Real rho = std::min(rho_in, _rho_max);
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
