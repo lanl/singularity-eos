@@ -81,6 +81,11 @@ if(SINGULARITY_USE_FORTRAN)
   include(CMakeDetermineFortranCompiler)
 endif()
 
+if (SINGULARITY_BUILD_PYTHON)
+  # need position independent code for Python shared library
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 # checks if this is our build, or we've 
 # been imported via `add_subdirectory`
 # NB: this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
