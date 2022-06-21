@@ -132,9 +132,8 @@ if(SINGULARITY_USE_KOKKOSKERNELS AND NOT KokkosKernels_FOUND)
   )
 endif() # USE_KOKKOS AND NOT Kokkos_FOUND
 
-# apparently, this doesn't do anything anymore,
 # see https://cmake.org/cmake/help/latest/policy/CMP0090.html
-# to re-enable, uncomment 
-## set(CMAKE_EXPORT_PACKAGE_REGISTRY "ON")
-export(PACKAGE singularity-eos)
+# this used to populate the package registery, but doesn't 
+# do anything anymore, & probably shouldn't
+# export(PACKAGE singularity-eos)
 
