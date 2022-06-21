@@ -9,6 +9,9 @@ on:
     types:
       - created
 
+permissions:
+  contents: write
+
 jobs:
     docs:
       name: build and deploy docs
