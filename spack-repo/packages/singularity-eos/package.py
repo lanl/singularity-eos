@@ -56,6 +56,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     # building/testing/docs
     depends_on("cmake@3.14:")
     depends_on("catch2@2.13.7", when="+tests")
+    depends_on("python@3:", when="+python")
 #    depends_on("py-h5py", when="+tests build_extra=stellarcollapse")
     depends_on("py-sphinx", when="+doc")
     depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
@@ -149,3 +150,12 @@ class SingularityEos(CMakePackage, CudaPackage):
     #   cmake -C $SINGULARITY_SPACK_CMAKE_CONFIG ...
     def setup_run_environment(self, env):
         env.set("SINGULARITY_SPACK_CMAKE_CONFIG", os.path.join(self.prefix, self.cmake_config_fname))
+        if os.path.isdir(self.prefix.lib64):
+            lib_dir = self.prefix.lib64
+        else:
+            lib_dir = self.prefix.lib
+
+        if '+python' in self.spec:
+            python_version = self.spec['python'].version.up_to(2)
+            python_inst_dir = join_path(lib_dir, 'python{0}'.format(python_version), 'site-packages')
+            env.prepend_path('PYTHONPATH', python_inst_dir)

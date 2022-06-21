@@ -17,3 +17,11 @@ endif()
 
 pybind11_add_module(singularity_eos module.cpp)
 target_link_libraries(singularity_eos PRIVATE singularity-eos singularity-eos::flags singularity-eos::libs)
+
+include(GNUInstallDirs)
+
+set(PYTHON_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages")
+
+install(TARGETS singularity_eos
+  COMPONENT python
+  LIBRARY DESTINATION "${PYTHON_INSTALL_DIR}")
