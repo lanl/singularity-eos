@@ -13,6 +13,8 @@
 #------------------------------------------------------------------------------#
 
 macro(singularity_cmake_config pkg)
+  set(_storBT ${BUILD_TESTING})
+  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
   if(${pkg} STREQUAL "Kokkos")
     set(Kokkos_ENABLE_SERIAL ON CACHE BOOL "" FORCE)
     if(SINGULARITY_USE_CUDA)
@@ -62,5 +64,7 @@ macro(singularity_cmake_config pkg)
     #TODO: optional print of options
     singularity_msg(STATUS "[SUBMOD_CONFIG] \"${pkg}\" configured with defined config.")
   endif()
+  set(BUILD_TESTING ${_storBT} CACHE BOOL "" FORCE)
+  unset(_storBT)
 endmacro()
 
