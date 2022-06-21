@@ -16,7 +16,7 @@ if(NOT pybind11_FOUND)
 endif()
 
 pybind11_add_module(singularity_eos module.cpp)
-target_link_libraries(singularity_eos PRIVATE singularity-eos singularity-eos::flags singularity-eos::libs)
+target_link_libraries(singularity_eos PRIVATE singularity-eos)
 
 include(GNUInstallDirs)
 
