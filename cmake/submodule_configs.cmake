@@ -13,6 +13,9 @@
 #------------------------------------------------------------------------------#
 
 macro(singularity_cmake_config pkg)
+  # workaround
+  # submodules will enable `BUILD_TESTING` by default
+  # and this is used to disable it. 
   set(_storBT ${BUILD_TESTING})
   set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
   if(${pkg} STREQUAL "Kokkos")
