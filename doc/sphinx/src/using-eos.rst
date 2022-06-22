@@ -78,6 +78,26 @@ variant. For example:
 This will give you access to methods and fields which may be unique to
 a class but not shared by the ``Variant``.
 
+The EOS model also allows some host-side introspection. The method
+
+.. cpp:function:: static std::string EosType();
+
+returns a string representing the equation of state an ``EOS`` object
+currently is. For example:
+
+.. code-block::
+
+  auto tpe_str = my_ideal_gas.EosType();
+  // prints "IdealGas"
+  std::cout << tpe_str << std::endl;
+
+Similarly the method
+
+.. cpp:function:: void PrintParams() const;
+
+prints relevant parameters that the EOS object was created with, such
+as the Gruneisen coefficient and specific heat for an ideal gas model.
+
 If you would like to create your own custom variant with additional
 models (or a subset of models), you may do so by using the
 ``eos_variant`` class. For example,
@@ -220,6 +240,54 @@ For more details on modifiers, see the :ref:`modifiers<modifiers>`
 section. If you need a combination of modifiers not supported by
 default, we recommend building a custom variant as described above.
 
+Preferred Inputs
+-----------------
+
+Some equations of state, such as those built on tabulated data, are
+most performant when quantities, e.g., pressure, are requested in
+terms of density and temperature. Others may be most performant for
+density and specific internal energy.
+
+Most fluid codes work in terms of density and energy. However, for a
+model that prefers density and temperature inputs, it may be better
+compute temperature first, then compute other quantities given density
+and temperature, rather than computing everything from density and
+energy.
+
+``singularity-eos`` offers some introspection to enable users to
+determine what the right sequence of calls to make is:
+
+.. cpp:function:: static constexpr unsigned long PreferredInput();
+
+The return value is a bit field, represented as a number, where each
+nonzero bit in the field represents some thermodynamic quantity like
+density or temperature. You can check whether or not an eos prefers
+energy or temperature as an input via code like this:
+
+.. code-block:: cpp
+
+  using namespace singularity;
+  auto preferred_input = my_eos.PreferredInput();
+  bool en_preferred = preferred_input & thermalqs::specific_internal_energy;
+  bool temp_preferred = preferred_input & thermalqs::temperature;
+
+Here the bitwise and operator masks out a specific flag, allowing one
+to check whether or not the bitfield contains that flag.
+
+The available flags in the ``singulartiy::thermalqs`` namespace are
+currently:
+* ``thermalqs::none``
+* ``thermalqs::density``
+* ``thermalqs::specific_internal_energy``
+* ``thermalqs::pressure``
+* ``thermalqs::temperature``
+* ``thermalqs::specific_heat``
+* ``thermalqs::bulk_modulus``
+* ``thermalqs::all_values``
+
+however, most EOS models only specify that they prefer density and
+temperature or density and specific internal energy.
+
 EOS Builder
 ------------
 
@@ -319,4 +387,98 @@ returns specific heat capacity at constant volume, in units of
 :math:`erg/(g K)` in terms of density in :math:`g/cm^3` and specific
 internal energy in :math:`erg/g`.
 
+.. cpp:function:: Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature, Real *lambda = nullptr) const;
 
+returns the the bulk modulus
+
+.. math::
+
+  B_s = (\partial P/\partial \rho)_s
+
+in units of :math:`g cm^2/s^2` given density in :math:`g/cm^3` and
+temperature in Kelvin. For most material models, the square of the
+sound speed is given by
+
+.. math::
+
+   c_s^2 = \frac{B_S}{\rho}
+
+Note that for relativistic models,
+
+.. math::
+
+   c_s^2 = \frac{B_S}{w}
+
+where :math:`w = \rho h` for specific entalpy :math:`h` is the
+enthalpy by volume. The sound speed may also differ for, e.g., porous
+models, where the pressure is less directly correlated with the
+density.
+
+.. cpp:function:: Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie, Real *lambda = nullptr) const;
+
+returns the bulk modulus in units of :math:`g cm^2/s^2` given density
+in :math:`g/cm^3` and specific internal energy in :math:`erg/g`.
+
+.. cpp:function:: Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature, Real *lambda = nullptr) const;
+
+returns the unitless Gruneisen parameter
+
+.. math::
+
+  \Gamma = \frac{1}{\rho}\left(\frac{\partial P}{\partial \varepsilon}\right)_\rho
+
+given density in :math:`g/cm^3` and temperature in Kelvin.
+
+.. cpp:function:: Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie, Real *lambda = nullptr) const;
+
+returns the unitless Gruneisen parameter given density in
+:math:`g/cm^3` and specific internal energy in :math:`erg/g`.
+
+The function
+
+.. cpp:function::FillEos(Rela &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod, const unsigned long output, Real *lambda = nullptr) const;
+
+is a a bit of a special case. ``output`` is a bitfield represented as
+an unsigned 64 bit number. Quantities such ``pressure`` and
+``specific_internal_energy`` can be represented in the ``output``
+field by flipping the appropriate bits. There is one bit per
+quantity. ``FillEos`` sets all parameters (passed in by reference)
+requested in the ``output`` field utilizing all paramters not
+requested in the ``output`` flag, which are assumed to be input.
+
+The ``output`` variable uses the same ``thermalqs`` flags as the
+``PreferredInput`` method. If an insufficient number of variables are
+passed in as input, or if the input is not a combination supported by
+a given model, the function is expected to raise an error. The exact
+combinations of inputs and ouptuts supported is model
+dependent. However, the user will always be able to use density and
+temperature or internal energy as inputs and get all other
+quantities as outputs.
+
+Methods Used for Mixed Cell Closures
+--------------------------------------
+
+Several methods were developed in support of mixed cell closures. In particular:
+
+.. cpp:function:: Real MinimumDensity() const;
+
+and 
+
+.. cpp:function:: Real MinimumTemperature() const;
+
+provide bounds for valid inputs into a table, which can be used by a
+root finder to meaningful bound the root search. Similarly,
+
+.. cpp:function:: Real RhoPmin(const Real temp) const;
+
+returns the density at which pressure is minimized for a given
+temperature. This is again useful for root finds.
+
+Finally the method
+
+.. cpp:function:: void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const;
+
+returns pressure and temperature, as well as the thermodynamic
+derivatives of pressure and temperature with respect to density and
+specific internal energy, as a function of density and specific
+internal energy.

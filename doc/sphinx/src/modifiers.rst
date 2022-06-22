@@ -1,5 +1,5 @@
 .. _modifiers:
 
-EOS Modifiers
-==============
+Equation of State Modifiers
+============================
 
