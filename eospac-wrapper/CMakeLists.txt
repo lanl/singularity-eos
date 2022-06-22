@@ -14,21 +14,23 @@
 
 option(SINGULARITY_EOSPAC_SKIP_EXTRAP "Skip extrapolation checks" OFF)
 
-if (SINGULARITY_EOSPAC_INSTALL_DIR)
-  list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_EOSPAC_INSTALL_DIR}")
-  set(EOSPAC_INCLUDE_DIR "${SINGULARITY_EOSPAC_INSTALL_DIR}/include")
-endif()
-find_package(EOSPAC)
-
 add_library(eospac-wrapper
   eospac_wrapper.hpp
   eospac_wrapper.cpp
-  )
+)
 
 if (SINGULARITY_EOSPAC_SKIP_EXTRAP)
   target_compile_definitions(eospac-wrapper
-    SINGULARITY_EOSPAC_SKIP_EXTRAP
-    )
-endif()
+    PRIVATE
+      SINGULARITY_EOSPAC_SKIP_EXTRAP
+  )
+endif() #SINGULARITY_EOSPAC_SKIP_EXTRAP
 
-target_link_libraries(eospac-wrapper EOSPAC::eospac)
+target_link_libraries(eospac-wrapper 
+  PUBLIC
+    EOSPAC::eospac
+)
+
+#TODO: should this be here? not sure what's appropriate 
+# (could put line in top-level CMakeLists.txt)
+install(TARGETS eospac-wrapper EXPORT singularity-eosTargets DESTINATION lib)
