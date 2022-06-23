@@ -62,6 +62,9 @@ before_script:
 .x86volta: &x86volta
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86 -C cpu_family:haswell"
 
+.python: &python
+    SINGULARITY_BUILD_PYTHON: "ON"
+
 #################
 # General Setup #
 #################
@@ -118,7 +121,7 @@ before_script:
     - mkdir -p ${TMPDIR}/sphinx_doc_env
     - spack env create --without-view -d ${TMPDIR}/sphinx_doc_env
     - spack env activate -d ${TMPDIR}/sphinx_doc_env
-    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
+    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+python+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION}^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
     - source ${TMPDIR}/spack/share/spack/setup-env.sh
     - spack module tcl refresh -y
     - spack env loads -r -x singularity-eos
@@ -163,9 +166,11 @@ before_script:
             -DSINGULARITY_USE_HDF5=ON \
             -DSINGULARITY_BUILD_SESAME2SPINER=ON \
             -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
+            -DSINGULARITY_BUILD_PYTHON=${SINGULARITY_BUILD_PYTHON:-OFF} \
             -DSINGULARITY_BUILD_TESTS=ON \
             -DSINGULARITY_TEST_SESAME=ON \
             -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
+            -DSINGULARITY_TEST_PYTHON=${SINGULARITY_BUILD_PYTHON:-OFF} \
             -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_KOKKOSKERNELS=${SINGULARITY_USE_CUDA:-OFF} \
@@ -218,12 +223,14 @@ test_gnu_skylake:
   extends: .test
   variables:
     <<: *skylake
+    <<: *python
 
 test_gnu_power9:
   <<: *job_def
   extends: .test
   variables:
     <<: *power9
+    <<: *python
 
 test_gnu_power9_gpu:
   <<: *job_def
@@ -244,6 +251,7 @@ install_gnu_skylake_fort:
   extends: .test
   variables:
     <<: *skylake
+    <<: *python
     <<: *fort
 
 install_gnu_skylake_nofort:
@@ -251,4 +259,5 @@ install_gnu_skylake_nofort:
   extends: .test
   variables:
     <<: *skylake
+    <<: *python
     <<: *nofort

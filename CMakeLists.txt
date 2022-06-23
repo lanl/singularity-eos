@@ -33,6 +33,7 @@ option (SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
 option (SINGULARITY_USE_CUDA "Enable cuda support" OFF)
 option (SINGULARITY_USE_KOKKOSKERNELS
   "Use kokkos-kernels for linear algebra" OFF)
+option (SINGULARITY_BUILD_PYTHON "Compile Python bindings" OFF)
 option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
 option (SINGULARITY_BUILD_EXAMPLES "Compile examples" OFF)
 option (SINGULARITY_BUILD_SESAME2SPINER "Compile sesame2spiner" OFF)
@@ -44,6 +45,7 @@ option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
 option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
 option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
 option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
+option (SINGULARITY_TEST_PYTHON "Test the Python bindings" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
 
@@ -77,6 +79,11 @@ include(CMakeDetermineCXXCompiler)
 if(SINGULARITY_USE_FORTRAN)
   enable_language(Fortran)
   include(CMakeDetermineFortranCompiler)
+endif()
+
+if (SINGULARITY_BUILD_PYTHON)
+  # need position independent code for Python shared library
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # checks if this is our build, or we've 
@@ -148,6 +155,10 @@ if(SINGULARITY_USE_HDF5)
   if(SINGULARITY_BUILD_EXAMPLES)
     list(APPEND _subdirs2add example)
   endif()
+endif()
+
+if (SINGULARITY_BUILD_PYTHON)
+  list(APPEND _subdirs2add python)
 endif()
 
 if(SINGULARITY_USE_SINGLE_LOGS)
@@ -354,11 +365,13 @@ if (SINGULARITY_USE_FORTRAN)
   )
 endif() # SINGULARITY_USE_FORTRAN
 
+
 target_include_directories(singularity-eos
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:include>
 )
+
 
 # plug in collected includes/libs/definitions
 
