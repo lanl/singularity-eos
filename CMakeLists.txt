@@ -157,6 +157,10 @@ if(SINGULARITY_USE_HDF5)
   endif()
 endif()
 
+if (SINGULARITY_BUILD_PYTHON)
+  list(APPEND _subdirs2add python)
+endif()
+
 if(SINGULARITY_USE_SINGLE_LOGS)
   list(APPEND TAR_DEFINES SINGULARITY_USE_SINGLE_LOGS)
 endif()
@@ -368,13 +372,6 @@ target_include_directories(singularity-eos
     $<INSTALL_INTERFACE:include>
 )
 
-
-#------------------------------------------------------------------------------#
-# Python bindings
-#------------------------------------------------------------------------------#
-if (SINGULARITY_BUILD_PYTHON)
-  add_subdirectory(${PROJECT_SOURCE_DIR}/python)
-endif()
 
 # plug in collected includes/libs/definitions
 
