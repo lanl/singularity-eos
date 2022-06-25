@@ -42,6 +42,9 @@ class SingularityEos(CMakePackage, CudaPackage):
     # build the fortran interface
     variant("fortran", default=True, description="Enable building fortran interface")
 
+    # build the Python bindings
+    variant("python", default=False, description="Enable building Python bindings")
+
     # build the documentation
     variant("doc", default=False, description="Sphinx Documentation Support")
 
@@ -53,6 +56,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     # building/testing/docs
     depends_on("cmake@3.14:")
     depends_on("catch2@2.13.7", when="+tests")
+    depends_on("python@3:", when="+python")
 #    depends_on("py-h5py", when="+tests build_extra=stellarcollapse")
     depends_on("py-sphinx", when="+doc")
     depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
@@ -107,11 +111,13 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_USE_KOKKOSKERNELS", "kokkos-kernels"),
             self.define_from_variant("SINGULARITY_USE_FORTRAN", "fortran"),
             self.define_from_variant("SINGULARITY_BUILD_CLOSURE", "fortran"),
+            self.define_from_variant("SINGULARITY_BUILD_PYTHON", "python"),
             self.define_from_variant("SINGULARITY_BUILD_TESTS", "tests"),
             self.define("SINGULARITY_BUILD_SESAME2SPINER", "sesame" in self.spec.variants["build_extra"]),
             self.define("SINGULARITY_TEST_SESAME", ("sesame" in self.spec.variants["build_extra"] and "tests" in self.spec)),
             self.define("SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER", "stellarcollapse" in self.spec.variants["build_extra"]),
             self.define("SINGULARITY_TEST_STELLARCOLLAPSE2SPINER", ("stellarcollapse" in self.spec.variants["build_extra"] and "tests" in self.spec)),
+            self.define("SINGULARITY_TEST_PYTHON", ("python" in self.spec and "tests" in self.spec)),
             self.define("SINGULARITY_USE_HDF5", "^hdf5" in self.spec),
             self.define("SINGULARITY_USE_EOSPAC", "^eospac" in self.spec)
         ]
@@ -144,3 +150,12 @@ class SingularityEos(CMakePackage, CudaPackage):
     #   cmake -C $SINGULARITY_SPACK_CMAKE_CONFIG ...
     def setup_run_environment(self, env):
         env.set("SINGULARITY_SPACK_CMAKE_CONFIG", os.path.join(self.prefix, self.cmake_config_fname))
+        if os.path.isdir(self.prefix.lib64):
+            lib_dir = self.prefix.lib64
+        else:
+            lib_dir = self.prefix.lib
+
+        if '+python' in self.spec:
+            python_version = self.spec['python'].version.up_to(2)
+            python_inst_dir = join_path(lib_dir, 'python{0}'.format(python_version), 'site-packages')
+            env.prepend_path('PYTHONPATH', python_inst_dir)
