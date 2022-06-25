@@ -436,7 +436,18 @@ returns the unitless Gruneisen parameter given density in
 
 The function
 
-.. cpp:function::FillEos(Rela &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod, const unsigned long output, Real *lambda = nullptr) const;
+.. cpp:function:: void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod, Real &dpde, Real &dvdt, Real *lambda = nullptr) const;
+
+fills the density, temperature, specific internal energy, pressure,
+and thermodynamic derivatives a specifically chosen characteristic
+"reference" state. For terrestrial equations of state, this reference
+state is probably close to standard density and pressure. For
+astrophysical models, it will be chosen to be close to a
+representative energy and density scale.
+
+The function
+
+.. cpp:function:: void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod, const unsigned long output, Real *lambda = nullptr) const;
 
 is a a bit of a special case. ``output`` is a bitfield represented as
 an unsigned 64 bit number. Quantities such ``pressure`` and
