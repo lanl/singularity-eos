@@ -32,11 +32,10 @@ jobs:
             pip install sphinx-multiversion
         - name: build code
           run: |
-            mkdir -p bin && cd bin
-            cmake -DSINGULARITY_BUILD_PYTHON=ON -DSINGULARITY_USE_HDF5=OFF -DSINGULARITY_USE_FORTRAN=OFF ..
-            make -j
-            sudo make install
-            cd ..
+            mkdir -p build
+            cmake -DSINGULARITY_BUILD_PYTHON=ON -DSINGULARITY_USE_HDF5=OFF -DSINGULARITY_USE_FORTRAN=OFF -B build .
+            cmake --build build
+            sudo cmake --install build
         - name: build docs
           run: |
             cd doc/sphinx
