@@ -173,8 +173,6 @@ all the functions in the base class can be used freely.
 
 .. _CRTP: https://www.fluentcpp.com/2017/05/12/curiously-recurring-template-pattern/
 
->>>>>>> main
-
 Fast Logs and Approximate Log Gridding
 ```````````````````````````````````````
 
