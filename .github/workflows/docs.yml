@@ -33,7 +33,7 @@ jobs:
         - name: build code
           run: |
             mkdir -p bin && cd bin
-            cmake -DSINGULARITY_BUILD_PYTHON=ON ..
+            cmake -DSINGULARITY_BUILD_PYTHON=ON -DSINGULARITY_USE_HDF5=OFF -DSINGULARITY_USE_FORTRAN=OFF ..
             make -j
             make install
             cd ..
