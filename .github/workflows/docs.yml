@@ -21,12 +21,12 @@ jobs:
         - name: Checkout code
           uses: actions/checkout@v2
           with:
-            fetch-depth: 0
+            submodules: recursive
         - name: Set system to non-interactive mode
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
           run: |
-            sudo apt-get install -y --force-yes -qq build-essential
+            sudo apt-get install -y --force-yes -qq build-essential python3-dev
             pip install sphinx
             pip install sphinx-rtd-theme
             pip install sphinx-multiversion
