@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -29,8 +29,8 @@
 #include <singularity-eos/eos/eos.hpp>
 
 #include <ports-of-call/portability.hpp>
-#include <root-finding-1d/root_finding.hpp>
-#include <sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
@@ -62,9 +62,7 @@ namespace singularity {
 constexpr char METADATA_NAME[] = "Metadata";
 
 StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp5,
-                                 bool filter_bmod)
-    : filename_(filename.c_str()) {
-
+                                 bool filter_bmod) {
   if (use_sp5) {
     LoadFromSP5File_(filename);
   } else {
@@ -623,7 +621,7 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
                                      Real *lambda) const noexcept {
   checkLambda_(lambda);
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
-  using RootFinding1D::findRoot;
+  using RootFinding1D::regula_falsi;
   Real lT;
   Real Ye = lambda[Lambda::Ye];
   Real lTGuess = lambda[Lambda::lT];
@@ -644,8 +642,8 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
     // Get log(sie)
     Real lE = e2le_(sie);
     const callable_interp::LogT lEFunc(lE_, Ye, lRho);
-    status = findRoot(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH, lT,
-                      counts);
+    status = regula_falsi(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
+                          lT, counts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if STELLAR_COLLAPSE_EOS_VERBOSE
       std::stringstream errorMessage;

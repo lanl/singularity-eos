@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -40,10 +40,12 @@ EOSPAC::EOSPAC(const int matid, bool invert_at_setup) : matid_(matid) {
   RofPT_table_ = tablehandle[3];
   TofRP_table_ = tablehandle[4];
 
-  // Set reference states
+  // Set reference states and table bounds
   SesameMetadata m;
   eosGetMetadata(matid, m, Verbosity::Quiet);
   rho_ref_ = m.normalDensity;
+  rho_min_ = m.rhoMin;
+  temp_min_ = m.TMin;
 
   EOS_REAL R[1] = {rho_ref_};
   EOS_REAL T[1] = {temperatureToSesame(temp_ref_)};

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -16,11 +16,11 @@
 #define _SINGULARITY_EOS_EOS_EOS_BUILDER_HPP_
 
 #include <map>
+#include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <string>
 #include <unordered_set>
-#include <variant/include/mpark/variant.hpp>
 
 namespace singularity {
 
@@ -81,22 +81,6 @@ EOS makeUnitSystem(T &&eos, bool use_length_time, Real rho_unit, Real sie_unit,
 template <typename T>
 EOS makeRelativistic(T &&eos, Real cl) {
   return RelativisticEOS<T>(std::move(eos), cl);
-}
-
-template <typename T>
-EOS applyScaleAndShift(T &&eos, bool scaled, bool shifted, Real scale, Real shift) {
-  if (shifted && scaled) {
-    ScaledEOS<T> a(std::move(eos), scale);
-    ShiftedEOS<ScaledEOS<T>> b(std::move(a), shift);
-    return b;
-  }
-  if (shifted) {
-    return ShiftedEOS<T>(std::move(eos), shift);
-  }
-  if (scaled) {
-    return ScaledEOS<T>(std::move(eos), scale);
-  }
-  return eos;
 }
 
 template <typename T>

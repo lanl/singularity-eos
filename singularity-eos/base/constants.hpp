@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -15,6 +15,8 @@
 #ifndef SINGULARITY_EOS_BASE_CONSTANTS_HPP_
 #define SINGULARITY_EOS_BASE_CONSTANTS_HPP_
 
+#include <ports-of-call/portability.hpp>
+
 namespace singularity {
 
 namespace thermalqs {
@@ -29,8 +31,8 @@ constexpr unsigned long all_values = (1 << 6) - 1;
 } // namespace thermalqs
 
 constexpr size_t MAX_NUM_LAMBDAS = 3;
-enum class DataStatus { Deallocated, OnDevice, OnHost };
-enum class TableStatus { OnTable, OffBottom, OffTop };
+enum class DataStatus { Deallocated = 0, OnDevice = 1, OnHost = 2 };
+enum class TableStatus { OnTable = 0, OffBottom = 1, OffTop = 2 };
 constexpr Real ROOM_TEMPERATURE = 293; // K
 constexpr Real ATMOSPHERIC_PRESSURE = 1e6;
 constexpr Real EPS = 10.0 * std::numeric_limits<Real>::epsilon();

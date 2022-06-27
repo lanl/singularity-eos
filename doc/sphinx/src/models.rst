@@ -106,15 +106,31 @@ Gruneisen Parameter
 '''''''''''''''''''
 In this description of the EOS models, we use :math:`\Gamma` to represent the
 Gruneisen coeficient since this is the most commonly-used symbol in the
-context of Mie-Gruneisen equations of state. This should be differentiated from
+context of Mie-Gruneisen equations of state. The definition of the Gruneisen
+parameter is
 
  .. math::
 
-    \gamma := \frac{C_P}{C_V} = \frac{B_S}{B_T}
+    \Gamma := \frac{1}{\rho} \left( \frac{\partial P}{\partial e} \right)_\rho
+
+This should be differentiated from
+
+ .. math::
+
+    \gamma := \frac{V}{P} \left( \frac{\partial P}{\partial V} \right)_S =
+            \frac{B_S}{P}
  
-though, which is the adiabatic exponent. Here :math:`C_P` is the specific heat
-capacity at constant *pressure* and :math:`B_T` is the *isothermal* bulk
-modulus.
+though, which is the adiabatic exponent. 
+
+For an ideal gas, the adiabatic exponent is simply the ratio of the heat
+capacities,
+
+ .. math::
+
+    \gamma_\mathrm{id} = \frac{C_P}{C_V} = \frac{B_S}{B_T}.
+
+Here :math:`C_P` is the specific heat capacity at constant *pressure*
+and :math:`B_T` is the *isothermal* bulk modulus.
 
 Units and conversions
 ---------------------
@@ -214,40 +230,70 @@ The user should note that this implies that :math:`e=0` at the reference
 temperature, :math:`T_0`. Given this simple relationship, the user should
 treat the temperature from this EOS as only a rough estimate.
 
-The Grunesien parameter is given by
+Given a reference density, :math:`\rho_0`, we first parameterize the EOS using
+:math:`\eta` as a measure of compression given by
+
+.. math::
+
+    \eta = 1 - \frac{\rho_0}{\rho}.
+
+This is convenient because :math:`eta = 0` when :math:`\rho = \rho_0`,
+:math:`\eta = 1` at the infinite density limit, and :math:`\eta = -\infty` at
+the zero density limit. The Gruneisen parameter, :math:`\Gamma` can be expressed
+in terms of :math:`\eta` as
 
 .. math::
 
     \Gamma(\rho) =
       \begin{cases}
-        \Gamma_0                                          & \rho < \rho_0 \\
-        \Gamma_0 \frac{\rho_0}{\rho} 
-           + b(1 - \frac{\rho_0}{\rho})                   & \rho >= \rho_0
+        \Gamma_0                                          & \eta \leq 0 \\
+        \Gamma_0 (1 - \eta) + b\eta                       & 0 \leq \eta < 1 
       \end{cases}
 
-and when the unitless user parameter :math:`b=0`, this ensures the the Gruneisen
-parameter is of a form where :math:`\rho\Gamma =` constant in compression.
+When the unitless user parameter :math:`b=0`, the Gruneisen parameter is of a
+form where :math:`\rho\Gamma =` constant in compression, i.e. when
+:math:`\eta > 0`.
 
 The reference pressure along the Hugoniot is determined by
 
 .. math::
 
-    P_H(\rho) = \rho_0 c_0^2 \mu
+    P_H(\rho) = P_0 + c_0^2 \eta
       \begin{cases}
-        1                                                 & \rho < \rho_0 \\
-        \frac{1 + \left(1 - \frac{1}{2}\Gamma_0 \right)\mu - \frac{b}{2} \mu^2}
-          {\left(1 - (s_1 - 1)\mu + s_2 \frac{\mu^2}{1 + \mu}
-            - s_3 \frac{\mu^3}{(1+\mu)^2} \right)^2}      & \rho > \rho_0
+        \rho                                                  & \rho < \rho_0 \\
+        \frac{\rho_0}{\left(
+          1 - s_1 \eta - s_2 \eta^2 - s_3 \eta^3 \right)^2}   & \rho \geq \rho_0
       \end{cases}
 
-where :math:`c_0`, :math:`s_1`, :math:`s_2`, and :math:`s_3` are fitting
-paramters. The units of :math:`c_0` are velocity while the rest are unitless.
+where :math:`P_0` is the reference pressure and :math:`c_0`, :math:`s_1`,
+:math:`s_2`, and :math:`s_3` are fitting paramters to the
+:math:`U_s`-:math:`u_p` curve such that
 
-Note that similar implementations may have subtly different definitions for the
-:math:`s_i` coefficients and care must be taken to use the correct values. Since
-:math:`s_2` and `s_3` are unitless for example, these parameters would not
-directly correspond to coefficients in a polynomial fit of the shock velocity to
-the particle velocity.
+.. math::
+
+    U_s = c_0 + u_p \left( s_1 + s_2 \frac{u_p}{U_s} 
+                           + s_3\left(\frac{u_p}{U_s}\right)^2 \right).
+
+Here :math:`U_s` is the shock velocity and :math:`u_p` is the particle
+velocity. For many materials, this relationship is roughly linear so only the
+:math:`s_1` parameter is needed. The units for :math:`c_0` are velocity while
+the rest are unitless.
+
+Finally the energy along the Hugoniot is given by
+
+.. math::
+
+    E_H(\rho) =
+      \begin{cases}
+        0                                               & \rho < \rho_0 \\
+        \frac{\eta (P_H + P_0)}{2 \rho_0}               & \rho \geq \rho_0
+      \end{cases}.
+
+One should note that in this form neither the expansion region nor the overall
+temperature are thermodynamically consistent with the rest of the EOS. Since the
+EOS is a fit to the principal Hugoniot, the EOS will obviously reproduce single
+shocks quite well, but it may not be as appropriate when there are multiple
+shocks or for modeling the release behavior of a material.
 
 JWL EOS
 ````````
@@ -448,9 +494,96 @@ parameters with units related to their non-subscripted counterparts.
 Spiner EOS
 ````````````
 
+Spiner EOS is a tabulated reader for the `Sesame`_ database of material
+equations of state. Materials include things like water, dry air,
+iron, or steel. This model comes in two flavors:
+``SpinerEOSDependsRhoT`` and ``SpinerEOSDependsRhoSie``. The former
+tabulates all quantities of interest in terms of density and
+temperature. The latter also includes tables in terms of density and
+specific internal energy.
+
+Tabulating in terms of density and pressure means that computing,
+e.g., pressure in terms of density and internal energy requires
+solving the equation:
+
+.. math::
+
+   e_0 = e(\rho, T)
+
+for temperature :math:`T` given density :math:`\rho` and specific
+internal energy :math:`e_0`. This is in general not closed
+algebraically and must be solved using a
+root-find. ``SpinerEOSDependsRhoT`` performs this root find in-line,
+and the result is performant, thanks to library's ability to take and
+cache initial guesses. ``SpinerEOSDependsRhoSie`` circumvents this
+issue by tabulating in terms of both specific internal energy and
+temperature.
+
+Both models use (approximately) log-linear interpolation on a grid
+that is (approximately) uniformly spaced on a log scale. Thermodynamic
+derivatives are tabulated and interpolated, rather than computed from
+the interpolating function. This approach allows for significantly
+higher fidelity approximations of these derivatives.
+
 Stellar Collapse EOS
 ````````````````````
+
+This model provides finite temperature nuclear equations of state
+suitable for core collapse supernova and compact object (such as
+neutron star) simulations. These models assume nuclear statistical
+equilibrium (NSE). It reads tabulated data in the `Stellar Collapse`_
+format, as first presented by `O'Connor and Ott`_.
+
+Like ``SpinerEOSDependsRhoT``, ``StellarCollapse`` tabulateds all
+quantities in terms of density and temperature on a logarithmically
+spaced grid. And similarly, it requires an in-line root-find to
+compute quantities in terms of density and specific internal
+energy. Unlike most of the other models in ``singularity-eos``,
+``StellarCollapse`` also depends on a third quantity, the electron
+fraction,
+
+.. math::
+
+   Y_e = \frac{n_e}{n_p + n_n}
+
+which measures the number fraction of electrons to baryons. Symmetric
+matter has a :math:`Y_e` of 0.5, while cold neutron stars, have a
+:math:`Y_e` approximately less than 0.1.
+
+As with ``SpinerEOSDependsRhoT``, the Stellar Collapse tables tabulate
+thermodynamic derivatives separately, rather than reconstruct them
+from interpolants. However, the tabulated values can contain
+artifacts, such as unphysical spikes. To mitigate this issue, the
+thermodynamic derivatives are cleaned via a `median filter`_. The bulk
+modulus is then recomputed from these thermodynamic derivatives via:
+
+.. math::
+
+   B_S(\rho, T) = \rho \left(\frac{\partial P}{\partial\rho}\right)_e + \frac{P}{\rho} \left(\frac{\partial P}{\partial e}\right)_\rho
+
+Note that ``StellarCollapse`` is a relativistic model, and thus the
+sound speed is given by
+
+.. math::
+
+   c_s^2 = \frac{B_S}{w}
+
+where :math:`w = \rho h` for specific entalpy :math:`h` is the
+enthalpy by volume, rather than the density :math:`rho`. This ensures
+the sound speed is bounded from above by the speed of light.
+
+.. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
+
+.. _O'connor and Ott`: https://doi.org/10.1088/0264-9381/27/11/114103
+
+.. _median filter: https://en.wikipedia.org/wiki/Median_filter
 
 EOSPAC EOS
 ````````````
 
+This is a striaghtforward wrapper of the `EOSPAC`_ library for the
+`Sesame`_ database.
+
+.. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
+
+.. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php

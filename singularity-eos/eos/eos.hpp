@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -28,16 +28,17 @@
 #include <singularity-eos/eos/eos_variant.hpp>
 
 #ifdef SPINER_USE_HDF
-#include <fast-math/logs.hpp>
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include <root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/spiner_types.hpp>
 #endif // SPINER_USE_HDF
 
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
 #include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
 #include <singularity-eos/eos/modifiers/scaled_eos.hpp>
@@ -125,9 +126,31 @@ class Gruneisen : public EosBase<Gruneisen> {
   Gruneisen() = default;
   PORTABLE_INLINE_FUNCTION
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
+            const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv,
+            const Real rho_max)
+      : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
+        _Cv(Cv), _rho_max(rho_max) {
+    // Warn user when provided rho_max is greater than the computed rho_max
+#ifndef NDEBUG
+    const Real computed_rho_max = ComputeRhoMax(s1, s2, s3, rho0);
+    if (rho_max > RHOMAX_SAFETY * computed_rho_max) {
+      printf(
+          "WARNING: Provided rho_max, %g, is greater than the computed rho_max of %g.\n",
+          rho_max, computed_rho_max);
+      printf("         States beyond %g g/cm^3 are unphysical (i.e. imaginary sound "
+             "speeds).\n",
+             computed_rho_max);
+    }
+#endif
+  }
+  // Constructor when rho_max isn't specified automatically determines _rho_max
+  PORTABLE_INLINE_FUNCTION
+  Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
       : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
-        _Cv(Cv) {}
+        _Cv(Cv), _rho_max(RHOMAX_SAFETY * ComputeRhoMax(s1, s2, s3, rho0)) {}
+  static PORTABLE_FUNCTION Real ComputeRhoMax(const Real s1, const Real s2, const Real s3,
+                                              const Real rho0);
   Gruneisen GetOnDevice() { return *this; }
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
@@ -167,8 +190,9 @@ class Gruneisen : public EosBase<Gruneisen> {
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"Gruneisen Params: "};
-    printf("%sC0:%e s1:%e s2:%e\ns3:%e G0:%e b:%e\nrho0:%e T0:%e P0:%e\nCv:%E\n", s1, _C0,
-           _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv);
+    printf("%s C0:%e s1:%e s2:%e s3:%e\n  G0:%e b:%e rho0:%e T0:%e\n  P0:%eCv:%e "
+           "rho_max:%e\n",
+           s1, _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max);
   }
   PORTABLE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
                                                               const Real temp,
@@ -178,14 +202,17 @@ class Gruneisen : public EosBase<Gruneisen> {
   static std::string EosType() { return std::string("Gruneisen"); }
 
  private:
-  Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv;
+  Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max;
   // static constexpr const char _eos_type[] = {"Gruneisen"};
-  PORTABLE_INLINE_FUNCTION
-  Real Gamma(const Real rho) const {
-    return rho < _rho0 ? _G0 : _G0 * _rho0 / rho + _b * (1 - _rho0 / rho);
-  }
+  PORTABLE_FUNCTION
+  Real Gamma(const Real rho) const;
+  PORTABLE_FUNCTION
+  Real dPres_drho_e(const Real rho, const Real sie) const;
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
+  // Scaling factor for density singularity (reference pressure blows up). Consistent with
+  // Pagosa implementation
+  static constexpr Real RHOMAX_SAFETY = 0.99;
 };
 
 // COMMENT: This is meant to be an implementation of the "standard" JWL as
@@ -411,6 +438,22 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };
   };
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<SpinerEOSDependsRhoT>::TemperatureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::InternalEnergyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::PTofRE;
+  using EosBase<SpinerEOSDependsRhoT>::FillEos;
 
   SpinerEOSDependsRhoT(const std::string &filename, int matid,
                        bool reproduciblity_mode = false);
@@ -462,28 +505,30 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // Generic functions provided by the base class. These contain e.g. the vector
-  // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT)
+
+  PORTABLE_FUNCTION
+  Real RhoPmin(const Real temp) const;
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  std::string filename() const { return std::string(filename_); }
-  std::string materialName() const { return std::string(materialName_); }
   int matid() const { return matid_; }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real rhoMin() const { return rho_(lRhoMin_); }
-  Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_INLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
+  PORTABLE_INLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_INLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
+  PORTABLE_INLINE_FUNCTION Real TMax() const { return TMax_; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
-    static constexpr char s2[]{"depends on log_10(rho) and log_10(sie)"};
+    static constexpr char s2[]{"depends on log_10(rho) and log_10(temp)"};
     static constexpr char s3[]{"EOS file   = "};
     static constexpr char s4[]{"EOS mat ID = "};
     static constexpr char s5[]{"EOS name   = "};
-    printf("%s\n\t%s\n\t%s%s\n\t%s%i\n\t%s%s\n", s1, s2, s3, filename_, s4, matid_, s5,
-           materialName_);
+    printf("%s\n\t%s\n\t%s\n\t%s%i\n\t%s\n", s1, s2, s3, s4, matid_, s5);
     return;
   }
-  static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
+  int nlambda() const noexcept { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }
   inline TableStatus tableStatus() const { return whereAmI_; }
   RootFinding1D::RootCounts counts;
@@ -499,10 +544,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
     // return std::log10(x + offset + EPS);
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
-    return std::pow(10., lx) - offset;
+    return FastMath::pow10(lx) - offset;
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   lRho_(const Real rho) const noexcept {
@@ -563,6 +608,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Spiner::DataBox lTColdCrit_;
   Spiner::DataBox PCold_, sieCold_, bModCold_;
   Spiner::DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
+  Spiner::DataBox rho_at_pmin_;
   int numRho_, numT_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lRhoMinSearch_;
@@ -570,14 +616,13 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
-  const char *filename_;
-  const char *materialName_;
   int matid_;
   bool reproducible_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.
   mutable TableStatus whereAmI_ = TableStatus::OnTable;
   mutable RootFinding1D::Status status_ = RootFinding1D::Status::SUCCESS;
   static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
+  static constexpr const Real SOFT_THRESH = 1e-8;
   DataStatus memoryStatus_ = DataStatus::Deallocated;
   static constexpr const int _n_lambda = 2;
   static constexpr const char *_lambda_names[2] = {"log(rho)", "log(T)"};
@@ -607,6 +652,23 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   struct SP5Tables {
     Spiner::DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
   };
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<SpinerEOSDependsRhoSie>::TemperatureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::InternalEnergyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::PTofRE;
+  using EosBase<SpinerEOSDependsRhoSie>::FillEos;
+
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
   SpinerEOSDependsRhoSie(const std::string &filename, int matid,
@@ -657,33 +719,37 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
-  // Generic functions provided by the base class. These contain e.g. the vector
-  // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie)
+
   PORTABLE_FUNCTION
   unsigned long PreferredInput() const { return _preferred_input; }
-  std::string filename() const { return std::string(filename_); }
-  std::string materialName() const { return std::string(materialName_); }
   int matid() const { return matid_; }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real lEOffset() const { return lEOffset_; }
-  Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
-  Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
-  Real TMin() const { return fromLog_(T_.range(0).min(), lTOffset_); }
-  Real TMax() const { return fromLog_(T_.range(0).max(), lTOffset_); }
-  Real sieMin() const { return fromLog_(sie_.range(0).min(), lEOffset_); }
-  Real sieMax() const { return fromLog_(sie_.range(0).max(), lEOffset_); }
+  PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_INLINE_FUNCTION Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
+  PORTABLE_INLINE_FUNCTION Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
+  PORTABLE_INLINE_FUNCTION Real TMin() const {
+    return fromLog_(T_.range(0).min(), lTOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real TMax() const {
+    return fromLog_(T_.range(0).max(), lTOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real sieMin() const {
+    return fromLog_(sie_.range(0).min(), lEOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real sieMax() const {
+    return fromLog_(sie_.range(0).max(), lEOffset_);
+  }
 
-  static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
+
+  int nlambda() const noexcept { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
     static constexpr char s2[]{"depends on log_10(rho) and log_10(sie)"};
-    static constexpr char s3[]{"EOS file   = "};
-    static constexpr char s4[]{"EOS mat ID = "};
-    static constexpr char s5[]{"EOS name   = "};
-    printf("%s\n\t%s\n\t%s%s\n\t%s%i\n\t%s%s\n", s1, s2, s3, filename_, s4, matid_, s5,
-           materialName_);
+    static constexpr char s3[]{"EOS mat ID = "};
+    printf("%s\n\t%s\n\t%s%i\n", s1, s2, s3, matid_);
     return;
   }
   RootFinding1D::Status rootStatus() const { return status_; }
@@ -698,10 +764,10 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
   static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
     // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
-    return std::pow(10., lx) - offset;
+    return FastMath::pow10(lx) - offset;
   }
   PORTABLE_FUNCTION
   Real interpRhoT_(const Real rho, const Real T, const Spiner::DataBox &db,
@@ -727,8 +793,6 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   static constexpr unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] = "SpinerEOSDependsRhoSie";
-  const char *filename_;
-  const char *materialName_;
   int matid_;
   bool reproducible_;
   mutable RootFinding1D::Status status_;
@@ -751,6 +815,23 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   struct Lambda {
     enum Index { Ye = 0, lT = 1 };
   };
+
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<StellarCollapse>::TemperatureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
+  using EosBase<StellarCollapse>::PressureFromDensityTemperature;
+  using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
+  using EosBase<StellarCollapse>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::BulkModulusFromDensityTemperature;
+  using EosBase<StellarCollapse>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::GruneisenParamFromDensityTemperature;
+  using EosBase<StellarCollapse>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::PTofRE;
+  using EosBase<StellarCollapse>::FillEos;
 
   StellarCollapse(const std::string &filename, bool use_sp5 = false,
                   bool filter_bmod = true);
@@ -806,34 +887,33 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                               Real *lambda = nullptr) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(StellarCollapse)
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  std::string filename() const { return std::string(filename_); }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real lEOffset() const { return lEOffset_; }
-  Real lRhoMin() const { return lRhoMin_; }
-  Real lRhoMax() const { return lRhoMax_; }
-  Real rhoMin() const { return rho_(lRhoMin_); }
-  Real rhoMax() const { return rho_(lRhoMax_); }
-  Real lTMin() const { return lTMin_; }
-  Real lTMax() const { return lTMax_; }
-  Real TMin() const { return T_(lTMin_); }
-  Real TMax() const { return T_(lTMax_); }
-  Real YeMin() const { return YeMin_; }
-  Real YeMax() const { return YeMax_; }
-  Real sieMin() const { return sieMin_; }
-  Real sieMax() const { return sieMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMin() const { return lRhoMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMax() const { return lRhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTMin() const { return lTMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTMax() const { return lTMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMax() const { return T_(lTMax_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real YeMin() const { return YeMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real YeMax() const { return YeMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const { return sieMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const { return sieMax_; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("StellarCollapse parameters:\n"
            "depends on log10(rho), log10(T), Ye\n"
-           "EOS file = %s\n"
            "lrho bounds = %g, %g\n"
            "lT bounds = %g, %g\n"
            "Ye bounds = %g, %g\n",
-           filename_, lRhoMin_, lRhoMax_, lTMin_, lTMax_, YeMin_, YeMax_);
+           lRhoMin_, lRhoMax_, lTMin_, lTMax_, YeMin_, YeMax_);
     return;
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }
@@ -867,12 +947,14 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) Real
   toLog_(const Real x, const Real offset) const noexcept {
-    // return std::log10(x + offset + EPS);
-    // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return Math::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    // StellarCollapse can't use fast logs, unless we re-grid onto the
+    // "fast log grid"
+    return std::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
   fromLog_(const Real lx, const Real offset) const noexcept {
+    // StellarCollapse can't use fast logs, unless we re-grid onto the
+    // "fast log grid"
     return std::pow(10., lx) - offset;
   }
   PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
@@ -981,7 +1063,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   static constexpr Real lPOffset_ = 0.0;
   static constexpr Real lBOffset_ = 0.0;
 
-  const char *filename_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.
   mutable RootFinding1D::Status status_ = RootFinding1D::Status::SUCCESS;
   static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
@@ -1037,9 +1118,23 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                 Real &press, Real &cv, Real &bmod,
                                                 Real &dpde, Real &dvdt,
                                                 Real *lambda = nullptr) const;
-  // Generic functions provided by the base class. These contain e.g. the vector
-  // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(EOSPAC)
+
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::InternalEnergyFromDensityTemperature;
+  using EosBase<EOSPAC>::PressureFromDensityTemperature;
+  using EosBase<EOSPAC>::PressureFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::SpecificHeatFromDensityTemperature;
+  using EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::BulkModulusFromDensityTemperature;
+  using EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::GruneisenParamFromDensityTemperature;
+  using EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::PTofRE;
+  using EosBase<EOSPAC>::FillEos;
 
   // TODO (JHP): Change EOSPAC vector implementations to be more performant
   // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -1122,12 +1217,12 @@ class EOSPAC : public EosBase<EOSPAC> {
   //              const int num, const unsigned long output,
   //              LambdaIndexer &&lambdas) const;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  int nlambda() const noexcept { return 0; }
+  PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 0; }
   inline void Finalize() {}
   static std::string EosType() { return std::string("EOSPAC"); }
-  PORTABLE_INLINE_FUNCTION void PrintParams() const {
-    printf("EOSPAC parameters:\nmatid = %s\n", matid_);
-  }
+  inline void PrintParams() const { printf("EOSPAC parameters:\nmatid = %s\n", matid_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
 
  private:
   static constexpr const unsigned long _preferred_input =
@@ -1150,43 +1245,72 @@ class EOSPAC : public EosBase<EOSPAC> {
   Real bmod_ref_ = 1;
   Real dpde_ref_ = 1;
   Real dvdt_ref_ = 1;
+  Real rho_min_ = 0;
+  Real temp_min_ = 0;
 };
 #endif // SINGULARITY_USE_EOSPAC
 
-using EOS = Variant<
-    IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts, ScaledEOS<IdealGas>,
-    ShiftedEOS<IdealGas>, ShiftedEOS<ScaledEOS<IdealGas>>,
-    ScaledEOS<ShiftedEOS<IdealGas>>, RelativisticEOS<IdealGas>, ScaledEOS<Gruneisen>,
-    ShiftedEOS<Gruneisen>, ScaledEOS<ShiftedEOS<Gruneisen>>, ScaledEOS<JWL>,
-    ShiftedEOS<JWL>, ScaledEOS<ShiftedEOS<JWL>>, ScaledEOS<DavisReactants>,
-    ShiftedEOS<DavisReactants>, ScaledEOS<ShiftedEOS<DavisReactants>>,
-    ScaledEOS<DavisProducts>, ShiftedEOS<DavisProducts>,
-    ScaledEOS<ShiftedEOS<DavisProducts>>, UnitSystem<IdealGas>
+// recreate variadic list
+template <typename... Ts>
+using tl = singularity::detail::type_list<Ts...>;
+
+template <template <typename> typename... Ts>
+using al = singularity::detail::adapt_list<Ts...>;
+
+// transform variadic list: applies modifiers to eos's
+using singularity::detail::transform_variadic_list;
+
+// all eos's
+static constexpr const auto full_eos_list =
+    tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
 #ifdef SPINER_USE_HDF
-    ,
-    SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, ScaledEOS<SpinerEOSDependsRhoT>,
-    ScaledEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<SpinerEOSDependsRhoT>,
-    ShiftedEOS<SpinerEOSDependsRhoSie>, ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoT>>,
-    ShiftedEOS<ScaledEOS<SpinerEOSDependsRhoSie>>,
-    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoT>>,
-    ScaledEOS<ShiftedEOS<SpinerEOSDependsRhoSie>>, RelativisticEOS<SpinerEOSDependsRhoT>,
-    RelativisticEOS<SpinerEOSDependsRhoSie>, UnitSystem<SpinerEOSDependsRhoT>,
-    UnitSystem<SpinerEOSDependsRhoSie>,
-    // TODO(JMM): Might need shifted + relativistic
-    // for StellarCollapse. Might not. Negative
-    // energies can throw off normalization of cs2 by
-    // enthalpy weirdly.
-    StellarCollapse, ScaledEOS<StellarCollapse>, ShiftedEOS<StellarCollapse>,
-    ShiftedEOS<ScaledEOS<StellarCollapse>>, RelativisticEOS<StellarCollapse>,
-    UnitSystem<StellarCollapse>
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
 #endif // SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
-    ,
-    EOSPAC, ScaledEOS<EOSPAC>, ShiftedEOS<EOSPAC>, ShiftedEOS<ScaledEOS<EOSPAC>>,
-    ScaledEOS<ShiftedEOS<EOSPAC>>
+       ,
+       EOSPAC
 #endif // SINGULARITY_USE_EOSPAC
-    >;
+       >{};
+// eos's that get relativistic and unit system modifiers
+static constexpr const auto partial_eos_list =
+    tl<IdealGas
+#ifdef SPINER_USE_HDF
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+#endif // SPINER_USE_HDF
+       >{};
+// modifiers that get applied to all eos's
+static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
+// modifiers thet get applied to a subset of eos's
+static constexpr const auto apply_to_partial = al<UnitSystem, RelativisticEOS>{};
+// variadic list of eos's with shifted or scaled modifiers
+static constexpr const auto shifted =
+    transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
+static constexpr const auto scaled =
+    transform_variadic_list(full_eos_list, al<ScaledEOS>{});
+// variadic list of Scaled<Shifted<T>>'s
+static constexpr const auto scaled_of_shifted =
+    transform_variadic_list(shifted, al<ScaledEOS>{});
+// relativistic and unit system modifiers
+static constexpr const auto unit_or_rel =
+    transform_variadic_list(partial_eos_list, apply_to_partial);
+// create combined list
+static constexpr const auto combined_list = singularity::detail::concat(
+    full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel);
+// a function that returns a Variant from a typelist
+template <typename... Ts>
+struct tl_to_Variant_struct {
+  using vt = Variant<Ts...>;
+};
 
+template <typename... Ts>
+constexpr auto tl_to_Variant(tl<Ts...>) {
+  return tl_to_Variant_struct<Ts...>{};
+}
+
+// create the alias
+using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_EOS_HPP_

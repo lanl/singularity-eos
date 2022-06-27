@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -17,17 +17,23 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream> // debug
+#include <limits>
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 
-#define CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
+#endif
+
+#include <test/eos_unit_test_helpers.hpp>
 
 using singularity::EOS;
+using singularity::Gruneisen;
 using singularity::IdealGas;
 using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
@@ -58,22 +64,42 @@ constexpr Real ev2k = 1.160451812e4;
 #endif // SINGULARITY_TEST_SESAME
 #endif // SPINER_USE_HDF
 
-PORTABLE_INLINE_FUNCTION bool isClose(Real a, Real b, Real eps = 5e-2) {
-  return fabs(b - a) / (fabs(a + b) + 1e-20) <= eps;
-}
-
-PORTABLE_INLINE_FUNCTION Real myAtan(Real x, Real shift, Real scale, Real offset) {
-  return scale * atan(x - shift) + offset;
-}
-
-// Function for comparing arrays and outputting the important information
-template <typename X, typename Y, typename Z, typename ZT, typename XN, typename YN>
-inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN yname,
-                          Real tol = 1e-12) {
-  for (int i = 0; i < num; i++) {
-    INFO("i: " << i << ", " << xname << ": " << x[i] << ", " << yname << ": " << y[i]
-               << ", Value: " << z[i] << ", True Value: " << ztrue[i]);
-    REQUIRE(isClose(z[i], ztrue[i], 1e-12));
+SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
+  GIVEN("A set of values to invert over a large dynamic range") {
+    constexpr Real LXMIN = -20;
+    constexpr Real LXMAX = 32;
+    constexpr int NX = 1000;
+    constexpr Real DLX = (LXMAX - LXMIN) / (NX - 1);
+    Real *x = (Real *)PORTABLE_MALLOC(NX * sizeof(Real));
+    portableFor(
+        "Set x values", 0, NX, PORTABLE_LAMBDA(const int i) {
+          const Real lx = LXMIN + i * DLX;
+          x[i] = std::pow(10., lx);
+        });
+    THEN("The fast exp of the fast log returns the original") {
+      int nw_ie = 0;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
+      Kokkos::View<int, atomic_view> n_wrong_ie("wrong_ie");
+#else
+      PortableMDArray<int> n_wrong_ie(&nw_ie, 1);
+#endif
+      portableFor(
+          "try out the fast math", 0, NX, PORTABLE_LAMBDA(const int i) {
+            constexpr Real machine_eps = std::numeric_limits<Real>::epsilon();
+            constexpr Real acceptable_err = 100 * machine_eps;
+            const Real lx = singularity::FastMath::log10(x[i]);
+            const Real elx = singularity::FastMath::pow10(lx);
+            const Real rel_err = 2.0 * std::abs(x[i] - elx) /
+                                 (std::abs(x[i]) + std::abs(elx) + machine_eps);
+            n_wrong_ie() += (rel_err > acceptable_err);
+          });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::deep_copy(nw_ie, n_wrong_ie);
+#endif
+      REQUIRE(nw_ie == 0);
+    }
+    PORTABLE_FREE(x);
   }
 }
 
@@ -108,8 +134,8 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
       portableFor(
           "find roots", 0, ntimes, PORTABLE_LAMBDA(const int i) {
             RootCounts per_thread_counts;
-            statuses(i) =
-                findRoot(f, 0, guess, -1, 3, 1e-10, 1e-10, roots(i), per_thread_counts);
+            statuses(i) = regula_falsi(f, 0, guess, -1, 3, 1e-10, 1e-10, roots(i),
+                                       per_thread_counts);
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::View<Status> s_copy(statuses, 0);
@@ -130,6 +156,11 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
   }
 }
 
+SCENARIO("EOS Variant Type", "[Variant][EOS]") {
+  // print out the eos type
+  std::cout << demangle(typeid(EOS).name()) << std::endl;
+}
+
 SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
 
   GIVEN("Parameters for a shifted and scaled ideal gas") {
@@ -141,11 +172,11 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
     constexpr Real sie = 0.5;
     WHEN("We construct a shifted, scaled IdealGas by hand") {
       IdealGas a = IdealGas(gm1, Cv);
-      ScaledEOS<IdealGas> b = ScaledEOS<IdealGas>(std::move(a), scale);
-      EOS eos = ShiftedEOS<ScaledEOS<IdealGas>>(std::move(b), shift);
+      ShiftedEOS<IdealGas> b = ShiftedEOS<IdealGas>(std::move(a), shift);
+      EOS eos = ScaledEOS<ShiftedEOS<IdealGas>>(std::move(b), scale);
       THEN("The shift and scale parameters pass through correctly") {
 
-        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.4);
+        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
     }
     WHEN("We use the EOSBuilder") {
@@ -160,7 +191,16 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
       EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
       THEN("The shift and scale parameters pass through correctly") {
-        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.4);
+        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
+      }
+    }
+    WHEN("We construct a non-modifying modifier") {
+      EOS ig = IdealGas(gm1, Cv);
+      EOS igsh = ScaledEOS<IdealGas>(IdealGas(gm1, Cv), 1.0);
+      EOS igsc = ShiftedEOS<IdealGas>(IdealGas(gm1, Cv), 0.0);
+      THEN("The modified EOS should produce equivalent results") {
+        compare_two_eoss(igsh, ig);
+        compare_two_eoss(igsc, ig);
       }
     }
   }
@@ -535,7 +575,6 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
 
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
-      REQUIRE(steelEOS_host.filename() == eosName);
 
       AND_THEN("We can get a reference density and temperature") {
         Real rho, T, sie, P, cv, bmod, dpde, dvdt;
@@ -691,7 +730,6 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]") {
     EOS steelEOS = steelEOS_host.GetOnDevice();
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
-      REQUIRE(steelEOS_host.filename() == eosName);
 
       int nw_ie2{0}, nw_te2{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -949,16 +987,3 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 }
 #endif // SINGULARITY_TEST_STELLAR_COLLAPSE
 #endif // USE_HDF5
-
-int main(int argc, char *argv[]) {
-
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-  Kokkos::initialize();
-#endif
-  int result;
-  { result = Catch::Session().run(argc, argv); }
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-  Kokkos::finalize();
-#endif
-  return result;
-}

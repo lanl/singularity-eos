@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -35,6 +35,27 @@ using namespace eos_base;
 template <typename T>
 class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
  public:
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+
+  // TODO(JMM): The modifier EOS's should probably call the specific
+  // sub-functions of the class they modify so that they can leverage,
+  // e.g., an especially performant or special version of these
+  using EosBase<ShiftedEOS<T>>::TemperatureFromDensityInternalEnergy;
+  using EosBase<ShiftedEOS<T>>::InternalEnergyFromDensityTemperature;
+  using EosBase<ShiftedEOS<T>>::PressureFromDensityTemperature;
+  using EosBase<ShiftedEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<ShiftedEOS<T>>::SpecificHeatFromDensityTemperature;
+  using EosBase<ShiftedEOS<T>>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<ShiftedEOS<T>>::BulkModulusFromDensityTemperature;
+  using EosBase<ShiftedEOS<T>>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityTemperature;
+  using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<ShiftedEOS<T>>::PTofRE;
+  using EosBase<ShiftedEOS<T>>::FillEos;
+
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
   ShiftedEOS() = default;
@@ -76,7 +97,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   PORTABLE_FUNCTION
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
-    return t_.PressureFromDensityInternalEnergy(rho, temperature, lambda);
+    return t_.PressureFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
@@ -136,8 +157,12 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     sie += shift_;
   }
 
-  // Vector functions that overload the scalar versions declared here.
-  SG_ADD_BASE_CLASS_USINGS(ShiftedEOS<T>)
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
+    return t_.MinimumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
+    return t_.MinimumTemperature();
+  }
 
  private:
   T t_;
@@ -146,4 +171,4 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
 
 } // namespace singularity
 
-#endif _SINGULARITY_EOS_EOS_SHIFTED_EOS_
+#endif // _SINGULARITY_EOS_EOS_SHIFTED_EOS_

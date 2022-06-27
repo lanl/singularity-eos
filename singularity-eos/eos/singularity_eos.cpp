@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -184,6 +184,7 @@ static const std::map<const int, const unsigned long> EAPInputToBD = {
 };
 
 // EAP centric arguments and function signature
+
 int get_sg_eos( // sizing information
     int nmat, int ncell, int cell_dim,
     // Input parameters
@@ -232,7 +233,7 @@ int get_sg_eos( // sizing information
   using DMS = DES::memory_space;
   using Kokkos::MemoryTraits;
   constexpr const unsigned int ra{0 | Kokkos::RandomAccess};
-  constexpr const unsigned int ra_u{Kokkos::Unmanaged | Kokkos::RandomAccess};
+  // constexpr const unsigned int ra_u{Kokkos::Unmanaged | Kokkos::RandomAccess};
   using VAWI = Kokkos::ViewAllocateWithoutInitializing;
   using Kokkos::deep_copy;
   static constexpr const double ev2k = 1.160451930280894026e4;
@@ -330,6 +331,9 @@ int get_sg_eos( // sizing information
   ScratchV<double> temp_pte("PTE::scratch temp", scratch_size, nmat_local);
   ScratchV<double> press_pte("PTE::scratch press", scratch_size, nmat_local);
   ScratchV<double> rho_pte("PTE::scratch rho", scratch_size, nmat_local);
+  const int pte_solver_scratch_size = PTESolverRhoTRequiredScratch(nmat_local);
+  ScratchV<double> solver_scratch("PTE::scratch solver", scratch_size,
+                                  pte_solver_scratch_size);
   // ScratchV<EOS> eos_pte("PTE::scratch eos", scratch_size, nmat);
 
   Kokkos::View<int, MemoryTraits<at_int>> res("PTE::num fails");
@@ -379,7 +383,7 @@ int get_sg_eos( // sizing information
         int npte = 0;
         double vsum_nopte = 0.0;
         double esum_nopte = 0.0;
-        double rhoavg_pte = 0.0;
+        // double rhoavg_pte = 0.0;
         for (int m = 0; m < nmat; ++m) {
           const bool something = frac_mass_v(i, m) / mass_sum > min_frac;
           frac_sie_v(i, m) = sie_v(i) * frac_mass_v(i, m);
@@ -521,11 +525,27 @@ int get_sg_eos( // sizing information
           //  //eng_sum += mu*sie_pte(tid, m);
           //}
         }
-        int niter;
-        const bool res_{pte_closure_josh_offset(
-            npte, eos_v.data(), vfrac_tot, sie_tot, &pte_mats(tid, 0), &rho_pte(tid, 0),
-            &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0),
-            lambda_map)};
+        // int niter;
+        // TODO: this struct declaration should probably be moved elsewhere
+        struct EOSAccessor_ {
+          PORTABLE_INLINE_FUNCTION
+          EOSAccessor_(const Kokkos::View<EOS *, Llft> &eos_v, int *mats)
+              : eos_v_(eos_v), mats_(mats) {}
+          PORTABLE_INLINE_FUNCTION
+          EOS &operator[](const int m) const { return eos_v_(mats_[m]); }
+          Kokkos::View<EOS *, Llft> eos_v_;
+          int *mats_;
+        };
+        EOSAccessor_ eos_inx(eos_v, &pte_mats(tid, 0));
+        PTESolverRhoT<EOSAccessor_, Real *, Real **> method(
+            npte, eos_inx, vfrac_tot, sie_tot, &rho_pte(tid, 0), &vfrac_pte(tid, 0),
+            &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), lambda_map,
+            &solver_scratch(tid, 0));
+        const bool res_{PTESolver(method)};
+        // const bool res_{pte_closure_josh_offset(
+        //    npte, eos_v.data(), vfrac_tot, sie_tot, &pte_mats(tid, 0), &rho_pte(tid, 0),
+        //    &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0),
+        //    lambda_map)};
         // assign local values to global
         press_v(i) = p_is_inp ? press_v(i) : 0.0;
         sie_v(i) = s_is_inp ? sie_v(i) : 0.0;
