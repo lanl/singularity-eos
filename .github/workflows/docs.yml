@@ -26,9 +26,17 @@ jobs:
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
           run: |
+            sudo apt-get install -y --force-yes -qq build-essential
             pip install sphinx
             pip install sphinx-rtd-theme
             pip install sphinx-multiversion
+        - name: build code
+          run: |
+            mkdir -p bin && cd bin
+            cmake -DSINGULARITY_BUILD_PYTHON=ON ..
+            make -j
+            make install
+            cd ..
         - name: build docs
           run: |
             cd doc/sphinx

@@ -69,16 +69,19 @@ A number of options are avaialable for compiling:
 
 `singularity-eos` will do it's utmost to import all it's dependencies with as little user prompts as possible.
 However, there may be situations where `singularity-eos` cannot find either an install or a source tree of a dependency.
-Furthermore, users may with to use a modified dependency that `singularity-eos` lacks the foreknowledge to know how to find or otherwise does not utilize.
+Furthermore, users may wish to use a modified dependency that `singularity-eos` lacks the foreknowledge to know how to find or otherwise does not utilize.
 Therefore the `singularity-eos` build system provides an "override" option for dependencies.
 
-| SINGULARITY_PKG_INSTALL_DIR      | empty   | Specifies a path where a CMake install of `PKG` is located                           |
-| SINGULARITY_PKG_IMPORT_DIR       | empty   | Specifies a path where a CMake source tree of `PKG` is located                       |
+| Option                            | Default | Comment                                                                              |
+| --------------------------------- | ------- | ------------------------------------------------------------------------------------ |
+| SINGULARITY_PKG_INSTALL_DIR       | empty   | Specifies a path where a CMake install of `PKG` is located                           |
+| SINGULARITY_PKG_IMPORT_DIR        | empty   | Specifies a path where a CMake source tree of `PKG` is located                       |
 
 Notes on using these options:
 
 - These options are intended for `singularity-eos` developers. Users are encouraged to let `singularity-eos` use it's own build system to find and configure dependencies
 - `PKG` should be in all uppercase, for example `-DSINGULARITY_KOKKOSKERNELS_IMPORT_DIR=...`
+- Dashes in package names should be given as underscores, e.g. for `ports-of-call`, use `-DSINGULARITY_PORTS_OF_CALL_INSTALL_DIR=...`
 - `_INSTALL_DIR` points to a directory where the package has been installed by CMake. It expects to find a CMake configuration file in a standard location. If this option is specified and the configuration file cannot be found at that location, the build will produce and error and halt
 - `_IMPORT_DIR` points to a directory that is the top-level of a source-tree of `PKG`. The directory will be imported into the build "as-though" it was an "in-tree" directory
 - using `_IMPORT_DIR` will only check for the existence of a top-level `CMakeLists.txt` file. It does no other evaluation on the directory (e.g. there is no check that this path points to the "correct" package source)

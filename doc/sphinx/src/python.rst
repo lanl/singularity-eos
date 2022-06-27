@@ -32,6 +32,8 @@ A more elaborate example can be found in ``examples/get_sound_speed_press.py``.
 Classes
 -------
 
+List may not be complete.
+
 .. currentmodule:: singularity_eos
 
 .. autoclass:: EOSState
