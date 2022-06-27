@@ -17,16 +17,19 @@ Work in progress. Things to cover:
 The CRTP slass structure and static polymorphism
 ````````````````````````````````````````````````
 
-Each of the EOS models in ``singularity-eos`` inherits from a base class in
-order to centralize default functionality and avoid code duplication. The two
-main examples of this are the vector overloads and the ``PTofRE`` scalar lookup
-function. In the vector overloads, a simple for loop is used to loop over the
-set of states provided to the function and then call the scalar version on each
-state. The ``PTofRE`` function is designed to provide a common method for
-getting the needing information for a PTE solve from an EOS. Both of these
-features are not dependent on the specific EOS for their definition, but in the
-case of the vector overloads, they *do* need to access methods in the derived
-class.
+Each of the EOS models in ``singularity-eos`` inherits from a base
+class in order to centralize default functionality and avoid code
+duplication. The two main examples of this are the vector overloads
+and the ``PTofRE`` scalar lookup function. In the vector overloads, a
+simple for loop is used to loop over the set of states provided to the
+function and then call the scalar version on each state. The
+``PTofRE`` function is designed to provide a common method for getting
+the needing information for a PTE solve from an EOS. Both of these
+features are not dependent on the specific EOS for their definition,
+but in the case of the vector overloads, they *do* need to access
+methods in the derived class. In both cases, these functions have
+default behaviour that may need to be overriden for a given equation
+of state.
 
 The vector overloads in the base class take the following form (in pseudocode):
 
@@ -46,13 +49,21 @@ lookup in the specific EOS. However, this means that the base class needs to
 have knowledge of which class is being derived from it in order to call the
 correct EOS implementation.
 
-The challenge in making this sort of code performance portable is that on a CPU
-this sort of type deduction (i.e. what specific EOS implementaiton to call)
-would be done at runtime through vtables. In a heterogenous computing enviroment
-though, the vtable may point to member functions that do not exist on the
-device, causing a segfault. We could have used a similar technique to the
-modifier classes and pass the EOS as a template paramter, but then the vector
-function calls could only be achieved by creating vector modifiers of all the
+
+
+The standard solution to this problem would be "run-time inheritence,"
+where type deduction is performed at run-time. While this is possible
+on GPU, it becomes cumbersome, as the user must be very explicit about
+class inheritence. Moreover, run-time inheritence relies on
+relocatable device code, which is not as performant on device, thanks
+to weaker cross-compilation unit optimization. We note that to obtain
+full performance on device and to build with compilers that don't
+support relocatable device code, the entire library must be made
+header-only.
+
+We could have used a similar technique to the modifier classes and
+pass the EOS as a template paramter, but then the vector function
+calls could only be achieved by creating vector modifiers of all the
 implemented EOS.
 
 Instead, the strategy we decided to use in this case was to implement the
@@ -116,6 +127,9 @@ overloaded.
 With several EOS that all inherit from the ``EosBase`` class, we can achieve
 static polymorphism in all of the EOS classes without having to implement
 vector member functions in each class.
+
+Note there are several macros to enable the ``using`` statements if
+all the functions in the base class can be used freely.
 
 .. _CRTP: https://www.fluentcpp.com/2017/05/12/curiously-recurring-template-pattern/
 
