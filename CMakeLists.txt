@@ -274,6 +274,7 @@ singularity_import_dependency(
 if (SINGULARITY_USE_HDF5)
   # hdf5, for data interopability
   # type: external
+  enable_language(C)
   singularity_import_dependency(
     PKG HDF5
     COMPONENTS C HL
