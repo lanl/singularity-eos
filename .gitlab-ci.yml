@@ -10,7 +10,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
   SINGULARITY_EOS_OPENMPI_VERSION: "4.0.5"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@develop+mpi+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 before_script:
   - export HOME=${CI_PROJECT_DIR}
@@ -45,7 +45,7 @@ before_script:
 
 .gpu: &gpu
   SINGULARITY_USE_CUDA: "true"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cuda@11.4.2 ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@develop+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cuda@11.4.2 ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"

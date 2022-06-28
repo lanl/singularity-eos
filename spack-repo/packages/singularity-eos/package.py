@@ -22,7 +22,8 @@ class SingularityEos(CMakePackage, CudaPackage):
     homepage    = "https://lanl.github.io/singularity-eos/main/index.html"
     git         = "http://github.com/lanl/singularity-eos.git"
 
-    version("main", branch="main", submodules=True)
+    version("main", branch="main")
+    version("develop", branch="rbberger/spackage_new_deps")
 
     # build with kokkos, kokkos-kernels for offloading support
     variant("kokkos", default=False, description="Enable kokkos")
@@ -68,11 +69,17 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("eigen@3.3.8", when="~cuda")
 
     depends_on("eospac", when="+eospac")
+    depends_on("spiner")
+    depends_on("spiner +kokkos", when="+kokkos")
+
+    depends_on("mpark-variant")
+    depends_on("mpark-variant", patches=patch("https://raw.githubusercontent.com/lanl/singularity-eos/main/utils/cuda_compatibility.patch", sha256="7b3eaa52b5ab23dc45fbfb456528e36742e04b838a5df859eca96c4e8274bb38"), when="+cuda")
 
     # set up kokkos offloading dependencies
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
         depends_on("kokkos@3.2: ~shared" +_flag, when="+kokkos" + _flag)
         depends_on("kokkos-kernels@3.2:" + _flag, when="+kokkos-kernels" + _flag)
+        depends_on("spiner" + _flag, when="+kokkos" + _flag)
 
     # specfic specs when using GPU/cuda offloading
     depends_on("kokkos +wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
@@ -84,6 +91,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     for _flag in list(CudaPackage.cuda_arch_values):
         depends_on("kokkos cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
         depends_on("kokkos-kernels cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
+        depends_on("spiner cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
 
     conflicts("cuda_arch=none", when="+cuda",
           msg="CUDA architecture is required")
@@ -106,6 +114,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     def cmake_args(self):
 
         args = [
+            self.define("SINGULARITY_PATCH_MPARK_VARIANT", False),
             self.define_from_variant("SINGULARITY_USE_CUDA", "cuda"),
             self.define_from_variant("SINGULARITY_USE_KOKKOS", "kokkos"),
             self.define_from_variant("SINGULARITY_USE_KOKKOSKERNELS", "kokkos-kernels"),
