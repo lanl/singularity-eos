@@ -248,32 +248,65 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       EOS ig = IdealGas(gm1, Cv);
       EOS igsh = ScaledEOS<IdealGas>(IdealGas(gm1, Cv), 1.0);
       EOS igsc = ShiftedEOS<IdealGas>(IdealGas(gm1, Cv), 0.0);
-      EOS igra; // = SAPRampEOS<IdealGas>(IdealGas(gm1, Cv), 1.e9, 1.0, 2.0, 1.0);
+      EOS igra;
       // test out the c interface
       int enabled[4] = {0, 0, 1, 0};
       Real vals[6] = {0.0, 0.0, 1.e9, 1.0, 2.0, 1.0};
       Real rho0 = 1.e6 / (gm1 * Cv * 293.0);
       init_sg_IdealGas(0, &igra, gm1, Cv, enabled, vals);
-      EOS igra2;
-      enabled[2] = 0;
-      enabled[3] = 1;
-      Real Pe = 2.e6, Pc = 1.e7;
-      Real alpha0 = 0.98;
-      vals[2] = alpha0;
-      vals[3] = Pe;
-      vals[4] = Pc;
-      vals[5] = 0.0;
-      Real r1 = Pc / (gm1 * Cv * 293.0);
-      Real rmid = Pe / (gm1 * Cv * 293.0 * alpha0);
-      init_sg_IdealGas(0, &igra2, gm1, Cv, enabled, vals);
-      REQUIRE(isClose(Pe, igra2.PressureFromDensityTemperature(alpha0 * rmid, 293.0),
-                      1.e-12));
-      REQUIRE(isClose(Pc, igra2.PressureFromDensityTemperature(r1, 293.0), 1.e-12));
       THEN("The modified EOS should produce equivalent results") {
         compare_two_eoss(igsh, ig);
         compare_two_eoss(igsc, ig);
         compare_two_eoss(igra, ig);
       }
+    }
+    WHEN("We construct a ramp from a p-alpha model") {
+      const Real Pe = 2.e6, Pc = 2.5e6;
+      const Real alpha0 = 1.1;
+      const Real T0 = 293.0;
+      int enabled[4] = {0, 0, 0, 1};
+      Real vals[6] = {0.0, 0.0, alpha0, Pe, Pc, 0.0};
+      const Real rho0 = 1.e6 / (gm1 * Cv * T0);
+      EOS igra;
+      const Real r0 = rho0 / alpha0;
+      const Real r1 = Pc / (gm1 * Cv * T0);
+      const Real rmid = Pe / (gm1 * Cv * T0 * alpha0);
+      init_sg_IdealGas(0, &igra, gm1, Cv, enabled, vals);
+      // construct ramp params and evaluate directly for test
+      const Real a = r0 * Pe / (rmid - r0);
+      const Real b = r0 * (Pc - Pe) / (r1 - rmid);
+      const Real c = (Pc * rmid - Pe * r1) / (r0 * (Pc - Pe));
+      // density in the middle of the first slope
+      const Real rho_t1 = 0.5 * (r0 + rmid);
+      // density in the middle of the second slope
+      const Real rho_t2 = 0.5 * (rmid + r1);
+      // P (alpha0*rho_t1) note that r0 = rho0 / alpha0
+      const Real Prhot1 = a * (rho_t1 / r0 - 1.0);
+      // P (alpha0*rho_t2)
+      const Real Prhot2 = b * (rho_t2 / r0 - c);
+      // P (alpha0*rho_t1) note that r0 = rho0 / alpha0
+      const Real Prhot1i = gm1 * Cv * rho_t1 * T0;
+      // P (alpha0*rho_t2)
+      const Real Prhot2i = gm1 * Cv * rho_t2 * T0;
+      printf("Pe=%e Pe_lb=%e\n", Pe, 1.e6 * rho_t2 / (rho0 + (1.0-alpha0)*rho_t2));
+      printf("rho1=%e\nrho2=%e\n", rho_t1, rho_t2);
+      printf("P1=%e P2=%e P1noa=%e P2noa=%e \n", Prhot1, Prhot2, Prhot1i, Prhot2i);
+      printf("P1eval=%e P2eval=%e P1evalnoa=%e P2evalnoa=%e\n",
+	     igra.PressureFromDensityTemperature(rho_t1, T0),
+	     igra.PressureFromDensityTemperature(rho_t2, T0),
+	     igra.PressureFromDensityTemperature(alpha0*rho_t1, T0),
+	     igra.PressureFromDensityTemperature(alpha0*rho_t2, T0));
+      THEN("We obtain Pe and Pc when evaluating at mid and upper density values") {
+	REQUIRE(isClose(Pe, igra.PressureFromDensityTemperature(alpha0 * rmid, 293.0),
+			1.e-12));
+	REQUIRE(isClose(Pc, igra.PressureFromDensityTemperature(r1, 293.0), 1.e-12));
+	// also check pressures on ramp
+	REQUIRE(isClose(Prhot1, igra.PressureFromDensityTemperature(rho_t1, T0), 1.e-12));
+	REQUIRE(isClose(Prhot2, igra.PressureFromDensityTemperature(rho_t2, T0), 1.e-12));
+      }
+    }
+    WHEN("We construct a bi-linear ramp") {
+      
     }
   }
 }
