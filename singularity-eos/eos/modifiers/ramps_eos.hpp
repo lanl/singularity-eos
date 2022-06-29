@@ -39,7 +39,8 @@ void pAlpha2SAPRampParams(const T &eos, const Real alpha0, const Real Pe, const 
   Real rho0, T0, sie0, P0, cv0, bmod0, dpde0, dvdt0;
   Real rmid, r1;
   eos.ValuesAtReferenceState(rho0, T0, sie0, P0, cv0, bmod0, dpde0, dvdt0);
-  // calculate r0
+  // calculate r0, ensure alpha0 > 1
+  assert(alpha0 > 1.0);
   r0 = rho0 / alpha0;
   // calculate rmid
   auto rmid_func = [&](const Real x) {
@@ -74,7 +75,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
       : t_(std::forward<T>(t)), r0_(r0), a_(a), b_(b), c_(c),
         rmid_(r0 * (a - b * c) / (a - b)), Pmid_(a * (rmid_ / r0 - 1.0)) {
     // add input parameter checks to ensure validity of the ramp
-    assert(r0 >= 0.0);
+    assert(r0 > 0.0);
     assert(a > 0.0);
     assert(b >= 0);
     assert(a != b);
@@ -179,9 +180,9 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
       // maybe switch case on preferred input and check for not output of the input
       // for now sie lookup is prioritized
       if (!(output & thermalqs::specific_internal_energy)) {
-        press = this->PressureFromDensityInternalEnergy(rho, energy, lambda);
+        press = PressureFromDensityInternalEnergy(rho, energy, lambda);
       } else if (!(output & thermalqs::temperature)) {
-        press = this->PressureFromDensityTemperature(rho, temp, lambda);
+        press = PressureFromDensityTemperature(rho, temp, lambda);
       }
     }
     // call internal filleos
@@ -206,7 +207,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
 
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();
-    printf("r0=%e\na=%e\nb=%e\nc=%e\n", r0_, a_, b_, c_);
+    printf("Ramp Params:\nr0=%.14e\na=%.14e\nb=%.14e\nc=%.14e\n", r0_, a_, b_, c_);
   }
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
