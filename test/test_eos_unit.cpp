@@ -286,17 +286,15 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       // P (rho_t2)
       const Real Prhot2 = b * (rho_t2 / r0 - c);
       THEN("We obtain Pe and Pc when evaluating at mid and upper density values") {
-	REQUIRE(isClose(P_armid, igra.PressureFromDensityTemperature(rmid, 293.0),
-			1.e-12));
-	//REQUIRE(isClose(Pc, igra.PressureFromDensityTemperature(r1, 293.0), 1.e-12));
-	// also check pressures on ramp
-	REQUIRE(isClose(Prhot1, igra.PressureFromDensityTemperature(rho_t1, T0), 1.e-12));
-	REQUIRE(isClose(Prhot2, igra.PressureFromDensityTemperature(rho_t2, T0), 1.e-12));
+        REQUIRE(
+            isClose(P_armid, igra.PressureFromDensityTemperature(rmid, 293.0), 1.e-12));
+        // REQUIRE(isClose(Pc, igra.PressureFromDensityTemperature(r1, 293.0), 1.e-12));
+        // also check pressures on ramp
+        REQUIRE(isClose(Prhot1, igra.PressureFromDensityTemperature(rho_t1, T0), 1.e-12));
+        REQUIRE(isClose(Prhot2, igra.PressureFromDensityTemperature(rho_t2, T0), 1.e-12));
       }
     }
-    WHEN("We construct a bi-linear ramp") {
-      
-    }
+    WHEN("We construct a bi-linear ramp") {}
   }
 }
 
