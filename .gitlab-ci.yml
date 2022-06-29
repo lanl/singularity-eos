@@ -139,6 +139,7 @@ before_script:
     - mkdir -p ${TMPDIR}/spack_env
     - spack env create --without-view -d ${TMPDIR}/spack_env
     - spack env activate -d ${TMPDIR}/spack_env
+    - spack spec -I ${SINGULARITY_EOS_SPACK_SPEC}
     - spack dev-build -q ${SINGULARITY_EOS_SPACK_SPEC} || ( cat spack-build-out.txt && exit 1 )
     - export SINGULARITY_EOS_CMD="spack install --show-log-on-error --no-checksum --yes-to-all ${SINGULARITY_EOS_SPACK_SPEC}"
     - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
