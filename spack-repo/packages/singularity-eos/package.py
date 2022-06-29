@@ -112,7 +112,6 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos"+_flag)
 
     def cmake_args(self):
-
         args = [
             self.define("SINGULARITY_PATCH_MPARK_VARIANT", False),
             self.define_from_variant("SINGULARITY_USE_CUDA", "cuda"),
@@ -130,6 +129,9 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define("SINGULARITY_USE_HDF5", "^hdf5" in self.spec),
             self.define("SINGULARITY_USE_EOSPAC", "^eospac" in self.spec)
         ]
+
+        if '+kokkos+cuda' in self.spec:
+            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
 
         return args
 
