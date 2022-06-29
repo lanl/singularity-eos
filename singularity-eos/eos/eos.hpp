@@ -28,10 +28,10 @@
 #include <singularity-eos/eos/eos_variant.hpp>
 
 #ifdef SPINER_USE_HDF
-#include <fast-math/logs.hpp>
 #include <hdf5.h>
 #include <hdf5_hl.h>
-#include <root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/spiner_types.hpp>
 #endif // SPINER_USE_HDF
@@ -511,8 +511,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real RhoPmin(const Real temp) const;
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  std::string filename() const { return std::string(filename_); }
-  std::string materialName() const { return std::string(materialName_); }
   int matid() const { return matid_; }
   PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
@@ -526,13 +524,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
     static constexpr char s3[]{"EOS file   = "};
     static constexpr char s4[]{"EOS mat ID = "};
     static constexpr char s5[]{"EOS name   = "};
-    printf("%s\n\t%s\n\t%s%s\n\t%s%i\n\t%s%s\n", s1, s2, s3, filename_, s4, matid_, s5,
-           materialName_);
+    printf("%s\n\t%s\n\t%s\n\t%s%i\n\t%s\n", s1, s2, s3, s4, matid_, s5);
     return;
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
-  static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
+  int nlambda() const noexcept { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }
   inline TableStatus tableStatus() const { return whereAmI_; }
   RootFinding1D::RootCounts counts;
@@ -620,8 +617,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
-  const char *filename_;
-  const char *materialName_;
   int matid_;
   bool reproducible_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.
@@ -728,31 +723,34 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
   PORTABLE_FUNCTION
   unsigned long PreferredInput() const { return _preferred_input; }
-  std::string filename() const { return std::string(filename_); }
-  std::string materialName() const { return std::string(materialName_); }
   int matid() const { return matid_; }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real lEOffset() const { return lEOffset_; }
-  Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
-  Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
-  Real TMin() const { return fromLog_(T_.range(0).min(), lTOffset_); }
-  Real TMax() const { return fromLog_(T_.range(0).max(), lTOffset_); }
-  Real sieMin() const { return fromLog_(sie_.range(0).min(), lEOffset_); }
-  Real sieMax() const { return fromLog_(sie_.range(0).max(), lEOffset_); }
+  PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_INLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_INLINE_FUNCTION Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
+  PORTABLE_INLINE_FUNCTION Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
+  PORTABLE_INLINE_FUNCTION Real TMin() const {
+    return fromLog_(T_.range(0).min(), lTOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real TMax() const {
+    return fromLog_(T_.range(0).max(), lTOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real sieMin() const {
+    return fromLog_(sie_.range(0).min(), lEOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real sieMax() const {
+    return fromLog_(sie_.range(0).max(), lEOffset_);
+  }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
 
-  static PORTABLE_FORCEINLINE_FUNCTION int nlambda() { return _n_lambda; }
+  int nlambda() const noexcept { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
     static constexpr char s2[]{"depends on log_10(rho) and log_10(sie)"};
-    static constexpr char s3[]{"EOS file   = "};
-    static constexpr char s4[]{"EOS mat ID = "};
-    static constexpr char s5[]{"EOS name   = "};
-    printf("%s\n\t%s\n\t%s%s\n\t%s%i\n\t%s%s\n", s1, s2, s3, filename_, s4, matid_, s5,
-           materialName_);
+    static constexpr char s3[]{"EOS mat ID = "};
+    printf("%s\n\t%s\n\t%s%i\n", s1, s2, s3, matid_);
     return;
   }
   RootFinding1D::Status rootStatus() const { return status_; }
@@ -796,8 +794,6 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   static constexpr unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] = "SpinerEOSDependsRhoSie";
-  const char *filename_;
-  const char *materialName_;
   int matid_;
   bool reproducible_;
   mutable RootFinding1D::Status status_;
@@ -893,30 +889,28 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  std::string filename() const { return std::string(filename_); }
-  Real lRhoOffset() const { return lRhoOffset_; }
-  Real lTOffset() const { return lTOffset_; }
-  Real lEOffset() const { return lEOffset_; }
-  Real lRhoMin() const { return lRhoMin_; }
-  Real lRhoMax() const { return lRhoMax_; }
-  Real rhoMin() const { return rho_(lRhoMin_); }
-  Real rhoMax() const { return rho_(lRhoMax_); }
-  Real lTMin() const { return lTMin_; }
-  Real lTMax() const { return lTMax_; }
-  Real TMin() const { return T_(lTMin_); }
-  Real TMax() const { return T_(lTMax_); }
-  Real YeMin() const { return YeMin_; }
-  Real YeMax() const { return YeMax_; }
-  Real sieMin() const { return sieMin_; }
-  Real sieMax() const { return sieMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMin() const { return lRhoMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMax() const { return lRhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTMin() const { return lTMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTMax() const { return lTMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMax() const { return T_(lTMax_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real YeMin() const { return YeMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real YeMax() const { return YeMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const { return sieMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const { return sieMax_; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("StellarCollapse parameters:\n"
            "depends on log10(rho), log10(T), Ye\n"
-           "EOS file = %s\n"
            "lrho bounds = %g, %g\n"
            "lT bounds = %g, %g\n"
            "Ye bounds = %g, %g\n",
-           filename_, lRhoMin_, lRhoMax_, lTMin_, lTMax_, YeMin_, YeMax_);
+           lRhoMin_, lRhoMax_, lTMin_, lTMax_, YeMin_, YeMax_);
     return;
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
@@ -1070,7 +1064,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   static constexpr Real lPOffset_ = 0.0;
   static constexpr Real lBOffset_ = 0.0;
 
-  const char *filename_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.
   mutable RootFinding1D::Status status_ = RootFinding1D::Status::SUCCESS;
   static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
@@ -1225,12 +1218,10 @@ class EOSPAC : public EosBase<EOSPAC> {
   //              const int num, const unsigned long output,
   //              LambdaIndexer &&lambdas) const;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  int nlambda() const noexcept { return 0; }
+  PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 0; }
   inline void Finalize() {}
   static std::string EosType() { return std::string("EOSPAC"); }
-  PORTABLE_INLINE_FUNCTION void PrintParams() const {
-    printf("EOSPAC parameters:\nmatid = %s\n", matid_);
-  }
+  inline void PrintParams() const { printf("EOSPAC parameters:\nmatid = %s\n", matid_); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
 

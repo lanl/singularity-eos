@@ -1,4 +1,4 @@
-#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------#
 # © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
@@ -10,13 +10,20 @@
 # paid-up, irrevocable worldwide license in this material to reproduce,
 # prepare derivative works, distribute copies to the public, perform
 # publicly and display publicly, and to permit others to do so.
-#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------#
 
-add_executable(stellarcollapse2spiner main.cpp)
+@SINGULARITY_CONFIG_CODE@
 
-target_link_libraries(stellarcollapse2spiner
-  PUBLIC
-    singularity-eos::singularity-eos
-)
+#------------------------------------------------------------------------------#
+# library dependencies
+#------------------------------------------------------------------------------#
 
-install(TARGETS stellarcollapse2spiner DESTINATION bin)
+list(APPEND CMAKE_MODULE_PATH @CMAKE_INSTALL_FULL_LIBDIR@/cmake/singularity-eos)
+
+@SINGULARITY_CONFIG_DEPENDENCIES@
+
+if(NOT TARGET singularity-eos AND NOT singularity-eos_BINARY_DIR)
+  include(@CMAKE_INSTALL_FULL_LIBDIR@/cmake/singularity-eos/singularity-eosTargets.cmake)
+endif()
+
+

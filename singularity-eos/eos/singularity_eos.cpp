@@ -280,7 +280,7 @@ int get_sg_eos( // sizing information
   using DMS = DES::memory_space;
   using Kokkos::MemoryTraits;
   constexpr const unsigned int ra{0 | Kokkos::RandomAccess};
-  constexpr const unsigned int ra_u{Kokkos::Unmanaged | Kokkos::RandomAccess};
+  // constexpr const unsigned int ra_u{Kokkos::Unmanaged | Kokkos::RandomAccess};
   using VAWI = Kokkos::ViewAllocateWithoutInitializing;
   using Kokkos::deep_copy;
   static constexpr const double ev2k = 1.160451930280894026e4;
@@ -430,7 +430,7 @@ int get_sg_eos( // sizing information
         int npte = 0;
         double vsum_nopte = 0.0;
         double esum_nopte = 0.0;
-        double rhoavg_pte = 0.0;
+        // double rhoavg_pte = 0.0;
         for (int m = 0; m < nmat; ++m) {
           const bool something = frac_mass_v(i, m) / mass_sum > min_frac;
           frac_sie_v(i, m) = sie_v(i) * frac_mass_v(i, m);
@@ -572,7 +572,7 @@ int get_sg_eos( // sizing information
           //  //eng_sum += mu*sie_pte(tid, m);
           //}
         }
-        int niter;
+        // int niter;
         // TODO: this struct declaration should probably be moved elsewhere
         struct EOSAccessor_ {
           PORTABLE_INLINE_FUNCTION

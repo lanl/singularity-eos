@@ -29,8 +29,8 @@
 #include <singularity-eos/eos/eos.hpp>
 
 #include <ports-of-call/portability.hpp>
-#include <root-finding-1d/root_finding.hpp>
-#include <sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
@@ -62,9 +62,7 @@ namespace singularity {
 constexpr char METADATA_NAME[] = "Metadata";
 
 StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp5,
-                                 bool filter_bmod)
-    : filename_(filename.c_str()) {
-
+                                 bool filter_bmod) {
   if (use_sp5) {
     LoadFromSP5File_(filename);
   } else {
