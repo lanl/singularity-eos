@@ -285,6 +285,10 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       const Real Prhot1 = a * (rho_t1 / r0 - 1.0);
       // P (rho_t2)
       const Real Prhot2 = b * (rho_t2 / r0 - c);
+      // bmod (rho_t1)
+      const Real bmodrt1 = rho_t1 * a / r0;
+      // bmod (rho_t2)
+      const Real bmodrt2 = rho_t2 * b / r0;
       THEN("We obtain Pe and Pc when evaluating at mid and upper density values") {
         REQUIRE(
             isClose(P_armid, igra.PressureFromDensityTemperature(rmid, 293.0), 1.e-12));
@@ -292,9 +296,19 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
         // also check pressures on ramp
         REQUIRE(isClose(Prhot1, igra.PressureFromDensityTemperature(rho_t1, T0), 1.e-12));
         REQUIRE(isClose(Prhot2, igra.PressureFromDensityTemperature(rho_t2, T0), 1.e-12));
+	// check pressure below and beyond ramp matches unmodified ideal gas
+	REQUIRE(isClose(0.8*r0 * gm1 * Cv * T0, igra.PressureFromDensityTemperature(0.8*r0, T0), 1.e-12));
+	REQUIRE(isClose(1.2*r1 * gm1 * Cv * T0, igra.PressureFromDensityTemperature(1.2*r1, T0), 1.e-12));
+	// check bulk moduli on both pieces of ramp
+	REQUIRE(isClose(bmodrt1, igra.BulkModulusFromDensityTemperature(rho_t1, T0), 1.e-12));
+	REQUIRE(isClose(bmodrt2, igra.BulkModulusFromDensityTemperature(rho_t2, T0), 1.e-12));
+	// check bulk modulus below and beyond ramp matches unmodified ideal gas
+	REQUIRE(isClose(0.8*r0 * gm1 * (gm1 + 1.0) * Cv * T0,
+			igra.BulkModulusFromDensityTemperature(0.8*r0, T0), 1.e-12));
+	REQUIRE(isClose(1.2*r1 * gm1 * (gm1 + 1.0) * Cv * T0,
+			igra.BulkModulusFromDensityTemperature(1.2*r1, T0), 1.e-12));
       }
     }
-    WHEN("We construct a bi-linear ramp") {}
   }
 }
 
