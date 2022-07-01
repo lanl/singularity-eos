@@ -91,15 +91,16 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
   PORTABLE_INLINE_FUNCTION
   Real get_ramp_pressure(Real rho) const {
     const Real r_r0{ratio(rho, r0_)};
-    const Real p_ramp{rho < r0_         ? 0.0
-			  : rho < rmid_ ? a_ * (r_r0 - 1.0)
-				        : b_ * (r_r0 - c_)};
+    const Real p_ramp{rho < r0_     ? 0.0
+                      : rho < rmid_ ? a_ * (r_r0 - 1.0)
+                                    : b_ * (r_r0 - c_)};
     return p_ramp;
   }
 
   PORTABLE_INLINE_FUNCTION
   Real get_ramp_density(Real P) const {
-    const Real rho_ramp{P < Pmid_ ? r0_ * (ratio(P, a_) + 1.0) : r0_ * (ratio(P, b_) + c_)};
+    const Real rho_ramp{P < Pmid_ ? r0_ * (ratio(P, a_) + 1.0)
+                                  : r0_ * (ratio(P, b_) + c_)};
     return rho_ramp;
   }
 
