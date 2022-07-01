@@ -73,28 +73,58 @@ inline void compare_two_eoss(E1 &&test_e, E2 &&ref_e) {
   // modifiers that can be initialized in such a way as to
   // be equivalent of an unmodified eos. Best used with analytic
   // eoss.
-  REQUIRE(isClose(test_e.TemperatureFromDensityInternalEnergy(1, 1),
-                  ref_e.TemperatureFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.InternalEnergyFromDensityTemperature(1, 1),
-                  ref_e.InternalEnergyFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.PressureFromDensityInternalEnergy(1, 1),
-                  ref_e.PressureFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.SpecificHeatFromDensityInternalEnergy(1, 1),
-                  ref_e.SpecificHeatFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.BulkModulusFromDensityInternalEnergy(1, 1),
-                  ref_e.BulkModulusFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.GruneisenParamFromDensityInternalEnergy(1, 1),
-                  ref_e.GruneisenParamFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.PressureFromDensityTemperature(1, 1),
-                  ref_e.PressureFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.SpecificHeatFromDensityTemperature(1, 1),
-                  ref_e.SpecificHeatFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.BulkModulusFromDensityTemperature(1, 1),
-                  ref_e.BulkModulusFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.GruneisenParamFromDensityTemperature(1, 1),
-                  ref_e.GruneisenParamFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.MinimumDensity(), ref_e.MinimumDensity(), 1.e-15));
-  REQUIRE(isClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15));
+  INFO("reference T: " << ref_e.TemperatureFromDensityInternalEnergy(1, 1) << " test T: "
+                       << test_e.TemperatureFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.TemperatureFromDensityInternalEnergy(1, 1),
+                ref_e.TemperatureFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference sie: " << ref_e.InternalEnergyFromDensityTemperature(1, 1)
+                         << " test sie: "
+                         << test_e.InternalEnergyFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.InternalEnergyFromDensityTemperature(1, 1),
+                ref_e.InternalEnergyFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference P: " << ref_e.PressureFromDensityInternalEnergy(1, 1)
+                       << " test P: " << test_e.PressureFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.PressureFromDensityInternalEnergy(1, 1),
+                ref_e.PressureFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference Cv: " << ref_e.SpecificHeatFromDensityInternalEnergy(1, 1)
+                        << " test Cv: "
+                        << test_e.SpecificHeatFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.SpecificHeatFromDensityInternalEnergy(1, 1),
+                ref_e.SpecificHeatFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference bmod: " << ref_e.BulkModulusFromDensityInternalEnergy(1, 1)
+                          << " test bmod: "
+                          << test_e.BulkModulusFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.BulkModulusFromDensityInternalEnergy(1, 1),
+                ref_e.BulkModulusFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference Grun. Param.: "
+       << ref_e.GruneisenParamFromDensityInternalEnergy(1, 1)
+       << " test Grun. Param.: " << test_e.GruneisenParamFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.GruneisenParamFromDensityInternalEnergy(1, 1),
+                ref_e.GruneisenParamFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference P: " << ref_e.PressureFromDensityTemperature(1, 1)
+                       << " test P: " << test_e.PressureFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.PressureFromDensityTemperature(1, 1),
+                ref_e.PressureFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference Cv: " << ref_e.SpecificHeatFromDensityTemperature(1, 1) << " test Cv: "
+                        << test_e.SpecificHeatFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.SpecificHeatFromDensityTemperature(1, 1),
+                ref_e.SpecificHeatFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference bmod: " << ref_e.BulkModulusFromDensityTemperature(1, 1)
+                          << " test bmod: "
+                          << test_e.BulkModulusFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.BulkModulusFromDensityTemperature(1, 1),
+                ref_e.BulkModulusFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference Grun. Param.: " << ref_e.GruneisenParamFromDensityTemperature(1, 1)
+                                  << " test Grun. Param.: "
+                                  << test_e.GruneisenParamFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.GruneisenParamFromDensityTemperature(1, 1),
+                ref_e.GruneisenParamFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference rho min.: " << ref_e.MinimumDensity()
+                              << " test rho min.: " << test_e.MinimumDensity());
+  CHECK(isClose(test_e.MinimumDensity(), ref_e.MinimumDensity(), 1.e-15));
+  INFO("reference T min.: " << ref_e.MinimumTemperature()
+                            << " test T min.: " << test_e.MinimumTemperature());
+  CHECK(isClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15));
   return;
 }
 
@@ -289,26 +319,57 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       const Real bmodrt1 = rho_t1 * a / r0;
       // bmod (rho_t2)
       const Real bmodrt2 = rho_t2 * b / r0;
-      THEN("We obtain Pe and Pc when evaluating at mid and upper density values") {
-        REQUIRE(
-            isClose(P_armid, igra.PressureFromDensityTemperature(rmid, 293.0), 1.e-12));
-        // REQUIRE(isClose(Pc, igra.PressureFromDensityTemperature(r1, 293.0), 1.e-12));
+      THEN("P_eos(alpha_0*rmid, T0) = P_ramp(rmid,T0)") {
+        INFO("P_eos(alpha_0*rmid, T0): "
+             << P_armid
+             << " P_ramp(rmid, T0): " << igra.PressureFromDensityTemperature(rmid, T0));
+        REQUIRE(isClose(P_armid, igra.PressureFromDensityTemperature(rmid, T0), 1.e-12));
+      }
+      THEN("We obtain correct ramp behavior in P(rho) for rho <r0, [r0,rmid], [rmid,r1] "
+           "and >r1") {
         // also check pressures on ramp
+        INFO("reference P((r0+rmid)/2, T0): "
+             << Prhot1 << " test P((r0+rmid)/2, T0): "
+             << igra.PressureFromDensityTemperature(rho_t1, T0));
         REQUIRE(isClose(Prhot1, igra.PressureFromDensityTemperature(rho_t1, T0), 1.e-12));
+        INFO("reference P((rmid+r1)/2, T0): "
+             << Prhot2 << " test P((rmid+r1)/2, T0): "
+             << igra.PressureFromDensityTemperature(rho_t2, T0));
         REQUIRE(isClose(Prhot2, igra.PressureFromDensityTemperature(rho_t2, T0), 1.e-12));
         // check pressure below and beyond ramp matches unmodified ideal gas
+        INFO("reference P(0.8*r0, T0): "
+             << 0.8 * r0 * gm1 * Cv * T0 << " test P(0.8*r0, T0): "
+             << igra.PressureFromDensityTemperature(0.8 * r0, T0));
         REQUIRE(isClose(0.8 * r0 * gm1 * Cv * T0,
                         igra.PressureFromDensityTemperature(0.8 * r0, T0), 1.e-12));
+        INFO("reference P(1.2*r1, T0): "
+             << 1.2 * r1 * gm1 * Cv * T0 << " test P(1.2*r1, T0): "
+             << igra.PressureFromDensityTemperature(1.2 * r1, T0));
         REQUIRE(isClose(1.2 * r1 * gm1 * Cv * T0,
                         igra.PressureFromDensityTemperature(1.2 * r1, T0), 1.e-12));
+      }
+      THEN("We obtain correct ramp behavior in bmod(rho) for rho <r0, [r0,rmid], "
+           "[rmid,r1] and >r1") {
         // check bulk moduli on both pieces of ramp
+        INFO("reference bmod((r0+rmid)/2, T0): "
+             << bmodrt1 << " test bmod((r0+rmid)/2, T0): "
+             << igra.BulkModulusFromDensityTemperature(rho_t1, T0));
         REQUIRE(
             isClose(bmodrt1, igra.BulkModulusFromDensityTemperature(rho_t1, T0), 1.e-12));
+        INFO("reference bmod((rmid+r1)/2, T0): "
+             << bmodrt2 << " test bmod((rmid+r1)/2, T0): "
+             << igra.BulkModulusFromDensityTemperature(rho_t2, T0));
         REQUIRE(
             isClose(bmodrt2, igra.BulkModulusFromDensityTemperature(rho_t2, T0), 1.e-12));
         // check bulk modulus below and beyond ramp matches unmodified ideal gas
+        INFO("reference bmod(0.8*r0, T0): "
+             << 0.8 * r0 * gm1 * (gm1 + 1.0) * Cv * T0 << " test bmod(0.8*r0, T0): "
+             << igra.BulkModulusFromDensityTemperature(0.8 * r0, T0));
         REQUIRE(isClose(0.8 * r0 * gm1 * (gm1 + 1.0) * Cv * T0,
                         igra.BulkModulusFromDensityTemperature(0.8 * r0, T0), 1.e-12));
+        INFO("reference bmod(1.2*r1, T0): "
+             << 1.2 * r1 * gm1 * (gm1 + 1.0) * Cv * T0 << " test bmod(1.2*r1, T0): "
+             << igra.BulkModulusFromDensityTemperature(1.2 * r1, T0));
         REQUIRE(isClose(1.2 * r1 * gm1 * (gm1 + 1.0) * Cv * T0,
                         igra.BulkModulusFromDensityTemperature(1.2 * r1, T0), 1.e-12));
       }
