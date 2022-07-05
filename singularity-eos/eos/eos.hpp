@@ -529,9 +529,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
+  PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
-  inline RootFinding1D::Status rootStatus() const { return status_; }
-  inline TableStatus tableStatus() const { return whereAmI_; }
+  PORTABLE_INLINE_FUNCTION
+  RootFinding1D::Status rootStatus() const { return status_; }
+  PORTABLE_INLINE_FUNCTION
+  TableStatus tableStatus() const { return whereAmI_; }
   RootFinding1D::RootCounts counts;
   void Finalize();
   static std::string EosType() { return std::string("SpinerEOSDependsRhoT"); }
@@ -745,6 +748,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
 
+  PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
@@ -753,6 +757,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     printf("%s\n\t%s\n\t%s%i\n", s1, s2, s3, matid_);
     return;
   }
+  PORTABLE_INLINE_FUNCTION
   RootFinding1D::Status rootStatus() const { return status_; }
   RootFinding1D::RootCounts counts;
   static std::string EosType() { return std::string("SpinerEOSDependsRhoSie"); }
