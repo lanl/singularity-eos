@@ -46,7 +46,7 @@ void pAlpha2SAPRampParams(const T &eos, const Real alpha0, const Real Pe, const 
   assert(alpha0 > 1.0);
   r0 = ratio(rho0, alpha0);
   // calculate rmid
-  auto rmid_func = [&](const Real x) {
+  auto rmid_func = PORTABLE_LAMBDA(const Real x) {
     return eos.PressureFromDensityTemperature(alpha0 * x, T0);
   };
   RootFinding1D::RootCounts co{};
@@ -58,7 +58,7 @@ void pAlpha2SAPRampParams(const T &eos, const Real alpha0, const Real Pe, const 
   // finds where rmid_func = Pe
   RootFinding1D::findRoot(rmid_func, Pe, rho0, r0, rho_ub, 1.e-12, 1.e-12, rmid, co);
   // calculate r1
-  auto r1_func = [&](const Real x) { return eos.PressureFromDensityTemperature(x, T0); };
+  auto r1_func = PORTABLE_LAMBDA(const Real x) { return eos.PressureFromDensityTemperature(x, T0); };
   // finds where r1_func = Pc
   RootFinding1D::findRoot(r1_func, Pc, rmid, r0, rho_ub, 1.e-12, 1.e-12, r1, co);
   // a
