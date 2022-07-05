@@ -225,7 +225,7 @@ EOS Modifiers
 ``EOS`` models can be *modified* by templated classes we call
 *modifiers*. A modifier has exactly the same API as an ``EOS``, but
 provides some internal transformation on inputs and outputs. For
-example the ``ShiftedEOS`` modifier changes the zero point energy of a
+example the ``ShiftedEOS`` modifier changes the reference energy of a
 given EOS model by shifting all energies up or down. Modifiers can be
 used to, for example, production-harden a model. Only certain
 combinations of ``EOS`` and ``modifier`` are permitted by the defualt
