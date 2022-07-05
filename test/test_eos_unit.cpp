@@ -263,10 +263,10 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
         Real a = 1;
         Real b = 0;
         Real c = 0;
-        ramp_params["r0"] = r0;
-        ramp_params["a"] = a;
-        ramp_params["b"] = b;
-        ramp_params["c"] = c;
+        ramp_params["r0"].emplace<Real>(r0);
+        ramp_params["a"].emplace<Real>(a);
+        ramp_params["b"].emplace<Real>(b);
+        ramp_params["c"].emplace<Real>(c);
         modifiers[EOSBuilder::EOSModifier::SAPRamp] = ramp_params;
         THEN("The EOS is constructed correctly") {
           auto eos_ramped = EOSBuilder::buildEOS(type, base_params, modifiers);
