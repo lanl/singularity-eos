@@ -40,6 +40,7 @@ jobs:
         - name: build docs
           run: |
             cd doc/sphinx
+            export PYTHONPATH=/usr/local/lib/python3.8/site-packages:$PYTHONPATH
             make multiversion
         - name: Deploy
           if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
