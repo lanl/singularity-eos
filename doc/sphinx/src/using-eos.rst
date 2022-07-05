@@ -162,7 +162,7 @@ array. By default the vector version is called from host on device (if
 
 The vector API is templated to accept *accessors*. An accessor is any
 object with a square bracket operator. One-dimensional arrays,
-pointers, and ``std::vector<double>`` are two exmaples of what we call
+pointers, and ``std::vector<double>`` are all examples of what we call
 an accessor. However, the value of an accessor is it doesn't have to
 be an array. You can create an accessor class that wraps your
 preferred memory layout, and ``singularity-eos`` will handle it
