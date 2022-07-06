@@ -16,11 +16,13 @@ set(EOS_HEADERS
     base/constants.hpp
     base/eos_error.hpp
     base/fast-math/logs.hpp
+    base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
     eos/eos.hpp
     eos/eos_builder.hpp
     eos/eos_variant.hpp
     eos/modifiers/eos_unitsystem.hpp
+    eos/modifiers/ramps_eos.hpp
     eos/modifiers/scaled_eos.hpp
     eos/modifiers/shifted_eos.hpp
     eos/modifiers/relativistic_eos.hpp

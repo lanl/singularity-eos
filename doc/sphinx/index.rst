@@ -19,6 +19,7 @@ Documentation approved for unlimited release. LA-UR-21-31131.
    src/building
    src/using-eos
    src/models
+   src/modifiers
    src/using-closures
    src/contributing
    src/sphinx-doc
