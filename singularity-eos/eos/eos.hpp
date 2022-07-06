@@ -1306,7 +1306,7 @@ static constexpr const auto combined_list_1 = singularity::detail::concat(
     full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel);
 // make a ramped eos of everything
 static constexpr const auto ramped_all =
-    transform_variadic_list(combined_list_1, al<SAPRampEOS>{});
+    transform_variadic_list(combined_list_1, al<BilinearRampEOS>{});
 // final combined list
 static constexpr const auto combined_list = singularity::detail::concat(
     full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel, ramped_all);

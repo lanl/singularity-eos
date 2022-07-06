@@ -36,7 +36,7 @@ using namespace eos_base;
 using singularity::robust::ratio;
 
 template <typename T>
-void pAlpha2SAPRampParams(const T &eos, const Real alpha0, const Real Pe, const Real Pc,
+void pAlpha2BilinearRampParams(const T &eos, const Real alpha0, const Real Pe, const Real Pc,
                           Real &r0, Real &a, Real &b, Real &c) {
   // get reference conditions
   Real rho0, T0, sie0, P0, cv0, bmod0, dpde0, dvdt0;
@@ -73,10 +73,10 @@ void pAlpha2SAPRampParams(const T &eos, const Real alpha0, const Real Pe, const 
 }
 
 template <typename T>
-class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
+class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
  public:
   // move semantics ensures dynamic memory comes along for the ride
-  SAPRampEOS(T &&t, const Real r0, const Real a, const Real b, const Real c)
+  BilinearRampEOS(T &&t, const Real r0, const Real a, const Real b, const Real c)
       : t_(std::forward<T>(t)), r0_(r0), a_(a), b_(b), c_(c),
         rmid_(r0 * (a - b * c) / (a - b)), Pmid_(a * (rmid_ / r0 - 1.0)) {
     // add input parameter checks to ensure validity of the ramp
@@ -85,9 +85,9 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
     assert(b >= 0);
     assert(a != b);
   }
-  SAPRampEOS() = default;
+  BilinearRampEOS() = default;
 
-  auto GetOnDevice() { return SAPRampEOS<T>(t_.GetOnDevice(), r0_, a_, b_, c_); }
+  auto GetOnDevice() { return BilinearRampEOS<T>(t_.GetOnDevice(), r0_, a_, b_, c_); }
   inline void Finalize() { t_.Finalize(); }
 
   PORTABLE_INLINE_FUNCTION
@@ -230,7 +230,7 @@ class SAPRampEOS : public EosBase<SAPRampEOS<T>> {
   }
 
   // Vector functions that overload the scalar versions declared here.
-  SG_ADD_BASE_CLASS_USINGS(SAPRampEOS<T>)
+  SG_ADD_BASE_CLASS_USINGS(BilinearRampEOS<T>)
 
  private:
   T t_;

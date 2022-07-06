@@ -36,7 +36,7 @@
 using singularity::EOS;
 using singularity::Gruneisen;
 using singularity::IdealGas;
-using singularity::SAPRampEOS;
+using singularity::BilinearRampEOS;
 using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
 
@@ -267,7 +267,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
         ramp_params["a"].emplace<Real>(a);
         ramp_params["b"].emplace<Real>(b);
         ramp_params["c"].emplace<Real>(c);
-        modifiers[EOSBuilder::EOSModifier::SAPRamp] = ramp_params;
+        modifiers[EOSBuilder::EOSModifier::BilinearRamp] = ramp_params;
         THEN("The EOS is constructed correctly") {
           auto eos_ramped = EOSBuilder::buildEOS(type, base_params, modifiers);
         }
