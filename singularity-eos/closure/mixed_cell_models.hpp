@@ -140,7 +140,6 @@ struct NullPtrIndexer {
 
 class CacheAccessor {
  public:
-  PORTABLE_INLINE_FUNCTION
   CacheAccessor() = default;
   PORTABLE_INLINE_FUNCTION
   explicit CacheAccessor(Real *scr) : cache_(scr) {}
@@ -931,7 +930,7 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
 
     // possibly scale the update to stay within reasonable bounds
     Real scale = s.ScaleDx();
-    const Real scale_save = scale;
+    // const Real scale_save = scale;
 
     // Line search
     Real gradfdx = -2.0 * scale * err;

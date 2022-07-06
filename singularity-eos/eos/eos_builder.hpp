@@ -43,7 +43,7 @@ enum class EOSType {
   StellarCollapse
 #endif
 };
-enum class EOSModifier { Scaled, Shifted, Relativistic, UnitSystem };
+enum class EOSModifier { Scaled, Shifted, Relativistic, UnitSystem, BilinearRamp };
 
 // evil type erasure
 using param_t = mpark::variant<bool, int, Real, std::string>;
@@ -51,6 +51,7 @@ using params_t = std::map<std::string, param_t>;
 using modifiers_t = std::map<EOSModifier, params_t>;
 const params_t NO_PARAMS;
 
+// TODO: Extend if needed
 const std::unordered_set<EOSType> modifiable({EOSType::IdealGas
 #ifdef SPINER_USE_HDF
                                               ,
@@ -84,8 +85,8 @@ EOS makeRelativistic(T &&eos, Real cl) {
 }
 
 template <typename T>
-EOS makeSAPRamp(T &&eos, Real r0, Real a, Real b, Real c) {
-  return SAPRampEOS<T>(std::forward<T>(eos), r0, a, b, c);
+EOS makeBilinearRamp(T &&eos, Real r0, Real a, Real b, Real c) {
+  return BilinearRampEOS<T>(std::forward<T>(eos), r0, a, b, c);
 }
 
 template <typename T>
@@ -104,8 +105,9 @@ EOS applyShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shif
   return eos;
 }
 
-template <typename T, template <typename> class W, typename ... ARGS>
-EOS applyWrappedShiftAndScale(T&& eos, bool scaled, bool shifted, Real scale, Real shift, ARGS ... args) {
+template <typename T, template <typename> class W, typename... ARGS>
+EOS applyWrappedShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shift,
+                              ARGS... args) {
   if (shifted && scaled) {
     ShiftedEOS<T> a(std::forward<T>(eos), shift);
     ScaledEOS<ShiftedEOS<T>> b(std::move(a), scale);
@@ -124,9 +126,12 @@ EOS applyWrappedShiftAndScale(T&& eos, bool scaled, bool shifted, Real scale, Re
 }
 
 template <typename T>
-EOS applyShiftAndScaleAndSAPRamp(T&& eos, bool scaled, bool shifted, bool ramped, Real scale, Real shift, Real r0, Real a, Real b, Real c) {
+EOS applyShiftAndScaleAndBilinearRamp(T &&eos, bool scaled, bool shifted, bool ramped,
+                                      Real scale, Real shift, Real r0, Real a, Real b,
+                                      Real c) {
   if (ramped) {
-    return applyWrappedShiftAndScale<T, SAPRampEOS>(std::forward<T>(eos), scaled, shifted, scale, shift, r0, a, b, c);
+    return applyWrappedShiftAndScale<T, BilinearRampEOS>(
+        std::forward<T>(eos), scaled, shifted, scale, shift, r0, a, b, c);
   } else {
     return applyShiftAndScale(std::forward<T>(eos), scaled, shifted, scale, shift);
   }

@@ -257,12 +257,11 @@ int main(int argc, char *argv[]) {
       std::cout << "\t\tsie bounds = [" << sieMin << ", " << sieMax << "]" << std::endl;
 
       EOS_INTEGER tableHandle[NT];
-      EOS_INTEGER eospacPofRT, eospacTofRE, eospacEofRT;
+      EOS_INTEGER eospacPofRT, eospacTofRE;
       EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT};
       eosSafeLoad(NT, matid, tableType, tableHandle, Verbosity::Debug);
       eospacPofRT = tableHandle[0];
       eospacTofRE = tableHandle[1];
-      eospacEofRT = tableHandle[2];
 
       std::cout << "\t\tGenerating interpolation points for rho-T tables" << std::endl;
       start = std::chrono::high_resolution_clock::now();

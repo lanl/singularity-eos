@@ -108,29 +108,17 @@ class interp {
 
 SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, int matid,
                                            bool reproducibility_mode)
-    : filename_(filename.c_str()), matid_(matid), reproducible_(reproducibility_mode),
+    : matid_(matid), reproducible_(reproducibility_mode),
       status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
-  hsize_t dims;
-  size_t size;
-  H5T_class_t tclass;
   hid_t file, matGroup, lTGroup, coldGroup;
   herr_t status = H5_SUCCESS;
-  std::vector<char> materialName;
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
   lTGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT);
   coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
-
-  // This works because chars are 1 byte. ~ JMM
-  status += H5LTget_attribute_info(file, matid_str.c_str(), SP5::Material::name, &dims,
-                                   &tclass, &size);
-  materialName.resize((int)size + 1);
-  status += H5LTget_attribute_string(file, matid_str.c_str(), SP5::Material::name,
-                                     materialName.data());
-  materialName_ = materialName.data();
 
   status += loadDataboxes_(matid_str, file, lTGroup, coldGroup);
 
@@ -147,8 +135,7 @@ SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, int mati
 SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
                                            const std::string &materialName,
                                            bool reproducibility_mode)
-    : filename_(filename.c_str()), materialName_(materialName.c_str()),
-      reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
+    : reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
       memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
@@ -990,29 +977,17 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
 
 SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename, int matid,
                                                bool reproducibility_mode)
-    : filename_(filename.c_str()), matid_(matid), reproducible_(reproducibility_mode),
+    : matid_(matid), reproducible_(reproducibility_mode),
       status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
-  hsize_t dims;
-  size_t size;
-  H5T_class_t tclass;
   hid_t file, matGroup, lTGroup, lEGroup;
   herr_t status = H5_SUCCESS;
-  std::vector<char> materialName;
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
   lTGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT);
   lEGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogSie, H5P_DEFAULT);
-
-  // This works because chars are 1 byte. ~ JMM
-  status += H5LTget_attribute_info(file, matid_str.c_str(), SP5::Material::name, &dims,
-                                   &tclass, &size);
-  materialName.resize((int)size + 1);
-  status += H5LTget_attribute_string(file, matid_str.c_str(), SP5::Material::name,
-                                     materialName.data());
-  materialName_ = materialName.data();
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup);
 
@@ -1029,8 +1004,7 @@ SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename, int 
 SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
                                                const std::string &materialName,
                                                bool reproducibility_mode)
-    : filename_(filename.c_str()), materialName_(materialName.c_str()),
-      reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
+    : reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
       memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
@@ -1424,7 +1398,7 @@ Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
         ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, EPS, EPS, lRho, counts);
 
     if (status_ != RootFinding1D::Status::SUCCESS) {
-#if EPINER_EOS_VERBOSE
+#if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
       errorMessage << "inverting P table for logRho failed\n"
                    << "matid     = " << matid_ << "\n"

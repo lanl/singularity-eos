@@ -12,31 +12,46 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_BASE_CONSTANTS_HPP_
-#define SINGULARITY_EOS_BASE_CONSTANTS_HPP_
+#ifndef SINGULARITY_EOS_BASE_ROBUST_UTILS_HPP_
+#define SINGULARITY_EOS_BASE_ROBUST_UTILS_HPP_
 
+#include <limits>
 #include <ports-of-call/portability.hpp>
 
 namespace singularity {
+namespace robust {
 
-namespace thermalqs {
-constexpr unsigned long none = 0;
-constexpr unsigned long density = (1 << 0);
-constexpr unsigned long specific_internal_energy = (1 << 1);
-constexpr unsigned long pressure = (1 << 2);
-constexpr unsigned long temperature = (1 << 3);
-constexpr unsigned long specific_heat = (1 << 4);
-constexpr unsigned long bulk_modulus = (1 << 5);
-constexpr unsigned long all_values = (1 << 6) - 1;
-} // namespace thermalqs
+template <typename T = Real>
+PORTABLE_FORCEINLINE_FUNCTION constexpr auto SMALL() {
+  return 10 * std::numeric_limits<T>::min();
+}
 
-constexpr size_t MAX_NUM_LAMBDAS = 3;
-enum class DataStatus { Deallocated = 0, OnDevice = 1, OnHost = 2 };
-enum class TableStatus { OnTable = 0, OffBottom = 1, OffTop = 2 };
-constexpr Real ROOM_TEMPERATURE = 293; // K
-constexpr Real ATMOSPHERIC_PRESSURE = 1e6;
-constexpr Real EPS = 10.0 * std::numeric_limits<Real>::epsilon();
+template <typename T = Real>
+PORTABLE_FORCEINLINE_FUNCTION constexpr auto EPS() {
+  return 10 * std::numeric_limits<T>::epsilon();
+}
 
+template <typename T>
+PORTABLE_FORCEINLINE_FUNCTION auto make_positive(const T val) {
+  return std::max(val, EPS<T>());
+}
+
+PORTABLE_FORCEINLINE_FUNCTION
+Real make_bounded(const Real val, const Real vmin, const Real vmax) {
+  return std::min(std::max(val, vmin + EPS()), vmax * (1.0 - EPS()));
+}
+
+template <typename T>
+PORTABLE_FORCEINLINE_FUNCTION int sgn(const T &val) {
+  return (T(0) <= val) - (val < T(0));
+}
+
+template <typename A, typename B>
+PORTABLE_FORCEINLINE_FUNCTION auto ratio(const A &a, const B &b) {
+  return a / (b + sgn(b) * SMALL<B>());
+}
+
+} // namespace robust
 } // namespace singularity
 
-#endif // SINGULARITY_EOS_BASE_CONSTANTS_HPP_
+#endif // SINGULARITY_EOS_BASE_ROBUST_UTILS_HPP_

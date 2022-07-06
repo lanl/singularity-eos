@@ -12,13 +12,22 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#pragma once
+#include <ports-of-call/portability.hpp>
 
-#cmakedefine PORTABILITY_STRATAGY_KOKKOS
+#ifndef CATCH_CONFIG_RUNNER
+#define CATCH_CONFIG_RUNNER
+#include "catch2/catch.hpp"
+#endif
 
-#cmakedefine SINGULARITY_INVERT_AT_SETUP
-#cmakedefine SINGULARITY_EOS_SKIP_EXTRAP
+int main(int argc, char *argv[]) {
 
-#cmakedefine SINGULARITY_USE_FMATH_ORDER @SINGULARITY_USE_FMATH_ORDER@
-#cmakedefine SINGULARITY_USE_SINGLE_LOGS
-#cmakedefine SINGULARITY_USE_TRUE_LOG_GRIDDING
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  Kokkos::initialize();
+#endif
+  int result;
+  { result = Catch::Session().run(argc, argv); }
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  Kokkos::finalize();
+#endif
+  return result;
+}

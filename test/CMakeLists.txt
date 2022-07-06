@@ -13,7 +13,11 @@
 #------------------------------------------------------------------------------
 
 add_executable(eos_unit_tests
-                 eos_unit_tests.cpp)
+  catch2_define.cpp
+  eos_unit_test_helpers.hpp
+  test_eos_unit.cpp
+  test_eos_gruneisen.cpp
+)
 
 if(SINGULARITY_USE_HDF5)
   if(SINGULARITY_TEST_SESAME)
@@ -29,6 +33,8 @@ target_link_libraries(eos_unit_tests
     Catch2::Catch2
     singularity-eos::singularity-eos
 )
+include(Catch)
+catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac
@@ -39,8 +45,6 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_SESAME)
       singularity-eos::singularity-eos
   )
 endif()
-include(Catch)
-catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
 
 if (SINGULARITY_BUILD_CLOSURE)
   add_executable(test_pte
@@ -57,14 +61,23 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_link_libraries(profile_stellar_collapse singularity-eos::singularity-eos)
 
   message(STATUS "Generating stellar collapse table for tests using Python script")
-  include(FindPythonInterp)
+  find_package(Python COMPONENTS Interpreter REQUIRED)
   if (HDF5_IS_PARALLEL)
-    execute_process(COMMAND mpirun -n 1 ${PYTHON_EXECUTABLE}
+    execute_process(COMMAND mpirun -n 1 ${Python_EXECUTABLE}
       ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_ideal_sc.py
       -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
   else()
-    execute_process(COMMAND ${PYTHON_EXECUTABLE}
+    execute_process(COMMAND ${Python_EXECUTABLE}
       ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_ideal_sc.py
       -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
   endif()
+endif()
+
+if (SINGULARITY_BUILD_PYTHON AND SINGULARITY_TEST_PYTHON)
+  find_package(Python COMPONENTS Interpreter Development REQUIRED)
+  set(PYTHON_TEST_ENVIRONMENT PYTHONPATH=${CMAKE_BINARY_DIR}/python:$ENV{PYTHONPATH})
+
+  add_test(NAME PythonBindings
+           COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python_bindings.py -v)
+  set_tests_properties(PythonBindings PROPERTIES ENVIRONMENT "${PYTHON_TEST_ENVIRONMENT}")
 endif()
