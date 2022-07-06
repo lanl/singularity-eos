@@ -127,11 +127,11 @@ EOS applyWrappedShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Re
 
 template <typename T>
 EOS applyShiftAndScaleAndBilinearRamp(T &&eos, bool scaled, bool shifted, bool ramped,
-                                 Real scale, Real shift, Real r0, Real a, Real b,
-                                 Real c) {
+                                      Real scale, Real shift, Real r0, Real a, Real b,
+                                      Real c) {
   if (ramped) {
-    return applyWrappedShiftAndScale<T, BilinearRampEOS>(std::forward<T>(eos), scaled, shifted,
-                                                    scale, shift, r0, a, b, c);
+    return applyWrappedShiftAndScale<T, BilinearRampEOS>(
+        std::forward<T>(eos), scaled, shifted, scale, shift, r0, a, b, c);
   } else {
     return applyShiftAndScale(std::forward<T>(eos), scaled, shifted, scale, shift);
   }

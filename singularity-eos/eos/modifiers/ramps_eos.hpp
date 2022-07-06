@@ -36,8 +36,8 @@ using namespace eos_base;
 using singularity::robust::ratio;
 
 template <typename T>
-void pAlpha2BilinearRampParams(const T &eos, const Real alpha0, const Real Pe, const Real Pc,
-                          Real &r0, Real &a, Real &b, Real &c) {
+void pAlpha2BilinearRampParams(const T &eos, const Real alpha0, const Real Pe,
+                               const Real Pc, Real &r0, Real &a, Real &b, Real &c) {
   // get reference conditions
   Real rho0, T0, sie0, P0, cv0, bmod0, dpde0, dvdt0;
   Real rmid, r1;

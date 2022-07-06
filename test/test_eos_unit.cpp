@@ -33,10 +33,10 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
+using singularity::BilinearRampEOS;
 using singularity::EOS;
 using singularity::Gruneisen;
 using singularity::IdealGas;
-using singularity::BilinearRampEOS;
 using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
 
