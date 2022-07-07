@@ -40,6 +40,7 @@
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
+#include <singularity-eos/eos/modifiers/ramps_eos.hpp>
 #include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
 #include <singularity-eos/eos/modifiers/scaled_eos.hpp>
 #include <singularity-eos/eos/modifiers/shifted_eos.hpp>
@@ -528,9 +529,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
+  PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
-  inline RootFinding1D::Status rootStatus() const { return status_; }
-  inline TableStatus tableStatus() const { return whereAmI_; }
+  PORTABLE_INLINE_FUNCTION
+  RootFinding1D::Status rootStatus() const { return status_; }
+  PORTABLE_INLINE_FUNCTION
+  TableStatus tableStatus() const { return whereAmI_; }
   RootFinding1D::RootCounts counts;
   void Finalize();
   static std::string EosType() { return std::string("SpinerEOSDependsRhoT"); }
@@ -744,6 +748,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
 
+  PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
@@ -752,6 +757,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     printf("%s\n\t%s\n\t%s%i\n", s1, s2, s3, matid_);
     return;
   }
+  PORTABLE_INLINE_FUNCTION
   RootFinding1D::Status rootStatus() const { return status_; }
   RootFinding1D::RootCounts counts;
   static std::string EosType() { return std::string("SpinerEOSDependsRhoSie"); }
@@ -1296,8 +1302,14 @@ static constexpr const auto scaled_of_shifted =
 static constexpr const auto unit_or_rel =
     transform_variadic_list(partial_eos_list, apply_to_partial);
 // create combined list
-static constexpr const auto combined_list = singularity::detail::concat(
+static constexpr const auto combined_list_1 = singularity::detail::concat(
     full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel);
+// make a ramped eos of everything
+static constexpr const auto ramped_all =
+    transform_variadic_list(combined_list_1, al<BilinearRampEOS>{});
+// final combined list
+static constexpr const auto combined_list = singularity::detail::concat(
+    full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel, ramped_all);
 // a function that returns a Variant from a typelist
 template <typename... Ts>
 struct tl_to_Variant_struct {

@@ -211,7 +211,7 @@ if(SINGULARITY_USE_KOKKOS)
   ####
   # TODO: Once it's oppurtune, we will
   #       not support Kokkos < 3.3
-  if(Kokkos_VERSION_MAJOR VERSION_LESS "3.3")
+  if(${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR} VERSION_LESS "3.3")
     message(WARNING "`Kokkos` version [${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR}] is DEPRECATED, and `singularity-eos` will not support versions < '3.3' in the very near future.")
     if(SINGULARITY_USE_CUDA)
       get_filename_component(_compiler_exe ${CMAKE_CXX_COMPILER} NAME)
