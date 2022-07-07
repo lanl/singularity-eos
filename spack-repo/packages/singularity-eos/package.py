@@ -1,26 +1,20 @@
-#------------------------------------------------------------------------------#
-# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
-# program was produced under U.S. Government contract 89233218CNA000001
-# for Los Alamos National Laboratory (LANL), which is operated by Triad
-# National Security, LLC for the U.S.  Department of Energy/National
-# Nuclear Security Administration. All rights in the program are
-# reserved by Triad National Security, LLC, and the U.S. Department of
-# Energy/National Nuclear Security Administration. The Government is
-# granted for itself and others acting on its behalf a nonexclusive,
-# paid-up, irrevocable worldwide license in this material to reproduce,
-# prepare derivative works, distribute copies to the public, perform
-# publicly and display publicly, and to permit others to do so.
-#------------------------------------------------------------------------------#
-
-# Spackage for Singularity-EOS
+# Copyright 2013-2022 Lawrence Livermore National Security, LLC and other
+# Spack Project Developers. See the top-level COPYRIGHT file for details.
+#
+# SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
 import os
-from spack import *
-import llnl.util.tty as tty
+
+from spack.package import *
+
 
 class SingularityEos(CMakePackage, CudaPackage):
+    """Singularity-EOS: A collection of closure models and tools useful for
+    multiphysics codes."""
+
     homepage    = "https://lanl.github.io/singularity-eos/main/index.html"
-    git         = "http://github.com/lanl/singularity-eos.git"
+    git         = "https://github.com/lanl/singularity-eos.git"
+    url         = "https://github.com/lanl/singularity-eos/archive/refs/tags/release-1.6.0.tar.gz"
 
     version("main", branch="main")
     version("develop", branch="rbberger/spackage_new_deps")
@@ -35,12 +29,12 @@ class SingularityEos(CMakePackage, CudaPackage):
     variant("mpi", default=False, description="Build with MPI support")
 
     # build converters for sesame, stellarcollapse eos's
-    variant("build_extra", description="Build converters", values=any_combination_of("sesame","stellarcollapse").with_default("none"))
+    variant("build_extra", description="Build converters", values=any_combination_of("sesame", "stellarcollapse").with_default("none"))
 
-    # build tests (NB: will include tests for selected options in `build_extra`
+    # build tests
     variant("tests", default=False, description="Build tests")
 
-    # build the fortran interface
+    # build the Fortran interface
     variant("fortran", default=True, description="Enable building fortran interface")
 
     # build the Python bindings
@@ -62,7 +56,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("py-sphinx", when="+doc")
     depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
     depends_on("py-sphinx-multiversion", when="+doc")
-    # TODO: this can be messy, esp if all we need is clang-format
     depends_on('llvm@12.0.0+clang', when='+format')
 
     # linear algebra when not using GPUs
@@ -73,11 +66,14 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("spiner +kokkos", when="+kokkos")
 
     depends_on("mpark-variant")
-    depends_on("mpark-variant", patches=patch("https://raw.githubusercontent.com/lanl/singularity-eos/main/utils/cuda_compatibility.patch", sha256="7b3eaa52b5ab23dc45fbfb456528e36742e04b838a5df859eca96c4e8274bb38"), when="+cuda")
+    depends_on("mpark-variant",
+               patches=patch("https://raw.githubusercontent.com/lanl/singularity-eos/main/utils/cuda_compatibility.patch",
+                             sha256="7b3eaa52b5ab23dc45fbfb456528e36742e04b838a5df859eca96c4e8274bb38"),
+               when="+cuda")
 
     # set up kokkos offloading dependencies
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
-        depends_on("kokkos@3.2: ~shared" +_flag, when="+kokkos" + _flag)
+        depends_on("kokkos@3.2: ~shared" + _flag, when="+kokkos" + _flag)
         depends_on("kokkos-kernels@3.2:" + _flag, when="+kokkos-kernels" + _flag)
         depends_on("spiner" + _flag, when="+kokkos" + _flag)
 
@@ -89,12 +85,11 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("kokkos-kernels ~shared", when="+kokkos-kernels")
 
     for _flag in list(CudaPackage.cuda_arch_values):
-        depends_on("kokkos cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
-        depends_on("kokkos-kernels cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
-        depends_on("spiner cuda_arch=" +_flag, when="+cuda+kokkos cuda_arch=" + _flag)
+        depends_on("kokkos cuda_arch=" + _flag, when="+cuda+kokkos cuda_arch=" + _flag)
+        depends_on("kokkos-kernels cuda_arch=" + _flag, when="+cuda+kokkos cuda_arch=" + _flag)
+        depends_on("spiner cuda_arch=" + _flag, when="+cuda+kokkos cuda_arch=" + _flag)
 
-    conflicts("cuda_arch=none", when="+cuda",
-          msg="CUDA architecture is required")
+    conflicts("cuda_arch=none", when="+cuda", msg="CUDA architecture is required")
 
     # NOTE: we can do depends_on("libfoo cppflags='-fPIC -O2'") for compiler options
 
@@ -103,13 +98,14 @@ class SingularityEos(CMakePackage, CudaPackage):
     conflicts("+openmp", when="~kokkos")
     conflicts("+kokkos-kernels", when="~kokkos")
 
-    # NOTE: these are set so that dependencies in downstream projects share common MPI dependence
+    # NOTE: these are set so that dependencies in downstream projects share
+    # common MPI dependence
     for _flag in ("~mpi", "+mpi"):
         depends_on("hdf5~cxx+hl" + _flag, when=_flag)
-        depends_on("py-h5py" + _flag, when="+tests build_extra=stellarcollapse "+_flag)
+        depends_on("py-h5py" + _flag, when="+tests build_extra=stellarcollapse " + _flag)
 #        depends_on("hdf5+hl" + _flag, when=_flag)
         depends_on("py-h5py" + _flag, when=_flag)
-        depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos"+_flag)
+        depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos" + _flag)
 
     def cmake_args(self):
         args = [
@@ -121,17 +117,25 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_BUILD_CLOSURE", "fortran"),
             self.define_from_variant("SINGULARITY_BUILD_PYTHON", "python"),
             self.define_from_variant("SINGULARITY_BUILD_TESTS", "tests"),
-            self.define("SINGULARITY_BUILD_SESAME2SPINER", "sesame" in self.spec.variants["build_extra"]),
-            self.define("SINGULARITY_TEST_SESAME", ("sesame" in self.spec.variants["build_extra"] and "tests" in self.spec)),
-            self.define("SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER", "stellarcollapse" in self.spec.variants["build_extra"]),
-            self.define("SINGULARITY_TEST_STELLARCOLLAPSE2SPINER", ("stellarcollapse" in self.spec.variants["build_extra"] and "tests" in self.spec)),
-            self.define("SINGULARITY_TEST_PYTHON", ("python" in self.spec and "tests" in self.spec)),
+            self.define("SINGULARITY_BUILD_SESAME2SPINER",
+                        "sesame" in self.spec.variants["build_extra"]),
+            self.define("SINGULARITY_TEST_SESAME",
+                        ("sesame" in self.spec.variants["build_extra"] and
+                         "tests" in self.spec)),
+            self.define("SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER",
+                        "stellarcollapse" in self.spec.variants["build_extra"]),
+            self.define("SINGULARITY_TEST_STELLARCOLLAPSE2SPINER",
+                        ("stellarcollapse" in self.spec.variants["build_extra"] and
+                         "tests" in self.spec)),
+            self.define("SINGULARITY_TEST_PYTHON",
+                        ("python" in self.spec and "tests" in self.spec)),
             self.define("SINGULARITY_USE_HDF5", "^hdf5" in self.spec),
             self.define("SINGULARITY_USE_EOSPAC", "^eospac" in self.spec)
         ]
 
         if '+kokkos+cuda' in self.spec:
-            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
+            args.append(self.define("CMAKE_CXX_COMPILER",
+                                    self.spec["kokkos"].kokkos_cxx))
 
         return args
 
@@ -141,7 +145,8 @@ class SingularityEos(CMakePackage, CudaPackage):
         return "singularity-eos_spackconfig.cmake"
 
     # generate the pre-configured cmake cache file that reflects the spec options
-    # NOTE: this file isn't replaced if the same spec is already installed - you may need to uninstall the old spec first
+    # NOTE: this file isn't replaced if the same spec is already installed -
+    # you may need to uninstall the old spec first
     @run_after('cmake')
     def generate_cmake_configuration(self):
         config_fname = self.cmake_config_fname
@@ -150,17 +155,17 @@ class SingularityEos(CMakePackage, CudaPackage):
         with working_dir("cmake-gen", create=True):
             with open(config_fname, "w") as cmc:
                 for arg in cmake_config:
-                    kt, v = arg.replace("-D","").split("=")
+                    kt, v = arg.replace("-D", "").split("=")
                     k, t = kt.split(":")
-                    cmc.write("set(" + k + " \"" + v + "\" CACHE " + t + " \"\" FORCE)" + "\n")
+                    cmc.write("set({} \"{}\" CACHE {} \"\" FORCE)\n".format(k, v, t))
             install(config_fname, join_path(prefix, config_fname))
-        return       
 
     # run when loaded
     # NOTE: to use:
     #   cmake -C $SINGULARITY_SPACK_CMAKE_CONFIG ...
     def setup_run_environment(self, env):
-        env.set("SINGULARITY_SPACK_CMAKE_CONFIG", os.path.join(self.prefix, self.cmake_config_fname))
+        env.set("SINGULARITY_SPACK_CMAKE_CONFIG",
+                os.path.join(self.prefix, self.cmake_config_fname))
         if os.path.isdir(self.prefix.lib64):
             lib_dir = self.prefix.lib64
         else:
@@ -168,5 +173,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
         if '+python' in self.spec:
             python_version = self.spec['python'].version.up_to(2)
-            python_inst_dir = join_path(lib_dir, 'python{0}'.format(python_version), 'site-packages')
+            python_inst_dir = join_path(lib_dir,
+                                        'python{0}'.format(python_version),
+                                        'site-packages')
             env.prepend_path('PYTHONPATH', python_inst_dir)
