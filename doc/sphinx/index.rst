@@ -21,9 +21,9 @@ Documentation approved for unlimited release. LA-UR-21-31131.
    src/models
    src/modifiers
    src/using-closures
+   src/python
    src/contributing
    src/sphinx-doc
-   src/python
 
 Indices and tables
 ==================
