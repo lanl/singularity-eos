@@ -199,6 +199,14 @@ latter being the adiabatic exponent. For an ideal gas, they are related through
 
     \Gamma = \gamma - 1
 
+The ``IdealGas`` EOS constructor has two arguments, ``gm1``, which is
+the Gruneisen parameter :math:`\Gamma`, and ``Cv``, which is the
+specific heat :math:`C_V`:
+
+.. code-block:: cpp
+
+  IdealGas(Real gm1, Real Cv)
+
 Gruneisen EOS
 `````````````
 
@@ -295,6 +303,29 @@ EOS is a fit to the principal Hugoniot, the EOS will obviously reproduce single
 shocks quite well, but it may not be as appropriate when there are multiple
 shocks or for modeling the release behavior of a material.
 
+The constructor for the ``Gruneisen`` EOS has the signature
+
+.. code-block:: cpp
+
+  Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
+            const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv,
+            const Real rho_max)
+
+where ``C0`` is :math:`C_0`, ``s1`` is :math:`s_1`, ``s2`` is
+:math:`s_2`, ``s3`` is :math:`s_3`, ``G0`` is :math:`\Gamma_0`, ``b``
+is :math:`b`, ``rho0`` is :math:`\rho_0`, ``T0`` is :math:`T_0`,
+``P0`` is :math:`P_0`, and ``Cv`` is :math:`C_v`. ``rho_max`` is the
+maximum value of density for which the reference pressure curve is
+valid. Input densities above ``rho_max`` are pinned to ``rho_max``.
+
+There is an overload of the ``Gruneisen`` class which computes
+``rho_max`` automatically without the user needing to specify:
+
+.. code-block:: cpp
+
+  Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
+            const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
+
 JWL EOS
 ````````
 
@@ -331,6 +362,16 @@ Finally, to complete the EOS the energy is related to the temperature by
 
 where :math:`C_V` is the constant volume specific heat capacity.
 
+The constructor for the JWL EOS is
+
+.. code-block:: cpp
+
+  JWL(const Real A, const Real B, const Real R1, const Real R2,
+      const Real w, const Real rho0, const Real Cv)
+
+where ``A`` is :math:`A`, ``B`` is :math:`B`, ``R1`` is :math:`R_1`,
+``R2`` is :math:`R_2`, ``w`` is :math:`w`, ``rho0`` is :math:`\rho_0`,
+and ``Cv`` is :math:`C_V`.
 
 Davis EOS
 `````````
@@ -426,6 +467,19 @@ The settable parameters are the dimensionless parameters listed above as well as
 the pressure, density, temperature, energy, Gruneisen parameter, and constant
 volume specific heat capacity at the reference state.
 
+The constructor for the Davis Reactants EOS is
+
+.. code-block:: cpp
+
+  DavisReactants(const Real rho0, const Real e0, const Real P0, const Real T0,
+                 const Real A, const Real B, const Real C, const Real G0, const Real Z,
+                 const Real alpha, const Real Cv0)
+
+where ``rho0`` is :math:`\rho_0`, ``e0`` is :math:`e_0`, ``P0`` is
+:math:`P_0`, ``T0`` is :math:`T_0`, ``A`` is :math:`A`, ``B`` is
+:math:`B`, ``C`` is :math:`C`, ``G0`` is :math:`\Gamma_0`, ``Z`` is
+:math:`Z`, ``alpha`` is :math:`\alpha`, and ``Cv0`` is the specific
+heat capacity at the reference state.
 
 Davis Products EOS
 '''''''''''''''''''
@@ -490,6 +544,17 @@ Here, there are four dimensionless parameters that are settable by the user,
 :math:`e_\mathrm{C}`, :math:`V_\mathrm{C}` and :math:`T_\mathrm{C}` are tuning
 parameters with units related to their non-subscripted counterparts.
 
+The constructor for the Davis Products EOS is
+
+.. code-block:: cpp
+
+  DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
+                const Real pc, const Real Cv, const Real E0)
+
+where ``a`` is :math:`a`, ``b`` is :math:`b`, ``k`` is :math:`k`,
+``n`` is :math:`n`, ``vc`` is :math:`V_\mathrm{C}`, ``pc`` is
+:math:`P_\mathrm{C}`, ``Cv`` is :math:`C_{V,0}`, and ``E0`` is
+:math:`e_\mathrm{C}`.
 
 Spiner EOS
 ````````````
@@ -525,6 +590,92 @@ derivatives are tabulated and interpolated, rather than computed from
 the interpolating function. This approach allows for significantly
 higher fidelity approximations of these derivatives.
 
+Both ``SpinerEOS`` classes benefit from a ``lambda`` parameter, as
+described in :ref:`the EOS API section`<using-eos>`. In particular, if
+an array of size 2 is passed in to the scalar call (or one per point
+for the vector call), the model will leverage this scratch space to
+cache initial guesses for root finds.
+
+To avoid race conditions, at least one array should be allocated per
+thread. Depending on the call pattern, one per point may be best. In
+the vector case, one per point is necessary.
+
+The constructor for ``SpinerEOSDependsRhoT`` is given by two overloads:
+
+.. code-block:: cpp
+
+  SpinerEOSDependsRhoT(const std::string &filename, int matid,
+                       bool reproduciblity_mode = false);
+  SpinerEOSDependsRhoT(const std::string &filename, const std::string &materialName,
+                       bool reproducibility_mode = false);
+
+where here ``filename`` is the input file, ``matid`` is the unique
+material ID in the database in the file, ``materialName`` is the name
+of the material in the file, and ``reproducability_mode`` is a boolean
+which slightly changes how initial guesses for root finds are
+computed. The constructor for ``SpinerEOSDependsRhoSie`` is identical.
+
+``sp5`` files and ``sesame2spiner``
+`````````````````````````````````````
+
+The ``SpinerEOS`` models use their own file format built on ``hdf5``,
+which we call ``sp5``. These files can be generated by hand, or they
+can be generated from the `sesame`_ database (assuming `eospac`_ is
+installed) via the tool ``sesame2spiner``, which is packaged with
+``singularity-eos``. Buld ``sesame2spiner`` by specifying
+
+.. code-block::
+
+  -DSINGULARITY_USE_HDF5=ON -DSPINGULARITY_USE_EOSPAC=ON -DSINGULARITY_BUILD_SESAME2SPINER=ON
+
+at configure time. The call to ``sesame2spiner`` is of the form
+
+.. code-block::
+
+  sesame2spiner -s output_file_name.sp5 input1.dat input2.dat ...
+
+for any number of input files. Verbosity flags ``-p`` and ``-v`` are
+also available. Use ``-h`` for a help message. The ``-s`` flag is
+optional and the output file name defaults to ``materials.sp5``.
+
+Each input file corresponds to a material and consists of simple
+key-value pairs. For exampe the following input deck is for air:
+
+.. code-block::
+
+  matid = 5030
+  # These set the number of grid points per decade
+  # for each variable. The default is 50 points
+  # per decade.
+  numrho/decade = 40
+  numT/decade = 40
+  numSie/decade = 40
+  # Defaults pulled from the sesame file if possible
+  name = air
+  rhomin = 1e-2
+  rhomax = 10
+  Tmin = 252
+  Tmax = 1e4
+  siemin = 1e12
+  siemax = 1e16
+  # These shrink the logarithm of the bounds by a fraction of the
+  # total inteval <= 1.
+  # Note that these may be deprecated in the near future.
+  shrinklRhoBounds = 0.15
+  shrinklTBounds = 0.15
+  shrinkleBounds = 0.5
+
+The only required value in an input file is the matid, in this
+case 5030. All other values will be inferred from the original sesame
+database if possible and if no value in the input file is
+provided. Comments are prefixed with ``#``.
+
+`eospac`_ uses environment variables and files to locate files in the
+`sesame`_ database, and ``sesame2spiner`` uses `eospac`_. So the
+location of the ``sesame`` database need not be provided by the
+command line. For how to specify `sesame`_ file locations, see the
+`eospac`_ manual.
+
 Stellar Collapse EOS
 ````````````````````
 
@@ -532,7 +683,7 @@ This model provides finite temperature nuclear equations of state
 suitable for core collapse supernova and compact object (such as
 neutron star) simulations. These models assume nuclear statistical
 equilibrium (NSE). It reads tabulated data in the `Stellar Collapse`_
-format, as first presented by `O'Connor and Ott`_.
+format, as first presented by `OConnor and Ott`_.
 
 Like ``SpinerEOSDependsRhoT``, ``StellarCollapse`` tabulateds all
 quantities in terms of density and temperature on a logarithmically
@@ -572,9 +723,47 @@ where :math:`w = \rho h` for specific entalpy :math:`h` is the
 enthalpy by volume, rather than the density :math:`rho`. This ensures
 the sound speed is bounded from above by the speed of light.
 
+The ``StellarCollapse`` model requires a ``lambda`` parameter of size
+2, as described in :ref:`the EOS API section`<using-eos>`. The zeroth
+element of the ``lambda`` array contains the electron fraction. The
+first element is reserved for caching. It currently contains the
+natural log of the temperature, but this should not be assumed.
+
+To avoid race conditions, at least one array should be allocated per
+thread. Depending on the call pattern, one per point may be best. In
+the vector case, one per point is necessary.
+
+The ``StellarCollpase`` model can read files in either the original
+format found on the `Stellar Collapse`_ website, or in the ``sp5``
+format described above.
+
+.. warning::
+
+  Note that the data contained in an ``sp5`` file for the
+  ``StellarCollapse`` EOS and the ``SpinerEOS`` models is not
+  identical and the files are not interchangeable.
+
+The constructor for the ``StellarCollapse`` EOS class looks like
+
+.. code-block:: cpp
+
+  StellarCollapse(const std::string &filename, bool use_sp5 = false,
+                  bool filter_bmod = true)
+
+where ``filename`` is the file containing the tabulated model,
+``use_sp5`` specifies whether to read an ``sp5`` file or a file in the
+original `Stellar Collapse`_ format, and ``filter_bmod`` specifies
+whether or not to apply the above-described median filter.
+
+``StellarCollapse`` also provides 
+
+.. cpp:function:: void Save(const std::string &filename)
+
+which saves the current EOS data in ``sp5`` format.
+
 .. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
 
-.. _O'connor and Ott`: https://doi.org/10.1088/0264-9381/27/11/114103
+.. _OConnor and Ott: https://doi.org/10.1088/0264-9381/27/11/114103
 
 .. _median filter: https://en.wikipedia.org/wiki/Median_filter
 
@@ -582,7 +771,15 @@ EOSPAC EOS
 ````````````
 
 This is a striaghtforward wrapper of the `EOSPAC`_ library for the
-`Sesame`_ database.
+`Sesame`_ database. The constructor for the ``EOSPAC`` model looks like
+
+.. code-block::
+
+  EOSPAC(int matid, bool invert_at_setup = false)
+
+where ``matid`` is the unique material number in the database and
+``invert_at_setup`` specifies whether or not pre-compute tables of
+temperature as a function of density and energy.
 
 .. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
 

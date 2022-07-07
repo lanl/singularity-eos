@@ -3,16 +3,52 @@
 Contributing
 =============
 
-Useful code structure information
----------------------------------
+If you have any trouble with the project, or are interested in
+participating, please contact us by creating an issue on the github
+repository, or submit a pull request!
 
-The ``Variant`` class and ``mpark::variant``
-````````````````````````````````````````````
+Pull request protocol
+----------------------
 
-Work in progress. Things to cover:
+There is a pull reuqest template that will be auto-populated when you
+submit a pull request. A pull request should have a summary of
+changes. You should also add tests for bugs fixed or new features you
+add.
 
-*  Type erasure
-*  Unified API
+We have a changelog file, ``CHANGELOG.md``. After creating your pull
+request, add the relevant change and a link to the PR in the
+changelog.
+
+Before a pull request will be merged, the code should be formatted. We
+use clang-format for this, pinned to version 12. You can automatically
+trigger ``clang-format`` in two ways: first you can run the script
+``utils/scripts/format.sh``; second you can type ``make
+format_singularity`` after configuring the code with ``clang-format``
+discoverable by ``cmake``.
+
+Several sets of tests are triggered on a pull request: a static format
+check, a docs buld, and unit tests of analytic models and the stellar
+collapse model. These are run through github's CPU infrastructure. We
+have a second set of tests run on a wider set of architectures that
+also access the Sesame library, which we are not able to make public.
+
+The docs are built but not deployed on PRs from forks, and the
+internal tests will not be run automatically. So when the code is
+ready for merge, you must ask a project maintainer to trigger the
+remaining tests for you.
+
+Interwoven Dependencies
+------------------------
+
+``singularity-eos`` depends on several other open-source, Los Alamos
+maintained, projects. In particular, ``spiner`` and
+``ports-of-call``. If you have issues with these projects, ideally
+submit issues on the relevant github pages. However, if you can't
+figure out where an issue belongs, no big deal. Submit where you can
+and we'll engage with you to figure out how to proceed.
+
+Notes for Contribuors
+---------------------------------------
 
 The CRTP slass structure and static polymorphism
 ````````````````````````````````````````````````
@@ -133,7 +169,6 @@ all the functions in the base class can be used freely.
 
 .. _CRTP: https://www.fluentcpp.com/2017/05/12/curiously-recurring-template-pattern/
 
-
 Fast Logs and Approximate Log Gridding
 ```````````````````````````````````````
 
@@ -204,3 +239,7 @@ itself is an exact representation of itself and the difference from
 To invert, we use the built in function that inverts ``frexp``,
 ``ldexp``, which combines the mantissa and exponent into the original
 floating point representation.
+
+This approach is described in more detail in our `short note`_ on the topic.
+
+.. _Short note: https://arxiv.org/abs/2206.08957
