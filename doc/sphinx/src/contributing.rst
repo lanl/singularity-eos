@@ -15,6 +15,10 @@ submit a pull request. A pull request should have a summary of
 changes. You should also add tests for bugs fixed or new features you
 add.
 
+We have a changelog file, ``CHANGELOG.md``. After creating your pull
+request, add the relevant change and a link to the PR in the
+changelog.
+
 Before a pull request will be merged, the code should be formatted. We
 use clang-format for this, pinned to version 12. You can automatically
 trigger ``clang-format`` in two ways: first you can run the script
@@ -45,14 +49,6 @@ and we'll engage with you to figure out how to proceed.
 
 Notes for Contribuors
 ---------------------------------------
-
-The ``Variant`` class and ``mpark::variant``
-````````````````````````````````````````````
-
-Work in progress. Things to cover:
-
-*  Type erasure
-*  Unified API
 
 The CRTP slass structure and static polymorphism
 ````````````````````````````````````````````````
@@ -243,3 +239,7 @@ itself is an exact representation of itself and the difference from
 To invert, we use the built in function that inverts ``frexp``,
 ``ldexp``, which combines the mantissa and exponent into the original
 floating point representation.
+
+This approach is described in more detail in our `short note`_ on the topic.
+
+.. _Short note: https://arxiv.org/abs/2206.08957
