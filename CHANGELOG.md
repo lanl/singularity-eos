@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR150]](https://github.com/lanl/singularity-eos/pull/150) This changelog
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR146]](https://github.com/lanl/singularity-eos/pull/146) Changes needed to cmake to enable spackage upstream
