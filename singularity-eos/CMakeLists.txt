@@ -46,8 +46,11 @@ endif()
 
 if (SINGULARITY_USE_FORTRAN)
   list(APPEND EOS_SRCS eos/singularity_eos.f90)
+  # would rather handle this more robustly, being sloppy for now
+  list(APPEND EOS_MODS singularity_eos.mod singularity_eos_types.mod)
 endif()
 
 # export to parent scope
 set(EOS_HEADERS ${EOS_HEADERS} PARENT_SCOPE)
 set(EOS_SRCS ${EOS_SRCS} PARENT_SCOPE)
+set(EOS_MODS ${EOS_MODS} PARENT_SCOPE)
