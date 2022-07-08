@@ -349,6 +349,10 @@ foreach(_header ${EOS_HEADERS})
   list(APPEND _headers singularity-eos/${_header})
 endforeach()
 
+foreach(_mod ${EOS_MODS})
+  list(APPEND _install_mods ${CMAKE_CURRENT_BINARY_DIR}/${_mod})
+endforeach()
+
 foreach(_src ${EOS_SRCS})
   list(APPEND _srcs singularity-eos/${_src})
 endforeach()

@@ -2,6 +2,9 @@
 
 ## Current develop
 
+### Fixed cmake code to properly install fortran module files in include path
+- [[PR151]](https://github.com/lanl/singularity-eos/pull/151) fix module install
+
 ### Added (new features/APIs/variables/...)
 
 ### Changed (changing behavior/API/variables/...)
