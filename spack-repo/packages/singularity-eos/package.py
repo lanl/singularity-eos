@@ -17,7 +17,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     url         = "https://github.com/lanl/singularity-eos/archive/refs/tags/release-1.6.0.tar.gz"
 
     version("main", branch="main")
-    version("develop", branch="rbberger/spackage_new_deps")
 
     # build with kokkos, kokkos-kernels for offloading support
     variant("kokkos", default=False, description="Enable kokkos")
