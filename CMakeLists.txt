@@ -48,14 +48,17 @@ option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table reade
 option (SINGULARITY_TEST_PYTHON "Test the Python bindings" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
+option (SINGULARITY_PATCH_MPARK_VARIANT "Apply GPU patch to mpark-variant submodule" ON)
 
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
-message(STATUS "Patching mpark::variant to support GPUs")
-execute_process(COMMAND patch -N -s -V never
-                ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
-                )
+if(SINGULARITY_PATCH_MPARK_VARIANT)
+  message(STATUS "Patching mpark::variant to support GPUs")
+  execute_process(COMMAND patch -N -s -V never
+                  ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
+                  ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
+                  )
+endif()
 
 # keep config data stored in easily accessable vars,
 # only attaching them to targets as late as possible.
@@ -244,9 +247,8 @@ if (SINGULARITY_BUILD_CLOSURE)
 endif() #SINGULARITY_BUILD_CLOSURE
 
 # variant for prior C++17
-# type: hard submodule
+# type: soft submodule
 singularity_import_dependency(
-  SUBMODULE_ONLY
   PKG mpark_variant
   TARGET mpark_variant
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/variant
@@ -255,14 +257,13 @@ singularity_import_dependency(
 # ports-of-call
 # type: ghost submodule
 singularity_import_dependency(
-  SUBMODULE_ONLY
   PKG ports-of-call
   TARGET ports-of-call::ports-of-call
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/ports-of-call
 )
 
 # spiner
-# type: soft? submodule
+# type: soft submodule
 singularity_import_dependency(
   PKG spiner
   TARGET spiner::spiner
@@ -273,6 +274,7 @@ singularity_import_dependency(
 if (SINGULARITY_USE_HDF5)
   # hdf5, for data interopability
   # type: external
+  enable_language(C)
   singularity_import_dependency(
     PKG HDF5
     COMPONENTS C HL
