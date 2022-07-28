@@ -257,10 +257,11 @@ PORTABLE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
     RootFinding1D::RootCounts counts;
-    auto status = regula_falsi(PofRatE,press,_rho0,1.0e-5,1.0e3,1.0e-8,1.0e-8,rho,counts);
+    auto status =
+        regula_falsi(PofRatE, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
     if (status != Status::SUCCESS) {
       // Root finder failed even though the solution was bracketed... this is an error
-      EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: " 
+      EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: "
                 "Root find failed to find a solution given P, T\n");
     }
   }

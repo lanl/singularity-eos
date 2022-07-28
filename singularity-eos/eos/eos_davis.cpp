@@ -13,8 +13,8 @@
 //------------------------------------------------------------------------------
 
 #include <cmath>
-#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/eos/eos.hpp>
 
 namespace singularity {
 
@@ -142,15 +142,16 @@ PORTABLE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperature(
   // function of T
   auto PofRatT = [&](const Real r) {
     return (Ps(r) + Gamma(r) * r * _Cv0 * Ts(r) / (1 + _alpha) *
-                   (std::pow(temp / Ts(r), 1 + _alpha) - 1.0));
+                        (std::pow(temp / Ts(r), 1 + _alpha) - 1.0));
   };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
   RootFinding1D::RootCounts counts;
-  auto status = regula_falsi(PofRatT,press,_rho0,1.0e-5,1.0e3,1.0e-8,1.0e-8,rho,counts);
+  auto status =
+      regula_falsi(PofRatT, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
-    EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: " 
+    EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
               "Root find failed to find a solution given P, T\n");
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
@@ -304,10 +305,11 @@ PORTABLE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperature(
   using RootFinding1D::Status;
   RootFinding1D::RootCounts counts;
   const Real rho0 = 1.0 / _vc;
-  auto status = regula_falsi(PofRatT,press,rho0,1.0e-5,1.0e3,1.0e-8,1.0e-8,rho,counts);
+  auto status =
+      regula_falsi(PofRatT, press, rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
-    EOS_ERROR("DavisProducts::DensityEnergyFromPressureTemperature: " 
+    EOS_ERROR("DavisProducts::DensityEnergyFromPressureTemperature: "
               "Root find failed to find a solution given P, T\n");
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
