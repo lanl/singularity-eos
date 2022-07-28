@@ -291,7 +291,7 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("num"), py::arg("output"))
 
     .def_property_readonly("nlambda", &T::nlambda)
-    .def_property_readonly_static("PreferredInput", &T::PreferredInput)
+    .def_property_readonly_static("PreferredInput", [](py::object) { return T::PreferredInput(); })
     .def("PrintParams", &T::PrintParams)
     .def("DensityEnergyFromPressureTemperature", [](const T & self, const Real press, const Real temp, py::array_t<Real> lambda) {
       Real rho, sie;
@@ -304,7 +304,7 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
       return std::pair<Real, Real>(rho, sie);
     }, py::arg("press"), py::arg("temp"))
     .def("Finalize", &T::Finalize)
-    .def_property_readonly_static("EosType", &T::EosType);
+    .def_property_readonly_static("EosType", [](py::object) { return T::EosType(); });
 }
 
 PYBIND11_MODULE(singularity_eos, m) {
