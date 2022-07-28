@@ -63,7 +63,7 @@ energy. The pressure is unchanged under the operation
 
   \rho \to s\rho,\ \varepsilon\to \varepsilon/s
 
-for some scale parameter :math:`s`.  The ``ScaledOES`` applies this
+for some scale parameter :math:`s`.  The ``ScaledEOS`` applies this
 transformation to any equation of state, not just an ideal gas, where
 the pressure may change.
 
