@@ -251,24 +251,18 @@ PORTABLE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
   if (press < Pref) {
     rho = (press - _P0 + _C0 * _C0 * _rho0) / (_C0 * _C0 + _G0 * sie);
   } else { // We are in compression; iterate
-    auto residual = [&](const Real r) {
-      return press - PressureFromDensityInternalEnergy(r, sie);
+    auto PofRatE = [&](const Real r) {
+      return PressureFromDensityInternalEnergy(r, sie);
     };
-    Real rho1 = _rho0, res1 = residual(rho1), slope = _G0 * sie + _C0 * _C0, rho2, res2,
-         rhom, resm;
-    rho2 = (rho > rho1 + 1e-3) ? rho : rho1 + res1 / slope;
-    res2 = residual(rho2);
-    for (int i = 0; i < 20; ++i) {
-      slope = (rho2 - rho1) / (res2 - res1 + 1.0e-10);
-      rhom = rho2 - res2 * slope;
-      resm = residual(rhom);
-      if (resm / press < 1e-8) break;
-      rho1 = rho2;
-      res1 = res2;
-      rho2 = rhom;
-      res2 = resm;
+    using RootFinding1D::regula_falsi;
+    using RootFinding1D::Status;
+    RootFinding1D::RootCounts counts;
+    auto status = regula_falsi(PofRatE,press,_rho0,1.0e-5,1.0e3,1.0e-8,1.0e-8,rho,counts);
+    if (status != Status::SUCCESS) {
+      // Root finder failed even though the solution was bracketed... this is an error
+      EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: " 
+                "Root find failed to find a solution given P, T\n");
     }
-    rho = rhom;
   }
 }
 PORTABLE_FUNCTION void Gruneisen::FillEos(Real &rho_in, Real &temp, Real &sie,
