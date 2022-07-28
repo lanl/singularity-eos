@@ -56,6 +56,9 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   using EosBase<ScaledEOS<T>>::PTofRE;
   using EosBase<ScaledEOS<T>>::FillEos;
 
+  // give me std::format or fmt::format...
+  static std::string EosType() { return std::string("ScaledEOS<") + T::EosType() + std::string(">"); }
+
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
       : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {}
@@ -151,8 +154,7 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return t_.nlambda(); }
 
-  PORTABLE_FUNCTION
-  unsigned long PreferredInput() const { return t_.PreferredInput(); }
+  static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();
