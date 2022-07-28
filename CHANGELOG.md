@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Fixed cmake code to properly install fortran module files in include path
+- [[PR157]](https://github.com/lanl/singularity-eos/pull/157) fix root finders in Gruneisen, Davis, and JWL
 - [[PR151]](https://github.com/lanl/singularity-eos/pull/151) fix module install
 
 ### Added (new features/APIs/variables/...)
