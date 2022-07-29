@@ -310,7 +310,9 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
 template<typename T>
 py::class_<T> shifted_eos_class(py::module_ & m, const char * name) {
   // define Shifted utility function
-  m.def("Shifted", [](T eos, Real shift){ return ShiftedEOS<T>(std::move(eos), shift); });
+  m.def("Shifted", [](T eos, Real shift){
+    return ShiftedEOS<T>(std::move(eos), shift);
+  }, py::arg("eos"), py::arg("shift"));
 
   // define shifted class
   return eos_class<ShiftedEOS<T>>(m, std::string("Shifted") + name)
@@ -323,8 +325,12 @@ py::class_<T> shifted_eos_class(py::module_ & m, const char * name) {
 template<typename T>
 void scaled_eos_class(py::module_ & m, const char * name) {
   // define Scaled utility function
-  m.def("Scaled", [](T eos, Real scaled){ return ScaledEOS<T>(std::move(eos), scaled); });
-  m.def("Scaled", [](ShiftedEOS<T> eos, Real scaled){ return ScaledEOS<ShiftedEOS<T>>(std::move(eos), scaled); });
+  m.def("Scaled", [](T eos, Real scaled){
+    return ScaledEOS<T>(std::move(eos), scaled);
+  }, py::arg("eos"), py::arg("scaled"));
+  m.def("Scaled", [](ShiftedEOS<T> eos, Real scaled){
+    return ScaledEOS<ShiftedEOS<T>>(std::move(eos), scaled);
+  }, py::arg("eos"), py::arg("scaled"));
 
   // each scaled can also be shifted
   eos_class<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name)
@@ -342,37 +348,87 @@ void scaled_eos_class(py::module_ & m, const char * name) {
 }
 
 template<typename T>
-void relativistic_eos_class(py::module_ & m, const char * name) {
-  // define Relativistic utility function
-  m.def("Relativistic", [](T eos, const Real cl){ return RelativisticEOS<T>(std::move(eos), cl); });
-  m.def("Relativistic", [](ShiftedEOS<T> eos, const Real cl){ return RelativisticEOS<ShiftedEOS<T>>(std::move(eos), cl); });
-  m.def("Relativistic", [](ScaledEOS<T> eos, const Real cl){ return RelativisticEOS<ScaledEOS<T>>(std::move(eos), cl); });
-  m.def("Relativistic", [](ScaledEOS<ShiftedEOS<T>> eos, const Real cl){ return RelativisticEOS<ScaledEOS<ShiftedEOS<T>>>(std::move(eos), cl); });
+void relativistic_helper(py::module_ & m) {
+  m.def("Relativistic", [](T eos, const Real cl){
+    return RelativisticEOS<T>(std::move(eos), cl);
+  }, py::arg("eos"), py::arg("cl"));
+}
 
+template<typename T>
+void relativistic_class_helper(py::module_ & m, std::string name) {
   eos_class<RelativisticEOS<T>>(m, std::string("Relativistic") + name)
     .def(
       py::init<T, Real>(),
       py::arg("eos"), py::arg("cl")
     );
+}
 
-  // each relativistic can also be scaled and shifted
-  eos_class<RelativisticEOS<ScaledEOS<T>>>(m, std::string("RelativisticScaled") + name)
-    .def(
-      py::init<ScaledEOS<T>, Real>(),
-      py::arg("eos"), py::arg("cl")
-    );
+template<typename T>
+void relativistic_eos_class(py::module_ & m, const char * name) {
+  // define Relativistic utility function
+  relativistic_helper<T>(m);
+  relativistic_helper<ShiftedEOS<T>>(m);
+  relativistic_helper<ScaledEOS<T>>(m);
+  relativistic_helper<ScaledEOS<ShiftedEOS<T>>>(m);
 
-  eos_class<RelativisticEOS<ShiftedEOS<T>>>(m, std::string("RelativisticShifted") + name)
-    .def(
-      py::init<ShiftedEOS<T>, Real>(),
-      py::arg("eos"), py::arg("cl")
-    );
+  relativistic_class_helper<T>(m, name);
+  relativistic_class_helper<ShiftedEOS<T>>(m, std::string("Shifted") + name);
+  relativistic_class_helper<ScaledEOS<T>>(m, std::string("Scaled") + name);
+  relativistic_class_helper<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name);
+}
 
-  eos_class<RelativisticEOS<ScaledEOS<ShiftedEOS<T>>>>(m, std::string("RelativisticScaledShifted") + name)
+template<typename T>
+void unit_system_helper(py::module_ & m) {
+  m.def("UnitSystem", [](T eos, eos_units_init::ThermalUnitsInit, const Real rho_unit, const Real sie_unit, const Real temp_unit){
+    return UnitSystem<T>(std::move(eos), eos_units_init::ThermalUnitsInit(), rho_unit, sie_unit, temp_unit);
+  }, py::arg("eos"), py::arg("units"), py::arg("rho_unit"), py::arg("sie_unit"), py::arg("temp_unit"));
+  m.def("UnitSystem", [](T eos, eos_units_init::LengthTimeUnitsInit, const Real time_unit, const Real mass_unit, const Real length_unit, const Real temp_unit){
+    return UnitSystem<T>(std::move(eos), eos_units_init::LengthTimeUnitsInit(), time_unit, mass_unit, length_unit, temp_unit);
+  }, py::arg("eos"), py::arg("units"), py::arg("time_unit"), py::arg("mass_unit"), py::arg("length_unit"), py::arg("temp_unit"));
+  m.def("UnitSystem", [](T eos, const Real rho_unit, const Real sie_unit, const Real temp_unit){
+    return UnitSystem<T>(std::move(eos), rho_unit, sie_unit, temp_unit);
+  }, py::arg("eos"), py::arg("rho_unit"), py::arg("sie_unit"), py::arg("temp_unit"));
+}
+
+template<typename T>
+void unit_system_class_helper(py::module_ & m, std::string name) {
+  eos_class<UnitSystem<T>>(m, std::string("UnitSystem") + name)
     .def(
-      py::init<ScaledEOS<ShiftedEOS<T>>, Real>(),
-      py::arg("eos"), py::arg("cl")
+      py::init<T, eos_units_init::ThermalUnitsInit, Real, Real, Real>(),
+      py::arg("eos"), py::arg("units"), py::arg("rho_unit"), py::arg("sie_unit"), py::arg("temp_unit")
+    )
+    .def(
+      py::init<T, eos_units_init::LengthTimeUnitsInit, Real, Real, Real, Real>(),
+      py::arg("eos"), py::arg("units"), py::arg("time_unit"), py::arg("mass_unit"), py::arg("length_unit"), py::arg("temp_unit")
+    )
+    .def(
+      py::init<T, Real, Real, Real>(),
+      py::arg("eos"), py::arg("rho_unit"), py::arg("sie_unit"), py::arg("temp_unit")
     );
+}
+
+template<typename T>
+void unit_system_eos_class(py::module_ & m, const char * name) {
+  // define UnitSystem utility function
+  unit_system_helper<T>(m);
+  unit_system_helper<ShiftedEOS<T>>(m);
+  unit_system_helper<ScaledEOS<T>>(m);
+  unit_system_helper<ScaledEOS<ShiftedEOS<T>>>(m);
+
+  unit_system_class_helper<T>(m, name);
+  unit_system_class_helper<ShiftedEOS<T>>(m, std::string("Shifted") + name);
+  unit_system_class_helper<ScaledEOS<T>>(m, std::string("Scaled") + name);
+  unit_system_class_helper<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name);
+
+  unit_system_helper<RelativisticEOS<T>>(m);
+  unit_system_helper<RelativisticEOS<ShiftedEOS<T>>>(m);
+  unit_system_helper<RelativisticEOS<ScaledEOS<T>>>(m);
+  unit_system_helper<RelativisticEOS<ScaledEOS<ShiftedEOS<T>>>>(m);
+
+  unit_system_class_helper<RelativisticEOS<T>>(m, std::string("Relativistic") + name);
+  unit_system_class_helper<RelativisticEOS<ShiftedEOS<T>>>(m, std::string("RelativisticShifted") + name);
+  unit_system_class_helper<RelativisticEOS<ScaledEOS<T>>>(m, std::string("RelativisticScaled") + name);
+  unit_system_class_helper<RelativisticEOS<ScaledEOS<ShiftedEOS<T>>>>(m, std::string("RelativisticScaledShifted") + name);
 }
 
 PYBIND11_MODULE(singularity_eos, m) {
@@ -439,6 +495,7 @@ PYBIND11_MODULE(singularity_eos, m) {
   scaled_eos_class<DavisProducts>(m, "DavisProducts");
 
   relativistic_eos_class<IdealGas>(m, "IdealGas");
+  unit_system_eos_class<IdealGas>(m, "IdealGas");
 
 #ifdef SPINER_USE_HDF
   eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT")
@@ -498,6 +555,10 @@ PYBIND11_MODULE(singularity_eos, m) {
   relativistic_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
   relativistic_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
   relativistic_eos_class<StellarCollapse>(m, "StellarCollapse");
+
+  unit_system_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
+  unit_system_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
+  unit_system_eos_class<StellarCollapse>(m, "StellarCollapse");
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
@@ -518,6 +579,12 @@ PYBIND11_MODULE(singularity_eos, m) {
   thermalqs.attr("specific_heat") = pybind11::int_(thermalqs::specific_heat);
   thermalqs.attr("bulk_modulus") = pybind11::int_(thermalqs::bulk_modulus);
   thermalqs.attr("all_values") = pybind11::int_(thermalqs::all_values);
+
+  py::module eos_units = m.def_submodule("eos_units");
+  py::class_<eos_units_init::ThermalUnitsInit>(eos_units, "_ThermalUnits");
+  py::class_<eos_units_init::LengthTimeUnitsInit>(eos_units, "_LengthTimeUnits");
+  eos_units.attr("ThermalUnits") = eos_units_init::thermal_units_init_tag;
+  eos_units.attr("LengthTimeUnits") = eos_units_init::length_time_units_init_tag;
 
   m.doc() = "Singularity EOS Python Bindings";
 }

@@ -114,10 +114,10 @@ class Modifiers(unittest.TestCase, EOSTestBase):
         ig = IdealGas(self.gm1, self.Cv)
         igsh = Scaled(IdealGas(self.gm1, self.Cv), 1.0)
         igsc = Shifted(IdealGas(self.gm1, self.Cv), 0.0)
-        #int enabled[4] = {0, 0, 1, 0};
-        #Real vals[6] = {0.0, 0.0, 1.e9, 1.0, 2.0, 1.0};
-        #Real rho0 = 1.e6 / (gm1 * Cv * 293.0);
-        #init_sg_IdealGas(0, &igra, gm1, Cv, enabled, vals);
+        #int enabled[4] = {0, 0, 1, 0}
+        #Real vals[6] = {0.0, 0.0, 1.e9, 1.0, 2.0, 1.0}
+        #Real rho0 = 1.e6 / (gm1 * Cv * 293.0)
+        #init_sg_IdealGas(0, &igra, gm1, Cv, enabled, vals)
 
         # The modified EOS should produce equivalent results
         self.assertEqualEOS(igsh, ig)
@@ -125,7 +125,7 @@ class Modifiers(unittest.TestCase, EOSTestBase):
         #  compare_two_eoss(igra, ig)
 
     def testRelativisticIdealGas(self):
-        """Relativistic EOS", "[EOSBuilder][RelativisticEOS][IdealGas]"""
+        """[RelativisticEOS][IdealGas]"""
         from singularity_eos import IdealGas, Relativistic
         Cv = 2.0
         gm1 = 0.5
@@ -137,6 +137,50 @@ class Modifiers(unittest.TestCase, EOSTestBase):
         bmod = eos.BulkModulusFromDensityInternalEnergy(rho, sie)
         cs2 = bmod / rho
         self.assertLess(cs2, 1)
+
+    def testUnitSystemIdealGas_ThermalUnits(self):
+        """[UnitSystem][IdealGas][ThermalUnits]"""
+        from singularity_eos import IdealGas, UnitSystem
+
+        # Parameters for an ideal gas
+        Cv = 2.0
+        gm1 = 0.5
+
+        # Units with a thermal unit system
+        rho_unit = 1e1
+        sie_unit = 1e-1
+        temp_unit = 123
+        eos = UnitSystem(IdealGas(gm1, Cv), rho_unit=rho_unit, sie_unit=sie_unit, temp_unit=temp_unit)
+
+        # Units cancel out for an ideal gas
+        rho = 1e3
+        sie = 1e3
+        P = eos.PressureFromDensityInternalEnergy(rho, sie)
+        Ptrue = gm1 * rho * sie
+        self.assertLess(abs(P - Ptrue) / Ptrue,1e-3)
+
+    def testUnitSystemIdealGas_LengthTimeUnits(self):
+        """[UnitSystem][IdealGas][LengthTimeUnits]"""
+        from singularity_eos import IdealGas, UnitSystem
+        from singularity_eos.eos_units import LengthTimeUnits
+
+        # Parameters for an ideal gas
+        Cv = 2.0
+        gm1 = 0.5
+
+        # Units with length and time units
+        time_unit = 456
+        length_unit = 1e2
+        mass_unit = 1e6
+        temp_unit = 789
+        eos = UnitSystem(IdealGas(gm1, Cv), units=LengthTimeUnits, time_unit=time_unit, length_unit=length_unit, mass_unit=mass_unit, temp_unit=temp_unit)
+
+        # Units cancel out for an ideal gas
+        rho = 1e3
+        sie = 1e3
+        P = eos.PressureFromDensityInternalEnergy(rho, sie)
+        Ptrue = gm1 * rho * sie
+        self.assertLess(abs(P - Ptrue) / Ptrue, 1e-3)
 
 class VectorEOS_IdealGas_Given_Rho_Sie(unittest.TestCase):
     def setUp(self):
@@ -320,15 +364,15 @@ class SpinerEOSdependsOnRhoT_Air(unittest.TestCase, EOSTestBase):
         state_pac = self.eospac.ValuesAtReferenceState()
         self.assertIsClose(state.density, state_pac.density)
         self.assertIsClose(state.temperature, state_pac.temperature)
-   
-    def test_P_from_rho_sie(self): 
+
+    def test_P_from_rho_sie(self):
         "P(rho, sie) correct for extrapolation regime"
         rho = 1
         sie = 2.43e16
         P_pac = self.eospac.PressureFromDensityInternalEnergy(rho, sie)
         P_spi = self.airEOS_host.PressureFromDensityInternalEnergy(rho, sie)
         self.assertIsClose(P_pac, P_spi)
-    
+
     def tearDown(self):
         self.airEOS_host.Finalize()
 
@@ -354,7 +398,7 @@ class EOS_init_with_matid2(unittest.TestCase, EOSTestBase):
         self.assertIsClose(state.temperature, state_pac.temperature)
         self.assertIsClose(state.specific_internal_energy, state_pac.specific_internal_energy)
         self.assertIsClose(state.specific_heat, state_pac.specific_heat)
-    
+
     def tearDown(self):
         self.eos_spiner.Finalize()
         self.eos_eospac.Finalize()
@@ -467,7 +511,7 @@ class AluminumGruneisenEOS_SoundSpeedAndPressureComp(unittest.TestCase, EOSTestB
         self.us = 1.e-06
         self.Mbar = 1.e12
         self.Mbcc_per_g = 1e12
-    
+
         # Gruneisen parameters for copper
         self.C0 = 0.535 * self.cm / self.us
         self.S1 = 1.34
@@ -479,10 +523,10 @@ class AluminumGruneisenEOS_SoundSpeedAndPressureComp(unittest.TestCase, EOSTestB
         self.T0 = 298.
         self.P0 = 1e-06 * self.Mbar
         self.Cv = 0.383e-05 * self.Mbcc_per_g
-    
+
         # Create the EOS
         self.eos = singularity_eos.Gruneisen(self.C0, self.S1, self.S2, self.S3, self.Gamma0, self.b, self.rho0, self.T0, self.P0, self.Cv)
-    
+
         self.density = 5.92418956756592            # g/cm^3
         self.energy = 792486007.804619             # erg/g
         self.true_pres = 2.620656373250729         # Mbar
@@ -491,7 +535,7 @@ class AluminumGruneisenEOS_SoundSpeedAndPressureComp(unittest.TestCase, EOSTestB
     def test_pressure(self):
         "[GruneisenEOS] A P(rho, e) lookup is performed"
         pres = self.eos.PressureFromDensityInternalEnergy(self.density, self.energy)
-        pres = pres / self.Mbar;
+        pres = pres / self.Mbar
         self.assertIsClose(pres, self.true_pres, 1e-12)
 
     def test_bmod(self):
@@ -499,7 +543,7 @@ class AluminumGruneisenEOS_SoundSpeedAndPressureComp(unittest.TestCase, EOSTestB
         bulk_modulus =  self.eos.BulkModulusFromDensityInternalEnergy(self.density, self.energy)
         sound_speed = math.sqrt(bulk_modulus / self.density) / (self.cm / self.us)
         self.assertIsClose(sound_speed, self.true_sound_speed, 1e-12)
-    
+
     def test_bmod_approx(self):
         """A finite difference approximation is used for the bulk modulus"""
         # Bulk modulus approximation:
@@ -518,7 +562,7 @@ class AluminumGruneisenEOS_SoundSpeedAndPressureComp(unittest.TestCase, EOSTestB
         sound_speed = math.sqrt(bulk_modulus / self.density)
         self.assertIsClose(sound_speed, ss_approx, 1e-5)
 
-    def test_particle_vel_and_hugoniot(self):    
+    def test_particle_vel_and_hugoniot(self):
         """A particle velocity and the same Hugoniot fit used in the EOS"""
         # Use Rankine-Hugoniot jump conditions to calculate a consistent point on the EOS
         up = 2 * self.cm / self.us # 20 km/s is a pretty strong shock
