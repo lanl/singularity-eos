@@ -144,8 +144,8 @@ struct EOSState {
 };
 
 template<typename T>
-py::class_<T> eos_class(py::module_ & m, const char * name) {
-  return py::class_<T>(m, name)
+py::class_<T> eos_class(py::module_ & m, std::string name) {
+  return py::class_<T>(m, name.c_str())
     .def("TemperatureFromDensityInternalEnergy", &two_params<T, &T::TemperatureFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lmbda"))
     .def("InternalEnergyFromDensityTemperature", &two_params<T, &T::InternalEnergyFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lmbda"))
     .def("PressureFromDensityTemperature", &two_params<T, &T::PressureFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lmbda"))
@@ -307,6 +307,40 @@ py::class_<T> eos_class(py::module_ & m, const char * name) {
     .def_property_readonly_static("EosType", [](py::object) { return T::EosType(); });
 }
 
+template<typename T>
+py::class_<T> shifted_eos_class(py::module_ & m, const char * name) {
+  // define Shifted utility function
+  m.def("Shifted", [](T eos, Real shift){ return ShiftedEOS<T>(std::move(eos), shift); });
+
+  // define shifted class
+  return eos_class<ShiftedEOS<T>>(m, std::string("Shifted") + name)
+    .def(
+      py::init<T, Real>(),
+      py::arg("eos"), py::arg("shift")
+    );
+}
+
+template<typename T>
+void scaled_eos_class(py::module_ & m, const char * name) {
+  // define Scaled utility function
+  m.def("Scaled", [](T eos, Real scaled){ return ScaledEOS<T>(std::move(eos), scaled); });
+  m.def("Scaled", [](ShiftedEOS<T> eos, Real scaled){ return ScaledEOS<ShiftedEOS<T>>(std::move(eos), scaled); });
+
+  // each scaled can also be shifted
+  eos_class<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name)
+    .def(
+      py::init<ShiftedEOS<T>, Real>(),
+      py::arg("eos"), py::arg("scale")
+    );
+
+  // define scaled class
+  eos_class<ScaledEOS<T>>(m, std::string("Scaled") + name)
+    .def(
+      py::init<T, Real>(),
+      py::arg("eos"), py::arg("scale")
+    );
+}
+
 PYBIND11_MODULE(singularity_eos, m) {
   py::class_<EOSState>(m, "EOSState")
     .def(py::init())
@@ -358,6 +392,18 @@ PYBIND11_MODULE(singularity_eos, m) {
       py::arg("pc"), py::arg("Cv"), py::arg("E0")
     );
 
+  shifted_eos_class<IdealGas>(m, "IdealGas");
+  shifted_eos_class<Gruneisen>(m, "Gruneisen");
+  shifted_eos_class<JWL>(m, "JWL");
+  shifted_eos_class<DavisReactants>(m, "DavisReactants");
+  shifted_eos_class<DavisProducts>(m, "DavisProducts");
+
+  scaled_eos_class<IdealGas>(m, "IdealGas");
+  scaled_eos_class<Gruneisen>(m, "Gruneisen");
+  scaled_eos_class<JWL>(m, "JWL");
+  scaled_eos_class<DavisReactants>(m, "DavisReactants");
+  scaled_eos_class<DavisProducts>(m, "DavisProducts");
+
 #ifdef SPINER_USE_HDF
   eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT")
     .def(py::init())
@@ -403,12 +449,24 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def_property_readonly("YeMax", &StellarCollapse::YeMax)
     .def_property_readonly("sieMin", &StellarCollapse::sieMin)
     .def_property_readonly("sieMax", &StellarCollapse::sieMax);
+
+
+  shifted_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
+  shifted_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
+  shifted_eos_class<StellarCollapse>(m, "StellarCollapse");
+
+  scaled_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
+  scaled_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
+  scaled_eos_class<StellarCollapse>(m, "StellarCollapse");
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
   eos_class<EOSPAC>(m, "EOSPAC")
     .def(py::init())
     .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
+
+  shifted_eos_class<EOSPAC>(m, "EOSPAC");
+  scaled_eos_class<EOSPAC>(m, "EOSPAC");
 #endif
 
   py::module thermalqs = m.def_submodule("thermalqs");
