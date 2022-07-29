@@ -44,7 +44,7 @@ constexpr Real pte_abs_tolerance_p = 0.0;
 constexpr Real pte_abs_tolerance_e = 1.e-4;
 constexpr Real pte_abs_tolerance_t = 0.0;
 constexpr Real pte_residual_tolerance = 1.e-8;
-  constexpr int pte_max_iter_per_mat = 8;//128;
+constexpr int pte_max_iter_per_mat = 8; // 128;
 constexpr Real line_search_alpha = 1.e-2;
 constexpr int line_search_max_iter = 6;
 constexpr Real line_search_fac = 0.5;
@@ -231,9 +231,10 @@ class PTESolverBase {
     bool rho_fail;
     for (int i = 0; i < 3; i++) {
       Real vsum = 0.0;
-//      for (int m = 0; m < nmat; ++m) {
-//	printf("%i: r:%e rb:%e v:%e Tg:%e\n", m, rho[m], rhobar[m], vfrac[m], Tguess);
-//      }
+      //      for (int m = 0; m < nmat; ++m) {
+      //	printf("%i: r:%e rb:%e v:%e Tg:%e\n", m, rho[m], rhobar[m], vfrac[m],
+      //Tguess);
+      //      }
       // set volume fractions
       for (int m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
@@ -268,7 +269,7 @@ class PTESolverBase {
     for (int m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
-      //printf("r[%i] = %e ; T = %e\n", m, rho[m], Tguess);
+      // printf("r[%i] = %e ; T = %e\n", m, rho[m], Tguess);
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess);
       // note the scaling of pressure
       if (eos[m].PreferredInput() ==
@@ -693,11 +694,10 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
   PTESolverFixedT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real T_true,
-                Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
-                Lambda_t &&lambda, Real *scratch)
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat, eos, vfrac_tot,
-                                                         1.0, rho, vfrac, sie, temp,
-                                                         press, scratch) {
+                  Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp,
+                  Real_t &&press, Lambda_t &&lambda, Real *scratch)
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(
+            nmat, nmat, eos, vfrac_tot, 1.0, rho, vfrac, sie, temp, press, scratch) {
     dpdv = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     Tequil = T_true;
@@ -711,7 +711,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 
   PORTABLE_INLINE_FUNCTION
   Real Init() {
-    //InitBase();
+    // InitBase();
     // fake init base
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
@@ -725,12 +725,11 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     u_total = 0.0;
     for (int m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
-      //temp[m] = 1.0;
+      // temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, Cache[m]);
       u_total += sie[m] * rho[m];
       // note the scaling of pressure
-      press[m] =
-	eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]);
+      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]);
     }
     for (int m = 0; m < nmat; ++m) {
       press[m] /= u_total;
@@ -764,7 +763,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     }
     error_p = std::sqrt(error_p);
     Real error_v = std::abs(residual[0]);
-    printf("P: %e errp: %e errv: %e\n", mean_p*u_total, error_p*u_total, error_v);
+    printf("P: %e errp: %e errv: %e\n", mean_p * u_total, error_p * u_total, error_v);
     // Check for convergence
     bool converged_p = (error_p < pte_rel_tolerance_p * std::abs(mean_p) ||
                         error_p < pte_abs_tolerance_p);
@@ -784,8 +783,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       const Real rho_pert = rhobar[m] / vf_pert;
 
       Real p_pert =
-	eos[m].PressureFromDensityTemperature(rho_pert, Tequil, Cache[m]) /
-	u_total;
+          eos[m].PressureFromDensityTemperature(rho_pert, Tequil, Cache[m]) / u_total;
       dpdv[m] = (p_pert - press[m]) / dv;
     }
 
@@ -799,13 +797,13 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       jacobian[MatIndex(m + 1, m)] = -dpdv[m];
       jacobian[MatIndex(m + 1, m + 1)] = dpdv[m + 1];
     }
-//    printf("Jacobian:\n");
-//    for (int row = 0; row < nmat; row++) {
-//      for (int col = 0; col < nmat; ++col) {
-//	printf("%.3e ", jacobian[row*nmat+col]);
-//      }
-//      printf("| %.3e\n", residual[row]);
-//    }
+    //    printf("Jacobian:\n");
+    //    for (int row = 0; row < nmat; row++) {
+    //      for (int col = 0; col < nmat; ++col) {
+    //	printf("%.3e ", jacobian[row*nmat+col]);
+    //      }
+    //      printf("| %.3e\n", residual[row]);
+    //    }
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -837,21 +835,20 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PORTABLE_INLINE_FUNCTION
   Real TestUpdate(const Real scale) {
     if (scale == 1.0) {
-      //Ttemp = Tequil;
+      // Ttemp = Tequil;
       for (int m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
     }
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = rhobar[m] / vfrac[m];
-      u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
-                             rho[m], Tequil, Cache[m]);
+      u[m] = rhobar[m] *
+             eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, Cache[m]);
       sie[m] = u[m] / rhobar[m];
       u[m] /= u_total;
-      //temp[m] = Tequil;
+      // temp[m] = Tequil;
       press[m] =
-	eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]) /
-	u_total;
+          eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]) / u_total;
     }
     Residual();
     return ResidualNorm();
@@ -907,11 +904,10 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
   PTESolverFixedP(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real P,
-                Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
-                Lambda_t &&lambda, Real *scratch)
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat + 1, eos, vfrac_tot,
-                                                         1.0, rho, vfrac, sie, temp,
-                                                         press, scratch) {
+                  Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp,
+                  Real_t &&press, Lambda_t &&lambda, Real *scratch)
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(
+            nmat, nmat + 1, eos, vfrac_tot, 1.0, rho, vfrac, sie, temp, press, scratch) {
     dpdv = AssignIncrement(scratch, nmat);
     dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
@@ -924,7 +920,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 
   PORTABLE_INLINE_FUNCTION
   Real Init() {
-    //InitBase();
+    // InitBase();
     // fake init base
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
@@ -1002,7 +998,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Real vsum = 0.0;
     for (int m = 0; m < nmat; ++m) {
       vsum += vfrac[m];
-      residual[m] = Pequil/u_total - press[m];
+      residual[m] = Pequil / u_total - press[m];
     }
     residual[nmat] = vfrac_total - vsum;
   }
@@ -1016,10 +1012,9 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     }
     error_p = std::sqrt(error_p);
     error_p *= u_total;
-    Real error_v = std::abs(residual[neq-1]);
+    Real error_v = std::abs(residual[neq - 1]);
     // Check for convergence
-    bool converged_p = (error_p < pte_rel_tolerance_p ||
-                        error_p < pte_abs_tolerance_p);
+    bool converged_p = (error_p < pte_rel_tolerance_p || error_p < pte_abs_tolerance_p);
     bool converged_v = (error_v < pte_rel_tolerance_e || error_v < pte_abs_tolerance_e);
     return converged_p && converged_v;
   }
@@ -1036,7 +1031,8 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       const Real rho_pert = rhobar[m] / vf_pert;
 
       Real p_pert{};
-      Real e_pert = eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
+      Real e_pert =
+          eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
         p_pert = eos[m].PressureFromDensityInternalEnergy(rho_pert, e_pert, Cache[m]) /
@@ -1055,10 +1051,10 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
-	e_pert = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * (Tequil + dT),
-							     Cache[m]);
-	p_pert =
-	  eos[m].PressureFromDensityInternalEnergy(rho[m], e_pert, Cache[m]) / u_total;
+        e_pert = eos[m].InternalEnergyFromDensityTemperature(
+            rho[m], Tnorm * (Tequil + dT), Cache[m]);
+        p_pert =
+            eos[m].PressureFromDensityInternalEnergy(rho[m], e_pert, Cache[m]) / u_total;
       } else if (eos[m].PreferredInput() ==
                  (thermalqs::density | thermalqs::temperature)) {
         p_pert = eos[m].PressureFromDensityTemperature(rho[m], Tnorm * (Tequil + dT),
@@ -1076,7 +1072,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       jacobian[MatIndex(m, 0)] = dpdT[m];
     }
     for (int m = 0; m < neq - 1; ++m) {
-      jacobian[MatIndex(neq-1, m+1)] = 1.0;
+      jacobian[MatIndex(neq - 1, m + 1)] = 1.0;
     }
   }
 
@@ -1086,8 +1082,8 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
-      if (scale * dx[m+1] < -vfrac_safety_fac * vfrac[m]) {
-        scale = -vfrac_safety_fac * vfrac[m] / dx[m+1];
+      if (scale * dx[m + 1] < -vfrac_safety_fac * vfrac[m]) {
+        scale = -vfrac_safety_fac * vfrac[m] / dx[m + 1];
       }
     }
     const Real Tnew = Tequil + scale * dx[0];
@@ -1096,8 +1092,8 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
       const Real alpha_max = rhobar[m] / rho_min;
-      if (scale * dx[m+1] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = 0.5 * (alpha_max - vfrac[m]) / dx[m+1];
+      if (scale * dx[m + 1] > 0.5 * (alpha_max - vfrac[m])) {
+        scale = 0.5 * (alpha_max - vfrac[m]) / dx[m + 1];
       }
     }
     // control how big of a step toward T = 0 is allowed
@@ -1121,16 +1117,17 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     }
     Tequil = Ttemp + scale * dx[0];
     for (int m = 0; m < nmat; ++m) {
-      vfrac[m] = vtemp[m] + scale * dx[m+1];
+      vfrac[m] = vtemp[m] + scale * dx[m + 1];
       rho[m] = rhobar[m] / vfrac[m];
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
                              rho[m], Tnorm * Tequil, Cache[m]);
-      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tnorm * Tequil, Cache[m]) / u_total;
+      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tnorm * Tequil, Cache[m]) /
+                 u_total;
       sie[m] = u[m] / rhobar[m];
       u[m] /= u_total;
       temp[m] = Tequil;
     }
-    printf("Tnew: %e Told: %e\n", Tequil*Tnorm, Ttemp*Tnorm);
+    printf("Tnew: %e Told: %e\n", Tequil * Tnorm, Ttemp * Tnorm);
     Residual();
     return ResidualNorm();
   }

@@ -99,30 +99,29 @@ void run_sg_get_eos_tests() {
   // all variables needed to check the pte solve
   Real mfrac[NMAT];
   Real P_true = 5.e10, T_true = 800.0;
-  Real T_true_ev = T_true / ev2k ;
-  Real mass_tot = 0.0, sie_tot_true = 0.0,
-    v_true = 1.0, rho_tot, spvol;
+  Real T_true_ev = T_true / ev2k;
+  Real mass_tot = 0.0, sie_tot_true = 0.0, v_true = 1.0, rho_tot, spvol;
   Real pmax, bmod, dpde, cv;
   mfrac[0] = 0.67;
   mfrac[1] = 0.14;
   mfrac[2] = 0.19;
-  for(int i = 0; i < NMAT; ++i) {
+  for (int i = 0; i < NMAT; ++i) {
     mass_tot += mfrac[i];
   }
   rho_tot = mass_tot / v_true;
   spvol = 1.0 / rho_tot;
   int cell_offset = 1;
   int eos_offset[NMAT];
-  for(int m = 0; m < NMAT; ++m) {
+  for (int m = 0; m < NMAT; ++m) {
     eos_offset[m] = m + 1;
   }
   // do a rho/e(P,T) solve
   Real vfrac_true[NMAT], sie_true[NMAT];
   get_sg_eos(NMAT, 1, 1, -1, eos_offset, eoss, &cell_offset, &P_true, &pmax, &v_true,
-	     &spvol, &sie_tot_true, &T_true_ev, &bmod, &dpde, &cv, mfrac,
-	     vfrac_true, sie_true, nullptr, nullptr, nullptr);
+             &spvol, &sie_tot_true, &T_true_ev, &bmod, &dpde, &cv, mfrac, vfrac_true,
+             sie_true, nullptr, nullptr, nullptr);
   Real sie_tot_check = 0.0;
-  for(int m = 0; m < NMAT; ++m) {
+  for (int m = 0; m < NMAT; ++m) {
     const Real r_m = mfrac[m] / vfrac_true[m];
     const Real p_eos = eoss[m].PressureFromDensityInternalEnergy(r_m, sie_true[m]);
     const Real p_resid = std::abs(P_true - p_eos) / P_true;
@@ -138,29 +137,29 @@ void run_sg_get_eos_tests() {
   // do rho-T input solve
   Real p_check, vfrac_check[NMAT], sie_check[NMAT];
   get_sg_eos(NMAT, 1, 1, -3, eos_offset, eoss, &cell_offset, &p_check, &pmax, &v_true,
-	     &spvol, &sie_tot_check, &T_true_ev, &bmod, &dpde, &cv, mfrac,
-	     vfrac_check, sie_check, nullptr, nullptr, nullptr);
+             &spvol, &sie_tot_check, &T_true_ev, &bmod, &dpde, &cv, mfrac, vfrac_check,
+             sie_check, nullptr, nullptr, nullptr);
   printf("p: %e %e \n", P_true, p_check);
   printf("s: %e %e \n", sie_tot_true, sie_tot_check);
-  for(int m = 0; m < NMAT; ++m) {
+  for (int m = 0; m < NMAT; ++m) {
     printf("m=%i\n", m);
     printf("  rho: %e %e \n", mfrac[m] / vfrac_true[m], mfrac[m] / vfrac_check[m]);
     printf("  sie: %e %e \n", sie_true[m], sie_check[m]);
-    //sie_tot_check += sie_true[m] * mfrac[m];
+    // sie_tot_check += sie_true[m] * mfrac[m];
   }
   // ensure outputs are the same
   // do rho-P input solve
   Real t_check;
   get_sg_eos(NMAT, 1, 1, -2, eos_offset, eoss, &cell_offset, &P_true, &pmax, &v_true,
-	     &spvol, &sie_tot_check, &t_check, &bmod, &dpde, &cv, mfrac,
-	     vfrac_check, sie_check, nullptr, nullptr, nullptr);
-  printf("t: %e %e \n", T_true, t_check*ev2k);
+             &spvol, &sie_tot_check, &t_check, &bmod, &dpde, &cv, mfrac, vfrac_check,
+             sie_check, nullptr, nullptr, nullptr);
+  printf("t: %e %e \n", T_true, t_check * ev2k);
   printf("s: %e %e \n", sie_tot_true, sie_tot_check);
-  for(int m = 0; m < NMAT; ++m) {
+  for (int m = 0; m < NMAT; ++m) {
     printf("m=%i\n", m);
     printf("  rho: %e %e \n", mfrac[m] / vfrac_true[m], mfrac[m] / vfrac_check[m]);
     printf("  sie: %e %e \n", sie_true[m], sie_check[m]);
-    //sie_tot_check += sie_true[m] * mfrac[m];
+    // sie_tot_check += sie_true[m] * mfrac[m];
   }
 
   // ensure outputs are the same
@@ -182,7 +181,7 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     run_sg_get_eos_tests();
 #endif // PORTABILITY_STRATEGY_KOKKOS
-    // EOS
+       // EOS
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<EOS *> eos_v("eos", NMAT);
     auto eos_hv = Kokkos::create_mirror_view(eos_v);
@@ -310,15 +309,15 @@ int main(int argc, char *argv[]) {
                   NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
                   &scratch_d(t * nscratch_vars));
           bool success = PTESolver(method);
-//	  if (t == 0) {
-//	    printf("\n\n---\n");
-//	    for (int m = 0; m < NMAT; ++m) {
-//	      printf("r: %e\n", rho[m]);
-//	      printf("v: %e\n", vfrac[m]);
-//	      printf("t: %e\n", temp[m]);
-//	      printf("p: %e\n", press[m]);
-//	    }
-//	  }
+          //	  if (t == 0) {
+          //	    printf("\n\n---\n");
+          //	    for (int m = 0; m < NMAT; ++m) {
+          //	      printf("r: %e\n", rho[m]);
+          //	      printf("v: %e\n", vfrac[m]);
+          //	      printf("t: %e\n", temp[m]);
+          //	      printf("p: %e\n", press[m]);
+          //	    }
+          //	  }
           if (success) {
             nsuccess_d() += 1;
           }
