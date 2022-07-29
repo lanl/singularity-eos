@@ -23,6 +23,35 @@ class EOSTestBase(object):
         if rel > eps:
             raise AssertionError("{} > {}".format(rel, eps))
 
+    def assertEqualEOS(self, test_e, ref_e):
+        """compare all individual member functions with 1 as inputs,
+        this function is meant to catch mis-implementations of
+        modifiers that can be initialized in such a way as to
+        be equivalent of an unmodified eos. Best used with analytic eoss.
+        """
+        self.assertIsClose(test_e.TemperatureFromDensityInternalEnergy(1, 1),
+            ref_e.TemperatureFromDensityInternalEnergy(1, 1), 1.e-15)
+        self.assertIsClose(test_e.InternalEnergyFromDensityTemperature(1, 1),
+            ref_e.InternalEnergyFromDensityTemperature(1, 1), 1.e-15)
+        self.assertIsClose(test_e.PressureFromDensityInternalEnergy(1, 1),
+            ref_e.PressureFromDensityInternalEnergy(1, 1), 1.e-15)
+        self.assertIsClose(test_e.SpecificHeatFromDensityInternalEnergy(1, 1),
+            ref_e.SpecificHeatFromDensityInternalEnergy(1, 1), 1.e-15)
+        self.assertIsClose(test_e.BulkModulusFromDensityInternalEnergy(1, 1),
+            ref_e.BulkModulusFromDensityInternalEnergy(1, 1), 1.e-15)
+        self.assertIsClose(test_e.GruneisenParamFromDensityInternalEnergy(1, 1),
+            ref_e.GruneisenParamFromDensityInternalEnergy(1, 1), 1.e-15)
+        self.assertIsClose(test_e.PressureFromDensityTemperature(1, 1),
+            ref_e.PressureFromDensityTemperature(1, 1), 1.e-15)
+        self.assertIsClose(test_e.SpecificHeatFromDensityTemperature(1, 1),
+            ref_e.SpecificHeatFromDensityTemperature(1, 1), 1.e-15)
+        self.assertIsClose(test_e.BulkModulusFromDensityTemperature(1, 1),
+            ref_e.BulkModulusFromDensityTemperature(1, 1), 1.e-15)
+        self.assertIsClose(test_e.GruneisenParamFromDensityTemperature(1, 1),
+            ref_e.GruneisenParamFromDensityTemperature(1, 1), 1.e-15)
+        self.assertIsClose(test_e.MinimumDensity(), ref_e.MinimumDensity(), 1.e-15)
+        self.assertIsClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15)
+
 class EOS(unittest.TestCase):
     def testConstants(self):
         from singularity_eos import thermalqs
@@ -37,6 +66,16 @@ class EOS(unittest.TestCase):
     def testIdealGas(self):
         eos = singularity_eos.IdealGas(1,1)
 
+    def testShiftedIdealGas(self):
+        eos = singularity_eos.Shifted(singularity_eos.IdealGas(1,1),1)
+
+    def testScaledIdealGas(self):
+        eos = singularity_eos.Scaled(singularity_eos.IdealGas(1,1),1)
+
+    def testScaledShiftedIdealGas(self):
+        shifted = singularity_eos.Shifted(singularity_eos.IdealGas(1,1),1)
+        eos = singularity_eos.Scaled(shifted,1)
+
     def testGruneisen(self):
         eos = singularity_eos.Gruneisen(1,1,1,1,1,1,1,1,1,1)
 
@@ -49,6 +88,41 @@ class EOS(unittest.TestCase):
     def testDavisProducts(self):
         eos = singularity_eos.DavisProducts(1,1,1,1,1,1,1,1)
 
+class Modifiers(unittest.TestCase, EOSTestBase):
+    def setUp(self):
+        "Parameters for a shifted and scaled ideal gas"
+        self.Cv = 2.0
+        self.gm1 = 0.5
+        self.scale = 2.0
+        self.shift = 0.1
+        self.rho = 2.0
+        self.sie = 0.5
+
+    def testScaledShiftedIdealGas(self):
+        from singularity_eos import IdealGas, Shifted, Scaled
+
+        # We construct a shifted, scaled IdealGas by hand
+        a = IdealGas(self.gm1, self.Cv)
+        b = Shifted(a, self.shift)
+        eos = Scaled(b, self.scale)
+
+        # The shift and scale parameters pass through correctly"
+        self.assertIsClose(eos.PressureFromDensityInternalEnergy(self.rho, self.sie), 0.3)
+
+    def testNonModifying(self):
+        from singularity_eos import IdealGas, Shifted, Scaled
+        ig = IdealGas(self.gm1, self.Cv);
+        igsh = Scaled(IdealGas(self.gm1, self.Cv), 1.0);
+        igsc = Shifted(IdealGas(self.gm1, self.Cv), 0.0);
+        #int enabled[4] = {0, 0, 1, 0};
+        #Real vals[6] = {0.0, 0.0, 1.e9, 1.0, 2.0, 1.0};
+        #Real rho0 = 1.e6 / (gm1 * Cv * 293.0);
+        #init_sg_IdealGas(0, &igra, gm1, Cv, enabled, vals);
+
+        # The modified EOS should produce equivalent results
+        self.assertEqualEOS(igsh, ig)
+        self.assertEqualEOS(igsc, ig)
+        #  compare_two_eoss(igra, ig)
 
 class VectorEOS_IdealGas_Given_Rho_Sie(unittest.TestCase):
     def setUp(self):
