@@ -109,6 +109,21 @@ class Modifiers(unittest.TestCase, EOSTestBase):
         # The shift and scale parameters pass through correctly"
         self.assertIsClose(eos.PressureFromDensityInternalEnergy(self.rho, self.sie), 0.3)
 
+    def testBilinearRampScaledShiftedIdealGas(self):
+        from singularity_eos import IdealGas, Shifted, Scaled, BilinearRamp
+
+        # We construct a shifted, scaled IdealGas by hand
+        a = IdealGas(self.gm1, self.Cv)
+        b = Shifted(a, self.shift)
+        eos = Scaled(b, self.scale)
+
+        # We add a ramp
+        r0 = 1
+        a = 1
+        b = 0
+        c = 0
+        eos_ramped = BilinearRamp(eos, r0, a, b, c)
+
     def testNonModifying(self):
         from singularity_eos import IdealGas, Shifted, Scaled
         ig = IdealGas(self.gm1, self.Cv)
@@ -181,6 +196,63 @@ class Modifiers(unittest.TestCase, EOSTestBase):
         P = eos.PressureFromDensityInternalEnergy(rho, sie)
         Ptrue = gm1 * rho * sie
         self.assertLess(abs(P - Ptrue) / Ptrue, 1e-3)
+
+    def testBilinearRamp(self):
+        from singularity_eos import IdealGas, BilinearRamp, pAlpha2BilinearRampParams
+        Cv = 2.0;
+        gm1 = 0.5;
+        # We construct a ramp from a p-alpha model
+        Pe = 5.e7
+        Pc = 1.e8
+        alpha0 = 1.5
+        T0 = 293.0
+        rho0 = 1.e6 / (gm1 * Cv * T0)
+        r0 = rho0 / alpha0
+        r1 = Pc / (gm1 * Cv * T0)
+        rmid = Pe / (gm1 * Cv * T0 * alpha0)
+        # P(alpha0 * rmid)
+        P_armid = alpha0 * gm1 * Cv * rmid * T0
+
+        ig = IdealGas(gm1, Cv)
+        param_r0, param_a, param_b, param_c = pAlpha2BilinearRampParams(ig, alpha0, Pe, Pc)
+        igra = BilinearRamp(IdealGas(gm1, Cv), param_r0, param_a, param_b, param_c)
+
+        # construct ramp params and evaluate directly for test
+        a = r0 * Pe / (rmid - r0)
+        b = r0 * (Pc - Pe) / (r1 - rmid)
+        c = (Pc * rmid - Pe * r1) / (r0 * (Pc - Pe))
+        # density in the middle of the first slope
+        rho_t1 = 0.5 * (r0 + rmid)
+        # density in the middle of the second slope
+        rho_t2 = 0.5 * (rmid + r1)
+        # P (rho_t1) note that r0 = rho0 / alpha0
+        Prhot1 = a * (rho_t1 / r0 - 1.0)
+        # P (rho_t2)
+        Prhot2 = b * (rho_t2 / r0 - c)
+        # bmod (rho_t1)
+        bmodrt1 = rho_t1 * a / r0
+        # bmod (rho_t2)
+        bmodrt2 = rho_t2 * b / r0
+
+        # Then P_eos(alpha_0*rmid, T0) = P_ramp(rmid,T0)
+        self.assertIsClose(P_armid, igra.PressureFromDensityTemperature(rmid, T0), 1.e-12)
+
+        # We obtain correct ramp behavior in P(rho) for rho <r0, [r0,rmid], [rmid,r1] and >r1
+        self.assertIsClose(Prhot1, igra.PressureFromDensityTemperature(rho_t1, T0), 1.e-12)
+        self.assertIsClose(Prhot2, igra.PressureFromDensityTemperature(rho_t2, T0), 1.e-12)
+
+        # check pressure below and beyond ramp matches unmodified ideal gas
+        self.assertIsClose(0.8 * r0 * gm1 * Cv * T0, igra.PressureFromDensityTemperature(0.8 * r0, T0), 1.e-12)
+        self.assertIsClose(1.2 * r1 * gm1 * Cv * T0, igra.PressureFromDensityTemperature(1.2 * r1, T0), 1.e-12)
+
+        # We obtain correct ramp behavior in bmod(rho) for rho <r0, [r0,rmid], [rmid,r1] and >r1
+        # check bulk moduli on both pieces of ramp
+        self.assertIsClose(bmodrt1, igra.BulkModulusFromDensityTemperature(rho_t1, T0), 1.e-12)
+        self.assertIsClose(bmodrt2, igra.BulkModulusFromDensityTemperature(rho_t2, T0), 1.e-12)
+
+        # check bulk modulus below and beyond ramp matches unmodified ideal gas
+        self.assertIsClose(0.8 * r0 * gm1 * (gm1 + 1.0) * Cv * T0, igra.BulkModulusFromDensityTemperature(0.8 * r0, T0), 1.e-12)
+        self.assertIsClose(1.2 * r1 * gm1 * (gm1 + 1.0) * Cv * T0, igra.BulkModulusFromDensityTemperature(1.2 * r1, T0), 1.e-12)
 
 class VectorEOS_IdealGas_Given_Rho_Sie(unittest.TestCase):
     def setUp(self):
