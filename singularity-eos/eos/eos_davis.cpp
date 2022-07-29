@@ -13,6 +13,7 @@
 //------------------------------------------------------------------------------
 
 #include <cmath>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 namespace singularity {
@@ -139,28 +140,20 @@ PORTABLE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Real *lambda, Real &rho, Real &sie) const {
   // First, solve P=P(rho,T) for rho.  Note P(rho,e) has an sie-es term, which is only a
   // function of T
-  auto residual = [&](const Real r) {
-    return press - (Ps(r) + Gamma(r) * r * _Cv0 * Ts(r) / (1 + _alpha) *
-                                (std::pow(temp / Ts(r), 1 + _alpha) - 1.0));
+  auto PofRatT = [&](const Real r) {
+    return (Ps(r) + Gamma(r) * r * _Cv0 * Ts(r) / (1 + _alpha) *
+                        (std::pow(temp / Ts(r), 1 + _alpha) - 1.0));
   };
-  Real rho1 = _rho0, res1 = residual(rho1);
-  Real slope =
-      _Cv0 * _G0 *
-      ((_alpha * _G0 - 1.0) * temp * std::pow(temp / _T0, _alpha) + _T0 + _G0 * _T0) /
-      (1 + _alpha);
-  Real rho2 = rho1 + res1 / slope, res2 = residual(rho2);
-  Real rhom, resm;
-  for (int i = 1; i < 20; ++i) {
-    slope = (rho2 - rho1) / (res2 - res1);
-    rhom = rho2 - res2 * slope;
-    resm = residual(rhom);
-    if (resm / press < 1e-8) break;
-    rho1 = rho2;
-    res1 = res2;
-    rho2 = rhom;
-    res2 = resm;
+  using RootFinding1D::regula_falsi;
+  using RootFinding1D::Status;
+  RootFinding1D::RootCounts counts;
+  auto status =
+      regula_falsi(PofRatT, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
+  if (status != Status::SUCCESS) {
+    // Root finder failed even though the solution was bracketed... this is an error
+    EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
+              "Root find failed to find a solution given P, T\n");
   }
-  rho = rhom;
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
 PORTABLE_FUNCTION
@@ -305,24 +298,20 @@ Real DavisProducts::GruneisenParamFromDensityTemperature(const Real rho, const R
 }
 PORTABLE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Real *lambda, Real &rho, Real &sie) const {
-  auto residual = [&](const Real r) {
-    return press - (Ps(r) + Gamma(r) * r * _Cv * (temp - Ts(r)));
+  auto PofRatT = [&](const Real r) {
+    return (Ps(r) + Gamma(r) * r * _Cv * (temp - Ts(r)));
   };
-  Real rho1 = 1.0 / _vc, res1 = residual(rho1);
-  Real slope;
-  Real rho2 = rho1 * 2.0, res2 = residual(rho2);
-  Real rhom, resm;
-  for (int i = 1; i < 20; ++i) {
-    slope = (rho2 - rho1) / (res2 - res1);
-    rhom = rho2 - res2 * slope;
-    resm = residual(rhom);
-    if (resm / press < 1e-8) break;
-    rho1 = rho2;
-    res1 = res2;
-    rho2 = rhom;
-    res2 = resm;
+  using RootFinding1D::regula_falsi;
+  using RootFinding1D::Status;
+  RootFinding1D::RootCounts counts;
+  const Real rho0 = 1.0 / _vc;
+  auto status =
+      regula_falsi(PofRatT, press, rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
+  if (status != Status::SUCCESS) {
+    // Root finder failed even though the solution was bracketed... this is an error
+    EOS_ERROR("DavisProducts::DensityEnergyFromPressureTemperature: "
+              "Root find failed to find a solution given P, T\n");
   }
-  rho = rhom;
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
 PORTABLE_FUNCTION
