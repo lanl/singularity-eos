@@ -348,6 +348,37 @@ void scaled_eos_class(py::module_ & m, const char * name) {
 }
 
 template<typename T>
+void bilinear_ramp_helper(py::module_ & m) {
+  m.def("BilinearRamp", [](T eos, const Real r0, const Real a, const Real b, const Real c){
+    return BilinearRampEOS<T>(std::move(eos), r0, a, b, c);
+  }, py::arg("eos"), py::arg("r0"), py::arg("a"), py::arg("b"), py::arg("c"));
+}
+
+template<typename T>
+void bilinear_ramp_class_helper(py::module_ & m, std::string name) {
+  eos_class<BilinearRampEOS<T>>(m, std::string("BilinearRamp") + name)
+    .def(
+      py::init<T, Real, Real, Real, Real>(),
+      py::arg("eos"), py::arg("r0"), py::arg("a"), py::arg("b"), py::arg("c")
+    );
+}
+
+
+template<typename T>
+void bilinear_ramp_eos_class(py::module_ & m, const char * name) {
+  // define BilinearRamp utility function
+  bilinear_ramp_helper<T>(m);
+  bilinear_ramp_helper<ShiftedEOS<T>>(m);
+  bilinear_ramp_helper<ScaledEOS<T>>(m);
+  bilinear_ramp_helper<ScaledEOS<ShiftedEOS<T>>>(m);
+
+  bilinear_ramp_class_helper<T>(m, name);
+  bilinear_ramp_class_helper<ShiftedEOS<T>>(m, std::string("Shifted") + name);
+  bilinear_ramp_class_helper<ScaledEOS<T>>(m, std::string("Scaled") + name);
+  bilinear_ramp_class_helper<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name);
+}
+
+template<typename T>
 void relativistic_helper(py::module_ & m) {
   m.def("Relativistic", [](T eos, const Real cl){
     return RelativisticEOS<T>(std::move(eos), cl);
@@ -375,6 +406,16 @@ void relativistic_eos_class(py::module_ & m, const char * name) {
   relativistic_class_helper<ShiftedEOS<T>>(m, std::string("Shifted") + name);
   relativistic_class_helper<ScaledEOS<T>>(m, std::string("Scaled") + name);
   relativistic_class_helper<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name);
+
+  relativistic_helper<BilinearRampEOS<T>>(m);
+  relativistic_helper<BilinearRampEOS<ShiftedEOS<T>>>(m);
+  relativistic_helper<BilinearRampEOS<ScaledEOS<T>>>(m);
+  relativistic_helper<BilinearRampEOS<ScaledEOS<ShiftedEOS<T>>>>(m);
+
+  relativistic_class_helper<BilinearRampEOS<T>>(m, std::string("Bilinear") + name);
+  relativistic_class_helper<BilinearRampEOS<ShiftedEOS<T>>>(m, std::string("BilinearShifted") + name);
+  relativistic_class_helper<BilinearRampEOS<ScaledEOS<T>>>(m, std::string("BilinearScaled") + name);
+  relativistic_class_helper<BilinearRampEOS<ScaledEOS<ShiftedEOS<T>>>>(m, std::string("BilinearScaledShifted") + name);
 }
 
 template<typename T>
@@ -420,6 +461,16 @@ void unit_system_eos_class(py::module_ & m, const char * name) {
   unit_system_class_helper<ScaledEOS<T>>(m, std::string("Scaled") + name);
   unit_system_class_helper<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name);
 
+  unit_system_helper<BilinearRampEOS<T>>(m);
+  unit_system_helper<BilinearRampEOS<ShiftedEOS<T>>>(m);
+  unit_system_helper<BilinearRampEOS<ScaledEOS<T>>>(m);
+  unit_system_helper<BilinearRampEOS<ScaledEOS<ShiftedEOS<T>>>>(m);
+
+  unit_system_class_helper<BilinearRampEOS<T>>(m, std::string("BilinearRamp") + name);
+  unit_system_class_helper<BilinearRampEOS<ShiftedEOS<T>>>(m, std::string("BilinearRampShifted") + name);
+  unit_system_class_helper<BilinearRampEOS<ScaledEOS<T>>>(m, std::string("BilinearRampScaled") + name);
+  unit_system_class_helper<BilinearRampEOS<ScaledEOS<ShiftedEOS<T>>>>(m, std::string("BilinearRampScaledShifted") + name);
+
   unit_system_helper<RelativisticEOS<T>>(m);
   unit_system_helper<RelativisticEOS<ShiftedEOS<T>>>(m);
   unit_system_helper<RelativisticEOS<ScaledEOS<T>>>(m);
@@ -429,6 +480,16 @@ void unit_system_eos_class(py::module_ & m, const char * name) {
   unit_system_class_helper<RelativisticEOS<ShiftedEOS<T>>>(m, std::string("RelativisticShifted") + name);
   unit_system_class_helper<RelativisticEOS<ScaledEOS<T>>>(m, std::string("RelativisticScaled") + name);
   unit_system_class_helper<RelativisticEOS<ScaledEOS<ShiftedEOS<T>>>>(m, std::string("RelativisticScaledShifted") + name);
+
+  unit_system_helper<RelativisticEOS<BilinearRampEOS<T>>>(m);
+  unit_system_helper<RelativisticEOS<BilinearRampEOS<ShiftedEOS<T>>>>(m);
+  unit_system_helper<RelativisticEOS<BilinearRampEOS<ScaledEOS<T>>>>(m);
+  unit_system_helper<RelativisticEOS<BilinearRampEOS<ScaledEOS<ShiftedEOS<T>>>>>(m);
+
+  unit_system_class_helper<RelativisticEOS<BilinearRampEOS<T>>>(m, std::string("RelativisticBilinearRamp") + name);
+  unit_system_class_helper<RelativisticEOS<BilinearRampEOS<ShiftedEOS<T>>>>(m, std::string("RelativisticBilinearRampShifted") + name);
+  unit_system_class_helper<RelativisticEOS<BilinearRampEOS<ScaledEOS<T>>>>(m, std::string("RelativisticBilinearRampScaled") + name);
+  unit_system_class_helper<RelativisticEOS<BilinearRampEOS<ScaledEOS<ShiftedEOS<T>>>>>(m, std::string("RelativisticBilinearRampScaledShifted") + name);
 }
 
 PYBIND11_MODULE(singularity_eos, m) {
@@ -494,6 +555,7 @@ PYBIND11_MODULE(singularity_eos, m) {
   scaled_eos_class<DavisReactants>(m, "DavisReactants");
   scaled_eos_class<DavisProducts>(m, "DavisProducts");
 
+  bilinear_ramp_eos_class<IdealGas>(m, "IdealGas");
   relativistic_eos_class<IdealGas>(m, "IdealGas");
   unit_system_eos_class<IdealGas>(m, "IdealGas");
 
@@ -552,6 +614,10 @@ PYBIND11_MODULE(singularity_eos, m) {
   scaled_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
   scaled_eos_class<StellarCollapse>(m, "StellarCollapse");
 
+  bilinear_ramp_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
+  bilinear_ramp_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
+  bilinear_ramp_eos_class<StellarCollapse>(m, "StellarCollapse");
+
   relativistic_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
   relativistic_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
   relativistic_eos_class<StellarCollapse>(m, "StellarCollapse");
@@ -569,6 +635,12 @@ PYBIND11_MODULE(singularity_eos, m) {
   shifted_eos_class<EOSPAC>(m, "EOSPAC");
   scaled_eos_class<EOSPAC>(m, "EOSPAC");
 #endif
+
+  m.def("pAlpha2BilinearRampParams", [](const IdealGas &eos, const Real alpha0, const Real Pe, const Real Pc){
+    Real r0, a, b, c;
+    pAlpha2BilinearRampParams(eos, alpha0, Pe, Pc, r0, a, b, c);
+    return py::make_tuple(r0, a, b, c);
+  }, py::arg("eos"), py::arg("alpha0"), py::arg("Pe"), py::arg("Pc"));
 
   py::module thermalqs = m.def_submodule("thermalqs");
   thermalqs.attr("none") = pybind11::int_(thermalqs::none);

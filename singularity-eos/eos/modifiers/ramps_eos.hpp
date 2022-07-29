@@ -88,6 +88,9 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   }
   BilinearRampEOS() = default;
 
+  // give me std::format or fmt::format...
+  static std::string EosType() { return std::string("BilinearRampEOS<") + T::EosType() + std::string(">"); }
+
   auto GetOnDevice() { return BilinearRampEOS<T>(t_.GetOnDevice(), r0_, a_, b_, c_); }
   inline void Finalize() { t_.Finalize(); }
 
@@ -210,8 +213,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return t_.nlambda(); }
 
-  PORTABLE_FUNCTION
-  unsigned long PreferredInput() const { return t_.PreferredInput(); }
+  static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();
