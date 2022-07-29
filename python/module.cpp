@@ -341,6 +341,40 @@ void scaled_eos_class(py::module_ & m, const char * name) {
     );
 }
 
+template<typename T>
+void relativistic_eos_class(py::module_ & m, const char * name) {
+  // define Relativistic utility function
+  m.def("Relativistic", [](T eos, const Real cl){ return RelativisticEOS<T>(std::move(eos), cl); });
+  m.def("Relativistic", [](ShiftedEOS<T> eos, const Real cl){ return RelativisticEOS<ShiftedEOS<T>>(std::move(eos), cl); });
+  m.def("Relativistic", [](ScaledEOS<T> eos, const Real cl){ return RelativisticEOS<ScaledEOS<T>>(std::move(eos), cl); });
+  m.def("Relativistic", [](ScaledEOS<ShiftedEOS<T>> eos, const Real cl){ return RelativisticEOS<ScaledEOS<ShiftedEOS<T>>>(std::move(eos), cl); });
+
+  eos_class<RelativisticEOS<T>>(m, std::string("Relativistic") + name)
+    .def(
+      py::init<T, Real>(),
+      py::arg("eos"), py::arg("cl")
+    );
+
+  // each relativistic can also be scaled and shifted
+  eos_class<RelativisticEOS<ScaledEOS<T>>>(m, std::string("RelativisticScaled") + name)
+    .def(
+      py::init<ScaledEOS<T>, Real>(),
+      py::arg("eos"), py::arg("cl")
+    );
+
+  eos_class<RelativisticEOS<ShiftedEOS<T>>>(m, std::string("RelativisticShifted") + name)
+    .def(
+      py::init<ShiftedEOS<T>, Real>(),
+      py::arg("eos"), py::arg("cl")
+    );
+
+  eos_class<RelativisticEOS<ScaledEOS<ShiftedEOS<T>>>>(m, std::string("RelativisticScaledShifted") + name)
+    .def(
+      py::init<ScaledEOS<ShiftedEOS<T>>, Real>(),
+      py::arg("eos"), py::arg("cl")
+    );
+}
+
 PYBIND11_MODULE(singularity_eos, m) {
   py::class_<EOSState>(m, "EOSState")
     .def(py::init())
@@ -404,6 +438,8 @@ PYBIND11_MODULE(singularity_eos, m) {
   scaled_eos_class<DavisReactants>(m, "DavisReactants");
   scaled_eos_class<DavisProducts>(m, "DavisProducts");
 
+  relativistic_eos_class<IdealGas>(m, "IdealGas");
+
 #ifdef SPINER_USE_HDF
   eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT")
     .def(py::init())
@@ -458,6 +494,10 @@ PYBIND11_MODULE(singularity_eos, m) {
   scaled_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
   scaled_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
   scaled_eos_class<StellarCollapse>(m, "StellarCollapse");
+
+  relativistic_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
+  relativistic_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
+  relativistic_eos_class<StellarCollapse>(m, "StellarCollapse");
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC

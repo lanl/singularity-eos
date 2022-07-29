@@ -103,14 +103,14 @@ for the specific enthalpy :math:`h`. This brings the sound speed formula into al
 
   c_s = \sqrt{B_S/w}
 
-for enthalpy by volume :math:`w`. The ``RelativisticEOS`` constructor
-doesn't take any additional parameters, simply construct one with the
-parameters for the underlying EOS:
+for enthalpy by volume :math:`w`. The ``RelativisticEOS`` constructor accepts
+the underlying model, and the speed of light as parameter. For example, a
+relativistic ideal gas might be initialized as:
 
 .. code-block:: cpp
 
   using namespace singularity;
-  EOS my_eos = RelativisticEOS<IdealGas>(IdealGas(gm1, Cv));
+  EOS my_eos = RelativisticEOS<IdealGas>(IdealGas(gm1, Cv), cl);
 
 EOS Unit System
 -----------------
@@ -156,4 +156,4 @@ Modifiers can be composed. For example:
 .. code-block:: cpp
 
   using namespace singularity;
-  auto my_eos = ShiftedEOS<ScaledEOS<IdealGas>(ScaledEOS(IdealGas(gm1, Cv), scale), shift);
+  auto my_eos = ShiftedEOS<ScaledEOS<IdealGas>>(ScaledEOS(IdealGas(gm1, Cv), scale), shift);
