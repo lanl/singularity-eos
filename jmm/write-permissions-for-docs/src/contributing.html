@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing &mdash; Singularity-EOS  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to Use Sphinx for Writing Docs" href="sphinx-doc.html" />
+    <link rel="prev" title="Mixed Cell Closures" href="using-closures.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> Singularity-EOS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="getting-started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="philosophy.html">Design Philosophy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building.html">Building Singularity-EOS</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-eos.html">The Equation of State API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models.html">EOS Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="using-closures.html">Mixed Cell Closures</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#fast-logs-and-approximate-log-gridding">Fast Logs and Approximate Log Gridding</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sphinx-doc.html">How to Use Sphinx for Writing Docs</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Singularity-EOS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Contributing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/src/contributing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="contributing">
+<span id="contributing-doc"></span><h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this heading"></a></h1>
+<section id="fast-logs-and-approximate-log-gridding">
+<h2>Fast Logs and Approximate Log Gridding<a class="headerlink" href="#fast-logs-and-approximate-log-gridding" title="Permalink to this heading"></a></h2>
+<p>When spanning many orders of magnitude, Logarithmic grids are a
+natural choice. Even spacing in log space corresponds to exponential
+spacing in the original linear space. In other words, the grid spacing
+is proportional to the value of the independent variable.</p>
+<p>One can perform log-linear or log-log interpolation by simply
+converting to log space, interpolating as one normally would, and then
+converting back out. Unfortunately, logarithms and exponents are
+transcendental functions, meaning they are expensive to compute and it
+is thus expensive to transform in and out of log space.</p>
+<p>To avoid this issue, we construct a space that is <em>approximately</em>
+logarithmically spaced, but not quite exactly. The requirements for
+this space are that the transformation into and out of this space is
+fast to compute, continuous, differentiable, analytically invertible,
+and close to taking a logarithm or exponentiation (depending on which
+way you’re going).</p>
+<p>To achieve this, we leverage the internal representation of a floating
+point number in the IEE standard. In particular, a floating point
+number <span class="math notranslate nohighlight">\(x\)</span> is represented as a mantissa and an exponent in base
+2:</p>
+<div class="math notranslate nohighlight">
+\[x = m 2^e\]</div>
+<p>for mantissa <span class="math notranslate nohighlight">\(m\)</span> and exponent <span class="math notranslate nohighlight">\(e\)</span>. The mantiss is
+guaranteed to be on the interval <span class="math notranslate nohighlight">\([1/2, 1)\)</span>. The standard
+library of most low-level languages provides a performant and portable
+routine to pick apart this represnetation, <code class="docutils literal notranslate"><span class="pre">frexp</span></code>, which given a
+number <span class="math notranslate nohighlight">\(x\)</span>, return <span class="math notranslate nohighlight">\(m\)</span> and <span class="math notranslate nohighlight">\(e\)</span>.</p>
+<p>The log in base 2 <code class="docutils literal notranslate"><span class="pre">lg</span></code> of <span class="math notranslate nohighlight">\(x\)</span> is then given by the logarithm
+of the mantissa plus the exponent:</p>
+<div class="math notranslate nohighlight">
+\[\lg(x) = \lg(m) + e\]</div>
+<p>Therefore, if we can find a fast, invertible approximation to
+<span class="math notranslate nohighlight">\(\lg(m)\)</span>, we will have achieved our goal. It turns out the
+expression</p>
+<div class="math notranslate nohighlight">
+\[2 (x - 1)\]</div>
+<p>works pretty well, so we use that. (To convince yourself of this note
+that for <span class="math notranslate nohighlight">\(x=1/2\)</span> this expression returns -1 and for <span class="math notranslate nohighlight">\(x=1\)</span>,
+it returns 0, which are the correct values of <span class="math notranslate nohighlight">\(\lg(x)\)</span> at the
+bounds of the interval.) Thus our approximate, invertible expression
+for <span class="math notranslate nohighlight">\(\lg\)</span> is just</p>
+<div class="math notranslate nohighlight">
+\[2 (m - 1) + e\]</div>
+<p>for the mantissa and exponent extracted via <code class="docutils literal notranslate"><span class="pre">frexp</span></code>. This differs
+from <span class="math notranslate nohighlight">\(lg\)</span> by a maximum of about 0.1, which translates to at most
+a 25 percent difference. As discussed above, however, the function
+itself is an exact representation of itself and the difference from
+<span class="math notranslate nohighlight">\(lg\)</span> is acceptable.</p>
+<p>To invert, we use the built in function that inverts <code class="docutils literal notranslate"><span class="pre">frexp</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ldexp</span></code>, which combines the mantissa and exponent into the original
+floating point representation.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="using-closures.html" class="btn btn-neutral float-left" title="Mixed Cell Closures" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="sphinx-doc.html" class="btn btn-neutral float-right" title="How to Use Sphinx for Writing Docs" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021-2022. Triad National Security.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+<div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Other Versions</span>
+    v: jmm/write-permissions-for-docs
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Tags</dt>
+      <dd><a href="../../../release-1.6.0/src/contributing.html">release-1.6.0</a></dd>
+      <dd><a href="../../../release-1.6.1/src/contributing.html">release-1.6.1</a></dd>
+    </dl>
+    <dl>
+      <dt>Branches</dt>
+      <dd><a href="../../../brryan/stellarcollapse_T_units/src/contributing.html">brryan/stellarcollapse_T_units</a></dd>
+      <dd><a href="../../../dholladay00/eap_integration/src/contributing.html">dholladay00/eap_integration</a></dd>
+      <dd><a href="../../../jdolence/new_pte/src/contributing.html">jdolence/new_pte</a></dd>
+      <dd><a href="../../../jhp_eos_vector/src/contributing.html">jhp_eos_vector</a></dd>
+      <dd><a href="../../profile-root/src/contributing.html">jmm/profile-root</a></dd>
+      <dd><a href="../../sesame2spiner-library/src/contributing.html">jmm/sesame2spiner-library</a></dd>
+      <dd><a href="contributing.html">jmm/write-permissions-for-docs</a></dd>
+      <dd><a href="../../../main/src/contributing.html">main</a></dd>
+      <dd><a href="../../../mauneyc/feature/singular-spackage/src/contributing.html">mauneyc/feature/singular-spackage</a></dd>
+      <dd><a href="../../../mauneyc/fix/spack_info_homepage/src/contributing.html">mauneyc/fix/spack_info_homepage</a></dd>
+      <dd><a href="../../../mauneyc/fix/spackdown/src/contributing.html">mauneyc/fix/spackdown</a></dd>
+      <dd><a href="../../../rberger_python_modifiers/src/contributing.html">rberger_python_modifiers</a></dd>
+      <dd><a href="../../../sap_integration/src/contributing.html">sap_integration</a></dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
