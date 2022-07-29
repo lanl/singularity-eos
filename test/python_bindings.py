@@ -111,9 +111,9 @@ class Modifiers(unittest.TestCase, EOSTestBase):
 
     def testNonModifying(self):
         from singularity_eos import IdealGas, Shifted, Scaled
-        ig = IdealGas(self.gm1, self.Cv);
-        igsh = Scaled(IdealGas(self.gm1, self.Cv), 1.0);
-        igsc = Shifted(IdealGas(self.gm1, self.Cv), 0.0);
+        ig = IdealGas(self.gm1, self.Cv)
+        igsh = Scaled(IdealGas(self.gm1, self.Cv), 1.0)
+        igsc = Shifted(IdealGas(self.gm1, self.Cv), 0.0)
         #int enabled[4] = {0, 0, 1, 0};
         #Real vals[6] = {0.0, 0.0, 1.e9, 1.0, 2.0, 1.0};
         #Real rho0 = 1.e6 / (gm1 * Cv * 293.0);
@@ -123,6 +123,20 @@ class Modifiers(unittest.TestCase, EOSTestBase):
         self.assertEqualEOS(igsh, ig)
         self.assertEqualEOS(igsc, ig)
         #  compare_two_eoss(igra, ig)
+
+    def testRelativisticIdealGas(self):
+        """Relativistic EOS", "[EOSBuilder][RelativisticEOS][IdealGas]"""
+        from singularity_eos import IdealGas, Relativistic
+        Cv = 2.0
+        gm1 = 0.5
+        eos = Relativistic(IdealGas(gm1, Cv), 1.0)
+
+        # The EOS has finite sound speeds"
+        rho = 1e3
+        sie = 1e3
+        bmod = eos.BulkModulusFromDensityInternalEnergy(rho, sie)
+        cs2 = bmod / rho
+        self.assertLess(cs2, 1)
 
 class VectorEOS_IdealGas_Given_Rho_Sie(unittest.TestCase):
     def setUp(self):

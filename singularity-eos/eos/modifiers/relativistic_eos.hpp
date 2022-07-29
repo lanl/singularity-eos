@@ -56,6 +56,9 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   using EosBase<RelativisticEOS<T>>::PTofRE;
   using EosBase<RelativisticEOS<T>>::FillEos;
 
+  // give me std::format or fmt::format...
+  static std::string EosType() { return std::string("RelativisticEOS<") + T::EosType() + std::string(">"); }
+
   // move semantics ensures dynamic memory comes along for the ride
   RelativisticEOS(T &&t, const Real cl)
       : t_(std::forward<T>(t)), cl_(cl) // speed of light, units arbitrary
@@ -140,8 +143,7 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
     return t_.MinimumTemperature();
   }
 
-  PORTABLE_FUNCTION
-  unsigned long PreferredInput() const { return t_.PreferredInput(); }
+  static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
   PORTABLE_FUNCTION void PrintParams() const { t_.PrintParams(); }
   PORTABLE_FUNCTION
