@@ -90,7 +90,8 @@ void set_state(RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
 }
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-void run_sg_get_eos_tests() {
+int run_sg_get_eos_tests() {
+  int nfails = 0;
   // initialize inputs outputs
   static constexpr const double ev2k = 1.160451930280894026e4;
   EOS eoss[NMAT];
@@ -127,49 +128,80 @@ void run_sg_get_eos_tests() {
     const Real p_resid = std::abs(P_true - p_eos) / P_true;
     const Real t_eos = eoss[m].TemperatureFromDensityInternalEnergy(r_m, sie_true[m]);
     const Real t_resid = std::abs(T_true - t_eos) / T_true;
-    if (p_resid > 1.e-5) printf("p(%i) wrong: %e %e\n", m, P_true, p_eos);
-    if (t_resid > 1.e-5) printf("t(%i) wrong: %e %e\n", m, T_true, t_eos);
+    // check internal consitency of P-T input function
+    if (t_resid > 1.e-5 || p_resid > 1.e-5) {
+      printf("P-T: t_resid: %e | p_resid: %e\n", t_resid, p_resid);
+      nfails += 1;
+    }
     sie_tot_check += sie_true[m] * mfrac[m];
   }
   sie_tot_check /= mass_tot;
-  printf("sie: %e %e \n", sie_tot_true, sie_tot_check);
+  // further check of internal consintency of P-T input function
+  if (std::abs(sie_tot_check - sie_tot_true) / std::abs(sie_tot_true) > 1.e-5) {
+    printf("P-T: sie_tot_true: %e | sie_tot_check: %e\n", sie_tot_true, sie_tot_check);
+    nfails += 1;
+  }
   // obtain converged and consistent PTE solution
   // do rho-T input solve
   Real p_check, vfrac_check[NMAT], sie_check[NMAT];
   get_sg_eos(NMAT, 1, 1, -3, eos_offset, eoss, &cell_offset, &p_check, &pmax, &v_true,
              &spvol, &sie_tot_check, &T_true_ev, &bmod, &dpde, &cv, mfrac, vfrac_check,
              sie_check, nullptr, nullptr, nullptr);
-  printf("p: %e %e \n", P_true, p_check);
-  printf("s: %e %e \n", sie_tot_true, sie_tot_check);
-  for (int m = 0; m < NMAT; ++m) {
-    printf("m=%i\n", m);
-    printf("  rho: %e %e \n", mfrac[m] / vfrac_true[m], mfrac[m] / vfrac_check[m]);
-    printf("  sie: %e %e \n", sie_true[m], sie_check[m]);
-    // sie_tot_check += sie_true[m] * mfrac[m];
+  // check output pressure and sie, indicate failure if relative err is too large
+  if (std::abs(P_true - p_check) / std::abs(P_true) > 1.e-5 ||
+      std::abs(sie_tot_true - sie_tot_check) / std::abs(sie_tot_true) > 1.e-5) {
+    printf("r-T: p_true: %e | p_check: %e\n", P_true, p_check);
+    printf("r-T: sie_tot_true: %e | sie_tot_check: %e\n", sie_tot_true, sie_tot_check);
+    nfails += 1;
   }
-  // ensure outputs are the same
+  Real max_vfrac_resid = 0.0;
+  Real max_sie_resid = 0.0;
+  for (int m = 0; m < NMAT; ++m) {
+    max_vfrac_resid =
+      std::max(max_vfrac_resid,
+	       std::abs(vfrac_true[m] - vfrac_check[m]) / std::abs(vfrac_true[m]));
+    max_sie_resid = 
+      std::max(max_sie_resid,
+	       std::abs(sie_true[m] - sie_check[m]) / std::abs(sie_true[m]));
+  }
+  if (max_vfrac_resid > 1.e-5 || max_sie_resid > 1.e-5) {
+    printf("r-T: vr: %e | sr: %e\n", max_vfrac_resid, max_sie_resid);
+    nfails += 1;
+  }
   // do rho-P input solve
   Real t_check;
   get_sg_eos(NMAT, 1, 1, -2, eos_offset, eoss, &cell_offset, &P_true, &pmax, &v_true,
              &spvol, &sie_tot_check, &t_check, &bmod, &dpde, &cv, mfrac, vfrac_check,
              sie_check, nullptr, nullptr, nullptr);
-  printf("t: %e %e \n", T_true, t_check * ev2k);
-  printf("s: %e %e \n", sie_tot_true, sie_tot_check);
-  for (int m = 0; m < NMAT; ++m) {
-    printf("m=%i\n", m);
-    printf("  rho: %e %e \n", mfrac[m] / vfrac_true[m], mfrac[m] / vfrac_check[m]);
-    printf("  sie: %e %e \n", sie_true[m], sie_check[m]);
-    // sie_tot_check += sie_true[m] * mfrac[m];
+  // check output temperature and sie, indicate failure if relative err is too large
+  if (std::abs(T_true_ev - t_check) / std::abs(T_true_ev) > 1.e-5 ||
+      std::abs(sie_tot_true - sie_tot_check) / std::abs(sie_tot_true) > 1.e-5) {
+    printf("p-T: t_true: %e | t_check: %e\n", T_true_ev, t_check);
+    printf("p-T: sie_tot_true: %e | sie_tot_check: %e\n", sie_tot_true, sie_tot_check);
+    nfails += 1;
   }
-
-  // ensure outputs are the same
-  return;
+  max_vfrac_resid = 0.0;
+  max_sie_resid = 0.0;
+  for (int m = 0; m < NMAT; ++m) {
+    max_vfrac_resid =
+      std::max(max_vfrac_resid,
+	       std::abs(vfrac_true[m] - vfrac_check[m]) / std::abs(vfrac_true[m]));
+    max_sie_resid = 
+      std::max(max_sie_resid,
+	       std::abs(sie_true[m] - sie_check[m]) / std::abs(sie_true[m]));
+  }
+  if (max_vfrac_resid > 1.e-5 || max_sie_resid > 1.e-5) {
+    printf("p-T: vr: %e | sr: %e\n", max_vfrac_resid, max_sie_resid);
+    nfails += 1;
+  }
+  return nfails;
 }
 #endif
 
 int main(int argc, char *argv[]) {
 
   int nsuccess = 0;
+  int nfails_get_sg_eos = 0;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::initialize();
 #endif
@@ -179,7 +211,10 @@ int main(int argc, char *argv[]) {
     // if kokkos enable since that function requires it
     // to run the solvers
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-    run_sg_get_eos_tests();
+    nfails_get_sg_eos = run_sg_get_eos_tests();
+    if(nfails_get_sg_eos > 0) {
+      printf("nfails of fixed T/P solvers = %i\n", nfails_get_sg_eos);
+    }
 #endif // PORTABILITY_STRATEGY_KOKKOS
        // EOS
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -355,8 +390,8 @@ int main(int argc, char *argv[]) {
 
   // poor-man's ctest integration
   if (nsuccess >= 0.5 * NTRIAL) {
-    return 0; // exit success
+    return 0 + nfails_get_sg_eos; // exit success
   } else {
-    return 1; // exit failure
+    return 1 + nfails_get_sg_eos; // exit failure
   }
 }

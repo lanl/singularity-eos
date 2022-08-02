@@ -462,16 +462,6 @@ int get_sg_eos( // sizing information
           sie_v(i) = sie_tot_true;
           for (int mp = 0; mp < npte; ++mp) {
             const int m = pte_mats(tid, mp);
-            if (i == 0) {
-              const Real t_eval = eos_v(pte_idxs(tid, mp))
-                                      .TemperatureFromDensityInternalEnergy(
-                                          rho_pte(tid, mp), sie_pte(tid, mp), cache);
-              Real temp_resid = std::abs(temp_pte(tid, mp) - t_eval) / temp_pte(tid, mp);
-              if (temp_resid > 1.e-6) {
-                printf("temp off in mat(%i): t_true: %.5e t_eval: %.5e\n", m,
-                       temp_pte(tid, mp), t_eval);
-              }
-            }
             // pressure contribution from material m
             press_v(i) += press_pte(tid, mp) * vfrac_pte(tid, mp);
             // assign per material specific internal energy
@@ -617,7 +607,6 @@ int get_sg_eos( // sizing information
           for (int mp = 0; mp < npte; ++mp) {
             const int m = pte_mats(tid, mp);
             temp_v(i) += temp_pte(tid, mp) * vfrac_pte(tid, mp);
-            printf("P: %e p(%i): %e\n", press_v(i), mp, press_pte(tid, mp));
             // assign per material specific internal energy
             frac_sie_v(i, m) = sie_pte(tid, mp);
             // assign volume fraction based on pte calculation

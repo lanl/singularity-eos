@@ -44,7 +44,7 @@ constexpr Real pte_abs_tolerance_p = 0.0;
 constexpr Real pte_abs_tolerance_e = 1.e-4;
 constexpr Real pte_abs_tolerance_t = 0.0;
 constexpr Real pte_residual_tolerance = 1.e-8;
-constexpr int pte_max_iter_per_mat = 8; // 128;
+constexpr int pte_max_iter_per_mat = 128;
 constexpr Real line_search_alpha = 1.e-2;
 constexpr int line_search_max_iter = 6;
 constexpr Real line_search_fac = 0.5;
@@ -231,10 +231,6 @@ class PTESolverBase {
     bool rho_fail;
     for (int i = 0; i < 3; i++) {
       Real vsum = 0.0;
-      //      for (int m = 0; m < nmat; ++m) {
-      //	printf("%i: r:%e rb:%e v:%e Tg:%e\n", m, rho[m], rhobar[m], vfrac[m],
-      //Tguess);
-      //      }
       // set volume fractions
       for (int m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
@@ -269,7 +265,6 @@ class PTESolverBase {
     for (int m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
-      // printf("r[%i] = %e ; T = %e\n", m, rho[m], Tguess);
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess);
       // note the scaling of pressure
       if (eos[m].PreferredInput() ==
@@ -748,7 +743,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     residual[0] = 1.0 - vsum;
     // the 1 here is the scaled total internal energy density
     for (int m = 0; m < nmat - 1; ++m) {
-      residual[1 + m] = press[m + 1] - press[m];
+      residual[1 + m] = press[m] - press[m + 1];
     }
   }
 
@@ -763,7 +758,6 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     }
     error_p = std::sqrt(error_p);
     Real error_v = std::abs(residual[0]);
-    printf("P: %e errp: %e errv: %e\n", mean_p * u_total, error_p * u_total, error_v);
     // Check for convergence
     bool converged_p = (error_p < pte_rel_tolerance_p * std::abs(mean_p) ||
                         error_p < pte_abs_tolerance_p);
@@ -797,13 +791,6 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       jacobian[MatIndex(m + 1, m)] = -dpdv[m];
       jacobian[MatIndex(m + 1, m + 1)] = dpdv[m + 1];
     }
-    //    printf("Jacobian:\n");
-    //    for (int row = 0; row < nmat; row++) {
-    //      for (int col = 0; col < nmat; ++col) {
-    //	printf("%.3e ", jacobian[row*nmat+col]);
-    //      }
-    //      printf("| %.3e\n", residual[row]);
-    //    }
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -945,7 +932,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       for (int m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
         const Real vmax = std::min(0.9 * rhobar[m] / rho_min, 1.0);
-        vfrac[m] = (vfrac[m] > 0.0 ? std::min(vmax, vfrac[m]) : vmax);
+        vfrac[m] = vmax;
         vsum += vfrac[m];
       }
       // Normalize vfrac
@@ -1069,10 +1056,10 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       jacobian[i] = 0.0;
     for (int m = 0; m < nmat; m++) {
       jacobian[MatIndex(m, m)] = dpdv[m];
-      jacobian[MatIndex(m, 0)] = dpdT[m];
+      jacobian[MatIndex(m, nmat)] = dpdT[m];
     }
     for (int m = 0; m < neq - 1; ++m) {
-      jacobian[MatIndex(neq - 1, m + 1)] = 1.0;
+      jacobian[MatIndex(neq - 1, m)] = 1.0;
     }
   }
 
@@ -1082,23 +1069,23 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
-      if (scale * dx[m + 1] < -vfrac_safety_fac * vfrac[m]) {
-        scale = -vfrac_safety_fac * vfrac[m] / dx[m + 1];
+      if (scale * dx[m] < -vfrac_safety_fac * vfrac[m]) {
+        scale = -vfrac_safety_fac * vfrac[m] / dx[m];
       }
     }
-    const Real Tnew = Tequil + scale * dx[0];
+    const Real Tnew = Tequil + scale * dx[nmat];
     // control how big of a step toward rho = rho(Pmin) is allowed
     for (int m = 0; m < nmat; m++) {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
       const Real alpha_max = rhobar[m] / rho_min;
-      if (scale * dx[m + 1] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = 0.5 * (alpha_max - vfrac[m]) / dx[m + 1];
+      if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
+        scale = 0.5 * (alpha_max - vfrac[m]) / dx[m];
       }
     }
     // control how big of a step toward T = 0 is allowed
-    if (scale * dx[0] < -0.95 * Tequil) {
-      scale = -0.95 * Tequil / dx[0];
+    if (scale * dx[nmat] < -0.95 * Tequil) {
+      scale = -0.95 * Tequil / dx[nmat];
     }
     // Now apply the overall scaling
     for (int i = 0; i < neq; ++i)
@@ -1115,9 +1102,9 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       for (int m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
     }
-    Tequil = Ttemp + scale * dx[0];
+    Tequil = Ttemp + scale * dx[nmat];
     for (int m = 0; m < nmat; ++m) {
-      vfrac[m] = vtemp[m] + scale * dx[m + 1];
+      vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = rhobar[m] / vfrac[m];
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
                              rho[m], Tnorm * Tequil, Cache[m]);
@@ -1127,7 +1114,6 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       u[m] /= u_total;
       temp[m] = Tequil;
     }
-    printf("Tnew: %e Told: %e\n", Tequil * Tnorm, Ttemp * Tnorm);
     Residual();
     return ResidualNorm();
   }
