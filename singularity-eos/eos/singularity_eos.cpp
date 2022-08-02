@@ -242,9 +242,8 @@ struct EOSAccessor_ {
   Kokkos::View<EOS *, Llft> eos_v_;
   int *mats_;
 };
-#endif // PORTABILITY_STRATEGY_KOKKOS
-
 } // namespace singularity
+#endif // PORTABILITY_STRATEGY_KOKKOS
 // EAP centric arguments and function signature
 
 int get_sg_eos( // sizing information
