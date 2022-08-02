@@ -157,12 +157,10 @@ int run_sg_get_eos_tests() {
   Real max_vfrac_resid = 0.0;
   Real max_sie_resid = 0.0;
   for (int m = 0; m < NMAT; ++m) {
-    max_vfrac_resid =
-      std::max(max_vfrac_resid,
-	       std::abs(vfrac_true[m] - vfrac_check[m]) / std::abs(vfrac_true[m]));
-    max_sie_resid = 
-      std::max(max_sie_resid,
-	       std::abs(sie_true[m] - sie_check[m]) / std::abs(sie_true[m]));
+    max_vfrac_resid = std::max(max_vfrac_resid, std::abs(vfrac_true[m] - vfrac_check[m]) /
+                                                    std::abs(vfrac_true[m]));
+    max_sie_resid = std::max(max_sie_resid, std::abs(sie_true[m] - sie_check[m]) /
+                                                std::abs(sie_true[m]));
   }
   if (max_vfrac_resid > 1.e-5 || max_sie_resid > 1.e-5) {
     printf("r-T: vr: %e | sr: %e\n", max_vfrac_resid, max_sie_resid);
@@ -183,12 +181,10 @@ int run_sg_get_eos_tests() {
   max_vfrac_resid = 0.0;
   max_sie_resid = 0.0;
   for (int m = 0; m < NMAT; ++m) {
-    max_vfrac_resid =
-      std::max(max_vfrac_resid,
-	       std::abs(vfrac_true[m] - vfrac_check[m]) / std::abs(vfrac_true[m]));
-    max_sie_resid = 
-      std::max(max_sie_resid,
-	       std::abs(sie_true[m] - sie_check[m]) / std::abs(sie_true[m]));
+    max_vfrac_resid = std::max(max_vfrac_resid, std::abs(vfrac_true[m] - vfrac_check[m]) /
+                                                    std::abs(vfrac_true[m]));
+    max_sie_resid = std::max(max_sie_resid, std::abs(sie_true[m] - sie_check[m]) /
+                                                std::abs(sie_true[m]));
   }
   if (max_vfrac_resid > 1.e-5 || max_sie_resid > 1.e-5) {
     printf("p-T: vr: %e | sr: %e\n", max_vfrac_resid, max_sie_resid);
@@ -212,7 +208,7 @@ int main(int argc, char *argv[]) {
     // to run the solvers
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     nfails_get_sg_eos = run_sg_get_eos_tests();
-    if(nfails_get_sg_eos > 0) {
+    if (nfails_get_sg_eos > 0) {
       printf("nfails of fixed T/P solvers = %i\n", nfails_get_sg_eos);
     }
 #endif // PORTABILITY_STRATEGY_KOKKOS
