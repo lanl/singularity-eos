@@ -65,7 +65,9 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   using EosBase<UnitSystem<T>>::FillEos;
 
   // give me std::format or fmt::format...
-  static std::string EosType() { return std::string("UnitSystem<") + T::EosType() + std::string(">"); }
+  static std::string EosType() {
+    return std::string("UnitSystem<") + T::EosType() + std::string(">");
+  }
 
   // move semantics ensures dynamic memory comes along for the ride
   // TODO(JMM): Entropy unit needed?

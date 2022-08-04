@@ -57,7 +57,9 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   using EosBase<RelativisticEOS<T>>::FillEos;
 
   // give me std::format or fmt::format...
-  static std::string EosType() { return std::string("RelativisticEOS<") + T::EosType() + std::string(">"); }
+  static std::string EosType() {
+    return std::string("RelativisticEOS<") + T::EosType() + std::string(">");
+  }
 
   // move semantics ensures dynamic memory comes along for the ride
   RelativisticEOS(T &&t, const Real cl)
