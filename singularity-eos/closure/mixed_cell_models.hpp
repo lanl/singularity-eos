@@ -528,8 +528,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real rho_pert = rhobar[m] / vf_pert;
 
       Real p_pert{};
-      Real e_pert = 
-	eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
+      Real e_pert =
+          eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
         p_pert = eos[m].PressureFromDensityInternalEnergy(rho_pert, e_pert, Cache[m]) /
@@ -547,10 +547,10 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       //////////////////////////////
       Real dT = Tequil * derivative_eps;
       e_pert = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * (Tequil + dT),
-							   Cache[m]);
+                                                           Cache[m]);
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
-	p_pert =
+        p_pert =
             eos[m].PressureFromDensityInternalEnergy(rho[m], e_pert, Cache[m]) / u_total;
       } else if (eos[m].PreferredInput() ==
                  (thermalqs::density | thermalqs::temperature)) {
@@ -969,7 +969,8 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // note the scaling of the material internal energy densities
     for (int m = 0; m < nmat; ++m) {
       u[m] = sie[m] * rhobar[m] / u_total;
-      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tguess, Cache[m]) / u_total;
+      press[m] =
+          eos[m].PressureFromDensityTemperature(rho[m], Tguess, Cache[m]) / u_total;
     }
     Residual();
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -1020,8 +1021,8 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       Real e_pert{};
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
-	e_pert =
-          eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
+        e_pert = eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil,
+                                                             Cache[m]);
         p_pert = eos[m].PressureFromDensityInternalEnergy(rho_pert, e_pert, Cache[m]) /
                  u_total;
       } else if (eos[m].PreferredInput() ==
