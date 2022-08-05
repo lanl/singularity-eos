@@ -16,6 +16,8 @@
 
 ### Removed (removing behavior/API/varaibles/...)
 
+### Added (modifiers with python bindings)
+
 ## Release 1.6.1
 Date: 07/07/2022
 
