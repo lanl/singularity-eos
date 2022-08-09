@@ -67,6 +67,51 @@ void eosDataOfRhoSie(int matid, const Bounds &lRhoBounds, const Bounds &leBounds
 
   // Loop by hand to ensure ordering ordering of independent
   // variables is under our control.
+  std::vector<EOS_REAL> rho_ses, sie_ses;
+  for (size_t j = 0; j < rhos.size(); ++j) {
+    for (size_t i = 0; i < sies.size(); ++i) {
+      rho_ses.push_back(densityToSesame(rhos[j]));
+      sie_ses.push_back(sieToSesame(sies[i]));
+    }
+  }
+
+  const auto grid_size = rho_ses.size();
+  std::vector<EOS_REAL> dx_ses(grid_size), dy_ses(grid_size), T_ses(grid_size),
+    P_ses(grid_size), DTDR_E_ses(grid_size), DTDE_R_ses(grid_size),
+    DPDR_T_ses(grid_size), DPDT_R_ses(grid_size), DEDR_T_ses(grid_size),
+    DEDT_R_ses(grid_size), DPDE_R_ses(grid_size), var_ses(grid_size);
+
+  bool no_error = true;
+  no_error = no_error && eosSafeInterpolate(&eospacTofRE, grid_size, rho_ses.data(), sie_ses.data(),
+					    T_ses.data(), DTDR_E_ses.data(), DTDE_R_ses.data(),
+					    "TofRE", eospacWarn);
+  no_error = no_error && eosSafeInterpolate(&eospacPofRT, grid_size, rho_ses.data(), T_ses.data(),
+					    P_ses.data(), DPDR_T_ses.data(), DPDT_R_ses.data(),
+					    "PofRT", eospacWarn);
+  no_error = no_error && eosSafeInterpolate(&eospacEofRT, grid_size, rho_ses.data(), T_ses.data(),
+					    var_ses.data(), DEDR_T_ses.data(), DEDT_R_ses.data(),
+					    "EofRT", eospacWarn);
+  size_t grid_i = 0;
+  for (size_t j = 0; j < rhos.size(); ++j) {
+    for (size_t i = 0; i < sies.size(); ++i) {
+      Real DPDE_R = DPDT_R_ses[grid_i] / DEDT_R_ses[grid_i];
+      Real bMod = getBulkModulus(rho_ses[grid_i], P_ses[grid_i], DPDR_T_ses[grid_i],
+				 DPDE_R, DEDR_T_ses[grid_i]);
+      Ts(j, i) = temperatureFromSesame(T_ses[grid_i]);
+      Ps(j, i) = pressureFromSesame(P_ses[grid_i]);
+      bMods(j, i) = bulkModulusFromSesame(std::max(bMod, 0.0));
+      dPdRho(j, i) = pressureFromSesame(DPDR_T_ses[grid_i] +
+					DTDR_E_ses[grid_i] * DPDT_R_ses[grid_i]);
+      dPde(j, i) = sieToSesame(pressureFromSesame(DPDT_R_ses[grid_i] * DTDE_R_ses[grid_i]));
+      dTdRho(j, i) = temperatureFromSesame(DTDR_E_ses[grid_i]);
+      dTde(j, i) = sieToSesame(temperatureFromSesame(DTDE_R_ses[grid_i]));
+      dEdRho(j, i) = densityToSesame(sieFromSesame(DEDR_T_ses[grid_i]));
+      // not sure what to do about mask
+      //mask(j, i) = no_errors ? 1.0 : 0.0;
+      grid_i += 1;
+    }
+  }				    
+
   for (size_t j = 0; j < rhos.size(); j++) {
     Real rho = densityToSesame(rhos[j]);
     for (size_t i = 0; i < sies.size(); i++) {
