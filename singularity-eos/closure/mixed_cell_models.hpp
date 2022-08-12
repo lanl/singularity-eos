@@ -49,6 +49,8 @@ constexpr Real line_search_alpha = 1.e-2;
 constexpr int line_search_max_iter = 6;
 constexpr Real line_search_fac = 0.5;
 constexpr Real vfrac_safety_fac = 0.95;
+constexpr Real minimum_temperature = 1.e-9;
+constexpr Real maximum_temperature = 1.e9;
 } // namespace mix_params
 
 namespace mix_impl {
