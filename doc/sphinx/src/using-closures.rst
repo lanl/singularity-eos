@@ -225,9 +225,23 @@ For an example of the PTE solver machinery in use, see the
 Initial Guesses for PTE Solvers
 ------------------------------------
 
-As is always the case when solving systems of nonlinear equations, good initial guesses are important to ensure rapid convergence to the solution.  For the PTE solvers, this means providing intial guesses for the material densities and the equilibrium temperature.  For material densities, a good initial guess is often the previous value obtained from a prior call to the solver.  ``singularity-eos`` does not provide any mechanism to cache these values from call to call, so it is up to the host code to provide these as input to the solvers.  Note that the input values for the material densities and volume fractions are assumed to be consistent with the conserved cell-averaged material densities, or in other words, the produce of the input material densities, volume fractions, and cell volume should equal the amount of mass of each material in the cell.  This consistency should be ensured for the input values or else the solvers will not provide correct answers.
+As is always the case when solving systems of nonlinear equations, good initial
+guesses are important to ensure rapid convergence to the solution.  For the PTE
+solvers, this means providing intial guesses for the material densities and the
+equilibrium temperature.  For material densities, a good initial guess is often
+the previous value obtained from a prior call to the solver. ``singularity-eos``
+does not provide any mechanism to cache these values from call to call, so it is
+up to the host code to provide these as input to the solvers.  Note that the
+input values for the material densities and volume fractions are assumed to be
+consistent with the conserved cell-averaged material densities, or in other
+words, the produce of the input material densities, volume fractions, and cell
+volume should equal the amount of mass of each material in the cell.  This
+consistency should be ensured for the input values or else the solvers will not
+provide correct answers.
 
-For the temperature initial guess, one can similarly use a previous value for the cell.  Alternatively, ``singularity-eos`` provides a function that can be used to provide an initial guess.  This function takes the form
+For the temperature initial guess, one can similarly use a previous value for
+the cell.  Alternatively, ``singularity-eos`` provides a function that can be
+used to provide an initial guess.  This function takes the form
 
 .. code-block:: cpp
 
