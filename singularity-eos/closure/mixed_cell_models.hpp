@@ -16,6 +16,7 @@
 #define _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #include <cmath>
