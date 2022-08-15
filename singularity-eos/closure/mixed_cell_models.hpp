@@ -420,12 +420,10 @@ class PTESolverBase {
 
 } // namespace mix_impl
 
-
 template <typename EOSIndexer, typename RealIndexer>
-PORTABLE_INLINE_FUNCTION
-Real ApproxTemperatureFromRhoMatU(const int nmat, EOSIndexer &&eos, const Real u_tot,
-                                  RealIndexer &&rho, RealIndexer &&vfrac,
-                                  const Real Tguess = 0.0) {
+PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
+    const int nmat, EOSIndexer &&eos, const Real u_tot, RealIndexer &&rho,
+    RealIndexer &&vfrac, const Real Tguess = 0.0) {
   // given material microphysical densities, volume fractions, and a total internal energy
   // density (rho e => erg/cm^3), solve for the temperature that gives the right sum
   // of material energies.  this should only be used for a rough guess since it has a
@@ -444,7 +442,8 @@ Real ApproxTemperatureFromRhoMatU(const int nmat, EOSIndexer &&eos, const Real u
   if (u_tot > uhi) return mix_params::maximum_temperature;
   Real lTlo = FastMath::lg(mix_params::minimum_temperature);
   Real lThi = FastMath::lg(mix_params::maximum_temperature);
-  if (Tguess > mix_params::minimum_temperature && Tguess < mix_params::maximum_temperature) {
+  if (Tguess > mix_params::minimum_temperature &&
+      Tguess < mix_params::maximum_temperature) {
     const Real ug = ufunc(Tguess);
     if (ug < u_tot) {
       lTlo = FastMath::lg(Tguess);
@@ -459,7 +458,7 @@ Real ApproxTemperatureFromRhoMatU(const int nmat, EOSIndexer &&eos, const Real u
   while (lThi - lTlo > 0.01 && iter < max_iter) {
     // apply bisection which is much better behaved
     // for materials that have a flat sie at low temperatures
-    const Real lT = 0.5*(lTlo + lThi);
+    const Real lT = 0.5 * (lTlo + lThi);
     const Real uT = ufunc(FastMath::pow2(lT));
     if (uT < u_tot) {
       lTlo = lT;
@@ -471,7 +470,7 @@ Real ApproxTemperatureFromRhoMatU(const int nmat, EOSIndexer &&eos, const Real u
     iter++;
   }
 
-  const Real alpha = (u_tot - ulo)/(uhi - ulo);
+  const Real alpha = (u_tot - ulo) / (uhi - ulo);
   return FastMath::pow2((1.0 - alpha) * lTlo + alpha * lThi);
 }
 
@@ -538,7 +537,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     InitBase();
     Residual();
     // Leave this in for now, but comment out because I'm not sure it's a good idea
-    //TryIdealPTE(this);
+    // TryIdealPTE(this);
     // Set the current guess for the equilibrium temperature.  Note that this is already
     // scaled.
     Tequil = temp[0];
@@ -752,11 +751,11 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
  public:
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
-  PORTABLE_INLINE_FUNCTION
-  PTESolverRhoU(const int nmat, const EOS_t &&eos, const Real vfrac_tot,
-                const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
-                Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
-                const Real Tguess = 0.0)
+  PORTABLE_INLINE_FUNCTION PTESolverRhoU(const int nmat, const EOS_t &&eos,
+                                         const Real vfrac_tot, const Real sie_tot,
+                                         Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
+                                         Real_t &&temp, Real_t &&press, Lambda_t &&lambda,
+                                         Real *scratch, const Real Tguess = 0.0)
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2 * nmat, eos, vfrac_tot,
                                                          sie_tot, rho, vfrac, sie, temp,
                                                          press, scratch, Tguess) {
