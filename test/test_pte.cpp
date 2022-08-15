@@ -219,10 +219,12 @@ int main(int argc, char *argv[]) {
           }
           sie_tot /= rho_tot;
 
+          const Real Tguess = ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot*sie_tot, rho, vfrac);
+
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
                   NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
-                  &scratch_d(t * nscratch_vars));
+                  &scratch_d(t * nscratch_vars), Tguess);
           bool success = PTESolver(method);
           if (success) {
             nsuccess_d() += 1;
