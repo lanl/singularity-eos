@@ -14,6 +14,8 @@ variables:
 
 before_script:
   - export HOME=${CI_PROJECT_DIR}
+  - export SPACK_DISABLE_LOCAL_CONFIG=true
+  - export SPACK_USER_CACHE_PATH=/tmp/spack-local
   - unset SPACK_ROOT
   - echo "Spack Version:" ${XCAP_OSS_SPACK_REF}
   - cd ${TMPDIR} && git clone https://github.com/spack/spack.git
@@ -33,6 +35,9 @@ before_script:
   - spack compiler list
   - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
   - spack repo list
+  - mkdir -p ${CI_PROJECT_DIR}/spack_env
+  - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
+  - spack env activate -d ${CI_PROJECT_DIR}/spack_env
 
 ##########################
 # Build Matrix Variables #
@@ -103,14 +108,11 @@ before_script:
     GIT_SUBMODULE_STRATEGY: none
   script:
     - cd ${CI_PROJECT_DIR}
-    - mkdir clang_format_env
-    - spack env create --without-view -d ${TMPDIR}/clang_format_env
-    - spack env activate -d ${TMPDIR}/clang_format_env
     - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+format%gcc@${SINGULARITY_EOS_GCC_VERSION}^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
-    - source ${TMPDIR}/spack/share/spack/setup-env.sh
     - spack module tcl refresh -y
     - spack env loads -r -x singularity-eos
-    - source ${TMPDIR}/clang_format_env/loads
+    - source ${TMPDIR}/spack/share/spack/setup-env.sh
+    - source ${TMPDIR}/spack_env/loads
     - clang-format -version
     - find ${CI_PROJECT_DIR} -regex '.*\.\(cpp\|hpp\)' | xargs clang-format -style=file -i && git diff --exit-code --ignore-submodules
 
@@ -119,14 +121,11 @@ before_script:
   variables:
     GIT_SUBMODULE_STRATEGY: none
   script:
-    - mkdir -p ${TMPDIR}/sphinx_doc_env
-    - spack env create --without-view -d ${TMPDIR}/sphinx_doc_env
-    - spack env activate -d ${TMPDIR}/sphinx_doc_env
     - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+python+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION}^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
-    - source ${TMPDIR}/spack/share/spack/setup-env.sh
     - spack module tcl refresh -y
     - spack env loads -r -x singularity-eos
-    - source ${TMPDIR}/sphinx_doc_env/loads
+    - source ${TMPDIR}/spack/share/spack/setup-env.sh
+    - source ${TMPDIR}/spack_env/loads
     - cd ${CI_PROJECT_DIR}/doc/sphinx
     - make html
     - rm -rf ${CI_PROJECT_DIR}/public
@@ -137,16 +136,13 @@ before_script:
   extends:
     - .job
   script:
-    - mkdir -p ${TMPDIR}/spack_env
-    - spack env create --without-view -d ${TMPDIR}/spack_env
-    - spack env activate -d ${TMPDIR}/spack_env
     - spack spec -I ${SINGULARITY_EOS_SPACK_SPEC}
     - spack dev-build -j $(nproc) -q ${SINGULARITY_EOS_SPACK_SPEC} || ( cat spack-build-out.txt && exit 1 )
     - export SINGULARITY_EOS_CMD="spack install --show-log-on-error --no-checksum --yes-to-all ${SINGULARITY_EOS_SPACK_SPEC}"
     - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
-    - source ${TMPDIR}/spack/share/spack/setup-env.sh
     - spack module tcl refresh -y
     - spack env loads -r -x singularity-eos
+    - source ${TMPDIR}/spack/share/spack/setup-env.sh
     - export modName="${TMPDIR}/spack_env/loads"
     - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION}\n;" ${modName}
     - sed -i "1s;^;#%Module\n;" ${modName}
