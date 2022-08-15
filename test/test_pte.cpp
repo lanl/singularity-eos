@@ -219,7 +219,8 @@ int main(int argc, char *argv[]) {
           }
           sie_tot /= rho_tot;
 
-          const Real Tguess = ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot*sie_tot, rho, vfrac);
+          const Real Tguess =
+              ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
 
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
