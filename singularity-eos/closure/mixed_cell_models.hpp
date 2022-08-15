@@ -16,6 +16,7 @@
 #define _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #include <cmath>
@@ -49,6 +50,8 @@ constexpr Real line_search_alpha = 1.e-2;
 constexpr int line_search_max_iter = 6;
 constexpr Real line_search_fac = 0.5;
 constexpr Real vfrac_safety_fac = 0.95;
+constexpr Real minimum_temperature = 1.e-9;
+constexpr Real maximum_temperature = 1.e9;
 } // namespace mix_params
 
 namespace mix_impl {
@@ -190,10 +193,10 @@ class PTESolverBase {
   PTESolverBase(int nmats, int neqs, const EOSIndexer &eos_, const Real vfrac_tot,
                 const Real sie_tot, const RealIndexer &rho_, const RealIndexer &vfrac_,
                 const RealIndexer &sie_, const RealIndexer &temp_,
-                const RealIndexer &press_, Real *&scratch)
+                const RealIndexer &press_, Real *&scratch, Real Tguess)
       : nmat(nmats), neq(neqs), niter(0), eos(eos_), vfrac_total(vfrac_tot),
         sie_total(sie_tot), rho(rho_), vfrac(vfrac_), sie(sie_), temp(temp_),
-        press(press_) {
+        press(press_), Tnorm(Tguess) {
     jacobian = AssignIncrement(scratch, neq * neq);
     dx = AssignIncrement(scratch, neq);
     sol_scratch = AssignIncrement(scratch, 2 * neq);
@@ -221,9 +224,15 @@ class PTESolverBase {
     u_total = rho_total * sie_total;
 
     // guess some non-zero temperature to start
-    Real Tguess = 300.0;
-    for (int m = 0; m < nmat; ++m)
-      Tguess = std::max(Tguess, temp[m]);
+    // If a guess was passed in, it's saved in Tnorm
+    Real Tguess;
+    if (Tnorm > 0.0) {
+      Tguess = Tnorm;
+    } else {
+      Tguess = 300.0;
+      for (int m = 0; m < nmat; ++m)
+        Tguess = std::max(Tguess, temp[m]);
+    }
     // check for sanity.  basically checks that the input temperatures weren't garbage
     assert(Tguess < 1.0e15);
     // iteratively increase temperature guess until all rho's are above rho_at_pmin
@@ -412,6 +421,60 @@ class PTESolverBase {
 
 } // namespace mix_impl
 
+template <typename EOSIndexer, typename RealIndexer>
+PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
+    const int nmat, EOSIndexer &&eos, const Real u_tot, RealIndexer &&rho,
+    RealIndexer &&vfrac, const Real Tguess = 0.0) {
+  // given material microphysical densities, volume fractions, and a total internal energy
+  // density (rho e => erg/cm^3), solve for the temperature that gives the right sum
+  // of material energies.  this should only be used for a rough guess since it has a
+  // hard coded and fairly loose tolerance
+  auto ufunc = [&](const Real T) {
+    Real usum = 0.0;
+    for (int m = 0; m < nmat; m++) {
+      usum += rho[m] * vfrac[m] * eos[m].InternalEnergyFromDensityTemperature(rho[m], T);
+    }
+    return usum;
+  };
+
+  Real ulo = ufunc(mix_params::minimum_temperature);
+  if (u_tot < ulo) return mix_params::minimum_temperature;
+  Real uhi = ufunc(mix_params::maximum_temperature);
+  if (u_tot > uhi) return mix_params::maximum_temperature;
+  Real lTlo = FastMath::lg(mix_params::minimum_temperature);
+  Real lThi = FastMath::lg(mix_params::maximum_temperature);
+  if (Tguess > mix_params::minimum_temperature &&
+      Tguess < mix_params::maximum_temperature) {
+    const Real ug = ufunc(Tguess);
+    if (ug < u_tot) {
+      lTlo = FastMath::lg(Tguess);
+      ulo = ug;
+    } else {
+      lThi = FastMath::lg(Tguess);
+      uhi = ug;
+    }
+  }
+  int iter = 0;
+  constexpr int max_iter = 10;
+  while (lThi - lTlo > 0.01 && iter < max_iter) {
+    // apply bisection which is much better behaved
+    // for materials that have a flat sie at low temperatures
+    const Real lT = 0.5 * (lTlo + lThi);
+    const Real uT = ufunc(FastMath::pow2(lT));
+    if (uT < u_tot) {
+      lTlo = lT;
+      ulo = uT;
+    } else {
+      lThi = lT;
+      uhi = uT;
+    }
+    iter++;
+  }
+
+  const Real alpha = (u_tot - ulo) / (uhi - ulo);
+  return FastMath::pow2((1.0 - alpha) * lTlo + alpha * lThi);
+}
+
 inline int PTESolverRhoTRequiredScratch(const int nmat) {
   int neq = nmat + 1;
   return neq * neq                 // jacobian
@@ -456,10 +519,10 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   PORTABLE_INLINE_FUNCTION
   PTESolverRhoT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
                 Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
-                Lambda_t &&lambda, Real *scratch)
+                Lambda_t &&lambda, Real *scratch, const Real Tguess = 0.0)
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat + 1, eos, vfrac_tot,
                                                          sie_tot, rho, vfrac, sie, temp,
-                                                         press, scratch) {
+                                                         press, scratch, Tguess) {
     dpdv = AssignIncrement(scratch, nmat);
     dedv = AssignIncrement(scratch, nmat);
     dpdT = AssignIncrement(scratch, nmat);
@@ -474,7 +537,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real Init() {
     InitBase();
     Residual();
-    TryIdealPTE(this);
+    // Leave this in for now, but comment out because I'm not sure it's a good idea
+    // TryIdealPTE(this);
     // Set the current guess for the equilibrium temperature.  Note that this is already
     // scaled.
     Tequil = temp[0];
@@ -688,13 +752,14 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
  public:
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
-  PORTABLE_INLINE_FUNCTION
-  PTESolverRhoU(const int nmat, const EOS_t &&eos, const Real vfrac_tot,
-                const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
-                Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch)
+  PORTABLE_INLINE_FUNCTION PTESolverRhoU(const int nmat, const EOS_t &&eos,
+                                         const Real vfrac_tot, const Real sie_tot,
+                                         Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
+                                         Real_t &&temp, Real_t &&press, Lambda_t &&lambda,
+                                         Real *scratch, const Real Tguess = 0.0)
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2 * nmat, eos, vfrac_tot,
                                                          sie_tot, rho, vfrac, sie, temp,
-                                                         press, scratch) {
+                                                         press, scratch, Tguess) {
     dpdv = AssignIncrement(scratch, nmat);
     dtdv = AssignIncrement(scratch, nmat);
     dpde = AssignIncrement(scratch, nmat);
