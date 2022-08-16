@@ -9,6 +9,7 @@
 ### Added (new features/APIs/variables/...)
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR67]](https://github.com/lanl/singularity-eos/pull/167) allow for the possiblity Kokkos version can't be inferred
 
 ### Fixed (not changing behavior/API/variables/...)
 
