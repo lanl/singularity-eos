@@ -44,7 +44,7 @@ constexpr Real pte_abs_tolerance_p = 0.0;
 constexpr Real pte_abs_tolerance_e = 1.e-4;
 constexpr Real pte_abs_tolerance_t = 0.0;
 constexpr Real pte_residual_tolerance = 1.e-8;
-constexpr int pte_max_iter_per_mat = 128;
+constexpr int pte_max_iter_per_mat = 16;
 constexpr Real line_search_alpha = 1.e-2;
 constexpr int line_search_max_iter = 6;
 constexpr Real line_search_fac = 0.5;
@@ -185,6 +185,16 @@ class PTESolverBase {
     return solve_Ax_b_wscr(neq, jacobian, dx, sol_scratch);
   }
 
+  PORTABLE_INLINE_FUNCTION
+  void PrintSpec() const {
+    printf("utot: %e Tnorm: %e\n", u_total, Tnorm);
+    for (int m = 0; m < nmat; ++m) {
+      printf("r: %e vf: %e T: %e s: %e p: %e\n", rho[m],
+	     vfrac[m], temp[m]*Tnorm, sie[m]*u_total, press[m]*u_total);
+    }
+    return;
+  }
+
  protected:
   PORTABLE_INLINE_FUNCTION
   PTESolverBase(int nmats, int neqs, const EOSIndexer &eos_, const Real vfrac_tot,
@@ -203,14 +213,8 @@ class PTESolverBase {
     Cache = CacheAccessor(AssignIncrement(scratch, nmat * MAX_NUM_LAMBDAS));
   }
 
-  // Initialize the volume fractions, avg densities, temperatures, energies, and
-  // pressures of the materials.  Compute the total density and internal energy.
-  // Scale the energy densities u = rho sie and pressures with the total internal energy
-  // density.  This makes Sum(u(mat)) = 1.  Also scale the temperature with the initial
-  // guess, so all the initial, scaled material temperatures are = 1.
-  PORTABLE_INLINE_FUNCTION
-  void InitBase() {
-
+  PORTABLE_FORCEINLINE_FUNCTION
+  void InitRhoBarandRho() {
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
     rho_total = 0.0;
@@ -218,9 +222,10 @@ class PTESolverBase {
       rhobar[m] = rho[m] * vfrac[m];
       rho_total += rhobar[m];
     }
-    u_total = rho_total * sie_total;
+  }
 
-    // guess some non-zero temperature to start
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real GetTguess() {
     Real Tguess = 300.0;
     for (int m = 0; m < nmat; ++m)
       Tguess = std::max(Tguess, temp[m]);
@@ -259,6 +264,23 @@ class PTESolverBase {
     if (rho_fail) {
       printf("rho < rho_min in PTE initialization!  Solver may not converge.");
     }
+    return Tguess;
+  }
+
+  // Initialize the volume fractions, avg densities, temperatures, energies, and
+  // pressures of the materials.  Compute the total density and internal energy.
+  // Scale the energy densities u = rho sie and pressures with the total internal energy
+  // density.  This makes Sum(u(mat)) = 1.  Also scale the temperature with the initial
+  // guess, so all the initial, scaled material temperatures are = 1.
+  PORTABLE_INLINE_FUNCTION
+  void InitBase() {
+
+    // intialize rhobar array and final density
+    InitRhoBarandRho();
+    u_total = rho_total * sie_total;
+
+    // guess some non-zero temperature to start
+    const Real Tguess = GetTguess();
     // set the temperature normalization
     Tnorm = Tguess;
 
@@ -458,8 +480,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
                 Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
                 Lambda_t &&lambda, Real *scratch)
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat + 1, eos, vfrac_tot,
-                                                         sie_tot, rho, vfrac, sie, temp,
-                                                         press, scratch) {
+							 sie_tot, rho, vfrac, sie, temp,
+							 press, scratch) {
     dpdv = AssignIncrement(scratch, nmat);
     dedv = AssignIncrement(scratch, nmat);
     dpdT = AssignIncrement(scratch, nmat);
@@ -685,10 +707,11 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
-  template <typename EOS_t, typename Real_t, typename Lambda_t>
+  // allow the type of the temperature array to be different, potentially a const Real*
+  template <typename EOS_t, typename Real_t, typename CReal_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
   PTESolverFixedT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real T_true,
-                  Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp,
+                  Real_t &&rho, Real_t &&vfrac, Real_t &&sie, CReal_t &&temp,
                   Real_t &&press, Lambda_t &&lambda, Real *scratch)
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(
             nmat, nmat, eos, vfrac_tot, 1.0, rho, vfrac, sie, temp, press, scratch) {
@@ -710,11 +733,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
     Tnorm = 1.0;
-    rho_total = 0.0;
-    for (int m = 0; m < nmat; ++m) {
-      rhobar[m] = rho[m] * vfrac[m];
-      rho_total += rhobar[m];
-    }
+    this->InitRhoBarandRho();
     // utotal is fake but should act as a reasonable scale factor
     u_total = 0.0;
     for (int m = 0; m < nmat; m++) {
@@ -739,8 +758,9 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     for (int m = 0; m < nmat; ++m) {
       vsum += vfrac[m];
     }
+    // the 1 here is the correct value for
+    // sum of the volume fractions
     residual[0] = 1.0 - vsum;
-    // the 1 here is the scaled total internal energy density
     for (int m = 0; m < nmat - 1; ++m) {
       residual[1 + m] = press[m] - press[m + 1];
     }
@@ -887,11 +907,11 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
-  template <typename EOS_t, typename Real_t, typename Lambda_t>
+  template <typename EOS_t, typename Real_t, typename CReal_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
   PTESolverFixedP(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real P,
                   Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp,
-                  Real_t &&press, Lambda_t &&lambda, Real *scratch)
+                  CReal_t &&press, Lambda_t &&lambda, Real *scratch)
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(
             nmat, nmat + 1, eos, vfrac_tot, 1.0, rho, vfrac, sie, temp, press, scratch) {
     dpdv = AssignIncrement(scratch, nmat);
@@ -910,51 +930,10 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // fake init base
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
-    rho_total = 0.0;
-    for (int m = 0; m < nmat; ++m) {
-      rhobar[m] = rho[m] * vfrac[m];
-      rho_total += rhobar[m];
-    }
+    this->InitRhoBarandRho();
 
     // guess some non-zero temperature to start
-    Real Tguess = 300.0;
-    for (int m = 0; m < nmat; ++m)
-      Tguess = std::max(Tguess, temp[m]);
-    // check for sanity.  basically checks that the input temperatures weren't garbage
-    assert(Tguess < 1.0e15);
-    // iteratively increase temperature guess until all rho's are above rho_at_pmin
-    const Real Tfactor = 10.0;
-    bool rho_fail;
-    for (int i = 0; i < 3; i++) {
-      Real vsum = 0.0;
-      // set volume fractions
-      for (int m = 0; m < nmat; ++m) {
-        const Real rho_min = eos[m].RhoPmin(Tguess);
-        const Real vmax = std::min(0.9 * rhobar[m] / rho_min, 1.0);
-        vfrac[m] = vmax;
-        vsum += vfrac[m];
-      }
-      // Normalize vfrac
-      for (int m = 0; m < nmat; ++m) {
-        vfrac[m] *= vfrac_total / vsum;
-      }
-      // check to make sure the normalization didn't put us below rho_at_pmin
-      rho_fail = false;
-      for (int m = 0; m < nmat; ++m) {
-        const Real rho_min = eos[m].RhoPmin(Tguess);
-        rho[m] = rhobar[m] / vfrac[m];
-        if (rho[m] < rho_min) {
-          rho_fail = true;
-          Tguess *= Tfactor;
-          break;
-        }
-      }
-      if (!rho_fail) break;
-    }
-
-    if (rho_fail) {
-      printf("rho < rho_min in PTE initialization!  Solver may not converge.");
-    }
+    const Real Tguess = this->GetTguess();
     // set the temperature normalization
     Tnorm = Tguess;
     // calculate u normalization as internal energy guess
@@ -1161,6 +1140,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rhobar;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Cache;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Tnorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::PrintSpec;
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
@@ -1400,9 +1380,10 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
     bool success = s.Solve();
     if (!success) {
       // do something to crash out?  Tell folks what happened?
-      printf("crashing out at iteration: %i\n", niter);
+      //printf("crashing out at iteration: %i\n", niter);
+      //s.PrintSpec();
       converged = false;
-      std::exit(1);
+      //std::exit(1);
       break;
     }
 

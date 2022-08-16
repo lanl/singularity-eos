@@ -246,6 +246,33 @@ struct EOSAccessor_ {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 // EAP centric arguments and function signature
 
+#include <signal.h>
+#include <execinfo.h>
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
+#include <algorithm>
+
+static inline void printBacktrace() {
+  static std::vector<std::string> bt_vec;
+    void *stackBuffer[64];
+    int numAddresses = backtrace((void**) &stackBuffer, 64); 
+    char **addresses = backtrace_symbols(stackBuffer, numAddresses);
+    std::stringstream s;
+    
+    for( int i = 0 ; i < numAddresses ; ++i ) {
+      s << "[" << i << "]: " << addresses[i] << "\n";
+      //printf("[%2d]: %s\n", i, addresses[i]); 
+    }
+    const bool stack_exists = std::find(bt_vec.begin(), bt_vec.end(), s.str())
+      != bt_vec.end();
+    if(!stack_exists) {
+      bt_vec.push_back(s.str());
+      std::cout << s.str();
+    }
+    free(addresses); 
+} 
+
 int get_sg_eos( // sizing information
     int nmat, int ncell, int cell_dim,
     // Input parameters
@@ -263,6 +290,7 @@ int get_sg_eos( // sizing information
     double *frac_mass, double *frac_vol, double *frac_sie,
     // optional per material quantities
     double *frac_bmod, double *frac_dpde, double *frac_cv) {
+  //printBacktrace();
   // kernel return value will be the number of failures
   int ret{0};
   // handle optionals
@@ -369,6 +397,14 @@ int get_sg_eos( // sizing information
   int pte_solver_scratch_size{};
   ScratchV<double> solver_scratch;
 
+  // add characterization of solver convergence
+  Kokkos::View<int> min_its("min_its"), max_its("max_its"), sum_its("sum_its");
+  bool do_its_analysis = input_int != 0 || (input_int == 0 && ncell > 1);
+  do_its_analysis = do_its_analysis && input_int != -1;
+  do_its_analysis = do_its_analysis && nmat > 1;
+  if (do_its_analysis) {
+    deep_copy(min_its, int(1e6));
+  }
   Kokkos::View<int, MemoryTraits<at_int>> res("PTE::num fails");
   Kokkos::View<int, MemoryTraits<at_int>> n_solves("PTE::num solves");
   const std::string perf_nums =
@@ -443,6 +479,9 @@ int get_sg_eos( // sizing information
               const int m = pte_mats(tid, mp);
               sie_tot_true += sie_pte(tid, mp) * frac_mass_v(i, m);
             }
+	    min_its() = std::min(min_its(), method.Niter());
+	    max_its() = std::max(max_its(), method.Niter());
+	    sum_its() += method.Niter();
           } else {
             // pure cell (nmat = 1)
             // calculate sie from single eos
@@ -468,6 +507,14 @@ int get_sg_eos( // sizing information
             const int m = pte_mats(tid, mp);
             // pressure contribution from material m
             press_v(i) += press_pte(tid, mp) * vfrac_pte(tid, mp);
+	    const Real press_eos = eos_v(pte_idxs(tid, mp))
+	      .PressureFromDensityInternalEnergy(rho_pte(tid, mp), sie_pte(tid, mp), cache[mp]);
+	    Real rel_press = std::abs(press_pte(tid, mp) - press_eos);
+	    rel_press /= std::abs(press_pte(tid, mp) + press_eos);
+	    //if (rel_press > 1.e-3) {
+	      printf("pressures %i: %e %e, rho: %e sie:%e\n", pte_idxs(tid, mp),
+		     press_pte(tid, mp), press_eos, rho_pte(tid, mp), sie_pte(tid, mp));
+	      //}
             // assign per material specific internal energy
             frac_sie_v(i, m) = sie_pte(tid, mp);
             // assign volume fraction based on pte calculation
@@ -505,6 +552,15 @@ int get_sg_eos( // sizing information
           for (int m = 0; m < nmat; ++m) {
             frac_mass_v(i, m) *= mass_sum;
           }
+	  for (int mp = 0; mp < npte; ++mp) {
+	    Real rel_press = std::abs(press_pte(tid, mp) - press_v(i));
+	    rel_press /= std::abs(press_pte(tid, mp) + press_v(i));
+	    if (rel_press > 1.e-3) {
+	      printf("pressures disagree %i: %e %e\n", pte_idxs(tid, mp),
+		     press_pte(tid, mp), press_v(i));
+	    }
+	  }
+	  printf("sie total: %e\n", sie_v(i));
           // assign max pressure
           pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
           // release the token used for scratch arrays
@@ -580,6 +636,9 @@ int get_sg_eos( // sizing information
               const int m = pte_mats(tid, mp);
               sie_tot_true += sie_pte(tid, mp) * frac_mass_v(i, m);
             }
+	    min_its() = std::min(min_its(), method.Niter());
+	    max_its() = std::max(max_its(), method.Niter());
+	    sum_its() += method.Niter();
           } else {
             // pure cell (nmat = 1)
             // calculate sie from single eos
@@ -821,6 +880,9 @@ int get_sg_eos( // sizing information
                 &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), cache,
                 &solver_scratch(tid, 0));
             const bool res_{PTESolver(method)};
+	    min_its() = std::min(min_its(), method.Niter());
+	    max_its() = std::max(max_its(), method.Niter());
+	    sum_its() += method.Niter();
           } else {
             // pure cell (nmat = 1)
             // calculate sie from single eos
@@ -840,6 +902,14 @@ int get_sg_eos( // sizing information
             const int m = pte_mats(tid, mp);
             // pressure contribution from material m
             press_v(i) += press_pte(tid, mp) * vfrac_pte(tid, mp);
+	    const Real press_eos = eos_v(pte_idxs(tid, mp))
+	      .PressureFromDensityInternalEnergy(rho_pte(tid, mp), sie_pte(tid, mp), cache[mp]);
+	    Real rel_press = std::abs(press_pte(tid, mp) - press_eos);
+	    rel_press /= std::abs(press_pte(tid, mp) + press_eos);
+	    if (rel_press > 1.e-3) {
+	      printf("p disagree %i: %e %e, rho: %e sie:%e\n", pte_idxs(tid, mp),
+		     press_pte(tid, mp), press_eos, rho_pte(tid, mp), sie_pte(tid, mp));
+	    }
             // temperature averaging
             temp_v(i) += temp_pte(tid, mp) * vfrac_pte(tid, mp);
             // assign per material specific internal energy
@@ -879,6 +949,14 @@ int get_sg_eos( // sizing information
           for (int m = 0; m < nmat; ++m) {
             frac_mass_v(i, m) *= mass_sum;
           }
+	  for (int mp = 0; mp < npte; ++mp) {
+	    Real rel_press = std::abs(press_pte(tid, mp) - press_v(i));
+	    rel_press /= std::abs(press_pte(tid, mp) + press_v(i));
+	    if (rel_press > 1.e-3 || press_v(i) < 0.0) {
+	      printf("--p disagree %i: %e %e\n", pte_idxs(tid, mp),
+		     press_pte(tid, mp), press_v(i));
+	    }
+	  }
           // convert temperature to ev from kelvin
           temp_v(i) /= ev2k;
           // assign max pressure
@@ -891,6 +969,10 @@ int get_sg_eos( // sizing information
   }
 
   Kokkos::fence();
+  if(do_its_analysis && false) {
+    printf("\n---\nmin_its = %i, max_its = %i, avg_its = %e\n---\n",
+	   min_its(), max_its(), (double)(sum_its()) / ncell);
+  }
   // copy results back into local values
   // there is lots of room for performance optimization
   // in terms of when to copy and when not necessary
