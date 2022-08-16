@@ -2,6 +2,9 @@
 
 ## Current develop
 
+### Fixed (Install paths, Fortran tests)
+- [[PR165]](https://github.com/lanl/singularity-eos/pull/165) Updated target install paths, updates to C/F90 interface
+
 ### Fixed (Repair bugs, etc)
 - [[PR157]](https://github.com/lanl/singularity-eos/pull/157) fix root finders in Gruneisen, Davis, and JWL
 - [[PR151]](https://github.com/lanl/singularity-eos/pull/151) fix module install
