@@ -59,11 +59,14 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
                                 double *const vals);
 #endif
 
-#ifdef SINGULARITY_USE_EOSPAC
-// capitalize? eospaceos Eospac Eospaceos EOSPAC EOSPACeos?
+// CMM: There was C/Ftn binding issues if this was not
+//      explicitly defined. Instead, we use no-ops if
+//      EOSPAC is not included. (see <this>.cpp file)
+//#ifdef SINGULARITY_USE_EOSPAC
+//  capitalize? eospaceos Eospac Eospaceos EOSPAC EOSPACeos?
 int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const enabled,
                    double *const vals);
-#endif // SINGULARITY_USE_EOSPAC
+//#endif // SINGULARITY_USE_EOSPAC
 
 int get_sg_eos( // sizing information
     int nmat, int ncell, int cell_dim,

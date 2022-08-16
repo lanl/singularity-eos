@@ -208,9 +208,21 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const 
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
+
 int init_sg_eospac(const int matindex, EOS *eos, const int id) {
   return init_sg_eospac(matindex, eos, id, def_en, def_v);
 }
+
+// CMM: A more robust solution may be to preprocess the fortran,
+//      however that is slightly more involved than you'd like to think.
+#else // stubs if not built, just to satisfy linking.
+int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const enabled,
+                   double *const vals) {
+  return 0;
+}
+
+int init_sg_eospac(const int matindex, EOS *eos, const int id) { return 0; }
+
 #endif // SINGULARITY_USE_EOSPAC
 
 #undef SGAPPLYMOD

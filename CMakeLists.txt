@@ -275,9 +275,13 @@ if (SINGULARITY_USE_HDF5)
   # hdf5, for data interopability
   # type: external
   enable_language(C)
+  set(_hdf5_comp "C;HL")
+  if(SINGULARITY_USE_FORTRAN)
+    set(_hdf5_comp "${_hdf5_comp};Fortran")
+  endif()
   singularity_import_dependency(
     PKG HDF5
-    COMPONENTS C HL
+    COMPONENTS ${_hdf5_comp}
     #NB: 'newer' CMake versions, HDF5s will
     #    do the `idiomatic` cmake setup,
     #    and `find_package(HDF5)` will define
@@ -367,7 +371,7 @@ if (SINGULARITY_USE_FORTRAN)
   set_target_properties(singularity-eos PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   target_include_directories(singularity-eos INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:include/eos>
   )
 endif() # SINGULARITY_USE_FORTRAN
 

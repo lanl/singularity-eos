@@ -61,4 +61,14 @@ function(print_target_properties target)
     endforeach()
 endfunction()
 
+# finds and prints all variables prefixed with `varpre_`
+function(print_variable_prefixed varpre)
+  # get all available `SINGULARITY_` cmake variables set during configuration
+  get_cmake_property(_variableNames VARIABLES)
+  string (REGEX MATCHALL "(^|;)${varpre}_[A-Za-z0-9_]*"
+    _matchedVars "${_variableNames}")
 
+  foreach(_variableName ${_matchedVars})
+    message("(${_variableName}: \"${${_variableName}}\")")
+  endforeach()
+endfunction()
