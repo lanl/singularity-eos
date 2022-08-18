@@ -117,23 +117,24 @@ int run_sg_get_eos_tests() {
     eos_offset[m] = m + 1;
   }
   // do a rho/e(P,T) solve
-  Real vfrac_true[NMAT], sie_true[NMAT];
+  Real vfrac_true[NMAT], ie_true[NMAT];
   get_sg_eos(NMAT, 1, 1, -1, eos_offset, eoss, &cell_offset, &P_true, &pmax, &v_true,
              &spvol, &sie_tot_true, &T_true_ev, &bmod, &dpde, &cv, mfrac, vfrac_true,
-             sie_true, nullptr, nullptr, nullptr);
+             ie_true, nullptr, nullptr, nullptr);
   Real sie_tot_check = 0.0;
   for (int m = 0; m < NMAT; ++m) {
     const Real r_m = mfrac[m] / vfrac_true[m];
-    const Real p_eos = eoss[m].PressureFromDensityInternalEnergy(r_m, sie_true[m]);
+    const Real sie_m = ie_true[m] / mfrac[m];
+    const Real p_eos = eoss[m].PressureFromDensityInternalEnergy(r_m, sie_m);
     const Real p_resid = std::abs(P_true - p_eos) / P_true;
-    const Real t_eos = eoss[m].TemperatureFromDensityInternalEnergy(r_m, sie_true[m]);
+    const Real t_eos = eoss[m].TemperatureFromDensityInternalEnergy(r_m, sie_m);
     const Real t_resid = std::abs(T_true - t_eos) / T_true;
     // check internal consitency of P-T input function
     if (t_resid > 1.e-5 || p_resid > 1.e-5) {
       printf("P-T: t_resid: %e | p_resid: %e\n", t_resid, p_resid);
       nfails += 1;
     }
-    sie_tot_check += sie_true[m] * mfrac[m];
+    sie_tot_check += ie_true[m];
   }
   sie_tot_check /= mass_tot;
   // further check of internal consintency of P-T input function
@@ -143,10 +144,10 @@ int run_sg_get_eos_tests() {
   }
   // obtain converged and consistent PTE solution
   // do rho-T input solve
-  Real p_check, vfrac_check[NMAT], sie_check[NMAT];
+  Real p_check, vfrac_check[NMAT], ie_check[NMAT];
   get_sg_eos(NMAT, 1, 1, -3, eos_offset, eoss, &cell_offset, &p_check, &pmax, &v_true,
              &spvol, &sie_tot_check, &T_true_ev, &bmod, &dpde, &cv, mfrac, vfrac_check,
-             sie_check, nullptr, nullptr, nullptr);
+             ie_check, nullptr, nullptr, nullptr);
   // check output pressure and sie, indicate failure if relative err is too large
   if (std::abs(P_true - p_check) / std::abs(P_true) > 1.e-5 ||
       std::abs(sie_tot_true - sie_tot_check) / std::abs(sie_tot_true) > 1.e-5) {
@@ -159,8 +160,8 @@ int run_sg_get_eos_tests() {
   for (int m = 0; m < NMAT; ++m) {
     max_vfrac_resid = std::max(max_vfrac_resid, std::abs(vfrac_true[m] - vfrac_check[m]) /
                                                     std::abs(vfrac_true[m]));
-    max_sie_resid = std::max(max_sie_resid, std::abs(sie_true[m] - sie_check[m]) /
-                                                std::abs(sie_true[m]));
+    max_sie_resid = std::max(max_sie_resid, std::abs(ie_true[m] - ie_check[m]) /
+                                                std::abs(ie_true[m]));
   }
   if (max_vfrac_resid > 1.e-5 || max_sie_resid > 1.e-5) {
     printf("r-T: vr: %e | sr: %e\n", max_vfrac_resid, max_sie_resid);
@@ -170,7 +171,7 @@ int run_sg_get_eos_tests() {
   Real t_check;
   get_sg_eos(NMAT, 1, 1, -2, eos_offset, eoss, &cell_offset, &P_true, &pmax, &v_true,
              &spvol, &sie_tot_check, &t_check, &bmod, &dpde, &cv, mfrac, vfrac_check,
-             sie_check, nullptr, nullptr, nullptr);
+             ie_check, nullptr, nullptr, nullptr);
   // check output temperature and sie, indicate failure if relative err is too large
   if (std::abs(T_true_ev - t_check) / std::abs(T_true_ev) > 1.e-5 ||
       std::abs(sie_tot_true - sie_tot_check) / std::abs(sie_tot_true) > 1.e-5) {
@@ -183,8 +184,8 @@ int run_sg_get_eos_tests() {
   for (int m = 0; m < NMAT; ++m) {
     max_vfrac_resid = std::max(max_vfrac_resid, std::abs(vfrac_true[m] - vfrac_check[m]) /
                                                     std::abs(vfrac_true[m]));
-    max_sie_resid = std::max(max_sie_resid, std::abs(sie_true[m] - sie_check[m]) /
-                                                std::abs(sie_true[m]));
+    max_sie_resid = std::max(max_sie_resid, std::abs(ie_true[m] - ie_check[m]) /
+                                                std::abs(ie_true[m]));
   }
   if (max_vfrac_resid > 1.e-5 || max_sie_resid > 1.e-5) {
     printf("p-T: vr: %e | sr: %e\n", max_vfrac_resid, max_sie_resid);

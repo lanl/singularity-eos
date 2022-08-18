@@ -260,7 +260,7 @@ int get_sg_eos( // sizing information
     double *press, double *pmax, double *vol, double *spvol, double *sie, double *temp,
     double *bmod, double *dpde, double *cv,
     // per material quantities
-    double *frac_mass, double *frac_vol, double *frac_sie,
+    double *frac_mass, double *frac_vol, double *frac_ie,
     // optional per material quantities
     double *frac_bmod, double *frac_dpde, double *frac_cv) {
   // kernel return value will be the number of failures
@@ -311,7 +311,7 @@ int get_sg_eos( // sizing information
   host_v cv_hv(cv, cell_dim);
   host_frac_v frac_mass_hv(frac_mass, cell_dim, nmat);
   host_frac_v frac_vol_hv(frac_vol, cell_dim, nmat);
-  host_frac_v frac_sie_hv(frac_sie, cell_dim, nmat);
+  host_frac_v frac_ie_hv(frac_ie, cell_dim, nmat);
   host_frac_v frac_bmod_hv, frac_dpde_hv, frac_cv_hv;
   if (do_frac_bmod) frac_bmod_hv = host_frac_v(frac_bmod, cell_dim, nmat);
   if (do_frac_dpde) frac_dpde_hv = host_frac_v(frac_dpde, cell_dim, nmat);
@@ -333,7 +333,7 @@ int get_sg_eos( // sizing information
   dev_v cv_v{create_mirror_view_and_copy(DMS(), cv_hv)};
   dev_frac_v frac_mass_v{create_mirror_view_and_copy(DMS(), frac_mass_hv)};
   dev_frac_v frac_vol_v{create_mirror_view_and_copy(DMS(), frac_vol_hv)};
-  dev_frac_v frac_sie_v{create_mirror_view_and_copy(DMS(), frac_sie_hv)};
+  dev_frac_v frac_ie_v{create_mirror_view_and_copy(DMS(), frac_ie_hv)};
   dev_frac_v frac_bmod_v, frac_dpde_v, frac_cv_v;
   if (do_frac_bmod) frac_bmod_v = create_mirror_view_and_copy(DMS(), frac_bmod_hv);
   if (do_frac_dpde) frac_dpde_v = create_mirror_view_and_copy(DMS(), frac_dpde_hv);
@@ -469,7 +469,7 @@ int get_sg_eos( // sizing information
             // pressure contribution from material m
             press_v(i) += press_pte(tid, mp) * vfrac_pte(tid, mp);
             // assign per material specific internal energy
-            frac_sie_v(i, m) = sie_pte(tid, mp);
+            frac_ie_v(i, m) = sie_pte(tid, mp) * frac_mass_v(i, m) * mass_sum;
             // assign volume fraction based on pte calculation
             frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
             // calculate bulk modulus for material m
@@ -616,7 +616,7 @@ int get_sg_eos( // sizing information
             const int m = pte_mats(tid, mp);
             temp_v(i) += temp_pte(tid, mp) * vfrac_pte(tid, mp);
             // assign per material specific internal energy
-            frac_sie_v(i, m) = sie_pte(tid, mp);
+            frac_ie_v(i, m) = sie_pte(tid, mp) * frac_mass_v(i, m) * mass_sum;
             // assign volume fraction based on pte calculation
             frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
             // calculate bulk modulus for material m
@@ -716,7 +716,7 @@ int get_sg_eos( // sizing information
           spvol_v(i) = vol_v(i) / mass_sum;
           for (int m = 0; m < nmat; ++m) {
             // assign per material specific internal energy
-            frac_sie_v(i, m) = sie_pte(tid, m);
+            frac_ie_v(i, m) = sie_pte(tid, m) * frac_mass_v(i, m) * mass_sum;
             // apply normalization to to vfrac
             vfrac_pte(tid, m) /= vfrac_tot;
             // assign volume fraction based on pte calculation
@@ -843,7 +843,7 @@ int get_sg_eos( // sizing information
             // temperature averaging
             temp_v(i) += temp_pte(tid, mp) * vfrac_pte(tid, mp);
             // assign per material specific internal energy
-            frac_sie_v(i, m) = sie_pte(tid, mp);
+            frac_ie_v(i, m) = sie_pte(tid, mp) * frac_mass_v(i, m) * mass_sum;
             // assign volume fraction based on pte calculation
             frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
             // calculate bulk modulus for material m
@@ -917,7 +917,7 @@ int get_sg_eos( // sizing information
   // volume fractions, always copy-back (maybe not for pure cells)
   deep_copy(frac_vol_hv, frac_vol_v);
   // component internal energies, always copy-back (maybe not for pure cells)
-  deep_copy(frac_sie_hv, frac_sie_v);
+  deep_copy(frac_ie_hv, frac_ie_v);
   // optionally copy-back the component bmod, dpde, and cv
   if (do_frac_bmod) {
     deep_copy(frac_bmod_hv, frac_bmod_v);
