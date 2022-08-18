@@ -1400,9 +1400,8 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
     bool success = s.Solve();
     if (!success) {
       // do something to crash out?  Tell folks what happened?
-      printf("crashing out at iteration: %i\n", niter);
+      //printf("crashing out at iteration: %i\n", niter);
       converged = false;
-      std::exit(1);
       break;
     }
 
