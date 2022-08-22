@@ -12,18 +12,159 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#ifndef _SINGULARITY_EOS_EOS_EOS_DAVIS_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_DAVIS_HPP_
+
 #include <cmath>
+#include <cstdio>
+
+#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
-#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
 
-PORTABLE_INLINE_FUNCTION Real square(const Real x) { return x * x; }
-PORTABLE_INLINE_FUNCTION Real cube(const Real x) { return x * x * x; }
-PORTABLE_INLINE_FUNCTION Real fourth(const Real x) { return x * x * x * x; }
-PORTABLE_INLINE_FUNCTION Real fifth(const Real x) { return x * x * x * x * x; }
+using namespace eos_base;
 
-constexpr Real onethird = 1.0 / 3.0;
+class DavisReactants : public EosBase<DavisReactants> {
+ public:
+  DavisReactants() = default;
+  PORTABLE_INLINE_FUNCTION
+  DavisReactants(const Real rho0, const Real e0, const Real P0, const Real T0,
+                 const Real A, const Real B, const Real C, const Real G0, const Real Z,
+                 const Real alpha, const Real Cv0)
+      : _rho0(rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C), _G0(G0), _Z(Z),
+        _alpha(alpha), _Cv0(Cv0) {}
+  DavisReactants GetOnDevice() { return *this; }
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                        Real &cv, Real &bmod, const unsigned long output,
+                                        Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
+                              Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
+                                       Real &rho, Real &sie) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(DavisReactants)
+  PORTABLE_INLINE_FUNCTION
+  int nlambda() const noexcept { return 0; }
+  static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+    static constexpr char s1[]{"DavisReactants Params: "};
+    printf("%srho0:%e e0:%e P0:%e\nT0:%e A:%e B:%e\nC:%e G0:%e Z:%e\nalpha:%e "
+           "Cv0:%e\n",
+           s1, _rho0, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _Cv0);
+  }
+  void inline Finalize() {}
+  static std::string EosType() { return std::string("DavisReactants"); }
+
+ private:
+  static constexpr Real onethird = 1.0 / 3.0;
+  Real _rho0, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _Cv0;
+  // static constexpr const char _eos_type[] = "DavisReactants";
+  static constexpr unsigned long _preferred_input =
+      thermalqs::density | thermalqs::specific_internal_energy;
+  PORTABLE_INLINE_FUNCTION Real Ps(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real Es(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real Ts(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real Gamma(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real square(const Real x) const { return x * x; }
+  PORTABLE_INLINE_FUNCTION Real cube(const Real x) const { return x * x * x; }
+  PORTABLE_INLINE_FUNCTION Real fourth(const Real x) const { return x * x * x * x; }
+  PORTABLE_INLINE_FUNCTION Real fifth(const Real x) const { return x * x * x * x * x; }
+};
+
+class DavisProducts : public EosBase<DavisProducts> {
+ public:
+  DavisProducts() = default;
+  PORTABLE_INLINE_FUNCTION
+  DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
+                const Real pc, const Real Cv, const Real E0)
+      : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv), _E0(E0) {}
+  DavisProducts GetOnDevice() { return *this; }
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
+                                       Real &rho, Real &sie) const;
+  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                        Real &cv, Real &bmod, const unsigned long output,
+                                        Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
+                              Real *lambda = nullptr) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(DavisProducts)
+  PORTABLE_INLINE_FUNCTION
+  int nlambda() const noexcept { return 0; }
+  static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+    static constexpr char s1[]{"DavisProducts Params: "};
+    printf("%sa:%e b:%e k:%e\nn:%e vc:%e pc:%e\nCv:%e E0:%e\n", s1, _a, _b, _k, _n, _vc,
+           _pc, _Cv, _E0);
+  }
+  inline void Finalize() {}
+  static std::string EosType() { return std::string("DavisProducts"); }
+
+ private:
+  static constexpr Real onethird = 1.0 / 3.0;
+  Real _a, _b, _k, _n, _vc, _pc, _Cv, _E0;
+  // static constexpr const char _eos_type[] = "DavisProducts";
+  static constexpr const unsigned long _preferred_input =
+      thermalqs::density | thermalqs::specific_internal_energy;
+  PORTABLE_INLINE_FUNCTION Real F(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real Ps(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real Es(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real Ts(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real Gamma(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real square(const Real x) const { return x * x; }
+  PORTABLE_INLINE_FUNCTION Real cube(const Real x) const { return x * x * x; }
+  PORTABLE_INLINE_FUNCTION Real fourth(const Real x) const { return x * x * x * x; }
+  PORTABLE_INLINE_FUNCTION Real fifth(const Real x) const { return x * x * x * x * x; }
+};
 
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   const Real y = 1.0 - _rho0 / rho;
@@ -69,17 +210,17 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Gamma(const Real rho) const {
     return _G0;
   }
 }
-PORTABLE_FUNCTION Real DavisReactants::InternalEnergyFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real DavisReactants::InternalEnergyFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   const Real t_s = Ts(rho);
   return Es(rho) +
          _Cv0 * t_s / (1.0 + _alpha) * (std::pow(temp / t_s, 1.0 + _alpha) - 1.0);
 }
-PORTABLE_FUNCTION Real DavisReactants::PressureFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real DavisReactants::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   return Ps(rho) + Gamma(rho) * rho * (sie - Es(rho));
 }
-PORTABLE_FUNCTION Real DavisReactants::TemperatureFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real DavisReactants::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   const Real es = Es(rho);
   const Real tmp = std::pow((1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - es) + 1.0,
@@ -87,12 +228,12 @@ PORTABLE_FUNCTION Real DavisReactants::TemperatureFromDensityInternalEnergy(
   if (tmp > 0) return Ts(rho) * tmp;
   return Ts(rho) + (sie - es) / _Cv0; // This branch is a negative temperature
 }
-PORTABLE_FUNCTION Real DavisReactants::SpecificHeatFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real DavisReactants::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   return _Cv0 / std::pow((1 + _alpha) / (Ts(rho) * _Cv0) * (sie - Es(rho)) + 1,
                          -_alpha / (1 + _alpha));
 }
-PORTABLE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   const Real y = 1 - _rho0 / rho;
   const Real phat = 0.25 * _A * _A / _B * _rho0;
@@ -109,34 +250,34 @@ PORTABLE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEnergy(
   return -(psv + (sie - Es(rho)) * rho * (gammav - gamma * rho) - gamma * rho * esv) /
          rho;
 }
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real DavisReactants::GruneisenParamFromDensityInternalEnergy(const Real rho,
                                                              const Real sie,
                                                              Real *lambda) const {
   return Gamma(rho);
 }
 // Below are "unimplemented" routines
-PORTABLE_FUNCTION Real DavisReactants::PressureFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real DavisReactants::PressureFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION Real DavisReactants::SpecificHeatFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real DavisReactants::SpecificHeatFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   return SpecificHeatFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION Real DavisReactants::BulkModulusFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   return BulkModulusFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real DavisReactants::GruneisenParamFromDensityTemperature(const Real rho, const Real temp,
                                                           Real *lambda) const {
   return Gamma(rho);
 }
-PORTABLE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperature(
+PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Real *lambda, Real &rho, Real &sie) const {
   // First, solve P=P(rho,T) for rho.  Note P(rho,e) has an sie-es term, which is only a
   // function of T
@@ -156,7 +297,7 @@ PORTABLE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperature(
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void DavisReactants::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                              Real &bmod, const unsigned long output, Real *lambda) const {
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
@@ -169,7 +310,7 @@ void DavisReactants::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real
 }
 // TODO: Chad please decide if this is sane
 // TODO(JMM): Pre-cache values instead of computing inline
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void DavisReactants::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
                                             Real &cv, Real &bmod, Real &dpde, Real &dvdt,
                                             Real *lambda) const {
@@ -186,7 +327,7 @@ void DavisReactants::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Re
 }
 
 #if 0
-PORTABLE_FUNCTION void DavisReactants::PTofRE(const Real rho, const Real sie, Real * lambda, Real& press, Real& temp, Real & dpdr, Real & dpde, Real & dtdr, Real & dtde) const
+PORTABLE_INLINE_FUNCTION void DavisReactants::PTofRE(const Real rho, const Real sie, Real * lambda, Real& press, Real& temp, Real & dpdr, Real & dpde, Real & dtdr, Real & dtde) const
 {
     press = PressureFromDensityInternalEnergy(rho,sie,lambda);
     temp = TemperatureFromDensityInternalEnergy(rho,sie,lambda);
@@ -233,23 +374,23 @@ PORTABLE_INLINE_FUNCTION Real DavisProducts::Ts(const Real rho) const {
 PORTABLE_INLINE_FUNCTION Real DavisProducts::Gamma(const Real rho) const {
   return _k - 1.0 + (1.0 - _b) * F(rho);
 }
-PORTABLE_FUNCTION Real DavisProducts::InternalEnergyFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real DavisProducts::InternalEnergyFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   return _Cv * (temp - Ts(rho)) + Es(rho);
 }
-PORTABLE_FUNCTION Real DavisProducts::PressureFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real DavisProducts::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   return Ps(rho) + rho * Gamma(rho) * (sie - Es(rho));
 }
-PORTABLE_FUNCTION Real DavisProducts::TemperatureFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real DavisProducts::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   return Ts(rho) + (sie - Es(rho)) / _Cv;
 }
-PORTABLE_FUNCTION Real DavisProducts::SpecificHeatFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real DavisProducts::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   return _Cv;
 }
-PORTABLE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   const Real vvc = 1 / (rho * _vc);
   const Real Fx = -4 * _a * std::pow(vvc, 2 * _n - 1) / square(1 + std::pow(vvc, 2 * _n));
@@ -268,35 +409,34 @@ PORTABLE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnergy(
   return -(psv + (sie - Es(rho)) * rho * (gammav - gamma * rho) - gamma * rho * esv) /
          rho;
 }
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real DavisProducts::GruneisenParamFromDensityInternalEnergy(const Real rho,
                                                             const Real sie,
                                                             Real *lambda) const {
   return Gamma(rho);
 }
 // Below are "unimplemented" routines
-PORTABLE_FUNCTION Real DavisProducts::PressureFromDensityTemperature(const Real rho,
-                                                                     const Real temp,
-                                                                     Real *lambda) const {
+PORTABLE_INLINE_FUNCTION Real DavisProducts::PressureFromDensityTemperature(
+    const Real rho, const Real temp, Real *lambda) const {
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION Real DavisProducts::SpecificHeatFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real DavisProducts::SpecificHeatFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   return SpecificHeatFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION Real DavisProducts::BulkModulusFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   return BulkModulusFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real DavisProducts::GruneisenParamFromDensityTemperature(const Real rho, const Real temp,
                                                          Real *lambda) const {
   return Gamma(rho);
 }
-PORTABLE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperature(
+PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Real *lambda, Real &rho, Real &sie) const {
   auto PofRatT = [&](const Real r) {
     return (Ps(r) + Gamma(r) * r * _Cv * (temp - Ts(r)));
@@ -314,7 +454,7 @@ PORTABLE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperature(
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void DavisProducts::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                             Real &bmod, const unsigned long output, Real *lambda) const {
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
@@ -327,7 +467,7 @@ void DavisProducts::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real 
 }
 // TODO: pre-cache values instead of computing them
 // TODO: chad please decide if these choices are sane
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void DavisProducts::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
                                            Real &cv, Real &bmod, Real &dpde, Real &dvdt,
                                            Real *lambda) const {
@@ -343,7 +483,7 @@ void DavisProducts::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Rea
   dvdt = gm1 * cv / bmod;
 }
 #if 0
-PORTABLE_FUNCTION void DavisProducts::PTofRE(const Real rho, const Real sie, Real * lambda, Real& press, Real& temp, Real & dpdr, Real & dpde, Real & dtdr, Real & dtde) const
+PORTABLE_INLINE_FUNCTION void DavisProducts::PTofRE(const Real rho, const Real sie, Real * lambda, Real& press, Real& temp, Real & dpdr, Real & dpde, Real & dtdr, Real & dtde) const
 {
     press = PressureFromDensityInternalEnergy(rho,sie,lambda);
     temp = TemperatureFromDensityInternalEnergy(rho,sie,lambda);
@@ -366,3 +506,5 @@ PORTABLE_FUNCTION void DavisProducts::PTofRE(const Real rho, const Real sie, Rea
 #endif
 
 } // namespace singularity
+
+#endif // _SINGULARITY_EOS_EOS_EOS_DAVIS_HPP_

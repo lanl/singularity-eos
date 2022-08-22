@@ -12,41 +12,123 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#ifndef _SINGULARITY_EOS_EOS_EOS_JWL_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_JWL_HPP_
+
+// stdlib
 #include <cmath>
-#include <singularity-eos/eos/eos.hpp>
+#include <cstdio>
+#include <string>
+
+// Ports-of-call
+#include <ports-of-call/portability.hpp>
+
+// Base stuff
+#include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/eos_error.hpp>
 
 namespace singularity {
 
-PORTABLE_FUNCTION Real JWL::ReferencePressure(const Real rho) const {
+using namespace eos_base;
+
+// COMMENT: This is meant to be an implementation of the "standard" JWL as
+// implemented in xRAGE for eostype(1).  It does not include any energy shifting
+class JWL : public EosBase<JWL> {
+ public:
+  JWL() = default;
+  PORTABLE_INLINE_FUNCTION JWL(const Real A, const Real B, const Real R1, const Real R2,
+                               const Real w, const Real rho0, const Real Cv)
+      : _A(A), _B(B), _R1(R1), _R2(R2), _w(w), _rho0(rho0), _Cv(Cv) {}
+  JWL GetOnDevice() { return *this; }
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(const Real rho,
+                                                        const Real temperature,
+                                                        Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                           Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(const Real rho,
+                                                            const Real temperature,
+                                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(const Real rho,
+                                                           const Real temperature,
+                                                           Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                 Real &cv, Real &bmod, const unsigned long output,
+                                 Real *lambda = nullptr) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  SG_ADD_BASE_CLASS_USINGS(JWL)
+  PORTABLE_INLINE_FUNCTION
+  int nlambda() const noexcept { return 0; }
+  PORTABLE_INLINE_FUNCTION
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
+                              Real *lambda = nullptr) const;
+  static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+    static constexpr char s1[]{"JWL Params: "};
+    printf("%sA:%e B:%e R1: %e\nR2:%e w:%e rho0:%e\nCv:%e\n", s1, _A, _B, _R1, _R2, _w,
+           _rho0, _Cv);
+  }
+  PORTABLE_INLINE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
+                                                              const Real temp,
+                                                              Real *lambda, Real &rho,
+                                                              Real &sie) const;
+  inline void Finalize() {}
+  static std::string EosType() { return std::string("JWL"); }
+
+ private:
+  Real _A, _B, _R1, _R2, _w, _rho0, _Cv;
+  PORTABLE_INLINE_FUNCTION Real ReferenceEnergy(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real ReferencePressure(const Real rho) const;
+  // static constexpr const char _eos_type[] = "JWL";
+  static constexpr const unsigned long _preferred_input =
+      thermalqs::density | thermalqs::specific_internal_energy;
+};
+
+PORTABLE_INLINE_FUNCTION Real JWL::ReferencePressure(const Real rho) const {
   const Real x = _rho0 / rho;
   return _A * std::exp(-_R1 * x) + _B * std::exp(-_R2 * x);
 }
-PORTABLE_FUNCTION Real JWL::ReferenceEnergy(const Real rho) const {
+PORTABLE_INLINE_FUNCTION Real JWL::ReferenceEnergy(const Real rho) const {
   const Real x = _rho0 / rho;
   return _A / (_rho0 * _R1) * std::exp(-_R1 * x) +
          _B / (_rho0 * _R2) * std::exp(-_R2 * x);
 }
-PORTABLE_FUNCTION Real JWL::InternalEnergyFromDensityTemperature(const Real rho,
+PORTABLE_INLINE_FUNCTION Real JWL::InternalEnergyFromDensityTemperature(const Real rho,
                                                                  const Real temp,
                                                                  Real *lambda) const {
   return ReferenceEnergy(rho) + _Cv * temp;
 }
-PORTABLE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(const Real rho,
+PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(const Real rho,
                                                               const Real sie,
                                                               Real *lambda) const {
   return ReferencePressure(rho) + _w * rho * (sie - ReferenceEnergy(rho));
 }
-PORTABLE_FUNCTION Real JWL::TemperatureFromDensityInternalEnergy(const Real rho,
+PORTABLE_INLINE_FUNCTION Real JWL::TemperatureFromDensityInternalEnergy(const Real rho,
                                                                  const Real sie,
                                                                  Real *lambda) const {
   return (sie - ReferenceEnergy(rho)) / _Cv;
 }
-PORTABLE_FUNCTION Real JWL::SpecificHeatFromDensityInternalEnergy(const Real rho,
+PORTABLE_INLINE_FUNCTION Real JWL::SpecificHeatFromDensityInternalEnergy(const Real rho,
                                                                   const Real sie,
                                                                   Real *lambda) const {
   return _Cv;
 }
-PORTABLE_FUNCTION Real JWL::BulkModulusFromDensityInternalEnergy(const Real rho,
+PORTABLE_INLINE_FUNCTION Real JWL::BulkModulusFromDensityInternalEnergy(const Real rho,
                                                                  const Real sie,
                                                                  Real *lambda) const {
   const Real x = _rho0 / rho;
@@ -55,36 +137,36 @@ PORTABLE_FUNCTION Real JWL::BulkModulusFromDensityInternalEnergy(const Real rho,
   return (_w + 1) * _w * rho * (sie - ReferenceEnergy(rho)) +
          x * (_A * _R1 * std::exp(-_R1 * x) + _B * _R2 * std::exp(-_R2 * x));
 }
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real JWL::GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
                                                   Real *lambda) const {
   return _w;
 }
 // Below are "unimplemented" routines
-PORTABLE_FUNCTION Real JWL::PressureFromDensityTemperature(const Real rho,
+PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityTemperature(const Real rho,
                                                            const Real temp,
                                                            Real *lambda) const {
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION Real JWL::SpecificHeatFromDensityTemperature(const Real rho,
+PORTABLE_INLINE_FUNCTION Real JWL::SpecificHeatFromDensityTemperature(const Real rho,
                                                                const Real temp,
                                                                Real *lambda) const {
   return SpecificHeatFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION Real JWL::BulkModulusFromDensityTemperature(const Real rho,
+PORTABLE_INLINE_FUNCTION Real JWL::BulkModulusFromDensityTemperature(const Real rho,
                                                               const Real temp,
                                                               Real *lambda) const {
   return BulkModulusFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real JWL::GruneisenParamFromDensityTemperature(const Real rho, const Real temp,
                                                Real *lambda) const {
   return _w;
 }
-PORTABLE_FUNCTION void JWL::DensityEnergyFromPressureTemperature(const Real press,
+PORTABLE_INLINE_FUNCTION void JWL::DensityEnergyFromPressureTemperature(const Real press,
                                                                  const Real temp,
                                                                  Real *lambda, Real &rho,
                                                                  Real &sie) const {
@@ -105,7 +187,7 @@ PORTABLE_FUNCTION void JWL::DensityEnergyFromPressureTemperature(const Real pres
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
-PORTABLE_FUNCTION void JWL::FillEos(Real &rho, Real &temp, Real &sie, Real &press,
+PORTABLE_INLINE_FUNCTION void JWL::FillEos(Real &rho, Real &temp, Real &sie, Real &press,
                                     Real &cv, Real &bmod, const unsigned long output,
                                     Real *lambda) const {
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
@@ -120,7 +202,7 @@ PORTABLE_FUNCTION void JWL::FillEos(Real &rho, Real &temp, Real &sie, Real &pres
 // TODO(JMM): pre-cache these rather than recomputing them each time
 // TODO: Chad, please decide if STP is actually right here. Should it be
 // based on the reference energy and pressure instead?
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void JWL::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                                  Real &bmod, Real &dpde, Real &dvdt, Real *lambda) const {
   rho = _rho0;
@@ -136,3 +218,5 @@ void JWL::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, 
 }
 
 } // namespace singularity
+
+#endif // _SINGULARITY_EOS_EOS_EOS_JWL_HPP_
