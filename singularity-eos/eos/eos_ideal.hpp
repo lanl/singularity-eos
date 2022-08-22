@@ -24,9 +24,9 @@
 #include <ports-of-call/portability.hpp>
 
 // Base stuff
-#include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 #define MYMAX(a, b) a > b ? a : b
 

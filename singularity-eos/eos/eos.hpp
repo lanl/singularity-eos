@@ -34,8 +34,8 @@
 
 // EOS models
 #include <singularity-eos/eos/eos_davis.hpp>
-#include <singularity-eos/eos/eos_gruneisen.hpp>
 #include <singularity-eos/eos/eos_eospac.hpp>
+#include <singularity-eos/eos/eos_gruneisen.hpp>
 #include <singularity-eos/eos/eos_ideal.hpp>
 #include <singularity-eos/eos/eos_jwl.hpp>
 #include <singularity-eos/eos/eos_spiner.hpp>

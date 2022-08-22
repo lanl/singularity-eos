@@ -33,10 +33,10 @@
 
 // base
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -87,7 +87,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
                               bool reproduciblity_mode = false);
-  inline SpinerEOSDependsRhoT(const std::string &filename, const std::string &materialName,
+  inline SpinerEOSDependsRhoT(const std::string &filename,
+                              const std::string &materialName,
                               bool reproducibility_mode = false);
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT() : memoryStatus_(DataStatus::Deallocated) {}
@@ -305,9 +306,10 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
   inline SpinerEOSDependsRhoSie(const std::string &filename, int matid,
-                         bool reproducibility_mode = false);
-  inline SpinerEOSDependsRhoSie(const std::string &filename, const std::string &materialName,
-                         bool reproducibility_mode = false);
+                                bool reproducibility_mode = false);
+  inline SpinerEOSDependsRhoSie(const std::string &filename,
+                                const std::string &materialName,
+                                bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoSie GetOnDevice();
 
   PORTABLE_INLINE_FUNCTION
@@ -506,7 +508,7 @@ class interp {
 } // namespace callable_interp
 
 inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, int matid,
-                                           bool reproducibility_mode)
+                                                  bool reproducibility_mode)
     : matid_(matid), reproducible_(reproducibility_mode),
       status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
@@ -532,8 +534,8 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
 }
 
 inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
-                                           const std::string &materialName,
-                                           bool reproducibility_mode)
+                                                  const std::string &materialName,
+                                                  bool reproducibility_mode)
     : reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
       memoryStatus_(DataStatus::OnHost) {
 
@@ -1375,8 +1377,9 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
   return whereAmI;
 }
 
-inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename, int matid,
-                                               bool reproducibility_mode)
+inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
+                                                      int matid,
+                                                      bool reproducibility_mode)
     : matid_(matid), reproducible_(reproducibility_mode),
       status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
@@ -1402,8 +1405,8 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
 }
 
 inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
-                                               const std::string &materialName,
-                                               bool reproducibility_mode)
+                                                      const std::string &materialName,
+                                                      bool reproducibility_mode)
     : reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
       memoryStatus_(DataStatus::OnHost) {
 

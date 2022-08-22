@@ -32,10 +32,10 @@
 
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -80,7 +80,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   using EosBase<StellarCollapse>::FillEos;
 
   inline StellarCollapse(const std::string &filename, bool use_sp5 = false,
-                  bool filter_bmod = true);
+                         bool filter_bmod = true);
 
   // Saves to an SP5 file
   inline void Save(const std::string &filename);
@@ -171,14 +171,15 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline void LoadFromSP5File_(const std::string &filename);
   inline void LoadFromStellarCollapseFile_(const std::string &filename);
   inline int readSCInt_(const hid_t &file_id, const std::string &name);
-  inline void readBounds_(const hid_t &file_id, const std::string &name, int size, Real &lo,
-                          Real &hi);
-  inline void readSCDset_(const hid_t &file_id, const std::string &name, Spiner::DataBox &db);
+  inline void readBounds_(const hid_t &file_id, const std::string &name, int size,
+                          Real &lo, Real &hi);
+  inline void readSCDset_(const hid_t &file_id, const std::string &name,
+                          Spiner::DataBox &db);
 
   inline void medianFilter_(Spiner::DataBox &db);
   inline void medianFilter_(const Spiner::DataBox &in, Spiner::DataBox &out);
   inline void fillMedianBuffer_(Real buffer[], int width, int iY, int iT, int irho,
-                         const Spiner::DataBox &tab) const;
+                                const Spiner::DataBox &tab) const;
   inline Real findMedian_(Real buffer[], int size) const;
   inline void computeBulkModulus_();
   inline void computeColdAndHotCurves_();
@@ -248,7 +249,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   }
 
   PORTABLE_INLINE_FUNCTION Real lTFromlRhoSie_(const Real lRho, const Real sie,
-                                        Real *lambda) const noexcept;
+                                               Real *lambda) const noexcept;
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
   getLogsFromRhoT_(const Real rho, const Real temp, Real *lambda, Real &lRho, Real &lT,
                    Real &Ye) const noexcept {
@@ -349,7 +350,7 @@ class LogT {
 constexpr char METADATA_NAME[] = "Metadata";
 
 inline StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp5,
-                                 bool filter_bmod) {
+                                        bool filter_bmod) {
   if (use_sp5) {
     LoadFromSP5File_(filename);
   } else {
@@ -752,8 +753,8 @@ inline int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &
 // Read (inclusive) bounds on the independent variables Assumes
 // uniform tables in log-space. The file requires we read in the
 // array, but we only need the bounds themselves.
-inline void StellarCollapse::readBounds_(const hid_t &file_id, const std::string &name, int size,
-                                  Real &lo, Real &hi) {
+inline void StellarCollapse::readBounds_(const hid_t &file_id, const std::string &name,
+                                         int size, Real &lo, Real &hi) {
   std::vector<Real> table(size);
   herr_t status = H5LTread_dataset_double(file_id, name.c_str(), table.data());
   if (status != H5_SUCCESS) {
@@ -769,7 +770,7 @@ inline void StellarCollapse::readBounds_(const hid_t &file_id, const std::string
  * https://forum.hdfgroup.org/t/is-this-a-bug-in-hdf5-1-8-6/2211
  */
 inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
-                                  Spiner::DataBox &db) {
+                                         Spiner::DataBox &db) {
   herr_t exists = H5LTfind_dataset(file_id, name.c_str());
   if (!exists) {
     std::string msg = "Tried to read dataset " + name + " but it doesn't exist\n";
@@ -794,7 +795,8 @@ inline void StellarCollapse::medianFilter_(Spiner::DataBox &db) {
   medianFilter_(tmp, db);
 }
 
-inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in, Spiner::DataBox &out) {
+inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
+                                           Spiner::DataBox &out) {
   Real buffer[MF_S];
   // filter, overwriting as needed
   for (int iY = MF_W; iY < numYe_ - MF_W; ++iY) {
@@ -812,7 +814,8 @@ inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in, Spiner::Da
 }
 
 inline void StellarCollapse::fillMedianBuffer_(Real buffer[], int width, int iY, int iT,
-                                        int irho, const Spiner::DataBox &tab) const {
+                                               int irho,
+                                               const Spiner::DataBox &tab) const {
   int i = 0;
   for (int iWy = -width; iWy <= width; iWy++) {
     for (int iWt = -width; iWt <= width; iWt++) {
