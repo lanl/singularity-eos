@@ -21,6 +21,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
