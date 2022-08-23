@@ -31,6 +31,8 @@
 namespace singularity {
 
 using namespace eos_base;
+  
+enum class ShiftParams {shift, reference_energy};
 
 template <typename T>
 class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
@@ -55,6 +57,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<ShiftedEOS<T>>::PTofRE;
   using EosBase<ShiftedEOS<T>>::FillEos;
+  using ParamMap = std::map<ShiftParams,Real>;
 
   // give me std::format or fmt::format...
   static std::string EosType() {
@@ -64,10 +67,17 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
   // constructor with a default shift corresponding to the reference state
-  ShiftedEOS(T &&t) : t_(std::forward<T>(t)) {
-    Real rho, temp, sie, press, cv, bmod, dpde, dvdt;
-    t.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt);
-    shift_ = sie;
+  ShiftedEOS(T &&t, ParamMap params = ParamMap()) : t_(std::forward<T>(t)) {
+    if (params.count(ShiftParams::shift) > 0) {
+      shift_ = params[ShiftParams::shift];
+    } else {
+      Real ref = 0.0;
+      if (params.count(ShiftParams::reference_energy) > 0)
+        ref = params[ShiftParams::reference_energy];
+      Real rho, temp, sie, press, cv, bmod, dpde, dvdt;
+      t.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt);
+      shift_ = sie - ref;
+    }
   }
   ShiftedEOS() = default;
 
