@@ -63,6 +63,12 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
 
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
+  // constructor with a default shift corresponding to the reference state
+  ShiftedEOS(T &&t) : t_(std::forward<T>(t)) {
+    Real rho, temp, sie, press, cv, bmod, dpde, dvdt;
+    t.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt);
+    shift_ = sie;
+  }
   ShiftedEOS() = default;
 
   auto GetOnDevice() { return ShiftedEOS<T>(t_.GetOnDevice(), shift_); }
