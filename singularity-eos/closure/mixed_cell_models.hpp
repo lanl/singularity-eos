@@ -237,7 +237,7 @@ class PTESolverBase {
     } else {
       Tguess = 300.0;
       for (int m = 0; m < nmat; ++m)
-	Tguess = std::max(Tguess, temp[m]);
+        Tguess = std::max(Tguess, temp[m]);
     }
     // check for sanity.  basically checks that the input temperatures weren't garbage
     assert(Tguess < 1.0e15);
@@ -778,8 +778,9 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PTESolverFixedT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real T_true,
                   Real_t &&rho, Real_t &&vfrac, Real_t &&sie, CReal_t &&temp,
                   Real_t &&press, Lambda_t &&lambda, Real *scratch)
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(
-							 nmat, nmat, eos, vfrac_tot, 1.0, rho, vfrac, sie, temp, press, scratch, T_true) {
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat, eos, vfrac_tot, 1.0,
+                                                         rho, vfrac, sie, temp, press,
+                                                         scratch, T_true) {
     dpdv = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     Tequil = T_true;
@@ -973,8 +974,9 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PTESolverFixedP(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real P,
                   Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp,
                   CReal_t &&press, Lambda_t &&lambda, Real *scratch)
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(
-							 nmat, nmat + 1, eos, vfrac_tot, 1.0, rho, vfrac, sie, temp, press, scratch, 0.0) {
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat + 1, eos, vfrac_tot,
+                                                         1.0, rho, vfrac, sie, temp,
+                                                         press, scratch, 0.0) {
     dpdv = AssignIncrement(scratch, nmat);
     dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
