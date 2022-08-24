@@ -840,7 +840,6 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PORTABLE_INLINE_FUNCTION
   Real TestUpdate(const Real scale) {
     if (scale == 1.0) {
-      // Ttemp = Tequil;
       for (int m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
     }
@@ -851,7 +850,6 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
              eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, Cache[m]);
       sie[m] = u[m] / rhobar[m];
       u[m] /= uscale;
-      // temp[m] = Tequil;
       press[m] =
           eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]) / uscale;
     }
