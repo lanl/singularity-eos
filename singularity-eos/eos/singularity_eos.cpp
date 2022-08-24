@@ -246,32 +246,32 @@ struct EOSAccessor_ {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 // EAP centric arguments and function signature
 
-#include <signal.h>
-#include <execinfo.h>
-#include <cstdlib>
-#include <iostream>
-#include <sstream>
 #include <algorithm>
+#include <cstdlib>
+#include <execinfo.h>
+#include <iostream>
+#include <signal.h>
+#include <sstream>
 
 static inline void printBacktrace() {
   static std::vector<std::string> bt_vec;
-    void *stackBuffer[64];
-    int numAddresses = backtrace((void**) &stackBuffer, 64); 
-    char **addresses = backtrace_symbols(stackBuffer, numAddresses);
-    std::stringstream s;
-    
-    for( int i = 0 ; i < numAddresses ; ++i ) {
-      s << "[" << i << "]: " << addresses[i] << "\n";
-      //printf("[%2d]: %s\n", i, addresses[i]); 
-    }
-    const bool stack_exists = std::find(bt_vec.begin(), bt_vec.end(), s.str())
-      != bt_vec.end();
-    if(!stack_exists) {
-      bt_vec.push_back(s.str());
-      std::cout << s.str();
-    }
-    free(addresses); 
-} 
+  void *stackBuffer[64];
+  int numAddresses = backtrace((void **)&stackBuffer, 64);
+  char **addresses = backtrace_symbols(stackBuffer, numAddresses);
+  std::stringstream s;
+
+  for (int i = 0; i < numAddresses; ++i) {
+    s << "[" << i << "]: " << addresses[i] << "\n";
+    // printf("[%2d]: %s\n", i, addresses[i]);
+  }
+  const bool stack_exists =
+      std::find(bt_vec.begin(), bt_vec.end(), s.str()) != bt_vec.end();
+  if (!stack_exists) {
+    bt_vec.push_back(s.str());
+    std::cout << s.str();
+  }
+  free(addresses);
+}
 
 int get_sg_eos( // sizing information
     int nmat, int ncell, int cell_dim,
@@ -290,7 +290,7 @@ int get_sg_eos( // sizing information
     double *frac_mass, double *frac_vol, double *frac_ie,
     // optional per material quantities
     double *frac_bmod, double *frac_dpde, double *frac_cv) {
-  //printBacktrace();
+  // printBacktrace();
   // kernel return value will be the number of failures
   int ret{0};
   // handle optionals
@@ -301,8 +301,13 @@ int get_sg_eos( // sizing information
   bool do_frac_cv{true};
   if (frac_dpde == NULL || frac_dpde == nullptr) do_frac_cv = false;
   // get inputs
-  enum input_condition {RHO_T_INPUT = -3, RHO_P_INPUT = -2, P_T_INPUT=-1,
-			NORM_RHO_E_INPUT = 0, RHO_E_INPUT = 1};
+  enum input_condition {
+    RHO_T_INPUT = -3,
+    RHO_P_INPUT = -2,
+    P_T_INPUT = -1,
+    NORM_RHO_E_INPUT = 0,
+    RHO_E_INPUT = 1
+  };
   const auto input{EAPInputToBD.at(input_int)};
   const auto output = thermalqs::all_values - input;
   const bool p_is_inp{static_cast<bool>(input & thermalqs::pressure)};
@@ -500,10 +505,11 @@ int get_sg_eos( // sizing information
             const int m = pte_mats(tid, mp);
             // pressure contribution from material m
             press_v(i) += press_pte(tid, mp) * vfrac_pte(tid, mp);
-	    const Real press_eos = eos_v(pte_idxs(tid, mp))
-	      .PressureFromDensityInternalEnergy(rho_pte(tid, mp), sie_pte(tid, mp), cache[mp]);
-	    Real rel_press = std::abs(press_pte(tid, mp) - press_eos);
-	    rel_press /= std::abs(press_pte(tid, mp) + press_eos);
+            const Real press_eos = eos_v(pte_idxs(tid, mp))
+                                       .PressureFromDensityInternalEnergy(
+                                           rho_pte(tid, mp), sie_pte(tid, mp), cache[mp]);
+            Real rel_press = std::abs(press_pte(tid, mp) - press_eos);
+            rel_press /= std::abs(press_pte(tid, mp) + press_eos);
             // assign per material specific internal energy
             frac_ie_v(i, m) = sie_pte(tid, mp) * frac_mass_v(i, m) * mass_sum;
             // assign volume fraction based on pte calculation

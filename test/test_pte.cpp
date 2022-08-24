@@ -160,8 +160,8 @@ int run_sg_get_eos_tests() {
   for (int m = 0; m < NMAT; ++m) {
     max_vfrac_resid = std::max(max_vfrac_resid, std::abs(vfrac_true[m] - vfrac_check[m]) /
                                                     std::abs(vfrac_true[m]));
-    max_sie_resid = std::max(max_sie_resid, std::abs(ie_true[m] - ie_check[m]) /
-                                                std::abs(ie_true[m]));
+    max_sie_resid = std::max(max_sie_resid,
+                             std::abs(ie_true[m] - ie_check[m]) / std::abs(ie_true[m]));
   }
   if (max_vfrac_resid > 1.e-5 || max_sie_resid > 1.e-5) {
     printf("r-T: vr: %e | sr: %e\n", max_vfrac_resid, max_sie_resid);
@@ -184,8 +184,8 @@ int run_sg_get_eos_tests() {
   for (int m = 0; m < NMAT; ++m) {
     max_vfrac_resid = std::max(max_vfrac_resid, std::abs(vfrac_true[m] - vfrac_check[m]) /
                                                     std::abs(vfrac_true[m]));
-    max_sie_resid = std::max(max_sie_resid, std::abs(ie_true[m] - ie_check[m]) /
-                                                std::abs(ie_true[m]));
+    max_sie_resid = std::max(max_sie_resid,
+                             std::abs(ie_true[m] - ie_check[m]) / std::abs(ie_true[m]));
   }
   if (max_vfrac_resid > 1.e-5 || max_sie_resid > 1.e-5) {
     printf("p-T: vr: %e | sr: %e\n", max_vfrac_resid, max_sie_resid);

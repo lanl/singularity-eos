@@ -189,8 +189,8 @@ class PTESolverBase {
   void PrintSpec() const {
     printf("utot: %e Tnorm: %e\n", uscale, Tnorm);
     for (int m = 0; m < nmat; ++m) {
-      printf("r: %e vf: %e T: %e s: %e p: %e\n", rho[m],
-	     vfrac[m], temp[m]*Tnorm, sie[m]*uscale, press[m]*uscale);
+      printf("r: %e vf: %e T: %e s: %e p: %e\n", rho[m], vfrac[m], temp[m] * Tnorm,
+             sie[m] * uscale, press[m] * uscale);
     }
     return;
   }
@@ -480,8 +480,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
                 Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
                 Lambda_t &&lambda, Real *scratch)
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat + 1, eos, vfrac_tot,
-							 sie_tot, rho, vfrac, sie, temp,
-							 press, scratch) {
+                                                         sie_tot, rho, vfrac, sie, temp,
+                                                         press, scratch) {
     dpdv = AssignIncrement(scratch, nmat);
     dedv = AssignIncrement(scratch, nmat);
     dpdT = AssignIncrement(scratch, nmat);
@@ -554,8 +554,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
           eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
-        p_pert = eos[m].PressureFromDensityInternalEnergy(rho_pert, e_pert, Cache[m]) /
-                 uscale;
+        p_pert =
+            eos[m].PressureFromDensityInternalEnergy(rho_pert, e_pert, Cache[m]) / uscale;
       } else if (eos[m].PreferredInput() ==
                  (thermalqs::density | thermalqs::temperature)) {
         p_pert =
@@ -850,8 +850,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
              eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, Cache[m]);
       sie[m] = u[m] / rhobar[m];
       u[m] /= uscale;
-      press[m] =
-          eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]) / uscale;
+      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]) / uscale;
     }
     Residual();
     return ResidualNorm();
@@ -945,8 +944,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // note the scaling of the material internal energy densities
     for (int m = 0; m < nmat; ++m) {
       u[m] = sie[m] * rhobar[m] / uscale;
-      press[m] =
-          eos[m].PressureFromDensityTemperature(rho[m], Tguess, Cache[m]) / uscale;
+      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tguess, Cache[m]) / uscale;
     }
     Residual();
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -999,8 +997,8 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
           (thermalqs::density | thermalqs::specific_internal_energy)) {
         e_pert = eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil,
                                                              Cache[m]);
-        p_pert = eos[m].PressureFromDensityInternalEnergy(rho_pert, e_pert, Cache[m]) /
-                 uscale;
+        p_pert =
+            eos[m].PressureFromDensityInternalEnergy(rho_pert, e_pert, Cache[m]) / uscale;
       } else if (eos[m].PreferredInput() ==
                  (thermalqs::density | thermalqs::temperature)) {
         p_pert =
@@ -1228,8 +1226,8 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
           eos[m].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]) / Tnorm;
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
-        p_pert = eos[m].PressureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]) /
-                 uscale;
+        p_pert =
+            eos[m].PressureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]) / uscale;
       } else if (eos[m].PreferredInput() ==
                  (thermalqs::density | thermalqs::temperature)) {
         p_pert =
@@ -1244,9 +1242,9 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real de = std::abs(u[m]) * derivative_eps;
       Real e_pert = (u[m] + de) / rhobar[m];
 
-      t_pert = eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert,
-                                                           Cache[m]) /
-               Tnorm;
+      t_pert =
+          eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert, Cache[m]) /
+          Tnorm;
       if (eos[m].PreferredInput() ==
           (thermalqs::density | thermalqs::specific_internal_energy)) {
         p_pert =
@@ -1377,7 +1375,7 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
     bool success = s.Solve();
     if (!success) {
       // do something to crash out?  Tell folks what happened?
-      //printf("crashing out at iteration: %i\n", niter);
+      // printf("crashing out at iteration: %i\n", niter);
       converged = false;
       break;
     }
