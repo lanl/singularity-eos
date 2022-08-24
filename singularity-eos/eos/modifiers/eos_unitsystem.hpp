@@ -64,6 +64,11 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   using EosBase<UnitSystem<T>>::PTofRE;
   using EosBase<UnitSystem<T>>::FillEos;
 
+  // give me std::format or fmt::format...
+  static std::string EosType() {
+    return std::string("UnitSystem<") + T::EosType() + std::string(">");
+  }
+
   // move semantics ensures dynamic memory comes along for the ride
   // TODO(JMM): Entropy unit needed?
   UnitSystem(T &&t, eos_units_init::ThermalUnitsInit, const Real rho_unit,
@@ -229,8 +234,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return t_.nlambda(); }
 
-  PORTABLE_FUNCTION
-  unsigned long PreferredInput() const { return t_.PreferredInput(); }
+  static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();

@@ -214,14 +214,18 @@ if(SINGULARITY_USE_KOKKOS)
   ####
   # TODO: Once it's oppurtune, we will
   #       not support Kokkos < 3.3
-  if(${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR} VERSION_LESS "3.3")
-    message(WARNING "`Kokkos` version [${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR}] is DEPRECATED, and `singularity-eos` will not support versions < '3.3' in the very near future.")
-    if(SINGULARITY_USE_CUDA)
-      get_filename_component(_compiler_exe ${CMAKE_CXX_COMPILER} NAME)
-      if(NOT _compiler_exe STREQUAL "nvcc_wrapper")
-        message(FATAL_ERROR "To use CUDA offloading with `Kokkos` version <= 3.2, you must use `-DCMAKE_CXX_COMPILER=/path/to/kokkos/bin/nvcc_wrapper` when invoking `cmake`. You may also need to set a Kokkos target architecture via: https://github.com/kokkos/kokkos/wiki/Compiling.")
-      endif()
-   endif() #SINGULARITY_USE_CUDA
+  if((${Kokkos_VERSION_MAJOR} MATCHES "^[0-9]+$") AND (${Kokkos_VERSION_MINOR} MATCHES "^[0-9]+$"))
+    if(${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR} VERSION_LESS "3.3")
+      message(WARNING "`Kokkos` version [${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR}] is DEPRECATED, and `singularity-eos` will not support versions < '3.3' in the very near future.")
+      if(SINGULARITY_USE_CUDA)
+        get_filename_component(_compiler_exe ${CMAKE_CXX_COMPILER} NAME)
+        if(NOT _compiler_exe STREQUAL "nvcc_wrapper")
+          message(FATAL_ERROR "To use CUDA offloading with `Kokkos` version <= 3.2, you must use `-DCMAKE_CXX_COMPILER=/path/to/kokkos/bin/nvcc_wrapper` when invoking `cmake`. You may also need to set a Kokkos target architecture via: https://github.com/kokkos/kokkos/wiki/Compiling.")
+        endif()
+     endif() #SINGULARITY_USE_CUDA
+    endif() #Kokkos_VERSION_MAJOR
+  else()
+    message(WARNING "`Kokkos` version could not be inferred. Note that versions less than `3.3` are DEPRECATED and may not work properly.")
   endif() #Kokkos_VERSION_MAJOR
   ####
 endif() #SINGULARITY_USE_KOKKOS

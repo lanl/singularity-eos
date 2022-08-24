@@ -724,8 +724,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
 
-  PORTABLE_FUNCTION
-  unsigned long PreferredInput() const { return _preferred_input; }
+  static constexpr unsigned long PreferredInput() { return _preferred_input; }
   int matid() const { return matid_; }
   PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }

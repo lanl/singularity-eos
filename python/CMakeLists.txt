@@ -15,7 +15,14 @@ if(NOT pybind11_FOUND)
   endif()
 endif()
 
-pybind11_add_module(singularity_eos module.cpp)
+pybind11_add_module(singularity_eos
+  module.cpp
+  modifier_shifted.cpp
+  modifier_scaled.cpp
+  modifier_bilinear_ramp.cpp
+  modifier_relativistic.cpp
+  modifier_unit_system.cpp
+)
 target_link_libraries(singularity_eos PRIVATE singularity-eos)
 
 include(GNUInstallDirs)

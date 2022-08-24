@@ -36,6 +36,6 @@ jobs:
                   -DSINGULARITY_TEST_PYTHON=ON \
                   -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
                   ..
-            make -j
+            make
             make install
             make test

@@ -7,14 +7,18 @@
 - [[PR151]](https://github.com/lanl/singularity-eos/pull/151) fix module install
 
 ### Added (new features/APIs/variables/...)
+- [[PR164]](https://github.com/lanl/singularity-eos/pull/164) provide facilities for an initial temperature guess for PTE
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR67]](https://github.com/lanl/singularity-eos/pull/167) allow for the possiblity Kokkos version can't be inferred
 
 ### Fixed (not changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
 
 ### Removed (removing behavior/API/varaibles/...)
+
+### Added (modifiers with python bindings)
 
 ## Release 1.6.1
 Date: 07/07/2022

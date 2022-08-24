@@ -174,7 +174,7 @@ The constructor for the ``PTESolverRhoT`` is of the form
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PTESolverRhoT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
                 Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
-                Lambda_t &&lambda, Real *scratch);
+                Lambda_t &&lambda, Real *scratch, const Real Tguess = 0);
 
 where ``nmat`` is the number of materials, ``eos`` is an indexer over
 equation of state objects, one per material, and ``vfrac_tot`` is a
@@ -188,7 +188,9 @@ one per material. ``press`` is an indexer over pressures, one per
 material. ``lambda`` is an indexer over lambda arrays, one ``Real *``
 object per material. ``scratch`` is a pointer to pre-allocated scratch
 memory, as described above. It is assumed enough scratch has been
-allocated.
+allocated.  Finally, the optional argument ``Tguess`` allows for host
+codes to pass in an initial temperature guess for the solver.  For more
+information on initial guesses, see the section below.
 
 The constructor for the ``PTESolverRhoU`` has the same structure:
 
@@ -197,7 +199,8 @@ The constructor for the ``PTESolverRhoU`` has the same structure:
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PTESolverRhoU(const int nmat, const EOS_t &&eos, const Real vfrac_tot,
                 const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
-                Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch);
+                Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
+                const Real Tguess = 0);
 
 Both constructors are callable on host or device. In gerneral,
 densities and internal energies are the required inputs. However, all
@@ -218,3 +221,44 @@ example:
 
 For an example of the PTE solver machinery in use, see the
 ``test_pte.cpp`` file in the tests directory.
+
+Initial Guesses for PTE Solvers
+------------------------------------
+
+As is always the case when solving systems of nonlinear equations, good initial
+guesses are important to ensure rapid convergence to the solution.  For the PTE
+solvers, this means providing intial guesses for the material densities and the
+equilibrium temperature.  For material densities, a good initial guess is often
+the previous value obtained from a prior call to the solver. ``singularity-eos``
+does not provide any mechanism to cache these values from call to call, so it is
+up to the host code to provide these as input to the solvers.  Note that the
+input values for the material densities and volume fractions are assumed to be
+consistent with the conserved cell-averaged material densities, or in other
+words, the produce of the input material densities, volume fractions, and cell
+volume should equal the amount of mass of each material in the cell.  This
+consistency should be ensured for the input values or else the solvers will not
+provide correct answers.
+
+For the temperature initial guess, one can similarly use a previous value for
+the cell.  Alternatively, ``singularity-eos`` provides a function that can be
+used to provide an initial guess.  This function takes the form
+
+.. code-block:: cpp
+
+  template <typename EOSIndexer, typename RealIndexer>
+  PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
+    const int nmat, EOSIndexer &&eos, const Real u_tot, RealIndexer &&rho,
+    RealIndexer &&vfrac, const Real Tguess = 0.0);
+
+where ``nmat`` is the number of materials, ``eos`` is an indexer over
+equation of state objects, ``u_tot`` is the total material internal
+energy density (energy per unit volume), ``rho`` is an indexer over
+material density, ``vfrac`` is an indexer over material volume fractions,
+and the optional argument ``Tguess`` allows for callers to pass in a guess
+that could accelerate finding a solution.  This function does a 1-D root find
+to find the temperature at which the material internal energies sum to the
+total.  The root find does not have a tight tolerance -- instead the
+hard-coded tolerance was selected to balance performance with the accuracy
+desired for an initial guess in a PTE solve.  If a previous temperature value
+is unavailable or some other process may have significantly modified the
+temperature since it was last updated, this function can be quite effective.
