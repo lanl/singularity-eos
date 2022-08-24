@@ -16,6 +16,7 @@ set(EOS_HEADERS
     base/constants.hpp
     base/eos_error.hpp
     base/fast-math/logs.hpp
+    base/math_utils.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
     eos/eos.hpp

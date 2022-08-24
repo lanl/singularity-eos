@@ -142,12 +142,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   int matid() const { return matid_; }
-  PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
-  PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
-  PORTABLE_INLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
-  PORTABLE_INLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
-  PORTABLE_INLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
-  PORTABLE_INLINE_FUNCTION Real TMax() const { return TMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMax() const { return TMax_; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"SpinerEOS Parameters:"};
     static constexpr char s2[]{"depends on log_10(rho) and log_10(temp)"};
@@ -357,21 +357,23 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   int matid() const { return matid_; }
-  PORTABLE_INLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
-  PORTABLE_INLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
-  PORTABLE_INLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
-  PORTABLE_INLINE_FUNCTION Real rhoMin() const { return fromLog_(lRhoMin_, lRhoOffset_); }
-  PORTABLE_INLINE_FUNCTION Real rhoMax() const { return fromLog_(lRhoMax_, lRhoOffset_); }
-  PORTABLE_INLINE_FUNCTION Real TMin() const {
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const {
+    return fromLog_(lRhoMin_, lRhoOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMin() const {
     return fromLog_(T_.range(0).min(), lTOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real TMax() const {
+  PORTABLE_FORCEINLINE_FUNCTION Real TMax() const {
     return fromLog_(T_.range(0).max(), lTOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real sieMin() const {
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const {
     return fromLog_(sie_.range(0).min(), lEOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real sieMax() const {
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const {
     return fromLog_(sie_.range(0).max(), lEOffset_);
   }
 

@@ -185,66 +185,55 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline void computeColdAndHotCurves_();
   inline void setNormalValues_();
 
-  PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
-  checkLambda_(Real *lambda) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION void checkLambda_(Real *lambda) const noexcept {
     if (lambda == nullptr) {
       EOS_ERROR("StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
     }
   }
 
-  PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) Real
-  toLog_(const Real x, const Real offset) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x,
+                                            const Real offset) const noexcept {
     // StellarCollapse can't use fast logs, unless we re-grid onto the
     // "fast log grid"
     return std::log10(std::abs(std::max(x, -offset) + offset) + EPS);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  fromLog_(const Real lx, const Real offset) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx,
+                                              const Real offset) const noexcept {
     // StellarCollapse can't use fast logs, unless we re-grid onto the
     // "fast log grid"
     return std::pow(10., lx) - offset;
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  lRho_(const Real rho) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real lRho_(const Real rho) const noexcept {
     Real out = toLog_(rho, lRhoOffset_);
     return out;
     // return out < lRhoMin_ ? lRhoMin_ : out;
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  lT_(const Real T) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real lT_(const Real T) const noexcept {
     return toLog_(T, lTOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  rho_(const Real lRho) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real rho_(const Real lRho) const noexcept {
     Real rho = fromLog_(lRho, lRhoOffset_);
     return rho < 0 ? 0 : rho;
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  T_(const Real lT) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real T_(const Real lT) const noexcept {
     return fromLog_(lT, lTOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  le2e_(const Real le) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real le2e_(const Real le) const noexcept {
     return fromLog_(le, lEOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  e2le_(const Real e) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real e2le_(const Real e) const noexcept {
     return toLog_(e, lEOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  lP2P_(const Real lP) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real lP2P_(const Real lP) const noexcept {
     return fromLog_(lP, lPOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  P2lP_(const Real P) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real P2lP_(const Real P) const noexcept {
     return toLog_(P, lPOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  lB2B_(const Real lB) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real lB2B_(const Real lB) const noexcept {
     return fromLog_(lB, lBOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  B2lB_(const Real B) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION Real B2lB_(const Real B) const noexcept {
     return toLog_(B, lBOffset_);
   }
 
