@@ -246,33 +246,6 @@ struct EOSAccessor_ {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 // EAP centric arguments and function signature
 
-#include <algorithm>
-#include <cstdlib>
-#include <execinfo.h>
-#include <iostream>
-#include <signal.h>
-#include <sstream>
-
-static inline void printBacktrace() {
-  static std::vector<std::string> bt_vec;
-  void *stackBuffer[64];
-  int numAddresses = backtrace((void **)&stackBuffer, 64);
-  char **addresses = backtrace_symbols(stackBuffer, numAddresses);
-  std::stringstream s;
-
-  for (int i = 0; i < numAddresses; ++i) {
-    s << "[" << i << "]: " << addresses[i] << "\n";
-    // printf("[%2d]: %s\n", i, addresses[i]);
-  }
-  const bool stack_exists =
-      std::find(bt_vec.begin(), bt_vec.end(), s.str()) != bt_vec.end();
-  if (!stack_exists) {
-    bt_vec.push_back(s.str());
-    std::cout << s.str();
-  }
-  free(addresses);
-}
-
 int get_sg_eos( // sizing information
     int nmat, int ncell, int cell_dim,
     // Input parameters
