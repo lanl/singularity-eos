@@ -1266,7 +1266,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       t_pert =
           eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert, Cache[m]) /
           Tnorm;
-      p_pert = GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert, u_scale * e_pert,
+      p_pert = GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert, uscale * e_pert,
                                         Cache[m], false) /
                uscale;
       dpde[m] = (p_pert - press[m]) / de;
