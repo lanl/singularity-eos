@@ -8,9 +8,11 @@
 
 ### Added (new features/APIs/variables/...)
 - [[PR164]](https://github.com/lanl/singularity-eos/pull/164) provide facilities for an initial temperature guess for PTE
+- [[PR156]](https://github.com/lanl/singularity-eos/pull/156) This PR adds 2 new PTE solvers, solvers that obtain a PTE solution when either P or T are known. This enables mixed material rho-T and rho-P initializations to be dealt with correctly.
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR67]](https://github.com/lanl/singularity-eos/pull/167) allow for the possiblity Kokkos version can't be inferred
+- [[PR156]](https://github.com/lanl/singularity-eos/pull/156) This PR changes how the get_sg_eos function calls PTE solvers and does lookups based on input condition. Each input condition now calls into its own specialized kernel that ensures the inputs and outputs are treated appropriately.
 
 ### Fixed (not changing behavior/API/variables/...)
 
