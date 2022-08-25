@@ -228,6 +228,22 @@ class PTESolverBase {
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
+  void SetVfracFromT(const Real T) {
+    Real vsum = 0.0;
+    // set volume fractions
+    for (int m = 0; m < nmat; ++m) {
+      const Real rho_min = eos[m].RhoPmin(T);
+      const Real vmax = std::min(0.9 * rhobar[m] / rho_min, 1.0);
+      vfrac[m] = (vfrac[m] > 0.0 ? std::min(vmax, vfrac[m]) : vmax);
+      vsum += vfrac[m];
+    }
+    // Normalize vfrac
+    for (int m = 0; m < nmat; ++m) {
+      vfrac[m] *= vfrac_total / vsum;
+    }
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
   Real GetTguess() {
     // guess some non-zero temperature to start
     // If a guess was passed in, it's saved in Tnorm
@@ -245,18 +261,7 @@ class PTESolverBase {
     const Real Tfactor = 10.0;
     bool rho_fail;
     for (int i = 0; i < 3; i++) {
-      Real vsum = 0.0;
-      // set volume fractions
-      for (int m = 0; m < nmat; ++m) {
-        const Real rho_min = eos[m].RhoPmin(Tguess);
-        const Real vmax = std::min(0.9 * rhobar[m] / rho_min, 1.0);
-        vfrac[m] = (vfrac[m] > 0.0 ? std::min(vmax, vfrac[m]) : vmax);
-        vsum += vfrac[m];
-      }
-      // Normalize vfrac
-      for (int m = 0; m < nmat; ++m) {
-        vfrac[m] *= vfrac_total / vsum;
-      }
+      SetVfracFromT(Tguess);
       // check to make sure the normalization didn't put us below rho_at_pmin
       rho_fail = false;
       for (int m = 0; m < nmat; ++m) {
@@ -800,11 +805,13 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // material m averaged over the full PTE volume
     Tnorm = 1.0;
     this->InitRhoBarandRho();
-    // utotal is fake but should act as a reasonable scale factor
+    this->SetVfracFromT(Tequil);
     uscale = 0.0;
     for (int m = 0; m < nmat; m++) {
-      // scaled initial guess for temperature is just 1
-      // temp[m] = 1.0;
+      // volume fractions have been potentially reset to ensure densitites are
+      // larger than rho(Pmin(Tequil)); set the physical density to reflect
+      // this change in volume fraction
+      rho[m] = rhobar[m] / vfrac[m];
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, Cache[m]);
       uscale += sie[m] * rho[m];
       // note the scaling of pressure
@@ -825,7 +832,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       vsum += vfrac[m];
     }
     // the 1 here is the scaled volume fraction
-    residual[0] = 1.0 - vsum;
+    residual[0] = vfrac_total - vsum;
     for (int m = 0; m < nmat - 1; ++m) {
       residual[1 + m] = press[m] - press[m + 1];
     }
