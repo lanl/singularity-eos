@@ -376,11 +376,11 @@ int get_sg_eos( // sizing information
   // declare solver scratch, allocate in the case statement
   int pte_solver_scratch_size{};
   ScratchV<double> solver_scratch;
-  
+
   // create helper lambdas to reduce code duplication
-  const auto init_lambda = PORTABLE_LAMBDA
-    (const int i, const int tid, double& mass_sum, int& npte,
-     const Real t_mult, const Real s_mult, const Real p_mult) {
+  const auto init_lambda =
+      PORTABLE_LAMBDA(const int i, const int tid, double &mass_sum, int &npte,
+                      const Real t_mult, const Real s_mult, const Real p_mult) {
     // normalize mass fractions
     // first find the mass sum
     // also set idxs as the decrement of the eos offsets
@@ -397,9 +397,9 @@ int get_sg_eos( // sizing information
     npte = 0;
     for (int m = 0; m < nmat; ++m) {
       if (frac_mass_v(i, m) > 1.e-12) {
-	pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
-	pte_mats(tid, npte) = m;
-	npte += 1;
+        pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
+        pte_mats(tid, npte) = m;
+        npte += 1;
       }
       vfrac_pte(tid, m) = 0.0;
       sie_pte(tid, m) = 0.0;
@@ -415,10 +415,9 @@ int get_sg_eos( // sizing information
       sie_pte(tid, mp) = sie_v(i) * frac_mass_v(i, m) * s_mult;
     }
   };
-  const auto final_lambda = PORTABLE_LAMBDA
-    (const int i, const int tid, const int npte, const Real mass_sum,
-     const Real t_mult, const Real s_mult, const Real p_mult,
-     singularity::mix_impl::CacheAccessor& cache) {
+  const auto final_lambda = PORTABLE_LAMBDA(
+      const int i, const int tid, const int npte, const Real mass_sum, const Real t_mult,
+      const Real s_mult, const Real p_mult, singularity::mix_impl::CacheAccessor &cache) {
     // initialize averaged quantities to 0
     const bool do_t = t_mult == 1.0;
     const bool do_s = s_mult == 1.0;
@@ -451,32 +450,31 @@ int get_sg_eos( // sizing information
       frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
       // calculate bulk modulus for material m
       const Real bmod_m = eos_v(pte_idxs(tid, mp))
-	.BulkModulusFromDensityTemperature(
-					   rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+                              .BulkModulusFromDensityTemperature(
+                                  rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
       // add bmod contribution from material m
       bmod_v(i) += bmod_m * vfrac_pte(tid, mp);
       // calculate specific heat for material m
-      const Real cv_m =
-	ev2k * eos_v(pte_idxs(tid, mp))
-	.SpecificHeatFromDensityTemperature(
-					    rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+      const Real cv_m = ev2k * eos_v(pte_idxs(tid, mp))
+                                   .SpecificHeatFromDensityTemperature(
+                                       rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
       // add mass weighted contribution specific heat for material m
       cv_v(i) += cv_m * frac_mass_v(i, m);
       // calculate gruneisen parameter for material m
       const Real dpde_m = eos_v(pte_idxs(tid, mp))
-	.GruneisenParamFromDensityTemperature(
-					      rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+                              .GruneisenParamFromDensityTemperature(
+                                  rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
       // add gruneisen param contribution from material m
       dpde_v(i) += dpde_m * vfrac_pte(tid, mp);
       // optionally assign per material quantities to per material arrays
       if (do_frac_bmod) {
-	frac_bmod_v(i, m) = bmod_m;
+        frac_bmod_v(i, m) = bmod_m;
       }
       if (do_frac_cv) {
-	frac_cv_v(i, m) = cv_m;
+        frac_cv_v(i, m) = cv_m;
       }
       if (do_frac_dpde) {
-	frac_dpde_v(i, m) = dpde_m;
+        frac_dpde_v(i, m) = dpde_m;
       }
     }
     if (do_t) {
@@ -516,10 +514,10 @@ int get_sg_eos( // sizing information
           const int32_t token{tokens.acquire()};
           const int32_t tid{small_loop ? iloop : token};
           double mass_sum{0.0};
-	  int npte{0};
-	  // initialize values for solver / lookup
-	  init_lambda(i, tid, mass_sum, npte, 1.0, 0.0, 0.0);
-	  // calculate pte condition (lookup for 1 mat cell)
+          int npte{0};
+          // initialize values for solver / lookup
+          init_lambda(i, tid, mass_sum, npte, 1.0, 0.0, 0.0);
+          // calculate pte condition (lookup for 1 mat cell)
           Real sie_tot_true{0.0};
           const int neq = npte;
           singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
@@ -553,8 +551,8 @@ int get_sg_eos( // sizing information
           }
           // total sie is known
           sie_v(i) = sie_tot_true;
-	  // assign quantities
-	  final_lambda(i, tid, npte, mass_sum, 0.0, 0.0, 1.0, cache);
+          // assign quantities
+          final_lambda(i, tid, npte, mass_sum, 0.0, 0.0, 1.0, cache);
           // assign max pressure
           pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
           // release the token used for scratch arrays
@@ -581,9 +579,9 @@ int get_sg_eos( // sizing information
           const int32_t token{tokens.acquire()};
           const int32_t tid{small_loop ? iloop : token};
           double mass_sum{0.0};
-	  int npte{0};
-	  // initialize values for solver / lookup
-	  init_lambda(i, tid, mass_sum, npte, 0.0, 0.0, 1.0);
+          int npte{0};
+          // initialize values for solver / lookup
+          init_lambda(i, tid, mass_sum, npte, 0.0, 0.0, 1.0);
           Real sie_tot_true{0.0};
           const int neq = npte + 1;
           singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
@@ -626,10 +624,10 @@ int get_sg_eos( // sizing information
             // set temperature
             temp_pte(tid, 0) = temp_i;
           }
-	  // sie calculate explicitly already
-	  sie_v(i) = sie_tot_true;
-	  // assign remaining outputs
-	  final_lambda(i, tid, npte, mass_sum, 1.0, 0.0, 0.0, cache);
+          // sie calculate explicitly already
+          sie_v(i) = sie_tot_true;
+          // assign remaining outputs
+          final_lambda(i, tid, npte, mass_sum, 1.0, 0.0, 0.0, cache);
           // assign max pressure
           pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
           // release the token used for scratch arrays
@@ -639,7 +637,7 @@ int get_sg_eos( // sizing information
   }
   case P_T_INPUT: {
     // P-T input
-    const int pte_solver_scratch_size = nmat*MAX_NUM_LAMBDAS;
+    const int pte_solver_scratch_size = nmat * MAX_NUM_LAMBDAS;
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
                                       pte_solver_scratch_size);
     const std::string pt_name = "PTE::solve (P,T) input" + perf_nums;
@@ -652,7 +650,7 @@ int get_sg_eos( // sizing information
           const int32_t token{tokens.acquire()};
           const int32_t tid{small_loop ? iloop : token};
           // caching mechanism
-	  singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0));
+          singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0));
           double mass_sum{0.0};
           // normalize mass fractions
           // first find the mass sum
@@ -661,7 +659,7 @@ int get_sg_eos( // sizing information
           for (int m = 0; m < nmat; ++m) {
             mass_sum += frac_mass_v(i, m);
             pte_idxs(tid, m) = eos_offsets_v(m) - 1;
-	    pte_mats(tid, m) = m;
+            pte_mats(tid, m) = m;
             temp_pte(tid, m) = temp_v(i) * ev2k;
             press_pte(tid, m) = press_v(i);
           }
@@ -684,16 +682,16 @@ int get_sg_eos( // sizing information
             // add internal energy component
             sie_tot += sie_pte(tid, m) * frac_mass_v(i, m);
           }
-	  // assign volume, etc.
+          // assign volume, etc.
           // total sie is known
           sie_v(i) = sie_tot;
           vol_v(i) = vfrac_tot;
           spvol_v(i) = vol_v(i) / mass_sum;
-	  for (int m = 0; m < nmat; ++m) {
-	    vfrac_pte(tid, m) /= vfrac_tot;
-	  }
-	  // assign remaining outputs
-	  final_lambda(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, cache);
+          for (int m = 0; m < nmat; ++m) {
+            vfrac_pte(tid, m) /= vfrac_tot;
+          }
+          // assign remaining outputs
+          final_lambda(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, cache);
           // assign max pressure
           pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
           // release the token used for scratch arrays
@@ -719,10 +717,10 @@ int get_sg_eos( // sizing information
           const int32_t token{tokens.acquire()};
           const int32_t tid{small_loop ? iloop : token};
           double mass_sum{0.0};
-	  int npte{0};
-	  // initialize values for solver / lookup
-	  init_lambda(i, tid, mass_sum, npte, 0.0, 1.0, 0.0);
-	  // get cache from offsets into scratch
+          int npte{0};
+          // initialize values for solver / lookup
+          init_lambda(i, tid, mass_sum, npte, 0.0, 1.0, 0.0);
+          // get cache from offsets into scratch
           const int neq = npte + 1;
           singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
                                                      neq * (neq + 4) + 2 * npte);
@@ -744,8 +742,8 @@ int get_sg_eos( // sizing information
                 .PTofRE(rho_pte(tid, 0), sie_pte(tid, 0), cache[0], press_pte(tid, 0),
                         temp_pte(tid, 0), dpdr_m, dpde_m, dtdr_m, dtde_m);
           }
-	  // assign outputs
-	  final_lambda(i, tid, npte, mass_sum, 1.0, 0.0, 1.0, cache);
+          // assign outputs
+          final_lambda(i, tid, npte, mass_sum, 1.0, 0.0, 1.0, cache);
           // assign max pressure
           pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
           // release the token used for scratch arrays

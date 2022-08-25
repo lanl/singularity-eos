@@ -273,17 +273,16 @@ class PTESolverBase {
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
-  static Real GetPressureFromPreferred(const EOS& eos, const Real rho, const Real T, Real sie,
-				       Real* lambda, const bool do_e_lookup) {
+  static Real GetPressureFromPreferred(const EOS &eos, const Real rho, const Real T,
+                                       Real sie, Real *lambda, const bool do_e_lookup) {
     Real P{};
     if (eos.PreferredInput() ==
-	(thermalqs::density | thermalqs::specific_internal_energy)) {
+        (thermalqs::density | thermalqs::specific_internal_energy)) {
       if (do_e_lookup) {
-	sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
+        sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
       }
       P = eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
-    } else if (eos.PreferredInput() ==
-	       (thermalqs::density | thermalqs::temperature)) {
+    } else if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
       P = eos.PressureFromDensityTemperature(rho, T, lambda);
     }
     return P;
@@ -311,7 +310,9 @@ class PTESolverBase {
       temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, Cache[m]);
       // note the scaling of pressure
-      press[m] = GetPressureFromPreferred(eos[m], rho[m], Tguess, sie[m], Cache[m], false) / uscale;
+      press[m] =
+          GetPressureFromPreferred(eos[m], rho[m], Tguess, sie[m], Cache[m], false) /
+          uscale;
     }
 
     // note the scaling of the material internal energy densities
@@ -388,8 +389,9 @@ class PTESolverBase {
       const Real sie_m =
           eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * Tideal, Cache[m]);
       u[m] = rhobar[m] * sie_m / uscale;
-      press[m] = GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tideal, sie_m,
-					  Cache[m], false) / uscale;
+      press[m] = GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tideal, sie_m, Cache[m],
+                                          false) /
+                 uscale;
     }
     // fill in the residual
     solver->Residual();
@@ -614,7 +616,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       Real e_pert =
           eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
       p_pert = GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil, e_pert,
-					Cache[m], false) / uscale;
+                                        Cache[m], false) /
+               uscale;
       dpdv[m] = (p_pert - press[m]) / dv;
       dedv[m] = (rhobar[m] * e_pert / uscale - u[m]) / dv;
       //////////////////////////////
@@ -624,7 +627,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       e_pert = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * (Tequil + dT),
                                                            Cache[m]);
       p_pert = GetPressureFromPreferred(eos[m], rho[m], Tnorm * (Tequil + dT), e_pert,
-					Cache[m], false) / uscale;
+                                        Cache[m], false) /
+               uscale;
       dpdT[m] = (p_pert - press[m]) / dT;
       dedT_sum += (rhobar[m] * e_pert / uscale - u[m]) / dT;
     }
@@ -694,7 +698,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       u[m] /= uscale;
       temp[m] = Tequil;
       press[m] = GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tequil, sie[m],
-					  Cache[m], false) / uscale;
+                                          Cache[m], false) /
+                 uscale;
     }
     Residual();
     return ResidualNorm();
@@ -1035,15 +1040,17 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       Real p_pert{};
       Real e_pert{};
       p_pert = GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil, e_pert,
-					Cache[m], true) / uscale;
+                                        Cache[m], true) /
+               uscale;
       dpdv[m] = (p_pert - press[m]) / dv;
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
       Real dT = Tequil * derivative_eps;
-      
+
       p_pert = GetPressureFromPreferred(eos[m], rho[m], Tnorm * (Tequil + dT), e_pert,
-					Cache[m], true) / uscale;
+                                        Cache[m], true) /
+               uscale;
       dpdT[m] = (p_pert - press[m]) / dT;
     }
 
@@ -1246,7 +1253,8 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       Real t_pert =
           eos[m].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]) / Tnorm;
       p_pert = GetPressureFromPreferred(eos[m], rho_pert, Tnorm * t_pert, sie[m],
-					Cache[m], false) / uscale;
+                                        Cache[m], false) /
+               uscale;
       dpdv[m] = (p_pert - press[m]) / dv;
       dtdv[m] = (t_pert - temp[m]) / dv;
       //////////////////////////////
@@ -1259,7 +1267,8 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
           eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert, Cache[m]) /
           Tnorm;
       p_pert = GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert, u_scale * e_pert,
-					Cache[m], false) / uscale;
+                                        Cache[m], false) /
+               uscale;
       dpde[m] = (p_pert - press[m]) / de;
       dtde[m] = (t_pert - temp[m]) / de;
       if (std::abs(dtde[m]) < 1.e-16) { // must be on the cold curve
@@ -1340,7 +1349,8 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       temp[m] =
           eos[m].TemperatureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]) / Tnorm;
       press[m] = GetPressureFromPreferred(eos[m], rho[m], Tnorm * temp[m], sie[m],
-					  Cache[m], false) / uscale;
+                                          Cache[m], false) /
+                 uscale;
     }
     Residual();
     return ResidualNorm();
