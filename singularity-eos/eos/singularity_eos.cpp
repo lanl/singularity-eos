@@ -488,7 +488,6 @@ int get_sg_eos( // sizing information
       frac_mass_v(i, m) *= mass_sum;
     }
   };
-  // add characterization of solver convergence
   Kokkos::View<int, MemoryTraits<at_int>> res("PTE::num fails");
   Kokkos::View<int, MemoryTraits<at_int>> n_solves("PTE::num solves");
   const std::string perf_nums =
