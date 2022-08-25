@@ -344,15 +344,6 @@ int main(int argc, char *argv[]) {
                   NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
                   &scratch_d(t * nscratch_vars), Tguess);
           bool success = PTESolver(method);
-          //	  if (t == 0) {
-          //	    printf("\n\n---\n");
-          //	    for (int m = 0; m < NMAT; ++m) {
-          //	      printf("r: %e\n", rho[m]);
-          //	      printf("v: %e\n", vfrac[m]);
-          //	      printf("t: %e\n", temp[m]);
-          //	      printf("p: %e\n", press[m]);
-          //	    }
-          //	  }
           if (success) {
             nsuccess_d() += 1;
           }
