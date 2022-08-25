@@ -376,7 +376,120 @@ int get_sg_eos( // sizing information
   // declare solver scratch, allocate in the case statement
   int pte_solver_scratch_size{};
   ScratchV<double> solver_scratch;
-
+  
+  // create helper lambdas to reduce code duplication
+  const auto init_lambda = PORTABLE_LAMBDA
+    (const int i, const int tid, double& mass_sum, int& npte,
+     const Real t_mult, const Real s_mult, const Real p_mult) {
+    // normalize mass fractions
+    // first find the mass sum
+    // also set idxs as the decrement of the eos offsets
+    // to take into account 1 based indexing in fortran
+    for (int m = 0; m < nmat; ++m) {
+      mass_sum += frac_mass_v(i, m);
+      pte_idxs(tid, m) = eos_offsets_v(m) - 1;
+      frac_vol_v(i, m) = 0.0;
+    }
+    for (int m = 0; m < nmat; ++m) {
+      frac_mass_v(i, m) /= mass_sum;
+    }
+    // set inputs
+    npte = 0;
+    for (int m = 0; m < nmat; ++m) {
+      if (frac_mass_v(i, m) > 1.e-12) {
+	pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
+	pte_mats(tid, npte) = m;
+	npte += 1;
+      }
+      vfrac_pte(tid, m) = 0.0;
+      sie_pte(tid, m) = 0.0;
+      temp_pte(tid, m) = 0.0;
+      press_pte(tid, m) = 0.0;
+    }
+    for (int mp = 0; mp < npte; ++mp) {
+      const int m = pte_mats(tid, mp);
+      rho_pte(tid, mp) = npte / spvol_v(i) * frac_mass_v(i, m);
+      vfrac_pte(tid, mp) = 1.0 / npte;
+      temp_pte(tid, mp) = temp_v(i) * ev2k * t_mult;
+      press_pte(tid, mp) = press_v(i) * p_mult;
+      sie_pte(tid, mp) = sie_v(i) * frac_mass_v(i, m) * s_mult;
+    }
+  };
+  const auto final_lambda = PORTABLE_LAMBDA
+    (const int i, const int tid, const int npte, const Real mass_sum,
+     const Real t_mult, const Real s_mult, const Real p_mult,
+     singularity::mix_impl::CacheAccessor& cache) {
+    // initialize averaged quantities to 0
+    const bool do_t = t_mult == 1.0;
+    const bool do_s = s_mult == 1.0;
+    const bool do_p = p_mult == 1.0;
+    if (do_t) {
+      temp_v(i) = 0.0;
+    }
+    if (do_p) {
+      press_v(i) = 0.0;
+    }
+    if (do_s) {
+      sie_v(i) = 0.0;
+    }
+    bmod_v(i) = 0.0;
+    cv_v(i) = 0.0;
+    dpde_v(i) = 0.0;
+    // material loop for averaging and assigning per mat quantities
+    for (int mp = 0; mp < npte; ++mp) {
+      const int m = pte_mats(tid, mp);
+      // pressure contribution from material m
+      press_v(i) += press_pte(tid, mp) * vfrac_pte(tid, mp) * p_mult;
+      // temperature contribution from material m
+      temp_v(i) += temp_pte(tid, mp) * vfrac_pte(tid, mp) * t_mult;
+      const Real ie_m = sie_pte(tid, mp) * frac_mass_v(i, m) * mass_sum;
+      // sie contribution from material m
+      sie_v(i) += ie_m * s_mult;
+      // assign per material specific internal energy
+      frac_ie_v(i, m) = ie_m;
+      // assign volume fraction based on pte calculation
+      frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
+      // calculate bulk modulus for material m
+      const Real bmod_m = eos_v(pte_idxs(tid, mp))
+	.BulkModulusFromDensityTemperature(
+					   rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+      // add bmod contribution from material m
+      bmod_v(i) += bmod_m * vfrac_pte(tid, mp);
+      // calculate specific heat for material m
+      const Real cv_m =
+	ev2k * eos_v(pte_idxs(tid, mp))
+	.SpecificHeatFromDensityTemperature(
+					    rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+      // add mass weighted contribution specific heat for material m
+      cv_v(i) += cv_m * frac_mass_v(i, m);
+      // calculate gruneisen parameter for material m
+      const Real dpde_m = eos_v(pte_idxs(tid, mp))
+	.GruneisenParamFromDensityTemperature(
+					      rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+      // add gruneisen param contribution from material m
+      dpde_v(i) += dpde_m * vfrac_pte(tid, mp);
+      // optionally assign per material quantities to per material arrays
+      if (do_frac_bmod) {
+	frac_bmod_v(i, m) = bmod_m;
+      }
+      if (do_frac_cv) {
+	frac_cv_v(i, m) = cv_m;
+      }
+      if (do_frac_dpde) {
+	frac_dpde_v(i, m) = dpde_m;
+      }
+    }
+    if (do_t) {
+      temp_v(i) /= ev2k;
+    }
+    if (do_s) {
+      sie_v(i) /= mass_sum;
+    }
+    // reset mass fractions to original values if not normalized to 1
+    for (int m = 0; m < nmat; ++m) {
+      frac_mass_v(i, m) *= mass_sum;
+    }
+  };
   // add characterization of solver convergence
   Kokkos::View<int, MemoryTraits<at_int>> res("PTE::num fails");
   Kokkos::View<int, MemoryTraits<at_int>> n_solves("PTE::num solves");
@@ -403,38 +516,10 @@ int get_sg_eos( // sizing information
           const int32_t token{tokens.acquire()};
           const int32_t tid{small_loop ? iloop : token};
           double mass_sum{0.0};
-          // normalize mass fractions
-          // first find the mass sum
-          // also set idxs as the decrement of the eos offsets
-          // to take into account 1 based indexing in fortran
-          for (int m = 0; m < nmat; ++m) {
-            mass_sum += frac_mass_v(i, m);
-            pte_idxs(tid, m) = eos_offsets_v(m) - 1;
-            frac_vol_v(i, m) = 0.0;
-          }
-          for (int m = 0; m < nmat; ++m) {
-            frac_mass_v(i, m) /= mass_sum;
-          }
-          // set inputs
-          int npte = 0;
-          for (int m = 0; m < nmat; ++m) {
-            if (frac_mass_v(i, m) > 1.e-12) {
-              pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
-              pte_mats(tid, npte) = m;
-              npte += 1;
-            }
-            vfrac_pte(tid, m) = 0.0;
-            sie_pte(tid, m) = 0.0;
-            temp_pte(tid, m) = 0.0;
-            press_pte(tid, m) = 0.0;
-          }
-
-          for (int mp = 0; mp < npte; ++mp) {
-            const int m = pte_mats(tid, mp);
-            rho_pte(tid, mp) = npte / spvol_v(i) * frac_mass_v(i, m);
-            vfrac_pte(tid, mp) = 1.0 / npte;
-            temp_pte(tid, mp) = temp_v(i) * ev2k;
-          }
+	  int npte{0};
+	  // initialize values for solver / lookup
+	  init_lambda(i, tid, mass_sum, npte, 1.0, 0.0, 0.0);
+	  // calculate pte condition (lookup for 1 mat cell)
           Real sie_tot_true{0.0};
           const int neq = npte;
           singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
@@ -466,60 +551,10 @@ int get_sg_eos( // sizing information
                                     .PressureFromDensityTemperature(
                                         rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
           }
-          // since rho_ptes are correct, now do rho-T lookups for remaining quantities
-          // first zero out quantities to be averaged
-          press_v(i) = 0.0;
-          bmod_v(i) = 0.0;
-          cv_v(i) = 0.0;
-          dpde_v(i) = 0.0;
           // total sie is known
           sie_v(i) = sie_tot_true;
-          for (int mp = 0; mp < npte; ++mp) {
-            const int m = pte_mats(tid, mp);
-            // pressure contribution from material m
-            press_v(i) += press_pte(tid, mp) * vfrac_pte(tid, mp);
-            const Real press_eos = eos_v(pte_idxs(tid, mp))
-                                       .PressureFromDensityInternalEnergy(
-                                           rho_pte(tid, mp), sie_pte(tid, mp), cache[mp]);
-            Real rel_press = std::abs(press_pte(tid, mp) - press_eos);
-            rel_press /= std::abs(press_pte(tid, mp) + press_eos);
-            // assign per material specific internal energy
-            frac_ie_v(i, m) = sie_pte(tid, mp) * frac_mass_v(i, m) * mass_sum;
-            // assign volume fraction based on pte calculation
-            frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
-            // calculate bulk modulus for material m
-            const Real bmod_m = eos_v(pte_idxs(tid, mp))
-                                    .BulkModulusFromDensityTemperature(
-                                        rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
-            // add bmod contribution from material m
-            bmod_v(i) += bmod_m * vfrac_pte(tid, mp);
-            // calculate specific heat for material m
-            const Real cv_m =
-                ev2k * eos_v(pte_idxs(tid, mp))
-                           .SpecificHeatFromDensityTemperature(
-                               rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
-            // add mass weighted contribution specific heat for material m
-            cv_v(i) += cv_m * frac_mass_v(i, m);
-            // calculate gruneisen parameter for material m
-            const Real dpde_m = eos_v(pte_idxs(tid, mp))
-                                    .GruneisenParamFromDensityTemperature(
-                                        rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
-            // add gruneisen param contribution from material m
-            dpde_v(i) += dpde_m * vfrac_pte(tid, mp);
-            // optionally assign per material quantities to per material arrays
-            if (do_frac_bmod) {
-              frac_bmod_v(i, m) = bmod_m;
-            }
-            if (do_frac_cv) {
-              frac_cv_v(i, m) = cv_m;
-            }
-            if (do_frac_dpde) {
-              frac_dpde_v(i, m) = dpde_m;
-            }
-          }
-          for (int m = 0; m < nmat; ++m) {
-            frac_mass_v(i, m) *= mass_sum;
-          }
+	  // assign quantities
+	  final_lambda(i, tid, npte, mass_sum, 0.0, 0.0, 1.0, cache);
           // assign max pressure
           pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
           // release the token used for scratch arrays
@@ -546,37 +581,9 @@ int get_sg_eos( // sizing information
           const int32_t token{tokens.acquire()};
           const int32_t tid{small_loop ? iloop : token};
           double mass_sum{0.0};
-          // normalize mass fractions
-          // first find the mass sum
-          // also set idxs as the decrement of the eos offsets
-          // to take into account 1 based indexing in fortran
-          for (int m = 0; m < nmat; ++m) {
-            mass_sum += frac_mass_v(i, m);
-            pte_idxs(tid, m) = eos_offsets_v(m) - 1;
-            frac_vol_v(i, m) = 0.0;
-          }
-          for (int m = 0; m < nmat; ++m) {
-            frac_mass_v(i, m) /= mass_sum;
-          }
-          // set inputs
-          int npte = 0;
-          for (int m = 0; m < nmat; ++m) {
-            if (frac_mass_v(i, m) > 1.e-12) {
-              pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
-              pte_mats(tid, npte) = m;
-              npte += 1;
-            }
-            vfrac_pte(tid, m) = 0.0;
-            sie_pte(tid, m) = 0.0;
-            press_pte(tid, m) = press_v(i);
-            temp_pte(tid, m) = 0.0;
-          }
-
-          for (int mp = 0; mp < npte; ++mp) {
-            const int m = pte_mats(tid, mp);
-            rho_pte(tid, mp) = npte / spvol_v(i) * frac_mass_v(i, m);
-            vfrac_pte(tid, mp) = 1.0 / npte;
-          }
+	  int npte{0};
+	  // initialize values for solver / lookup
+	  init_lambda(i, tid, mass_sum, npte, 0.0, 0.0, 1.0);
           Real sie_tot_true{0.0};
           const int neq = npte + 1;
           singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
@@ -619,56 +626,10 @@ int get_sg_eos( // sizing information
             // set temperature
             temp_pte(tid, 0) = temp_i;
           }
-          // since rho_ptes are correct, now do rho-T lookups for remaining quantities
-          // first zero out quantities to be averaged
-          temp_v(i) = 0.0;
-          bmod_v(i) = 0.0;
-          cv_v(i) = 0.0;
-          dpde_v(i) = 0.0;
-          // total sie is known
-          sie_v(i) = sie_tot_true;
-          for (int mp = 0; mp < npte; ++mp) {
-            const int m = pte_mats(tid, mp);
-            temp_v(i) += temp_pte(tid, mp) * vfrac_pte(tid, mp);
-            // assign per material specific internal energy
-            frac_ie_v(i, m) = sie_pte(tid, mp) * frac_mass_v(i, m) * mass_sum;
-            // assign volume fraction based on pte calculation
-            frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
-            // calculate bulk modulus for material m
-            const Real bmod_m = eos_v(pte_idxs(tid, mp))
-                                    .BulkModulusFromDensityTemperature(
-                                        rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
-            // add bmod contribution from material m
-            bmod_v(i) += bmod_m * vfrac_pte(tid, mp);
-            // calculate specific heat for material m
-            const Real cv_m =
-                ev2k * eos_v(pte_idxs(tid, mp))
-                           .SpecificHeatFromDensityTemperature(
-                               rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
-            // add mass weighted contribution specific heat for material m
-            cv_v(i) += cv_m * frac_mass_v(i, m);
-            // calculate gruneisen parameter for material m
-            const Real dpde_m = eos_v(pte_idxs(tid, mp))
-                                    .GruneisenParamFromDensityTemperature(
-                                        rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
-            // add gruneisen param contribution from material m
-            dpde_v(i) += dpde_m * vfrac_pte(tid, mp);
-            // optionally assign per material quantities to per material arrays
-            if (do_frac_bmod) {
-              frac_bmod_v(i, m) = bmod_m;
-            }
-            if (do_frac_cv) {
-              frac_cv_v(i, m) = cv_m;
-            }
-            if (do_frac_dpde) {
-              frac_dpde_v(i, m) = dpde_m;
-            }
-          }
-          for (int m = 0; m < nmat; ++m) {
-            frac_mass_v(i, m) *= mass_sum;
-          }
-          // convert to ev
-          temp_v(i) /= ev2k;
+	  // sie calculate explicitly already
+	  sie_v(i) = sie_tot_true;
+	  // assign remaining outputs
+	  final_lambda(i, tid, npte, mass_sum, 1.0, 0.0, 0.0, cache);
           // assign max pressure
           pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
           // release the token used for scratch arrays
@@ -678,6 +639,9 @@ int get_sg_eos( // sizing information
   }
   case P_T_INPUT: {
     // P-T input
+    const int pte_solver_scratch_size = nmat*MAX_NUM_LAMBDAS;
+    solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
+                                      pte_solver_scratch_size);
     const std::string pt_name = "PTE::solve (P,T) input" + perf_nums;
     portableFor(
         pt_name.c_str(), 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
@@ -688,7 +652,7 @@ int get_sg_eos( // sizing information
           const int32_t token{tokens.acquire()};
           const int32_t tid{small_loop ? iloop : token};
           // caching mechanism
-          Real cache[MAX_NUM_LAMBDAS];
+	  singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0));
           double mass_sum{0.0};
           // normalize mass fractions
           // first find the mass sum
@@ -697,13 +661,13 @@ int get_sg_eos( // sizing information
           for (int m = 0; m < nmat; ++m) {
             mass_sum += frac_mass_v(i, m);
             pte_idxs(tid, m) = eos_offsets_v(m) - 1;
+	    pte_mats(tid, m) = m;
             temp_pte(tid, m) = temp_v(i) * ev2k;
             press_pte(tid, m) = press_v(i);
           }
           for (int m = 0; m < nmat; ++m) {
             frac_mass_v(i, m) /= mass_sum;
           }
-
           // do r-e of pt for each mat
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
           Real vfrac_tot{0.0};
@@ -711,7 +675,7 @@ int get_sg_eos( // sizing information
           for (int m = 0; m < nmat; ++m) {
             // obtain rho and sie from P-T
             eos_inx[m].DensityEnergyFromPressureTemperature(
-                press_pte(tid, m), temp_pte(tid, m), cache, rho_pte(tid, m),
+                press_pte(tid, m), temp_pte(tid, m), cache[m], rho_pte(tid, m),
                 sie_pte(tid, m));
             // assign volume fractions
             // this is a physical volume
@@ -720,52 +684,16 @@ int get_sg_eos( // sizing information
             // add internal energy component
             sie_tot += sie_pte(tid, m) * frac_mass_v(i, m);
           }
-          // since rho_ptes are correct, now do rho-T lookups for remaining quantities
-          // first zero out quantities to be averaged
-          bmod_v(i) = 0.0;
-          cv_v(i) = 0.0;
-          dpde_v(i) = 0.0;
+	  // assign volume, etc.
           // total sie is known
           sie_v(i) = sie_tot;
           vol_v(i) = vfrac_tot;
           spvol_v(i) = vol_v(i) / mass_sum;
-          for (int m = 0; m < nmat; ++m) {
-            // assign per material specific internal energy
-            frac_ie_v(i, m) = sie_pte(tid, m) * frac_mass_v(i, m) * mass_sum;
-            // apply normalization to to vfrac
-            vfrac_pte(tid, m) /= vfrac_tot;
-            // assign volume fraction based on pte calculation
-            frac_vol_v(i, m) = vfrac_pte(tid, m) * vol_v(i);
-            // calculate bulk modulus for material m
-            const Real bmod_m = eos_v(pte_idxs(tid, m))
-                                    .BulkModulusFromDensityTemperature(
-                                        rho_pte(tid, m), temp_pte(tid, m), cache);
-            // add bmod contribution from material m
-            bmod_v(i) += bmod_m * vfrac_pte(tid, m);
-            // calculate specific heat for material m
-            const Real cv_m = ev2k * eos_v(pte_idxs(tid, m))
-                                         .SpecificHeatFromDensityTemperature(
-                                             rho_pte(tid, m), temp_pte(tid, m), cache);
-            // add mass weighted contribution specific heat for material m
-            cv_v(i) += cv_m * frac_mass_v(i, m);
-            frac_mass_v(i, m) *= mass_sum;
-            // calculate gruneisen parameter for material m
-            const Real dpde_m = eos_v(pte_idxs(tid, m))
-                                    .GruneisenParamFromDensityTemperature(
-                                        rho_pte(tid, m), temp_pte(tid, m), cache);
-            // add gruneisen param contribution from material m
-            dpde_v(i) += dpde_m * vfrac_pte(tid, m);
-            // optionally assign per material quantities to per material arrays
-            if (do_frac_bmod) {
-              frac_bmod_v(i, m) = bmod_m;
-            }
-            if (do_frac_cv) {
-              frac_cv_v(i, m) = cv_m;
-            }
-            if (do_frac_dpde) {
-              frac_dpde_v(i, m) = dpde_m;
-            }
-          }
+	  for (int m = 0; m < nmat; ++m) {
+	    vfrac_pte(tid, m) /= vfrac_tot;
+	  }
+	  // assign remaining outputs
+	  final_lambda(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, cache);
           // assign max pressure
           pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
           // release the token used for scratch arrays
@@ -791,38 +719,10 @@ int get_sg_eos( // sizing information
           const int32_t token{tokens.acquire()};
           const int32_t tid{small_loop ? iloop : token};
           double mass_sum{0.0};
-          // normalize mass fractions
-          // first find the mass sum
-          // also set idxs as the decrement of the eos offsets
-          // to take into account 1 based indexing in fortran
-          for (int m = 0; m < nmat; ++m) {
-            mass_sum += frac_mass_v(i, m);
-            pte_idxs(tid, m) = eos_offsets_v(m) - 1;
-          }
-          for (int m = 0; m < nmat; ++m) {
-            frac_mass_v(i, m) /= mass_sum;
-          }
-          // set inputs
-          int npte = 0;
-          for (int m = 0; m < nmat; ++m) {
-            if (frac_mass_v(i, m) > 1.e-12) {
-              pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
-              pte_mats(tid, npte) = m;
-              npte += 1;
-            }
-            vfrac_pte(tid, m) = 0.0;
-            sie_pte(tid, m) = 0.0;
-            temp_pte(tid, m) = 0.0;
-            press_pte(tid, m) = 0.0;
-          }
-          for (int mp = 0; mp < npte; ++mp) {
-            const int m = pte_mats(tid, mp);
-            rho_pte(tid, mp) = npte / spvol_v(i) * frac_mass_v(i, m);
-            vfrac_pte(tid, mp) = 1.0 / npte;
-            sie_pte(tid, mp) = sie_v(i) * frac_mass_v(i, m);
-            temp_pte(tid, mp) = 0.0;
-            press_pte(tid, mp) = 0.0;
-          }
+	  int npte{0};
+	  // initialize values for solver / lookup
+	  init_lambda(i, tid, mass_sum, npte, 0.0, 1.0, 0.0);
+	  // get cache from offsets into scratch
           const int neq = npte + 1;
           singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
                                                      neq * (neq + 4) + 2 * npte);
@@ -844,58 +744,8 @@ int get_sg_eos( // sizing information
                 .PTofRE(rho_pte(tid, 0), sie_pte(tid, 0), cache[0], press_pte(tid, 0),
                         temp_pte(tid, 0), dpdr_m, dpde_m, dtdr_m, dtde_m);
           }
-          // since rho_ptes are correct, now do rho-T lookups for remaining quantities
-          // first zero out quantities to be averaged
-          press_v(i) = 0.0;
-          temp_v(i) = 0.0;
-          bmod_v(i) = 0.0;
-          cv_v(i) = 0.0;
-          dpde_v(i) = 0.0;
-          for (int mp = 0; mp < npte; ++mp) {
-            const int m = pte_mats(tid, mp);
-            // pressure contribution from material m
-            press_v(i) += press_pte(tid, mp) * vfrac_pte(tid, mp);
-            // temperature averaging
-            temp_v(i) += temp_pte(tid, mp) * vfrac_pte(tid, mp);
-            // assign per material specific internal energy
-            frac_ie_v(i, m) = sie_pte(tid, mp) * frac_mass_v(i, m) * mass_sum;
-            // assign volume fraction based on pte calculation
-            frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
-            // calculate bulk modulus for material m
-            const Real bmod_m = eos_v(pte_idxs(tid, mp))
-                                    .BulkModulusFromDensityTemperature(
-                                        rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
-            // add bmod contribution from material m
-            bmod_v(i) += bmod_m * vfrac_pte(tid, mp);
-            // calculate specific heat for material m
-            const Real cv_m =
-                ev2k * eos_v(pte_idxs(tid, mp))
-                           .SpecificHeatFromDensityTemperature(
-                               rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
-            // add mass weighted contribution specific heat for material m
-            cv_v(i) += cv_m * frac_mass_v(i, m);
-            // calculate gruneisen parameter for material m
-            const Real dpde_m = eos_v(pte_idxs(tid, mp))
-                                    .GruneisenParamFromDensityTemperature(
-                                        rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
-            // add gruneisen param contribution from material m
-            dpde_v(i) += dpde_m * vfrac_pte(tid, mp);
-            // optionally assign per material quantities to per material arrays
-            if (do_frac_bmod) {
-              frac_bmod_v(i, m) = bmod_m;
-            }
-            if (do_frac_cv) {
-              frac_cv_v(i, m) = cv_m;
-            }
-            if (do_frac_dpde) {
-              frac_dpde_v(i, m) = dpde_m;
-            }
-          }
-          for (int m = 0; m < nmat; ++m) {
-            frac_mass_v(i, m) *= mass_sum;
-          }
-          // convert temperature to ev from kelvin
-          temp_v(i) /= ev2k;
+	  // assign outputs
+	  final_lambda(i, tid, npte, mass_sum, 1.0, 0.0, 1.0, cache);
           // assign max pressure
           pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
           // release the token used for scratch arrays
