@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#ifndef _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
 #ifdef SPINER_USE_HDF
 
 #include <algorithm>
@@ -26,18 +28,419 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
+// ports-of-call
 #include <ports-of-call/portability.hpp>
+
+// base
+#include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
-#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
+
+// spiner
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
+#include <spiner/spiner_types.hpp>
 
 #define SPINER_EOS_VERBOSE (0)
 #define ROOT_FINDER (RootFinding1D::regula_falsi)
 
 namespace singularity {
+
+using namespace eos_base;
+
+/*
+  Tables all have indep. variables log10(rho), log10(T)
+
+  Extrapolation strategy:
+  ------------------------------------------------------------
+  We use cold curve for low temperatures/energies
+  and assume ideal gas for large temperatures/energies.
+
+  For low densities, we floor the density. For high densities, we
+  we use log-linear extrapolation.
+*/
+class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
+ public:
+  // A weakly typed index map for lambdas
+  struct Lambda {
+    enum Index { lRho = 0, lT = 1 };
+  };
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<SpinerEOSDependsRhoT>::TemperatureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::InternalEnergyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::PTofRE;
+  using EosBase<SpinerEOSDependsRhoT>::FillEos;
+
+  inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
+                              bool reproduciblity_mode = false);
+  inline SpinerEOSDependsRhoT(const std::string &filename,
+                              const std::string &materialName,
+                              bool reproducibility_mode = false);
+  PORTABLE_INLINE_FUNCTION
+  SpinerEOSDependsRhoT() : memoryStatus_(DataStatus::Deallocated) {}
+
+  inline SpinerEOSDependsRhoT GetOnDevice();
+
+  PORTABLE_INLINE_FUNCTION
+  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real PressureFromDensityTemperature(const Real rho, const Real temperature,
+                                      Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
+                                          Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
+                                             Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
+                                         Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
+                                               Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                            Real *lambda, Real &rho, Real &sie) const;
+  PORTABLE_INLINE_FUNCTION
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const;
+
+  PORTABLE_INLINE_FUNCTION
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
+                              Real *lambda = nullptr) const;
+
+  PORTABLE_INLINE_FUNCTION
+  Real RhoPmin(const Real temp) const;
+
+  static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  int matid() const { return matid_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMax() const { return TMax_; }
+  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+    static constexpr char s1[]{"SpinerEOS Parameters:"};
+    static constexpr char s2[]{"depends on log_10(rho) and log_10(temp)"};
+    static constexpr char s3[]{"EOS file   = "};
+    static constexpr char s4[]{"EOS mat ID = "};
+    static constexpr char s5[]{"EOS name   = "};
+    printf("%s\n\t%s\n\t%s\n\t%s%i\n\t%s\n", s1, s2, s3, s4, matid_, s5);
+    return;
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
+  PORTABLE_INLINE_FUNCTION
+  int nlambda() const noexcept { return _n_lambda; }
+  PORTABLE_INLINE_FUNCTION
+  RootFinding1D::Status rootStatus() const { return status_; }
+  PORTABLE_INLINE_FUNCTION
+  TableStatus tableStatus() const { return whereAmI_; }
+  RootFinding1D::RootCounts counts;
+  inline void Finalize();
+  static std::string EosType() { return std::string("SpinerEOSDependsRhoT"); }
+
+ private:
+  herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
+                        hid_t coldGroup);
+  inline void fixBulkModulus_();
+  inline void setlTColdCrit_();
+
+  static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
+    // return std::log10(x + offset + EPS);
+    // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+  }
+  static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
+    return FastMath::pow10(lx) - offset;
+  }
+  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
+  lRho_(const Real rho) const noexcept {
+    Real out = toLog_(rho, lRhoOffset_);
+    return out;
+    // return out < lRhoMin_ ? lRhoMin_ : out;
+  }
+  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
+  lT_(const Real T) const noexcept {
+    return toLog_(T, lTOffset_);
+  }
+  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
+  rho_(const Real lRho) const noexcept {
+    Real rho = fromLog_(lRho, lRhoOffset_);
+    return rho < 0 ? 0 : rho;
+  }
+  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
+  T_(const Real lT) const noexcept {
+    return fromLog_(lT, lTOffset_);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real lTFromlRhoSie_(const Real lRho, const Real sie, TableStatus &whereAmI,
+                      Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real lTFromlRhoP_(const Real lRho, const Real press, TableStatus &whereAmI,
+                    Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real lRhoFromPlT_(const Real P, const Real lT, TableStatus &whereAmI,
+                    Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  void getLogsRhoT_(const Real rho, const Real temperature, Real &lRho, Real &lT,
+                    Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real sieFromlRhoTlT_(const Real lRho, const Real T, const Real lT,
+                       const TableStatus &whereAmI) const;
+  PORTABLE_INLINE_FUNCTION
+  Real PFromRholRhoTlT_(const Real rho, const Real lRho, const Real T, const Real lT,
+                        const TableStatus &whereAmI) const;
+  PORTABLE_INLINE_FUNCTION
+  Real CvFromlRholT_(const Real lRho, const Real lT, const TableStatus &whereAmI) const;
+  PORTABLE_INLINE_FUNCTION
+  Real bModFromRholRhoTlT_(const Real rho, const Real lRho, const Real T, const Real lT,
+                           const TableStatus &whereAmI) const;
+  PORTABLE_INLINE_FUNCTION
+  TableStatus getLocDependsRhoSie_(const Real lRho, const Real sie) const;
+  PORTABLE_INLINE_FUNCTION
+  TableStatus getLocDependsRhoT_(const Real lRho, const Real lT) const;
+  // PORTABLE_INLINE_FUNCTION
+  // Real sieToColdInterval_(const Real lRho, const Real sie) const;
+
+  static constexpr const unsigned long _preferred_input =
+      thermalqs::density | thermalqs::temperature;
+  // static constexpr const char _eos_type[] {"SpinerEOSDependsRhoT"};
+  static constexpr const int numDataBoxes_ = 12;
+  Spiner::DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
+  Spiner::DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
+  Spiner::DataBox lTColdCrit_;
+  Spiner::DataBox PCold_, sieCold_, bModCold_;
+  Spiner::DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
+  Spiner::DataBox rho_at_pmin_;
+  int numRho_, numT_;
+  Real lRhoMin_, lRhoMax_, rhoMax_;
+  Real lRhoMinSearch_;
+  Real lTMin_, lTMax_, TMax_;
+  Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
+  Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
+  Real lRhoOffset_, lTOffset_; // offsets must be non-negative
+  int matid_;
+  bool reproducible_;
+  // whereAmI_ and status_ used only for reporting. They are not thread-safe.
+  mutable TableStatus whereAmI_ = TableStatus::OnTable;
+  mutable RootFinding1D::Status status_ = RootFinding1D::Status::SUCCESS;
+  static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
+  static constexpr const Real SOFT_THRESH = 1e-8;
+  DataStatus memoryStatus_ = DataStatus::Deallocated;
+  static constexpr const int _n_lambda = 2;
+  static constexpr const char *_lambda_names[2] = {"log(rho)", "log(T)"};
+};
+
+/*
+  TODO(JMM): Extrapolation Strategy
+  ----------------------------------
+  Currently the bottom of the table is the bound.
+  We do constant extrapolation off the bottom of the table
+  and linear extrapolation off the top.
+
+  Since the table is in log-log space, this means extrapolation off
+  the top is a power law. Extrapolation off the bottom is constant.
+  This worked for nubhlight. But it may or may not work here. We will
+  potentially need to revisit this.
+
+  The best solution might be a three-part EOS matched to the bottom of
+  the table, containing:
+  - A polytropic term
+  - A photon pressure term
+  - An ideal gas term
+  mitigated by Ye and (1-Ye) to control how important each term is.
+ */
+class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
+ public:
+  struct SP5Tables {
+    Spiner::DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
+  };
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<SpinerEOSDependsRhoSie>::TemperatureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::InternalEnergyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::PTofRE;
+  using EosBase<SpinerEOSDependsRhoSie>::FillEos;
+
+  PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
+      : memoryStatus_(DataStatus::Deallocated) {}
+  inline SpinerEOSDependsRhoSie(const std::string &filename, int matid,
+                                bool reproducibility_mode = false);
+  inline SpinerEOSDependsRhoSie(const std::string &filename,
+                                const std::string &materialName,
+                                bool reproducibility_mode = false);
+  inline SpinerEOSDependsRhoSie GetOnDevice();
+
+  PORTABLE_INLINE_FUNCTION
+  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real T,
+                                            Real *lambda = nullptr) const;
+
+  PORTABLE_INLINE_FUNCTION
+  Real PressureFromDensityTemperature(const Real rho, const Real T,
+                                      Real *lambda = nullptr) const;
+
+  PORTABLE_INLINE_FUNCTION
+  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real T,
+                                          Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
+                                             Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real BulkModulusFromDensityTemperature(const Real rho, const Real T,
+                                         Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real T,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
+                                               Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                            Real *lambda, Real &rho, Real &sie) const;
+  PORTABLE_INLINE_FUNCTION
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
+                              Real *lambda = nullptr) const;
+
+  static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  int matid() const { return matid_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const {
+    return fromLog_(lRhoMin_, lRhoOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMin() const {
+    return fromLog_(T_.range(0).min(), lTOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMax() const {
+    return fromLog_(T_.range(0).max(), lTOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const {
+    return fromLog_(sie_.range(0).min(), lEOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const {
+    return fromLog_(sie_.range(0).max(), lEOffset_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
+
+  PORTABLE_INLINE_FUNCTION
+  int nlambda() const noexcept { return _n_lambda; }
+  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+    static constexpr char s1[]{"SpinerEOS Parameters:"};
+    static constexpr char s2[]{"depends on log_10(rho) and log_10(sie)"};
+    static constexpr char s3[]{"EOS mat ID = "};
+    printf("%s\n\t%s\n\t%s%i\n", s1, s2, s3, matid_);
+    return;
+  }
+  PORTABLE_INLINE_FUNCTION
+  RootFinding1D::Status rootStatus() const { return status_; }
+  RootFinding1D::RootCounts counts;
+  static std::string EosType() { return std::string("SpinerEOSDependsRhoSie"); }
+  inline void Finalize();
+
+ private:
+  inline herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
+                               hid_t lEGroup);
+  inline void calcBMod_(SP5Tables &tables);
+
+  static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
+    // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+  }
+  static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
+    return FastMath::pow10(lx) - offset;
+  }
+  PORTABLE_INLINE_FUNCTION
+  Real interpRhoT_(const Real rho, const Real T, const Spiner::DataBox &db,
+                   Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real interpRhoSie_(const Real rho, const Real sie, const Spiner::DataBox &db,
+                     Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real lRhoFromPlT_(const Real P, const Real lT, Real *lambda) const;
+
+  Spiner::DataBox sie_; // depends on (rho,T)
+  Spiner::DataBox T_;   // depends on (rho, sie)
+  SP5Tables dependsRhoT_;
+  SP5Tables dependsRhoSie_;
+  int numRho_;
+  Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
+  Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
+  Real lRhoMin_, lRhoMax_, rhoMax_;
+  Spiner::DataBox PlRhoMax_, dPdRhoMax_;
+
+  Real lRhoOffset_, lTOffset_, lEOffset_; // offsets must be non-negative
+
+  static constexpr unsigned long _preferred_input =
+      thermalqs::density | thermalqs::temperature;
+  // static constexpr const char _eos_type[] = "SpinerEOSDependsRhoSie";
+  int matid_;
+  bool reproducible_;
+  mutable RootFinding1D::Status status_;
+  static constexpr const int _n_lambda = 1;
+  static constexpr const char *_lambda_names[1] = {"log(rho)"};
+  DataStatus memoryStatus_ = DataStatus::Deallocated;
+};
+
+// implementation details below
+// ======================================================================
 
 // TODO: we're using log-linear interpolation, not log-log
 // this may be suboptimal. We may want a way to do some variables
@@ -106,8 +509,8 @@ class interp {
 };
 } // namespace callable_interp
 
-SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, int matid,
-                                           bool reproducibility_mode)
+inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, int matid,
+                                                  bool reproducibility_mode)
     : matid_(matid), reproducible_(reproducibility_mode),
       status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
@@ -132,9 +535,9 @@ SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, int mati
   }
 }
 
-SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
-                                           const std::string &materialName,
-                                           bool reproducibility_mode)
+inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
+                                                  const std::string &materialName,
+                                                  bool reproducibility_mode)
     : reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
       memoryStatus_(DataStatus::OnHost) {
 
@@ -163,7 +566,7 @@ SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
   }
 }
 
-SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
+inline SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
   SpinerEOSDependsRhoT other;
   other.P_ = Spiner::getOnDeviceDataBox(P_);
   other.sie_ = Spiner::getOnDeviceDataBox(sie_);
@@ -241,8 +644,9 @@ void SpinerEOSDependsRhoT::Finalize() {
   memoryStatus_ = DataStatus::Deallocated;
 }
 
-herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str, hid_t file,
-                                            hid_t lTGroup, hid_t coldGroup) {
+inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
+                                                   hid_t file, hid_t lTGroup,
+                                                   hid_t coldGroup) {
   herr_t status = H5_SUCCESS;
 
   // offsets
@@ -380,7 +784,7 @@ herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str, hid_t 
   return status;
 }
 
-void SpinerEOSDependsRhoT::fixBulkModulus_() {
+inline void SpinerEOSDependsRhoT::fixBulkModulus_() {
   // assumes all databoxes are the same size
   // TODO: do we need to smooth this data with a median filter
   // or something like that?
@@ -407,7 +811,7 @@ void SpinerEOSDependsRhoT::fixBulkModulus_() {
   }
 }
 
-void SpinerEOSDependsRhoT::setlTColdCrit_() {
+inline void SpinerEOSDependsRhoT::setlTColdCrit_() {
   lTColdCrit_.copyMetadata(bModCold_);
   for (int j = 0; j < numRho_; j++) {
     Real lRho = bModCold_.range(0).x(j);
@@ -468,7 +872,7 @@ void SpinerEOSDependsRhoT::setlTColdCrit_() {
   }
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::TemperatureFromDensityInternalEnergy(const Real rho,
                                                                 const Real sie,
                                                                 Real *lambda) const {
@@ -478,7 +882,7 @@ Real SpinerEOSDependsRhoT::TemperatureFromDensityInternalEnergy(const Real rho,
   return T_(lT);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::InternalEnergyFromDensityTemperature(const Real rho,
                                                                 const Real temperature,
                                                                 Real *lambda) const {
@@ -488,7 +892,7 @@ Real SpinerEOSDependsRhoT::InternalEnergyFromDensityTemperature(const Real rho,
   return sieFromlRhoTlT_(lRho, temperature, lT, whereAmI);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::PressureFromDensityTemperature(const Real rho,
                                                           const Real temperature,
                                                           Real *lambda) const {
@@ -498,7 +902,7 @@ Real SpinerEOSDependsRhoT::PressureFromDensityTemperature(const Real rho,
   return PFromRholRhoTlT_(rho, lRho, temperature, lT, whereAmI);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy(const Real rho,
                                                              const Real sie,
                                                              Real *lambda) const {
@@ -517,7 +921,7 @@ Real SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy(const Real rho,
   return P;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::SpecificHeatFromDensityTemperature(const Real rho,
                                                               const Real temperature,
                                                               Real *lambda) const {
@@ -527,7 +931,7 @@ Real SpinerEOSDependsRhoT::SpecificHeatFromDensityTemperature(const Real rho,
   return CvFromlRholT_(lRho, lT, whereAmI);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::SpecificHeatFromDensityInternalEnergy(const Real rho,
                                                                  const Real sie,
                                                                  Real *lambda) const {
@@ -547,7 +951,7 @@ Real SpinerEOSDependsRhoT::SpecificHeatFromDensityInternalEnergy(const Real rho,
   return Cv > EPS ? Cv : EPS;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::BulkModulusFromDensityTemperature(const Real rho,
                                                              const Real temperature,
                                                              Real *lambda) const {
@@ -557,7 +961,7 @@ Real SpinerEOSDependsRhoT::BulkModulusFromDensityTemperature(const Real rho,
   return bModFromRholRhoTlT_(rho, lRho, temperature, lT, whereAmI);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::GruneisenParamFromDensityTemperature(const Real rho,
                                                                 const Real temp,
                                                                 Real *lambda) const {
@@ -578,7 +982,7 @@ Real SpinerEOSDependsRhoT::GruneisenParamFromDensityTemperature(const Real rho,
   return gm1;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::BulkModulusFromDensityInternalEnergy(const Real rho,
                                                                 const Real sie,
                                                                 Real *lambda) const {
@@ -597,7 +1001,7 @@ Real SpinerEOSDependsRhoT::BulkModulusFromDensityInternalEnergy(const Real rho,
   return bMod;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rho,
                                                                    const Real sie,
                                                                    Real *lambda) const {
@@ -618,7 +1022,7 @@ Real SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rh
 }
 
 // TODO(JMM): This would be faster with hand-tuned code
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void SpinerEOSDependsRhoT::DensityEnergyFromPressureTemperature(const Real press,
                                                                 const Real temp,
                                                                 Real *lambda, Real &rho,
@@ -630,7 +1034,7 @@ void SpinerEOSDependsRhoT::DensityEnergyFromPressureTemperature(const Real press
   sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void SpinerEOSDependsRhoT::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                    Real &cv, Real &bmod, const unsigned long output,
                                    Real *lambda) const {
@@ -682,7 +1086,7 @@ void SpinerEOSDependsRhoT::FillEos(Real &rho, Real &temp, Real &energy, Real &pr
   }
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void SpinerEOSDependsRhoT::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
                                                   Real &press, Real &cv, Real &bmod,
                                                   Real &dpde, Real &dvdt,
@@ -697,7 +1101,7 @@ void SpinerEOSDependsRhoT::ValuesAtReferenceState(Real &rho, Real &temp, Real &s
   dvdt = dVdTNormal_;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::RhoPmin(const Real temp) const {
   const Real lT = lT_(temp);
   if (lT <= lTMin_) return rho_at_pmin_(0);
@@ -705,7 +1109,7 @@ Real SpinerEOSDependsRhoT::RhoPmin(const Real temp) const {
   return rho_at_pmin_.interpToReal(lT);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void SpinerEOSDependsRhoT::getLogsRhoT_(const Real rho, const Real temperature,
                                         Real &lRho, Real &lT, Real *lambda) const {
   lRho = lRho_(rho);
@@ -716,7 +1120,7 @@ void SpinerEOSDependsRhoT::getLogsRhoT_(const Real rho, const Real temperature,
   }
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
                                         TableStatus &whereAmI, Real *lambda) const {
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
@@ -771,7 +1175,7 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
   return lRho;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
                                           TableStatus &whereAmI, Real *lambda) const {
 
@@ -825,7 +1229,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
   return lT;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
                                         TableStatus &whereAmI, Real *lambda) const {
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
@@ -875,7 +1279,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
   return lT;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::sieFromlRhoTlT_(const Real lRho, const Real T, const Real lT,
                                            const TableStatus &whereAmI) const {
   Real sie;
@@ -891,7 +1295,7 @@ Real SpinerEOSDependsRhoT::sieFromlRhoTlT_(const Real lRho, const Real T, const 
   return sie;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::PFromRholRhoTlT_(const Real rho, const Real lRho, const Real T,
                                             const Real lT,
                                             const TableStatus &whereAmI) const {
@@ -910,7 +1314,7 @@ Real SpinerEOSDependsRhoT::PFromRholRhoTlT_(const Real rho, const Real lRho, con
   return P;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::CvFromlRholT_(const Real lRho, const Real lT,
                                          const TableStatus &whereAmI) const {
   Real Cv;
@@ -926,7 +1330,7 @@ Real SpinerEOSDependsRhoT::CvFromlRholT_(const Real lRho, const Real lT,
   return Cv > EPS ? Cv : EPS;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::bModFromRholRhoTlT_(const Real rho, const Real lRho,
                                                const Real T, const Real lT,
                                                const TableStatus &whereAmI) const {
@@ -945,7 +1349,7 @@ Real SpinerEOSDependsRhoT::bModFromRholRhoTlT_(const Real rho, const Real lRho,
   return bMod > EPS ? bMod : EPS;
 }
 
-PORTABLE_FUNCTION TableStatus
+PORTABLE_INLINE_FUNCTION TableStatus
 SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) const {
   TableStatus whereAmI;
   const Real sielTMax = sielTMax_.interpToReal(lRho);
@@ -962,7 +1366,7 @@ SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) cons
   return whereAmI;
 }
 
-PORTABLE_FUNCTION TableStatus
+PORTABLE_INLINE_FUNCTION TableStatus
 SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
   TableStatus whereAmI;
   if (lT <= (1 + SOFT_THRESH) * lTMin_)
@@ -975,8 +1379,9 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
   return whereAmI;
 }
 
-SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename, int matid,
-                                               bool reproducibility_mode)
+inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
+                                                      int matid,
+                                                      bool reproducibility_mode)
     : matid_(matid), reproducible_(reproducibility_mode),
       status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
@@ -1001,9 +1406,9 @@ SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename, int 
   }
 }
 
-SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
-                                               const std::string &materialName,
-                                               bool reproducibility_mode)
+inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
+                                                      const std::string &materialName,
+                                                      bool reproducibility_mode)
     : reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
       memoryStatus_(DataStatus::OnHost) {
 
@@ -1115,7 +1520,7 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   return status;
 }
 
-void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
+inline void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
   for (int j = 0; j < tables.bMod.dim(2); j++) {
     Real lRho = tables.bMod.range(1).x(j);
     Real rho = fromLog_(lRho, lRhoOffset_);
@@ -1138,7 +1543,7 @@ void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
   }
 }
 
-SpinerEOSDependsRhoSie SpinerEOSDependsRhoSie::GetOnDevice() {
+inline SpinerEOSDependsRhoSie SpinerEOSDependsRhoSie::GetOnDevice() {
   SpinerEOSDependsRhoSie other;
   using Spiner::getOnDeviceDataBox;
   other.sie_ = getOnDeviceDataBox(sie_);
@@ -1205,62 +1610,62 @@ void SpinerEOSDependsRhoSie::Finalize() {
   memoryStatus_ = DataStatus::Deallocated;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::TemperatureFromDensityInternalEnergy(const Real rho,
                                                                   const Real sie,
                                                                   Real *lambda) const {
   return interpRhoSie_(rho, sie, T_, lambda);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::InternalEnergyFromDensityTemperature(const Real rho,
                                                                   const Real T,
                                                                   Real *lambda) const {
   return interpRhoT_(rho, T, sie_, lambda);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::PressureFromDensityTemperature(const Real rho, const Real T,
                                                             Real *lambda) const {
   return interpRhoT_(rho, T, dependsRhoT_.P, lambda);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::PressureFromDensityInternalEnergy(const Real rho,
                                                                const Real sie,
                                                                Real *lambda) const {
   return interpRhoSie_(rho, sie, dependsRhoSie_.P, lambda);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::SpecificHeatFromDensityTemperature(const Real rho,
                                                                 const Real T,
                                                                 Real *lambda) const {
   return 1. / interpRhoT_(rho, T, dependsRhoT_.dTdE, lambda);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::SpecificHeatFromDensityInternalEnergy(const Real rho,
                                                                    const Real sie,
                                                                    Real *lambda) const {
   return 1. / interpRhoSie_(rho, sie, dependsRhoSie_.dTdE, lambda);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::BulkModulusFromDensityTemperature(const Real rho,
                                                                const Real T,
                                                                Real *lambda) const {
   return interpRhoT_(rho, T, dependsRhoT_.bMod, lambda);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::BulkModulusFromDensityInternalEnergy(const Real rho,
                                                                   const Real sie,
                                                                   Real *lambda) const {
   return interpRhoSie_(rho, sie, dependsRhoSie_.bMod, lambda);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::GruneisenParamFromDensityTemperature(const Real rho,
                                                                   const Real T,
                                                                   Real *lambda) const {
@@ -1268,7 +1673,7 @@ Real SpinerEOSDependsRhoSie::GruneisenParamFromDensityTemperature(const Real rho
   return dpde / rho;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::GruneisenParamFromDensityInternalEnergy(const Real rho,
                                                                      const Real sie,
                                                                      Real *lambda) const {
@@ -1278,7 +1683,7 @@ Real SpinerEOSDependsRhoSie::GruneisenParamFromDensityInternalEnergy(const Real 
   return dpde / rho;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void SpinerEOSDependsRhoSie::DensityEnergyFromPressureTemperature(const Real press,
                                                                   const Real temp,
                                                                   Real *lambda, Real &rho,
@@ -1289,7 +1694,7 @@ void SpinerEOSDependsRhoSie::DensityEnergyFromPressureTemperature(const Real pre
   sie = sie_.interpToReal(lRho, lT);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void SpinerEOSDependsRhoSie::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                      Real &cv, Real &bmod, const unsigned long output,
                                      Real *lambda) const {
@@ -1340,7 +1745,7 @@ void SpinerEOSDependsRhoSie::FillEos(Real &rho, Real &temp, Real &energy, Real &
   }
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void SpinerEOSDependsRhoSie::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
                                                     Real &press, Real &cv, Real &bmod,
                                                     Real &dpde, Real &dvdt,
@@ -1355,7 +1760,7 @@ void SpinerEOSDependsRhoSie::ValuesAtReferenceState(Real &rho, Real &temp, Real 
   dvdt = dVdTNormal_;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::interpRhoT_(const Real rho, const Real T,
                                          const Spiner::DataBox &db, Real *lambda) const {
   const Real lRho = toLog_(rho, lRhoOffset_);
@@ -1366,7 +1771,7 @@ Real SpinerEOSDependsRhoSie::interpRhoT_(const Real rho, const Real T,
   return db.interpToReal(lRho, lT);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::interpRhoSie_(const Real rho, const Real sie,
                                            const Spiner::DataBox &db,
                                            Real *lambda) const {
@@ -1378,7 +1783,7 @@ Real SpinerEOSDependsRhoSie::interpRhoSie_(const Real rho, const Real sie,
   return db.interpToReal(lRho, lE);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
                                           Real *lambda) const {
   Real lRho;
@@ -1416,4 +1821,5 @@ Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
 
 } // namespace singularity
 
-#endif
+#endif // SPINER_USE_HDF
+#endif // _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
