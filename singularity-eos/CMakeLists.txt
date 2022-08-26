@@ -16,10 +16,18 @@ set(EOS_HEADERS
     base/constants.hpp
     base/eos_error.hpp
     base/fast-math/logs.hpp
+    base/math_utils.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
     eos/eos.hpp
     eos/eos_builder.hpp
+    eos/eos_davis.hpp
+    eos/eos_eospac.hpp
+    eos/eos_gruneisen.hpp
+    eos/eos_ideal.hpp
+    eos/eos_jwl.hpp
+    eos/eos_spiner.hpp
+    eos/eos_stellar_collapse.hpp
     eos/eos_variant.hpp
     eos/modifiers/eos_unitsystem.hpp
     eos/modifiers/ramps_eos.hpp
@@ -29,14 +37,7 @@ set(EOS_HEADERS
 )
 
 set(EOS_SRCS
-    eos/eos_spiner.cpp
-    eos/eos_jwl.cpp
     eos/eos_builder.cpp
-    eos/eos_ideal.cpp
-    eos/eos_gruneisen.cpp
-    eos/eos_davis.cpp
-    eos/eos_stellar_collapse.cpp
-    eos/eos_eospac.cpp
 )
 
 if (SINGULARITY_BUILD_CLOSURE)

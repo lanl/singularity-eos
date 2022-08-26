@@ -10,7 +10,8 @@
 - [[PR164]](https://github.com/lanl/singularity-eos/pull/164) provide facilities for an initial temperature guess for PTE
 
 ### Changed (changing behavior/API/variables/...)
-- [[PR67]](https://github.com/lanl/singularity-eos/pull/167) allow for the possiblity Kokkos version can't be inferred
+- [[PR168]](https://github.com/lanl/singularity-eos/pull/168) move EOS files to header-only
+- [[PR167]](https://github.com/lanl/singularity-eos/pull/167) allow for the possiblity Kokkos version can't be inferred
 
 ### Fixed (not changing behavior/API/variables/...)
 

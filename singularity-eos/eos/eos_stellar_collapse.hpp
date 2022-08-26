@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#ifndef _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
 #ifdef SPINER_USE_HDF
 
 // C++ includes
@@ -25,17 +27,294 @@
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
-// singularity includes
-#include <singularity-eos/eos/eos.hpp>
-
+// ports-of-call
 #include <ports-of-call/portability.hpp>
+
+// singularity-eos
+#include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
+
+// spiner
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
 
 #define STELLAR_COLLAPSE_EOS_VERBOSE (0)
+
+namespace singularity {
+using namespace eos_base;
+
+// Note the Stellar Collapse tables have units of:
+// 1. Ye (unitless)
+// 2. log(MeV) for temperature
+// 3. log(g/cm^3) for density.
+//
+// TODO(JMM): For now the bottom of the table is a floor and the top
+// is linear extrapolation in log-log space. We should reconsider this
+// and introduce extrapolation as needed.
+class StellarCollapse : public EosBase<StellarCollapse> {
+ public:
+  // A weakly typed index map for lambdas
+  struct Lambda {
+    enum Index { Ye = 0, lT = 1 };
+  };
+
+  // Generic functions provided by the base class. These contain
+  // e.g. the vector overloads that use the scalar versions declared
+  // here We explicitly list, rather than using the macro because we
+  // overload some methods.
+  using EosBase<StellarCollapse>::TemperatureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
+  using EosBase<StellarCollapse>::PressureFromDensityTemperature;
+  using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
+  using EosBase<StellarCollapse>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::BulkModulusFromDensityTemperature;
+  using EosBase<StellarCollapse>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::GruneisenParamFromDensityTemperature;
+  using EosBase<StellarCollapse>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::PTofRE;
+  using EosBase<StellarCollapse>::FillEos;
+
+  inline StellarCollapse(const std::string &filename, bool use_sp5 = false,
+                         bool filter_bmod = true);
+
+  // Saves to an SP5 file
+  inline void Save(const std::string &filename);
+
+  PORTABLE_INLINE_FUNCTION
+  StellarCollapse() : memoryStatus_(DataStatus::Deallocated) {}
+
+  inline StellarCollapse GetOnDevice();
+
+  PORTABLE_INLINE_FUNCTION
+  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real PressureFromDensityTemperature(const Real rho, const Real temperature,
+                                      Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
+                                          Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
+                                             Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
+                                         Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
+                                            Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
+                                               Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                            Real *lambda, Real &rho, Real &sie) const;
+  PORTABLE_INLINE_FUNCTION
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const;
+
+  PORTABLE_INLINE_FUNCTION
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
+                              Real *lambda = nullptr) const;
+  // Generic functions provided by the base class. These contain e.g. the vector
+  // overloads that use the scalar versions declared here
+  static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMin() const { return lRhoMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMax() const { return lRhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTMin() const { return lTMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real lTMax() const { return lTMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real TMax() const { return T_(lTMax_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real YeMin() const { return YeMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real YeMax() const { return YeMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const { return sieMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const { return sieMax_; }
+  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+    printf("StellarCollapse parameters:\n"
+           "depends on log10(rho), log10(T), Ye\n"
+           "lrho bounds = %g, %g\n"
+           "lT bounds = %g, %g\n"
+           "Ye bounds = %g, %g\n",
+           lRhoMin_, lRhoMax_, lTMin_, lTMax_, YeMin_, YeMax_);
+    return;
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
+  PORTABLE_INLINE_FUNCTION
+  int nlambda() const noexcept { return _n_lambda; }
+  inline RootFinding1D::Status rootStatus() const { return status_; }
+  RootFinding1D::RootCounts counts;
+  inline void Finalize();
+  static std::string EosType() { return std::string("StellarCollapse"); }
+
+ private:
+  inline void LoadFromSP5File_(const std::string &filename);
+  inline void LoadFromStellarCollapseFile_(const std::string &filename);
+  inline int readSCInt_(const hid_t &file_id, const std::string &name);
+  inline void readBounds_(const hid_t &file_id, const std::string &name, int size,
+                          Real &lo, Real &hi);
+  inline void readSCDset_(const hid_t &file_id, const std::string &name,
+                          Spiner::DataBox &db);
+
+  inline void medianFilter_(Spiner::DataBox &db);
+  inline void medianFilter_(const Spiner::DataBox &in, Spiner::DataBox &out);
+  inline void fillMedianBuffer_(Real buffer[], int width, int iY, int iT, int irho,
+                                const Spiner::DataBox &tab) const;
+  inline Real findMedian_(Real buffer[], int size) const;
+  inline void computeBulkModulus_();
+  inline void computeColdAndHotCurves_();
+  inline void setNormalValues_();
+
+  PORTABLE_FORCEINLINE_FUNCTION void checkLambda_(Real *lambda) const noexcept {
+    if (lambda == nullptr) {
+      EOS_ERROR("StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
+    }
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x,
+                                            const Real offset) const noexcept {
+    // StellarCollapse can't use fast logs, unless we re-grid onto the
+    // "fast log grid"
+    return std::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx,
+                                              const Real offset) const noexcept {
+    // StellarCollapse can't use fast logs, unless we re-grid onto the
+    // "fast log grid"
+    return std::pow(10., lx) - offset;
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real lRho_(const Real rho) const noexcept {
+    Real out = toLog_(rho, lRhoOffset_);
+    return out;
+    // return out < lRhoMin_ ? lRhoMin_ : out;
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real lT_(const Real T) const noexcept {
+    return toLog_(T, lTOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real rho_(const Real lRho) const noexcept {
+    Real rho = fromLog_(lRho, lRhoOffset_);
+    return rho < 0 ? 0 : rho;
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real T_(const Real lT) const noexcept {
+    return fromLog_(lT, lTOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real le2e_(const Real le) const noexcept {
+    return fromLog_(le, lEOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real e2le_(const Real e) const noexcept {
+    return toLog_(e, lEOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real lP2P_(const Real lP) const noexcept {
+    return fromLog_(lP, lPOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real P2lP_(const Real P) const noexcept {
+    return toLog_(P, lPOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real lB2B_(const Real lB) const noexcept {
+    return fromLog_(lB, lBOffset_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real B2lB_(const Real B) const noexcept {
+    return toLog_(B, lBOffset_);
+  }
+
+  PORTABLE_INLINE_FUNCTION Real lTFromlRhoSie_(const Real lRho, const Real sie,
+                                               Real *lambda) const noexcept;
+  PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
+  getLogsFromRhoT_(const Real rho, const Real temp, Real *lambda, Real &lRho, Real &lT,
+                   Real &Ye) const noexcept {
+    checkLambda_(lambda);
+    lRho = lRho_(rho);
+    lT = lT_(temp);
+    Ye = lambda[Lambda::Ye];
+    lambda[Lambda::lT] = lT;
+  }
+  PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
+  getLogsFromRhoSie_(const Real rho, const Real sie, Real *lambda, Real &lRho, Real &lT,
+                     Real &Ye) const noexcept {
+    lRho = lRho_(rho);
+    lT = lTFromlRhoSie_(lRho, sie, lambda);
+    Ye = lambda[Lambda::Ye];
+    return;
+  }
+
+  static constexpr const unsigned long _preferred_input =
+      thermalqs::density | thermalqs::temperature;
+
+  // Dependent variables
+  Spiner::DataBox lP_, lE_, dPdRho_, dPdE_, dEdT_, lBMod_;
+  Spiner::DataBox entropy_; // kb/baryon
+  Spiner::DataBox Xa_;      // mass fraction of alpha particles
+  Spiner::DataBox Xh_;      // mass fraction of heavy ions
+  Spiner::DataBox Xn_;      // mass fraction of neutrons
+  Spiner::DataBox Xp_;      // mass fraction of protons
+  Spiner::DataBox Abar_;    // Average atomic mass
+  Spiner::DataBox Zbar_;    // Average atomic number
+  // Spiner::DataBox gamma_; // polytropic index. dlog(P)/dlog(rho).
+  // dTdRho_, dTdE_, dEdRho_, dEdT_;
+
+  // Bounds of dependent variables. Needed for root finding.
+  Spiner::DataBox eCold_, eHot_;
+
+  // Independent variable bounds
+  int numRho_, numT_, numYe_;
+  Real lRhoMin_, lRhoMax_;
+  Real lTMin_, lTMax_;
+  Real YeMin_, YeMax_;
+  Real sieMin_, sieMax_;
+
+  static constexpr Real MeV2GK_ = 11.604525006;
+  static constexpr Real GK2MeV_ = 1. / MeV2GK_;
+  static constexpr Real MeV2K_ = 1.e9 * MeV2GK_;
+  static constexpr Real K2MeV_ = 1. / MeV2K_;
+  static constexpr Real TNormal_ = 5 * GK2MeV_; // Threshold of NSE
+  static constexpr Real rhoNormal_ = 2.e12;     // 1./100'th of nuclear density
+  static constexpr Real YeNormal_ = 0.3517;     // Beta equilibrium value
+  Real sieNormal_, PNormal_;
+  Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
+
+  // offsets must be non-negative
+  Real lEOffset_;
+  static constexpr Real lRhoOffset_ = 0.0; // TODO(JMM): Address if this ever changes
+  static constexpr Real lTOffset_ = 0.0;
+  static constexpr Real lPOffset_ = 0.0;
+  static constexpr Real lBOffset_ = 0.0;
+
+  // whereAmI_ and status_ used only for reporting. They are not thread-safe.
+  mutable RootFinding1D::Status status_ = RootFinding1D::Status::SUCCESS;
+  static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
+  DataStatus memoryStatus_ = DataStatus::Deallocated;
+  static constexpr const int _n_lambda = 2;
+  static constexpr const char *_lambda_names[] = {"Ye", "log(T)"};
+
+  // Stuff for median filter smoothing
+  static constexpr Real EPSSMOOTH = 10.0;
+  static constexpr int MF_W = 3;
+  static constexpr int MF_S = (2 * MF_W + 1) * (2 * MF_W + 1) * (2 * MF_W + 1);
+};
+
+// ======================================================================
+// Implementation details below
+// ======================================================================
 
 namespace callable_interp {
 
@@ -55,14 +334,12 @@ class LogT {
 
 } // namespace callable_interp
 
-namespace singularity {
-
 // For some reason, the linker doesn't like this being a member field
 // of StellarCollapse.  So we'll make it a global variable.
 constexpr char METADATA_NAME[] = "Metadata";
 
-StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp5,
-                                 bool filter_bmod) {
+inline StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp5,
+                                        bool filter_bmod) {
   if (use_sp5) {
     LoadFromSP5File_(filename);
   } else {
@@ -79,7 +356,7 @@ StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp5,
 }
 
 // Saves to an SP5 file
-void StellarCollapse::Save(const std::string &filename) {
+inline void StellarCollapse::Save(const std::string &filename) {
   herr_t status = H5_SUCCESS;
   hid_t file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -114,7 +391,7 @@ void StellarCollapse::Save(const std::string &filename) {
   }
 }
 
-StellarCollapse StellarCollapse::GetOnDevice() {
+inline StellarCollapse StellarCollapse::GetOnDevice() {
   StellarCollapse other;
   other.lP_ = Spiner::getOnDeviceDataBox(lP_);
   other.lE_ = Spiner::getOnDeviceDataBox(lE_);
@@ -150,7 +427,7 @@ StellarCollapse StellarCollapse::GetOnDevice() {
   return other;
 }
 
-void StellarCollapse::Finalize() {
+inline void StellarCollapse::Finalize() {
   lP_.finalize();
   lE_.finalize();
   dPdRho_.finalize();
@@ -169,7 +446,7 @@ void StellarCollapse::Finalize() {
   memoryStatus_ = DataStatus::Deallocated;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                                            Real *lambda) const {
   const Real lRho = lRho_(rho);
@@ -177,7 +454,7 @@ Real StellarCollapse::TemperatureFromDensityInternalEnergy(const Real rho, const
   return T_(lT);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::InternalEnergyFromDensityTemperature(const Real rho,
                                                            const Real temp,
                                                            Real *lambda) const {
@@ -187,7 +464,7 @@ Real StellarCollapse::InternalEnergyFromDensityTemperature(const Real rho,
   return le2e_(lE);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::PressureFromDensityTemperature(const Real rho,
                                                      const Real temperature,
                                                      Real *lambda) const {
@@ -197,7 +474,7 @@ Real StellarCollapse::PressureFromDensityTemperature(const Real rho,
   return lP2P_(lP);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                                         Real *lambda) const {
   Real lRho, lT, Ye;
@@ -206,7 +483,7 @@ Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho, const Re
   return lP2P_(lP);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::SpecificHeatFromDensityTemperature(const Real rho,
                                                          const Real temperature,
                                                          Real *lambda) const {
@@ -216,7 +493,7 @@ Real StellarCollapse::SpecificHeatFromDensityTemperature(const Real rho,
   return (Cv > EPS ? Cv : EPS);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::SpecificHeatFromDensityInternalEnergy(const Real rho,
                                                             const Real sie,
                                                             Real *lambda) const {
@@ -226,7 +503,7 @@ Real StellarCollapse::SpecificHeatFromDensityInternalEnergy(const Real rho,
   return (Cv > EPS ? Cv : EPS);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::BulkModulusFromDensityTemperature(const Real rho,
                                                         const Real temperature,
                                                         Real *lambda) const {
@@ -237,7 +514,7 @@ Real StellarCollapse::BulkModulusFromDensityTemperature(const Real rho,
   return bMod > EPS ? bMod : EPS;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::GruneisenParamFromDensityTemperature(const Real rho,
                                                            const Real temp,
                                                            Real *lambda) const {
@@ -248,7 +525,7 @@ Real StellarCollapse::GruneisenParamFromDensityTemperature(const Real rho,
   return gm1;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
                                                            Real *lambda) const {
   Real lRho, lT, Ye;
@@ -258,7 +535,7 @@ Real StellarCollapse::BulkModulusFromDensityInternalEnergy(const Real rho, const
   return bMod;
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::GruneisenParamFromDensityInternalEnergy(const Real rho,
                                                               const Real sie,
                                                               Real *lambda) const {
@@ -270,14 +547,14 @@ Real StellarCollapse::GruneisenParamFromDensityInternalEnergy(const Real rho,
 }
 
 // TODO(JMM): Fill in this stub if we ever use this EOS in a PTE code.
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void StellarCollapse::DensityEnergyFromPressureTemperature(const Real press,
                                                            const Real temp, Real *lambda,
                                                            Real &rho, Real &sie) const {
   EOS_ERROR("StellarCollapse::DensityEnergyFromPRessureTemperature is a stub");
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
                               Real &bmod, const unsigned long output,
                               Real *lambda) const {
@@ -314,7 +591,7 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, 
   }
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 void StellarCollapse::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
                                              Real &press, Real &cv, Real &bmod,
                                              Real &dpde, Real &dvdt, Real *lambda) const {
@@ -331,7 +608,7 @@ void StellarCollapse::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
   lambda[Lambda::lT] = lT;
 }
 
-void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
+inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
   herr_t status = H5_SUCCESS;
 
   hid_t file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -381,7 +658,7 @@ void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
 }
 
 // Read data directly from a stellar collapse eos file
-void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) {
+inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) {
   // Open the file.
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   herr_t status = H5_SUCCESS;
@@ -439,7 +716,7 @@ void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) 
   H5Fclose(file_id);
 }
 
-int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &name) {
+inline int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &name) {
   int data;
   hsize_t one = 1;
   hsize_t file_grid_dims[] = {1};
@@ -465,8 +742,8 @@ int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &name) {
 // Read (inclusive) bounds on the independent variables Assumes
 // uniform tables in log-space. The file requires we read in the
 // array, but we only need the bounds themselves.
-void StellarCollapse::readBounds_(const hid_t &file_id, const std::string &name, int size,
-                                  Real &lo, Real &hi) {
+inline void StellarCollapse::readBounds_(const hid_t &file_id, const std::string &name,
+                                         int size, Real &lo, Real &hi) {
   std::vector<Real> table(size);
   herr_t status = H5LTread_dataset_double(file_id, name.c_str(), table.data());
   if (status != H5_SUCCESS) {
@@ -481,8 +758,8 @@ void StellarCollapse::readBounds_(const hid_t &file_id, const std::string &name,
  * then copying the elements. There's some evidence this is an HDF5 bug. See:
  * https://forum.hdfgroup.org/t/is-this-a-bug-in-hdf5-1-8-6/2211
  */
-void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
-                                  Spiner::DataBox &db) {
+inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
+                                         Spiner::DataBox &db) {
   herr_t exists = H5LTfind_dataset(file_id, name.c_str());
   if (!exists) {
     std::string msg = "Tried to read dataset " + name + " but it doesn't exist\n";
@@ -501,13 +778,14 @@ void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
   db.setRange(0, lRhoMin_, lRhoMax_, numRho_);
 }
 
-void StellarCollapse::medianFilter_(Spiner::DataBox &db) {
+inline void StellarCollapse::medianFilter_(Spiner::DataBox &db) {
   Spiner::DataBox tmp;
   tmp.copy(db);
   medianFilter_(tmp, db);
 }
 
-void StellarCollapse::medianFilter_(const Spiner::DataBox &in, Spiner::DataBox &out) {
+inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
+                                           Spiner::DataBox &out) {
   Real buffer[MF_S];
   // filter, overwriting as needed
   for (int iY = MF_W; iY < numYe_ - MF_W; ++iY) {
@@ -524,8 +802,9 @@ void StellarCollapse::medianFilter_(const Spiner::DataBox &in, Spiner::DataBox &
   }
 }
 
-void StellarCollapse::fillMedianBuffer_(Real buffer[], int width, int iY, int iT,
-                                        int irho, const Spiner::DataBox &tab) const {
+inline void StellarCollapse::fillMedianBuffer_(Real buffer[], int width, int iY, int iT,
+                                               int irho,
+                                               const Spiner::DataBox &tab) const {
   int i = 0;
   for (int iWy = -width; iWy <= width; iWy++) {
     for (int iWt = -width; iWt <= width; iWt++) {
@@ -537,7 +816,7 @@ void StellarCollapse::fillMedianBuffer_(Real buffer[], int width, int iY, int iT
 }
 
 // Note modifies buffer
-Real StellarCollapse::findMedian_(Real buffer[], int size) const {
+inline Real StellarCollapse::findMedian_(Real buffer[], int size) const {
   std::qsort(buffer, size, sizeof(Real), [](const void *ap, const void *bp) {
     double a = *((double *)ap);
     double b = *((double *)bp);
@@ -550,7 +829,7 @@ Real StellarCollapse::findMedian_(Real buffer[], int size) const {
 }
 
 // TODO(JMM): I tabulate bulk modulus on a log scale. Should I?
-void StellarCollapse::computeBulkModulus_() {
+inline void StellarCollapse::computeBulkModulus_() {
   lBMod_.copyMetadata(lP_);
   for (int iY = 0; iY < numYe_; ++iY) {
     Real Ye = lBMod_.range(2).x(iY);
@@ -571,7 +850,7 @@ void StellarCollapse::computeBulkModulus_() {
   }
 }
 
-void StellarCollapse::computeColdAndHotCurves_() {
+inline void StellarCollapse::computeColdAndHotCurves_() {
   eCold_.resize(numYe_, numRho_);
   eHot_.resize(numYe_, numRho_);
   int iTCold = 0;
@@ -592,7 +871,7 @@ void StellarCollapse::computeColdAndHotCurves_() {
   eHot_.setRange(1, YeMin_, YeMax_, numYe_);
 }
 
-void StellarCollapse::setNormalValues_() {
+inline void StellarCollapse::setNormalValues_() {
   const Real lT = lT_(TNormal_);
   const Real lRho = lRho_(rhoNormal_);
   const Real Ye = YeNormal_;
@@ -616,7 +895,7 @@ void StellarCollapse::setNormalValues_() {
   dVdTNormal_ = dPdENormal_ * CvNormal_ / (rhoNormal_ * rhoNormal_ * dPdR);
 }
 
-PORTABLE_FUNCTION
+PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
                                      Real *lambda) const noexcept {
   checkLambda_(lambda);
@@ -665,3 +944,4 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
 } // namespace singularity
 
 #endif // SPINER_USE_HDF
+#endif // _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
