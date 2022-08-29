@@ -274,7 +274,7 @@ int get_sg_eos( // sizing information
   bool do_frac_cv{true};
   if (frac_dpde == NULL || frac_dpde == nullptr) do_frac_cv = false;
   // get inputs
-  enum input_condition {
+  enum class input_condition {
     RHO_T_INPUT = -3,
     RHO_P_INPUT = -2,
     P_T_INPUT = -1,
@@ -494,7 +494,7 @@ int get_sg_eos( // sizing information
       "[" + std::to_string(nmat) + "," + std::to_string(ncell) + "]";
   auto input_int_enum = static_cast<input_condition>(input_int);
   switch (input_int_enum) {
-  case RHO_T_INPUT: {
+  case input_condition::RHO_T_INPUT: {
     // T-rho input
     // set frac_vol = 1/nmat
     // set rho_i = nmat / spvol * frac_mass_i
@@ -559,7 +559,7 @@ int get_sg_eos( // sizing information
         });
     break;
   }
-  case RHO_P_INPUT: {
+  case input_condition::RHO_P_INPUT: {
     // rho-P input
     // set frac_vol = 1/nmat
     // set rho_i = nmat / spvol * frac_mass_i
@@ -634,7 +634,7 @@ int get_sg_eos( // sizing information
         });
     break;
   }
-  case P_T_INPUT: {
+  case input_condition::P_T_INPUT: {
     // P-T input
     const int pte_solver_scratch_size = nmat * MAX_NUM_LAMBDAS;
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
@@ -698,10 +698,10 @@ int get_sg_eos( // sizing information
         });
     break;
   }
-  case NORM_RHO_E_INPUT:
+  case input_condition::NORM_RHO_E_INPUT:
     // rho-sie input
     // no break so fallthrough to case 1
-  case RHO_E_INPUT: {
+  case input_condition::RHO_E_INPUT: {
     // rho-sie input
     pte_solver_scratch_size = PTESolverRhoTRequiredScratch(nmat);
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,

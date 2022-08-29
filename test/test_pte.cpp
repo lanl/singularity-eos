@@ -90,6 +90,9 @@ void set_state(RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
 }
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
+// TODO DAH: when the get_sg_eos function is moved out of sg,
+// this function will have to change how the PTE solutions
+// are obtained.
 int run_sg_get_eos_tests() {
   int nfails = 0;
   // initialize inputs outputs
