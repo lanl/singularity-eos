@@ -337,6 +337,9 @@ endif ()
 if (SINGULARITY_TEST_SESAME)
   list(APPEND SINGULARITY_PRIVATE_DEFINES SINGULARITY_TEST_SESAME)
 endif()
+if (SINGULARITY_BUILD_CLOSURE)
+  list(APPEND SINGULARITY_PRIVATE_DEFINES SINGULARITY_BUILD_CLOSURE)
+endif()
 
 #------------------------------------------------------------------------------#
 # singularity-eos library

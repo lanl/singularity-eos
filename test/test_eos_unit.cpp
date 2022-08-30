@@ -25,7 +25,10 @@
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
+
+#ifdef SINGULARITY_BUILD_CLOSURE
 #include <singularity-eos/eos/singularity_eos.hpp>
+#endif
 
 #ifndef CATCH_CONFIG_RUNNER
 #include "catch2/catch.hpp"
@@ -273,6 +276,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
         }
       }
     }
+#ifdef SINGULARITY_BUILD_CLOSURE
     WHEN("We construct a non-modifying modifier") {
       EOS ig = IdealGas(gm1, Cv);
       EOS igsh = ScaledEOS<IdealGas>(IdealGas(gm1, Cv), 1.0);
@@ -374,6 +378,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
                         igra.BulkModulusFromDensityTemperature(1.2 * r1, T0), 1.e-12));
       }
     }
+#endif
   }
 }
 
