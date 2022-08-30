@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-    tests minimal:
+    tests-minimal:
       name: Run minimal set of tests, to constrain minimal build
       runs-on: ubuntu-latest
 
