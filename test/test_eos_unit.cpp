@@ -378,7 +378,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
                         igra.BulkModulusFromDensityTemperature(1.2 * r1, T0), 1.e-12));
       }
     }
-#endif
+#endif // SINGULARITY_BUILD_CLOSURE
   }
 }
 
