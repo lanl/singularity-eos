@@ -189,7 +189,7 @@ Building ``singularity-eos`` with Python wrappers in a virtual environment:
   source singularity-eos/bin/activate
   pip install numpy h5py matplotlib # and whatever else you want
   cd build
-  cmake -DSINGULARITY_USE_HDF55=ON -DSINGULARITY_BUILD_PYTHON=ON -DCMAKE_INSTALL_PREFIX=../singularity-eos ../..
+  cmake -DSINGULARITY_USE_HDF55=ON -DSINGULARITY_BUILD_PYTHON=ON -DCMAKE_INSTALL_PREFIX=$VIRTUAL_ENV ../..
   make -j
   make install
 
