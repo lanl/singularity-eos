@@ -175,6 +175,25 @@ to the standard ones) are supported:
 |                                          |            |         | by adding it as a subdirectory.               |
 +------------------------------------------+------------+---------+-----------------------------------------------+
 
+Example builds
+--------------
+
+Building ``singularity-eos`` with Python wrappers in a virtual environment:
+
+.. code-block:: bash
+  git clone --recursive git@github.com:lanl/singularity-eos.git
+  cd singularity-eos
+  mkdir -p python-build/build
+  cd python-build
+  python3 -m venv singularity-eos
+  source singularity-eos/bin/activate
+  pip install numpy h5py matplotlib # and whatever else you want
+  cd build
+  cmake -DSINGULARITY_USE_HDF55=ON -DSINGULARITY_BUILD_PYTHON=ON -DCMAKE_INSTALL_PREFIX=../singularity-eos ../..
+  make -j
+  make install
+
+
 Dependencies
 ------------
 
