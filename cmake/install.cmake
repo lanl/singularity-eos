@@ -64,14 +64,12 @@ install(
 
 # export install; generates CMake code that instructs other projects how to 
 # import targets from this source tree.
-if(FALSE)
 install(
   EXPORT singularity-eosTargets
   FILE  singularity-eosTargets.cmake
   NAMESPACE "singularity-eos::"
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos
 )
-endif()
 #----------------------------------------------------------------------------#
 # Install headers/cmake modules + Packaging
 #----------------------------------------------------------------------------#
@@ -109,7 +107,6 @@ install(
 #----------------------------------------------------------------------------#
 # Local export
 #----------------------------------------------------------------------------#
-if(FALSE)
 # same as install step, but just places the file in the build tree.
 # useful for downstream projects that use the source directly
 export(
@@ -139,7 +136,6 @@ if(SINGULARITY_USE_KOKKOSKERNELS AND NOT KokkosKernels_FOUND)
     NAMESPACE Kokkos::
   )
 endif() # USE_KOKKOS AND NOT Kokkos_FOUND
-endif()
 # see https://cmake.org/cmake/help/latest/policy/CMP0090.html
 # this used to populate the package registery, but doesn't 
 # do anything anymore, & probably shouldn't
