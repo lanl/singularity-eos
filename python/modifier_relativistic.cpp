@@ -15,52 +15,25 @@
 #include "module.hpp"
 
 template<typename T>
-void relativistic_helper(py::module_ & m) {
-  m.def("Relativistic", [](T eos, const Real cl){
-    return RelativisticEOS<T>(std::move(eos), cl);
+void relativistic_eos_class(py::module_ & m) {
+  // define Relativistic utility function
+  m.def("Relativistic", [](typename T::BaseType eos, const Real cl){
+    return T(std::move(eos), cl);
   }, py::arg("eos"), py::arg("cl"));
-}
 
-template<typename T>
-void relativistic_class_helper(py::module_ & m, std::string name) {
-  eos_class<RelativisticEOS<T>>(m, std::string("Relativistic") + name)
+  eos_class<T>(m, T::EosPyType())
     .def(
-      py::init<T, Real>(),
+      py::init<typename T::BaseType, Real>(),
       py::arg("eos"), py::arg("cl")
     );
 }
 
-template<typename T>
-void relativistic_eos_class(py::module_ & m, const char * name) {
-  // define Relativistic utility function
-  relativistic_helper<T>(m);
-  relativistic_helper<ShiftedEOS<T>>(m);
-  relativistic_helper<ScaledEOS<T>>(m);
-  relativistic_helper<ScaledEOS<ShiftedEOS<T>>>(m);
-
-  relativistic_class_helper<T>(m, name);
-  relativistic_class_helper<ShiftedEOS<T>>(m, std::string("Shifted") + name);
-  relativistic_class_helper<ScaledEOS<T>>(m, std::string("Scaled") + name);
-  relativistic_class_helper<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name);
-
-  relativistic_helper<BilinearRampEOS<T>>(m);
-  relativistic_helper<BilinearRampEOS<ShiftedEOS<T>>>(m);
-  relativistic_helper<BilinearRampEOS<ScaledEOS<T>>>(m);
-  relativistic_helper<BilinearRampEOS<ScaledEOS<ShiftedEOS<T>>>>(m);
-
-  relativistic_class_helper<BilinearRampEOS<T>>(m, std::string("Bilinear") + name);
-  relativistic_class_helper<BilinearRampEOS<ShiftedEOS<T>>>(m, std::string("BilinearShifted") + name);
-  relativistic_class_helper<BilinearRampEOS<ScaledEOS<T>>>(m, std::string("BilinearScaled") + name);
-  relativistic_class_helper<BilinearRampEOS<ScaledEOS<ShiftedEOS<T>>>>(m, std::string("BilinearScaledShifted") + name);
+template<typename... Ts>
+void create_relativistic(py::module_ &m, tl<Ts...>) {
+  // C++14 workaround, since we don't have C++17 fold expressions
+  auto l = { (relativistic_eos_class<Ts>(m), 0)... };
 }
 
-
 void create_relativistic_eos_classes(py::module_ & m) {
-  relativistic_eos_class<IdealGas>(m, "IdealGas");
-
-#ifdef SPINER_USE_HDF
-  relativistic_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
-  relativistic_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
-  relativistic_eos_class<StellarCollapse>(m, "StellarCollapse");
-#endif
+  create_relativistic(m, singularity::relativistic);
 }

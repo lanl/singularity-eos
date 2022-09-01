@@ -56,10 +56,14 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   using EosBase<ShiftedEOS<T>>::PTofRE;
   using EosBase<ShiftedEOS<T>>::FillEos;
 
+  using BaseType = T;
+
   // give me std::format or fmt::format...
   static std::string EosType() {
     return std::string("ShiftedEOS<") + T::EosType() + std::string(">");
   }
+
+  static std::string EosPyType() { return std::string("Shifted") + T::EosPyType(); }
 
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}

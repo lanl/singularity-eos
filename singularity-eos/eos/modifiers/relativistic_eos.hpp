@@ -56,10 +56,14 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   using EosBase<RelativisticEOS<T>>::PTofRE;
   using EosBase<RelativisticEOS<T>>::FillEos;
 
+  using BaseType = T;
+
   // give me std::format or fmt::format...
   static std::string EosType() {
     return std::string("RelativisticEOS<") + T::EosType() + std::string(">");
   }
+
+  static std::string EosPyType() { return std::string("Relativistic") + T::EosPyType(); }
 
   // move semantics ensures dynamic memory comes along for the ride
   RelativisticEOS(T &&t, const Real cl)

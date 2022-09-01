@@ -117,6 +117,7 @@ class IdealGas : public EosBase<IdealGas> {
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("IdealGas"); }
+  static std::string EosPyType() { return EosType(); }
 
  private:
   Real _Cv, _gm1;

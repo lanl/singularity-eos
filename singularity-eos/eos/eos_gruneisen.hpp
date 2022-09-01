@@ -119,6 +119,7 @@ class Gruneisen : public EosBase<Gruneisen> {
                                        Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("Gruneisen"); }
+  static std::string EosPyType() { return EosType(); }
 
  private:
   Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max;
