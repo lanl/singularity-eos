@@ -10,6 +10,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
   SINGULARITY_EOS_OPENMPI_VERSION: "4.0.5"
+  SINGULARITY_EOS_TEMP_SPACK_VERSION: "v0.18.1"
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 before_script:
@@ -18,9 +19,11 @@ before_script:
   - export SPACK_USER_CACHE_PATH=/tmp/spack-local
   - cd ${CI_PROJECT_DIR}
   - unset SPACK_ROOT
-  - echo "Spack Version:" ${XCAP_OSS_SPACK_REF}
+    #  - echo "Spack Version:" ${XCAP_OSS_SPACK_REF}
+  - echo "Spack Version:" ${SINGULARITY_TEMP_SPACK_VERSION}
   - git clone https://github.com/spack/spack.git
-  - cd spack && git checkout ${XCAP_OSS_SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
+    #  - cd spack && git checkout ${XCAP_OSS_SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
+  - cd spack && git checkout ${SINGULARITY_EOS_TEMP_SPACK_VERSION##*-} && cd ${CI_PROJECT_DIR}
   - export SPACK_ARCH=`${CI_PROJECT_DIR}/spack/bin/spack arch` && echo ${SPACK_ARCH}
   - export PLATFORM="${SPACK_ARCH%%-*}" && echo ${PLATFORM}
   - mkdir -p ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}
