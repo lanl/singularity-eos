@@ -3,10 +3,12 @@
 ## Current develop
 
 ### Fixed (Repair bugs, etc)
+- [[PR174]](https://github.com/lanl/singularity-eos/pull/174) fix build configuration when closures are disabled
 - [[PR157]](https://github.com/lanl/singularity-eos/pull/157) fix root finders in Gruneisen, Davis, and JWL
 - [[PR151]](https://github.com/lanl/singularity-eos/pull/151) fix module install
 
 ### Added (new features/APIs/variables/...)
+- [[PR175]](https://github.com/lanl/singularity-eos/pull/175) document some builds
 - [[PR164]](https://github.com/lanl/singularity-eos/pull/164) provide facilities for an initial temperature guess for PTE
 - [[PR156]](https://github.com/lanl/singularity-eos/pull/156) This PR adds 2 new PTE solvers, solvers that obtain a PTE solution when either P or T are known. This enables mixed material rho-T and rho-P initializations to be dealt with correctly.
 
