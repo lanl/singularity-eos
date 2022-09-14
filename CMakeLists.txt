@@ -282,15 +282,7 @@ if (SINGULARITY_USE_HDF5)
   singularity_import_dependency(
     PKG HDF5
     COMPONENTS C HL
-    #NB: 'newer' CMake versions, HDF5s will
-    #    do the `idiomatic` cmake setup,
-    #    and `find_package(HDF5)` will define
-    #    these targets.
-    #    however, some downstream codes
-    #    are still struggling through the
-    #    dark times, so we use the 
-    #    'standard' hack for now
-    #    TARGETS HDF5::HDF5 hdf5::hdf5_hl
+    TARGETS HDF5::HDF5 hdf5::hdf5_hl
   )
 
   # make sure we use MPI,
@@ -305,13 +297,7 @@ if (SINGULARITY_USE_HDF5)
       TARGETS MPI::MPI_CXX
     )
   endif()
-  ####
-  #TODO: when downstream is rescued,
-  #      we can discard these
-  list(APPEND SINGULARITY_PUBLIC_LIBS ${HDF5_LIBRARIES})
-  list(APPEND SINGULARITY_PUBLIC_LIBS ${HDF5_HL_LIBRARIES})
-  list(APPEND SINGULARITY_PUBLIC_INCS ${HDF5_INCLUDE_DIRS})
-  ####
+
   list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_HDF)
   list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_HDF)
 endif() # SINGULARITY_USE_HDF5
