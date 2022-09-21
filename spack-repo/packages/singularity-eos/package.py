@@ -107,6 +107,8 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("py-h5py" + _flag, when=_flag)
         depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos" + _flag)
 
+    depends_on("hdf5+fortran", when="+fortran")
+
     def cmake_args(self):
         args = [
             self.define("SINGULARITY_PATCH_MPARK_VARIANT", False),
