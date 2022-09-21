@@ -279,10 +279,16 @@ if (SINGULARITY_USE_HDF5)
   # hdf5, for data interopability
   # type: external
   enable_language(C)
+  set(_hdf5_comp "C;HL")
+  set(_hdf5_tars "HDF5::HDF5;hdf5::hdf5_hl")
+  if(SINGULARITY_USE_FORTRAN)
+    set(_hdf5_comp "${_hdf5_comp};Fortran")
+    set(_hdf5_tars "${_hdf5_tars};hdf5::hdf5_hl_fortran")
+  endif()
   singularity_import_dependency(
     PKG HDF5
-    COMPONENTS C HL
-    TARGETS HDF5::HDF5 hdf5::hdf5_hl hdf5::hdf5_hl_fortran
+    COMPONENTS ${_hdf5_comp}
+    TARGETS ${_hdf5_tars}
   )
 
   # make sure we use MPI,
