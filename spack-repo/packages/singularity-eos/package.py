@@ -47,6 +47,8 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     variant("eospac", default=True, description="Pull in EOSPAC")
 
+    variant("hdf5_fortran", default=False, description="Use +fortran variant for HDF5")
+
     # building/testing/docs
     depends_on("cmake@3.14:")
     depends_on("catch2@2.13.7", when="+tests")
@@ -107,7 +109,8 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("py-h5py" + _flag, when=_flag)
         depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos" + _flag)
 
-    depends_on("hdf5+fortran", when="+fortran")
+    depends_on("hdf5+fortran", when="+hdf5_fortran")
+    conflicts("+hdf5_fortran", when="~fortran")
 
     def cmake_args(self):
         args = [
@@ -119,6 +122,7 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_BUILD_CLOSURE", "fortran"),
             self.define_from_variant("SINGULARITY_BUILD_PYTHON", "python"),
             self.define_from_variant("SINGULARITY_BUILD_TESTS", "tests"),
+            self.define_from_variant("SINGULARITY_LINK_HDF5_FORTRAN", "hdf5_fortran"),
             self.define("SINGULARITY_BUILD_SESAME2SPINER",
                         "sesame" in self.spec.variants["build_extra"]),
             self.define("SINGULARITY_TEST_SESAME",

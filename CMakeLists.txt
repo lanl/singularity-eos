@@ -49,6 +49,7 @@ option (SINGULARITY_TEST_PYTHON "Test the Python bindings" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
 option (SINGULARITY_PATCH_MPARK_VARIANT "Apply GPU patch to mpark-variant submodule" ON)
+option (SINGULARITY_LINK_HDF5_FORTRAN "Include HDF5 fortran in link" OFF)
 
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
@@ -281,7 +282,7 @@ if (SINGULARITY_USE_HDF5)
   enable_language(C)
   set(_hdf5_comp "C;HL")
   set(_hdf5_tars "HDF5::HDF5;hdf5::hdf5_hl")
-  if(SINGULARITY_USE_FORTRAN)
+  if(SINGULARITY_LINK_HDF5_FORTRAN)
     set(_hdf5_comp "${_hdf5_comp};Fortran")
     set(_hdf5_tars "${_hdf5_tars};hdf5::hdf5_hl_fortran")
   endif()
