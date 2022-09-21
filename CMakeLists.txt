@@ -281,10 +281,10 @@ if (SINGULARITY_USE_HDF5)
   # type: external
   enable_language(C)
   set(_hdf5_comp "C;HL")
-  set(_hdf5_tars "HDF5::HDF5;hdf5::hdf5_hl")
+  set(_hdf5_tars "HDF5::HDF5 hdf5::hdf5_hl")
   if(SINGULARITY_LINK_HDF5_FORTRAN)
     set(_hdf5_comp "${_hdf5_comp};Fortran")
-    set(_hdf5_tars "${_hdf5_tars};hdf5::hdf5_hl_fortran")
+    set(_hdf5_tars "HDF5::HDF5 hdf5::hdf5_hl hdf5::hdf5_hl_fortran")
   endif()
   singularity_import_dependency(
     PKG HDF5
