@@ -282,7 +282,7 @@ if (SINGULARITY_USE_HDF5)
   singularity_import_dependency(
     PKG HDF5
     COMPONENTS C HL
-    TARGETS HDF5::HDF5 hdf5::hdf5_hl
+    TARGETS HDF5::HDF5 hdf5::hdf5_hl hdf5::hdf5_hl_fortran
   )
 
   # make sure we use MPI,
@@ -360,7 +360,7 @@ if (SINGULARITY_USE_FORTRAN)
   set_target_properties(singularity-eos PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   target_include_directories(singularity-eos INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:include/singularity-eos/eos>
   )
 endif() # SINGULARITY_USE_FORTRAN
 
