@@ -49,7 +49,6 @@ option (SINGULARITY_TEST_PYTHON "Test the Python bindings" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
 option (SINGULARITY_PATCH_MPARK_VARIANT "Apply GPU patch to mpark-variant submodule" ON)
-option (SINGULARITY_LINK_HDF5_FORTRAN "Include HDF5 fortran in link" OFF)
 
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
@@ -280,14 +279,9 @@ if (SINGULARITY_USE_HDF5)
   # hdf5, for data interopability
   # type: external
   enable_language(C)
-  if(SINGULARITY_LINK_HDF5_FORTRAN)
-    set(_hdf5_comp "C;Fortran;HL")
-  else()
-    set(_hdf5_comp "C;HL")
-  endif()
   singularity_import_dependency(
     PKG HDF5
-    COMPONENTS ${_hdf5_comp}
+    COMPONENTS "C;HL"
   )
   # For the moment, there are several versions of
   # HDF5 that are necessary to support, but they 
