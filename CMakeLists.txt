@@ -289,7 +289,7 @@ if (SINGULARITY_USE_HDF5)
   singularity_import_dependency(
     PKG HDF5
     COMPONENTS ${_hdf5_comp}
-    TARGETS ${_hdf5_tars}
+    TARGET ${_hdf5_tars}
   )
 
   # make sure we use MPI,
