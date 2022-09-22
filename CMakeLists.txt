@@ -280,22 +280,28 @@ if (SINGULARITY_USE_HDF5)
   # hdf5, for data interopability
   # type: external
   enable_language(C)
-  set(_hdf5_comp "C;HL")
-  set(_hdf5_tars "HDF5::HDF5")# hdf5::hdf5_hl")
   if(SINGULARITY_LINK_HDF5_FORTRAN)
-    set(_hdf5_comp "${_hdf5_comp};Fortran")
-    set(_hdf5_tars "HDF5::HDF5")# hdf5::hdf5_hl hdf5::hdf5_hl_fortran")
+    set(_hdf5_comp "C;Fortran;HL")
+  else()
+    set(_hdf5_comp "C;HL")
   endif()
   singularity_import_dependency(
     PKG HDF5
     COMPONENTS ${_hdf5_comp}
-    TARGET ${_hdf5_tars}
   )
-
-  # make sure we use MPI,
-  # as this requirement is not
-  # transitive in hdf5
-  #  if(HDF5_IS_PARALLEL)
+  # For the moment, there are several versions of
+  # HDF5 that are necessary to support, but they 
+  # have incompatible build targets.
+  # So, for now, we roll a custom `FindHDF5.cmake`,
+  # and then explicilty pull out the libraries.
+  # CMM: I don't love this, but trying to get things
+  # moving for now
+  #TODO: Move this into `cmake/FindHDF5.cmake`
+  get_target_property(_seosh5ll HDF5::HDF5 INTERFACE_LINK_LIBRARIES)
+  get_target_property(_seosh5ic HDF5::HDF5 INTERFACE_INCLUDE_DIRECTORIES)
+  list(APPEND SINGULARITY_PUBLIC_LIBS ${_seosh5ll})
+  list(APPEND SINGULARITY_PUBLIC_INCS ${_seosh5ic})
+  # make sure we use MPI
   if (HDF5_parallel_FOUND)
     # Message passing interface
     # type: external

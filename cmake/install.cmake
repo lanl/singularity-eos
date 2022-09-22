@@ -41,7 +41,7 @@ foreach(_depName ${SINGULARITY_DEP_PKGS})
     set(_components "COMPONENTS ${SINGULARITY_DEP_PKGS_${_depName}}")
   endif()
   set(SINGULARITY_CONFIG_DEPENDENCIES
-    "${SINGULARITY_CONFIG_DEPENDENCIES}\nfind_package(${_depName} ${_components} REQUIRED)")
+    "${SINGULARITY_CONFIG_DEPENDENCIES}\nif(NOT ${_depName}_FOUND)\n\tfind_package(${_depName} ${_components} REQUIRED)\nendif()")
 endforeach()
 
 # generate the configuration file

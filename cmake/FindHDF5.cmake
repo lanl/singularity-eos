@@ -1,3 +1,66 @@
+# From https://github.com/geospace-code/h5fortran/blob/main/cmake/FindHDF5.cmake
+
+# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
+# file Copyright.txt or https://cmake.org/licensing for details.
+
+#[=======================================================================[.rst:
+
+FindHDF5
+---------
+
+by Michael Hirsch www.scivision.dev
+
+Finds HDF5 library for C, CXX, Fortran. Serial or parallel HDF5.
+
+Environment variable ``HDF5MPI_ROOT`` or CMake variable HDF5MPI_ROOT can
+specify the location of the HDF5-MPI parallel library.
+
+
+Result Variables
+^^^^^^^^^^^^^^^^
+
+``HDF5_FOUND``
+  HDF5 libraries were found
+
+``HDF5_INCLUDE_DIRS``
+  HDF5 include directory
+
+``HDF5_LIBRARIES``
+  HDF5 library files
+
+``HDF5_<lang>_COMPILER_EXECUTABLE``
+  wrapper compiler for HDF5
+
+``HDF5_HAVE_PARALLEL``
+  HDF5 links the MPI library (thus user program must link MPI as well)
+
+Components
+==========
+
+``C``
+  C is normally available for all HDF5 library installs
+
+``CXX``
+  C++ is an optional feature that not all HDF5 library installs are built with
+
+``Fortran``
+  Fortran is an optional feature that not all HDF5 library installs are built with
+
+``parallel``
+  checks that the optional MPI parallel HDF5 layer is enabled. NOTE: if HDF5_parallel_FOUND is true,
+  the user program MUST link MPI::MPI_C and/or MPI::MPI_Fortran.
+
+``HL``
+  always implied and silently accepted to keep compatibility with factory FindHDF5.cmake
+
+
+Targets
+^^^^^^^
+
+``HDF5::HDF5``
+  HDF5 Imported Target
+#]=======================================================================]
+
 include(CheckSymbolExists)
 include(CheckCSourceCompiles)
 include(CheckFortranSourceCompiles)
