@@ -81,3 +81,11 @@ if (SINGULARITY_BUILD_PYTHON AND SINGULARITY_TEST_PYTHON)
            COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python_bindings.py -v)
   set_tests_properties(PythonBindings PROPERTIES ENVIRONMENT "${PYTHON_TEST_ENVIRONMENT}")
 endif()
+
+if(SINGULARITY_USE_FORTRAN)
+  add_executable(ftniface test_ftniface.f90)
+  target_link_libraries(ftniface singularity-eos::singularity-eos)
+  add_test(test_fortran_interface ftniface)
+endif()
+
+
