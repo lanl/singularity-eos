@@ -40,15 +40,17 @@ set(EOS_SRCS
     eos/eos_builder.cpp
 )
 
-if (SINGULARITY_BUILD_CLOSURE)
+if (SINGULARITY_BUILD_CLOSURE OR SINGULARITY_USE_FORTRAN)
   list(APPEND EOS_SRCS eos/singularity_eos.cpp)
-  list(APPEND EOS_HEADERS eos/singularity_eos.hpp closure/mixed_cell_models.hpp)
-endif()
-
-if (SINGULARITY_USE_FORTRAN)
-  list(APPEND EOS_SRCS eos/singularity_eos.f90)
-  # would rather handle this more robustly, being sloppy for now
-  list(APPEND EOS_MODS singularity_eos.mod singularity_eos_types.mod)
+  list(APPEND EOS_HEADERS eos/singularity_eos.hpp)
+  if (SINGULARITY_BUILD_CLOSURE)
+      list(APPEND EOS_HEADERS eos/singularity_eos.hpp closure/mixed_cell_models.hpp)
+  endif()
+  if (SINGULARITY_USE_FORTRAN)
+      list(APPEND EOS_SRCS eos/singularity_eos.f90)
+      # would rather handle this more robustly, being sloppy for now
+      list(APPEND EOS_MODS singularity_eos.mod singularity_eos_types.mod)
+  endif()
 endif()
 
 # export to parent scope
