@@ -422,11 +422,19 @@ set(with_warnings "$<NOT:$<BOOL:${SINGULARITY_HIDE_MORE_WARNINGS}>>")
 set(with_better_flags "$<BOOL:${SINGULARITY_BETTER_DEBUG_FLAGS}>")
 
 set(xlfix "$<${with_xlcxx}:-std=c++1y;-qxflag=disable__cplusplusOverride>")
+# default generators do not invoke preprocessor on fortran sources,
+# these add the appropriate flag to do this
+set(pp_fort "$<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-cpp>")
+set(pp_fort "${pp_fort}$<$<COMPILE_LANG_AND_ID:Fortran,Intel>:-fpp>")
+set(pp_fort "${pp_fort}$<$<COMPILE_LANG_AND_ID:Fortran,PGI>:-Mpreprocess>")
+set(pp_fort "${pp_fort}$<$<COMPILE_LANG_AND_ID:Fortran,Cray>:-eZ>")
+set(pp_fort "${pp_fort}$<$<COMPILE_LANG_AND_ID:Fortran,XL>:-qpreprocess>")
 
 target_compile_options(singularity-eos
   PRIVATE
     ${xlfix}
   PUBLIC
+    ${pp_fort}
     $<${with_cuda}:
       $<${with_cxx}:
         --expt-relaxed-constexpr

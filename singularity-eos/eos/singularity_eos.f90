@@ -39,7 +39,9 @@ module singularity_eos
     init_sg_DavisReactants_f,&
     init_sg_SpinerDependsRhoT_f,&
     init_sg_SpinerDependsRhoSie_f,&
+#ifdef SINGULARITY_USE_EOSPAC
     init_sg_eospac_f,&
+#endif
     get_sg_eos_f,&
     finalize_sg_eos_f
 
@@ -147,6 +149,7 @@ module singularity_eos
     end function init_sg_SpinerDependsRhoSie
   end interface
 
+#ifdef SINGULARITY_USE_EOSPAC
   interface
     integer(kind=c_int) function &
       init_sg_eospac(matindex, eos, id, sg_mods_enabled, sg_mods_values) &
@@ -157,6 +160,7 @@ module singularity_eos
       type(c_ptr), value, intent(in)    :: sg_mods_enabled, sg_mods_values
     end function init_sg_eospac
   end interface
+#endif
 
   interface
     integer(kind=c_int) function &
@@ -374,7 +378,7 @@ contains
                                       c_loc(sg_mods_enabled), &
                                       c_loc(sg_mods_values))
   end function init_sg_SpinerDependsRhoSie_f
-
+#ifdef SINGULARITY_USE_EOSPAC
   integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
                                     sg_mods_values) &
     result(err)
@@ -385,7 +389,7 @@ contains
     err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled), &
                          c_loc(sg_mods_values))
   end function init_sg_eospac_f
-
+#endif
   integer function finalize_sg_eos_f(nmat, eos) &
     result(err)
     integer(c_int), value, intent(in) :: nmat
