@@ -2,6 +2,9 @@
 
 ## Current develop
 
+### Updated `hdf5` handling in the build
+- [[PR181]](https://github.com/lanl/singularity-eos/pull/181) change from manual dependecy handling to using hdf5 interface targets
+
 ### Fixed (Repair bugs, etc)
 - [[PR174]](https://github.com/lanl/singularity-eos/pull/174) fix build configuration when closures are disabled
 - [[PR157]](https://github.com/lanl/singularity-eos/pull/157) fix root finders in Gruneisen, Davis, and JWL

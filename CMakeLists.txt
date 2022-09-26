@@ -281,22 +281,22 @@ if (SINGULARITY_USE_HDF5)
   enable_language(C)
   singularity_import_dependency(
     PKG HDF5
-    COMPONENTS C HL
-    #NB: 'newer' CMake versions, HDF5s will
-    #    do the `idiomatic` cmake setup,
-    #    and `find_package(HDF5)` will define
-    #    these targets.
-    #    however, some downstream codes
-    #    are still struggling through the
-    #    dark times, so we use the 
-    #    'standard' hack for now
-    #    TARGETS HDF5::HDF5 hdf5::hdf5_hl
+    COMPONENTS "C;HL"
   )
-
-  # make sure we use MPI,
-  # as this requirement is not
-  # transitive in hdf5
-  if(HDF5_IS_PARALLEL)
+  # For the moment, there are several versions of
+  # HDF5 that are necessary to support, but they 
+  # have incompatible build targets.
+  # So, for now, we roll a custom `FindHDF5.cmake`,
+  # and then explicilty pull out the libraries.
+  # CMM: I don't love this, but trying to get things
+  # moving for now
+  #TODO: Move this into `cmake/FindHDF5.cmake`
+  get_target_property(_seosh5ll HDF5::HDF5 INTERFACE_LINK_LIBRARIES)
+  get_target_property(_seosh5ic HDF5::HDF5 INTERFACE_INCLUDE_DIRECTORIES)
+  list(APPEND SINGULARITY_PUBLIC_LIBS ${_seosh5ll})
+  list(APPEND SINGULARITY_PUBLIC_INCS ${_seosh5ic})
+  # make sure we use MPI
+  if (HDF5_parallel_FOUND)
     # Message passing interface
     # type: external
     singularity_import_dependency(
@@ -305,13 +305,7 @@ if (SINGULARITY_USE_HDF5)
       TARGETS MPI::MPI_CXX
     )
   endif()
-  ####
-  #TODO: when downstream is rescued,
-  #      we can discard these
-  list(APPEND SINGULARITY_PUBLIC_LIBS ${HDF5_LIBRARIES})
-  list(APPEND SINGULARITY_PUBLIC_LIBS ${HDF5_HL_LIBRARIES})
-  list(APPEND SINGULARITY_PUBLIC_INCS ${HDF5_INCLUDE_DIRS})
-  ####
+
   list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_HDF)
   list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_HDF)
 endif() # SINGULARITY_USE_HDF5
@@ -374,7 +368,7 @@ if (SINGULARITY_USE_FORTRAN)
   set_target_properties(singularity-eos PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   target_include_directories(singularity-eos INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:include/singularity-eos/eos>
   )
 endif() # SINGULARITY_USE_FORTRAN
 
