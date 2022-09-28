@@ -131,6 +131,9 @@ macro(singularity_import_dependency)
   if(dep_COMPONENTS)
     list(APPEND SINGULARITY_DEP_PKGS_${dep_PKG} "${dep_COMPONENTS}")
   endif()
+  if(dep_TARGET)
+    set(SINGULARITY_DEP_TARGET_${dep_PKG} ${dep_TARGET})
+  endif()
   unset(_SMSG_PREFIX)
 endmacro() # singularity_import_dependency
 
