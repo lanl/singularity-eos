@@ -6,6 +6,7 @@
 - [[PR181]](https://github.com/lanl/singularity-eos/pull/181) change from manual dependecy handling to using hdf5 interface targets
 
 ### Fixed (Repair bugs, etc)
+- [[PR183]](https://github.com/lanl/singularity-eos/pull/183) fortify cmake export config to always have interface targets of dependencies that need them
 - [[PR174]](https://github.com/lanl/singularity-eos/pull/174) fix build configuration when closures are disabled
 - [[PR157]](https://github.com/lanl/singularity-eos/pull/157) fix root finders in Gruneisen, Davis, and JWL
 - [[PR151]](https://github.com/lanl/singularity-eos/pull/151) fix module install
