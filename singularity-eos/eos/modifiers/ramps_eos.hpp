@@ -88,10 +88,14 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   }
   BilinearRampEOS() = default;
 
+  using BaseType = T;
+
   // give me std::format or fmt::format...
   static std::string EosType() {
     return std::string("BilinearRampEOS<") + T::EosType() + std::string(">");
   }
+
+  static std::string EosPyType() { return std::string("BilinearRamp") + T::EosPyType(); }
 
   auto GetOnDevice() { return BilinearRampEOS<T>(t_.GetOnDevice(), r0_, a_, b_, c_); }
   inline void Finalize() { t_.Finalize(); }
