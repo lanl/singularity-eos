@@ -14,7 +14,7 @@
 
 cmake_minimum_required(VERSION 3.14)
 
-project(singularity-eos VERSION 1.5.0 LANGUAGES NONE)
+project(singularity-eos VERSION 1.6.1 LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
