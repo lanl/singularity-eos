@@ -14,41 +14,25 @@
 #include "module.hpp"
 
 template <typename T>
-void scaled_eos_class(py::module_ &m, const char *name) {
+void scaled_eos_class(py::module_ &m) {
   // define Scaled utility function
   m.def(
-      "Scaled", [](T eos, Real scaled) { return ScaledEOS<T>(std::move(eos), scaled); },
-      py::arg("eos"), py::arg("scaled"));
-  m.def(
       "Scaled",
-      [](ShiftedEOS<T> eos, Real scaled) {
-        return ScaledEOS<ShiftedEOS<T>>(std::move(eos), scaled);
-      },
+      [](typename T::BaseType eos, Real scaled) { return T(std::move(eos), scaled); },
       py::arg("eos"), py::arg("scaled"));
-
-  // each scaled can also be shifted
-  eos_class<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name)
-      .def(py::init<ShiftedEOS<T>, Real>(), py::arg("eos"), py::arg("scale"));
 
   // define scaled class
-  eos_class<ScaledEOS<T>>(m, std::string("Scaled") + name)
-      .def(py::init<T, Real>(), py::arg("eos"), py::arg("scale"));
+  eos_class<T>(m, T::EosPyType())
+      .def(py::init<typename T::BaseType, Real>(), py::arg("eos"), py::arg("scale"));
+}
+
+template <typename... Ts>
+void create_scaled(py::module_ &m, tl<Ts...>) {
+  // C++14 workaround, since we don't have C++17 fold expressions
+  auto l = {(scaled_eos_class<Ts>(m), 0)...};
 }
 
 void create_scaled_eos_classes(py::module_ &m) {
-  scaled_eos_class<IdealGas>(m, "IdealGas");
-  scaled_eos_class<Gruneisen>(m, "Gruneisen");
-  scaled_eos_class<JWL>(m, "JWL");
-  scaled_eos_class<DavisReactants>(m, "DavisReactants");
-  scaled_eos_class<DavisProducts>(m, "DavisProducts");
-
-#ifdef SPINER_USE_HDF
-  scaled_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
-  scaled_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
-  scaled_eos_class<StellarCollapse>(m, "StellarCollapse");
-#endif
-
-#ifdef SINGULARITY_USE_EOSPAC
-  scaled_eos_class<EOSPAC>(m, "EOSPAC");
-#endif
+  create_scaled(m, singularity::scaled);
+  create_scaled(m, singularity::scaled_of_shifted);
 }

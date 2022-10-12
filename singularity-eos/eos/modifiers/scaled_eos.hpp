@@ -56,10 +56,14 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   using EosBase<ScaledEOS<T>>::PTofRE;
   using EosBase<ScaledEOS<T>>::FillEos;
 
+  using BaseType = T;
+
   // give me std::format or fmt::format...
   static std::string EosType() {
     return std::string("ScaledEOS<") + T::EosType() + std::string(">");
   }
+
+  static std::string EosPyType() { return std::string("Scaled") + T::EosPyType(); }
 
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)

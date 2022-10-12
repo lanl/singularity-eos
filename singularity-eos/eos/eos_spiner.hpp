@@ -168,6 +168,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   RootFinding1D::RootCounts counts;
   inline void Finalize();
   static std::string EosType() { return std::string("SpinerEOSDependsRhoT"); }
+  static std::string EosPyType() { return EosType(); }
 
  private:
   herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
@@ -393,6 +394,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   RootFinding1D::Status rootStatus() const { return status_; }
   RootFinding1D::RootCounts counts;
   static std::string EosType() { return std::string("SpinerEOSDependsRhoSie"); }
+  static std::string EosPyType() { return EosType(); }
   inline void Finalize();
 
  private:

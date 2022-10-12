@@ -92,6 +92,12 @@ static constexpr const auto scaled =
 // variadic list of Scaled<Shifted<T>>'s
 static constexpr const auto scaled_of_shifted =
     transform_variadic_list(shifted, al<ScaledEOS>{});
+// variadic list of UnitSystem<T>'s
+static constexpr const auto unit_system =
+    transform_variadic_list(partial_eos_list, al<UnitSystem>{});
+// variadic list of Relativistic<T>'s
+static constexpr const auto relativistic =
+    transform_variadic_list(partial_eos_list, al<RelativisticEOS>{});
 // relativistic and unit system modifiers
 static constexpr const auto unit_or_rel =
     transform_variadic_list(partial_eos_list, apply_to_partial);

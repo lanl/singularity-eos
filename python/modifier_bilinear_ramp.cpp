@@ -15,42 +15,26 @@
 #include "module.hpp"
 
 template <typename T>
-void bilinear_ramp_helper(py::module_ &m) {
+void bilinear_ramp_eos_class(py::module_ &m) {
+  // define BilinearRamp utility function
   m.def(
       "BilinearRamp",
-      [](T eos, const Real r0, const Real a, const Real b, const Real c) {
-        return BilinearRampEOS<T>(std::move(eos), r0, a, b, c);
+      [](typename T::BaseType eos, const Real r0, const Real a, const Real b, const Real c) {
+        return T(std::move(eos), r0, a, b, c);
       },
       py::arg("eos"), py::arg("r0"), py::arg("a"), py::arg("b"), py::arg("c"));
-}
 
-template <typename T>
-void bilinear_ramp_class_helper(py::module_ &m, std::string name) {
-  eos_class<BilinearRampEOS<T>>(m, std::string("BilinearRamp") + name)
-      .def(py::init<T, Real, Real, Real, Real>(), py::arg("eos"), py::arg("r0"),
+  eos_class<T>(m, T::EosPyType())
+      .def(py::init<typename T::BaseType, Real, Real, Real, Real>(), py::arg("eos"), py::arg("r0"),
            py::arg("a"), py::arg("b"), py::arg("c"));
 }
 
-template <typename T>
-void bilinear_ramp_eos_class(py::module_ &m, const char *name) {
-  // define BilinearRamp utility function
-  bilinear_ramp_helper<T>(m);
-  bilinear_ramp_helper<ShiftedEOS<T>>(m);
-  bilinear_ramp_helper<ScaledEOS<T>>(m);
-  bilinear_ramp_helper<ScaledEOS<ShiftedEOS<T>>>(m);
-
-  bilinear_ramp_class_helper<T>(m, name);
-  bilinear_ramp_class_helper<ShiftedEOS<T>>(m, std::string("Shifted") + name);
-  bilinear_ramp_class_helper<ScaledEOS<T>>(m, std::string("Scaled") + name);
-  bilinear_ramp_class_helper<ScaledEOS<ShiftedEOS<T>>>(m, std::string("ScaledShifted") + name);
+template<typename... Ts>
+void create_bilinear_ramp(py::module_ &m, tl<Ts...>) {
+  // C++14 workaround, since we don't have C++17 fold expressions
+  auto l = { (bilinear_ramp_eos_class<Ts>(m), 0)... };
 }
 
 void create_bilinear_ramp_eos_classes(py::module_ &m) {
-  bilinear_ramp_eos_class<IdealGas>(m, "IdealGas");
-
-#ifdef SPINER_USE_HDF
-  bilinear_ramp_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
-  bilinear_ramp_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
-  bilinear_ramp_eos_class<StellarCollapse>(m, "StellarCollapse");
-#endif
+  create_bilinear_ramp(m, singularity::ramped_all);
 }
