@@ -85,7 +85,7 @@ endif()
 add_executable(profile_eos profile_eos.cpp)
 target_link_libraries(profile_eos singularity-eos::singularity-eos)
 
-if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
+if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME AND NOT SINGULARITY_USE_CUDA)
   set(METHODS_TO_TEST
     TemperatureFromDensityInternalEnergy
     PressureFromDensityTemperature
