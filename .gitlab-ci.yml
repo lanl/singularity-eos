@@ -10,6 +10,8 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
   SINGULARITY_EOS_OPENMPI_VERSION: "4.0.5"
+  SINGULARITY_EOS_TEMP_SPACK_VERSION: "v0.16.3"
+  SINGULARITY_EOS_TEMP_SPACK_DIR: "/projects/xcap/oss/deployment/spack-v0.16.3-3"
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 before_script:
@@ -18,17 +20,19 @@ before_script:
   - export SPACK_USER_CACHE_PATH=/tmp/spack-local
   - cd ${CI_PROJECT_DIR}
   - unset SPACK_ROOT
-  - echo "Spack Version:" ${XCAP_OSS_SPACK_REF}
+  - export SINGULARITY_EOS_SPACK_VERSION=$([ -z "$SINGULARITY_EOS_TEMP_SPACK_VERSION" ] && echo $XCAP_OSS_SPACK_REF || echo $SINGULARITY_EOS_TEMP_SPACK_VERSION)
+  - export SINGULARITY_EOS_SPACK_DIR=${SINGULARITY_EOS_TEMP_SPACK_DIR:=$XCAP_OSS_SPACK_DIR}
+  - echo "Spack Version:" ${SINGULARITY_EOS_SPACK_VERSION}
   - git clone https://github.com/spack/spack.git
-  - cd spack && git checkout ${XCAP_OSS_SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
+  - cd spack && git checkout ${SINGULARITY_EOS_SPACK_VERSION##*-} && cd ${CI_PROJECT_DIR}
   - export SPACK_ARCH=`${CI_PROJECT_DIR}/spack/bin/spack arch` && echo ${SPACK_ARCH}
   - export PLATFORM="${SPACK_ARCH%%-*}" && echo ${PLATFORM}
   - mkdir -p ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}
-  - cp ${XCAP_OSS_SPACK_DIR}/etc/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
+  - cp ${SINGULARITY_EOS_SPACK_DIR}/etc/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
   - cp ${CI_PROJECT_DIR}/.gitlab-ci/config/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
-  - sed -i "s;XCAP_OSS_SPACK_DIR_TMP;${XCAP_OSS_SPACK_DIR};g" "${CI_PROJECT_DIR}/spack/etc/spack/upstreams.yaml"
+  - sed -i "s;XCAP_OSS_SPACK_DIR_TMP;${SINGULARITY_EOS_SPACK_DIR};g" "${CI_PROJECT_DIR}/spack/etc/spack/upstreams.yaml"
   - rm ${CI_PROJECT_DIR}/spack/etc/spack/repos.yaml ${CI_PROJECT_DIR}/spack/etc/spack/packages.yaml
-  - cp ${XCAP_OSS_SPACK_DIR}/etc/spack/${PLATFORM}/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}/
+  - cp ${SINGULARITY_EOS_SPACK_DIR}/etc/spack/${PLATFORM}/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}/
   - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
   - spack compiler list
   - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
