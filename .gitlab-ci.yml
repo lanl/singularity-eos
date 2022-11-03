@@ -10,8 +10,8 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
   SINGULARITY_EOS_OPENMPI_VERSION: "4.0.5"
-  SINGULARITY_EOS_TEMP_SPACK_VERSION: "v0.16.3"
-  SINGULARITY_EOS_TEMP_SPACK_DIR: "/projects/xcap/oss/deployment/spack-v0.16.3-3"
+  SINGULARITY_EOS_TEMP_SPACK_VERSION: "v0.18.1"
+  SINGULARITY_EOS_TEMP_SPACK_DIR: "/projects/xcap/oss/deployment/CI/spack-v0.18.1-0"
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 before_script:
