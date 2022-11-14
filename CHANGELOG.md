@@ -9,6 +9,7 @@
 ### Added (new features/APIs/variables/...)
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR192]](https://github.com/lanl/singularity-eos/pull/192) remove h5py and start using gold files
 
 ### Fixed (not changing behavior/API/variables/...)
 
