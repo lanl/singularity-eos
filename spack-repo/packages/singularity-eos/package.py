@@ -52,7 +52,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("catch2@2.13.7", when="+tests")
     depends_on("python@3:", when="+python")
     depends_on("py-pybind11@2.9.1:", when="+python")
-#    depends_on("py-h5py", when="+tests build_extra=stellarcollapse")
     depends_on("py-sphinx", when="+doc")
     depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
     depends_on("py-sphinx-multiversion", when="+doc")
@@ -102,9 +101,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     # common MPI dependence
     for _flag in ("~mpi", "+mpi"):
         depends_on("hdf5~cxx+hl" + _flag, when=_flag)
-        depends_on("py-h5py" + _flag, when="+tests build_extra=stellarcollapse " + _flag)
 #        depends_on("hdf5+hl" + _flag, when=_flag)
-        depends_on("py-h5py" + _flag, when=_flag)
         depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos" + _flag)
 
     def cmake_args(self):

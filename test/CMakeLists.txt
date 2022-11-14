@@ -60,16 +60,17 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
                  profile_stellar_collapse.cpp)
   target_link_libraries(profile_stellar_collapse singularity-eos::singularity-eos)
 
-  message(STATUS "Generating stellar collapse table for tests using Python script")
-  find_package(Python COMPONENTS Interpreter REQUIRED)
-  if (HDF5_parallel_FOUND)
-    execute_process(COMMAND mpirun -n 1 ${Python_EXECUTABLE}
-      ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_ideal_sc.py
-      -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
-  else()
-    execute_process(COMMAND ${Python_EXECUTABLE}
-      ${CMAKE_SOURCE_DIR}/utils/scripts/make_tabulated_ideal_sc.py
-      -o ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
+  if (NOT EXISTS ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
+    message(STATUS "Attempting to download the stellar collapse gold file for regression tests. "
+      "You can also download this file manually, and save it in the build directory. "
+      "File is located at https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/stellar_collapse_ideal.h5 "
+      "If you do not want to use the gold file, you can set -DSINGULARITY_TEST_STELLAR_COLLAPSE=OFF."
+      )
+    file(
+      DOWNLOAD
+      https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/stellar_collapse_ideal.h5
+      ${CMAKE_BINARY_DIR}/stellar_collapse_ideal.h5
+      )
   endif()
 endif()
 

@@ -18,6 +18,8 @@ project(singularity-eos VERSION 1.6.2 LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.6.2")
+
 #------------------------------------------------------------------------------#
 # Use better messages
 #------------------------------------------------------------------------------#
@@ -477,6 +479,7 @@ include(cmake/install.cmake)
 # to enable tests. It creates a "BUILD_TESTING" option, and runs
 # `enable_testing()`. See https://cmake.org/cmake/help/latest/module/CTest.html
 if(SINGULARITY_BUILD_TESTS)
+  include(ExternalProject) # for downloading files
   enable_testing()
   add_subdirectory(test)
 endif()
