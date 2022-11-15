@@ -101,7 +101,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     # common MPI dependence
     for _flag in ("~mpi", "+mpi"):
         depends_on("hdf5~cxx+hl" + _flag, when=_flag)
-#        depends_on("hdf5+hl" + _flag, when=_flag)
         depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos" + _flag)
 
     def cmake_args(self):
