@@ -65,7 +65,7 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   include(FetchContent)
   FetchContent_Declare(goldfiles
     URL ${SINGULARITY_GOLDFILE_URL}
-    URL_HASH SHA256=${SIGNULARITY_GOLDFILE_HASH}
+    URL_HASH SHA256=${SINGULARITY_GOLDFILE_HASH}
     SOURCE_DIR goldfiles
     )
   FetchContent_MakeAvailable(goldfiles)
