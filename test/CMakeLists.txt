@@ -56,7 +56,7 @@ if (SINGULARITY_BUILD_CLOSURE)
 endif()
 
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
-   set(SINGULARITY_GOLDFILE_URL
+  set(SINGULARITY_GOLDFILE_URL
     https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/goldfiles.tar.gz)
   message(STATUS "Attempting to download gold files for regression tests. "
     "File is located at ${SINGULARITY_GOLDFILE_URL} "
