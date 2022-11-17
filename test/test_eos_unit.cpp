@@ -992,7 +992,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
   const std::string savename = "stellar_collapse_ideal_2.sp5";
   static constexpr Real MeV2K_ = 1.e9 * 11.604525006;
   GIVEN("A stellar collapse EOS") {
-    const std::string filename = "../stellar_collapse_ideal.h5";
+    const std::string filename = "./goldfiles/stellar_collapse_ideal.h5";
     THEN("We can load the file") { // don't bother filtering bmod here.
       StellarCollapse sc(filename, false, false);
       AND_THEN("Some properties we expect for ideal gas hold") {

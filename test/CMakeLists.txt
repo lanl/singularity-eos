@@ -56,22 +56,23 @@ if (SINGULARITY_BUILD_CLOSURE)
 endif()
 
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
+   set(SINGULARITY_GOLDFILE_URL
+    https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/goldfiles.tar.gz)
+  message(STATUS "Attempting to download gold files for regression tests. "
+    "File is located at ${SINGULARITY_GOLDFILE_URL} "
+    "If you do not want to use the gold file, you can set -DSINGULARITY_TEST_STELLAR_COLLAPSE=OFF."
+    )
+  include(FetchContent)
+  FetchContent_Declare(goldfiles
+    URL ${SINGULARITY_GOLDFILE_URL}
+    URL_HASH SHA256=${SIGNULARITY_GOLDFILE_HASH}
+    SOURCE_DIR goldfiles
+    )
+  FetchContent_MakeAvailable(goldfiles)
+
   add_executable(profile_stellar_collapse
                  profile_stellar_collapse.cpp)
   target_link_libraries(profile_stellar_collapse singularity-eos::singularity-eos)
-
-  if (NOT EXISTS ${PROJECT_BINARY_DIR}/stellar_collapse_ideal.h5)
-    message(STATUS "Attempting to download the stellar collapse gold file for regression tests. "
-      "You can also download this file manually, and save it in the build directory. "
-      "File is located at https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/stellar_collapse_ideal.h5 "
-      "If you do not want to use the gold file, you can set -DSINGULARITY_TEST_STELLAR_COLLAPSE=OFF."
-      )
-    file(
-      DOWNLOAD
-      https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/stellar_collapse_ideal.h5
-      ${CMAKE_BINARY_DIR}/stellar_collapse_ideal.h5
-      )
-  endif()
 endif()
 
 if (SINGULARITY_BUILD_PYTHON AND SINGULARITY_TEST_PYTHON)
