@@ -33,6 +33,8 @@ namespace EOSBuilder {
 enum class EOSType {
   IdealGas,
   Gruneisen,
+  SNLGruneisen,
+  Vinet,
   JWL,
   DavisReactants,
   DavisProducts
