@@ -296,7 +296,9 @@ if (SINGULARITY_USE_HDF5)
   list(APPEND SINGULARITY_PUBLIC_LIBS ${_seosh5ll})
   list(APPEND SINGULARITY_PUBLIC_INCS ${_seosh5ic})
   # make sure we use MPI
-  if (HDF5_parallel_FOUND)
+  # mauneyc 20221129: HDF5 is messy in the wild, so check both
+  # TODO: clarify this 
+  if (HDF5_parallel_FOUND OR HDF5_IS_PARALLEL)
     # Message passing interface
     # type: external
     singularity_import_dependency(
