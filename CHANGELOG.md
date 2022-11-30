@@ -22,6 +22,9 @@
 ## Release 1.6.2
 Date: 10/12/2022
 
+### Revert to standard `hdf5` handling
+- [[PR198]](https://github.com/lanl/singularity-eos/pull/198) Use a more robust HDF5 handling that eliminates some edge breaks
+
 ### Updated `hdf5` handling in the build
 - [[PR181]](https://github.com/lanl/singularity-eos/pull/181) change from manual dependecy handling to using hdf5 interface targets
 
