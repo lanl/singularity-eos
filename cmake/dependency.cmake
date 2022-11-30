@@ -74,7 +74,6 @@ macro(singularity_import_dependency)
   )
   set(one_value_args
     PKG
-    TARGET
     SUBDIR
   )
   set(multi_value_args
@@ -84,11 +83,21 @@ macro(singularity_import_dependency)
   cmake_parse_arguments(dep "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
   set(_SMSG_PREFIX "[IMPORT ${dep_PKG}]")
+  set(_SMSG_METHOD "undetermined")
+  set(_SMSG_CONTINUE TRUE)
 
-  # first, if this target is already defined, then ignore figuring out imports
-  if(TARGET ${dep_TARGET})
-    singularity_msg(STATUS "Detected ${dep_TARGET} present, no further processing for this dependency.")
-  else()
+  # first, if targets are already defined, then ignore figuring out imports
+  foreach(_tar ${dep_TARGETS})
+    if(TARGET ${_tar})
+      singularity_msg(VERBOSE "Requested target ${_tar} present, no further processing for this dependency.")
+      set(_SMSG_METHOD "target(s) already present")
+      set(_SMSG_CONTINUE FALSE)
+      break()
+    endif()
+  endforeach()
+
+  # if requested targets absent, try and find them
+  if(_SMSG_CONTINUE)
     # check for user overrides
     # sets `SINGULARITY_IMPORT_USER_OVERRIDE_${dep_PKG}`
     # if that user requests import
@@ -99,42 +108,56 @@ macro(singularity_import_dependency)
 
     # if only use submodule, or user requests import of external source
     if(dep_SUBMODULE_ONLY OR SINGULARITY_IMPORT_USER_OVERRIDE_${dep_PKG})
+      singularity_msg(VERBOSE "User override of ${dep_PKG} requested")
       singularity_import_submodule(
         PKG ${dep_PKG}
         SUBDIR ${dep_SUBDIR}
       )
+      set(_SMSG_METHOD "user override")
     else()
       # the standard path of dependency importing.
       # check if pkg can be found in environment
-      singularity_msg(STATUS "Attempting \"find_package(${dep_PKG})\"")
+      singularity_msg(VERBOSE "Attempting find_package(${dep_PKG} COMPONENTS ${dep_COMPONENTS})")
       find_package(${dep_PKG} QUIET COMPONENTS ${dep_COMPONENTS})
 
       # if we fail to find the package, try a submodule
       if (NOT ${dep_PKG}_FOUND)
+        singularity_msg(VERBOSE "\"find_package(${dep_PKG})\" did not detect ${dep_PKG}, proceeding to try \"add_subdirectory(${dep_SUBDIR})\"")
         # does `add_subdirectory` with ${SUBDIR}
         singularity_import_submodule(
           PKG ${dep_PKG}
           SUBDIR ${dep_SUBDIR}
         )
+        set(_SMSG_METHOD "add_subdirectory")
       else()
-        singularity_msg(STATUS "Found with find_package() [${${dep_PKG}_DIR}]")
+        singularity_msg(VERBOSE "Found with find_package() [${${dep_PKG}_DIR}]")
+        set(_SMSG_METHOD "find_package")
       endif() # NOT FOUND
     endif() # SUBMODULE ONLY
-  endif() # TARGET
+  endif() # CONTINUE
 
+  # do some robustness checks
+  foreach(_tar ${dep_TARGETS})
+    if(NOT TARGET ${_tar})
+      message(FATAL_ERROR "${dep_PKG} declared target ${_tar}, but after processing that target is not defined")
+    endif()
+  endforeach()
+
+  singularity_msg(STATUS "successfuly configured ${dep_PKG}, method used: ${_SMSG_METHOD}")
   # if we made it hear, there should be valid imports available.
   # we record these to the global scope for later use and processing
   # TODO: split out public/private libs
   list(APPEND SINGULARITY_PUBLIC_LIBS ${dep_TARGETS})
-  list(APPEND SINGULARITY_PUBLIC_LIBS ${dep_TARGET})
   list(APPEND SINGULARITY_DEP_PKGS ${dep_PKG})
   if(dep_COMPONENTS)
     list(APPEND SINGULARITY_DEP_PKGS_${dep_PKG} "${dep_COMPONENTS}")
   endif()
-  if(dep_TARGET)
-    set(SINGULARITY_DEP_TARGET_${dep_PKG} ${dep_TARGET})
+  if(dep_TARGETS)
+    set(SINGULARITY_DEP_TARGETS_${dep_PKG} ${dep_TARGETS})
   endif()
   unset(_SMSG_PREFIX)
+  unset(_SMSG_METHOD)
+  unset(_SMSG_CONTINUE)
 endmacro() # singularity_import_dependency
 
 #------------------------------------------------------------------------------
@@ -166,7 +189,7 @@ macro(singularity_import_check_user_override)
     if(NOT ${dep_PKG}_ROOT)
       singularity_msg(FATAL_ERROR "SINGULARITY_${dep_VARCASE}_INSTALL_DIR [${SINGULARITY_${dep_CAP}_INSTALL_DIR}] set, but did not find an installed CMake package. Use a valid install path or unset this variable.")
     else()
-      singularity_msg(STATUS "located user-provided install, ${dep_PKG}_ROOT = ${${dep_PKG}_ROOT}")
+      singularity_msg(VERBOSE "located user-provided install, ${dep_PKG}_ROOT = ${${dep_PKG}_ROOT}")
     endif()
   endif()
   if(SINGULARITY_${dep_CAP}_IMPORT_DIR)
@@ -191,5 +214,5 @@ macro(singularity_import_submodule)
       
   add_subdirectory(${dep_SUBDIR} "${CMAKE_CURRENT_BINARY_DIR}/extern/${dep_PKG}")
 
-  singularity_msg(STATUS "${dep_PKG} added from: ${dep_SUBDIR}")
+  singularity_msg(VERBOSE "${dep_PKG} added from: ${dep_SUBDIR}")
 endmacro()
