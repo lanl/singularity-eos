@@ -27,8 +27,6 @@ include(cmake/submodule_configs.cmake)
 #     - PKG:                the name of the package (e.g. `find_package()`)
 #     - SUBDIR (optional):  directory of submodule where to find package 
 #                           source tree
-#     - TARGET:             the target to import(/export later mayber).
-#                           CANNOT be used with `TARGETS`
 #   keyword arguments, multi-values:
 #     - TARGETS:            list of targets to import(/export later mayber).
 #                           CANNOT be used with `TARGET`
@@ -187,6 +185,9 @@ macro(singularity_import_check_user_override)
       NO_DEFAULT_PATH
     )
     if(NOT ${dep_PKG}_ROOT)
+      #TODO: this is actaully where fails all funnel to, so it can be 
+      #      confusing - the error is real, but it may be due to an issue
+      #      find_package() for instance.
       singularity_msg(FATAL_ERROR "SINGULARITY_${dep_VARCASE}_INSTALL_DIR [${SINGULARITY_${dep_CAP}_INSTALL_DIR}] set, but did not find an installed CMake package. Use a valid install path or unset this variable.")
     else()
       singularity_msg(VERBOSE "located user-provided install, ${dep_PKG}_ROOT = ${${dep_PKG}_ROOT}")
