@@ -18,6 +18,10 @@ project(singularity-eos VERSION 1.6.2 LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.6.2")
+set(SINGULARITY_GOLDFILE_HASH
+  33ef74b29937cc1347b525f72662933dd2b0556550f6541f97fc1de8a01c3c2a)
+
 #------------------------------------------------------------------------------#
 # Use better messages
 #------------------------------------------------------------------------------#
