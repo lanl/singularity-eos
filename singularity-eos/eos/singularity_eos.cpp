@@ -113,24 +113,23 @@ int init_sg_SNLGruneisen(const int matindex, EOS *eos, const double C0, const do
 
 int init_sg_Vinet(const int matindex, EOS *eos, const double rho0, const double T0,
                       const double B0, const double BP0, const double A0, const double Cv0,
-                      const double E0, const double S0, const double d2,
-                      const double d3, int const *const enabled, double *const vals) {
+                      const double E0, const double S0, const double *d2to40,
+                      int const *const enabled, double *const vals) {
   assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2, d3));
+  EOS eosi = SGAPPLYMODSIMPLE(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
   }
-  EOS eos_ = SGAPPLYMOD(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2, d3));
+  EOS eos_ = SGAPPLYMOD(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
 
 int init_sg_Vinet(const int matindex, EOS *eos, const double rho0, const double T0,
                       const double B0, const double BP0, const double A0, const double Cv0,
-                      const double E0, const double S0, const double d2,
-                      const double d3) {
-  return init_sg_Vinet(matindex, eos, rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2, d3, def_en,
+                      const double E0, const double S0, const double *d2to40) {
+  return init_sg_Vinet(matindex, eos, rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40, def_en,
                            def_v);
 }
 

@@ -38,20 +38,26 @@ SCENARIO("Vinet EOS", "[VectorEOS][VinetEOS]") {
     constexpr Real cm = 1.;
     constexpr Real us = 1e-06;
     constexpr Real Mbcc_per_g = 1e12;
-    // Gruneisen parameters for copper
-    constexpr Real C0 = 0.394 * cm / us;
-    constexpr Real S1 = 1.489;
-    constexpr Real S2 = 0.;
-    constexpr Real S3 = 0.;
-    constexpr Real Gamma0 = 2.02;
-    constexpr Real b = 0.47;
+    // Vinet parameters for copper
     constexpr Real rho0 = 8.93;
-    constexpr Real T0 = 298.;
-    constexpr Real P0 = 0.;
-    constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
+    constexpr Real T0 = 298.0;
+    constexpr Real B0 = 1.3448466 * Mbcc_per_g;
+    constexpr Real BP0 = 4.956;
+    constexpr Real A0 = 5.19245e-05;
+    constexpr Real Cv0 = 0.383e-05 * Mbcc_per_g;
+    constexpr Real E0 = 0.0;
+    constexpr Real S0 = 5.05e-04 * Mbcc_per_g;
+    constexpr int dnum = 38;
+    constexpr Real d2to40[38]={0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
+	    0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
+	    0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
+	    0.,0.,0.,0.,0.,0.,0.,0.};
     // Create the EOS
-    EOS host_eos = Vinet(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
+    EOS host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
     EOS eos = host_eos.GetOnDevice();
+
+    eos.PrintParams();
+    
     GIVEN("Densities and energies") {
       constexpr int num = 4;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -71,13 +77,13 @@ SCENARIO("Vinet EOS", "[VectorEOS][VinetEOS]") {
       portableFor(
           "Initialize density and energy", 0, 1, PORTABLE_LAMBDA(int i) {
             v_density[0] = 8.0;
-            v_density[1] = 9.0;
-            v_density[2] = 9.5;
-            v_density[3] = 0.;
-            v_energy[0] = 1.e9;
-            v_energy[1] = 5.e8;
-            v_energy[2] = 1.e8;
-            v_energy[3] = 0.;
+            v_density[1] = 8.5;
+            v_density[2] = 9.0;
+            v_density[3] = 8.93;
+            v_energy[0] = 2.e8;
+            v_energy[1] = 4.6e9;
+            v_energy[2] = 4.7e9;
+            v_energy[3] = 0.0;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create host-side mirrors of the inputs and copy the inputs. These are
@@ -91,14 +97,14 @@ SCENARIO("Vinet EOS", "[VectorEOS][VinetEOS]") {
       // Gold standard values for a subset of lookups
       constexpr std::array<Real, num> pressure_true{
           -1.282094800000000e+11, 1.998504088912181e+10, 9.595823319513451e+10,
-          P0 - C0 * C0 * rho0};
+           B0 - B0*B0*A0*A0/Cv0/rho0*T0};
       constexpr std::array<Real, num> bulkmodulus_true{
           9.990648504000005e+11, 1.460692677162573e+12, 1.851227213843747e+12,
-          Gamma0 * (P0 - C0 * C0 * rho0)};
+          (B0 - B0*B0*A0*A0/Cv0/rho0*T0)};
       constexpr std::array<Real, num> temperature_true{
           5.590966057441253e+02, 4.285483028720627e+02, 3.241096605744125e+02, T0};
-      constexpr std::array<Real, num> gruneisen_true{Gamma0, 2.007944444444444e+00,
-                                                     1.927000000000000e+00, Gamma0};
+      constexpr std::array<Real, num> gruneisen_true{B0*A0/Cv0/rho0, 2.007944444444444e+00,
+                                                     1.927000000000000e+00, B0*A0/Cv0/rho0};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -154,7 +160,7 @@ SCENARIO("Vinet EOS", "[VectorEOS][VinetEOS]") {
         Kokkos::fence();
         Kokkos::deep_copy(h_temperature, v_temperature);
 #endif // PORTABILITY_STRATEGY_KOKKOS
-        THEN("The returned B_S(rho, e) should be equal to the true value") {
+        THEN("The returned T(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_temperature, temperature_true, "Density",
                         "Energy");
         }

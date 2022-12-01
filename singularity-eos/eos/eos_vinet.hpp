@@ -39,9 +39,9 @@ class Vinet : public EosBase<Vinet> {
   // Constructor 
   PORTABLE_INLINE_FUNCTION
   Vinet(const Real rho0, const Real T0, const Real B0, const Real BP0, const Real A0, 
-	    const Real Cv0, const Real E0, const Real S0, const Real d2, const Real d3)
+	    const Real Cv0, const Real E0, const Real S0, const Real *expconsts)
       : _rho0(rho0), _T0(T0), _B0(B0), _BP0(BP0), _A0(A0), _Cv0(Cv0), _E0(E0), _S0(S0), 
-	_d2(d2), _d3(d3) {
+	_expconsts(expconsts) {
       CheckVinet();
   }
 
@@ -54,6 +54,10 @@ class Vinet : public EosBase<Vinet> {
       const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temp, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;	  
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const {
     return _Cv0;
@@ -89,8 +93,11 @@ class Vinet : public EosBase<Vinet> {
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char st[]{"Vinet Params: "};
-    printf("%s rho0:%e T0:%e B0:%e BP0:%e\n  A0:%e Cv0:%e E0:%e S0:%e\n  d2:%e d3:%e \n",
-           st, _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0, _d2, _d3);
+    printf("%s rho0:%e T0:%e B0:%e BP0:%e\n  A0:%e Cv0:%e E0:%e S0:%e\n\n",
+           st, _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0);
+    for( int i=0; i<=38; i++) {
+	    if(_d2to40[i] > 0.0) printf("d%i:%e\n",i+2,_d2to40[i]);
+    }
   }
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
@@ -100,140 +107,120 @@ class Vinet : public EosBase<Vinet> {
   static std::string EosPyType() { return EosType(); }
 
  private:
-  Real _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0, _d2, _d3;
-  // static constexpr const char _eos_type[] = {"Vinet"};
-  Real *_VIP;
-  PORTABLE_INLINE_FUNCTION
-  Real dPres_drho_e(const Real rho, const Real sie) const;
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
-  PORTABLE_INLINE_FUNCTION void CheckVinet() const;
+  Real _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0;
+  const Real *_expconsts;
+  // static constexpr const char _eos_type[] = {"Vinet"};
+  Real _VIP[42], _d2to40[38];
+
+  PORTABLE_INLINE_FUNCTION void CheckVinet();
   PORTABLE_INLINE_FUNCTION void Vinet_F_DT_func(const Real rho, const Real T, 
 		  				Real *output) const;
 };
 
-PORTABLE_INLINE_FUNCTION Real Vinet::dPres_drho_e(const Real rho_in,
-                                                  const Real sie) const {
-  using namespace math_utils;
-  const Real rho = std::min(rho_in, _rho_max);
-  if (rho < _rho0) {
-    return pow<2>(_C0) + Gamma(rho) * sie;
-  } else {
-    const Real eta = 1 - _rho0 / rho;
-    const Real s = _s1 * eta + _s2 * pow<2>(eta) + _s3 * pow<3>(eta);
-    const Real ds = _s1 + 2 * _s2 * eta + 3 * _s3 * pow<2>(eta);
-    const Real deta = _rho0 / pow<2>(rho);
-    const Real dGam = (_b - _G0) * deta;
-    const Real P_H = _P0 + pow<2>(_C0) * _rho0 * eta / pow<2>(1 - s);
-    const Real dP_H = math_utils::pow<2>(_C0) * _rho0 / pow<2>(1 - s) * deta *
-                      (1 + 2 * eta * ds / (1 - s));
-    const Real E_H = (P_H + _P0) * eta / _rho0 / 2.;
-    const Real dE_H = deta * (P_H + _P0) / _rho0 / 2. + eta / _rho0 / 2 * dP_H;
-    return dP_H + Gamma(rho) * (sie - E_H) + rho * dGam * (sie - E_H) -
-           rho * Gamma(rho) * dE_H;
-  }
-}
+PORTABLE_INLINE_FUNCTION void Vinet::CheckVinet() {
 
-PORTABLE_INLINE_FUNCTION void Vinet::CheckVinet() const {
-
-  Real *VIP;
   int ind;
 
-  if (VP[VR0] < (EOS_REAL) 0.0){
-    printf("testing VP[VR0]\n");
+  if (_rho0 < 0.0){
+    printf("testing rho0\n");
     EOS_ERROR("Required Vinet model parameter rho0 not set");
     return;
   }
-  if (VP[VT0] < (EOS_REAL) 0.0){
-    printf("testing VP[VT0]\n");
+  if (_T0 < 0.0){
+    printf("testing T0\n");
     EOS_ERROR("Required Vinet model parameter T0 not set");
     return;
   }
-  if (VP[VBT0] < (EOS_REAL) 0.0){
-    printf("testing VP[VBT0]\n");
+  if (_B0 < 0.0){
+    printf("testing B0\n");
     EOS_ERROR("Required Vinet model parameter B0 not set");
     return;
   }
-  if (VP[VBTP0] < 1.0){
-    printf("testing VP[VBTP0]\n");
+  if (_BP0 < 1.0){
+    printf("testing BP0\n");
     EOS_ERROR("Required Vinet model parameter BP0 not set or too small (<1)");
     return;
   }
-  if (VP[VA0] < 0.0){
-    printf("testing VP[VA0]\n");
+  if (_A0 < 0.0){
+    printf("testing A0\n");
     EOS_ERROR("Required Vinet model parameter A0 not set");
     return;
   }
-  if (VP[VCV0] < 0.0){
-    printf("testing VP[VCV0]\n");
+  if (_Cv0 < 0.0){
+    printf("testing Cv0\n");
     EOS_ERROR("Required Vinet model parameter Cv0 not set");
     return;
   }
 
-  VIP[0] = _B0/_rho0 + pow(_A0*_B0/_rho0,2.0)*_T0/_Cv0;      // sound speed squared
-  VIP[1] = 3.0/2.0*(_BP0-1.0); // exponent
-  VIP[2] = 1.0; // prefactor f0
-  VIP[3] = 0.0; // prefactor f1
 
-  for (ind = 4; ind < 43; ind++) VIP[ind] = VP[VD2+ind-4];
+  for(ind = 0; ind < 38; ind++) _d2to40[ind]=_expconsts[ind];
+
+  _VIP[0] = _B0/_rho0 + pow(_A0*_B0/_rho0,2.0)*_T0/_Cv0;      // sound speed squared
+  _VIP[1] = 3.0/2.0*(_BP0-1.0); // exponent
+  _VIP[2] = 1.0; // prefactor f0
+  _VIP[3] = 0.0; // prefactor f1
+
+  for (ind = 4; ind < 42; ind++) _VIP[ind] = _d2to40[ind-4];
   ind = 42;
-  while (VIP[ind] == 0.0) ind--;
+  while (_VIP[ind] == 0.0) ind--;
   while (ind >= 4) {
     ind--;
-    VIP[ind] = VIP[ind] - (ind -1)/VIP[1]*VIP[ind+1];
+    _VIP[ind] = _VIP[ind] - (ind -1)/_VIP[1]*_VIP[ind+1];
   }
 }
 
 
 PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real T, 
 							Real *output) const {
-  int pref0vp = VD2-2, pref0vip = 2, ind;
+  int pref0vp = -2, pref0vip = 2, ind;
   Real x, x2inv, onemx, etatimes1mx, expetatimes1mx, temp;
   Real sumP=0.0, sumB=0.0, sumE=0.0;
   Real entropy, energy, pressure, dpdrho, dpdt, dedt, dedrho, soundspeed;
 
-  ind = 40;
-  while (VIP[pref0vip+ind] == 0.0) ind--;
+  ind = 40-1;
+  while (_VIP[pref0vip+ind] == 0.0) ind--;
 
   x = pow(_rho0/rho,1.0/3.0);  /*rho-dependent*/
   x2inv = 1.0/pow(x,2.0);
   onemx = 1.0-x;
-  etatimes1mx = VIP[1]*onemx;
+  etatimes1mx = _VIP[1]*onemx;
   expetatimes1mx = exp(etatimes1mx);
 
   while (ind >= 2){
-    sumP = VP[pref0vp+ind]+onemx*sumP;
-    sumB = VP[pref0vp+ind]*ind+onemx*sumB;
-    sumE = VIP[pref0vip+ind]+onemx*sumE;
+    sumP = _d2to40[pref0vp+ind]+onemx*sumP;
+    sumB = _d2to40[pref0vp+ind]*ind+onemx*sumB;
+    sumE = _VIP[pref0vip+ind]+onemx*sumE;
     ind--;
   }
   while (ind >= 0){
-    sumE = VIP[pref0vip+ind]+onemx*sumE;
+    sumE = _VIP[pref0vip+ind]+onemx*sumE;
     ind--;
   }
   sumP = 1.0+sumP*pow(onemx,2.0);
   sumB = sumB*onemx;
-  sumE = VIP[1]*onemx*sumE;
+  sumE = _VIP[1]*onemx*sumE;
 
   /* T0 isotherm */
-  energy = 9.0*_B0/pow(VIP[1],2.0)/_rho0(VIP[pref0vip]-expetatimes1mx*(VIP[pref0vip]-sumE))-_A0*_B0*_T0*(1.0-_rho0/rho);
-  pressure = 3.0*VP[VBT0]*x2inv*onemx*expetatimes1mx*sumP;
-  temp = (1.0+onemx*(VIP[1]*x+1.0))*sumP+x*onemx*sumB;
-  temp = VP[VBT0]/VP[VR0]*x*expetatimes1mx*temp;
+  energy = 9.0*_B0/pow(_VIP[1],2.0)/_rho0*(_VIP[pref0vip]-expetatimes1mx*(_VIP[pref0vip]-sumE))-_A0*_B0*_T0*(1.0-_rho0/rho);
+  pressure = 3.0*_B0*x2inv*onemx*expetatimes1mx*sumP;
+  temp = (1.0+onemx*(_VIP[1]*x+1.0))*sumP+x*onemx*sumB;
+  temp = _B0/_rho0*x*expetatimes1mx*temp;
 
   /* Go to required temperature */
-  energy = energy + VP[VCV0]*(T-VP[VT0])+VP[VESFT];
-  pressure = pressure + VP[VA0]*VP[VBT0]*(T-VP[VT0]);
+  energy = energy + _Cv0*(T-_T0)+_E0;
+  pressure = pressure + _A0*_B0*(T-_T0);
   dpdrho = temp;
-  dpdt = VP[VA0]*VP[VBT0];
-  dedt = VP[VCV0];
-  dedrho = (pressure -T*VP[VA0]*VP[VBT0])/pow(rho,2.0);
+  dpdt = _A0*_B0;
+  dedt = _Cv0;
+  dedrho = (pressure - T*_A0*_B0)/pow(rho,2.0);
   if (T < 0.0){
     printf("warning!! negative temperature");
     entropy = 0.0;
   } else
-    entropy = VP[VA0]*VP[VBT0]*(1.0/rho-1/VP[VR0])+VP[VCV0]*log(T/VP[VT0])+VP[VSSFT];
-  soundspeed = MAX(0.0,dpdrho+T*pow(dpdt/rho,2.0)/VP[VCV0]);
+    entropy = _A0*_B0*(1.0/rho-1/_rho0)+_Cv0*log(T/_T0)+_S0;
+  soundspeed = std::max(0.0,dpdrho+T*pow(dpdt/rho,2.0)/_Cv0);
   soundspeed = sqrt(soundspeed);
 
   output[0] = energy;
@@ -247,93 +234,81 @@ PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real 
 
   return;
 }
-
-
-PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityInternalEnergy(
-    const Real rho_in, const Real sie, Real *lambda) const {
-  using namespace math_utils;
-  const Real rho = std::min(rho_in, _rho_max);
-  Real P_H;
-  Real E_H;
-  if (rho >= _rho0) {
-    const Real eta = 1 - _rho0 / rho;
-    const Real s = _s1 * eta + _s2 * pow<2>(eta) + _s3 * pow<3>(eta);
-    P_H = _P0 + pow<2>(_C0) * _rho0 * eta / pow<2>(1 - s);
-    E_H = (P_H + _P0) * eta / _rho0 / 2.;
-  } else {
-    // This isn't thermodynamically consistent but it's widely used for expansion
-    P_H = _P0 + pow<2>(_C0) * (rho - _rho0);
-    E_H = 0.;
-  }
-  return P_H + Gamma(rho) * rho * (sie - E_H);
+PORTABLE_INLINE_FUNCTION Real Vinet::InternalEnergyFromDensityTemperature(
+    const Real rho, const Real temp, Real *lambda) const {
+  Real output[8];
+  Vinet_F_DT_func(rho,temp,output);
+  return output[0];
 }
-PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityInternalEnergy(
-    const Real rho_in, const Real sie, Real *lambda) const {
-  using namespace gruneisen_utils;
-  const Real rho = std::min(rho_in, _rho_max);
-  // The if statement exists here to avoid the divide by zero
-  if (rho < _rho0) {
-    return rho * math_utils::pow<2>(_C0) +
-           _G0 * (rho * sie + PressureFromDensityInternalEnergy(rho, sie));
-  } else {
-    const Real dPdr_e = dPres_drho_e(rho, sie);
-    const Real dPde_r = rho * Gamma(rho);
-    // Thermodynamic identity
-    return rho * dPdr_e + PressureFromDensityInternalEnergy(rho, sie) / rho * dPde_r;
-  }
-}
-// Below are "unimplemented" routines
 PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityTemperature(
-    const Real rho_in, const Real temp, Real *lambda) const {
-  const Real rho = std::min(rho_in, _rho_max);
-  return PressureFromDensityInternalEnergy(
-      rho, InternalEnergyFromDensityTemperature(rho, temp));
+    const Real rho, const Real temp, Real *lambda) const {
+  Real output[8];
+  Vinet_F_DT_func(rho,temp,output);
+  return output[1];
+}
+PORTABLE_INLINE_FUNCTION Real Vinet::EntropyFromDensityTemperature(
+    const Real rho, const Real temp, Real *lambda) const {
+  Real output[8];
+  Vinet_F_DT_func(rho,temp,output);
+  return output[6];
 }
 PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityTemperature(
-    const Real rho_in, const Real temp, Real *lambda) const {
-  const Real rho = std::min(rho_in, _rho_max);
-  return BulkModulusFromDensityInternalEnergy(
-      rho, InternalEnergyFromDensityTemperature(rho, temp));
+    const Real rho, const Real temp, Real *lambda) const {
+  Real output[8];
+  Vinet_F_DT_func(rho,temp,output);
+  return output[7]*output[7]*rho;
 }
+PORTABLE_INLINE_FUNCTION Real Vinet::TemperatureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *lambda) const {
+  Real Tref;
+  Real output[8];
+  Tref=_T0;
+  Vinet_F_DT_func(rho,Tref,output);
+  return (sie - output[0])/_Cv0+Tref;
+}
+PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *lambda) const {
+  Real temp;
+  Real output[8];
+  temp=TemperatureFromDensityInternalEnergy(rho,sie);
+  Vinet_F_DT_func(rho,temp,output);
+  return output[1];
+}
+PORTABLE_INLINE_FUNCTION Real Vinet::EntropyFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *lambda) const {
+  Real temp;
+  Real output[8];
+  temp=TemperatureFromDensityInternalEnergy(rho,sie);
+  Vinet_F_DT_func(rho,temp,output);
+  return output[6];
+}
+PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *lambda) const {
+  Real temp;
+  Real output[8];
+  temp=TemperatureFromDensityInternalEnergy(rho,sie);
+  Vinet_F_DT_func(rho,temp,output);
+  return output[7]*output[7]*rho;
+}
+// Below are "unimplemented" routines
 PORTABLE_INLINE_FUNCTION void Vinet::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Real *lambda, Real &rho, Real &sie) const {
-  sie = _Cv * (temp - _T0);
-  // We have a branch at rho0, so we need to decide, based on our pressure, whether we
-  // should be above or below rho0
-  Real Pref = PressureFromDensityInternalEnergy(_rho0, sie);
-  if (press < Pref) {
-    rho = (press - _P0 + _C0 * _C0 * _rho0) / (_C0 * _C0 + _G0 * sie);
-  } else { // We are in compression; iterate
-    auto PofRatE = [&](const Real r) {
-      return PressureFromDensityInternalEnergy(r, sie);
-    };
-    using RootFinding1D::regula_falsi;
-    using RootFinding1D::Status;
-    RootFinding1D::RootCounts counts;
-    auto status =
-        regula_falsi(PofRatE, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
-    if (status != Status::SUCCESS) {
-      // Root finder failed even though the solution was bracketed... this is an error
       EOS_ERROR("Vinet::DensityEnergyFromPressureTemperature: "
-                "Root find failed to find a solution given P, T\n");
-    }
-  }
+                "Not implemented.\n");
 }
-PORTABLE_INLINE_FUNCTION void Vinet::FillEos(Real &rho_in, Real &temp, Real &sie,
+PORTABLE_INLINE_FUNCTION void Vinet::FillEos(Real &rho, Real &temp, Real &sie,
                                                  Real &press, Real &cv, Real &bmod,
                                                  const unsigned long output,
                                                  Real *lambda) const {
   // The following could be sped up with work!
   const unsigned long input = ~output;
   if (thermalqs::temperature & input && thermalqs::pressure & input) {
-    DensityEnergyFromPressureTemperature(press, temp, lambda, rho_in, sie);
+    DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
   } else if (thermalqs::density & output ||
              thermalqs::specific_internal_energy & output) {
-    // Error out on density or energy output because they're currently required as inputs
     EOS_ERROR("Vinet FillEos: Density and energy are currently required inputs "
               "except when pressure and temperature are inputs.\n");
   }
-  const Real rho = std::min(rho_in, _rho_max);
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::temperature)
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
@@ -348,16 +323,17 @@ PORTABLE_INLINE_FUNCTION
 void Vinet::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
                                        Real &cv, Real &bmod, Real &dpde, Real &dvdt,
                                        Real *lambda) const {
+  Real entropy;
+
   rho = _rho0;
   temp = _T0;
   sie = _E0;
-  press = PressureFromDensityInternalEnergy(rho, sie, lambda);
-  cv = SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
-  bmod = BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
-  dpde = PressureFromDensityInternalEnergy(rho, sie, lambda) / sie;
-  // TODO: chad please fix this one for me. This is wrong.
-  Real gm1 = GruneisenParamFromDensityInternalEnergy(rho, sie, lambda) * rho;
-  dvdt = gm1 * cv / bmod;
+  press = PressureFromDensityTemperature(rho, temp, lambda);
+  entropy = _S0;
+  cv = _Cv0;
+  bmod = _B0;
+  dpde = _A0*bmod/_Cv0;
+  dvdt = _A0/_rho0;
 }
 } // namespace singularity
 
