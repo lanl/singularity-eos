@@ -67,6 +67,10 @@ inline double get_duration(Function function) {
   return std::chrono::duration_cast<duration>(stop - start).count();
 }
 
+// This file can be used to test any of the EOS methods below by defining
+// METHOD_UNDER_TEST. CMake will configure multiple targets each defining one
+// of these.
+
 //#define METHOD_UNDER_TEST TemperatureFromDensityInternalEnergy
 //#define METHOD_UNDER_TEST PressureFromDensityTemperature
 //#define METHOD_UNDER_TEST InternalEnergyFromDensityTemperature
