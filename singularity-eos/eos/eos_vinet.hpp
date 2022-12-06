@@ -54,6 +54,7 @@ class Vinet : public EosBase<Vinet> {
       const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  //Entropy added AEM Dec. 2022
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
@@ -66,10 +67,16 @@ class Vinet : public EosBase<Vinet> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return _Cv0;
   }
+  //Thermal Bulk Modulus added AEM Dec 2022
+  PORTABLE_INLINE_FUNCTION Real TBulkModulusFromDensityTemperature(
+      const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  //Thermal expansion coefficient added AEM 2022
+  PORTABLE_INLINE_FUNCTION Real TExpansionCoeffFromDensityTemperature(
+      const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const {
     return _A0 * _B0 / _Cv0 / rho;
@@ -93,12 +100,14 @@ class Vinet : public EosBase<Vinet> {
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char st[]{"Vinet Params: "};
-    printf("%s rho0:%e T0:%e B0:%e BP0:%e\n  A0:%e Cv0:%e E0:%e S0:%e\n\n",
+    printf("%s rho0:%e T0:%e B0:%e BP0:%e\n  A0:%e Cv0:%e E0:%e S0:%e\n",
            st, _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0);
-    for( int i=0; i<=38; i++) {
-	    if(_d2to40[i] > 0.0) printf("d%i:%e\n",i+2,_d2to40[i]);
+    for( int i=0; i<39; i++) {
+	    if(_d2to40[i] > 0.0) printf("d%i:%e\t",i+2,_d2to40[i]);
     }
+    printf("\n\n");
   }
+  //Density/Energy from P/T not unique, if used will give error
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
                                        Real &rho, Real &sie) const;
@@ -107,13 +116,12 @@ class Vinet : public EosBase<Vinet> {
   static std::string EosPyType() { return EosType(); }
 
  private:
+  //AEM: I am not sure what this does so leave it in.
   static constexpr const unsigned long _preferred_input =
-      thermalqs::density | thermalqs::specific_internal_energy;
+      thermalqs::density | thermalqs::temperature;
   Real _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0;
   const Real *_expconsts;
-  // static constexpr const char _eos_type[] = {"Vinet"};
-  Real _VIP[42], _d2to40[38];
-
+  Real _VIP[43], _d2to40[39];
   PORTABLE_INLINE_FUNCTION void CheckVinet();
   PORTABLE_INLINE_FUNCTION void Vinet_F_DT_func(const Real rho, const Real T, 
 		  				Real *output) const;
@@ -155,14 +163,14 @@ PORTABLE_INLINE_FUNCTION void Vinet::CheckVinet() {
   }
 
 
-  for(ind = 0; ind < 38; ind++) _d2to40[ind]=_expconsts[ind];
+  for(ind = 0; ind < 39; ind++) _d2to40[ind]=_expconsts[ind];
 
   _VIP[0] = _B0/_rho0 + pow(_A0*_B0/_rho0,2.0)*_T0/_Cv0;      // sound speed squared
   _VIP[1] = 3.0/2.0*(_BP0-1.0); // exponent
   _VIP[2] = 1.0; // prefactor f0
   _VIP[3] = 0.0; // prefactor f1
 
-  for (ind = 4; ind < 42; ind++) _VIP[ind] = _d2to40[ind-4];
+  for (ind = 4; ind < 43; ind++) _VIP[ind] = _d2to40[ind-4];
   ind = 42;
   while (_VIP[ind] == 0.0) ind--;
   while (ind >= 4) {
@@ -179,7 +187,7 @@ PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real 
   Real sumP=0.0, sumB=0.0, sumE=0.0;
   Real entropy, energy, pressure, dpdrho, dpdt, dedt, dedrho, soundspeed;
 
-  ind = 40-1;
+  ind = 40;
   while (_VIP[pref0vip+ind] == 0.0) ind--;
 
   x = pow(_rho0/rho,1.0/3.0);  /*rho-dependent*/
@@ -203,7 +211,7 @@ PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real 
   sumE = _VIP[1]*onemx*sumE;
 
   /* T0 isotherm */
-  energy = 9.0*_B0/pow(_VIP[1],2.0)/_rho0*(_VIP[pref0vip]-expetatimes1mx*(_VIP[pref0vip]-sumE))-_A0*_B0*_T0*(1.0-_rho0/rho);
+  energy = 9.0*_B0/pow(_VIP[1],2.0)/_rho0*(_VIP[pref0vip]-expetatimes1mx*(_VIP[pref0vip]-sumE))-_A0*_B0*_T0*(1.0/_rho0-1.0/rho);
   pressure = 3.0*_B0*x2inv*onemx*expetatimes1mx*sumP;
   temp = (1.0+onemx*(_VIP[1]*x+1.0))*sumP+x*onemx*sumB;
   temp = _B0/_rho0*x*expetatimes1mx*temp;
@@ -252,6 +260,18 @@ PORTABLE_INLINE_FUNCTION Real Vinet::EntropyFromDensityTemperature(
   Vinet_F_DT_func(rho,temp,output);
   return output[6];
 }
+PORTABLE_INLINE_FUNCTION Real Vinet::TExpansionCoeffFromDensityTemperature(
+    const Real rho, const Real temp, Real *lambda) const {
+  Real output[8];
+  Vinet_F_DT_func(rho,temp,output);
+  return output[3]/output[2]/rho;
+}
+PORTABLE_INLINE_FUNCTION Real Vinet::TBulkModulusFromDensityTemperature(
+    const Real rho, const Real temp, Real *lambda) const {
+  Real output[8];
+  Vinet_F_DT_func(rho,temp,output);
+  return output[2]*rho;
+}
 PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   Real output[8];
@@ -290,12 +310,13 @@ PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityInternalEnergy(
   Vinet_F_DT_func(rho,temp,output);
   return output[7]*output[7]*rho;
 }
-// Below are "unimplemented" routines
+//AEM: Give error since function is not well defined
 PORTABLE_INLINE_FUNCTION void Vinet::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Real *lambda, Real &rho, Real &sie) const {
       EOS_ERROR("Vinet::DensityEnergyFromPressureTemperature: "
                 "Not implemented.\n");
 }
+//AEM: Left this in since I am not sure what it does.
 PORTABLE_INLINE_FUNCTION void Vinet::FillEos(Real &rho, Real &temp, Real &sie,
                                                  Real &press, Real &cv, Real &bmod,
                                                  const unsigned long output,
@@ -323,7 +344,8 @@ PORTABLE_INLINE_FUNCTION
 void Vinet::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
                                        Real &cv, Real &bmod, Real &dpde, Real &dvdt,
                                        Real *lambda) const {
-  Real entropy;
+//AEM: Added all variables I think should be output eventually
+  Real entropy,tbmod,alpha,Gamma;
 
   rho = _rho0;
   temp = _T0;
@@ -331,8 +353,12 @@ void Vinet::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press
   press = PressureFromDensityTemperature(rho, temp, lambda);
   entropy = _S0;
   cv = _Cv0;
-  bmod = _B0;
-  dpde = _A0*bmod/_Cv0;
+  tbmod=_B0;
+  alpha=_A0;
+  bmod = BulkModulusFromDensityTemperature(rho, temp, lambda);
+  Gamma= _A0*_B0/_Cv0/_rho0;
+  //AEM: I suggest taking the two following away.
+  dpde = _A0*tbmod/_Cv0;
   dvdt = _A0/_rho0;
 }
 } // namespace singularity
