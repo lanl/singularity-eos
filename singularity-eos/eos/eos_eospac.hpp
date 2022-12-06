@@ -94,9 +94,6 @@ class EOSPAC : public EosBase<EOSPAC> {
   TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&temperatures, Real *scratch,
                                        const int num, LambdaIndexer &&lambdas) const {
-    static auto const name =
-        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
-    static auto const cname = name.c_str();
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
@@ -117,9 +114,6 @@ class EOSPAC : public EosBase<EOSPAC> {
   PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
                                  RealIndexer &&pressures, Real *scratch, const int num,
                                  LambdaIndexer &&lambdas) const {
-    static auto const name =
-        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
-    static auto const cname = name.c_str();
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
@@ -276,9 +270,6 @@ class EOSPAC : public EosBase<EOSPAC> {
   PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                     RealIndexer &&pressures, Real *scratch, const int num,
                                     LambdaIndexer &&lambdas) const {
-    static auto const name =
-        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
-    static auto const cname = name.c_str();
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
