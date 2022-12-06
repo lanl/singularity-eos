@@ -55,6 +55,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("py-sphinx", when="+doc")
     depends_on("py-sphinx-rtd-theme@0.4.3", when="+doc")
     depends_on("py-sphinx-multiversion", when="+doc")
+    depends_on("py-numpy", when="+tests")
     depends_on('llvm@12.0.0+clang', when='+format')
 
     # linear algebra when not using GPUs
