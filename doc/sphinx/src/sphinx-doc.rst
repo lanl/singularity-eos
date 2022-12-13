@@ -5,6 +5,25 @@
 How to Use Sphinx for Writing Docs
 ===================================
 
+How to have github build your documentation for you
+----------------------------------------------------
+
+Github can automatically build your documentation for you through the continuous integration pipeline.
+After you submit a pull request with your .rst changes for documentation on `Github Singularity-EOS`_, 
+the documentation will automatically get built. You will see a "build and deploy documentation" job
+at the bottom of the pull request page. If this passes, your documentation will have been generated.
+
+On the bottom left of the documentation page on `github-pages`_, you can select the branch/build
+of the documentation, one of which should be the branch you wrote your changes on.
+
+Documentation is available on `github-pages`_ and on `re-git`_
+
+.. _Github Singularity-EOS: https://github.com/lanl/singularity-eos
+
+.. _github-pages: https://lanl.github.io/singularity-eos/
+
+.. _re-git: http://xcap.re-pages.lanl.gov/oss/singularity-eos
+
 Building documentation locally
 ------------------------------
 
@@ -126,23 +145,6 @@ from :code:`.gitlab-ci.yml`
 
 .. note:: 
    You can view the documentation webpage locally on your web browser by passing in the URL as :code:`file:///path/to/singularity-eos/doc/sphinx/_build/html/index.html`
-
-How to Deploy
--------------
-
-#. Submit a PR with your .rst changes for documentation on `Github Singularity-EOS`_
-#. Get your PR reviewed and merged into main
-#. Make sure the :code:`pages` CI job passes in the CI pipeline
-
-.. _Github Singularity-EOS: https://github.com/lanl/singularity-eos
-
-As soon as the PR is merged into main, this will trigger the Pages deployment automatically if the :code:`pages` CI job passes.
-
-Documentation is available on `github-pages`_ and on `re-git`_
-
-.. _github-pages: https://lanl.github.io/singularity-eos/
-
-.. _re-git: http://xcap.re-pages.lanl.gov/oss/singularity-eos
 
 More Info.
 ----------
