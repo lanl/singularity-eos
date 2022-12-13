@@ -43,22 +43,21 @@ SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
     constexpr Real Cv0 = 0.383e-05 * Mbcc_per_g;
     constexpr Real E0 = 0.0;
     constexpr Real S0 = 5.05e-04 * Mbcc_per_g;
-    constexpr Real d2to40[39]={0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-	    0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-	    0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-	    0.,0.,0.,0.,0.,0.,0.,0.,0.};
+    constexpr Real d2to40[39] = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
     // Create the EOS
     EOS host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
     EOS eos = host_eos.GetOnDevice();
 
     eos.PrintParams();
-    
+
     GIVEN("Densities and energies") {
       constexpr int num = 4;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create Kokkos views on device for the input arrays
       Kokkos::View<Real[num]> v_density("density");
-      //AEM: I think it should not be "density" again below
+      // AEM: I think it should not be "density" again below
       Kokkos::View<Real[num]> v_energy("density");
 #else
       // Otherwise just create arrays to contain values and create pointers to
@@ -97,13 +96,13 @@ SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
           -1.283459624233147e+11, 1.98538351697004e+10, 9.66446220551959e+10, 0.};
       constexpr std::array<Real, num> entropy_true{
           5.001577106121646e+08, 5.113826249851692e+08, 5.112014799091142e+08, S0};
-      constexpr std::array<Real, num> cv_true{ Cv0, Cv0, Cv0, Cv0};
+      constexpr std::array<Real, num> cv_true{Cv0, Cv0, Cv0, Cv0};
       constexpr std::array<Real, num> bulkmodulus_true{
           7.44411028807209e+11, 1.254880120063067e+12, 1.613822819346433e+12,
-          (B0 + B0*B0*A0*A0/Cv0/rho0*T0)};
-      constexpr std::array<Real, num> gruneisen_true{B0*A0/Cv0/8.0, B0*A0/Cv0/8.5,
-                                                     B0*A0/Cv0/9.0, B0*A0/Cv0/rho0};
-
+          (B0 + B0 * B0 * A0 * A0 / Cv0 / rho0 * T0)};
+      constexpr std::array<Real, num> gruneisen_true{
+          B0 * A0 / Cv0 / 8.0, B0 * A0 / Cv0 / 8.5, B0 * A0 / Cv0 / 9.0,
+          B0 * A0 / Cv0 / rho0};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -161,18 +160,18 @@ SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
         }
       }
 
-//      WHEN("A S(rho, e) lookup is performed") {
-//        eos.EntropyFromDensityInternalEnergy(v_density, v_energy, v_entropy, num);
-//    	  printf("%20.16e,%20.16e,%20.16e,%20.16e",v_entropy[0],v_entropy[1],v_entropy[2],v_entropy[3]);
-//#ifdef PORTABILITY_STRATEGY_KOKKOS
-//        Kokkos::fence();
-//        Kokkos::deep_copy(h_entropy, v_entropy);
-//#endif // PORTABILITY_STRATEGY_KOKKOS
-//        THEN("The returned S(rho, e) should be equal to the true value") {
-//          array_compare(num, density, energy, h_entropy, entropy_true, "Density",
-//                        "Energy");
-//        }
-//      }
+      //      WHEN("A S(rho, e) lookup is performed") {
+      //        eos.EntropyFromDensityInternalEnergy(v_density, v_energy, v_entropy, num);
+      //    	  printf("%20.16e,%20.16e,%20.16e,%20.16e",v_entropy[0],v_entropy[1],v_entropy[2],v_entropy[3]);
+      //#ifdef PORTABILITY_STRATEGY_KOKKOS
+      //        Kokkos::fence();
+      //        Kokkos::deep_copy(h_entropy, v_entropy);
+      //#endif // PORTABILITY_STRATEGY_KOKKOS
+      //        THEN("The returned S(rho, e) should be equal to the true value") {
+      //          array_compare(num, density, energy, h_entropy, entropy_true, "Density",
+      //                        "Energy");
+      //        }
+      //      }
 
       WHEN("A B_S(rho, e) lookup is performed") {
         eos.BulkModulusFromDensityInternalEnergy(v_density, v_energy, v_bulkmodulus, num);
@@ -193,8 +192,7 @@ SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
         Kokkos::deep_copy(h_cv, v_cv);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned T(rho, e) should be equal to the true value") {
-          array_compare(num, density, energy, h_cv, cv_true, "Density",
-                        "Energy");
+          array_compare(num, density, energy, h_cv, cv_true, "Density", "Energy");
         }
       }
 
@@ -228,10 +226,9 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
     constexpr Real Cv0 = 0.383e-05 * Mbcc_per_g;
     constexpr Real E0 = 0.0;
     constexpr Real S0 = 5.05e-04 * Mbcc_per_g;
-    constexpr Real d2to40[39]={0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-            0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-            0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-            0.,0.,0.,0.,0.,0.,0.,0.,0.};
+    constexpr Real d2to40[39] = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
     // Create the EOS
     EOS host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
     EOS eos = host_eos.GetOnDevice();
@@ -248,7 +245,7 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
       // Otherwise just create arrays to contain values and create pointers to
       // be passed to the functions in place of the Kokkos views
       std::array<Real, num> density;
-      std::array<Real, num> temperature; 
+      std::array<Real, num> temperature;
       auto v_density = density.data();
       auto v_temperature = temperature.data();
 #endif // PORTABILITY_STRATEGY_KOKKOS
@@ -281,13 +278,12 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
           -1.283459584783398e+11, 1.98561454605571e+10, 9.66461314103968e+10, 0.};
       constexpr std::array<Real, num> entropy_true{
           5.001577106121646e+08, 5.113826249851692e+08, 5.112014799091142e+08, S0};
-      constexpr std::array<Real, num> cv_true{ Cv0, Cv0, Cv0, Cv0};
-      constexpr std::array<Real, num> tbulkmodulus_true{
-          7.33847e+11, 1.04178e+12, 1.39757e+12,
-          B0 };
-      constexpr std::array<Real, num> alpha_true{B0*A0/tbulkmodulus_true[0], B0*A0/tbulkmodulus_true[1],
-                                                     B0*A0/tbulkmodulus_true[2], A0};
-
+      constexpr std::array<Real, num> cv_true{Cv0, Cv0, Cv0, Cv0};
+      constexpr std::array<Real, num> tbulkmodulus_true{7.33847e+11, 1.04178e+12,
+                                                        1.39757e+12, B0};
+      constexpr std::array<Real, num> alpha_true{B0 * A0 / tbulkmodulus_true[0],
+                                                 B0 * A0 / tbulkmodulus_true[1],
+                                                 B0 * A0 / tbulkmodulus_true[2], A0};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -345,30 +341,34 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
         }
       }
 
-//      WHEN("A S(rho, T) lookup is performed") {
-//        eos.EntropyFromDensityTemperature(v_density, v_temperature, v_entropy, num);
-//        printf("%20.16e,%20.16e,%20.16e,%20.16e",v_entropy[0],v_entropy[1],v_entropy[2],v_entropy[3]);
-//#ifdef PORTABILITY_STRATEGY_KOKKOS
-//        Kokkos::fence();
-//        Kokkos::deep_copy(h_entropy, v_entropy);
-//#endif // PORTABILITY_STRATEGY_KOKKOS
-//        THEN("The returned S(rho, T) should be equal to the true value") {
-//          array_compare(num, density, temperature, h_entropy, entropy_true, "Density",
-//                        "Temperature");
-//        }
-//      }
+      //      WHEN("A S(rho, T) lookup is performed") {
+      //        eos.EntropyFromDensityTemperature(v_density, v_temperature, v_entropy,
+      //        num);
+      //        printf("%20.16e,%20.16e,%20.16e,%20.16e",v_entropy[0],v_entropy[1],v_entropy[2],v_entropy[3]);
+      //#ifdef PORTABILITY_STRATEGY_KOKKOS
+      //        Kokkos::fence();
+      //        Kokkos::deep_copy(h_entropy, v_entropy);
+      //#endif // PORTABILITY_STRATEGY_KOKKOS
+      //        THEN("The returned S(rho, T) should be equal to the true value") {
+      //          array_compare(num, density, temperature, h_entropy, entropy_true,
+      //          "Density",
+      //                        "Temperature");
+      //        }
+      //      }
 
-//      WHEN("A B_T(rho, T) lookup is performed") {
-//        eos.TBulkModulusFromDensityTemperature(v_density, v_temperature, v_tbulkmodulus, num);
-//#ifdef PORTABILITY_STRATEGY_KOKKOS
-//        Kokkos::fence();
-//        Kokkos::deep_copy(h_tbulkmodulus, v_tbulkmodulus);
-//#endif // PORTABILITY_STRATEGY_KOKKOS
-//        THEN("The returned B_T(rho, T) should be equal to the true value") {
-//          array_compare(num, density, temperature, h_tbulkmodulus, tbulkmodulus_true, "Density",
-//                        "Temperature");
-//        }
-//      }
+      //      WHEN("A B_T(rho, T) lookup is performed") {
+      //        eos.TBulkModulusFromDensityTemperature(v_density, v_temperature,
+      //        v_tbulkmodulus, num);
+      //#ifdef PORTABILITY_STRATEGY_KOKKOS
+      //        Kokkos::fence();
+      //        Kokkos::deep_copy(h_tbulkmodulus, v_tbulkmodulus);
+      //#endif // PORTABILITY_STRATEGY_KOKKOS
+      //        THEN("The returned B_T(rho, T) should be equal to the true value") {
+      //          array_compare(num, density, temperature, h_tbulkmodulus,
+      //          tbulkmodulus_true, "Density",
+      //                        "Temperature");
+      //        }
+      //      }
 
       WHEN("A Cv(rho, T) lookup is performed") {
         eos.SpecificHeatFromDensityTemperature(v_density, v_temperature, v_cv, num);
@@ -382,18 +382,19 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
         }
       }
 
-//      WHEN("A alpha(rho, T) lookup is performed") {
-//        eos.TExpansionCoeffFromDensityTemperature(v_density, v_temperature, v_alpha
-//                                                    num);
-//#ifdef PORTABILITY_STRATEGY_KOKKOS
-//        Kokkos::fence();
-//        Kokkos::deep_copy(h_alpha, v_alpha);
-//#endif // PORTABILITY_STRATEGY_KOKKOS
-//        THEN("The returned alpha(rho, T) should be equal to the true value") {
-//          array_compare(num, density, temperature, h_alpha, alpha_true, "Density",
-//                        "Temperature");
-//        }
-//      }
+      //      WHEN("A alpha(rho, T) lookup is performed") {
+      //        eos.TExpansionCoeffFromDensityTemperature(v_density, v_temperature,
+      //        v_alpha
+      //                                                    num);
+      //#ifdef PORTABILITY_STRATEGY_KOKKOS
+      //        Kokkos::fence();
+      //        Kokkos::deep_copy(h_alpha, v_alpha);
+      //#endif // PORTABILITY_STRATEGY_KOKKOS
+      //        THEN("The returned alpha(rho, T) should be equal to the true value") {
+      //          array_compare(num, density, temperature, h_alpha, alpha_true, "Density",
+      //                        "Temperature");
+      //        }
+      //      }
     }
   }
 }
@@ -412,27 +413,32 @@ SCENARIO("Vinet EOS SetUp", "[VectorEOS][VinetEOS]") {
     Real Cv0 = 0.383e-05 * Mbcc_per_g;
     constexpr Real E0 = 0.0;
     constexpr Real S0 = 5.05e-04 * Mbcc_per_g;
-    constexpr Real d2to40[39]={0.,0.,0.0000000000001,0.,0.,0.,0.,0.,0.,0.,
-            0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-            0.,0.,0.,0.,0.,0.,0.,0.,0.,0.,
-            0.,0.,0.,0.,1.0e-26,0.,0.,0.,0.};
+    constexpr Real d2to40[39] = {0., 0.,      0.0000000000001,
+                                 0., 0.,      0.,
+                                 0., 0.,      0.,
+                                 0., 0.,      0.,
+                                 0., 0.,      0.,
+                                 0., 0.,      0.,
+                                 0., 0.,      0.,
+                                 0., 0.,      0.,
+                                 0., 0.,      0.,
+                                 0., 0.,      0.,
+                                 0., 0.,      0.,
+                                 0., 1.0e-26, 0.,
+                                 0., 0.,      0.};
     // Create the EOS
     EOS host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
     EOS eos = host_eos.GetOnDevice();
-
     eos.PrintParams();
-
     eos.Finalize();
 
     WHEN("Faulty/not set parameter rho0 is given") {
-      rho0 = -1.0;	    
-      host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40); 
+      rho0 = -1.0;
+      host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
       eos = host_eos.GetOnDevice();
       eos.PrintParams();
       eos.Finalize();
-      THEN("An error message should be written out") {
-
-      }
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter T0 is given") {
       T0 = -1.0;
@@ -440,29 +446,30 @@ SCENARIO("Vinet EOS SetUp", "[VectorEOS][VinetEOS]") {
       eos = host_eos.GetOnDevice();
       eos.PrintParams();
       eos.Finalize();
-      THEN("An error message should be written out") {
-
-      }
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter B0 is given") {
       B0 = -1.0;
-      host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
+      //      CHECK_THROWS(host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      CHECK_NOTHROW(host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
       eos = host_eos.GetOnDevice();
       eos.PrintParams();
       eos.Finalize();
-      THEN("An error message should be written out") {
-
-      }
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter BP0 is given") {
       BP0 = 0.0;
-      host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
-      eos = host_eos.GetOnDevice();
-      eos.PrintParams();
-      eos.Finalize();
-      THEN("An error message should be written out") {
-
+      try {
+        host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
+        eos = host_eos.GetOnDevice();
+        eos.Finalize();
+      } catch (std::runtime_error &e) {
+        printf("error is: %s\n", e.what());
+      } catch (...) {
+        printf("Got it here\n");
       }
+      printf("Did not catch anything\n");
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter Cv0 is given") {
       Cv0 = -1.0;
@@ -470,9 +477,7 @@ SCENARIO("Vinet EOS SetUp", "[VectorEOS][VinetEOS]") {
       eos = host_eos.GetOnDevice();
       eos.PrintParams();
       eos.Finalize();
-      THEN("An error message should be written out") {
-
-      }
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter A0 is given") {
       A0 = -10000000.0;
@@ -480,9 +485,7 @@ SCENARIO("Vinet EOS SetUp", "[VectorEOS][VinetEOS]") {
       eos = host_eos.GetOnDevice();
       eos.PrintParams();
       eos.Finalize();
-      THEN("An error message should be written out") {
-
-      }
+      THEN("An error message should be written out") {}
     }
   }
 }

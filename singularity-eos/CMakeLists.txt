@@ -24,7 +24,7 @@ set(EOS_HEADERS
     eos/eos_davis.hpp
     eos/eos_eospac.hpp
     eos/eos_gruneisen.hpp
-    eos/eos_snlgruneisen.hpp
+    eos/eos_vinet.hpp
     eos/eos_ideal.hpp
     eos/eos_jwl.hpp
     eos/eos_spiner.hpp

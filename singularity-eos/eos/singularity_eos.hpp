@@ -38,16 +38,6 @@ int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const doubl
                       const double rho0, const double T0, const double P0,
                       const double Cv, int const *const enabled, double *const vals);
 
-int init_sg_SNLGruneisen(const int matindex, EOS *eos, const double C0, const double s1,
-                      const double s2, const double s3, const double G0, const double b,
-                      const double rho0, const double T0, const double P0,
-                      const double Cv, int const *const enabled, double *const vals);
-
-int init_sg_Vinet(const int matindex, EOS *eos, const double rho0, const double T0,
-                      const double B0, const double BP0, const double A0, const double Cv0,
-                      const double E0, const double S0, const double d2,
-                      const double d3, int const *const enabled, double *const vals);
-
 int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const double b,
                           const double k, const double n, const double vc,
                           const double pc, const double Cv, const double E0,
@@ -107,16 +97,6 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
                 const double Cv);
 
 int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const double s1,
-                      const double s2, const double s3, const double G0, const double b,
-                      const double rho0, const double T0, const double P0,
-                      const double Cv);
-
-int init_sg_SNLGruneisen(const int matindex, EOS *eos, const double C0, const double s1,
-                      const double s2, const double s3, const double G0, const double b,
-                      const double rho0, const double T0, const double P0,
-                      const double Cv);
-
-int init_sg_Vinet(const int matindex, EOS *eos, const double C0, const double s1,
                       const double s2, const double s3, const double G0, const double b,
                       const double rho0, const double T0, const double P0,
                       const double Cv);
