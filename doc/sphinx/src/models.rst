@@ -346,9 +346,9 @@ where the reference isotherm is
 
 .. math::
 
-    P_{ref}(X)=\frac{3 B_0}{X^2} Z \exp[\eta_0 Z] \left( 1 + \sum_{n=2}^N d_n Z^n \right) \, , \\
-    X = \left( \frac{\rho_0}{\rho} \right)^{1/3} \\
-    Z = 1-X
+    P_{ref}(X)&=\frac{3 B_0}{X^2} Z \exp[\eta_0 Z] \left( 1 + \sum_{n=2}^N d_n Z^n \right) \, , \\
+    X &= \left( \frac{\rho_0}{\rho} \right)^{1/3} \\
+    Z &= 1-X
 
 Note that :math:`P_{ref}=0` when :math:`\rho = \rho_0`, the reference state on the reference
 isotherm is always at ambient pressure. However, the reference isotherm is not necessarily
@@ -372,17 +372,17 @@ and from that a thermodynamic consistent energy
 
 .. math::
 
-  E(X,T) = 9 \frac{B_0 V_0}{{\eta_0}^2}\left(f_0 - \exp[\eta_0 Z] \left(f_0 - \eta_0 Z \left(f_0 + \sum_{n=1}^N f_n Z^n \right)\right)\right) \\
-           - \alpha_0 B_0 V_0 (1-X^3) T_{ref} + {C_V}_0 (T - T_{ref}) + E_0
+  E(X,T) =& 9 \frac{B_0 V_0}{{\eta_0}^2}\left(f_0 - \exp[\eta_0 Z] \left(f_0 - \eta_0 Z \left(f_0 + \sum_{n=1}^N f_n Z^n \right)\right)\right) \\
+          & - \alpha_0 B_0 V_0 (1-X^3) T_{ref} + {C_V}_0 (T - T_{ref}) + E_0
 
 where the energy coefficients :math:`f_n` are determined from the pressure coefficients :math:`d_n`, :math:`n\geq 2`, by
 
 .. math::
 
-    f_N = d_N \\
-    f_n = d_n - \frac{n+2}{\eta_0} f_{n+1} \\
-    d_0 = 1.0 \\
-    d_1 = 0.0 
+    f_N &= d_N \\
+    f_n &= d_n - \frac{n+2}{\eta_0} f_{n+1} \\
+    d_0 &= 1.0 \\
+    d_1 &= 0.0 
 
     
 The constructor for the ``Vinet`` EOS has the signature
