@@ -9,6 +9,9 @@ on:
     types:
       - created
 
+permissions:
+  contents: write
+
 jobs:
     docs:
       name: build and deploy docs
@@ -19,18 +22,28 @@ jobs:
           uses: actions/checkout@v2
           with:
             fetch-depth: 0
+            submodules: recursive
         - name: Set system to non-interactive mode
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
           run: |
+            sudo apt-get install -y --force-yes -qq build-essential python3-dev
             pip install sphinx
             pip install sphinx-rtd-theme
             pip install sphinx-multiversion
+        - name: build code
+          run: |
+            mkdir -p build
+            cmake -DSINGULARITY_BUILD_PYTHON=ON -DSINGULARITY_USE_HDF5=OFF -DSINGULARITY_USE_FORTRAN=OFF -B build .
+            cmake --build build
+            sudo cmake --install build
         - name: build docs
           run: |
             cd doc/sphinx
+            export PYTHONPATH=/usr/local/lib/python3.8/site-packages:$PYTHONPATH
             make multiversion
         - name: Deploy
+          if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
           uses: peaceiris/actions-gh-pages@v3.7.3
           with:
             github_token: ${{ secrets.GITHUB_TOKEN }}

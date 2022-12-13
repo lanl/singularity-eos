@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -24,16 +24,15 @@
 
 // #include <iostream> // debug
 // #include <iomanip>
-#include "../ports-of-call/portability.hpp"
 #include <assert.h>
 #include <math.h>
+#include <ports-of-call/portability.hpp>
 #include <stdio.h>
 
-#define ROOT_DEBUG (0)
-#define ROOT_VERBOSE (0)
-#define ROOT_NAN_OK (0)
+#define SINGULARITY_ROOT_DEBUG (0)
+#define SINGULARITY_ROOT_VERBOSE (0)
 
-#define MY_SIGN(x) (x > 0) - (x < 0)
+#define SINGULARITY_MY_SIGN(x) (x > 0) - (x < 0)
 
 namespace RootFinding1D {
 constexpr const int SECANT_NITER_MAX{1000};
@@ -108,7 +107,123 @@ class RootCounts {
   PORTABLE_INLINE_FUNCTION int more() const { return nbins_ - 1; }
 };
 
+PORTABLE_INLINE_FUNCTION bool check_bracket(const Real ya, const Real yb) {
+  return (ya * yb <= 0.0);
+}
+
+template <typename T>
+PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess, Real &b,
+                                          Real &ya, const Real yg, Real &yb) {
+  constexpr int max_search_depth = 6;
+  Real dx = b - a;
+  for (int level = 0; level < max_search_depth; level++) {
+    const int nlev = (1 << level);
+    for (int i = 0; i < nlev; i++) {
+      const Real x = a + (i + 0.5) * dx;
+      const Real yx = f(x);
+      if (check_bracket(yx, yg)) {
+        if (x < guess) {
+          a = x;
+          ya = yx;
+          b = guess;
+          yb = yg;
+        } else {
+          a = guess;
+          ya = guess;
+          b = x;
+          yb = yx;
+        }
+        return true;
+      }
+    }
+  }
+  // if we get here then we failed to bracket a root
+  printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
+         guess, b, ya, yg, yb);
+  return false;
+}
+
 // solves for f(x,params) - ytarget = 0
+template <typename T>
+PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
+                                             const Real guess, Real a, Real b,
+                                             const Real xtol, const Real ytol,
+                                             Real &xroot, const RootCounts &counts) {
+  constexpr int max_iter = SECANT_NITER_MAX;
+  auto func = [&](const Real x) { return f(x) - ytarget; };
+  Real ya = func(a);
+  Real yg = func(guess);
+  Real yb;
+
+  if (check_bracket(ya, yg)) {
+    b = guess;
+    yb = yg;
+  } else {
+    yb = func(b);
+    if (check_bracket(yg, yb)) {
+      a = guess;
+      ya = yg;
+    } else {
+      // ya, yg, and yb have the same sign
+      if (!set_bracket(func, a, guess, b, ya, yg, yb)) {
+        printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
+        return Status::FAIL;
+      }
+    }
+  }
+
+  Real sign = (ya < 0 ? 1.0 : -1.0);
+  ya *= sign;
+  yb *= sign;
+
+  int b1 = 0;
+  int b2 = 0;
+  int iteration_count = 0;
+  while (b - a > 2.0 * xtol && (std::abs(ya) > ytol || std::abs(yb) > ytol) &&
+         iteration_count < max_iter) {
+    Real c = (a * yb - b * ya) / (yb - ya);
+    // guard against roundoff because ya or yb is sufficiently close to zero
+    if (c == a) {
+      b = a;
+      continue;
+    } else if (c == b) {
+      a = b;
+      continue;
+    }
+    Real yc = sign * func(c);
+    if (yc > 0.0) {
+      b = c;
+      yb = yc;
+      b1++;
+      ya *= (b1 > 1 ? 0.5 : 1.0);
+      b2 = 0;
+    } else if (yc < 0.0) {
+      a = c;
+      ya = yc;
+      b2++;
+      yb *= (b2 > 1 ? 0.5 : 1.0);
+      b1 = 0;
+    } else {
+      a = c;
+      b = c;
+    }
+    iteration_count++;
+  }
+  auto status = Status::SUCCESS;
+  if (iteration_count == max_iter) {
+    printf(
+        "root finding reached the maximum number of iterations.  likely not converged\n");
+    status = Status::FAIL;
+  }
+  if (iteration_count < counts.nBins()) {
+    counts.increment(iteration_count);
+  } else {
+    counts.increment(counts.more());
+  }
+  xroot = 0.5 * (a + b);
+  return status;
+}
+
 template <typename T>
 PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xguess,
                                          const Real xmin, const Real xmax,
@@ -117,8 +232,6 @@ PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xg
   Status status;
 
   // first check if we're at the max or min values
-  // TODO: these short-circuits almost never happen. Should they be removed?
-  // ~JMM
   const Real fmax = f(xmax);
   const Real errmax = fabs(fmax - ytarget) / (fabs(fmax) + ytol);
   if (errmax < ytol) {
@@ -141,14 +254,14 @@ PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xg
   status = secant(f, ytarget, xguess, xmin, xmax, xtol, ytol, xroot, counts);
   if (status == Status::SUCCESS) return status;
 
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
   if (isnan(xroot)) {
     fprintf(stderr, "xroot is nan after secant\n");
   }
 #endif
 
 // Secant failed. Try bisection.
-#if ROOT_VERBOSE
+#if SINGULARITY_ROOT_VERBOSE
   fprintf(stderr,
           "\n\nRoot finding. Secant failed. Trying bisection.\n"
           "\txguess  = %.10g\n"
@@ -161,7 +274,7 @@ PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xg
 
   // Check for something horrible happening
   if (isnan(xroot) || isinf(xroot)) {
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
     fprintf(stderr, "xroot is nan after bisection\n");
 #endif
     return Status::FAIL;
@@ -196,7 +309,7 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
     if (x > xmax) x = xmax;
     if (isnan(x) || isinf(x)) {
       // can't recover from this
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
       fprintf(stderr,
               "\n\n[secant]: NAN or out-of-bounds detected!\n"
               "\txguess  = %.10e\n"
@@ -215,7 +328,7 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
               "\titer    = %d\n"
               "\tsign x  = %d\n",
               xguess, ytarget, x, x_last, xmin, xmax, y, dx, yp, ym, dyNum, dyDen, dy,
-              iter, (int)MY_SIGN(x));
+              iter, (int)SINGULARITY_MY_SIGN(x));
 #endif
       counts.increment(counts.more());
       return Status::FAIL;
@@ -233,7 +346,7 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
 
   y = f(x);
   const Real frac_error = fabs(y - ytarget) / (fabs(y) + ytol);
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
   if (frac_error > ytol) {
     fprintf(stderr,
             "\n\n[secant]: Failed via too large yerror.\n"
@@ -293,7 +406,7 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
     grow *= 1.1;
     if (fl * fr < 0.0 || xl < xmin || xr > xmax) break;
     if (i > BISECT_REG_MAX - 2) {
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
       fprintf(stderr,
               "\n\n[Bisect]: expanding region failed\n"
               "\txl   = %.10g\n"
@@ -327,7 +440,7 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
       xr = xmax;
       fr = f(xr) - ytarget;
       if (fl * fr > 0) {
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
         Real il = f(xl);
         Real ir = f(xr);
         fprintf(stderr,
@@ -372,7 +485,7 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
   xroot = 0.5 * (xl + xr);
 
   if (isnan(xroot)) {
-#if ROOT_DEBUG
+#if SINGULARITY_ROOT_DEBUG
     Real il = f(xl);
     Real ir = f(xr);
     fprintf(stderr,
@@ -398,8 +511,8 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
 // ----------------------------------------------------------------------
 } // namespace RootFinding1D
 
-#undef ROOT_DEBUG
-#undef ROOT_VERBOSE
-#undef MY_SIGN
+#undef SINGULARITY_ROOT_DEBUG
+#undef SINGULARITY_ROOT_VERBOSE
+#undef SINGULARITY_MY_SIGN
 
 #endif // _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_

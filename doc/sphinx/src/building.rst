@@ -128,6 +128,8 @@ to the standard ones) are supported:
 +------------------------------------------+------------+---------+-----------------------------------------------+
 | SINGULARITY_BUILD_TESTS                  | boolean    | OFF     | Turn on testing                               |
 +------------------------------------------+------------+---------+-----------------------------------------------+
+| SINGULARITY_BUILD_PYTHON                 | boolean    | OFF     | Build Python Bindings                         |
++------------------------------------------+------------+---------+-----------------------------------------------+
 | SINGULARITY_BUILD_EXAMPLES               | boolean    | OFF     | Build code in examples directory              |
 +------------------------------------------+------------+---------+-----------------------------------------------+
 | SINGULARITY_BUILD_SESAME2SPINER          | boolean    | OFF     | Build converter from sesame to sp5 tables     |
@@ -152,6 +154,8 @@ to the standard ones) are supported:
 +------------------------------------------+------------+---------+-----------------------------------------------+
 | SINGULARITY_TEST_STELLAR_COLLAPSE        | boolean    | OFF     | Test stellar collapse readers                 |
 +------------------------------------------+------------+---------+-----------------------------------------------+
+| SINGULARITY_TEST_PYTHON                  | boolean    | OFF     | Test the Python Bindings                      |
++------------------------------------------+------------+---------+-----------------------------------------------+
 | SINGULARITY_USE_SINGLE_LOGS              | boolean    | OFF     | Use single-precision logs. Can harm accuracy. |
 +------------------------------------------+------------+---------+-----------------------------------------------+
 | SINGULARITY_FMATH_USE_ORDER_4            | boolean    | OFF     | Use 4th- or 5th-order accurate fast logs.     |
@@ -170,6 +174,25 @@ to the standard ones) are supported:
 | SINGULARITY_KOKKOSKERNELS_SUB_DIR        | string     | NONE    | Set this to build kokkos-kernels "in-tree"    |
 |                                          |            |         | by adding it as a subdirectory.               |
 +------------------------------------------+------------+---------+-----------------------------------------------+
+
+Example builds
+--------------
+
+Building ``singularity-eos`` with Python wrappers in a virtual environment:
+
+.. code-block:: bash
+  git clone --recursive git@github.com:lanl/singularity-eos.git
+  cd singularity-eos
+  mkdir -p python-build/build
+  cd python-build
+  python3 -m venv singularity-eos
+  source singularity-eos/bin/activate
+  pip install numpy h5py matplotlib # and whatever else you want
+  cd build
+  cmake -DSINGULARITY_USE_HDF55=ON -DSINGULARITY_BUILD_PYTHON=ON -DCMAKE_INSTALL_PREFIX=$VIRTUAL_ENV ../..
+  make -j
+  make install
+
 
 Dependencies
 ------------
@@ -200,6 +223,8 @@ number of different ways:
   ``cmake`` where to ``add_subdirectory`` to make it available. One
   can also simply let ``cmake`` find a pre-installed version of the
   library.
+* `pybind11`_ is an optional dependency. ``cmake`` will either find
+  and externally installed version or fetch it from GitHub on-demand.
 * A fortran compiler is required if fortran bindings are enabled.
 
 .. _spiner: https://github.com/lanl/spiner
@@ -213,6 +238,8 @@ number of different ways:
 .. _Eigen: https://eigen.tuxfamily.org/index.php?title=Main_Page
 
 .. _kokkos-kernels: https://github.com/kokkos/kokkos-kernels/
+
+.. _pybind11: https://github.com/pybind/pybind11
 
 If you use spack, but would like to build ``singularity-eos`` from
 source, you can install dependencies via, e.g.,

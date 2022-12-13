@@ -16,3 +16,5 @@ detail.  Why is this change required?  What problem does it solve?-->
 - [ ] Adds a test for any bugs fixed. Adds tests for new features.
 - [ ] Format your changes by using the `make format` command after configuring with `cmake`.
 - [ ] Document any new features, update documentation for changes made.
+- [ ] Make sure the copyright notice on any files you modified is up to date.
+- [ ] After creating a pull request, note it in the CHANGELOG.md file

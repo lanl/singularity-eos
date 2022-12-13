@@ -39,7 +39,9 @@ Some equations of state store tabulated data.
   If you want to run one of these on an accelerator device like a GPU,
   you must copy the data over. This is provided by the function
 
-  .. cpp:function:: void EOS::GetOnDevice()
+  .. code-block:: cpp
+
+    EOS::GetOnDevice()
 
   which can be called as, e.g.,
 
@@ -63,7 +65,9 @@ The units are all in cgs. You can ignore the lambda for now.
   When you're done with the model, it's good practice to release
   device memory with a call to
 
-  .. cpp:function:: EOS::Finalize();
+  .. code-block::
+
+    EOS::Finalize();
 
   If you're not using device memory, you can ignore this.
 
@@ -79,4 +83,3 @@ Going Deeper
 * To learn about the available equations of state, look :ref:`here <models>`.
 * To learn about our mixed-cell closure models, such as pressure-temperature equilibrium, look at :ref:`using-closures`.
 * If you're interested in contributing, check out our :ref:`documentation for developers <contributing>`.
-

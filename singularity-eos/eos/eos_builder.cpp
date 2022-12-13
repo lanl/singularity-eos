@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------#
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -27,7 +27,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
   bool shifted = (modifiers.count(EOSModifier::Shifted) > 0);
   bool relativistic = (modifiers.count(EOSModifier::Relativistic) > 0);
   bool units = (modifiers.count(EOSModifier::UnitSystem) > 0);
-  if ((shifted || scaled || relativistic || units) && !(isModifiable(type))) {
+  bool ramped = (modifiers.count(EOSModifier::BilinearRamp) > 0);
+  if ((shifted || scaled || relativistic || units || ramped) && !(isModifiable(type))) {
     EOS_ERROR("Modifiers not supported for this EOS");
   }
   if (relativistic && (shifted || scaled || units)) {
@@ -52,6 +53,16 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
   if (units && (modifiers[EOSModifier::UnitSystem].count("use_length_time") > 0)) {
     use_length_time =
         mpark::get<bool>(modifiers[EOSModifier::UnitSystem]["use_length_time"]);
+  }
+  Real r0 = 0;
+  Real a = 1;
+  Real b = 0;
+  Real c = 0;
+  if (ramped) {
+    r0 = mpark::get<Real>(modifiers[EOSModifier::BilinearRamp]["r0"]);
+    a = mpark::get<Real>(modifiers[EOSModifier::BilinearRamp]["a"]);
+    b = mpark::get<Real>(modifiers[EOSModifier::BilinearRamp]["b"]);
+    c = mpark::get<Real>(modifiers[EOSModifier::BilinearRamp]["c"]);
   }
   Real rho_unit = 1;
   Real sie_unit = 1;
@@ -93,7 +104,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     if (relativistic) {
       return makeRelativistic(std::move(g), cl);
     }
-    return applyScaleAndShift(std::move(g), scaled, shifted, scale, shift);
+    return applyShiftAndScaleAndBilinearRamp(std::move(g), scaled, shifted, ramped, scale,
+                                             shift, r0, a, b, c);
   }
 #ifdef SPINER_USE_HDF
   if (type == EOSType::SpinerEOSDependsRhoT || type == EOSType::SpinerEOSDependsRhoSie) {
@@ -110,7 +122,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+        return applyShiftAndScale(std::move(s), scaled, shifted, scale, shift);
       } else {
         SpinerEOSDependsRhoSie s(filename, matid, reproducibility_mode);
         if (units) {
@@ -120,7 +132,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+        return applyShiftAndScaleAndBilinearRamp(std::move(s), scaled, shifted, ramped,
+                                                 scale, shift, r0, a, b, c);
       }
     } else {
       string materialName = mpark::get<string>(base_params["materialName"]);
@@ -133,7 +146,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+        return applyShiftAndScale(std::move(s), scaled, shifted, scale, shift);
       } else {
         SpinerEOSDependsRhoSie s(filename, materialName, reproducibility_mode);
         if (units) {
@@ -143,7 +156,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
         if (relativistic) {
           return makeRelativistic(std::move(s), cl);
         }
-        return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+        return applyShiftAndScaleAndBilinearRamp(std::move(s), scaled, shifted, ramped,
+                                                 scale, shift, r0, a, b, c);
       }
     }
   }
@@ -165,7 +179,8 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     if (relativistic) {
       return makeRelativistic(std::move(s), cl);
     }
-    return applyScaleAndShift(std::move(s), scaled, shifted, scale, shift);
+    return applyShiftAndScaleAndBilinearRamp(std::move(s), scaled, shifted, ramped, scale,
+                                             shift, r0, a, b, c);
   }
 #endif
   if (type == EOSType::Gruneisen) {

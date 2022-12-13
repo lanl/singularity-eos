@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -29,8 +29,8 @@
 #error "HDF5 must be enabled"
 #endif
 
-#include <sp5/singularity_eos_sp5.hpp>
-#include <spiner/ports-of-call/portability.hpp>
+#include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <spiner/sp5.hpp>
 
 #include "generate_files.hpp"

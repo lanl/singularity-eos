@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -35,15 +35,27 @@ int init_sg_eos(const int nmat, EOS *&eos) {
   return 0;
 }
 
-#define SGAPPLYMOD(A)                                                                    \
+// apply everything but ramp in order to possibly calculate the
+// SAP ramp parameters from p-alhpa ramp parameters
+#define SGAPPLYMODSIMPLE(A)                                                              \
   EOSBuilder::applyShiftAndScale(A, enabled[0] == 1, enabled[1] == 1, vals[0], vals[1])
 
-constexpr const int def_en[2] = {0, 0};
-constexpr const double def_v[2] = {0.0, 0.0};
+#define SGAPPLYMOD(A)                                                                    \
+  EOSBuilder::applyShiftAndScaleAndBilinearRamp(                                         \
+      A, enabled[0] == 1, enabled[1] == 1, enabled[2] == 1 || enabled[3] == 1, vals[0],  \
+      vals[1], vals[2], vals[3], vals[4], vals[5])
+
+int def_en[4] = {0, 0, 0, 0};
+double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const double Cv,
-                     int const *const enabled, double const *const vals) {
+                     int const *const enabled, double *const vals) {
   assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(IdealGas(gm1, Cv));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
   EOS eos_ = SGAPPLYMOD(IdealGas(gm1, Cv));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
@@ -56,9 +68,13 @@ int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const doubl
 int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const double s1,
                       const double s2, const double s3, const double G0, const double b,
                       const double rho0, const double T0, const double P0,
-                      const double Cv, int const *const enabled,
-                      double const *const vals) {
+                      const double Cv, int const *const enabled, double *const vals) {
   assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(Gruneisen(C0, s1, s2, s3, G0, b, rho0, T0, P0, Cv));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
   EOS eos_ = SGAPPLYMOD(Gruneisen(C0, s1, s2, s3, G0, b, rho0, T0, P0, Cv));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
@@ -74,8 +90,13 @@ int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const doubl
 
 int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
                 const double R1, const double R2, const double w, const double rho0,
-                const double Cv, int const *const enabled, double const *const vals) {
+                const double Cv, int const *const enabled, double *const vals) {
   assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(JWL(A, B, R1, R2, w, rho0, Cv));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
   EOS eos_ = SGAPPLYMOD(JWL(A, B, R1, R2, w, rho0, Cv));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
@@ -90,8 +111,13 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
 int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const double b,
                           const double k, const double n, const double vc,
                           const double pc, const double Cv, const double E0,
-                          int const *const enabled, double const *const vals) {
+                          int const *const enabled, double *const vals) {
   assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(DavisProducts(a, b, k, n, vc, pc, Cv, E0));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
   EOS eos_ = SGAPPLYMOD(DavisProducts(a, b, k, n, vc, pc, Cv, E0));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
@@ -108,8 +134,14 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                            const double A, const double B, const double C,
                            const double G0, const double Z, const double alpha,
                            const double Cv0, int const *const enabled,
-                           double const *const vals) {
+                           double *const vals) {
   assert(matindex >= 0);
+  EOS eosi =
+      SGAPPLYMODSIMPLE(DavisReactants(rho0, e0, P0, T0, A, B, C, G0, Z, alpha, Cv0));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
   EOS eos_ = SGAPPLYMOD(DavisReactants(rho0, e0, P0, T0, A, B, C, G0, Z, alpha, Cv0));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
@@ -127,8 +159,13 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
 #ifdef SPINER_USE_HDF
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int matid, int const *const enabled,
-                              double const *const vals) {
+                              double *const vals) {
   assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(SpinerEOSDependsRhoT(std::string(filename), matid));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
   EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoT(std::string(filename), matid));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
@@ -141,8 +178,13 @@ int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename
 
 int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filename,
                                 const int matid, int const *const enabled,
-                                double const *const vals) {
+                                double *const vals) {
   assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(SpinerEOSDependsRhoSie(std::string(filename), matid));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
   EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoSie(std::string(filename), matid));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
@@ -155,8 +197,13 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
 
 #ifdef SINGULARITY_USE_EOSPAC
 int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const enabled,
-                   double const *const vals) {
+                   double *const vals) {
   assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(EOSPAC(id));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
   EOS eos_ = SGAPPLYMOD(EOSPAC(id));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
@@ -170,6 +217,7 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id) {
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using Lrgt = Kokkos::LayoutRight;
+using Llft = Kokkos::LayoutLeft;
 template <typename T>
 using ScratchV = Kokkos::View<T **, Lrgt>;
 #endif // PORTABILITY_STRATEGY_KOKKOS
@@ -183,7 +231,21 @@ static const std::map<const int, const unsigned long> EAPInputToBD = {
     {1, thermalqs::specific_internal_energy | thermalqs::density},
 };
 
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+namespace singularity {
+struct EOSAccessor_ {
+  PORTABLE_INLINE_FUNCTION
+  EOSAccessor_(const Kokkos::View<EOS *, Llft> &eos_v, int *mats)
+      : eos_v_(eos_v), mats_(mats) {}
+  PORTABLE_INLINE_FUNCTION
+  EOS &operator[](const int m) const { return eos_v_(mats_[m]); }
+  Kokkos::View<EOS *, Llft> eos_v_;
+  int *mats_;
+};
+} // namespace singularity
+#endif // PORTABILITY_STRATEGY_KOKKOS
 // EAP centric arguments and function signature
+
 int get_sg_eos( // sizing information
     int nmat, int ncell, int cell_dim,
     // Input parameters
@@ -198,9 +260,10 @@ int get_sg_eos( // sizing information
     double *press, double *pmax, double *vol, double *spvol, double *sie, double *temp,
     double *bmod, double *dpde, double *cv,
     // per material quantities
-    double *frac_mass, double *frac_vol, double *frac_sie,
+    double *frac_mass, double *frac_vol, double *frac_ie,
     // optional per material quantities
     double *frac_bmod, double *frac_dpde, double *frac_cv) {
+  // printBacktrace();
   // kernel return value will be the number of failures
   int ret{0};
   // handle optionals
@@ -211,6 +274,13 @@ int get_sg_eos( // sizing information
   bool do_frac_cv{true};
   if (frac_dpde == NULL || frac_dpde == nullptr) do_frac_cv = false;
   // get inputs
+  enum class input_condition {
+    RHO_T_INPUT = -3,
+    RHO_P_INPUT = -2,
+    P_T_INPUT = -1,
+    NORM_RHO_E_INPUT = 0,
+    RHO_E_INPUT = 1
+  };
   const auto input{EAPInputToBD.at(input_int)};
   const auto output = thermalqs::all_values - input;
   const bool p_is_inp{static_cast<bool>(input & thermalqs::pressure)};
@@ -220,7 +290,6 @@ int get_sg_eos( // sizing information
   constexpr const Real min_guess_density{1.e-20};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   // convenience aliases
-  using Llft = Kokkos::LayoutLeft;
   using Unmgd = Kokkos::MemoryUnmanaged;
   using HS = Kokkos::HostSpace;
   using Kokkos::create_mirror_view_and_copy;
@@ -232,7 +301,7 @@ int get_sg_eos( // sizing information
   using DMS = DES::memory_space;
   using Kokkos::MemoryTraits;
   constexpr const unsigned int ra{0 | Kokkos::RandomAccess};
-  constexpr const unsigned int ra_u{Kokkos::Unmanaged | Kokkos::RandomAccess};
+  // constexpr const unsigned int ra_u{Kokkos::Unmanaged | Kokkos::RandomAccess};
   using VAWI = Kokkos::ViewAllocateWithoutInitializing;
   using Kokkos::deep_copy;
   static constexpr const double ev2k = 1.160451930280894026e4;
@@ -250,7 +319,7 @@ int get_sg_eos( // sizing information
   host_v cv_hv(cv, cell_dim);
   host_frac_v frac_mass_hv(frac_mass, cell_dim, nmat);
   host_frac_v frac_vol_hv(frac_vol, cell_dim, nmat);
-  host_frac_v frac_sie_hv(frac_sie, cell_dim, nmat);
+  host_frac_v frac_ie_hv(frac_ie, cell_dim, nmat);
   host_frac_v frac_bmod_hv, frac_dpde_hv, frac_cv_hv;
   if (do_frac_bmod) frac_bmod_hv = host_frac_v(frac_bmod, cell_dim, nmat);
   if (do_frac_dpde) frac_dpde_hv = host_frac_v(frac_dpde, cell_dim, nmat);
@@ -272,7 +341,7 @@ int get_sg_eos( // sizing information
   dev_v cv_v{create_mirror_view_and_copy(DMS(), cv_hv)};
   dev_frac_v frac_mass_v{create_mirror_view_and_copy(DMS(), frac_mass_hv)};
   dev_frac_v frac_vol_v{create_mirror_view_and_copy(DMS(), frac_vol_hv)};
-  dev_frac_v frac_sie_v{create_mirror_view_and_copy(DMS(), frac_sie_hv)};
+  dev_frac_v frac_ie_v{create_mirror_view_and_copy(DMS(), frac_ie_hv)};
   dev_frac_v frac_bmod_v, frac_dpde_v, frac_cv_v;
   if (do_frac_bmod) frac_bmod_v = create_mirror_view_and_copy(DMS(), frac_bmod_hv);
   if (do_frac_dpde) frac_dpde_v = create_mirror_view_and_copy(DMS(), frac_dpde_hv);
@@ -281,12 +350,6 @@ int get_sg_eos( // sizing information
   const auto eos_nmat{*std::max_element(eos_offsets, eos_offsets + nmat)};
   Kokkos::View<EOS *, Llft, HS, Unmgd> eos_hv(eos, eos_nmat);
   Kokkos::View<EOS *, Llft> eos_v{create_mirror_view_and_copy(DMS(), eos_hv)};
-  double **lambda_map = (double **)PORTABLE_MALLOC(sizeof(double *) * nmat);
-  portableFor(
-      "filling lambda ptrs", 0, nmat, PORTABLE_LAMBDA(const int &i) {
-        // const int lambda_size = eos_v(i).nlambda();
-        lambda_map[i] = nullptr; //(double*)malloc(sizeof(double)*lambda_size);
-      });
   // TODO: make this a scatter view
   constexpr auto at_int_full{0 | Kokkos::Atomic};
 #ifdef KOKKOS_ENABLE_SERIAL
@@ -295,308 +358,429 @@ int get_sg_eos( // sizing information
   // assume atomics are required for correctness if serial not even enabled
   constexpr auto at_int{at_int_full};
 #endif // KOKKOS_ENABLE_SERIAL
-  Kokkos::View<int *> nmat_cell_init(VAWI("nmat_cell"), ncell);
-  // minimum mass fraction necessary to participate
-  constexpr const Real min_frac{1.e-4};
-  int nmat_local;
-  Kokkos::parallel_reduce(
-      "prePTE", ncell,
-      PORTABLE_LAMBDA(const int &iloop, int &maxmat) {
-        const int i{offsets_v(iloop) - 1};
-        nmat_cell_init(iloop) = 0;
-        Real mass_sum = 0.0;
-        for (int m = 0; m < nmat; ++m) {
-          mass_sum += frac_mass_v(i, m);
-        }
-        for (int m = 0; m < nmat; ++m) {
-          if (frac_mass_v(i, m) / mass_sum > min_frac) nmat_cell_init(iloop) += 1;
-        }
-        const int nmat_cell_loc = nmat_cell_init(iloop);
-        maxmat = nmat_cell_loc > maxmat ? nmat_cell_loc : maxmat;
-      },
-      Kokkos::Max<int>(nmat_local));
-  Kokkos::View<const int *, MemoryTraits<ra>> nmat_cell(nmat_cell_init);
   // set up scratch arrays
   constexpr auto KGlobal = Kokkos::Experimental::UniqueTokenScope::Global;
   Kokkos::Experimental::UniqueToken<DES, KGlobal> tokens{};
+  using VAWI = Kokkos::ViewAllocateWithoutInitializing;
 
   const bool small_loop{tokens.size() > ncell};
   const decltype(tokens)::size_type scratch_size{std::min(tokens.size(), ncell)};
-  ScratchV<int> pte_mats("PTE::scratch mats", scratch_size, nmat_local);
-  ScratchV<int> pte_idxs("PTE::scratch idxs", scratch_size, nmat_local);
-  ScratchV<double> mass_pte("PTE::scratch mass", scratch_size, nmat_local);
-  ScratchV<double> sie_pte("PTE::scratch sie", scratch_size, nmat_local);
-  ScratchV<double> vfrac_pte("PTE::scratch vfrac", scratch_size, nmat_local);
-  ScratchV<double> temp_pte("PTE::scratch temp", scratch_size, nmat_local);
-  ScratchV<double> press_pte("PTE::scratch press", scratch_size, nmat_local);
-  ScratchV<double> rho_pte("PTE::scratch rho", scratch_size, nmat_local);
-  // ScratchV<EOS> eos_pte("PTE::scratch eos", scratch_size, nmat);
+  ScratchV<int> pte_mats(VAWI("PTE::scratch mats"), scratch_size, nmat);
+  ScratchV<int> pte_idxs(VAWI("PTE::scratch idxs"), scratch_size, nmat);
+  ScratchV<double> mass_pte(VAWI("PTE::scratch mass"), scratch_size, nmat);
+  ScratchV<double> sie_pte(VAWI("PTE::scratch sie"), scratch_size, nmat);
+  ScratchV<double> vfrac_pte(VAWI("PTE::scratch vfrac"), scratch_size, nmat);
+  ScratchV<double> temp_pte(VAWI("PTE::scratch temp"), scratch_size, nmat);
+  ScratchV<double> press_pte(VAWI("PTE::scratch press"), scratch_size, nmat);
+  ScratchV<double> rho_pte(VAWI("PTE::scratch rho"), scratch_size, nmat);
+  // declare solver scratch, allocate in the case statement
+  int pte_solver_scratch_size{};
+  ScratchV<double> solver_scratch;
 
+  // create helper lambdas to reduce code duplication
+  const auto init_lambda =
+      PORTABLE_LAMBDA(const int i, const int tid, double &mass_sum, int &npte,
+                      const Real t_mult, const Real s_mult, const Real p_mult) {
+    // normalize mass fractions
+    // first find the mass sum
+    // also set idxs as the decrement of the eos offsets
+    // to take into account 1 based indexing in fortran
+    for (int m = 0; m < nmat; ++m) {
+      mass_sum += frac_mass_v(i, m);
+      pte_idxs(tid, m) = eos_offsets_v(m) - 1;
+      frac_vol_v(i, m) = 0.0;
+    }
+    for (int m = 0; m < nmat; ++m) {
+      frac_mass_v(i, m) /= mass_sum;
+    }
+    // set inputs
+    npte = 0;
+    for (int m = 0; m < nmat; ++m) {
+      if (frac_mass_v(i, m) > 1.e-12) {
+        pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
+        pte_mats(tid, npte) = m;
+        npte += 1;
+      }
+      vfrac_pte(tid, m) = 0.0;
+      sie_pte(tid, m) = 0.0;
+      temp_pte(tid, m) = 0.0;
+      press_pte(tid, m) = 0.0;
+    }
+    for (int mp = 0; mp < npte; ++mp) {
+      const int m = pte_mats(tid, mp);
+      rho_pte(tid, mp) = npte / spvol_v(i) * frac_mass_v(i, m);
+      vfrac_pte(tid, mp) = 1.0 / npte;
+      temp_pte(tid, mp) = temp_v(i) * ev2k * t_mult;
+      press_pte(tid, mp) = press_v(i) * p_mult;
+      sie_pte(tid, mp) = sie_v(i) * frac_mass_v(i, m) * s_mult;
+    }
+  };
+  const auto final_lambda = PORTABLE_LAMBDA(
+      const int i, const int tid, const int npte, const Real mass_sum, const Real t_mult,
+      const Real s_mult, const Real p_mult, singularity::mix_impl::CacheAccessor &cache) {
+    // initialize averaged quantities to 0
+    const bool do_t = t_mult == 1.0;
+    const bool do_s = s_mult == 1.0;
+    const bool do_p = p_mult == 1.0;
+    if (do_t) {
+      temp_v(i) = 0.0;
+    }
+    if (do_p) {
+      press_v(i) = 0.0;
+    }
+    if (do_s) {
+      sie_v(i) = 0.0;
+    }
+    bmod_v(i) = 0.0;
+    cv_v(i) = 0.0;
+    dpde_v(i) = 0.0;
+    // material loop for averaging and assigning per mat quantities
+    for (int mp = 0; mp < npte; ++mp) {
+      const int m = pte_mats(tid, mp);
+      // pressure contribution from material m
+      press_v(i) += press_pte(tid, mp) * vfrac_pte(tid, mp) * p_mult;
+      // temperature contribution from material m
+      temp_v(i) += temp_pte(tid, mp) * vfrac_pte(tid, mp) * t_mult;
+      const Real ie_m = sie_pte(tid, mp) * frac_mass_v(i, m) * mass_sum;
+      // sie contribution from material m
+      sie_v(i) += ie_m * s_mult;
+      // assign per material specific internal energy
+      frac_ie_v(i, m) = ie_m;
+      // assign volume fraction based on pte calculation
+      frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
+      // calculate bulk modulus for material m
+      const Real bmod_m = eos_v(pte_idxs(tid, mp))
+                              .BulkModulusFromDensityTemperature(
+                                  rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+      // add bmod contribution from material m
+      bmod_v(i) += bmod_m * vfrac_pte(tid, mp);
+      // calculate specific heat for material m
+      const Real cv_m = ev2k * eos_v(pte_idxs(tid, mp))
+                                   .SpecificHeatFromDensityTemperature(
+                                       rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+      // add mass weighted contribution specific heat for material m
+      cv_v(i) += cv_m * frac_mass_v(i, m);
+      // calculate gruneisen parameter for material m
+      const Real dpde_m = eos_v(pte_idxs(tid, mp))
+                              .GruneisenParamFromDensityTemperature(
+                                  rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+      // add gruneisen param contribution from material m
+      dpde_v(i) += dpde_m * vfrac_pte(tid, mp);
+      // optionally assign per material quantities to per material arrays
+      if (do_frac_bmod) {
+        frac_bmod_v(i, m) = bmod_m;
+      }
+      if (do_frac_cv) {
+        frac_cv_v(i, m) = cv_m;
+      }
+      if (do_frac_dpde) {
+        frac_dpde_v(i, m) = dpde_m;
+      }
+    }
+    if (do_t) {
+      temp_v(i) /= ev2k;
+    }
+    if (do_s) {
+      sie_v(i) /= mass_sum;
+    }
+    // reset mass fractions to original values if not normalized to 1
+    for (int m = 0; m < nmat; ++m) {
+      frac_mass_v(i, m) *= mass_sum;
+    }
+  };
   Kokkos::View<int, MemoryTraits<at_int>> res("PTE::num fails");
   Kokkos::View<int, MemoryTraits<at_int>> n_solves("PTE::num solves");
-  // loop over cells
-  portableFor(
-      "PTE", 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
-        // cell offset
-        const int i{offsets_v(iloop) - 1};
-        // get "thread-id" like thing with optimization
-        // for small loops
-        const int32_t token{tokens.acquire()};
-        const int32_t tid{small_loop ? iloop : token};
-        // caching mechanism
-        Real cache[MAX_NUM_LAMBDAS];
-        // calculate total mass in the cell
-        Real mass_sum{0.0};
-        for (int m = 0; m < nmat; ++m)
-          mass_sum += frac_mass_v(i, m);
-        // validate specific volume
-        spvol_v(i) = r_is_inp ? spvol_v(i) : vol_v(i) / mass_sum;
-        // calculate specific internal energy if not already known
-        if (!s_is_inp) {
-          Real eng_sum{0.0};
-          Real vol_sum{0.0};
-          for (int m = 0; m < nmat; ++m) {
-            Real rho = 1.0 / spvol_v(i);
-            Real T = temp_v(i) * ev2k;
-            Real press_mat = press_v(i);
-            Real spie = sie_v(i);
-            Real cv_mat, bmod_mat;
-            int mid = eos_offsets_v(m) - 1;
-            eos_v(mid).FillEos(rho, T, spie, press_mat, cv_mat, bmod_mat, output, cache);
-            eng_sum += spie * frac_mass_v(i, m);
-            vol_sum += frac_mass_v(i, m) / rho;
-            if (vol_sum < 0.0)
-              printf("Neg. Volume:\ninput: %i mat: %i r: %e t: %e s: %e p: %e\n",
-                     input_int, mid + 1, rho, T, spie, press_mat);
-            // if (!r_is_inp) printf("mat: %i rho lookup: %e\n", eos_offsets_v(m), rho);
-          }
-          spvol_v(i) = r_is_inp ? spvol_v(i) : vol_sum / mass_sum;
-          sie_v(i) = eng_sum / mass_sum;
-        }
-        // calculate component volumes and energies
-        // figure out participating materials, get everything
-        // set up to feed in to solver
-        int npte = 0;
-        double vsum_nopte = 0.0;
-        double esum_nopte = 0.0;
-        double rhoavg_pte = 0.0;
-        for (int m = 0; m < nmat; ++m) {
-          const bool something = frac_mass_v(i, m) / mass_sum > min_frac;
-          frac_sie_v(i, m) = sie_v(i) * frac_mass_v(i, m);
-          frac_vol_v(i, m) = spvol_v(i) * frac_mass_v(i, m);
-          if (something) {
-            // vfrac true
-            int midx = eos_offsets_v(m) - 1;
-            pte_mats(tid, npte) = midx;
-            pte_idxs(tid, npte) = m;
-            mass_pte(tid, npte) = frac_mass_v(i, m);
-            sie_pte(tid, npte) = frac_sie_v(i, m) / frac_mass_v(i, m);
-            vfrac_pte(tid, npte) = frac_vol_v(i, m);
-            npte += 1;
+  const std::string perf_nums =
+      "[" + std::to_string(nmat) + "," + std::to_string(ncell) + "]";
+  auto input_int_enum = static_cast<input_condition>(input_int);
+  switch (input_int_enum) {
+  case input_condition::RHO_T_INPUT: {
+    // T-rho input
+    // set frac_vol = 1/nmat
+    // set rho_i = nmat / spvol * frac_mass_i
+    // iterate PTE solver to obtain internal energies
+    // that results in the input T
+    pte_solver_scratch_size = PTESolverFixedTRequiredScratch(nmat);
+    solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
+                                      pte_solver_scratch_size);
+    const std::string rt_name = "PTE::solve (rho,T) input" + perf_nums;
+    portableFor(
+        rt_name.c_str(), 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
+          // cell offset
+          const int i{offsets_v(iloop) - 1};
+          // get "thread-id" like thing with optimization
+          // for small loops
+          const int32_t token{tokens.acquire()};
+          const int32_t tid{small_loop ? iloop : token};
+          double mass_sum{0.0};
+          int npte{0};
+          // initialize values for solver / lookup
+          init_lambda(i, tid, mass_sum, npte, 1.0, 0.0, 0.0);
+          // calculate pte condition (lookup for 1 mat cell)
+          Real sie_tot_true{0.0};
+          const int neq = npte;
+          singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
+                                                     neq * (neq + 4) + 2 * npte);
+          if (npte > 1) {
+            // create solver lambda
+            // eos accessor
+            singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
+            PTESolverFixedT<singularity::EOSAccessor_, Real *, Real **> method(
+                npte, eos_inx, 1.0, temp_pte(tid, 0), &rho_pte(tid, 0),
+                &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0),
+                &press_pte(tid, 0), cache, &solver_scratch(tid, 0));
+            const bool res_{PTESolver(method)};
+            // calculate total internal energy
+            for (int mp = 0; mp < npte; ++mp) {
+              const int m = pte_mats(tid, mp);
+              sie_tot_true += sie_pte(tid, mp) * frac_mass_v(i, m);
+            }
           } else {
-            vsum_nopte += frac_vol_v(i, m);
-            esum_nopte += frac_sie_v(i, m);
+            // pure cell (nmat = 1)
+            // calculate sie from single eos
+            sie_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
+                                  .InternalEnergyFromDensityTemperature(
+                                      rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
+            // set total sie to material 0 value
+            sie_tot_true = sie_pte(tid, 0);
+            // set pressure
+            press_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
+                                    .PressureFromDensityTemperature(
+                                        rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
           }
-        }
-        // call solver to get correct volume fractions
-        // component masses, total energy, and total volume are conserved
-        const double vfrac_tot = r_is_inp ? spvol_v(i) * mass_sum : vol_v(i);
-        const double sie_tot = sie_v(i); // - esum_nopte / rhoavg_pte;
-        // calculate initial guess for mixed cells
-        if (npte > 1) {
-          n_solves() += 1;
-          // find the most common material
-          int common_mat_id = 0;
-          Real max_mass = 0.0;
+          // total sie is known
+          sie_v(i) = sie_tot_true;
+          // assign quantities
+          final_lambda(i, tid, npte, mass_sum, 0.0, 0.0, 1.0, cache);
+          // assign max pressure
+          pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
+          // release the token used for scratch arrays
+          tokens.release(token);
+        });
+    break;
+  }
+  case input_condition::RHO_P_INPUT: {
+    // rho-P input
+    // set frac_vol = 1/nmat
+    // set rho_i = nmat / spvol * frac_mass_i
+    // iterate PTE solver to obtain internal energies
+    // that results in the input P
+    pte_solver_scratch_size = PTESolverRhoTRequiredScratch(nmat);
+    solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
+                                      pte_solver_scratch_size);
+    const std::string rp_name = "PTE::solve (rho,P) input" + perf_nums;
+    portableFor(
+        rp_name.c_str(), 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
+          // cell offset
+          const int i{offsets_v(iloop) - 1};
+          // get "thread-id" like thing with optimization
+          // for small loops
+          const int32_t token{tokens.acquire()};
+          const int32_t tid{small_loop ? iloop : token};
+          double mass_sum{0.0};
+          int npte{0};
+          // initialize values for solver / lookup
+          init_lambda(i, tid, mass_sum, npte, 0.0, 0.0, 1.0);
+          Real sie_tot_true{0.0};
+          const int neq = npte + 1;
+          singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
+                                                     neq * (neq + 4) + 2 * npte);
+          if (npte > 1) {
+            // create solver lambda
+            // eos accessor
+            singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
+            PTESolverFixedP<singularity::EOSAccessor_, Real *, Real **> method(
+                npte, eos_inx, 1.0, press_pte(tid, 0), &rho_pte(tid, 0),
+                &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0),
+                &press_pte(tid, 0), cache[0], &solver_scratch(tid, 0));
+            const bool res_{PTESolver(method)};
+            // calculate total sie
+            for (int mp = 0; mp < npte; ++mp) {
+              const int m = pte_mats(tid, mp);
+              sie_tot_true += sie_pte(tid, mp) * frac_mass_v(i, m);
+            }
+          } else {
+            // pure cell (nmat = 1)
+            // calculate sie from single eos
+            auto p_from_t = [&](const Real &t_i) {
+              return eos_v(pte_idxs(tid, 0))
+                  .PressureFromDensityTemperature(rho_pte(tid, 0), t_i, cache[0]);
+            };
+            // calculate sie root bounds
+            Real r_rho{}, r_temp{}, r_sie{}, r_press{}, r_cv{}, r_bmod{};
+            Real r_dpde{}, r_dvdt{};
+            eos_v(pte_idxs(tid, 0))
+                .ValuesAtReferenceState(r_rho, r_temp, r_sie, r_press, r_cv, r_bmod,
+                                        r_dpde, r_dvdt);
+            RootFinding1D::RootCounts co{};
+            Real temp_i;
+            RootFinding1D::findRoot(p_from_t, press_v(i), r_temp, 1.e-10 * r_temp,
+                                    1.e10 * r_temp, 1.e-12, 1.e-12, temp_i, co);
+            sie_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
+                                  .InternalEnergyFromDensityTemperature(rho_pte(tid, 0),
+                                                                        temp_i, cache[0]);
+            sie_tot_true = sie_pte(tid, 0);
+            // set temperature
+            temp_pte(tid, 0) = temp_i;
+          }
+          // sie calculate explicitly already
+          sie_v(i) = sie_tot_true;
+          // assign remaining outputs
+          final_lambda(i, tid, npte, mass_sum, 1.0, 0.0, 0.0, cache);
+          // assign max pressure
+          pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
+          // release the token used for scratch arrays
+          tokens.release(token);
+        });
+    break;
+  }
+  case input_condition::P_T_INPUT: {
+    // P-T input
+    const int pte_solver_scratch_size = nmat * MAX_NUM_LAMBDAS;
+    solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
+                                      pte_solver_scratch_size);
+    const std::string pt_name = "PTE::solve (P,T) input" + perf_nums;
+    portableFor(
+        pt_name.c_str(), 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
+          // cell offset
+          const int i{offsets_v(iloop) - 1};
+          // get "thread-id" like thing with optimization
+          // for small loops
+          const int32_t token{tokens.acquire()};
+          const int32_t tid{small_loop ? iloop : token};
+          // caching mechanism
+          singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0));
+          double mass_sum{0.0};
+          // normalize mass fractions
+          // first find the mass sum
+          // also set idxs as the decrement of the eos offsets
+          // to take into account 1 based indexing in fortran
           for (int m = 0; m < nmat; ++m) {
-            if (frac_mass_v(i, m) > max_mass) {
-              max_mass = frac_mass_v(i, m);
-              common_mat_id = m;
-            }
+            mass_sum += frac_mass_v(i, m);
+            pte_idxs(tid, m) = eos_offsets_v(m) - 1;
+            pte_mats(tid, m) = m;
+            temp_pte(tid, m) = temp_v(i) * ev2k;
+            press_pte(tid, m) = press_v(i);
           }
-          int common_mid = eos_offsets_v(common_mat_id) - 1;
-          // eos lookup of most common material
-          Real common_rho{1.0 / spvol_v(i)};
-          Real common_temp{0.};
-          Real common_sie{frac_sie_v(i, common_mat_id) / frac_mass_v(i, common_mat_id)};
-          Real common_press{0.};
-          Real common_cv{0.0};
-          Real common_bmod{0.0};
-          Real ref_p, ref_dpde, ref_dvdt, ref_sie;
-          eos_v(common_mid)
-              .ValuesAtReferenceState(common_rho, common_temp, ref_sie, ref_p, common_cv,
-                                      common_bmod, ref_dpde, ref_dvdt);
-          const auto pt_output =
-              thermalqs::all_values -
-              (thermalqs::density | thermalqs::specific_internal_energy);
-          eos_v(common_mid)
-              .FillEos(common_rho, common_temp, common_sie, common_press, common_cv,
-                       common_bmod, pt_output, cache);
-          common_press = common_press < 0.0 ? press_v(i) : common_press;
-          // PT lookup of all other materials at PT of common material
-          const auto guess_output =
-              thermalqs::all_values - (thermalqs::pressure | thermalqs::temperature);
-          for (int m = 0; m < npte; ++m) {
-            int mid = pte_mats(tid, m);
-            int midx = pte_idxs(tid, m);
-            Real matrho{0.0}, mat_sie{0.0};
-            press_pte(tid, m) = common_press;
-            rho_pte(tid, m) = common_rho;
-            temp_pte(tid, m) = common_temp;
-            sie_pte(tid, m) = common_sie;
-            vfrac_pte(tid, m) = frac_mass_v(i, midx) / common_rho;
-            if (mid != common_mid) {
-              // reuse common cv and bmod b/c the values aren't needed
-              eos_v(mid).FillEos(matrho, common_temp, mat_sie, common_press, common_cv,
-                                 common_bmod, guess_output, cache);
-              // get rid of 0 density issues
-              Real guess_density = matrho;
-              if (matrho < min_guess_density) {
-                Real ref_T, ref_dpde, ref_dvdt;
-                eos_v(mid).ValuesAtReferenceState(guess_density, ref_T, ref_sie, ref_p,
-                                                  common_cv, common_bmod, ref_dpde,
-                                                  ref_dvdt);
-                press_pte(tid, m) = ref_p;
-                temp_pte(tid, m) = ref_T;
-                // sie_pte(tid, m) = ref_sie;
-              }
-              vfrac_pte(tid, m) = frac_mass_v(i, midx) / guess_density;
-              rho_pte(tid, m) = guess_density;
-              sie_pte(tid, m) = mat_sie;
-            }
+          for (int m = 0; m < nmat; ++m) {
+            frac_mass_v(i, m) /= mass_sum;
           }
-          // loop over materials to calc temperature, per material quantities
-          // Real sum_mu_cvt {0.0}, sum_mu_e0 {0.0}, sum_mu_cv {0.0};
-          // for (int m = 0; m < npte; ++m) {
-          //  const int mid = pte_mats(tid, m);
-          //  const int midx = pte_idxs(tid, m);
-          //  const Real mu = frac_mass_v(i, midx)/mass_sum;
-          //  Real ref_rho {0.0}, ref_T {0.0}, ref_sie {0.0}, ref_p{0.0};
-          //  Real ref_cv {0.0}, ref_bmod {0.0}, ref_dpde {0.0}, ref_dvdt {0.0};
-          //  eos_v(mid).ValuesAtReferenceState(ref_rho, ref_T, ref_sie, ref_p,
-          //                                    ref_cv, ref_bmod, ref_dpde, ref_dvdt);
-          //  sum_mu_cvt += mu*ref_cv*ref_T;
-          //  sum_mu_e0 += mu*ref_sie;
-          //  sum_mu_cv += mu*ref_cv;
-          //}
-          // const Real temp_est {(sie_v(i) + sum_mu_cvt - sum_mu_e0) / sum_mu_cv};
-          // const bool temp_est_pos {temp_est > 0.0};
-          // Real vol_sum{0.0}, eng_sum{0.0};
-          // for (int m = 0; m < npte; ++m) {
-          //  const int mid = pte_mats(tid, m);
-          //  const int midx = pte_idxs(tid, m);
-          //  const Real mu = frac_mass_v(i, midx)/mass_sum;
-          //  Real ref_rho {0.0}, ref_T {0.0}, ref_sie {0.0}, ref_p{0.0};
-          //  Real ref_cv {0.0}, ref_bmod {0.0}, ref_dpde {0.0}, ref_dvdt {0.0};
-          //  eos_v(mid).ValuesAtReferenceState(ref_rho, ref_T, ref_sie, ref_p,
-          //                                    ref_cv, ref_bmod, ref_dpde, ref_dvdt);
-          //  //const Real delta_T {temp_est_pos ? temp_est - ref_T : 0.0};
-          //  //sie_pte(tid, m) = ref_sie;//temp_est_pos ? ref_cv*delta_T + ref_sie :
-          //  mu*sie_v(i);
-          //  //const Real guess_rho = (1.0 - ref_rho*ref_dvdt*delta_T) <= 0.0
-          //  //                     ? ref_rho
-          //  //                     : ref_rho*(1.0 - ref_rho*ref_dvdt*delta_T);
-          //  vfrac_pte(tid, m) = frac_mass_v(i, midx) / ref_rho;
-          //  rho_pte(tid, m) = ref_rho;
-          //  temp_pte(tid, m) = ref_T;//temp_v(i);
-          //  press_pte(tid, m) = ref_p;
-          //  //sie_pte(tid, m) = ref_sie;
-          //  //printf("ref vals:\nv r t p s\n%e %e %e %e %e\n",
-          //  //       vfrac_pte(tid, m), ref_rho, ref_T, ref_p, ref_sie);
-          //  //mass_pte(tid, m) = ref_rho;
-          //  //rho_pte(tid, m) = 1.0/spvol_v(i);
-          //  //const auto guess_output = thermalqs::all_values
-          //  //                        - (thermalqs::pressure | thermalqs::temperature);
-          //  //Real mat_sie {frac_sie_v(i, midx) / frac_mass_v(i, midx)};
-          //  //Real mat_press {press_v(i)};
-          //  //Real mat_cv, mat_bmod, mat_dpde;
-          //  //temp_pte(tid, m) = temp_v(i);
-          //  //eos_v(mid).FillEos(rho_pte(tid, m), temp_pte(tid, m), mat_sie,
-          //  //                   mat_press, mat_cv, mat_bmod, mat_dpde);
-          //  //vfrac_pte(tid, m) = frac_mass_v(i, midx) / rho_pte(tid, m);
-          //  //press_pte(tid, m) = press_v(i);
-          //  //sie_pte(tid, m) = mat_sie;
-          //  //vfrac_pte(tid, m) = rho_pte(tid, m) / frac_mass_v(i, midx);
-          //  //vol_sum += vfrac_pte(tid, m);
-          //  //eng_sum += mu*sie_pte(tid, m);
-          //}
-        }
-        int niter;
-        const bool res_{pte_closure_josh_offset(
-            npte, eos_v.data(), vfrac_tot, sie_tot, &pte_mats(tid, 0), &rho_pte(tid, 0),
-            &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0),
-            lambda_map)};
-        // assign local values to global
-        press_v(i) = p_is_inp ? press_v(i) : 0.0;
-        sie_v(i) = s_is_inp ? sie_v(i) : 0.0;
-        temp_v(i) = t_is_inp ? temp_v(i) : 0.0;
-        bmod_v(i) = 0.0;
-        cv_v(i) = 0.0;
-        dpde_v(i) = 0.0;
-        Real vol_sum = 0.0;
-        for (int m = 0; m < npte; ++m) {
-          int mid = pte_mats(tid, m);
-          int midx = pte_idxs(tid, m);
-          Real rho = mass_pte(tid, m) / vfrac_pte(tid, m);
-          Real spie = sie_pte(tid, m);
-          Real press_mat = press_v(i);
-          Real T = temp_v(i) * ev2k;
-          Real cv_mat = 0.0;
-          Real bmod_mat = 0.0;
-          eos_v(mid).FillEos(rho, T, spie, press_mat, cv_mat, bmod_mat, output, cache);
-          frac_sie_v(i, midx) = spie * frac_mass_v(i, midx);
-          frac_vol_v(i, midx) = frac_mass_v(i, midx) / rho;
-          vol_sum += frac_vol_v(i, midx);
-          temp_v(i) += t_is_inp ? 0.0 : frac_vol_v(i, midx) / ev2k * T;
-          press_v(i) += p_is_inp ? 0.0 : frac_vol_v(i, midx) * press_mat;
-          // optional cv and bmod
-          const Real dpde_mat =
-              rho * eos_v(mid).GruneisenParamFromDensityInternalEnergy(rho, spie, cache);
-          sie_v(i) += s_is_inp ? 0.0 : frac_sie_v(i, midx);
-          bmod_v(i) += frac_vol_v(i, midx) * bmod_mat;
-          cv_v(i) += frac_mass_v(i, midx) * cv_mat;
-          dpde_v(i) += frac_vol_v(i, midx) * dpde_mat;
-          if (do_frac_bmod) {
-            frac_bmod_v(i, midx) = bmod_mat;
+          // do r-e of pt for each mat
+          singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
+          Real vfrac_tot{0.0};
+          Real sie_tot{0.0};
+          for (int m = 0; m < nmat; ++m) {
+            // obtain rho and sie from P-T
+            eos_inx[m].DensityEnergyFromPressureTemperature(
+                press_pte(tid, m), temp_pte(tid, m), cache[m], rho_pte(tid, m),
+                sie_pte(tid, m));
+            // assign volume fractions
+            // this is a physical volume
+            vfrac_pte(tid, m) = frac_mass_v(i, m) / rho_pte(tid, m) * mass_sum;
+            vfrac_tot += vfrac_pte(tid, m);
+            // add internal energy component
+            sie_tot += sie_pte(tid, m) * frac_mass_v(i, m);
           }
-          if (do_frac_cv) {
-            frac_cv_v(i, midx) = cv_mat;
+          // assign volume, etc.
+          // total sie is known
+          sie_v(i) = sie_tot;
+          vol_v(i) = vfrac_tot;
+          spvol_v(i) = vol_v(i) / mass_sum;
+          for (int m = 0; m < nmat; ++m) {
+            vfrac_pte(tid, m) /= vfrac_tot;
           }
-          if (do_frac_dpde) {
-            frac_dpde_v(i, midx) = dpde_mat;
+          // assign remaining outputs
+          final_lambda(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, cache);
+          // assign max pressure
+          pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
+          // release the token used for scratch arrays
+          tokens.release(token);
+        });
+    break;
+  }
+  case input_condition::NORM_RHO_E_INPUT:
+    // rho-sie input
+    // no break so fallthrough to case 1
+  case input_condition::RHO_E_INPUT: {
+    // rho-sie input
+    pte_solver_scratch_size = PTESolverRhoTRequiredScratch(nmat);
+    solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
+                                      pte_solver_scratch_size);
+    const std::string re_name = "PTE::solve (rho,e) input" + perf_nums;
+    portableFor(
+        re_name.c_str(), 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
+          // cell offset
+          const int i{offsets_v(iloop) - 1};
+          // get "thread-id" like thing with optimization
+          // for small loops
+          const int32_t token{tokens.acquire()};
+          const int32_t tid{small_loop ? iloop : token};
+          double mass_sum{0.0};
+          int npte{0};
+          // initialize values for solver / lookup
+          init_lambda(i, tid, mass_sum, npte, 0.0, 1.0, 0.0);
+          // get cache from offsets into scratch
+          const int neq = npte + 1;
+          singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
+                                                     neq * (neq + 4) + 2 * npte);
+          if (npte > 1) {
+            // create solver lambda
+            // eos accessor
+            singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
+            // reset inputs
+            PTESolverRhoT<singularity::EOSAccessor_, Real *, Real **> method(
+                npte, eos_inx, 1.0, sie_v(i), &rho_pte(tid, 0), &vfrac_pte(tid, 0),
+                &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), cache,
+                &solver_scratch(tid, 0));
+            const bool res_{PTESolver(method)};
+          } else {
+            // pure cell (nmat = 1)
+            // calculate sie from single eos
+            Real dpdr_m, dtdr_m, dpde_m, dtde_m;
+            eos_v(pte_idxs(tid, 0))
+                .PTofRE(rho_pte(tid, 0), sie_pte(tid, 0), cache[0], press_pte(tid, 0),
+                        temp_pte(tid, 0), dpdr_m, dpde_m, dtdr_m, dtde_m);
           }
-        }
-        press_v(i) /= p_is_inp ? 1.0 : vol_sum;
-        sie_v(i) /= s_is_inp ? 1.0 : mass_sum;
-        temp_v(i) /= t_is_inp ? 1.0 : vol_sum;
-        bmod_v(i) /= vol_sum;
-        cv_v(i) *= ev2k / mass_sum;
-        dpde_v(i) /= vol_sum;
-        spvol_v(i) = r_is_inp ? spvol_v(i) : vol_sum / mass_sum;
-        pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
-        // if failed, increment return value by 1
-        // use if rather than ternary to reduce contention
-        if (!res_) {
-          res() += 1;
-        }
-        // release token
-        tokens.release(token);
-      });
+          // assign outputs
+          final_lambda(i, tid, npte, mass_sum, 1.0, 0.0, 1.0, cache);
+          // assign max pressure
+          pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
+          // release the token used for scratch arrays
+          tokens.release(token);
+        });
+    break;
+  }
+  }
+
   Kokkos::fence();
   // copy results back into local values
+  // there is lots of room for performance optimization
+  // in terms of when to copy and when not necessary
+  // this is the return value (number of solve failures)
   deep_copy(ret, res);
+  // copy pressure, this is not needed in all cases
   deep_copy(press_hv, press_v);
+  // return max pressure, this may be needed
   deep_copy(pmax_hv, pmax_v);
+  // I don't think the volume is necessary
   deep_copy(vol_hv, vol_v);
+  // specific volume, copy-back not needed in all cases
   deep_copy(spvol_hv, spvol_v);
+  // internal energy, copy-back not needed in all cases
   deep_copy(sie_hv, sie_v);
+  // temperature, copy-back not needed in all cases
   deep_copy(temp_hv, temp_v);
+  // bulk modulus, alwasy copy-back
   deep_copy(bmod_hv, bmod_v);
+  // dpde, always copy-back
   deep_copy(dpde_hv, dpde_v);
+  // specific heat, always copy-back
   deep_copy(cv_hv, cv_v);
-  deep_copy(frac_mass_hv, frac_mass_v);
+  // volume fractions, always copy-back (maybe not for pure cells)
   deep_copy(frac_vol_hv, frac_vol_v);
-  deep_copy(frac_sie_hv, frac_sie_v);
+  // component internal energies, always copy-back (maybe not for pure cells)
+  deep_copy(frac_ie_hv, frac_ie_v);
+  // optionally copy-back the component bmod, dpde, and cv
   if (do_frac_bmod) {
     deep_copy(frac_bmod_hv, frac_bmod_v);
   }
@@ -606,13 +790,6 @@ int get_sg_eos( // sizing information
   if (do_frac_cv) {
     deep_copy(frac_cv_hv, frac_cv_v);
   }
-  portableFor(
-      "freeing lambda ptrs", 0, nmat,
-      PORTABLE_LAMBDA(const int &i) { free(lambda_map[i]); });
-  PORTABLE_FREE(lambda_map);
-  int tot_solves{0};
-  deep_copy(tot_solves, n_solves);
-  if (ret > 0) printf("%i/%i solves failed\n", ret, tot_solves);
 #endif // PORTABILITY_STRATEGY_KOKKOS
   return ret;
 }

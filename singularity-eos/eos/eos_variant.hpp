@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -15,9 +15,9 @@
 #ifndef EOS_VARIANT_HPP
 #define EOS_VARIANT_HPP
 
+#include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
-#include <variant/include/mpark/variant.hpp>
 
 using Real = double;
 
@@ -222,6 +222,21 @@ class Variant {
           return eos.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
         },
         eos_);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real RhoPmin(const Real temp) const {
+    return mpark::visit([&temp](const auto &eos) { return eos.RhoPmin(temp); }, eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const {
+    return mpark::visit([](const auto &eos) { return eos.MinimumDensity(); }, eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumTemperature() const {
+    return mpark::visit([](const auto &eos) { return eos.MinimumTemperature(); }, eos_);
   }
 
   /*

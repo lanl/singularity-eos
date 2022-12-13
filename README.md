@@ -54,14 +54,38 @@ A number of options are avaialable for compiling:
 | SINGULARITY_USE_KOKKOSKERNELS     | OFF     | Use Kokkos Kernels for linear algebra. Needed for mixed cell closure models on GPU   |
 | SINGULARITY_BUILD_CLOSURE         | ON      | Builds mixed cell closure machinery for multi-material problems                      |
 | SINGULARITY_BUILD_TESTS           | OFF     | Build test infrastructure.                                                           |
+| SINGULARITY_BUILD_PYTHON          | OFF     | Build Python bindings                                                                |
 | SINGULARITY_TEST_SESAME           | OFF     | Test the Sesame table readers                                                        |
 | SINGULARITY_TEST_STELLAR_COLLAPSE | OFF     | Test the Stellar Collapse table readers                                              |
+| SINGULARITY_TEST_PYTHON           | OFF     | Test the Python bindings                                                             |
 | SINGULARITY_BUILD_SESAME2SPINER   | OFF     | Builds the conversion tool sesame2spiner which makes files readable by SpinerEOS     |
 | SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER | OFF     | Builds the conversion tool stellarcollapse2spiner which optionally makes stellar collapse files faster to read |
 | SINGULARITY_INVERT_AT_SETUP       | OFF     | For tests, pre-invert eospac tables.                                                 |
 | SINGULARITY_BETTER_DEBUG_FLAGS    | ON      | Enables nicer GPU debug flags. May interfere with in-tree builds as a submodule      |
 | SINGULARITY_HIDE_MORE_WARNINGS    | OFF     | Makes warnings less verbose. May interfere with in-tree builds as a submodule        |
 | SINGULARITY_SUBMODULE_MODE        | OFF     | Sets cmake flags for in-tree builds                                                  |
+
+#### Dependency overriding
+
+`singularity-eos` will do it's utmost to import all it's dependencies with as little user prompts as possible.
+However, there may be situations where `singularity-eos` cannot find either an install or a source tree of a dependency.
+Furthermore, users may wish to use a modified dependency that `singularity-eos` lacks the foreknowledge to know how to find or otherwise does not utilize.
+Therefore the `singularity-eos` build system provides an "override" option for dependencies.
+
+| Option                            | Default | Comment                                                                              |
+| --------------------------------- | ------- | ------------------------------------------------------------------------------------ |
+| SINGULARITY_PKG_INSTALL_DIR       | empty   | Specifies a path where a CMake install of `PKG` is located                           |
+| SINGULARITY_PKG_IMPORT_DIR        | empty   | Specifies a path where a CMake source tree of `PKG` is located                       |
+
+Notes on using these options:
+
+- These options are intended for `singularity-eos` developers. Users are encouraged to let `singularity-eos` use it's own build system to find and configure dependencies
+- `PKG` should be in all uppercase, for example `-DSINGULARITY_KOKKOSKERNELS_IMPORT_DIR=...`
+- Dashes in package names should be given as underscores, e.g. for `ports-of-call`, use `-DSINGULARITY_PORTS_OF_CALL_INSTALL_DIR=...`
+- `_INSTALL_DIR` points to a directory where the package has been installed by CMake. It expects to find a CMake configuration file in a standard location. If this option is specified and the configuration file cannot be found at that location, the build will produce and error and halt
+- `_IMPORT_DIR` points to a directory that is the top-level of a source-tree of `PKG`. The directory will be imported into the build "as-though" it was an "in-tree" directory
+- using `_IMPORT_DIR` will only check for the existence of a top-level `CMakeLists.txt` file. It does no other evaluation on the directory (e.g. there is no check that this path points to the "correct" package source)
+- `_INSTALL_DIR` and `_IMPORT_DIR` cannot be used for the same package
 
 ### Building on Darwin power9 nodes with the IBM xl compiler
 
@@ -116,7 +140,7 @@ concreteness, the internal units of each quantity are:
 
 ## Copyright
 
-© 2021. Triad National Security, LLC. All rights reserved.  This
+© 2021-2022. Triad National Security, LLC. All rights reserved.  This
 program was produced under U.S. Government contract 89233218CNA000001
 for Los Alamos National Laboratory (LANL), which is operated by Triad
 National Security, LLC for the U.S.  Department of Energy/National

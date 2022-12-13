@@ -1,82 +1,12 @@
-# sesame2spiner
-
-Self-contained tool that uses `EOSPAC` to read `SESAME` tables and convert to Spiner HDF format.
-
-## Download
-
-```bash
-git clone --recursive git@gitlab.lanl.gov:jonahm/sesame2spiner.git
-```
-
-## Dependencies
-
-`sesame2spiner` requires the following header-only libraries, which are provided via `git` submodules:
-- [Spiner](https://gitlab.lanl.gov/jonahm/spiner)
-- [Catch2](https://github.com/catchorg/Catch2)
-- [nlohmann/json](https://github.com/nlohmann/json)
-
-It also requires the following pre-installed libraries
-- [EOSPAC](https://laws.lanl.gov/projects/data/eos/eospacReleases.php)
-- [HDF5](https://portal.hdfgroup.org/display/support)
-
 ## Build and install
 
-`sesame2spiner` uses a simple Makefile. Cloning and then typing `make`
-will build the binary and run the tests.
-
-You may need to change include libraries. In particular, you may need
-to set the following flags:
-- `EOSPAC_INCLUDE`, the `-I` flag for EOSPAC headers
-- `EOSPAC_LIB`, the `-L` flag for EOSPAC 
-- `EOSPAC_LINK`, the `-l` flag for EOSPAC. In particular, you may want to set the `rpath`.
-- `CC`, the compiler. You likely want this to be the path to `h5c++`
-  for `hdf5-serial`. You can also change it to, say, `icc` and simply
-  point the appropriate include and link flags `INCLUDE_FLAGS`,
-  `LFLAGS` to your `hdf5` installation.
-  
-Currently there is no `make install`. For now, please just copy the
-binary to where you want it.
+`sesame2spiner` is built with ``singularity-eos`` 
+if ``-DSINGULARITY_BUILD_SESAME2SPINER=ON`` is specified at the configure stage.
 
 ## Example usage
 
 ```bash
-jonahm@sn-fey1:$ ./sesame2spiner -h
-Usage: ./sesame2spiner[-p] [-h] <parameter file>
-
-	 <parameter file>: input file in json format
-	-p: print metadata associated with materials in parameter file
-	-h: print this message
-
-Example JSON file:
-
-{
-  "savename" : "materials.sp5",
-  "materials" : [
-    { // only matid is required. All others override defaults.
-      "matid"  : 5030,
-      "name"   : "air",
-      "rhomin" : 1e-2, // g/cc
-      "rhomax" : 10,
-      "Tmin"   : 252,  // kelvin
-      "Tmax"   : 1e4,
-      "siemin" : 1e12, // erg
-      "siemax" : 1e16
-    },
-    {
-      "matid" : 4272,
-      /* These shrink logarithm of bounds
-         by a fraction of the total interval <= 1.
-       */
-      "shrinklRhoBounds" : 0.15,
-      "shrinklTBounds" : 0.15,
-      "shrinkleBounds" : 0.5
-    }
-  ]
-}
-
-
-
-jonahm@sn-fey1:$ ./sesame2spiner -p examples/air_and_steel.json 
+jonahm@sn-fey1:$ ./sesame2spiner -p examples/air.dat examples/steel.dat
 sesame2spiner                            
 -----------------------------------------
 Author: Jonah Miller (jonahm@lanl.gov)   
@@ -125,7 +55,7 @@ stainless\ steel\ 347    Soft Link {4272}
 
 ## Copyright
 
-© 2021. Triad National Security, LLC. All rights reserved.  This
+© 2021-2022. Triad National Security, LLC. All rights reserved.  This
 program was produced under U.S. Government contract 89233218CNA000001
 for Los Alamos National Laboratory (LANL), which is operated by Triad
 National Security, LLC for the U.S.  Department of Energy/National

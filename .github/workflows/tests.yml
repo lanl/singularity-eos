@@ -1,4 +1,4 @@
-name: Tests
+name: Tests Full
 
 on:
   push:
@@ -28,7 +28,14 @@ jobs:
             mkdir -p bin
             cd bin
             mkdir -p ${HOME}/install
-            cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_USE_HDF5=ON -DSINGULARITY_TEST_SESAME=OFF -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON ..
-            make -j
+            cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
+                  -DSINGULARITY_BUILD_TESTS=ON \
+                  -DSINGULARITY_BUILD_PYTHON=ON \
+                  -DSINGULARITY_USE_HDF5=ON \
+                  -DSINGULARITY_TEST_SESAME=OFF \
+                  -DSINGULARITY_TEST_PYTHON=ON \
+                  -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
+                  ..
+            make
             make install
             make test
