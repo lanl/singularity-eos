@@ -72,7 +72,7 @@ push back.
 As with any creative endeavor, we put a lot of ourselves into our
 code. It can be painful to receive criticism on your contribution and
 easy to take it personally. While you should resist the urge to take
-offense, it is also partly code reviewer's responsiblity. to create a
+offense, it is also partly code reviewer's responsiblity to create a
 constructive environment, as discussed below.
 
 Expectations of code reviewers
