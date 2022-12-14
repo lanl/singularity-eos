@@ -2,6 +2,22 @@
 
 ## Current develop
 
+### Fixed (Repair bugs, etc)
+
+### Added (new features/APIs/variables/...)
+- [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.7.0
+Date: 12/14/2022
+
+### Fixed (Repair bugs, etc)
+
 ### Added (new features/APIs/variables/...)
 - [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
 
