@@ -14,6 +14,7 @@
 ### Fixed (not changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR206]](https://github.com/lanl/singularity-eos/pull/206) add another way to build sphinx docs
 
 ### Removed (removing behavior/API/varaibles/...)
 
