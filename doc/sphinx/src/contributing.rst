@@ -83,7 +83,7 @@ down. Here are a few rules to keep code reviews constructive and
 congenial:
 
 * You should take the time needed to review a contribution and offer
-  meaningful advice. Unless a contribution is very small limit
+  meaningful advice. Unless a contribution is very small, limit
   the times you simply click "approve" with a "looks good to me."
 
 * You should keep your comments constructive. For example, rather than
