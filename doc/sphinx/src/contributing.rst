@@ -171,7 +171,7 @@ Some notes on style and code architecture
 
 .. _ten rules for developing safety-critical code: http://web.eecs.umich.edu/~imarkov/10rules.pdf
 
-* Despite the above rules, ``singularity-eos`` is a modern C++ code
+* ``singularity-eos`` is a modern C++ code
   and both standard template library capabilities and template
   metaprogramming are leveraged frequently. This can sometimes make
   parsing the code difficult. If you see something you don't
