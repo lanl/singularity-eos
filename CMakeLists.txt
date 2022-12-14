@@ -18,6 +18,10 @@ project(singularity-eos VERSION 1.6.2 LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.6.2")
+set(SINGULARITY_GOLDFILE_HASH
+  33ef74b29937cc1347b525f72662933dd2b0556550f6541f97fc1de8a01c3c2a)
+
 #------------------------------------------------------------------------------#
 # Use better messages
 #------------------------------------------------------------------------------#
@@ -204,7 +208,7 @@ if(SINGULARITY_USE_KOKKOS)
   # type: soft submodule 
   singularity_import_dependency(
     PKG Kokkos
-    TARGET Kokkos::kokkos
+    TARGETS Kokkos::kokkos
     SUBDIR ${PROJECT_SOURCE_DIR}/utils/kokkos
     )
   set(PORTABILITY_STRATEGY "Kokkos")
@@ -237,14 +241,14 @@ if (SINGULARITY_BUILD_CLOSURE)
     # type: external
     singularity_import_dependency(
       PKG KokkosKernels
-      TARGET Kokkos::kokkoskernels
+      TARGETS Kokkos::kokkoskernels
       )
     list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
   else()
     # type: soft submodule
     singularity_import_dependency(
       PKG Eigen3
-      TARGET Eigen3::Eigen
+      TARGETS Eigen3::Eigen
       SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
       )
   endif() #SINGULARITY_USE_KOKKOS_KERNELS
@@ -254,7 +258,7 @@ endif() #SINGULARITY_BUILD_CLOSURE
 # type: soft submodule
 singularity_import_dependency(
   PKG mpark_variant
-  TARGET mpark_variant
+  TARGETS mpark_variant
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/variant
 )
 
@@ -262,7 +266,7 @@ singularity_import_dependency(
 # type: ghost submodule
 singularity_import_dependency(
   PKG ports-of-call
-  TARGET ports-of-call::ports-of-call
+  TARGETS ports-of-call::ports-of-call
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/ports-of-call
 )
 
@@ -270,7 +274,7 @@ singularity_import_dependency(
 # type: soft submodule
 singularity_import_dependency(
   PKG spiner
-  TARGET spiner::spiner
+  TARGETS spiner::spiner
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/spiner
 )
 
@@ -281,22 +285,12 @@ if (SINGULARITY_USE_HDF5)
   enable_language(C)
   singularity_import_dependency(
     PKG HDF5
-    COMPONENTS "C;HL"
+    COMPONENTS C HL
+    TARGETS hdf5::hdf5 hdf5::hdf5_hl
   )
-  # For the moment, there are several versions of
-  # HDF5 that are necessary to support, but they 
-  # have incompatible build targets.
-  # So, for now, we roll a custom `FindHDF5.cmake`,
-  # and then explicilty pull out the libraries.
-  # CMM: I don't love this, but trying to get things
-  # moving for now
-  #TODO: Move this into `cmake/FindHDF5.cmake`
-  get_target_property(_seosh5ll HDF5::HDF5 INTERFACE_LINK_LIBRARIES)
-  get_target_property(_seosh5ic HDF5::HDF5 INTERFACE_INCLUDE_DIRECTORIES)
-  list(APPEND SINGULARITY_PUBLIC_LIBS ${_seosh5ll})
-  list(APPEND SINGULARITY_PUBLIC_INCS ${_seosh5ic})
+
   # make sure we use MPI
-  if (HDF5_parallel_FOUND)
+  if (HDF5_IS_PARALLEL)
     # Message passing interface
     # type: external
     singularity_import_dependency(
