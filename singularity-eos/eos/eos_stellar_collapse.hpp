@@ -166,6 +166,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   RootFinding1D::RootCounts counts;
   inline void Finalize();
   static std::string EosType() { return std::string("StellarCollapse"); }
+  static std::string EosPyType() { return EosType(); }
 
  private:
   inline void LoadFromSP5File_(const std::string &filename);

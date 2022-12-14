@@ -2,7 +2,35 @@
 
 ## Current develop
 
+### Updated `hdf5` handling in the build
+
 ### Fixed (Repair bugs, etc)
+
+### Added (new features/APIs/variables/...)
+
+### Changed (changing behavior/API/variables/...)
+- [[PR192]](https://github.com/lanl/singularity-eos/pull/192) remove h5py and start using gold files
+
+### Fixed (not changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+- [[PR206]](https://github.com/lanl/singularity-eos/pull/206) add another way to build sphinx docs
+
+### Removed (removing behavior/API/varaibles/...)
+
+### Added (modifiers with python bindings)
+
+## Release 1.6.2
+Date: 10/12/2022
+
+### Revert to standard `hdf5` handling
+- [[PR198]](https://github.com/lanl/singularity-eos/pull/198) Use a more robust HDF5 handling that eliminates some edge breaks
+
+### Updated `hdf5` handling in the build
+- [[PR181]](https://github.com/lanl/singularity-eos/pull/181) change from manual dependecy handling to using hdf5 interface targets
+
+### Fixed (Repair bugs, etc)
+- [[PR183]](https://github.com/lanl/singularity-eos/pull/183) fortify cmake export config to always have interface targets of dependencies that need them
 - [[PR174]](https://github.com/lanl/singularity-eos/pull/174) fix build configuration when closures are disabled
 - [[PR157]](https://github.com/lanl/singularity-eos/pull/157) fix root finders in Gruneisen, Davis, and JWL
 - [[PR151]](https://github.com/lanl/singularity-eos/pull/151) fix module install
@@ -17,14 +45,6 @@
 - [[PR156]](https://github.com/lanl/singularity-eos/pull/156) This PR changes how the get_sg_eos function calls PTE solvers and does lookups based on input condition. Each input condition now calls into its own specialized kernel that ensures the inputs and outputs are treated appropriately.
 - [[PR168]](https://github.com/lanl/singularity-eos/pull/168) move EOS files to header-only
 - [[PR167]](https://github.com/lanl/singularity-eos/pull/167) allow for the possiblity Kokkos version can't be inferred
-
-### Fixed (not changing behavior/API/variables/...)
-
-### Infrastructure (changes irrelevant to downstream codes)
-
-### Removed (removing behavior/API/varaibles/...)
-
-### Added (modifiers with python bindings)
 
 ## Release 1.6.1
 Date: 07/07/2022

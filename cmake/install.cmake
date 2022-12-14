@@ -18,6 +18,8 @@ include(GNUInstallDirs)
 # Generate config file
 #----------------------------------------------------------------------------#
 
+#TODO: Try to use the built-in cmake procedure for this
+
 # get all available `SINGULARITY_` cmake variables set during configuration
 get_cmake_property(_variableNames VARIABLES)
 string (REGEX MATCHALL "(^|;)SINGULARITY_[A-Za-z0-9_]*"
@@ -37,11 +39,21 @@ endforeach()
 # package install path
 foreach(_depName ${SINGULARITY_DEP_PKGS})
   set(_components "")
+  list(APPEND _targets "")
   if(SINGULARITY_DEP_PKGS_${_depName})
     set(_components "COMPONENTS ${SINGULARITY_DEP_PKGS_${_depName}}")
   endif()
+  if(SINGULARITY_DEP_TARGETS_${_depName})
+    set(_targets "${SINGULARITY_DEP_TARGETS_${_depName}}")
+  endif()
   set(SINGULARITY_CONFIG_DEPENDENCIES
-    "${SINGULARITY_CONFIG_DEPENDENCIES}\nfind_package(${_depName} ${_components} REQUIRED)")
+    "${SINGULARITY_CONFIG_DEPENDENCIES}\nif(NOT ${_depName}_FOUND")
+  foreach(_tar ${_targets})
+    set(SINGULARITY_CONFIG_DEPENDENCIES
+      "${SINGULARITY_CONFIG_DEPENDENCIES} OR NOT TARGET ${_tar}")
+  endforeach()
+  set(SINGULARITY_CONFIG_DEPENDENCIES
+    "${SINGULARITY_CONFIG_DEPENDENCIES})\n\tfind_package(${_depName} ${_components} REQUIRED)\nendif()")
 endforeach()
 
 # generate the configuration file

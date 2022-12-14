@@ -14,31 +14,24 @@
 #include "module.hpp"
 
 template <typename T>
-py::class_<T> shifted_eos_class(py::module_ &m, const char *name) {
+py::class_<T> shifted_eos_class(py::module_ &m) {
   // define Shifted utility function
   m.def(
-      "Shifted", [](T eos, Real shift) { return ShiftedEOS<T>(std::move(eos), shift); },
+      "Shifted",
+      [](typename T::BaseType eos, Real shift) { return T(std::move(eos), shift); },
       py::arg("eos"), py::arg("shift"));
 
   // define shifted class
-  return eos_class<ShiftedEOS<T>>(m, std::string("Shifted") + name)
-      .def(py::init<T, Real>(), py::arg("eos"), py::arg("shift"));
+  return eos_class<T>(m, T::EosPyType())
+      .def(py::init<typename T::BaseType, Real>(), py::arg("eos"), py::arg("shift"));
+}
+
+template <typename... Ts>
+void create_shifted(py::module_ &m, tl<Ts...>) {
+  // C++14 workaround, since we don't have C++17 fold expressions
+  auto l = {(shifted_eos_class<Ts>(m), 0)...};
 }
 
 void create_shifted_eos_classes(py::module_ &m) {
-  shifted_eos_class<IdealGas>(m, "IdealGas");
-  shifted_eos_class<Gruneisen>(m, "Gruneisen");
-  shifted_eos_class<JWL>(m, "JWL");
-  shifted_eos_class<DavisReactants>(m, "DavisReactants");
-  shifted_eos_class<DavisProducts>(m, "DavisProducts");
-
-#ifdef SPINER_USE_HDF
-  shifted_eos_class<SpinerEOSDependsRhoT>(m, "SpinerEOSDependsRhoT");
-  shifted_eos_class<SpinerEOSDependsRhoSie>(m, "SpinerEOSDependsRhoSie");
-  shifted_eos_class<StellarCollapse>(m, "StellarCollapse");
-#endif
-
-#ifdef SINGULARITY_USE_EOSPAC
-  shifted_eos_class<EOSPAC>(m, "EOSPAC");
-#endif
+  create_shifted(m, singularity::shifted);
 }

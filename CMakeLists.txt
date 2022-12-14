@@ -14,9 +14,13 @@
 
 cmake_minimum_required(VERSION 3.14)
 
-project(singularity-eos VERSION 1.5.0 LANGUAGES NONE)
+project(singularity-eos VERSION 1.6.2 LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
+set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.6.2")
+set(SINGULARITY_GOLDFILE_HASH
+  33ef74b29937cc1347b525f72662933dd2b0556550f6541f97fc1de8a01c3c2a)
 
 #------------------------------------------------------------------------------#
 # Use better messages
@@ -204,7 +208,7 @@ if(SINGULARITY_USE_KOKKOS)
   # type: soft submodule 
   singularity_import_dependency(
     PKG Kokkos
-    TARGET Kokkos::kokkos
+    TARGETS Kokkos::kokkos
     SUBDIR ${PROJECT_SOURCE_DIR}/utils/kokkos
     )
   set(PORTABILITY_STRATEGY "Kokkos")
@@ -237,14 +241,14 @@ if (SINGULARITY_BUILD_CLOSURE)
     # type: external
     singularity_import_dependency(
       PKG KokkosKernels
-      TARGET Kokkos::kokkoskernels
+      TARGETS Kokkos::kokkoskernels
       )
     list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
   else()
     # type: soft submodule
     singularity_import_dependency(
       PKG Eigen3
-      TARGET Eigen3::Eigen
+      TARGETS Eigen3::Eigen
       SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
       )
   endif() #SINGULARITY_USE_KOKKOS_KERNELS
@@ -254,7 +258,7 @@ endif() #SINGULARITY_BUILD_CLOSURE
 # type: soft submodule
 singularity_import_dependency(
   PKG mpark_variant
-  TARGET mpark_variant
+  TARGETS mpark_variant
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/variant
 )
 
@@ -262,7 +266,7 @@ singularity_import_dependency(
 # type: ghost submodule
 singularity_import_dependency(
   PKG ports-of-call
-  TARGET ports-of-call::ports-of-call
+  TARGETS ports-of-call::ports-of-call
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/ports-of-call
 )
 
@@ -270,7 +274,7 @@ singularity_import_dependency(
 # type: soft submodule
 singularity_import_dependency(
   PKG spiner
-  TARGET spiner::spiner
+  TARGETS spiner::spiner
   SUBDIR ${PROJECT_SOURCE_DIR}/utils/spiner
 )
 
@@ -282,21 +286,11 @@ if (SINGULARITY_USE_HDF5)
   singularity_import_dependency(
     PKG HDF5
     COMPONENTS C HL
-    #NB: 'newer' CMake versions, HDF5s will
-    #    do the `idiomatic` cmake setup,
-    #    and `find_package(HDF5)` will define
-    #    these targets.
-    #    however, some downstream codes
-    #    are still struggling through the
-    #    dark times, so we use the 
-    #    'standard' hack for now
-    #    TARGETS HDF5::HDF5 hdf5::hdf5_hl
+    TARGETS hdf5::hdf5 hdf5::hdf5_hl
   )
 
-  # make sure we use MPI,
-  # as this requirement is not
-  # transitive in hdf5
-  if(HDF5_IS_PARALLEL)
+  # make sure we use MPI
+  if (HDF5_IS_PARALLEL)
     # Message passing interface
     # type: external
     singularity_import_dependency(
@@ -305,13 +299,7 @@ if (SINGULARITY_USE_HDF5)
       TARGETS MPI::MPI_CXX
     )
   endif()
-  ####
-  #TODO: when downstream is rescued,
-  #      we can discard these
-  list(APPEND SINGULARITY_PUBLIC_LIBS ${HDF5_LIBRARIES})
-  list(APPEND SINGULARITY_PUBLIC_LIBS ${HDF5_HL_LIBRARIES})
-  list(APPEND SINGULARITY_PUBLIC_INCS ${HDF5_INCLUDE_DIRS})
-  ####
+
   list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_HDF)
   list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_HDF)
 endif() # SINGULARITY_USE_HDF5
@@ -374,7 +362,7 @@ if (SINGULARITY_USE_FORTRAN)
   set_target_properties(singularity-eos PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   target_include_directories(singularity-eos INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-    $<INSTALL_INTERFACE:include>
+    $<INSTALL_INTERFACE:include/singularity-eos/eos>
   )
 endif() # SINGULARITY_USE_FORTRAN
 

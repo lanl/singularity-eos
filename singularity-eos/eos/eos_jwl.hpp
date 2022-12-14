@@ -85,6 +85,7 @@ class JWL : public EosBase<JWL> {
                                        Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("JWL"); }
+  static std::string EosPyType() { return EosType(); }
 
  private:
   Real _A, _B, _R1, _R2, _w, _rho0, _Cv;

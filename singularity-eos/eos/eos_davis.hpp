@@ -109,6 +109,7 @@ class DavisReactants : public EosBase<DavisReactants> {
   }
   void inline Finalize() {}
   static std::string EosType() { return std::string("DavisReactants"); }
+  static std::string EosPyType() { return EosType(); }
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
@@ -193,6 +194,7 @@ class DavisProducts : public EosBase<DavisProducts> {
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("DavisProducts"); }
+  static std::string EosPyType() { return EosType(); }
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
