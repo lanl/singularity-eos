@@ -8,13 +8,10 @@
 
 ### Changed (changing behavior/API/variables/...)
 
-### Fixed (not changing behavior/API/variables/...)
-
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR190]](https://github.com/lanl/singularity-eos/pull/190) update CI on re-git
 
 ### Removed (removing behavior/API/varaibles/...)
-
-### Added (modifiers with python bindings)
 
 ## Release 1.7.0
 Date: 12/14/2022
