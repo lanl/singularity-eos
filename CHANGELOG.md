@@ -2,7 +2,22 @@
 
 ## Current develop
 
-### Updated `hdf5` handling in the build
+### Fixed (Repair bugs, etc)
+
+### Added (new features/APIs/variables/...)
+
+### Changed (changing behavior/API/variables/...)
+
+### Fixed (not changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+### Added (modifiers with python bindings)
+
+## Release 1.7.0
+Date: 12/14/2022
 
 ### Fixed (Repair bugs, etc)
 
