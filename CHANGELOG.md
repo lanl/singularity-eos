@@ -2,11 +2,8 @@
 
 ## Current develop
 
-### Updated `hdf5` handling in the build
-
-### Fixed (Repair bugs, etc)
-
 ### Added (new features/APIs/variables/...)
+- [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR192]](https://github.com/lanl/singularity-eos/pull/192) remove h5py and start using gold files
@@ -18,12 +15,10 @@
 
 ### Removed (removing behavior/API/varaibles/...)
 
-### Added (modifiers with python bindings)
-
 ## Release 1.6.2
 Date: 10/12/2022
 
-### Updated `hdf5` handling in the build
+### Updated
 - [[PR181]](https://github.com/lanl/singularity-eos/pull/181) change from manual dependecy handling to using hdf5 interface targets
 
 ### Fixed (Repair bugs, etc)
