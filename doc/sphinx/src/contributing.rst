@@ -105,6 +105,13 @@ congenial:
   of the pull request you do like and thank the contributor for their
   effort.
 
+General principle for everyone
+```````````````````````````````
+
+It's hard to convey tone in text correspondance. Try to read what
+others write favorably and try to write in such a way that your tone
+can't be mis-interpreted as malicious.
+
 Interwoven Dependencies
 ------------------------
 
@@ -265,8 +272,6 @@ where the base class basically needs to call the implementation of the scalar
 lookup in the specific EOS. However, this means that the base class needs to
 have knowledge of which class is being derived from it in order to call the
 correct EOS implementation.
-
-
 
 The standard solution to this problem would be "run-time inheritence,"
 where type deduction is performed at run-time. While this is possible
