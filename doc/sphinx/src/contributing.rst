@@ -161,8 +161,7 @@ Some notes on style and code architecture
 
     #. Restrict the scope of data to the smallest possible.
 
-    #. Use the preprocessor sparingly. (The same applies for
-       non-trivial template metaprogramming.)
+    #. Use the preprocessor sparingly.
 
     #. Limit pointer use to a single dereference. Avoid pointers of
        pointers when possible.
