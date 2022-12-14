@@ -9,6 +9,8 @@
 - [[PR192]](https://github.com/lanl/singularity-eos/pull/192) remove h5py and start using gold files
 
 ### Fixed (not changing behavior/API/variables/...)
+- [[PR198]](https://github.com/lanl/singularity-eos/pull/198) Use a more robust HDF5 handling that eliminates some edge breaks
+- [[PR181]](https://github.com/lanl/singularity-eos/pull/181) change from manual dependecy handling to using hdf5 interface targets
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR206]](https://github.com/lanl/singularity-eos/pull/206) add another way to build sphinx docs
@@ -17,9 +19,6 @@
 
 ## Release 1.6.2
 Date: 10/12/2022
-
-### Updated
-- [[PR181]](https://github.com/lanl/singularity-eos/pull/181) change from manual dependecy handling to using hdf5 interface targets
 
 ### Fixed (Repair bugs, etc)
 - [[PR183]](https://github.com/lanl/singularity-eos/pull/183) fortify cmake export config to always have interface targets of dependencies that need them
