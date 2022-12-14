@@ -136,7 +136,8 @@ Some notes on style and code architecture
   but many of the coding habits advocated for by Holzmann produce
   long-lived, easy to understand, easy to parse, and easy to maintain code.
   And we take many of the rules to heart. Here are a few that are most
-  relevant to ``singularity-eos``.
+  relevant to ``singularity-eos``. They have been adapted slightly to 
+  our context.
 
     #. Avoid complex flow constructs such as gotos.
 
@@ -157,7 +158,7 @@ Some notes on style and code architecture
        non-trivial template metaprogramming.)
 
     #. Limit pointer use to a single dereference. Avoid pointers of
-       pointers.
+       pointers when possible.
 
     #. Be compiler warning aware. Try to address compiler warnings as
        they come up.
@@ -190,13 +191,13 @@ style. Here we briefly discuss a few things one should be aware of.
   compiles correctly. Code that doesn't need to run on device does not
   need these decorations.
 
-* **Relocatable device code:** It is commen in C++ to split code
+* **Relocatable device code:** It is common in C++ to split code
   between a header file and an implementation file. Functionality that
   is to be called from within loops run on device should not be split
   in this way. Not all accelerator languages support this and the ones
   that do take a performance hit. Instead implement that functionality
   only in a header file and decorate it with
-  ``PORTABLE_INLINE_FUNCTION``.
+  ``PORTABLE_INLINE_FUNCTION`` or ``PORTABLE_FORCEINLINE_FUNCTION``.
 
 * **Host and device pointers:** Usually accelerators have different
   memory spaces than the CPU they are attached to. So you need to be
@@ -212,15 +213,15 @@ style. Here we briefly discuss a few things one should be aware of.
   device in this case. The libraries `ports-of-call`_ and `spiner`_
   offer some functionality for managing arrays on device.
 
-* **Shallow copies:** As a general rule for performance reasons, large
-  amount of data stored withing a ``singularity-eos`` should have
+* **Shallow copies:** As a general rule, large
+  amount of data stored within an ``EOS`` object should have
   "reference-semantics." This means that if you copy an EOS object, it
   should always be a shallow copy, not a deep copy, unless a deep copy
   is explicitly requested. This is for performance reasons and also to
   simplify the managment of data on device.
 
 * **Real:** The ``Real`` datatype is either a single precision or
-  double precision floatin gpoint number, depending on how
+  double precision floating point number, depending on how
   `ports-of-call`_ is configured. For most floating point numbers use
   the ``Real`` type. However, be conscious that sometimes you will
   specifically need a single or double precision number, in which case
