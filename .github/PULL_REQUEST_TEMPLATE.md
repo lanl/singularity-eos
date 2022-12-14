@@ -18,3 +18,4 @@ detail.  Why is this change required?  What problem does it solve?-->
 - [ ] Document any new features, update documentation for changes made.
 - [ ] Make sure the copyright notice on any files you modified is up to date.
 - [ ] After creating a pull request, note it in the CHANGELOG.md file
+- [ ] If preparing for a new release, update the version in cmake.
