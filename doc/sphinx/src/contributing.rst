@@ -194,8 +194,8 @@ style. Here we briefly discuss a few things one should be aware of.
   ``PORTABLE_FORCEINLINE_FUNCTION``. These macros are imported from
   the `ports-of-call`_ library and resolve to the appropriate
   decorations for a given device-side backend such as cuda so the code
-  compiles correctly. Code that doesn't need to run on device does not
-  need these decorations.
+  compiles correctly. Code that doesn't need to run on device, 
+  such as EOS class constructors, does not need these decorations.
 
 * **Relocatable device code:** It is common in C++ to split code
   between a header file and an implementation file. Functionality that
