@@ -10,6 +10,7 @@
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR190]](https://github.com/lanl/singularity-eos/pull/190) update CI on re-git
 
 ### Removed (removing behavior/API/varaibles/...)
 
