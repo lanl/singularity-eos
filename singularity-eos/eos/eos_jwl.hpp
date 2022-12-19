@@ -78,9 +78,7 @@ class JWL : public EosBase<JWL> {
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return 0;
   }
-  static inline unsigned long max_scratch_size(unsigned int nelements) {
-    return 0;
-  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"JWL Params: "};
     printf("%sA:%e B:%e R1: %e\nR2:%e w:%e rho0:%e\nCv:%e\n", s1, _A, _B, _R1, _R2, _w,

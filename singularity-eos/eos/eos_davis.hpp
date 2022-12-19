@@ -104,9 +104,7 @@ class DavisReactants : public EosBase<DavisReactants> {
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return 0;
   }
-  static inline unsigned long max_scratch_size(unsigned int nelements) {
-    return 0;
-  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisReactants Params: "};
     printf("%srho0:%e e0:%e P0:%e\nT0:%e A:%e B:%e\nC:%e G0:%e Z:%e\nalpha:%e "
@@ -196,9 +194,7 @@ class DavisProducts : public EosBase<DavisProducts> {
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return 0;
   }
-  static inline unsigned long max_scratch_size(unsigned int nelements) {
-    return 0;
-  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisProducts Params: "};
     printf("%sa:%e b:%e k:%e\nn:%e vc:%e pc:%e\nCv:%e E0:%e\n", s1, _a, _b, _k, _n, _vc,

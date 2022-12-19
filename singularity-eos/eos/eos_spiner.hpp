@@ -144,9 +144,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return 0;
   }
-  static inline unsigned long max_scratch_size(unsigned int nelements) {
-    return 0;
-  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   int matid() const { return matid_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
@@ -366,9 +364,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return 0;
   }
-  static inline unsigned long max_scratch_size(unsigned int nelements) {
-    return 0;
-  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   int matid() const { return matid_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
