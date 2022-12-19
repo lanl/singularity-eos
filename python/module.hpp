@@ -396,7 +396,9 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
       return std::pair<Real, Real>(rho, sie);
     }, py::arg("press"), py::arg("temp"))
     .def("Finalize", &T::Finalize)
-    .def_property_readonly_static("EosType", [](py::object) { return T::EosType(); });
+    .def_property_readonly_static("EosType", [](py::object) { return T::EosType(); })
+    .def_static("scratch_size", &T::scratch_size, py::arg("method_name"), py::arg("nelements"))
+    .def_static("max_scratch_size", &T::max_scratch_size, py::arg("nelements"));
 
     VectorFunctions<T, use_scratch>::add(cls);
 

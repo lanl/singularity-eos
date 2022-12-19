@@ -117,8 +117,6 @@ PYBIND11_MODULE(singularity_eos, m) {
   eos_class<EOSPAC, use_scratch>(m, "EOSPAC")
     .def(py::init())
     .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false)
-    .def_static("scratch_size", &EOSPAC::scratch_size, py::arg("method_name"), py::arg("nelements"))
-    .def_static("max_scratch_size", &EOSPAC::max_scratch_size, py::arg("nelements"));
 
 #endif
 

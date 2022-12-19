@@ -696,23 +696,6 @@ class EOSPAC : public EosBase<EOSPAC> {
     return scratch_size(e->first, nelements);
   }
 
-  static inline std::map<std::string, unsigned int> &scratch_nbuffers() {
-    static std::map<std::string, unsigned int> nbuffers = {
-        {"TemperatureFromDensityInternalEnergy", 2},
-        {"PressureFromDensityTemperature", 2},
-        {"FillEos", 4},
-        {"InternalEnergyFromDensityTemperature", 2},
-        {"PressureFromDensityInternalEnergy", 3},
-        {"SpecificHeatFromDensityTemperature", 2},
-        {"SpecificHeatFromDensityInternalEnergy", 3},
-        {"BulkModulusFromDensityTemperature", 6},
-        {"BulkModulusFromDensityInternalEnergy", 6},
-        {"GruneisenParamFromDensityTemperature", 4},
-        {"GruneisenParamFromDensityInternalEnergy", 5},
-        {"PTofRE", 11}};
-    return nbuffers;
-  }
-
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 0; }
   inline void Finalize() {}
@@ -745,6 +728,23 @@ class EOSPAC : public EosBase<EOSPAC> {
   Real dvdt_ref_ = 1;
   Real rho_min_ = 0;
   Real temp_min_ = 0;
+
+  static inline std::map<std::string, unsigned int> &scratch_nbuffers() {
+    static std::map<std::string, unsigned int> nbuffers = {
+        {"TemperatureFromDensityInternalEnergy", 2},
+        {"PressureFromDensityTemperature", 2},
+        {"FillEos", 4},
+        {"InternalEnergyFromDensityTemperature", 2},
+        {"PressureFromDensityInternalEnergy", 3},
+        {"SpecificHeatFromDensityTemperature", 2},
+        {"SpecificHeatFromDensityInternalEnergy", 3},
+        {"BulkModulusFromDensityTemperature", 6},
+        {"BulkModulusFromDensityInternalEnergy", 6},
+        {"GruneisenParamFromDensityTemperature", 4},
+        {"GruneisenParamFromDensityInternalEnergy", 5},
+        {"PTofRE", 11}};
+    return nbuffers;
+  }
 };
 
 // ======================================================================
