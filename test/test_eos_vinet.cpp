@@ -49,6 +49,8 @@ SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
     // Create the EOS
     EOS host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
     EOS eos = host_eos.GetOnDevice();
+    Vinet host_eos2 = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
+    Vinet eos2 = host_eos2.GetOnDevice();
 
     eos.PrintParams();
 
@@ -95,7 +97,7 @@ SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
       constexpr std::array<Real, num> pressure_true{
           -1.283459624233147e+11, 1.98538351697004e+10, 9.66446220551959e+10, 0.};
       constexpr std::array<Real, num> entropy_true{
-          5.001577106121646e+08, 5.113826249851692e+08, 5.112014799091142e+08, S0};
+          5.0015771521255749e+08, 5.1138262492866594e+08, 5.1120147992457777e+08, S0};
       constexpr std::array<Real, num> cv_true{Cv0, Cv0, Cv0, Cv0};
       constexpr std::array<Real, num> bulkmodulus_true{
           7.44411028807209e+11, 1.254880120063067e+12, 1.613822819346433e+12,
@@ -160,18 +162,19 @@ SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
         }
       }
 
-      //      WHEN("A S(rho, e) lookup is performed") {
-      //        eos.EntropyFromDensityInternalEnergy(v_density, v_energy, v_entropy, num);
-      //    	  printf("%20.16e,%20.16e,%20.16e,%20.16e",v_entropy[0],v_entropy[1],v_entropy[2],v_entropy[3]);
-      //#ifdef PORTABILITY_STRATEGY_KOKKOS
-      //        Kokkos::fence();
-      //        Kokkos::deep_copy(h_entropy, v_entropy);
-      //#endif // PORTABILITY_STRATEGY_KOKKOS
-      //        THEN("The returned S(rho, e) should be equal to the true value") {
-      //          array_compare(num, density, energy, h_entropy, entropy_true, "Density",
-      //                        "Energy");
-      //        }
-      //      }
+      WHEN("A S(rho, e) lookup is performed") {
+        for (int i = 0; i < num; i++) {
+          v_entropy[i] = eos2.EntropyFromDensityInternalEnergy(v_density[i], v_energy[i]);
+        }
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_entropy, v_entropy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned S(rho, e) should be equal to the true value") {
+          array_compare(num, density, energy, h_entropy, entropy_true, "Density",
+                        "Energy");
+        }
+      }
 
       WHEN("A B_S(rho, e) lookup is performed") {
         eos.BulkModulusFromDensityInternalEnergy(v_density, v_energy, v_bulkmodulus, num);
@@ -232,6 +235,8 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
     // Create the EOS
     EOS host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
     EOS eos = host_eos.GetOnDevice();
+    Vinet host_eos2 = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
+    Vinet eos2 = host_eos2.GetOnDevice();
 
     eos.PrintParams();
 
@@ -277,13 +282,14 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
       constexpr std::array<Real, num> pressure_true{
           -1.283459584783398e+11, 1.98561454605571e+10, 9.66461314103968e+10, 0.};
       constexpr std::array<Real, num> entropy_true{
-          5.001577106121646e+08, 5.113826249851692e+08, 5.112014799091142e+08, S0};
+          5.0015771847198445e+08, 5.1138271399469268e+08, 5.1120153407800680e+08, S0};
       constexpr std::array<Real, num> cv_true{Cv0, Cv0, Cv0, Cv0};
-      constexpr std::array<Real, num> tbulkmodulus_true{7.33847e+11, 1.04178e+12,
-                                                        1.39757e+12, B0};
-      constexpr std::array<Real, num> alpha_true{B0 * A0 / tbulkmodulus_true[0],
-                                                 B0 * A0 / tbulkmodulus_true[1],
-                                                 B0 * A0 / tbulkmodulus_true[2], A0};
+      constexpr std::array<Real, num> tbulkmodulus_true{
+          7.3384631127398950e+11, 1.0417839336794381e+12, 1.3975684023296028e+12, B0};
+      constexpr std::array<Real, num> alpha_true{
+          9.5156828083623124e-05, 6.7029721830195901e-05, 4.9965702691402983e-05, A0};
+      //    B0 * A0 / tbulkmodulus_true[0], B0 * A0 / tbulkmodulus_true[1], B0 * A0 /
+      //    tbulkmodulus_true[2]
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -341,34 +347,38 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
         }
       }
 
-      //      WHEN("A S(rho, T) lookup is performed") {
-      //        eos.EntropyFromDensityTemperature(v_density, v_temperature, v_entropy,
-      //        num);
-      //        printf("%20.16e,%20.16e,%20.16e,%20.16e",v_entropy[0],v_entropy[1],v_entropy[2],v_entropy[3]);
-      //#ifdef PORTABILITY_STRATEGY_KOKKOS
-      //        Kokkos::fence();
-      //        Kokkos::deep_copy(h_entropy, v_entropy);
-      //#endif // PORTABILITY_STRATEGY_KOKKOS
-      //        THEN("The returned S(rho, T) should be equal to the true value") {
-      //          array_compare(num, density, temperature, h_entropy, entropy_true,
-      //          "Density",
-      //                        "Temperature");
-      //        }
-      //      }
+      for (int i = 0; i < num; i++) {
+        v_entropy[i] = eos2.EntropyFromDensityInternalEnergy(v_density[i], v_energy[i]);
+      }
+      WHEN("A S(rho, T) lookup is performed") {
+        for (int i = 0; i < num; i++) {
+          v_entropy[i] =
+              eos2.EntropyFromDensityTemperature(v_density[i], v_temperature[i]);
+        }
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_entropy, v_entropy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned S(rho, T) should be equal to the true value") {
+          array_compare(num, density, temperature, h_entropy, entropy_true, "Density",
+                        "Temperature");
+        }
+      }
 
-      //      WHEN("A B_T(rho, T) lookup is performed") {
-      //        eos.TBulkModulusFromDensityTemperature(v_density, v_temperature,
-      //        v_tbulkmodulus, num);
-      //#ifdef PORTABILITY_STRATEGY_KOKKOS
-      //        Kokkos::fence();
-      //        Kokkos::deep_copy(h_tbulkmodulus, v_tbulkmodulus);
-      //#endif // PORTABILITY_STRATEGY_KOKKOS
-      //        THEN("The returned B_T(rho, T) should be equal to the true value") {
-      //          array_compare(num, density, temperature, h_tbulkmodulus,
-      //          tbulkmodulus_true, "Density",
-      //                        "Temperature");
-      //        }
-      //      }
+      WHEN("A B_T(rho, T) lookup is performed") {
+        for (int i = 0; i < num; i++) {
+          v_tbulkmodulus[i] =
+              eos2.TBulkModulusFromDensityTemperature(v_density[i], v_temperature[i]);
+        }
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_tbulkmodulus, v_tbulkmodulus);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned B_T(rho, T) should be equal to the true value") {
+          array_compare(num, density, temperature, h_tbulkmodulus, tbulkmodulus_true,
+                        "Density", "Temperature");
+        }
+      }
 
       WHEN("A Cv(rho, T) lookup is performed") {
         eos.SpecificHeatFromDensityTemperature(v_density, v_temperature, v_cv, num);
@@ -382,19 +392,20 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
         }
       }
 
-      //      WHEN("A alpha(rho, T) lookup is performed") {
-      //        eos.TExpansionCoeffFromDensityTemperature(v_density, v_temperature,
-      //        v_alpha
-      //                                                    num);
-      //#ifdef PORTABILITY_STRATEGY_KOKKOS
-      //        Kokkos::fence();
-      //        Kokkos::deep_copy(h_alpha, v_alpha);
-      //#endif // PORTABILITY_STRATEGY_KOKKOS
-      //        THEN("The returned alpha(rho, T) should be equal to the true value") {
-      //          array_compare(num, density, temperature, h_alpha, alpha_true, "Density",
-      //                        "Temperature");
-      //        }
-      //      }
+      WHEN("A alpha(rho, T) lookup is performed") {
+        for (int i = 0; i < num; i++) {
+          v_alpha[i] =
+              eos2.TExpansionCoeffFromDensityTemperature(v_density[i], v_temperature[i]);
+        }
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_alpha, v_alpha);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned alpha(rho, T) should be equal to the true value") {
+          array_compare(num, density, temperature, h_alpha, alpha_true, "Density",
+                        "Temperature");
+        }
+      }
     }
   }
 }

@@ -14,7 +14,6 @@
 
 #ifndef _SINGULARITY_EOS_EOS_VINET_HPP_
 #define _SINGULARITY_EOS_EOS_VINET_HPP_
-#define SINGULARITY_ENABLE_EXCEPTIONS
 
 #include <cmath>
 #include <cstdio>
@@ -38,12 +37,11 @@ class Vinet : public EosBase<Vinet> {
  public:
   Vinet() = default;
   // Constructor
-  PORTABLE_INLINE_FUNCTION
   Vinet(const Real rho0, const Real T0, const Real B0, const Real BP0, const Real A0,
         const Real Cv0, const Real E0, const Real S0, const Real *expconsts)
-      : _rho0(rho0), _T0(T0), _B0(B0), _BP0(BP0), _A0(A0), _Cv0(Cv0), _E0(E0), _S0(S0),
-        _expconsts(expconsts) {
+      : _rho0(rho0), _T0(T0), _B0(B0), _BP0(BP0), _A0(A0), _Cv0(Cv0), _E0(E0), _S0(S0) {
     CheckVinet();
+    InitializeVinet(expconsts);
   }
 
   Vinet GetOnDevice() { return *this; }
@@ -104,7 +102,7 @@ class Vinet : public EosBase<Vinet> {
     printf("%s rho0:%e T0:%e B0:%e BP0:%e\n  A0:%e Cv0:%e E0:%e S0:%e\n", st, _rho0, _T0,
            _B0, _BP0, _A0, _Cv0, _E0, _S0);
     for (int i = 0; i < 39; i++) {
-      if (_d2to40[i] > 0.0) printf("d%i:%e\t", i + 2, _d2to40[i]);
+      if (_d2tod40[i] > 0.0) printf("d%i:%e\t", i + 2, _d2tod40[i]);
     }
     printf("\n\n");
   }
@@ -117,20 +115,19 @@ class Vinet : public EosBase<Vinet> {
   static std::string EosPyType() { return EosType(); }
 
  private:
-  // AEM: I am not sure what this does so leave it in.
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   Real _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0;
-  const Real *_expconsts;
-  Real _VIP[43], _d2to40[39];
-  PORTABLE_INLINE_FUNCTION void CheckVinet();
+  static constexpr const int PressureCoeffsd2tod40Size = 39;
+  static constexpr const int VinetInternalParametersSize = PressureCoeffsd2tod40Size + 4;
+  Real _VIP[VinetInternalParametersSize], _d2tod40[PressureCoeffsd2tod40Size];
+  void CheckVinet();
+  void InitializeVinet(const Real *expcoeffs);
   PORTABLE_INLINE_FUNCTION void Vinet_F_DT_func(const Real rho, const Real T,
                                                 Real *output) const;
 };
 
 PORTABLE_INLINE_FUNCTION void Vinet::CheckVinet() {
-
-  int ind;
 
   if (_rho0 < 0.0) {
     printf("testing rho0\n");
@@ -162,78 +159,81 @@ PORTABLE_INLINE_FUNCTION void Vinet::CheckVinet() {
     EOS_ERROR("Required Vinet model parameter Cv0 < 0");
     return;
   }
+}
 
-  for (ind = 0; ind < 39; ind++)
-    _d2to40[ind] = _expconsts[ind];
+PORTABLE_INLINE_FUNCTION void Vinet::InitializeVinet(const Real *d2tod40input) {
 
-  _VIP[0] = _B0 / _rho0 + pow(_A0 * _B0 / _rho0, 2.0) * _T0 / _Cv0; // sound speed squared
-  _VIP[1] = 3.0 / 2.0 * (_BP0 - 1.0);                               // exponent
-  _VIP[2] = 1.0;                                                    // prefactor f0
-  _VIP[3] = 0.0;                                                    // prefactor f1
-
-  for (ind = 4; ind < 43; ind++)
-    _VIP[ind] = _d2to40[ind - 4];
-  ind = 42;
-  while (_VIP[ind] == 0.0)
-    ind--;
-  while (ind >= 4) {
-    ind--;
-    _VIP[ind] = _VIP[ind] - (ind - 1) / _VIP[1] * _VIP[ind + 1];
+  // The PressureCoeffsd2tod40Size (=39) allowed d2 to d40 coefficients
+  // for the pressure reference curve vs rho
+  // are seldome all used so did not want to crowd the argument list with them.
+  // Instead I ask the host code to send me a pointer to this array so that I can
+  // copy it here. Not used coeffs should be set to 0.0 (of course).
+  for (int ind = 0; ind < PressureCoeffsd2tod40Size; ind++) {
+    _d2tod40[ind] = d2tod40input[ind];
   }
+  // Put a couple of  much used model parameter combinations and
+  // the energy coefficients f0 to f40 in an internal parameters array
+  // of size 2+41=VinetInternalParametersSize.
+  _VIP[0] = _B0 / _rho0 + pow(_A0 * _B0 / _rho0, 2.0) * _T0 / _Cv0; // sound speed squared
+  _VIP[1] = 3.0 / 2.0 * (_BP0 - 1.0);                               // exponent eta0
+  // initializing with pressure coeffs to get energy coeffs into VIP
+  _VIP[2] = 1.0;                                                // prefactor d0
+  _VIP[3] = 0.0;                                                // prefactor d1
+  for (int ind = 4; ind < VinetInternalParametersSize; ind++) { //_d2tod40[0]=d2
+    _VIP[ind] = _d2tod40[ind - 4];                              // dn is in VIP[n+2]
+  }
+  for (int ind = VinetInternalParametersSize - 2; ind >= 2;
+       ind--) { // _VIP[42]=d40=f40 given,first calculated is _VIP[41]=f39
+    _VIP[ind] = _VIP[ind] - (ind) / _VIP[1] * _VIP[ind + 1]; // prefactors f40 to f0
+  }                                                          // _VIP[n+2]=fn, ind=n+2
 }
 
 PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real T,
                                                      Real *output) const {
-  int pref0vp = -2, pref0vip = 2, ind;
-  Real x, x2inv, onemx, etatimes1mx, expetatimes1mx, temp;
+  int pref0vp = -2, pref0vip = 2, maxind = VinetInternalParametersSize - 3;
   Real sumP = 0.0, sumB = 0.0, sumE = 0.0;
-  Real entropy, energy, pressure, dpdrho, dpdt, dedt, dedrho, soundspeed;
 
-  ind = 40;
-  while (_VIP[pref0vip + ind] == 0.0)
-    ind--;
+  Real x = pow(_rho0 / rho, 1.0 / 3.0); /*rho-dependent*/
+  Real x2inv = 1.0 / pow(x, 2.0);
+  Real onemx = 1.0 - x;
+  Real etatimes1mx = _VIP[1] * onemx;
+  Real expetatimes1mx = exp(etatimes1mx);
 
-  x = pow(_rho0 / rho, 1.0 / 3.0); /*rho-dependent*/
-  x2inv = 1.0 / pow(x, 2.0);
-  onemx = 1.0 - x;
-  etatimes1mx = _VIP[1] * onemx;
-  expetatimes1mx = exp(etatimes1mx);
-
-  while (ind >= 2) {
-    sumP = _d2to40[pref0vp + ind] + onemx * sumP;
-    sumB = _d2to40[pref0vp + ind] * ind + onemx * sumB;
+  for (int ind = maxind; ind >= 2; ind--) {              //_d2tod40[0]=d2
+    sumP = _d2tod40[pref0vp + ind] + onemx * sumP;       //_d2tod40[38]=d40
+    sumB = _d2tod40[pref0vp + ind] * ind + onemx * sumB; //_d2tod40[-2+40]=d40
+    sumE = _VIP[pref0vip + ind] + onemx * sumE;          //_VIP[42]=f40
+  }                                                      //_VIP[2]=f0
+  for (int ind = 1; ind >= 0; ind--) {
     sumE = _VIP[pref0vip + ind] + onemx * sumE;
-    ind--;
-  }
-  while (ind >= 0) {
-    sumE = _VIP[pref0vip + ind] + onemx * sumE;
-    ind--;
   }
   sumP = 1.0 + sumP * pow(onemx, 2.0);
   sumB = sumB * onemx;
   sumE = _VIP[1] * onemx * sumE;
 
   /* T0 isotherm */
-  energy = 9.0 * _B0 / pow(_VIP[1], 2.0) / _rho0 *
-               (_VIP[pref0vip] - expetatimes1mx * (_VIP[pref0vip] - sumE)) -
-           _A0 * _B0 * _T0 * (1.0 / _rho0 - 1.0 / rho);
-  pressure = 3.0 * _B0 * x2inv * onemx * expetatimes1mx * sumP;
-  temp = (1.0 + onemx * (_VIP[1] * x + 1.0)) * sumP + x * onemx * sumB;
+  Real energy = 9.0 * _B0 / pow(_VIP[1], 2.0) / _rho0 *
+                    (_VIP[pref0vip] - expetatimes1mx * (_VIP[pref0vip] - sumE)) -
+                _A0 * _B0 * _T0 * (1.0 / _rho0 - 1.0 / rho);
+  Real pressure = 3.0 * _B0 * x2inv * onemx * expetatimes1mx * sumP;
+  Real temp = (1.0 + onemx * (_VIP[1] * x + 1.0)) * sumP + x * onemx * sumB;
   temp = _B0 / _rho0 * x * expetatimes1mx * temp;
 
   /* Go to required temperature */
   energy = energy + _Cv0 * (T - _T0) + _E0;
   pressure = pressure + _A0 * _B0 * (T - _T0);
-  dpdrho = temp;
-  dpdt = _A0 * _B0;
-  dedt = _Cv0;
-  dedrho = (pressure - T * _A0 * _B0) / pow(rho, 2.0);
+  Real dpdrho = temp;
+  Real dpdt = _A0 * _B0;
+  Real dedt = _Cv0;
+  Real dedrho = (pressure - T * _A0 * _B0) / pow(rho, 2.0);
+  Real entropy;
   if (T < 0.0) {
     printf("warning!! negative temperature");
     entropy = 0.0;
-  } else
+  } else {
     entropy = _A0 * _B0 * (1.0 / rho - 1 / _rho0) + _Cv0 * log(T / _T0) + _S0;
-  soundspeed = std::max(0.0, dpdrho + T * pow(dpdt / rho, 2.0) / _Cv0);
+  }
+  Real soundspeed = std::max(0.0, dpdrho + T * pow(dpdt / rho, 2.0) / _Cv0);
   soundspeed = sqrt(soundspeed);
 
   output[0] = energy;
@@ -324,27 +324,30 @@ Vinet::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
   EOS_ERROR("Vinet::DensityEnergyFromPressureTemperature: "
             "Not implemented.\n");
 }
-// AEM: Left this in since I am not sure what it does.
+// AEM: We should add entropy and Gruneissen parameters here so that it is complete
+// If we add also alpha and BT, those should also be in here.
 PORTABLE_INLINE_FUNCTION void Vinet::FillEos(Real &rho, Real &temp, Real &sie,
                                              Real &press, Real &cv, Real &bmod,
                                              const unsigned long output,
                                              Real *lambda) const {
-  // The following could be sped up with work!
-  const unsigned long input = ~output;
-  if (thermalqs::temperature & input && thermalqs::pressure & input) {
-    DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
-  } else if (thermalqs::density & output ||
+  const unsigned long input = ~output; // everything that is not output is input?
+  if (thermalqs::density & output) {
+    EOS_ERROR("Vinet FillEos: Density is required input.\n");
+  } else if (thermalqs::temperature & output &&
              thermalqs::specific_internal_energy & output) {
-    EOS_ERROR("Vinet FillEos: Density and energy are currently required inputs "
-              "except when pressure and temperature are inputs.\n");
+    EOS_ERROR("Vinet FillEos: Density and Internal Energy or Density and Temperature "
+              "are required input parameters.\n");
   }
-  if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::temperature)
+  if (thermalqs::specific_internal_energy & input) {
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::bulk_modulus)
-    bmod = BulkModulusFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::specific_heat)
-    cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
+  }
+  Real Vout[8];
+  Vinet_F_DT_func(rho, temp, Vout);
+  if (output & thermalqs::temperature) temp = temp;
+  if (output & thermalqs::specific_internal_energy) sie = Vout[0];
+  if (output & thermalqs::pressure) press = Vout[1];
+  if (output & thermalqs::specific_heat) cv = Vout[4];
+  if (output & thermalqs::bulk_modulus) bmod = Vout[7] * Vout[7] * rho;
 }
 
 // TODO(JMM): pre-cache these rather than recomputing them each time
