@@ -5,6 +5,7 @@
 ### Fixed (Repair bugs, etc)
 
 ### Added (new features/APIs/variables/...)
+- [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
 
 ### Changed (changing behavior/API/variables/...)
 
@@ -19,27 +20,22 @@ Date: 12/14/2022
 ### Fixed (Repair bugs, etc)
 
 ### Added (new features/APIs/variables/...)
+- [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR192]](https://github.com/lanl/singularity-eos/pull/192) remove h5py and start using gold files
 
 ### Fixed (not changing behavior/API/variables/...)
+- [[PR198]](https://github.com/lanl/singularity-eos/pull/198) Use a more robust HDF5 handling that eliminates some edge breaks
+- [[PR181]](https://github.com/lanl/singularity-eos/pull/181) change from manual dependecy handling to using hdf5 interface targets
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR206]](https://github.com/lanl/singularity-eos/pull/206) add another way to build sphinx docs
 
 ### Removed (removing behavior/API/varaibles/...)
 
-### Added (modifiers with python bindings)
-
 ## Release 1.6.2
 Date: 10/12/2022
-
-### Revert to standard `hdf5` handling
-- [[PR198]](https://github.com/lanl/singularity-eos/pull/198) Use a more robust HDF5 handling that eliminates some edge breaks
-
-### Updated `hdf5` handling in the build
-- [[PR181]](https://github.com/lanl/singularity-eos/pull/181) change from manual dependecy handling to using hdf5 interface targets
 
 ### Fixed (Repair bugs, etc)
 - [[PR183]](https://github.com/lanl/singularity-eos/pull/183) fortify cmake export config to always have interface targets of dependencies that need them
