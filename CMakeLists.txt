@@ -12,9 +12,11 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.23)
 
-project(singularity-eos VERSION 1.7.0 LANGUAGES NONE)
+project(singularity-eos
+  VERSION 1.7.1 
+  LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -108,6 +110,13 @@ else()
   endif()
 endif()
 
+# Don't allow in-source builds
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+  message(FATAL_ERROR
+    "You cannot build in a source directory (or any directory with a CMakeLists.txt file). "
+    "Please make a build subdirectory. Feel free to remove CMakeCache.txt and CMakeFiles.")
+endif()
+
 #------------------------------------------------------------------------------#
 # De-thaw some options
 #------------------------------------------------------------------------------#
@@ -151,18 +160,6 @@ if (SINGULARITY_SUBMODULE_MODE)
   set(SINGULARITY_HIDE_MORE_WARNINGS ON CACHE BOOL "" FORCE)
 endif()
 
-# side-projects
-if(SINGULARITY_USE_HDF5)
-  if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
-    list(APPEND _subdirs2add stellarcollapse2spiner)
-  endif()
-  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
-    list(APPEND _subdirs2add sesame2spiner)
-  endif()
-  if(SINGULARITY_BUILD_EXAMPLES)
-    list(APPEND _subdirs2add example)
-  endif()
-endif()
 
 if (SINGULARITY_BUILD_PYTHON)
   list(APPEND _subdirs2add python)
@@ -179,42 +176,81 @@ endif()
 # need this for consistant Catch2 up/downstream.
 # depending on how this develops, this could be wrapped
 # into the dependcy logic (below)
+include(FetchContent)
 
-if(SINGULARITY_BUILD_TESTS)
-  if (NOT TARGET Catch2::Catch2)
-    find_package(Catch2 QUIET)
-  endif()
-
-  if(NOT Catch2_FOUND)
-    message(STATUS "Fetching Catch2 as needed")
-    # idiomatic FetchContent
-    include(FetchContent)
-    FetchContent_Declare(
-      Catch2
-      GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      # MAUNEYC: On my side, this version works. The ones
-      #           pinned onto upstream codes do not like to play
-      #           with clang and/or newer compilers.
-      GIT_TAG        v2.13.7)
-    FetchContent_MakeAvailable(Catch2)
-    list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
-  endif()
+# If we are on version 3.24+, then set FetchContent to always try 
+# to `find_package` before trying a download method
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
+  set(FETCHCONTENT_TRY_FIND_PACKAGE_MODE ALWAYS)
+  message(STATUS "FetchContent routines will try `find_package` first")
+else()
+  message(DEPRECATION 
+    "Detected cmake version (${CMAKE_VERSION}) older then 3.24. `spiner`"
+    "will begin requiring this version soon.  The current depedency "
+    "resolution is a soft-copy of the pattern of FetchContent introduced" 
+    "in cmake 3.24."
+  )
 endif()
 
-include(cmake/dependency.cmake)
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
+
+include(content)
+# PoC
+singularityeos_content_declare(
+  ports-of-call
+  GIT_REPO    https://github.com/lanl/ports-of-call
+  # NOTE: release 1.3.0 
+  GIT_TAG     4c3d3f7534f6c3d0d303286c936f89b75dbba005
+  NAMESPACE singularityeosDeps
+)
+
+if(SINGULARITY_USE_HDF)
+  set(_singularity_spiner_opt "SPINER_USE_HDF")
+endif()
+# spiner
+singularityeos_content_declare(
+  spiner
+  EXPECTED_TARGETS spiner::spiner
+  GIT_REPO    https://github.com/lanl/spiner
+  # NOTE: release 1.3.0 
+  GIT_TAG     4c3d3f7534f6c3d0d303286c936f89b75dbba005
+  NAMESPACE singularityeosDeps
+  ENABLE_OPTS ${_singularity_spiner_opt}
+)
+# variant
+singularityeos_content_declare(
+  mpark_variant
+  GIT_REPO https://github.com/mpark/variant
+  GIT_TAG 4988879a9f5a95d72308eca2b1779db6ed9b135d
+  PATCH ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
+  EXPECTED_TARGETS mpark_variant
+  NAMESPACE singularityeosDeps
+)
 
 if(SINGULARITY_USE_KOKKOS)
   # kokkos offloading
-  # type: soft submodule 
-  singularity_import_dependency(
-    PKG Kokkos
-    TARGETS Kokkos::kokkos
-    SUBDIR ${PROJECT_SOURCE_DIR}/utils/kokkos
-    )
-  set(PORTABILITY_STRATEGY "Kokkos")
-  set(SPINER_USE_KOKKOS ON)
+  # put together a list of kokkos configure options
+  list(APPEND _singularity_kokkos_opts "Kokkos_ENABLE_AGGRESSIVE_VECTORIZATION")
+  if (singularity_kokkos_opts_TEST_USE_KOKKOS_CUDA)
+    list(APPEND _singularity_kokkos_opts "Kokkos_ENABLE_CUDA")
+    list(APPEND _singularity_kokkos_opts "Kokkos_ENABLE_CUDA_LAMBDA")
+    list(APPEND _singularity_kokkos_opts "Kokkos_ENABLE_CUDA_CONSTEXPR")
+  endif()
+  if(CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+    list(APPEND _singularity_kokkos_opts "Kokkos_ENABLE_DEBUG")
+    list(APPEND _singularity_kokkos_opts "Kokkos_ENABLE_DEBUG_BOUNDS_CHECK")
+    list(APPEND _singularity_kokkos_opts "Kokkos_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK")
+  endif()
+ 
+  singularityeos_content_declare(
+    Kokkos
+    GIT_REPO https://github.com/kokkos/kokkos
+    GIT_TAG        61d7db55fceac3318c987a291f77b844fd94c165
+    EXPECTED_TARGETS Kokkos::kokkos
+    NAMESPACE singularityeosDeps
+    ENABLE_OPTS ${_singularity_kokkos_opts}
+   )
   list(APPEND SINGULARITY_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
-  list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_KOKKOS)
   ####
   # TODO: Once it's oppurtune, we will
   #       not support Kokkos < 3.3
@@ -238,71 +274,63 @@ endif() #SINGULARITY_USE_KOKKOS
 # we may need to rename this variable.
 if (SINGULARITY_BUILD_CLOSURE)
   if(SINGULARITY_USE_KOKKOSKERNELS)
-    # type: external
-    singularity_import_dependency(
-      PKG KokkosKernels
-      TARGETS Kokkos::kokkoskernels
-      )
+    # kokkoskernels solvers
+    # Disable TPLs
+    list(APPEND _kk_tpls "BLAS" "MKL" "LAPACK" "CUBLAS" "CUPARSE" "MAGMA")
+    foreach(_tpl ${_kk_tpls})
+      list(APPEND _singularity_kokkoskernels_opt_off "KokkosKernels_ENABLE_TPL_${_tpl}")
+    endforeach()
+    # Disable ETIs
+    list(APPEND _kk_etis "COMPLEX_DOUBLE" "COMPLEX_FLOAT" "DOUBLE" "EXECSPACE_OPENMP" "EXECSPACE_SERIAL")
+    list(APPEND _kk_etis "EXECSPACE_THREADS" "EXECSPACE_CUDA" "FLOAT" "LAYOUTLEFT" "LAYOUTRIGHT")
+    list(APPEND _kk_etis "MEMSPACE_HOSTSPACE" "OFFSET_INT" "OFFSET_SIZE_T" "ORDINAL_INT")
+    foreach(_eti ${_kk_etis})
+      list(APPEND _singularity_kokkoskernels_opt_off "KokkosKernels_INST_${_eti}")
+    endforeach()
+
+    singularityeos_content_declare(
+      KokkosKernels
+      GIT_REPO https://github.com/kokkos/kokkos
+      GIT_TAG        61d7db55fceac3318c987a291f77b844fd94c165
+      EXPECTED_TARGETS Kokkos::kokkoskernels
+      NAMESPACE singularityeosDeps
+      DISABLE_OPTS ${_singularity_kokkoskernels_opt_off}
+    )
     list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
   else()
-    # type: soft submodule
-    singularity_import_dependency(
-      PKG Eigen3
-      TARGETS Eigen3::Eigen
-      SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
-      )
+    list(APPEND _singularity_eigen_opt_off "EIGEN_TEST_CXX11" "EIGEN_BUILD_PKGCONFIG" "EIGEN_BUILD_DOC")
+    singularityeos_content_declare(
+      Eigen3
+      GIT_REPO https://gitlab.com/libeigen/eigen
+      GIT_TAG  e7248b26a1ed53fa030c5c459f7ea095dfd276ac
+      EXPECTED_TARGETS Eigen3::Eigen
+      NAMESPACE singularityeosDeps
+      DISABLE_OPTS ${_singularity_kokkoskernels_opt_off}
+    )
   endif() #SINGULARITY_USE_KOKKOS_KERNELS
 endif() #SINGULARITY_BUILD_CLOSURE
 
-# variant for prior C++17
-# type: soft submodule
-singularity_import_dependency(
-  PKG mpark_variant
-  TARGETS mpark_variant
-  SUBDIR ${PROJECT_SOURCE_DIR}/utils/variant
-)
-
-# ports-of-call
-# type: ghost submodule
-singularity_import_dependency(
-  PKG ports-of-call
-  TARGETS ports-of-call::ports-of-call
-  SUBDIR ${PROJECT_SOURCE_DIR}/utils/ports-of-call
-)
-
-# spiner
-# type: soft submodule
-singularity_import_dependency(
-  PKG spiner
-  TARGETS spiner::spiner
-  SUBDIR ${PROJECT_SOURCE_DIR}/utils/spiner
-)
 
 # only use hdf5 if spiner
-if (SINGULARITY_USE_HDF5)
-  # hdf5, for data interopability
-  # type: external
-  enable_language(C)
-  singularity_import_dependency(
-    PKG HDF5
-    COMPONENTS C HL
-    TARGETS hdf5::hdf5 hdf5::hdf5_hl
-  )
 
-  # make sure we use MPI
-  if (HDF5_IS_PARALLEL)
-    # Message passing interface
-    # type: external
-    singularity_import_dependency(
-      PKG MPI
-      COMPONENTS CXX
-      TARGETS MPI::MPI_CXX
-    )
-  endif()
+if (SINGULARITY_USE_HDF5)
 
   list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_HDF)
   list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_HDF)
 endif() # SINGULARITY_USE_HDF5
+
+# side-projects
+if(SINGULARITY_USE_HDF5)
+  if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+    list(APPEND _subdirs2add stellarcollapse2spiner)
+  endif()
+  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
+    list(APPEND _subdirs2add sesame2spiner)
+  endif()
+  if(SINGULARITY_BUILD_EXAMPLES)
+    list(APPEND _subdirs2add example)
+  endif()
+endif()
 
 #NB: An edge-case (but an easy one), that doesn't slot
 #   easily into the `import_dependency()` setup.
@@ -328,6 +356,10 @@ endif()
 if (SINGULARITY_BUILD_CLOSURE)
   list(APPEND SINGULARITY_PRIVATE_DEFINES SINGULARITY_BUILD_CLOSURE)
 endif()
+
+singularityeos_content_populate(
+  NAMESPACE singularityeosDeps
+)
 
 #------------------------------------------------------------------------------#
 # singularity-eos library
@@ -385,6 +417,7 @@ target_include_directories(singularity-eos
 
 target_link_libraries(singularity-eos
   PUBLIC
+    ${singularityeosDeps_POPULATED_TARGETS}
     ${SINGULARITY_PUBLIC_LIBS}
   PRIVATE
     ${SINGULARITY_PRIVATE_LIBS}
