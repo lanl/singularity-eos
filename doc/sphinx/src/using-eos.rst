@@ -35,6 +35,8 @@ conditions. The type of parallelism used depends on how
 ``singularity-eos`` is compiled. If the ``Kokkos`` backend is used,
 any parallel dispatch supported by ``Kokkos`` is supported.
 
+.. _variant section:
+
 Variants
 ---------
 
@@ -288,6 +290,8 @@ currently:
 however, most EOS models only specify that they prefer density and
 temperature or density and specific internal energy.
 
+.. _eos builder section:
+
 EOS Builder
 ------------
 
@@ -322,6 +326,9 @@ Putting it all together, initializing an ``IdealGas`` with
   modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
   modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
   EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+
+
+.. _eos methods reference section:
 
 Equation of State Methods Reference
 ------------------------------------

@@ -148,8 +148,7 @@ before_script:
     - export modName="${CI_PROJECT_DIR}/spack_env/loads"
     - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION}\n;" ${modName}
     - sed -i "1s;^;#%Module\n;" ${modName}
-    - module use ${CI_PROJECT_DIR}/spack_env
-    - module load loads # module load compiler, deps, etc.
+    - source ${CI_PROJECT_DIR}/spack_env/loads # module load compiler, deps, etc.
     - module list
     - |
       if [[ -n ${SINGULARITY_USE_CUDA} ]];
