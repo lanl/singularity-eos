@@ -6,6 +6,7 @@
 
 ### Added (new features/APIs/variables/...)
 - [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
+- [[PR214]](https://github.com/lanl/singularity-eos/pull/214) added documentation about adding a new EOS
 
 ### Changed (changing behavior/API/variables/...)
 
