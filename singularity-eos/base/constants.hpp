@@ -35,7 +35,6 @@ enum class DataStatus { Deallocated = 0, OnDevice = 1, OnHost = 2 };
 enum class TableStatus { OnTable = 0, OffBottom = 1, OffTop = 2 };
 constexpr Real ROOM_TEMPERATURE = 293; // K
 constexpr Real ATMOSPHERIC_PRESSURE = 1e6;
-constexpr Real EPS = 10.0 * std::numeric_limits<Real>::epsilon();
 
 } // namespace singularity
 

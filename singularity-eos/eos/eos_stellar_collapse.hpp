@@ -33,6 +33,7 @@
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -196,7 +197,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                                             const Real offset) const noexcept {
     // StellarCollapse can't use fast logs, unless we re-grid onto the
     // "fast log grid"
-    return std::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    return std::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
   }
   PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx,
                                               const Real offset) const noexcept {
@@ -308,7 +309,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   static constexpr const char *_lambda_names[] = {"Ye", "log(T)"};
 
   // Stuff for median filter smoothing
-  static constexpr Real EPSSMOOTH = 10.0;
+  static constexpr Real DELTASMOOTH = 10.0;
   static constexpr int MF_W = 3;
   static constexpr int MF_S = (2 * MF_W + 1) * (2 * MF_W + 1) * (2 * MF_W + 1);
 };
@@ -491,7 +492,7 @@ Real StellarCollapse::SpecificHeatFromDensityTemperature(const Real rho,
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
   const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
-  return (Cv > EPS ? Cv : EPS);
+  return (Cv > robust::EPS() ? Cv : robust::EPS());
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -501,7 +502,7 @@ Real StellarCollapse::SpecificHeatFromDensityInternalEnergy(const Real rho,
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
-  return (Cv > EPS ? Cv : EPS);
+  return (Cv > robust::EPS() ? Cv : robust::EPS());
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -512,7 +513,7 @@ Real StellarCollapse::BulkModulusFromDensityTemperature(const Real rho,
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
   const Real lbmod = lBMod_.interpToReal(Ye, lT, lRho);
   const Real bMod = lB2B_(lbmod);
-  return bMod > EPS ? bMod : EPS;
+  return bMod > robust::EPS() ? bMod : robust::EPS();
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -522,7 +523,7 @@ Real StellarCollapse::GruneisenParamFromDensityTemperature(const Real rho,
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temp, lambda, lRho, lT, Ye);
   const Real dpde = dPdE_.interpToReal(Ye, lT, lRho);
-  const Real gm1 = std::abs(dpde) / (std::abs(rho) + EPS);
+  const Real gm1 = std::abs(dpde) / (std::abs(rho) + robust::EPS());
   return gm1;
 }
 
@@ -543,7 +544,7 @@ Real StellarCollapse::GruneisenParamFromDensityInternalEnergy(const Real rho,
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real dpde = dPdE_.interpToReal(Ye, lT, lRho);
-  const Real gm1 = std::abs(dpde) / (std::abs(rho) + EPS);
+  const Real gm1 = std::abs(dpde) / (std::abs(rho) + robust::EPS());
   return gm1;
 }
 
@@ -584,7 +585,7 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, 
   }
   if (output & thermalqs::specific_heat) {
     const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
-    cv = (Cv > EPS ? Cv : EPS);
+    cv = (Cv > robust::EPS() ? Cv : robust::EPS());
   }
   if (output & thermalqs::bulk_modulus) {
     const Real lbmod = lBMod_.interpToReal(Ye, lT, lRho);
@@ -796,7 +797,7 @@ inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
         fillMedianBuffer_(buffer, MF_W, iY, iT, irho, in);
         Real point = in(iY, iT, irho);
         Real avg = findMedian_(buffer, MF_S);
-        int bad = std::abs(avg - point) / std::abs(avg) > EPSSMOOTH;
+        int bad = std::abs(avg - point) / std::abs(avg) > DELTASMOOTH;
         if (bad) out(iY, iT, irho) = avg;
       }
     }
@@ -844,7 +845,7 @@ inline void StellarCollapse::computeBulkModulus_() {
         Real PoR = fromLog_(lPoR, 0.0);
         // assume table is hardened
         Real bMod = rho * dPdRho_(iY, iT, irho) + PoR * dPdE_(iY, iT, irho);
-        if (bMod < EPS) bMod = EPS;
+        if (bMod < robust::EPS()) bMod = robust::EPS();
         lBMod_(iY, iT, irho) = B2lB_(bMod);
       }
     }
@@ -884,11 +885,11 @@ inline void StellarCollapse::setNormalValues_() {
   PNormal_ = lP2P_(lP);
 
   const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
-  CvNormal_ = (Cv > EPS ? Cv : EPS);
+  CvNormal_ = (Cv > robust::EPS() ? Cv : robust::EPS());
 
   const Real lB = lBMod_.interpToReal(Ye, lT, lRho);
   const Real bMod = lB2B_(lB);
-  bModNormal_ = bMod > EPS ? bMod : EPS;
+  bModNormal_ = bMod > robust::EPS() ? bMod : robust::EPS();
 
   dPdENormal_ = dPdE_.interpToReal(Ye, lT, lRho);
 
