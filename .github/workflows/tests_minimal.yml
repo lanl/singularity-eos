@@ -21,7 +21,7 @@ jobs:
         - name: install dependencies
           run: |
             sudo apt-get update -y -qq
-            sudo apt-get install -y --force-yes -qq build-essential
+            sudo apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages -qq build-essential
         - name: build and run tests
           run: |
             mkdir -p bin
