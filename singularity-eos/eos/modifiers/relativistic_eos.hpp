@@ -25,8 +25,8 @@
 
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
-#include <singularity-eos/eos/robust_utils.hpp>
 
 namespace singularity {
 
