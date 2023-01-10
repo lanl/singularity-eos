@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Fixed (Repair bugs, etc)
+- [[PR215]](https://github.com/lanl/singularity-eos/pull/215) fix duplicate definition of EPS and fix CI
 
 ### Added (new features/APIs/variables/...)
 - [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team

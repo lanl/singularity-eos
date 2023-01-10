@@ -22,6 +22,7 @@
 
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/math_utils.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -175,7 +176,7 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real
   };
 
   // Comparisons to zero are actually made to
-  static constexpr Real EPS = std::numeric_limits<Real>::epsilon();
+  static constexpr Real EPS = robust::EPS();
 
   // First find the eta root. A negative root indicates that there is no maximum density.
   Real root = -1.; // Non-sensical root means none exists
