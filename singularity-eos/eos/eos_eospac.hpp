@@ -24,6 +24,7 @@
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
@@ -243,12 +244,12 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup) : matid_(matid) {
   press_ref_ = pressureFromSesame(PRESS);
   DPDR = dx[0];
   DPDT = dy[0];
-  DPDE = DPDT / (DEDT + EPS);
-  BMOD = rho_ref_ * DPDR + DPDE * (PRESS / (rho_ref_ + EPS) - rho_ref_ * DEDR);
+  DPDE = DPDT / (DEDT + robust::EPS());
+  BMOD = rho_ref_ * DPDR + DPDE * (PRESS / (rho_ref_ + robust::EPS()) - rho_ref_ * DEDR);
   bmod_ref_ = bulkModulusFromSesame(std::max(BMOD, 0.0));
   dpde_ref_ = pressureFromSesame(sieToSesame(DPDE));
-  dvdt_ref_ =
-      dpde_ref_ * cv_ref_ / (rho_ref_ * rho_ref_ * pressureFromSesame(DPDR) + EPS);
+  dvdt_ref_ = dpde_ref_ * cv_ref_ /
+              (rho_ref_ * rho_ref_ * pressureFromSesame(DPDR) + robust::EPS());
 }
 
 PORTABLE_INLINE_FUNCTION Real EOSPAC::TemperatureFromDensityInternalEnergy(
@@ -412,7 +413,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityTemperature(
   eosSafeInterpolate(&table, nxypairs, R, T, P, dx, dy, "PofRT", Verbosity::Quiet);
   DPDT = dy[0];
   DPDE = DPDT / DEDT;
-  return pressureFromSesame(sieToSesame(DPDE)) / (rho + EPS);
+  return pressureFromSesame(sieToSesame(DPDE)) / (rho + robust::EPS());
 }
 PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {

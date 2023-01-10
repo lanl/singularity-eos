@@ -24,9 +24,9 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-eos/eos/robust_utils.hpp>
 
 namespace singularity {
 
@@ -100,9 +100,9 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {
     Real P = PressureFromDensityInternalEnergy(rho, sie, lambda);
-    Real h = cl2_ + sie + (P / (std::abs(rho) + EPS));
+    Real h = cl2_ + sie + robust::ratio(P, rho);
     Real bmod = t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
-    return std::max(0.0, bmod / (std::abs(h) + EPS));
+    return std::max(0.0, robust::ratio(bmod, std::abs(h)));
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -124,9 +124,9 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
                                          Real *lambda = nullptr) const {
     Real P = PressureFromDensityTemperature(rho, temperature, lambda);
     Real sie = InternalEnergyFromDensityTemperature(rho, temperature, lambda);
-    Real h = cl2_ + sie + (P / (std::abs(rho) + EPS));
-    Real bmod = t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
-    return std::max(0.0, bmod / (std::abs(h) + EPS));
+    Real h = cl2_ + sie + robust::ratio(P, rho) Real bmod =
+                 t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
+    return std::max(0.0, robust::ratio(bmod, std::abs(h)));
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,

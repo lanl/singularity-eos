@@ -175,6 +175,8 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real
   };
 
   // Comparisons to zero are actually made to
+  // TODO(JMM): Should this become robust::EPS()? They differ by a
+  // factor of 10.
   static constexpr Real EPS = std::numeric_limits<Real>::epsilon();
 
   // First find the eta root. A negative root indicates that there is no maximum density.
