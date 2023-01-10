@@ -245,7 +245,7 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup) : matid_(matid) {
   DPDR = dx[0];
   DPDT = dy[0];
   DPDE = robust::ratio(DPDT, DEDT);
-  BMOD = rho_ref_ * DPDR + DPDE * robust::ratio(PRESS, rho_ref_) - rho_ref_ * DEDR);
+  BMOD = rho_ref_ * DPDR + DPDE * (robust::ratio(PRESS, rho_ref_) - rho_ref_ * DEDR);
   bmod_ref_ = bulkModulusFromSesame(std::max(BMOD, 0.0));
   dpde_ref_ = pressureFromSesame(sieToSesame(DPDE));
   dvdt_ref_ =

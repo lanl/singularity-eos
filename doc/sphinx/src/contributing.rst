@@ -387,6 +387,11 @@ Some notes on style and code architecture
   understand, ask. It may be it can be refactored to be more simple or
   better documented.
 
+* As a general rule, to avoid accidental division by zero, use the
+  ``robust::ratio(x, y)`` function provided in
+  ``singularity-eos/base/robust_utils.hpp`` instead of writing ``x /
+  y``.
+
 Performance portability concerns
 `````````````````````````````````
 
