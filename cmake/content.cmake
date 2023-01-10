@@ -47,7 +47,7 @@ include(FetchContent)
 #                       if not specified, will default to `<pkg_name>::<pkg_name>`
 #   - DISABLE/ENABLE_OPTS - a list of cache vars used to configure content that is imported using `add_subdirectory()`
 #
-function(singularity_content_declare pkg_name)
+macro(singularityeos_content_declare pkg_name)
   set(options
     NO_FETCH
   )
@@ -112,19 +112,20 @@ function(singularity_content_declare pkg_name)
  
   # return some info
   list(APPEND ${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT ${pkg_name})
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT ${${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT}}  PARENT_SCOPE)
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_COMPONETS ${fp_COMPONENTS} PARENT_SCOPE)
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_ENABLEOPTS ${fp_ENABLE_OPTS} PARENT_SCOPE))
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_DISABLEOPTS ${fp_DISABLE_OPTS} PARENT_SCOPE))
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_PRIORS ${fp_PRIORS} PARENT_SCOPE)
+  message("BBB ${pkg_name}")
+  message("BBA ${${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT}")
+  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_COMPONETS ${fp_COMPONENTS} )
+  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_ENABLEOPTS ${fp_ENABLE_OPTS} )
+  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_DISABLEOPTS ${fp_DISABLE_OPTS} )
+  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_PRIORS ${fp_PRIORS} )
 
   if(fp_EXPECTED_TARGETS)
-      set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS ${fp_EXPECTED_TARGETS} PARENT_SCOPE)
+      set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS ${fp_EXPECTED_TARGETS} )
   else()
-      set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS "${pkg_name}::${pkg_name}" PARENT_SCOPE)
+      set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS "${pkg_name}::${pkg_name}" )
   endif()
 
-endfunction()
+endmacro()
 
 #
 # :: Overview
@@ -135,7 +136,7 @@ endfunction()
 #   single_value:
 #   - NAMESPACE - the namespace used in the corrisponding `singularity_content_declare` call
 #
-function(singularity_content_populate)
+macro(singularityeos_content_populate)
   set(options)
   set(one_value_args
     NAMESPACE
@@ -148,6 +149,7 @@ function(singularity_content_populate)
   message(STATUS 
     "[${fp_NAMESPACE}] Populating declared content"
   )
+message("AAAA  ${${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT}")
   # fill lists to populate
   # if cmake@3.24+, these are just the lists prepared in singularity_content_declare
   # otherwise, manually check `find_package` and remove content if found
@@ -226,11 +228,11 @@ function(singularity_content_populate)
   endforeach()
 
   # return target list
-  set(${fp_NAMESPACE}_POPULATED_TARGETS ${_expectedTars} PARENT_SCOPE)
+  set(${fp_NAMESPACE}_POPULATED_TARGETS ${_expectedTars} )
 
   # try to keep scope clean
   unset(${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT)
-endfunction()
+endmacro()
 
 
 # © 2021. Triad National Security, LLC. All rights reserved.  This

@@ -199,8 +199,7 @@ include(content)
 singularityeos_content_declare(
   ports-of-call
   GIT_REPO    https://github.com/lanl/ports-of-call
-  # NOTE: release 1.3.0 
-  GIT_TAG     4c3d3f7534f6c3d0d303286c936f89b75dbba005
+  GIT_TAG     5fea4f6a0ad75ca2326e1c32507e24a3e09e2f8b
   NAMESPACE singularityeosDeps
 )
 
@@ -212,8 +211,7 @@ singularityeos_content_declare(
   spiner
   EXPECTED_TARGETS spiner::spiner
   GIT_REPO    https://github.com/lanl/spiner
-  # NOTE: release 1.3.0 
-  GIT_TAG     4c3d3f7534f6c3d0d303286c936f89b75dbba005
+  GIT_TAG     9f3ccf017083af9111f4ea7e2dfb887d2f3579cb
   NAMESPACE singularityeosDeps
   ENABLE_OPTS ${_singularity_spiner_opt}
 )
@@ -245,7 +243,7 @@ if(SINGULARITY_USE_KOKKOS)
   singularityeos_content_declare(
     Kokkos
     GIT_REPO https://github.com/kokkos/kokkos
-    GIT_TAG        61d7db55fceac3318c987a291f77b844fd94c165
+    GIT_TAG        3.7.01
     EXPECTED_TARGETS Kokkos::kokkos
     NAMESPACE singularityeosDeps
     ENABLE_OPTS ${_singularity_kokkos_opts}
@@ -290,8 +288,8 @@ if (SINGULARITY_BUILD_CLOSURE)
 
     singularityeos_content_declare(
       KokkosKernels
-      GIT_REPO https://github.com/kokkos/kokkos
-      GIT_TAG        61d7db55fceac3318c987a291f77b844fd94c165
+      GIT_REPO https://github.com/kokkos/kokkos-kernels
+      GIT_TAG        3.7.01
       EXPECTED_TARGETS Kokkos::kokkoskernels
       NAMESPACE singularityeosDeps
       DISABLE_OPTS ${_singularity_kokkoskernels_opt_off}
@@ -305,7 +303,7 @@ if (SINGULARITY_BUILD_CLOSURE)
       GIT_TAG  e7248b26a1ed53fa030c5c459f7ea095dfd276ac
       EXPECTED_TARGETS Eigen3::Eigen
       NAMESPACE singularityeosDeps
-      DISABLE_OPTS ${_singularity_kokkoskernels_opt_off}
+      DISABLE_OPTS ${_singularity_eigen_opt_off}
     )
   endif() #SINGULARITY_USE_KOKKOS_KERNELS
 endif() #SINGULARITY_BUILD_CLOSURE
@@ -332,9 +330,6 @@ if(SINGULARITY_USE_HDF5)
   endif()
 endif()
 
-#NB: An edge-case (but an easy one), that doesn't slot
-#   easily into the `import_dependency()` setup.
-#   TODO: just do it correctly
 #TODO: Check: Does EOSPAC only pass into side-targets?
 if (SINGULARITY_USE_EOSPAC)
   #TODO: should be strictly module mode
@@ -343,8 +338,7 @@ if (SINGULARITY_USE_EOSPAC)
   list(APPEND SINGULARITY_PUBLIC_LIBS EOSPAC::eospac)
   list(APPEND SINGULARITY_PUBLIC_LIBS eospac-wrapper)
   list(APPEND SINGULARITY_DEPS_PKGS EOSPAC)
-
-  add_subdirectory(eospac-wrapper)
+  list(APPEND _subdirs2add eospac-wrapper)
 endif ()
 
 
