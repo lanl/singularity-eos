@@ -1541,7 +1541,7 @@ inline void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
       } else {
         bMod = 0.0;
       }
-      tables.bMod(j, i) = std::max(bMod, robust::robust::EPS()());
+      tables.bMod(j, i) = std::max(bMod, robust::EPS());
     }
   }
 }
