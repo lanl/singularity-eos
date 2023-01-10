@@ -124,8 +124,8 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
                                          Real *lambda = nullptr) const {
     Real P = PressureFromDensityTemperature(rho, temperature, lambda);
     Real sie = InternalEnergyFromDensityTemperature(rho, temperature, lambda);
-    Real h = cl2_ + sie + robust::ratio(P, rho) Real bmod =
-                 t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
+    Real h = cl2_ + sie + robust::ratio(P, rho);
+    Real bmod = t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
     return std::max(0.0, robust::ratio(bmod, std::abs(h)));
   }
   PORTABLE_FUNCTION
