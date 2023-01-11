@@ -15,7 +15,7 @@ More complete documentation is available [here](https://lanl.github.io/singulari
 - `eospac-wrapper` is a wrapper for eospac
 - `closure` contains mixed cell closure models. Currently pressure-temperature equilibrium is supported. Requires `eos`.
 - `sesame2spiner` converts sesame tables to spiner tables
-- `stellarcollaspe2spienr` converts tables found on stellarcollapse.org to spiner tables
+- `stellarcollaspe2spiner` converts tables found on stellarcollapse.org to spiner tables
 
 ## To Build
 
