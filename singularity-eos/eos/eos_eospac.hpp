@@ -538,7 +538,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           const Real DPDE = DPDT[i] / DEDT[i];
-          gm1s[i] = pressureFromSesame(sieToSesame(DPDE)) / (R[i] + EPS);
+          gm1s[i] = robust::ratio(pressureFromSesame(sieToSesame(DPDE)), R[i]);
         });
   }
 
@@ -590,7 +590,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           const Real DPDE = DPDT[i] / DEDT[i];
-          gm1s[i] = pressureFromSesame(sieToSesame(DPDE)) / (R[i] + EPS);
+          gm1s[i] = robust::ratio(pressureFromSesame(sieToSesame(DPDE)), R[i]);
         });
   }
 
