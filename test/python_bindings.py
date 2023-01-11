@@ -529,7 +529,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         """[Vector EOS][Steel][Densities and temperatures] A e(rho, T) lookup is performed"""
         energy_eospac = np.zeros(self.num)
         energy_spiner = np.zeros(self.num)
-        scratch = np.zeros(self.eospac.scratch_size("InternalEnergyFromDensityTemperature", self.num))
+        num_scratch = int(self.eospac.scratch_size("InternalEnergyFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
         self.eospac.InternalEnergyFromDensityTemperature(self.density, self.temperature, energy_eospac, scratch, self.num)
         self.steelEOS_host.InternalEnergyFromDensityTemperature(self.density, self.temperature, energy_spiner, self.num)
 
@@ -540,7 +541,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         """[Vector EOS][Steel][Densities and temperatures] A P(rho, T) lookup is performed"""
         pressure_eospac = np.zeros(self.num)
         pressure_spiner = np.zeros(self.num)
-        scratch = np.zeros(self.eospac.scratch_size("PressureFromDensityTemperature", self.num))
+        num_scratch = int(self.eospac.scratch_size("PressureFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
         self.eospac.PressureFromDensityTemperature(self.density, self.temperature, pressure_eospac, scratch, self.num)
         self.steelEOS_host.PressureFromDensityTemperature(self.density, self.temperature, pressure_spiner, self.num)
 
@@ -551,7 +553,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         """[Vector EOS][Steel][Densities and temperatures] A C_v(rho, T) lookup is performed"""
         heatcapacity_eospac = np.zeros(self.num)
         heatcapacity_spiner = np.zeros(self.num)
-        scratch = np.zeros(self.eospac.scratch_size("SpecificHeatFromDensityTemperature", self.num))
+        num_scratch = int(self.eospac.scratch_size("SpecificHeatFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
         self.eospac.SpecificHeatFromDensityTemperature(self.density, self.temperature, heatcapacity_eospac, scratch, self.num)
         self.steelEOS_host.SpecificHeatFromDensityTemperature(self.density, self.temperature, heatcapacity_spiner, self.num)
 
@@ -562,7 +565,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         """[Vector EOS][Steel][Densities and temperatures] A B_S(rho, T) lookup is performed"""
         bulkmodulus_eospac = np.zeros(self.num)
         bulkmodulus_spiner = np.zeros(self.num)
-        scratch = np.zeros(self.eospac.scratch_size("BulkModulusFromDensityTemperature", self.num))
+        num_scratch = int(self.eospac.scratch_size("BulkModulusFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
         self.eospac.BulkModulusFromDensityTemperature(self.density, self.temperature, bulkmodulus_eospac, scratch, self.num)
         self.steelEOS_host.BulkModulusFromDensityTemperature(self.density, self.temperature, bulkmodulus_spiner, self.num)
 
@@ -573,7 +577,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         """[Vector EOS][Steel][Densities and temperatures] A Gamma(rho, T) lookup is performed"""
         gruneisen_eospac = np.zeros(self.num)
         gruneisen_spiner = np.zeros(self.num)
-        scratch = np.zeros(self.eospac.scratch_size("GruneisenParamFromDensityTemperature", self.num))
+        num_scratch = int(self.eospac.scratch_size("GruneisenParamFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
         self.eospac.GruneisenParamFromDensityTemperature(self.density, self.temperature, gruneisen_eospac, scratch, self.num)
         self.steelEOS_host.GruneisenParamFromDensityTemperature(self.density, self.temperature, gruneisen_spiner, self.num)
 
