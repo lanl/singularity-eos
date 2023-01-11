@@ -185,6 +185,37 @@ might look like this:
 We do note, however, that vectorization may suffer if your underlying
 data structure is not contiguous in memory.
 
+.. _eospac_vector:
+
+EOSPAC Vector Functions
+~~~~~~~~~~~~~~~~~~~~~~~
+
+For performance reasons EOSPAC vector calls only support contiguous memory
+buffers as input and output. They also require an additional scratch buffer.
+
+These changes are needed to allow passing buffers directly into EOSPAC, taking
+advantage of EOSPAC options, and avoiding unnecessary copies.
+
+The size of the needed scratch buffer depends on which EOS function is called
+and the number of elements in the vector. Use the ``scratch_size(func_name, num_elements)``
+static member function to determine the size needed for an individual function
+or ``max_scratch_size(num_elements)`` to retrieve the maximum needed by any
+available member function.
+
+.. code-block:: cpp
+
+   // std::vector<double> density = ...;
+   // std::vector<double> energy = ...;
+   // std::vector<double> temperature = ...;
+
+   // determine size and allocate needed scratch buffer
+   auto sz = EOSPAC::scratch_size("TemperatureFromDensityInternalEnergy", density.size());
+   std::vector<double> scratch(sz / sizeof(double));
+
+   // call EOSPAC eos vector function with scratch buffer
+   eos.TemperatureFromDensityInternalEnergy(density.data(), energy.data(), temperature.data(),
+                                            scratch.data(), density.size());
+
 Lambdas and Optional Parameters
 --------------------------------
 
