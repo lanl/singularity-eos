@@ -116,8 +116,7 @@ PYBIND11_MODULE(singularity_eos, m) {
   constexpr bool use_scratch = true;
   eos_class<EOSPAC, use_scratch>(m, "EOSPAC")
     .def(py::init())
-    .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false)
-
+    .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
 #endif
 
   create_shifted_eos_classes(m);

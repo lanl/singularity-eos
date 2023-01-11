@@ -92,10 +92,11 @@ class EOSPAC : public EosBase<EOSPAC> {
   using EosBase<EOSPAC>::FillEos;
 
   // EOSPAC vector implementations
+  template <typename LambdaIndexer>
   inline void TemperatureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                    Real *temperatures, Real *scratch,
                                                    const int num,
-                                                   Real ** /*lambdas*/) const {
+                                                   LambdaIndexer /*lambdas*/) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
@@ -130,9 +131,10 @@ class EOSPAC : public EosBase<EOSPAC> {
                        options, values, nopts);
   }
 
+  template <typename LambdaIndexer>
   inline void FillEos(Real *rhos, Real *temps, Real *energies, Real *presses, Real *cvs,
                       Real *bmods, Real *scratch, const int num,
-                      const unsigned long output, Real ** /*lambdas*/) const {
+                      const unsigned long output, LambdaIndexer /*lambdas*/) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -238,10 +240,11 @@ class EOSPAC : public EosBase<EOSPAC> {
     }
   }
 
+  template <typename LambdaIndexer>
   inline void InternalEnergyFromDensityTemperature(const Real *rhos,
                                                    const Real *temperatures, Real *sies,
                                                    Real *scratch, const int num,
-                                                   Real ** /*lambdas*/) const {
+                                                   LambdaIndexer /*lambdas*/) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -261,10 +264,11 @@ class EOSPAC : public EosBase<EOSPAC> {
                        options, values, nopts);
   }
 
+  template <typename LambdaIndexer>
   inline void PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                 Real *pressures, Real *scratch,
                                                 const int num,
-                                                Real ** /*lambdas*/) const {
+                                                LambdaIndexer /*lambdas*/) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
@@ -295,10 +299,11 @@ class EOSPAC : public EosBase<EOSPAC> {
     }
   }
 
+  template <typename LambdaIndexer>
   inline void SpecificHeatFromDensityTemperature(const Real *rhos,
                                                  const Real *temperatures, Real *cvs,
                                                  Real *scratch, const int num,
-                                                 Real ** /*lambdas*/) const {
+                                                 LambdaIndexer /*lambdas*/) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -322,10 +327,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
 
+  template <typename LambdaIndexer>
   inline void SpecificHeatFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                     Real *cvs, Real *scratch,
                                                     const int num,
-                                                    Real ** /*lambdas*/) const {
+                                                    LambdaIndexer /*lambdas*/) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -363,10 +369,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
 
+  template <typename LambdaIndexer>
   inline void BulkModulusFromDensityTemperature(const Real *rhos,
                                                 const Real *temperatures, Real *bmods,
                                                 Real *scratch, const int num,
-                                                Real ** /*lambdas*/) const {
+                                                LambdaIndexer /*lambdas*/) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -426,10 +433,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
 
+  template <typename LambdaIndexer>
   inline void BulkModulusFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                    Real *bmods, Real *scratch,
                                                    const int num,
-                                                   Real ** /*lambdas*/) const {
+                                                   LambdaIndexer /*lambdas*/) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -501,10 +509,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
 
+  template <typename LambdaIndexer>
   inline void GruneisenParamFromDensityTemperature(const Real *rhos,
                                                    const Real *temperatures, Real *gm1s,
                                                    Real *scratch, const int num,
-                                                   Real ** /*lambdas*/) const {
+                                                   LambdaIndexer /*lambdas*/) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -542,10 +551,11 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
 
-  inline void GruneisenParamFromDensityInternalEnergy(const Real *&&rhos,
-                                                      const Real *&&sies, Real *gm1s,
-                                                      Real *scratch, const int num,
-                                                      Real ** /*lambdas*/) const {
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                      Real *gm1s, Real *scratch,
+                                                      const int num,
+                                                      LambdaIndexer /*lambdas*/) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -594,9 +604,10 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
 
+  template <typename LambdaIndexer>
   inline void PTofRE(Real *rhos, Real *sies, Real *presses, Real *temps, Real *dpdrs,
                      Real *dpdes, Real *dtdrs, Real *dtdes, Real *scratch, const int num,
-                     Real **lambdas) const {
+                     LambdaIndexer lambdas) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
