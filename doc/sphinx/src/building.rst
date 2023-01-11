@@ -23,9 +23,9 @@ simply call
 
 .. code-block:: bash
 
-  git clone --recursive git@github.com:lanl/singularity-eos.git
-  spack repo add singularity-eos/spack-repo
-  spack install singularity-eos
+   git clone --recursive git@github.com:lanl/singularity-eos.git
+   spack repo add singularity-eos/spack-repo
+   spack install singularity-eos
 
 to install ``singularity-eos`` into your spack instance. The spackage
 supports a number of relevant variants:
@@ -84,24 +84,24 @@ directory of your project, you might call a line like this in your
 
 .. code-block:: cmake
 
-  add_subdirectory(external/singularity-eos singularity-eos)
+   add_subdirectory(external/singularity-eos singularity-eos)
 
 At it's simplest, the cmake build process looks like this:
 
 .. code-block:: bash
 
-  git clone --recursive git@github.com:lanl/singularity-eos.git
-  cd singularity-eos
-  mkdir bin
-  cd bin
-  cmake ..
-  make install
+   git clone --recursive git@github.com:lanl/singularity-eos.git
+   cd singularity-eos
+   mkdir bin
+   cd bin
+   cmake ..
+   make install
 
 You can set options on the cmake line via, e.g.,
 
 .. code-block:: bash
 
-  cmake -DSINGULARITY_USE_HDF5=ON -DCMAKE_BUILD_TYPE=Debug ..
+   cmake -DSINGULARITY_USE_HDF5=ON -DCMAKE_BUILD_TYPE=Debug ..
 
 at the cmake configure line. The following cmake options (in addition
 to the standard ones) are supported:
@@ -181,17 +181,18 @@ Example builds
 Building ``singularity-eos`` with Python wrappers in a virtual environment:
 
 .. code-block:: bash
-  git clone --recursive git@github.com:lanl/singularity-eos.git
-  cd singularity-eos
-  mkdir -p python-build/build
-  cd python-build
-  python3 -m venv singularity-eos
-  source singularity-eos/bin/activate
-  pip install numpy h5py matplotlib # and whatever else you want
-  cd build
-  cmake -DSINGULARITY_USE_HDF55=ON -DSINGULARITY_BUILD_PYTHON=ON -DCMAKE_INSTALL_PREFIX=$VIRTUAL_ENV ../..
-  make -j
-  make install
+
+   git clone --recursive git@github.com:lanl/singularity-eos.git
+   cd singularity-eos
+   mkdir -p python-build/build
+   cd python-build
+   python3 -m venv singularity-eos
+   source singularity-eos/bin/activate
+   pip install numpy h5py matplotlib # and whatever else you want
+   cd build
+   cmake -DSINGULARITY_USE_HDF55=ON -DSINGULARITY_BUILD_PYTHON=ON -DCMAKE_INSTALL_PREFIX=$VIRTUAL_ENV ../..
+   make -j
+   make install
 
 
 Dependencies
@@ -246,9 +247,9 @@ source, you can install dependencies via, e.g.,
 
 .. code-block:: bash
 
-  git clone --recursive git@github.com:lanl/singularity-eos.git
-  spack repo add singularity-eos/spack-repo
-  spack install --only dependencies singularity-eos+cuda cuda_arch=70
+   git clone --recursive git@github.com:lanl/singularity-eos.git
+   spack repo add singularity-eos/spack-repo
+   spack install --only dependencies singularity-eos+cuda cuda_arch=70
 
 which will install all the dependencies for the variant of ``singularity-eos`` you've chosen.
 
