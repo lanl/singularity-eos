@@ -160,33 +160,6 @@ before_script:
 # Jobs #
 ########
 
-format:
-  <<: *job_def
-  extends: .clang-format
-  allow_failure: true
-
-pages_check:
-  <<: *job_def
-  extends: .sphinx-doc
-  only:
-    refs:
-      - merge_requests
-      - pipelines
-  except:
-
-pages:
-  <<: *job_def
-  extends: .sphinx-doc
-  artifacts:
-    paths:
-      - public
-  only:
-    refs:
-      - main
-  except:
-    refs:
-      - pipelines
-
 test_gnu_skylake:
   <<: *job_def
   extends: .test
