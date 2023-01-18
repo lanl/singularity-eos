@@ -3,7 +3,6 @@
 ###################
 
 stages:
-  - static_analysis
   - build_n_test
 
 variables:
@@ -104,35 +103,6 @@ before_script:
 # Job Script Template #
 #######################
 
-.clang-format:
-  stage: static_analysis
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
-  script:
-    - cd ${CI_PROJECT_DIR}
-    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+format%gcc@${SINGULARITY_EOS_GCC_VERSION}^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
-    - spack module tcl refresh -y
-    - spack env loads -r -x singularity-eos
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - source ${CI_PROJECT_DIR}/spack_env/loads
-    - clang-format -version
-    - find ${CI_PROJECT_DIR} -regex '.*\.\(cpp\|hpp\)' | xargs clang-format -style=file -i && git diff --exit-code --ignore-submodules
-
-.sphinx-doc:
-  stage: static_analysis
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
-  script:
-    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+python+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION}^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
-    - spack module tcl refresh -y
-    - spack env loads -r -x singularity-eos
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - source ${CI_PROJECT_DIR}/spack_env/loads
-    - cd ${CI_PROJECT_DIR}/doc/sphinx
-    - make html
-    - rm -rf ${CI_PROJECT_DIR}/public
-    - mv _build/html ${CI_PROJECT_DIR}/public
-
 .test:
   stage: build_n_test
   extends:
@@ -189,33 +159,6 @@ before_script:
 ########
 # Jobs #
 ########
-
-format:
-  <<: *job_def
-  extends: .clang-format
-  allow_failure: true
-
-pages_check:
-  <<: *job_def
-  extends: .sphinx-doc
-  only:
-    refs:
-      - merge_requests
-      - pipelines
-  except:
-
-pages:
-  <<: *job_def
-  extends: .sphinx-doc
-  artifacts:
-    paths:
-      - public
-  only:
-    refs:
-      - main
-  except:
-    refs:
-      - pipelines
 
 test_gnu_skylake:
   <<: *job_def
