@@ -15,7 +15,7 @@
 #ifndef SINGULARITY_EOS_BASE_EOS_ERROR_HPP_
 #define SINGULARITY_EOS_BASE_EOS_ERROR_HPP_
 
-#include <ports-of-call/portable_errors>
+#include <ports-of-call/portable_errors.hpp>
 #define EOS_ERROR(x) PORTABLE_ABORT(x)
 #define UNDEFINED_ERROR EOS_ERROR("DEFINE ME\n")
 
