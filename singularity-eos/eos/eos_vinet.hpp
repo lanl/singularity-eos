@@ -21,9 +21,9 @@
 #include <limits>
 
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/math_utils.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
@@ -80,11 +80,11 @@ class Vinet : public EosBase<Vinet> {
       const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const {
-    return robust::ratio(_A0*_B0 , _Cv0*rho);
+    return robust::ratio(_A0 * _B0, _Cv0 * rho);
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return robust::ratio(_A0*_B0 , _Cv0*rho);
+    return robust::ratio(_A0 * _B0, _Cv0 * rho);
   }
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
@@ -102,8 +102,8 @@ class Vinet : public EosBase<Vinet> {
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char st[]{"Vinet Params: "};
     printf("%s rho0:%e T0:%e B0:%e BP0:%e\n  A0:%e Cv0:%e E0:%e S0:%e\n"
-	    "non-zero elements in d2tod40 array:\n", st, _rho0, _T0, _B0,
-	    _BP0, _A0, _Cv0, _E0, _S0);
+           "non-zero elements in d2tod40 array:\n",
+           st, _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0);
     for (int i = 0; i < 39; i++) {
       if (_d2tod40[i] > 0.0) printf("d%i:%e\t", i + 2, _d2tod40[i]);
     }
@@ -177,8 +177,10 @@ PORTABLE_INLINE_FUNCTION void Vinet::InitializeVinet(const Real *d2tod40input) {
   // Put a couple of  much used model parameter combinations and
   // the energy coefficients f0 to f40 in an internal parameters array
   // of size 2+41=VinetInternalParametersSize.
-  _VIP[0] = robust::ratio(_B0 , _rho0) + robust::ratio(_A0*_A0*_B0*_B0*_T0 , _rho0*_rho0*_Cv0); // sound speed squared
-  _VIP[1] = 3.0 / 2.0 * (_BP0 - 1.0);                               // exponent eta0
+  _VIP[0] = robust::ratio(_B0, _rho0) +
+            robust::ratio(_A0 * _A0 * _B0 * _B0 * _T0,
+                          _rho0 * _rho0 * _Cv0); // sound speed squared
+  _VIP[1] = 3.0 / 2.0 * (_BP0 - 1.0);            // exponent eta0
   // initializing with pressure coeffs to get energy coeffs into VIP
   _VIP[2] = 1.0;                                                // prefactor d0
   _VIP[3] = 0.0;                                                // prefactor d1
@@ -196,8 +198,8 @@ PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real 
   constexpr int pref0vp = -2, pref0vip = 2, maxind = VinetInternalParametersSize - 3;
   Real sumP = 0.0, sumB = 0.0, sumE = 0.0;
 
-  Real x = std::cbrt(robust::ratio(_rho0 , rho)); /*rho-dependent*/
-  Real x2inv = robust::ratio(1.0 , x*x);
+  Real x = std::cbrt(robust::ratio(_rho0, rho)); /*rho-dependent*/
+  Real x2inv = robust::ratio(1.0, x * x);
   Real onemx = 1.0 - x;
   Real etatimes1mx = _VIP[1] * onemx;
   Real expetatimes1mx = exp(etatimes1mx);
@@ -212,37 +214,38 @@ PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real 
   for (int ind = 1; ind >= 0; ind--) {
     sumE = _VIP[pref0vip + ind] + onemx * sumE;
   }
-  sumP = 1.0 + sumP * (onemx*onemx);
+  sumP = 1.0 + sumP * (onemx * onemx);
   sumB = sumB * onemx;
   sumE = _VIP[1] * onemx * sumE;
 
   /* T0 isotherm */
-  Real energy = 9.0 * robust::ratio(_B0 , _VIP[1]*_VIP[1]*_rho0) *
+  Real energy = 9.0 * robust::ratio(_B0, _VIP[1] * _VIP[1] * _rho0) *
                     (_VIP[pref0vip] - expetatimes1mx * (_VIP[pref0vip] - sumE)) -
-                (_A0*_B0)*(robust::ratio(_T0 , _rho0) - robust::ratio(_T0 , rho));
+                (_A0 * _B0) * (robust::ratio(_T0, _rho0) - robust::ratio(_T0, rho));
   Real pressure = 3.0 * _B0 * x2inv * onemx * expetatimes1mx * sumP;
   Real temp = (1.0 + onemx * (_VIP[1] * x + 1.0)) * sumP + x * onemx * sumB;
-  temp = robust::ratio(_B0 , _rho0) * x * expetatimes1mx * temp;
+  temp = robust::ratio(_B0, _rho0) * x * expetatimes1mx * temp;
 
   /* Go to required temperature */
   energy = energy + _Cv0 * (T - _T0) + _E0;
-  pressure = pressure + (_A0*_B0) * (T - _T0);
+  pressure = pressure + (_A0 * _B0) * (T - _T0);
   Real dpdrho = temp;
   Real dpdt = _A0 * _B0;
   Real dedt = _Cv0;
-  Real dedrho = robust::ratio(pressure - T * (_A0*_B0) , rho*rho);
+  Real dedrho = robust::ratio(pressure - T * (_A0 * _B0), rho * rho);
   Real entropy;
   if (T < 0.0) {
-//   #ifndef NDEBUG
-     printf("warning!! negative temperature");
-//    PORTABLE_WARN("Negative temperature");
-//   #endif // NDEBUG
+    //   #ifndef NDEBUG
+    printf("warning!! negative temperature");
+    //    PORTABLE_WARN("Negative temperature");
+    //   #endif // NDEBUG
     entropy = 0.0;
   } else {
-    entropy = (_A0*_B0) * (robust::ratio(1.0 , rho) - robust::ratio(1 , _rho0)) +
-                    _Cv0 * std::log(robust::ratio(T , _T0)) + _S0;
+    entropy = (_A0 * _B0) * (robust::ratio(1.0, rho) - robust::ratio(1, _rho0)) +
+              _Cv0 * std::log(robust::ratio(T, _T0)) + _S0;
   }
-  Real soundspeed = std::max(0.0, dpdrho + T * robust::ratio(dpdt*dpdt , rho*rho*_Cv0));
+  Real soundspeed =
+      std::max(0.0, dpdrho + T * robust::ratio(dpdt * dpdt, rho * rho * _Cv0));
   soundspeed = std::sqrt(soundspeed);
 
   output[0] = energy;
@@ -280,7 +283,7 @@ PORTABLE_INLINE_FUNCTION Real Vinet::TExpansionCoeffFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   Real output[8];
   Vinet_F_DT_func(rho, temp, output);
-  return robust::ratio(output[3] , output[2] * rho);
+  return robust::ratio(output[3], output[2] * rho);
 }
 PORTABLE_INLINE_FUNCTION Real Vinet::TBulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
@@ -300,7 +303,7 @@ PORTABLE_INLINE_FUNCTION Real Vinet::TemperatureFromDensityInternalEnergy(
   Real output[8];
   Tref = _T0;
   Vinet_F_DT_func(rho, Tref, output);
-  return robust::ratio(sie - output[0] , _Cv0) + Tref;
+  return robust::ratio(sie - output[0], _Cv0) + Tref;
 }
 PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
@@ -376,10 +379,10 @@ void Vinet::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press
   tbmod = _B0;
   alpha = _A0;
   bmod = BulkModulusFromDensityTemperature(rho, temp, lambda);
-  Gamma = robust::ratio(_A0*_B0 , _Cv0 * _rho0);
+  Gamma = robust::ratio(_A0 * _B0, _Cv0 * _rho0);
   // AEM: I suggest taking the two following away.
-  dpde = robust::ratio(_A0*tbmod , _Cv0);
-  dvdt = robust::ratio(_A0 , _rho0);
+  dpde = robust::ratio(_A0 * tbmod, _Cv0);
+  dvdt = robust::ratio(_A0, _rho0);
 }
 } // namespace singularity
 

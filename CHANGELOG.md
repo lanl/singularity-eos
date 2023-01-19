@@ -2,6 +2,9 @@
 
 ## Current develop
 
+### Added (new features/APIs/variables/...)
+- [[PR202]](https://github.com/lanl/singularity-eos/pull/202) added the Vinet analytical EOS wth test cases and documentation.
+
 ### Fixed (Repair bugs, etc)
 - [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
 
