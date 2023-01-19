@@ -133,7 +133,9 @@ inline void compare_two_eoss(E1 &&test_e, E2 &&ref_e) {
 }
 
 SCENARIO("Test that we can either throw an error on host or do nothing on device", "[RequireMaybe]") {
-  REQUIRE_MAYBE_THROWS( [&](){ PORTABLE_ALWAYS_THROW_OR_ABORT("Error message"); }() );
+  // TODO(JMM): For whatever reason, the preprocessor does not like it if I
+  // call `PORTABLE_ALWAYS_THROW_OR_ABORT
+  REQUIRE_MAYBE_THROWS( PORTABLE_ALWAYS_THROW_OR_ABORT("Error message") );
 }
 
 SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
