@@ -10,6 +10,7 @@
 - [[PR214]](https://github.com/lanl/singularity-eos/pull/214) added documentation about adding a new EOS
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR219]](https://github.com/lanl/singularity-eos/pull/219) Removed static analysis from re-git pipeline
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR190]](https://github.com/lanl/singularity-eos/pull/190) update CI on re-git

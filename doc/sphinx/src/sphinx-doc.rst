@@ -16,13 +16,11 @@ at the bottom of the pull request page. If this passes, your documentation will 
 On the bottom left of the documentation page on `github-pages`_, you can select the branch/build
 of the documentation, one of which should be the branch you wrote your changes on.
 
-Documentation is available on `github-pages`_ and on `re-git`_
+Documentation is available on `github-pages`_.
 
 .. _Github Singularity-EOS: https://github.com/lanl/singularity-eos
 
 .. _github-pages: https://lanl.github.io/singularity-eos/
-
-.. _re-git: http://xcap.re-pages.lanl.gov/oss/singularity-eos
 
 Building documentation locally
 ------------------------------
