@@ -106,6 +106,6 @@ inline void compare_two_eoss(const EOS &test_e, const EOS &ref_e) {
 #define REQUIRE_MAYBE_THROWS(...) REQUIRE_THROWS(__VA_ARGS__)
 #else
 #define REQUIRE_MAYBE_THROWS(...) ((void)0)
-endif // PORTABILITY_STRATEGY_NONE
+#endif // PORTABILITY_STRATEGY_NONE
 
 #endif // _SINGULARITY_EOS_TEST_TEST_HELPERS_
