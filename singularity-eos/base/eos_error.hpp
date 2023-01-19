@@ -15,14 +15,8 @@
 #ifndef SINGULARITY_EOS_BASE_EOS_ERROR_HPP_
 #define SINGULARITY_EOS_BASE_EOS_ERROR_HPP_
 
-#ifdef SINGULARITY_ENABLE_EXCEPTIONS
-#include <stdexcept>
-#define EOS_ERROR(x) (throw std::runtime_error(x))
-#else
-#define EOS_ERROR(x)                                                                     \
-  printf("%s\n", x);                                                                     \
-  assert(false);
-#endif
+#include <ports-of-call/portable_errors>
+#define EOS_ERROR(x) PORTABLE_ABORT(x)
 #define UNDEFINED_ERROR EOS_ERROR("DEFINE ME\n")
 
 #endif // SINGULARITY_EOS_BASE_EOS_ERROR_HPP_
