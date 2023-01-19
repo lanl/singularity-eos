@@ -103,7 +103,7 @@ inline void compare_two_eoss(const EOS &test_e, const EOS &ref_e) {
 // Macro that checks for an exception or is a no-op depending on
 // whether or not a non-serial backend is supplied
 #ifdef PORTABILITY_STRATEGY_NONE
-#define REQUIRE_MAYBE_THROWS(...) REQUIRE_THROWS(__VA_ARGS__)
+#define REQUIRE_MAYBE_THROWS(...) REQUIRE_THROWS( __VA_ARGS__ )
 #else
 #define REQUIRE_MAYBE_THROWS(...) ((void)0)
 #endif // PORTABILITY_STRATEGY_NONE
