@@ -203,7 +203,7 @@ macro(singularityeos_content_populate)
   endforeach()
   foreach(ext_opt ${_fetchOptsOff})
     message(DEBUG "setting \"${ext_opt}\"=OFF")
-    set(${ext_opt} ON CACHE INTERNAL "")
+    set(${ext_opt} OFF CACHE INTERNAL "")
   endforeach()
 
 
