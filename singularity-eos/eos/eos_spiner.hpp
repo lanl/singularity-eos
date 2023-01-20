@@ -34,6 +34,7 @@
 // base
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -177,9 +178,9 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   inline void setlTColdCrit_();
 
   static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
-    // return std::log10(x + offset + EPS);
-    // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    // return std::log10(x + offset + robust::EPS());
+    // return std::log10(std::abs(std::max(x,-offset) + offset)+robust::EPS());
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
   }
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
     return FastMath::pow10(lx) - offset;
@@ -403,8 +404,8 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   inline void calcBMod_(SP5Tables &tables);
 
   static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
-    // return std::log10(std::abs(std::max(x,-offset) + offset)+EPS);
-    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + EPS);
+    // return std::log10(std::abs(std::max(x,-offset) + offset)+robust::EPS());
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
   }
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
     return FastMath::pow10(lx) - offset;
@@ -692,8 +693,8 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   TMax_ = fromLog_(lTMax_, lTOffset_);
 
   Real rhoMin = fromLog_(lRhoMin_, lRhoOffset_);
-  Real rhoMinSearch =
-      std::max(rhoMin, std::max(std::abs(EPS) * 10, std::abs(EPS * rhoMin)));
+  Real rhoMinSearch = std::max(
+      rhoMin, std::max(std::abs(robust::EPS()) * 10, std::abs(robust::EPS() * rhoMin)));
   lRhoMinSearch_ = toLog_(rhoMinSearch, lRhoOffset_);
 
   // bulk modulus can be wrong in the tables. Use FLAG's approach to
@@ -757,7 +758,7 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
     Real rho = rho_(lRho);
     PMax_(j) = P_(j, numT_ - 1);
     dEdTMax_(j) = dEdT_(j, numT_ - 1);
-    gm1Max_(j) = dPdE_(j, numT_ - 1) / (rho + EPS); // max gruneisen
+    gm1Max_(j) = robust::ratio(dPdE_(j, numT_ - 1), rho); // max gruneisen
     sielTMax_(j) = sie_(j, numT_ - 1);
   }
 
@@ -808,7 +809,7 @@ inline void SpinerEOSDependsRhoT::fixBulkModulus_() {
       } else {
         bMod = 0.0;
       }
-      bMod_(j, i) = std::max(bMod, std::abs(EPS));
+      bMod_(j, i) = std::max(bMod, std::abs(robust::EPS()));
     }
   }
 }
@@ -950,7 +951,7 @@ Real SpinerEOSDependsRhoT::SpecificHeatFromDensityInternalEnergy(const Real rho,
   } else {                                      // on table
     Cv = dEdT_.interpToReal(lRho, lT);
   }
-  return Cv > EPS ? Cv : EPS;
+  return Cv > robust::EPS() ? Cv : robust::EPS();
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -974,12 +975,12 @@ Real SpinerEOSDependsRhoT::GruneisenParamFromDensityTemperature(const Real rho,
   if (whereAmI == TableStatus::OffBottom) {
     // use cold curves
     Real dpde = dPdECold_.interpToReal(lRho);
-    gm1 = std::abs(dpde) / (std::abs(rho) + EPS);
+    gm1 = robust::ratio(std::abs(dpde), std::abs(rho));
   } else if (whereAmI == TableStatus::OffTop) {
     gm1 = gm1Max_.interpToReal(lRho);
   } else { // on table
     const Real dpde = dPdE_.interpToReal(lRho, lT);
-    gm1 = std::abs(dpde) / (std::abs(rho) + EPS);
+    gm1 = robust::ratio(std::abs(dpde), std::abs(rho));
   }
   return gm1;
 }
@@ -1013,12 +1014,12 @@ Real SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rh
   const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
   if (whereAmI == TableStatus::OffBottom) {
     Real dpde = dPdECold_.interpToReal(lRho);
-    gm1 = std::abs(dpde) / (std::abs(rho) + EPS);
+    gm1 = robust::ratio(std::abs(dpde), std::abs(rho));
   } else if (whereAmI == TableStatus::OffTop) {
     gm1 = gm1Max_.interpToReal(lRho);
   } else {
     const Real dpde = dPdE_.interpToReal(lRho, lT);
-    gm1 = std::abs(dpde) / (std::abs(rho) + EPS);
+    gm1 = robust::ratio(std::abs(dpde), std::abs(rho));
   }
   return gm1;
 }
@@ -1193,7 +1194,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
   } else if (whereAmI == TableStatus::OffTop) { // Assume ideal gas
     const Real Cv = dEdTMax_.interpToReal(lRho);
     const Real e0 = sielTMax_.interpToReal(lRho);
-    const Real T = TMax_ + (sie - e0) / (Cv + EPS);
+    const Real T = TMax_ + robust::ratio(sie - e0, Cv);
     lT = lT_(T);
     counts.increment(0);
   } else {
@@ -1329,7 +1330,7 @@ Real SpinerEOSDependsRhoT::CvFromlRholT_(const Real lRho, const Real lT,
   } else {                                      // on table
     Cv = dEdT_.interpToReal(lRho, lT);
   }
-  return Cv > EPS ? Cv : EPS;
+  return Cv > robust::EPS() ? Cv : robust::EPS();
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -1348,7 +1349,7 @@ Real SpinerEOSDependsRhoT::bModFromRholRhoTlT_(const Real rho, const Real lRho,
   } else { // on table
     bMod = bMod_.interpToReal(lRho, lT);
   }
-  return bMod > EPS ? bMod : EPS;
+  return bMod > robust::EPS() ? bMod : robust::EPS();
 }
 
 PORTABLE_INLINE_FUNCTION TableStatus
@@ -1540,7 +1541,7 @@ inline void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
       } else {
         bMod = 0.0;
       }
-      tables.bMod(j, i) = std::max(bMod, std::abs(Spiner::EPS));
+      tables.bMod(j, i) = std::max(bMod, robust::EPS());
     }
   }
 }
@@ -1801,8 +1802,8 @@ Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
       lRhoGuess = *lambda;
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
-    status_ =
-        ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, EPS, EPS, lRho, counts);
+    status_ = ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
+                          robust::EPS(), lRho, counts);
 
     if (status_ != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE

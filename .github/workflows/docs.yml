@@ -27,6 +27,7 @@ jobs:
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
           run: |
+            sudo apt-get update -y -qq
             sudo apt-get install -y --force-yes -qq build-essential python3-dev
             pip install sphinx
             pip install sphinx-rtd-theme
@@ -40,7 +41,8 @@ jobs:
         - name: build docs
           run: |
             cd doc/sphinx
-            export PYTHONPATH=/usr/local/lib/python3.8/site-packages:$PYTHONPATH
+            PYVERSION=$(python -c "from platform import python_version; print('.'.join(python_version().split('.')[:2]))")
+            export PYTHONPATH=/usr/local/lib/python${PYVERSION}/site-packages:$PYTHONPATH
             make multiversion
         - name: Deploy
           if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}

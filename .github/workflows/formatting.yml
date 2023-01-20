@@ -18,6 +18,7 @@ jobs:
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
           run: |
+            sudo apt-get update -y -qq
             sudo apt-get install -y --force-yes -qq git clang-format-12
         - name: check formatting
           run: find . -regex '.*\.\(cpp\|hpp\)' | xargs clang-format-12 -style=file -i && git diff --exit-code --ignore-submodules

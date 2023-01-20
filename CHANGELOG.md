@@ -3,12 +3,14 @@
 ## Current develop
 
 ### Fixed (Repair bugs, etc)
+- [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
 
 ### Added (new features/APIs/variables/...)
 - [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
 - [[PR214]](https://github.com/lanl/singularity-eos/pull/214) added documentation about adding a new EOS
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR219]](https://github.com/lanl/singularity-eos/pull/219) Removed static analysis from re-git pipeline
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR190]](https://github.com/lanl/singularity-eos/pull/190) update CI on re-git
