@@ -91,9 +91,12 @@ macro(singularityeos_content_declare pkg_name)
 
   if(fp_PATCH)
     message(VERBOSE 
-      " :: \"${pkg_name}\" is has patch [${fp_PATCH}], will apply after update stage"
+      " :: \"${pkg_name}\" has patch [${fp_PATCH}], will apply after update stage"
     )
-    string(APPEND _fetch_content_cmd " PATCH_COMMAND git apply --ignore-space-change --ignore-whitespace ${fp_PATCH}")
+    #NOTE: the ` || true` at the end of the command is a due to a bug where the apply fails if
+    #      it has already been applied, so the command fails and cmake fails.
+    #      https://gitlab.kitware.com/cmake/cmake/-/issues/21146
+    string(APPEND _fetch_content_cmd " PATCH_COMMAND git apply --ignore-space-change --ignore-whitespace ${fp_PATCH} || true")
   endif()
 
   # bifurcation on cmake version
@@ -112,8 +115,6 @@ macro(singularityeos_content_declare pkg_name)
  
   # return some info
   list(APPEND ${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT ${pkg_name})
-  message("BBB ${pkg_name}")
-  message("BBA ${${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT}")
   set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_COMPONETS ${fp_COMPONENTS} )
   set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_ENABLEOPTS ${fp_ENABLE_OPTS} )
   set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_DISABLEOPTS ${fp_DISABLE_OPTS} )
@@ -149,7 +150,6 @@ macro(singularityeos_content_populate)
   message(STATUS 
     "[${fp_NAMESPACE}] Populating declared content"
   )
-message("AAAA  ${${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT}")
   # fill lists to populate
   # if cmake@3.24+, these are just the lists prepared in singularity_content_declare
   # otherwise, manually check `find_package` and remove content if found

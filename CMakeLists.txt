@@ -203,10 +203,10 @@ singularityeos_content_declare(
   NAMESPACE singularityeosDeps
 )
 
-if(SINGULARITY_USE_HDF)
+# spiner
+if(SINGULARITY_USE_HDF5)
   set(_singularity_spiner_opt "SPINER_USE_HDF")
 endif()
-# spiner
 singularityeos_content_declare(
   spiner
   EXPECTED_TARGETS spiner::spiner
@@ -214,6 +214,7 @@ singularityeos_content_declare(
   GIT_TAG     9f3ccf017083af9111f4ea7e2dfb887d2f3579cb
   NAMESPACE singularityeosDeps
   ENABLE_OPTS ${_singularity_spiner_opt}
+  DISABLE_OPTS "BUILD_TESTING"
 )
 # variant
 singularityeos_content_declare(
