@@ -234,6 +234,12 @@ data that is particular to the EOS you have developed, and only for those
 specific tests should you instantiate an object whose type is your specific
 EOS. Otherwise, use the ``EOS`` object.
 
+If you wish to test error handling in your EOS, you may use the macro
+``REQUIRE_MAYBE_THROWS``, which is defined in the ``eos_unit_test_helpers.hpp``
+header file. This macro will check if your code throws an exception if
+compiled for CPU only and otherwise is a no-op. This is intended to combine with
+the ``PORTABLE_THROW_OR_ABORT` macro defined in ``ports-of-call``.
+
 Step 4: Fortran interface
 `````````````````````````
 
