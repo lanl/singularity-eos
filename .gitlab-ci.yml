@@ -14,10 +14,10 @@ variables:
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 before_script:
-  - ls utils/singularity-eos/singularity-eos
+  - pwd
+  - ls
   - git submodule sync --recursive
   - git submodule update --init --recursive
-  - ls utils/singularity-eos/singularity-eos
   - export HOME=${CI_PROJECT_DIR}
   - export SPACK_DISABLE_LOCAL_CONFIG=true
   - export SPACK_USER_CACHE_PATH=/tmp/spack-local
