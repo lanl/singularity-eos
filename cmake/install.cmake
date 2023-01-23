@@ -143,7 +143,8 @@ if(SINGULARITY_USE_KOKKOS AND NOT Kokkos_FOUND)
   )
 endif() # USE_KOKKOS AND NOT Kokkos_FOUND
 
-if(SINGULARITY_USE_KOKKOSKERNELS AND NOT KokkosKernels_FOUND)
+#if(SINGULARITY_USE_KOKKOSKERNELS AND NOT KokkosKernels_FOUND)
+if(1)
   export(
     EXPORT KokkosKernelsTargets 
     FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/KokkosKernelsTargets.cmake 
