@@ -18,6 +18,9 @@ before_script:
   - ls
   - git submodule sync --recursive
   - git submodule update --init --recursive
+  - ls utils
+  - ls utils/ports-of-call
+  - ls utils/ports-of-call/ports-of-call
   - export HOME=${CI_PROJECT_DIR}
   - export SPACK_DISABLE_LOCAL_CONFIG=true
   - export SPACK_USER_CACHE_PATH=/tmp/spack-local
