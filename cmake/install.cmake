@@ -135,7 +135,13 @@ export(
 # configuration step, but without it, there is a conflict between
 # export sets. I'm likely doing something incorrect.
 # if we are using Kokkos as a submodule
-if(SINGULARITY_USE_KOKKOS AND NOT Kokkos_FOUND)
+
+# check if either kokkos or kernels has been fetched by looking
+# at the file path prefix
+cmake_path(IS_PREFIX PROJECT_BINARY_DIR "${Kokkos_DIR}" KokkosInTree)
+cmake_path(IS_PREFIX PROJECT_BINARY_DIR "${KokkosKernels_DIR}" KokkosKernelsInTree)
+
+if(SINGULARITY_USE_KOKKOS AND KokkosInTree)
   export(
     EXPORT KokkosTargets 
     FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/KokkosTargets.cmake 
@@ -143,8 +149,7 @@ if(SINGULARITY_USE_KOKKOS AND NOT Kokkos_FOUND)
   )
 endif() # USE_KOKKOS AND NOT Kokkos_FOUND
 
-#if(SINGULARITY_USE_KOKKOSKERNELS AND NOT KokkosKernels_FOUND)
-if(1)
+if(SINGULARITY_USE_KOKKOSKERNELS AND KokkosKernelsInTree)
   export(
     EXPORT KokkosKernelsTargets 
     FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/KokkosKernelsTargets.cmake 
