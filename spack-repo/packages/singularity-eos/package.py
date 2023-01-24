@@ -63,7 +63,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     depends_on("eospac", when="+eospac")
     depends_on("spiner")
-    depends_on("ports-of-call@main")
+    depends_on("ports-of-call@1.4.0")
     depends_on("spiner +kokkos", when="+kokkos")
 
     depends_on("mpark-variant")
