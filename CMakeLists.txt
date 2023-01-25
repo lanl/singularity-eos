@@ -263,7 +263,7 @@ singularity_import_dependency(
 )
 
 # ports-of-call
-# type: ghost submodule
+# type: soft submodule
 singularity_import_dependency(
   PKG ports-of-call
   TARGETS ports-of-call::ports-of-call
