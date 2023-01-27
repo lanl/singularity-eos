@@ -9,36 +9,34 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
   SINGULARITY_EOS_OPENMPI_VERSION: "4.1.3"
-  SINGULARITY_EOS_TEMP_SPACK_VERSION: ""
-  SINGULARITY_EOS_TEMP_SPACK_DIR: ""
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  COLOR_CYAN: '\033[1;36m'
+  COLOR_PLAIN: '\033[0m'
+  # set to different spack upstream for testing
+  SINGULARITY_EOS_TEMP_SPACK_DIR: ""
+  # uncomment for debugging the CI and persist the Spack installation
+  # SPACK_USER_CACHE_PATH: "${CI_PROJECT_DIR}/spack-local"
+  # DEVEL_SPACK_CHECKOUT: "${CI_PROJECT_DIR}/spack"
 
 before_script:
-  - export HOME=${CI_PROJECT_DIR}
   - export SPACK_DISABLE_LOCAL_CONFIG=true
-  - export SPACK_USER_CACHE_PATH=/tmp/spack-local
-  - cd ${CI_PROJECT_DIR}
-  - unset SPACK_ROOT
-  - export SINGULARITY_EOS_SPACK_VERSION=$([ -z "$SINGULARITY_EOS_TEMP_SPACK_VERSION" ] && echo $XCAP_OSS_SPACK_REF || echo $SINGULARITY_EOS_TEMP_SPACK_VERSION)
+  - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH:-/tmp/spack-local}
+  - export DEVEL_SPACK_CHECKOUT=${DEVEL_SPACK_CHECKOUT:-/tmp/spack}
   - export SINGULARITY_EOS_SPACK_DIR=${SINGULARITY_EOS_TEMP_SPACK_DIR:=$XCAP_OSS_SPACK_DIR}
-  - echo "Spack Version:" ${SINGULARITY_EOS_SPACK_VERSION}
-  - git clone https://github.com/spack/spack.git
-  - cd spack && git checkout ${SINGULARITY_EOS_SPACK_VERSION##*-} && cd ${CI_PROJECT_DIR}
-  - export SPACK_ARCH=`${CI_PROJECT_DIR}/spack/bin/spack arch` && echo ${SPACK_ARCH}
-  - export PLATFORM="${SPACK_ARCH%%-*}" && echo ${PLATFORM}
-  - mkdir -p ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}
-  - cp ${SINGULARITY_EOS_SPACK_DIR}/etc/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
-  - cp ${CI_PROJECT_DIR}/.gitlab-ci/config/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
-  - sed -i "s;XCAP_OSS_SPACK_DIR_TMP;${SINGULARITY_EOS_SPACK_DIR};g" "${CI_PROJECT_DIR}/spack/etc/spack/upstreams.yaml"
-  - rm ${CI_PROJECT_DIR}/spack/etc/spack/repos.yaml ${CI_PROJECT_DIR}/spack/etc/spack/packages.yaml
-  - cp ${SINGULARITY_EOS_SPACK_DIR}/etc/spack/${PLATFORM}/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}/
-  - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
+  - echo -e "\e[0Ksection_start:`date +%s`:spack_init[collapsed=true]\r\e[0K${COLOR_CYAN}Creating Spack instance at ${DEVEL_SPACK_CHECKOUT}${COLOR_PLAIN}"
+  - |
+    rsync -rpl \
+        --exclude=".git" \
+        --exclude="etc/spack/repos.yaml" \
+        --exclude="etc/spack/packages.yaml" \
+        --include="etc/spack/**" \
+        --include="lib/spack/**" \
+        --exclude-from=${SINGULARITY_EOS_SPACK_DIR}/.gitignore \
+        ${SINGULARITY_EOS_SPACK_DIR}/ ${DEVEL_SPACK_CHECKOUT}/
+  - source ${DEVEL_SPACK_CHECKOUT}/share/spack/setup-env.sh
+  - spack --version
   - spack compiler list
-  - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
-  - spack repo list
-  - mkdir -p ${CI_PROJECT_DIR}/spack_env
-  - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
-  - spack env activate -d ${CI_PROJECT_DIR}/spack_env
+  - echo -e "\e[0Ksection_end:`date +%s`:spack_init\r\e[0K"
 
 ##########################
 # Build Matrix Variables #
@@ -88,17 +86,6 @@ before_script:
   except:
     refs:
 
-.artifacts: &artifacts_def
-  artifacts:
-    name: "singularity-eos-${CI_COMMIT_REF_SLUG}-${CI_JOB_NAME}-${CI_JOB_ID}"
-    paths:
-      - ${CI_PROJECT_DIR}/build
-      - ${CI_PROJECT_DIR}/spack
-      - ${CI_PROJECT_DIR}/spack_env
-    when: always
-    expire_in: 3 hours
-  dependencies: []
-
 #######################
 # Job Script Template #
 #######################
@@ -108,18 +95,31 @@ before_script:
   extends:
     - .job
   script:
+    - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
+    - module load cuda/11.4.2
+    - |
+      if [[ "${CI_COMMIT_BRANCH}" == "${CI_DEFAULT_BRANCH}" ]];
+      then
+        echo -e "\e[0Ksection_start:`date +%s`:spack_build[collapsed=true]\r\e[0K${COLOR_CYAN}Building via Spack${COLOR_PLAIN}"
+        mkdir -p spack_build_env
+        spack env create -d spack_build_env
+        spack env activate -d spack_build_env
+        spack repo add spack-repo
+        spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
+        spack dev-build -j $(nproc) ${SINGULARITY_EOS_SPACK_SPEC}
+        spack env deactivate
+        echo -e "\e[0Ksection_end:`date +%s`:spack_build\r\e[0K"
+      fi
+    - echo -e "\e[0Ksection_start:`date +%s`:spack_env[collapsed=true]\r\e[0K${COLOR_CYAN}Creating Spack environment${COLOR_PLAIN}"
+    - mkdir -p spack_env
+    - spack env create -d spack_env
+    - spack env activate -d spack_env
+    - spack repo add spack-repo
+    - spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
     - spack spec -I ${SINGULARITY_EOS_SPACK_SPEC}
-    - spack dev-build -j $(nproc) -q ${SINGULARITY_EOS_SPACK_SPEC} || ( cat spack-build-out.txt && exit 1 )
-    - export SINGULARITY_EOS_CMD="spack install --show-log-on-error --no-checksum --yes-to-all ${SINGULARITY_EOS_SPACK_SPEC}"
-    - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
-    - spack module tcl refresh -y
-    - spack env loads -r -x singularity-eos
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - export modName="${CI_PROJECT_DIR}/spack_env/loads"
-    - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION}\n;" ${modName}
-    - sed -i "1s;^;#%Module\n;" ${modName}
-    - source ${CI_PROJECT_DIR}/spack_env/loads # module load compiler, deps, etc.
-    - module list
+    - spack add ${SINGULARITY_EOS_SPACK_SPEC}
+    - spack install -j $(nproc) --show-log-on-error --no-checksum --yes-to-all -u cmake
+    - echo -e "\e[0Ksection_end:`date +%s`:spack_env\r\e[0K"
     - |
       if [[ -n ${SINGULARITY_USE_CUDA} ]];
       then
@@ -127,7 +127,7 @@ before_script:
         export SINGULARITY_CMAKE_CXX_COMPILER_FLAG="-DCMAKE_CXX_COMPILER=${SINGULARITY_NVCC_WRAPPER}";
         echo "passing '${SINGULARITY_CMAKE_CXX_COMPILER_FLAG}' to cmake"
       fi
-    - mkdir -p build install
+    - mkdir -p build
     - cd build
     - |
       cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install ${SINGULARITY_CMAKE_CXX_COMPILER_FLAG} \
@@ -149,12 +149,19 @@ before_script:
     - |
       if [[ ${CI_JOB_NAME} =~ "install" ]];
       then
-        make install;
+        make install
+        touch tests.xml
       else
         ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat;
         ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat;
-        make CTEST_OUTPUT_ON_FAILURE=1 test;
+        export CTEST_OUTPUT_ON_FAILURE=1
+        ctest --output-junit tests.xml
       fi
+  artifacts:
+    paths:
+      - build/tests.xml
+    reports:
+      junit: build/tests.xml
 
 ########
 # Jobs #

@@ -21,6 +21,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos.hpp>
@@ -129,6 +130,13 @@ inline void compare_two_eoss(E1 &&test_e, E2 &&ref_e) {
                             << " test T min.: " << test_e.MinimumTemperature());
   CHECK(isClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15));
   return;
+}
+
+SCENARIO("Test that we can either throw an error on host or do nothing on device",
+         "[RequireMaybe]") {
+  // TODO(JMM): For whatever reason, the preprocessor does not like it if I
+  // call `PORTABLE_ALWAYS_THROW_OR_ABORT
+  REQUIRE_MAYBE_THROWS(PORTABLE_ALWAYS_THROW_OR_ABORT("Error message"));
 }
 
 SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
