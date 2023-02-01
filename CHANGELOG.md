@@ -2,6 +2,9 @@
 
 ## Current develop
 
+### Added (entropy calculation for stellar collapse eos)
+- [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
+
 ### Fixed (Repair bugs, etc)
 - [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
 
