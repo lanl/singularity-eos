@@ -1127,6 +1127,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 #endif
 
             const int N = 123;
+            constexpr Real gamma = 1.4;
             const Real dY = (yemax - yemin) / (N + 1);
             const Real dlT = (ltmax - ltmin) / (N + 1);
             const Real dlR = (lrhomax - lrhomin) / (N + 1);
@@ -1139,7 +1140,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
                   Real lR = lrhomin + i * dlR;
                   Real T = std::pow(10., lT);
                   Real R = std::pow(10., lR);
-                  Real e1, e2, p1, p2, cv1, cv2, b1, b2;
+                  Real e1, e2, p1, p2, cv1, cv2, b1, b2, s1, s2;
                   unsigned long output =
                       (singularity::thermalqs::pressure |
                        singularity::thermalqs::specific_internal_energy |
@@ -1149,10 +1150,14 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 
                   sc1_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
                   sc2_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);
+                  // Fill entropy. Will need to change later.
+                  s1 = sc1_d.EntropyFromDensityTemperature(R, T, lambda);
+                  s2 = p2 * std::pow(R, -gamma); // ideal
                   if (!isClose(e1, e2)) nwrong_d() += 1;
                   if (!isClose(p1, p2)) nwrong_d() += 1;
                   if (!isClose(cv1, cv2)) nwrong_d() += 1;
                   if (!isClose(b1, b2)) nwrong_d() += 1;
+                  if (!isClose(s1, s2)) nwrong_d() += 1;
                 });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
             Kokkos::deep_copy(nwrong_h, nwrong_d);
