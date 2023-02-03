@@ -21,6 +21,9 @@
 #include "catch2/catch.hpp"
 #endif
 
+#include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_arrays.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
@@ -445,58 +448,49 @@ SCENARIO("Vinet EOS SetUp", "[VectorEOS][VinetEOS]") {
 
     WHEN("Faulty/not set parameter rho0 is given") {
       rho0 = -1.0;
-      host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
-      eos = host_eos.GetOnDevice();
-      eos.PrintParams();
-      eos.Finalize();
-      THEN("An error message should be written out") {}
+      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      THEN("An error message should be written out") {
+        printf("Did catch negative rho0\n\n");
+      }
     }
     WHEN("Faulty/not set parameter T0 is given") {
       T0 = -1.0;
-      host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
-      eos = host_eos.GetOnDevice();
-      eos.PrintParams();
-      eos.Finalize();
-      THEN("An error message should be written out") {}
+      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      THEN("An error message should be written out") {
+        printf("Did catch negative T0\n\n");
+      }
     }
     WHEN("Faulty/not set parameter B0 is given") {
       B0 = -1.0;
-      //      CHECK_THROWS(host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-      CHECK_NOTHROW(host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-      eos = host_eos.GetOnDevice();
-      eos.PrintParams();
-      eos.Finalize();
-      THEN("An error message should be written out") {}
+      REQUIRE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      THEN("An error message should be written out") {
+        printf("Did catch negative B0\n\n");
+      }
     }
     WHEN("Faulty/not set parameter BP0 is given") {
       BP0 = 0.0;
-      try {
-        host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
-        eos = host_eos.GetOnDevice();
-        eos.Finalize();
-      } catch (std::runtime_error &e) {
-        printf("error is: %s\n", e.what());
-      } catch (...) {
-        printf("Got it here\n");
-      }
-      printf("Did not catch anything\n");
-      THEN("An error message should be written out") {}
+      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      THEN("An error message should be written out") { printf("Did catch zero BP0\n\n"); }
     }
     WHEN("Faulty/not set parameter Cv0 is given") {
       Cv0 = -1.0;
-      host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
-      eos = host_eos.GetOnDevice();
-      eos.PrintParams();
-      eos.Finalize();
-      THEN("An error message should be written out") {}
+      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      THEN("An error message should be written out") {
+        printf("Did catch negative Cv0\n\n");
+      }
     }
     WHEN("Faulty/not set parameter A0 is given") {
       A0 = -10000000.0;
-      host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
-      eos = host_eos.GetOnDevice();
-      eos.PrintParams();
-      eos.Finalize();
-      THEN("An error message should be written out") {}
+      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      THEN("An error message should be written out") {
+        printf("Did catch negative A0\n\n");
+      }
+    }
+    WHEN("Reasonable parameters are given") {
+      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      THEN("An error message should be written out") {
+        printf("This test should not pass\n\n");
+      }
     }
   }
 }

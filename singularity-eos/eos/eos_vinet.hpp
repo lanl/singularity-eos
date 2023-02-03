@@ -20,8 +20,8 @@
 
 #include <limits>
 
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -134,33 +134,27 @@ PORTABLE_INLINE_FUNCTION void Vinet::CheckVinet() {
 
   if (_rho0 < 0.0) {
     printf("testing rho0\n");
-    EOS_ERROR("Required Vinet model parameter rho0 < 0");
-    return;
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter rho0 < 0");
   }
   if (_T0 < 0.0) {
     printf("testing T0\n");
-    EOS_ERROR("Required Vinet model parameter T0 < 0");
-    return;
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter T0 < 0");
   }
   if (_B0 < 0.0) {
     printf("testing B0\n");
-    EOS_ERROR("Required Vinet model parameter B0 < 0");
-    return;
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter B0 < 0");
   }
   if (_BP0 < 1.0) {
     printf("testing BP0\n");
-    EOS_ERROR("Required Vinet model parameter BP0 < 1");
-    return;
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter BP0 < 1");
   }
   if (_A0 < 0.0) {
     printf("testing A0\n");
-    EOS_ERROR("Required Vinet model parameter A0 < 0");
-    return;
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter A0 < 0");
   }
   if (_Cv0 < 0.0) {
     printf("testing Cv0\n");
-    EOS_ERROR("Required Vinet model parameter Cv0 < 0");
-    return;
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter Cv0 < 0");
   }
 }
 
@@ -235,10 +229,10 @@ PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real 
   Real dedrho = robust::ratio(pressure - T * (_A0 * _B0), rho * rho);
   Real entropy;
   if (T < 0.0) {
-    //   #ifndef NDEBUG
-    printf("warning!! negative temperature");
-    //    PORTABLE_WARN("Negative temperature");
-    //   #endif // NDEBUG
+#ifndef NDEBUG
+    //    printf("warning!! negative temperature");
+    PORTABLE_WARN("Negative temperature");
+#endif // NDEBUG
     entropy = 0.0;
   } else {
     entropy = (_A0 * _B0) * (robust::ratio(1.0, rho) - robust::ratio(1, _rho0)) +
