@@ -2,13 +2,13 @@
 
 ## Current develop
 
-### Added (new features/APIs/variables/...)
-- [[PR202]](https://github.com/lanl/singularity-eos/pull/202) added the Vinet analytical EOS wth test cases and documentation.
-
 ### Fixed (Repair bugs, etc)
+- [[PR228]](https://github.com/lanl/singularity-eos/pull/228) added untracked header files in cmake
 - [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
 
 ### Added (new features/APIs/variables/...)
+- [[PR202]](https://github.com/lanl/singularity-eos/pull/202) added the Vinet analytical EOS wth test cases and documentation.
+- [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
 - [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
 - [[PR214]](https://github.com/lanl/singularity-eos/pull/214) added documentation about adding a new EOS
 
