@@ -25,7 +25,7 @@ add_library(eospac-wrapper
 target_include_directories(eospac-wrapper
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/eospac-wrapper>
+  $<INSTALL_INTERFACE:include>
 )
 
 if (SINGULARITY_EOSPAC_SKIP_EXTRAP)
