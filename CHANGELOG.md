@@ -3,7 +3,7 @@
 ## Current develop
 
 ### Fixed (issue #227)
-- [[PR228]](https://github.com/lanl/singularity-eos/pull/228) added untracked header files in cmake
+- [[PR228]](https://github.com/lanl/singularity-eos/pull/228) and [[PR229]](https://github.com/lanl/singularity-eos/pull/229) added untracked header files in cmake
 
 ### Added (entropy calculation for stellar collapse eos)
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
