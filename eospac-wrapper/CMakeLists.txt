@@ -53,12 +53,10 @@ install(
 install(
   EXPORT eospac-wrapperTargets
   FILE eospac-wrapperTargets.cmake
-  NAMESPACE singularity-eos::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos
   )
 
 export(
   EXPORT eospac-wrapperTargets
   FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/eospac-wrapperTargets.cmake
-  NAMESPACE singularity-eos::
   )
