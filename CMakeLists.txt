@@ -316,7 +316,7 @@ if (SINGULARITY_USE_EOSPAC)
   list(APPEND SINGULARITY_PUBLIC_LIBS eospac-wrapper)
   list(APPEND SINGULARITY_DEPS_PKGS EOSPAC)
 
-  add_subdirectory(eospac-wrapper)
+  list(APPEND _subdirs2add eospac-wrapper)
 endif ()
 
 

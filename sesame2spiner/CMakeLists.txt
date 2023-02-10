@@ -35,6 +35,7 @@ target_link_libraries(sesame2spiner
     singularity-eos::singularity-eos
 )
 
-install(TARGETS sesame2spiner DESTINATION bin)
+install(TARGETS sesame2spiner DESTINATION ${CMAKE_INSTALL_BINDIR})
+
 
 # TODO: Add tests for sesame2spiner here.
