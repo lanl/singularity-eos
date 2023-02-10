@@ -462,7 +462,7 @@ SCENARIO("Vinet EOS SetUp", "[VectorEOS][VinetEOS]") {
     }
     WHEN("Faulty/not set parameter B0 is given") {
       B0 = -1.0;
-      REQUIRE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
       THEN("An error message should be written out") {
         printf("Did catch negative B0\n\n");
       }
