@@ -442,6 +442,7 @@ target_link_options(singularity-eos
     ${xlfix}
 )
 
+include(GNUInstallDirs)
 foreach(_sdir ${_subdirs2add})
   singularity_msg(STATUS "Adding ${_sdir}...")
   add_subdirectory(${_sdir})
