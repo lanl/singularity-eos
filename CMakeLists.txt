@@ -201,7 +201,8 @@ singularityeos_content_declare(
   spiner
   EXPECTED_TARGETS spiner::spiner
   GIT_REPO    https://github.com/lanl/spiner
-  GIT_TAG     9f3ccf017083af9111f4ea7e2dfb887d2f3579cb
+  #  GIT_TAG     9e039f96b2dc2f2caf8972cc03b0a32fd84c6318
+  GIT_TAG bf7ab6043d1253c7cad9bf7ba54c48194df730d6
   NAMESPACE singularityeosDeps
   ENABLE_OPTS ${_singularity_spiner_opt}
   DISABLE_OPTS "BUILD_TESTING"
