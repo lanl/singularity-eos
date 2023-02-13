@@ -2,6 +2,9 @@
 
 ## Current develop
 
+### Fixed (Repair, bugs, ect)
+- [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
+
 ### Fixed (issue #227)
 - [[PR228]](https://github.com/lanl/singularity-eos/pull/228) and [[PR229]](https://github.com/lanl/singularity-eos/pull/229) added untracked header files in cmake
 
