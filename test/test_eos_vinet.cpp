@@ -274,7 +274,7 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
       // Create host-side mirrors of the inputs and copy the inputs. These are
       // just used for the comparisons
       auto density = Kokkos::create_mirror_view(v_density);
-      auto energy = Kokkos::create_mirror_view(v_temperature);
+      auto temperature = Kokkos::create_mirror_view(v_temperature);
       Kokkos::deep_copy(density, v_density);
       Kokkos::deep_copy(temperature, v_temperature);
 #endif // PORTABILITY_STRATEGY_KOKKOS
