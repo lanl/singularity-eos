@@ -12,13 +12,13 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------
 
-spiner_content_declare(Catch2
+singularityeos_content_declare(Catch2
   GIT_REPO       https://github.com/catchorg/Catch2.git
   GIT_TAG        v2.13.7
   NAMESPACE singularity-eosTest
 )
 
-spiner_content_populate(
+singularityeos_content_populate(
   NAMESPACE singularity-eosTest
 )
 list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
