@@ -189,7 +189,7 @@ include(content)
 singularityeos_content_declare(
   ports-of-call
   GIT_REPO    https://github.com/lanl/ports-of-call
-  GIT_TAG     5fea4f6a0ad75ca2326e1c32507e24a3e09e2f8b
+  GIT_TAG     25097e633370cefd14a410d52e1278c6be566efc
   NAMESPACE singularityeosDeps
 )
 
