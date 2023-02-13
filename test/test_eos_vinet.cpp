@@ -486,11 +486,11 @@ SCENARIO("Vinet EOS SetUp", "[VectorEOS][VinetEOS]") {
         printf("Did catch negative A0\n\n");
       }
     }
-//    WHEN("Reasonable parameters are given") {
-//      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-//      THEN("An error message should be written out") {
-//        printf("This test should not pass\n\n");
-//      }
-//    }
+    //    WHEN("Reasonable parameters are given") {
+    //      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+    //      THEN("An error message should be written out") {
+    //        printf("This test should not pass\n\n");
+    //      }
+    //    }
   }
 }
