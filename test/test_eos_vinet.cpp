@@ -443,54 +443,37 @@ SCENARIO("Vinet EOS SetUp", "[VectorEOS][VinetEOS]") {
     // Create the EOS
     EOS host_eos = Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
     EOS eos = host_eos.GetOnDevice();
-    eos.PrintParams();
     eos.Finalize();
 
     WHEN("Faulty/not set parameter rho0 is given") {
       rho0 = -1.0;
       REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-      THEN("An error message should be written out") {
-        printf("Did catch negative rho0\n\n");
-      }
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter T0 is given") {
       T0 = -1.0;
       REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-      THEN("An error message should be written out") {
-        printf("Did catch negative T0\n\n");
-      }
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter B0 is given") {
       B0 = -1.0;
       REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-      THEN("An error message should be written out") {
-        printf("Did catch negative B0\n\n");
-      }
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter BP0 is given") {
       BP0 = 0.0;
       REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-      THEN("An error message should be written out") { printf("Did catch zero BP0\n\n"); }
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter Cv0 is given") {
       Cv0 = -1.0;
       REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-      THEN("An error message should be written out") {
-        printf("Did catch negative Cv0\n\n");
-      }
+      THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter A0 is given") {
       A0 = -10000000.0;
       REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-      THEN("An error message should be written out") {
-        printf("Did catch negative A0\n\n");
-      }
+      THEN("An error message should be written out") {}
     }
-    //    WHEN("Reasonable parameters are given") {
-    //      REQUIRE_MAYBE_THROWS(Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
-    //      THEN("An error message should be written out") {
-    //        printf("This test should not pass\n\n");
-    //      }
-    //    }
   }
 }

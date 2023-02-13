@@ -130,30 +130,24 @@ class Vinet : public EosBase<Vinet> {
                                                 Real *output) const;
 };
 
-PORTABLE_INLINE_FUNCTION void Vinet::CheckVinet() {
+inline void Vinet::CheckVinet() {
 
   if (_rho0 < 0.0) {
-    printf("testing rho0\n");
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter rho0 < 0");
   }
   if (_T0 < 0.0) {
-    printf("testing T0\n");
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter T0 < 0");
   }
   if (_B0 < 0.0) {
-    printf("testing B0\n");
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter B0 < 0");
   }
   if (_BP0 < 1.0) {
-    printf("testing BP0\n");
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter BP0 < 1");
   }
   if (_A0 < 0.0) {
-    printf("testing A0\n");
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter A0 < 0");
   }
   if (_Cv0 < 0.0) {
-    printf("testing Cv0\n");
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter Cv0 < 0");
   }
 }

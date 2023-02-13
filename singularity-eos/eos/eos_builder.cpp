@@ -196,18 +196,6 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     Real Cv = mpark::get<Real>(base_params["Cv"]);
     return Gruneisen(C0, s1, s2, s3, G0, b, rho0, T0, P0, Cv);
   }
-  //  if (type == EOSType::Vinet) {
-  //    Real rho0 = mpark::get<Real>(base_params["rho0"]);
-  //    Real T0 = mpark::get<Real>(base_params["T0"]);
-  //    Real B0 = mpark::get<Real>(base_params["B0"]);
-  //    Real BP0 = mpark::get<Real>(base_params["BP0"]);
-  //    Real A0 = mpark::get<Real>(base_params["A0"]);
-  //    Real Cv0 = mpark::get<Real>(base_params["Cv0"]);
-  //    Real E0 = mpark::get<Real>(base_params["E0"]);
-  //    Real S0 = mpark::get<Real>(base_params["S0"]);
-  //    Real d2to40 = mpark::get<Real>(base_params["d2to40"]);
-  //    return Vinet(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
-  //  }
   if (type == EOSType::JWL) {
     GETBASE(Real, A); // I got tired of writing this over and over
     GETBASE(Real, B);
