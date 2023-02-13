@@ -357,18 +357,18 @@ void Vinet::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press
                                    Real *lambda) const {
   // AEM: Added all variables I think should be output eventually
   Real tbmod;
-  //Real entropy, alpha, Gamma;
+  // Real entropy, alpha, Gamma;
 
   rho = _rho0;
   temp = _T0;
   sie = _E0;
   press = PressureFromDensityTemperature(rho, temp, lambda);
-  //entropy = _S0;
+  // entropy = _S0;
   cv = _Cv0;
   tbmod = _B0;
-  //alpha = _A0;
+  // alpha = _A0;
   bmod = BulkModulusFromDensityTemperature(rho, temp, lambda);
-  //Gamma = robust::ratio(_A0 * _B0, _Cv0 * _rho0);
+  // Gamma = robust::ratio(_A0 * _B0, _Cv0 * _rho0);
   // AEM: I suggest taking the two following away.
   dpde = robust::ratio(_A0 * tbmod, _Cv0);
   dvdt = robust::ratio(_A0, _rho0);
