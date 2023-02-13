@@ -1,0 +1,50 @@
+{
+  "version": 3,
+  "configurePresets":[
+    {
+      "name": "default",
+      "hidden": true,
+      "cacheVariables":{
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "testing-core",
+      "inherits": "default",
+      "cacheVariables":{
+        "SINGULARITY_BUILD_TESTS": true
+      }
+    },
+    {
+      "name": "kokkos-core",
+      "hidden": true,
+      "cacheVariables":{
+        "SINGULARITY_USE_KOKKOS": true,
+        "SINGULARITY_USE_KOKKOSKERNELS": true
+      }
+    },
+    {
+      "name": "eospac-wrapper",
+      "hidden": true,
+      "cacheVariables":{
+        "SINGULARITY_USE_EOSPAC": true
+      }
+    },
+    {
+      "name": "extras",
+      "cacheVariables":{
+        "SINGULARITY_BUILD_SESAME2SPINER": true,
+        "SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER": true,
+        "SINGULARITY_BUILD_CLOSURE": true
+      }
+    },
+    {
+      "name": "testing-all",
+      "inherits": ["testing-core", "eospac-wrapper", "extras"],
+      "cacheVariables":{
+        "SINGULARITY_TEST_SESAME": true,
+        "SINGULARITY_TEST_STELLAR_COLLAPSE": true
+      }
+    }
+  ]
+}

@@ -8,3 +8,4 @@ utils/variant
 cmake-gen*
 spack-build-*
 spack-configure-*
+CMakeUserPresets.json
