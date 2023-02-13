@@ -215,6 +215,30 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id) {
 
 #undef SGAPPLYMOD
 
+int get_sg_PressureFromDensityInternalEnergy(int matindex,
+            EOS *eos,
+            const double* rhos,
+            const double*  sies,
+            double* pressures,
+            const int len
+               )
+{
+  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
+  return 0; 
+
+}
+
+int get_sg_BulkModulusFromDensityInternalEnergy(int matindex,
+            EOS *eos,
+            const double* rhos,
+            const double*  sies,
+            double* bmods,
+            const int len
+            ){
+  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
+  return 0; 
+}
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using Lrgt = Kokkos::LayoutRight;
 using Llft = Kokkos::LayoutLeft;

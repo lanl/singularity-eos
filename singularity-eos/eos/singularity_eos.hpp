@@ -65,6 +65,20 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const 
                    double *const vals);
 #endif // SINGULARITY_USE_EOSPAC
 
+int get_sg_PressureFromDensityInternalEnergy(int matindex,
+            EOS *eos,
+            const double* rhos,
+            const double*  sies,
+            double* pressures,
+            const int len);
+
+int get_sg_BulkModulusFromDensityInternalEnergy(int matindex,
+            EOS *eos,
+            const double* rhos,
+            const double*  sies,
+            double* bmods,
+            const int len);
+
 int get_sg_eos( // sizing information
     int nmat, int ncell, int cell_dim,
     // Input parameters
