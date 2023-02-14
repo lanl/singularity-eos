@@ -224,8 +224,7 @@ PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real 
   Real entropy;
   if (T < 0.0) {
 #ifndef NDEBUG
-    //    printf("warning!! negative temperature");
-    PORTABLE_WARN("Negative temperature");
+    PORTABLE_WARN("Negative temperature input");
 #endif // NDEBUG
     entropy = 0.0;
   } else {
