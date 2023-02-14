@@ -28,6 +28,8 @@
 #include <cxxabi.h>
 #include <memory>
 
+#include <ports-of-call/portability.hpp>
+
 inline std::string demangle(const char *name) {
 
   int status = -4; // some arbitrary value to eliminate the compiler warning
