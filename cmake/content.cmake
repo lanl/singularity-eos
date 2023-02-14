@@ -68,9 +68,9 @@ function(singularityeos_content_declare pkg_name)
 
   string(TOUPPER ${pkg_name} pkg_CAP)
   string(REPLACE "-" "_" pkg_CAP "${pkg_CAP}")
-
-  message(STATUS
-    "[${pkg_name}] FetchContent_Declare wrapper"
+  
+  message(VERBOSE
+    "[${fp_NAMESPACE}::${pkg_name}] content declared"
   )
   # because the signature is different between versions,
   # we build the cmake call beforehand
@@ -148,9 +148,6 @@ function(singularityeos_content_populate)
 
   cmake_parse_arguments(fp "${options}" "${one_value_args}" "${multi_value_args}" "${ARGN}")
 
-  message(STATUS 
-    "[${fp_NAMESPACE}] Populating declared content"
-  )
   # fill lists to populate
   # if cmake@3.24+, these are just the lists prepared in singularity_content_declare
   # otherwise, manually check `find_package` and remove content if found
@@ -207,16 +204,24 @@ function(singularityeos_content_populate)
     set(${ext_opt} OFF CACHE INTERNAL "")
   endforeach()
 
+  list(LENGTH ${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT _ntot)
 
-  message(VERBOSE "\n"
-      " :: Populating dependency targets ${_fetchTars}\n"
-      " :: Calling `FetchContent_MakeAvailable` with ${_fetchList}\n"
-  )
+  message(STATUS 
+    "Content inventory for ${fp_NAMESPACE}")
   message(STATUS
-      "FetchContent_MakeAvailable prepared, "
-      "this may take a few moments if a download is required...\n"
+    " ${_ntot} total declared"
   )
-   # populate
+  
+  foreach(_itr ${${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT})
+    message(STATUS
+      "   ${_itr}")
+  endforeach()
+
+  message(STATUS 
+    " making available (this may take a few moments)..."
+  )
+
+  # populate
   FetchContent_MakeAvailable(${_fetchList})
 
   # check that declared targets exist

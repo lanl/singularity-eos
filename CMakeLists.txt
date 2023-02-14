@@ -172,7 +172,7 @@ include(FetchContent)
 # to `find_package` before trying a download method
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
   set(FETCHCONTENT_TRY_FIND_PACKAGE_MODE ALWAYS)
-  message(STATUS "FetchContent routines will try `find_package` first")
+  message(VERBOSE "FetchContent routines will try `find_package` first")
 else()
   message(DEPRECATION 
     "Detected cmake version (${CMAKE_VERSION}) older then 3.24. `spiner`"
@@ -202,7 +202,7 @@ singularityeos_content_declare(
   EXPECTED_TARGETS spiner::spiner
   GIT_REPO    https://github.com/lanl/spiner
   #  GIT_TAG     9e039f96b2dc2f2caf8972cc03b0a32fd84c6318
-  GIT_TAG bf7ab6043d1253c7cad9bf7ba54c48194df730d6
+  GIT_TAG 1d416b9270f07f0fdb3ef130c5bbacf9e0980fa0
   NAMESPACE singularityeosDeps
   ENABLE_OPTS ${_singularity_spiner_opt}
   DISABLE_OPTS "BUILD_TESTING"
@@ -457,7 +457,7 @@ target_link_options(singularity-eos
 )
 
 foreach(_sdir ${_subdirs2add})
-  singularity_msg(STATUS "Adding ${_sdir}...")
+  message(STATUS "Adding ${_sdir}...")
   add_subdirectory(${_sdir})
 endforeach()
 
