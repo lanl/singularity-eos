@@ -30,6 +30,7 @@ set(EOS_HEADERS
     eos/eos_spiner.hpp
     eos/eos_davis.hpp
     eos/eos_gruneisen.hpp
+    eos/eos_vinet.hpp
     eos/eos_builder.hpp
     eos/eos_jwl.hpp
     eos/modifiers/relativistic_eos.hpp
