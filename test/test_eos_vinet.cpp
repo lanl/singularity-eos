@@ -166,9 +166,10 @@ SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
       }
 
       WHEN("A S(rho, e) lookup is performed") {
-        for (int i = 0; i < num; i++) {
+	portableFor("Test entropy", 0, num,
+		    PORTABLE_LAMBDA(const int i) {
           v_entropy[i] = eos2.EntropyFromDensityInternalEnergy(v_density[i], v_energy[i]);
-        }
+		    });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::fence();
         Kokkos::deep_copy(h_entropy, v_entropy);
@@ -350,14 +351,14 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
         }
       }
 
-      for (int i = 0; i < num; i++) {
+	portableFor("entropy", 0, num, PORTABLE_LAMBDA(const int i) {
         v_entropy[i] = eos2.EntropyFromDensityInternalEnergy(v_density[i], v_energy[i]);
-      }
+	  });
       WHEN("A S(rho, T) lookup is performed") {
-        for (int i = 0; i < num; i++) {
+	portableFor("entropy", 0, num, PORTABLE_LAMBDA(const int i) {
           v_entropy[i] =
               eos2.EntropyFromDensityTemperature(v_density[i], v_temperature[i]);
-        }
+	  });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::fence();
         Kokkos::deep_copy(h_entropy, v_entropy);
@@ -369,10 +370,10 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
       }
 
       WHEN("A B_T(rho, T) lookup is performed") {
-        for (int i = 0; i < num; i++) {
+        portableFor("bulk modulus", 0, num, PORTABLE_LAMBDA(const int i) {
           v_tbulkmodulus[i] =
               eos2.TBulkModulusFromDensityTemperature(v_density[i], v_temperature[i]);
-        }
+	  });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::fence();
         Kokkos::deep_copy(h_tbulkmodulus, v_tbulkmodulus);
@@ -396,10 +397,10 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
       }
 
       WHEN("A alpha(rho, T) lookup is performed") {
-        for (int i = 0; i < num; i++) {
+	portableFor("alpha", 0, num, PORTABLE_LAMBDA(const int i) {
           v_alpha[i] =
               eos2.TExpansionCoeffFromDensityTemperature(v_density[i], v_temperature[i]);
-        }
+	  });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::fence();
         Kokkos::deep_copy(h_alpha, v_alpha);
