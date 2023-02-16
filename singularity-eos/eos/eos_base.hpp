@@ -18,6 +18,7 @@
 #include <string>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 
 namespace singularity {
 namespace mfuncname {
@@ -50,7 +51,9 @@ namespace eos_base {
   using EosBase<EOSDERIVED>::MinimumDensity;                                             \
   using EosBase<EOSDERIVED>::MinimumTemperature;                                         \
   using EosBase<EOSDERIVED>::PTofRE;                                                     \
-  using EosBase<EOSDERIVED>::FillEos;
+  using EosBase<EOSDERIVED>::FillEos;                                                    \
+  using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
+  using EosBase<EOSDERIVED>::EntropyFromDensityEnergy;
 
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
@@ -118,6 +121,34 @@ class EosBase {
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           pressures[i] =
               copy.PressureFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                RealIndexer &&entropies, const int num,
+                                                LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          entropies[i] =
+              copy.EntropyFromDensityTemperature(rhos[i], temperatures[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&entropies, const int num,
+                                               LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          entropies[i] =
+              copy.EntropyFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -264,69 +295,13 @@ class EosBase {
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
 
-  // Specialzied vector version of PTofRE maybe more suited for EOSPAC
-  // }
-  // template<typename RealIndexer, typename LambdaIndexer>
-  // inline
-  // void PTofRE(RealIndexer &&rhos, RealIndexer &&sies,
-  //             RealIndexer &&presses, RealIndexer &&temps,
-  //             RealIndexer &&dpdrs, RealIndexer &&dpdes,
-  //             RealIndexer &&dtdrs, RealIndexer &&dtdes,
-  //             const int num, LambdaIndexer &&lambdas) const {
-  //   // Get the dervived class
-  //   auto eos = static_cast<CRTP const&>(*this);
-
-  //   // Lookup at density and energy
-  //   eos.PressureFromDensityInternalEnergy(rhos, sies, num, presses,
-  //                                               lambdas);
-  //   eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, temps,
-  //                                                  lambdas);
-  //   // Peturbation factor
-  //   Real factor = 1. + 1.0e-06;
-
-  //   // Perturb densities and do lookups
-  //   portableFor(
-  //       'PerturbDensities', 0, num, PORTABLE_LAMBDA(const int i) {
-  //         rhos[i] *= factor;
-  //       }
-  //   );
-  //   eos.PressureFromDensityInternalEnergy(rhos, sies, num, dpdrs,
-  //                                               lambdas);
-  //   eos.TemperatureFromDensityInternalEnergy(rhos, sies, num, dtdrs,
-  //                                                  lambdas);
-
-  //   // Reset densities, perturb energies, and do lookups
-  //   portableFor(
-  //       'PerturbEnergiesResetDensities', 0, num,
-  //       PORTABLE_LAMBDA(const int i) {
-  //         sies[i] *= factor;
-  //         rhos[i] /= factor;
-  //       }
-  //   );
-  //   eos.PressureFromDensityInternalEnergy(rhos, sies, dpdes, num,
-  //                                               lambdas);
-  //   eos.TemperatureFromDensityInternalEnergy(rhos, sies, dtdes, num,
-  //                                                  lambdas);
-
-  //   // Reset the energies to their original values
-  //   portableFor(
-  //       'ResetEnergies', 0, num, PORTABLE_LAMBDA(const int i) {
-  //         sies[i] /= factor;
-  //       }
-  //   );
-
-  //   // Calculate the derivatives
-  //   portableFor(
-  //       'CalculateDerivatives', 0., num, PORTABLE_LAMBDA(const int i) {
-  //         dpdrs[i] = (dpdrs[i] - presses[i]) / (rhos[i] * (1. - factor));
-  //         dpdes[i] = (dpdes[i] - presses[i]) / (sies[i] * (1. - factor));
-  //         dtdrs[i] = (dtdrs[i] - temps[i]) / (rhos[i] * (1. - factor));
-  //         dtdes[i] = (dtdes[i] - temps[i]) / (sies[i] * (1. - factor));
-  //       }
-  //   );
-
-  //   return;
-  // }
+  // Default entropy behavior is to return an error
+  [[noreturn]] PORTABLE_FORCE_INLINE_FUNCTION
+  void EntropyIsNotEnabled() const {
+    PORTABLE_ALWAYS_THROW_OR_ABORT(std::string("Entropy is not enabled for the '") + 
+                                   std::string(typeid(CRTP).name()) +
+                                   std::string("' EOS"));
+  }
 };
 } // namespace eos_base
 } // namespace singularity
