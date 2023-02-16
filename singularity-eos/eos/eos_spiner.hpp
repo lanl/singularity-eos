@@ -85,6 +85,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoT>::PTofRE;
   using EosBase<SpinerEOSDependsRhoT>::FillEos;
+  using EosBase<SpinerEOSDependsRhoT>::EntropyIsNotEnabled;
 
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
                               bool reproduciblity_mode = false);
@@ -108,6 +109,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_INLINE_FUNCTION
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const;
@@ -304,6 +311,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoSie>::PTofRE;
   using EosBase<SpinerEOSDependsRhoSie>::FillEos;
+  using EosBase<SpinerEOSDependsRhoSie>::EntropyIsNotEnabled;
 
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
@@ -922,6 +930,21 @@ Real SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy(const Real rho,
     P = P_.interpToReal(lRho, lT);
   }
   return P;
+}
+
+PORTABLE_INLINE_FUNCTION
+Real SpinerEOSDependsRhoT::EntropyFromDensityTemperature(const Real rho,
+                                                          const Real temperature,
+                                                          Real *lambda) const {
+  EntropyIsNotEnabled();
+  return 1.0;
+}
+PORTABLE_INLINE_FUNCTION
+Real SpinerEOSDependsRhoT::EntropyFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Real *lambda) const {
+  EntropyIsNotEnabled();
+  return 1.0;
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -1638,6 +1661,21 @@ Real SpinerEOSDependsRhoSie::PressureFromDensityInternalEnergy(const Real rho,
                                                                const Real sie,
                                                                Real *lambda) const {
   return interpRhoSie_(rho, sie, dependsRhoSie_.P, lambda);
+}
+
+PORTABLE_INLINE_FUNCTION
+Real SpinerEOSDependsRhoSie::EntropyFromDensityTemperature(const Real rho,
+                                                          const Real temperature,
+                                                          Real *lambda) const {
+  EntropyIsNotEnabled();
+  return 1.0;
+}
+PORTABLE_INLINE_FUNCTION
+Real SpinerEOSDependsRhoSie::EntropyFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Real *lambda) const {
+  EntropyIsNotEnabled();
+  return 1.0;
 }
 
 PORTABLE_INLINE_FUNCTION
