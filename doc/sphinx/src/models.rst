@@ -1,5 +1,21 @@
 .. _models:
 
+..
+    Important references:
+
+.. _MenikoffAndPlohr: https://doi.org/10.1103/RevModPhys.61.75
+
+.. _MaxwellWiki: https://en.wikipedia.org/wiki/Maxwell_relations
+
+.. _MenikoffCompleteEOS: https://www.osti.gov/biblio/1241653
+
+.. _DavisReactants: https://doi.org/10.1016/S0010-2180(99)00112-1
+
+.. _ProbingOffHugoniotStates: https://doi.org/10.1063/1.4939675
+
+.. _WillsThermo: https://www.osti.gov/biblio/1561015
+
+
 EOS Models
 ===========
 
@@ -26,11 +42,9 @@ but it is missing thermal information (see the section on :ref:`complete
 equations of state <Complete EOS>`).
 
 An excellent resource on equations of state in the context of hydrodynamics is
-the seminal work from `Menikoff and Plohr`_. In particular, Appendix A contains
-a number of thermodynamic relationships that can be useful for computing
-additional quantities from those output in ``singularity-eos``.
-
-.. _Menikoff and Plohr: https://doi.org/10.1103/RevModPhys.61.75
+the seminal work from `Menikoff and Plohr <MenikoffAndPlohr_>`_. In particular,
+Appendix A contains a number of thermodynamic relationships that can be useful
+for computing additional quantities from those output in ``singularity-eos``.
 
 The Mie-Gruneisen form
 ````````````````````````
@@ -76,10 +90,10 @@ variables*, i.e.
 
 .. math::
 
-    e = e(\rho, S) \\
-    h = h(P, S) \\
-    F = F(\rho, T) \\
-    G = G(P, T) \\
+    e =& e(\rho, S) \\
+    h =& h(P, S) \\
+    F =& F(\rho, T) \\
+    G =& G(P, T) \\
 
 where all potentials are specific, :math:`e` is again the internal energy,
 :math:`h` is the enthalpy, :math:`F` is the Helmholtz free energy, and :math:`G`
@@ -102,11 +116,11 @@ specific requirements placed on the functional form of the heat capacity
 described below.
 
 
-The :ref:`Maxwell relations <Maxwell relations>` are the consequence of the
+The `Maxwell relations <MaxwellWiki_>`_ are the consequence of the
 requirement that mixed partial second derivatives of the thermodynamic
 potentials should be independent of the order of differentiation. This concept
-can be extended to third derivatives (as Davis does in his Appendix B :ref:`here
-<Davis reactants>`) to produce the relationship,
+can be extended to third derivatives (as Davis does in his Appendix B `here
+<DavisReactants_>`_) to produce the relationship,
 
 .. math::
 
@@ -114,7 +128,7 @@ can be extended to third derivatives (as Davis does in his Appendix B :ref:`here
       \left(\frac{\partial \Gamma}{\partial S}\right)_V.
 
 This is often referred to as a "compatibility condition" (see also
-:ref:`Menikoff <Menikoff Complete EOS>`) and provides an important connection
+`Menikoff <MenikoffCompleteEOS_>`_) and provides an important connection
 between the Gruneisen parameter, :math:`\Gamma`, and the constant volume heat
 capacity, :math:`C_V`, in the context of a complete equation of state
 developed from the internal energy. Importantly, if the Gruneisen form forces
@@ -122,14 +136,7 @@ us to assume that the Gruneisen parameter is a sole function of
 density/volume, then the implication is that the heat capacity ***must*** then
 be a sole function of entropy.
 
-.. _Davis reactants: https://doi.org/10.1016/S0010-2180(99)00112-1
-
-.. _Maxwell relations: https://en.wikipedia.org/wiki/Maxwell_relations
-
-.. _Menikoff Complete EOS:
-    https://permalink.lanl.gov/object/tr?what=info:lanl-repo/lareport/LA-UR-16-21706
-
-Again from :ref:`Menikoff <Menikoff Complete EOS>`, it can be shown that even
+Again from `Menikoff <MenikoffCompleteEOS_>`_, it can be shown that even
 in the simplest possible case of a constant heat capacity, the temperature
 is related to the energy through
 
@@ -143,12 +150,12 @@ energy along the isentrope that passes through the reference temperature, and
 
 .. math::
 
-    \phi(\rho) = \exp\left(\int\limits_{\rho_0}^{\rho} \rho' \Gamma
-     (\rho') \mathrm{d}\rho' \right).
+    \phi(\rho) = \exp\left(\int\limits_{\rho_0}^{\rho} \rho \Gamma
+     (\rho) \mathrm{d}\rho \right).
 
 As an EOS of a Mie-Gruneisen form becomes more complicated with more complex
-functional forms for :math:`Gamma` and the reference curves, the task of
-calculating a ***thermodynamically consistent*** temperature becomes more
+functional forms for :math:`\Gamma` and the reference curves, the task of
+calculating a **thermodynamically consistent** temperature becomes more
 complicated.
 
 Available EOS Information and Nomenclature
@@ -161,55 +168,95 @@ in the :doc:`EOS API <using-eos>`.
 +--------------------------+----------------------+--------------------------+
 | Function                 | Dependent Variable   | Independent Variables    |
 +==========================+======================+==========================+
-| :math:`T(\rho, e)`       | Temperature          | Density, Internal Energy |
-+--------------------------+----------------------+                          |
+| :math:`T(\rho, e)`       | Temperature          | Density, Specific        |
++--------------------------+----------------------+ Internal Energy          |
 | :math:`P(\rho, e)`       | Pressure             |                          |
 +--------------------------+----------------------+                          |
-| :math:`S(\rho, e)`       | Entropy              |                          |
+| :math:`S(\rho, e)`       | Specific Entropy     |                          |
 +--------------------------+----------------------+--------------------------+
-| :math:`e(\rho, T)`       | Internal Energy      | Density, Temperature     |
+| :math:`e(\rho, T)`       | Specific Internal    | Density, Temperature     |
+|                          | Energy               |                          |
 +--------------------------+----------------------+                          |
 | :math:`P(\rho, T)`       | Pressure             |                          |
 +--------------------------+----------------------+                          |
-| :math:`S(\rho, T)`       | Entropy              |                          |
+| :math:`S(\rho, T)`       | Specific Entropy     |                          |
 +--------------------------+----------------------+--------------------------+
 | :math:`\rho(P, T)`       | Density              | Pressure, Temperature    |
 +--------------------------+----------------------+                          |
-| :math:`e(P, T)`          | Internal Energy      |                          |
+| :math:`e(P, T)`          | Specific Internal    |                          |
+|                          | Energy               |                          |
 +--------------------------+----------------------+--------------------------+
 | :math:`C_V(\rho, T)`     | Constant Volume      | Density, Temperature     |
 +--------------------------+ Specific Heat        +--------------------------+
-| :math:`C_V(\rho, e)`     | Capacity             | Density, Internal Energy |
+| :math:`C_V(\rho, e)`     | Capacity             | Density, Specific        |
+|                          |                      | Internal Energy          |
 +--------------------------+----------------------+--------------------------+
 | :math:`B_S(\rho, T)`     | Isentropic Bulk      | Density, Temperature     |
 +--------------------------+ Modulus              +--------------------------+
-| :math:`B_S(\rho, e)`     |                      | Density, Internal Energy |
+| :math:`B_S(\rho, e)`     |                      | Density, Specific        |
+|                          |                      | Internal Energy          |
 +--------------------------+----------------------+--------------------------+
 | :math:`\Gamma(\rho, T)`  | Gruneisen Parameter  | Density, Temperature     |
 +--------------------------+                      +--------------------------+
-| :math:`\Gamma(\rho, e)`  |                      | Density, Internal Energy |
+| :math:`\Gamma(\rho, e)`  |                      | Density, Specific        |
+|                          |                      | Internal Energy          |
 +--------------------------+----------------------+--------------------------+
 
 A point of note is that "specific" implies that the quantity is intensive on a
-per unit mass basis. It should be assumed that the internal energy is *always*
-specific since we are working in terms of density (the inverse of specific
-volume).
+per unit mass basis. It should be assumed that the internal energy and entopry
+are *always* specific since we are working in terms of density (the inverse of
+specific volume).
 
 Entropy availability
 ````````````````````
-Although the functionality to calculate an entropy is exposed for all equations
-of state, the fact that many equations of state are based off of incomplete
-equations of state means that the entropy for many EOS is not thermodynamically
-consistent. While this is also true of the temperature, we have found that
-thermodynamic consistency is often more important for calculations involving
-entropy.
+For an arbitrary equation of state, a change in entropy in terms of temperature
+and volume is given by
 
-As a result, we *only* expose a numerical value for the entropy when the
-equation of state form is fully complete and thermodynamically constistent. We
-should note the standard sesame *form* is generally thermodynamically
-consistent even if specific data tables may not be. We do not *presently*
-provide tools to determine the thermodynamic consistency, either globally or
-locally, for a sesame EOS, but we would like to in the future.
+.. math::
+
+    \Delta S = \int\limits_{S_0}^{S} \mathrm{d}S =
+        \int\limits_{T_0}^{T} \left(\frac{\partial S}{\partial T}\right)_V
+        \mathrm{d}T
+        + \int\limits_{V_0}^{V} \left(\frac{\partial S}{\partial V}\right)_T
+        \mathrm{d}V,
+
+which can be simplified using a definition of the heat capacity and a Maxwell
+relation to become
+
+.. math::
+
+    \Delta S =
+        \int\limits_{T_0}^{T} \frac{C_V}{T} \mathrm{d}T
+        + \int\limits_{V_0}^{V} \left(\frac{\partial P}{\partial T}\right)_V
+        \mathrm{d}V.
+
+Similarly, expressing the entropy in terms of *energy* and volume yields
+
+.. math::
+
+    \Delta S =
+        \int\limits_{e_0}^{e} \frac{1}{T(\rho, e)} \mathrm{d}e
+        + \int\limits_{V_0}^{V} \frac{P(\rho, e)}{T(\rho, e)}
+        \mathrm{d}V
+
+after substituting for the appropriate derivatives using the first law of
+thermodynamics.
+
+Importantly for the analytic EOS, these integrals will tend to diverge as the
+temperature and volume approach zero if the heat capacity does not also
+approach zero. This necessitates appropriate choices for the reference
+states :math:`T_0` and :math:`V_0`.
+
+.. note::
+
+    All EOS objects will expose the functions
+    :code:`EntropyFromDensityInternalEnergy ()` and
+    :code:`EntropyFromDensityTemperature()` but many EOS cannot currently
+    calculate entropy, either because the EOS is not thermodynamically
+    consistent or because the feature has not yet been implemented. In these
+    cases, the use of these functions will abort the calculation or raise an
+    exception depending on the execution space (host or device). The cases where
+    this occurs are noted below.
 
 Nomenclature Disambiguation
 ````````````````````````````
@@ -282,6 +329,12 @@ Implemented EOS models
 Ideal Gas
 `````````
 
+.. note::
+
+    While entropy is definied for this EOS, it diverges to negative infinity at
+    absolute zero. Care should be taken using values significantly below that of
+    the reference state.
+
 The ideal gas (aka perfect or gamma-law gas) model in ``singularity-eos`` takes
 the form
 
@@ -294,39 +347,50 @@ the form
     e = C_V T,
 
 where quantities are defined in the :ref:`nomenclature <Available EOS
-Information and Nomenclature>` section.
-
-Generally, the change in entropy for an ideal gas is given by
-
-.. math::
-
-    \Delta S = C_V \ln\left(\frac{T}{T_0}\right) + R \ln\left(\frac{\rho_0}
-     {\rho}\right),
-
-where :math:`R` is the *specific* gas constant in units of erg/g-K. However, it
-should be noted that this equation may be invalid for temperatures below the
-reference temperature as the first term will tend towards negative infinity.
-This is limitation of assuming a constant heat capacity since the third law of
-thermodynamics states that the heat capacity should approach zero as the
-temperature approaches zero, whereupon the entropy should be constant.
-
-The settable parameters for this EOS are the Gruneisen parameter and specific
-heat capacity.
-
-Although this differs from the traditional representation of the ideal gas law
-as :math:`P\tilde{V} = RT`, the forms are equivalent by recognizing that
-:math:`\Gamma = \frac{R}{\tilde{C_V}}` where :math:`R` is the ideal gas constant
-in units of energy per mole per Kelvin and :math:`\tilde{C_\mathrm{V}}` is the
-*molar* heat capacity, relatable to the *specific* heat capacity through the
-molecular weight of the gas. Since :math:`\tilde{C_\mathrm{V}} = \frac{5}{2} R`
-for a diatomic ideal gas, the corresponding Gruneisen parameter should be 0.4.
-
-A common point of confusion is :math:`\Gamma` versus :math:`\gamma` with the
-latter being the adiabatic exponent. For an ideal gas, they are related through
+Information and Nomenclature>` section. A common point of confusion
+is :math:`\Gamma` versus :math:`\gamma` with the latter being the adiabatic
+exponent. For an ideal gas, they are related through
 
 .. math::
 
     \Gamma = \gamma - 1
+
+Although this formulation differs from the traditional representation of the
+ideal gas law as :math:`P\tilde{V} = RT`, the forms are equivalent by
+recognizing that :math:`\Gamma = \frac{R}{\tilde{C_V}}` where :math:`R` is the
+ideal gas constant in units of energy per mole per Kelvin and :math:`\tilde
+{C_\mathrm{V}}` is the *molar* heat capacity, relatable to the *specific* heat
+capacity through the molecular weight of the gas. Since :math:`\tilde{C_\mathrm
+{V}} = \frac{5}{2} R` for a diatomic ideal gas, the corresponding Gruneisen
+parameter should be 0.4.
+
+The entropy for an ideal gas is given by
+
+.. math::
+
+    S = C_V \ln\left(\frac{T}{T_0}\right) + \Gamma C_V \ln\left(\frac{\rho_0}
+     {\rho}\right),
+
+we have assumed that the entropy is zero at the reference state given
+by :math:`T_0` and :math:`\rho_0`. By default, :math:`T_0 = 298` K and the
+reference density is given by
+
+.. math::
+
+    \rho_0 = \frac{P_0}{\Gamma C_V T_0},
+
+where :math:`P_0 = 1` bar.
+
+It should be noted that this equation diverges as the temperature approaches
+zero or the density approaches infinity. From a physical perspective, this is a
+limitation of the constant heat capacity assumption and would be remedied if
+the heat capacity went to zero at absolute zero. However, this represents a
+significant deviation from true ideal gas physics so we do not include it
+here.
+
+The settable parameters for this EOS are the Gruneisen parameter and specific
+heat capacity. Optionally, the reference state for the entropy calculation can
+be provided by setting *both* the reference density and temperature.
 
 The ``IdealGas`` EOS constructor has two arguments, ``gm1``, which is
 the Gruneisen parameter :math:`\Gamma`, and ``Cv``, which is the
@@ -334,10 +398,26 @@ specific heat :math:`C_V`:
 
 .. code-block:: cpp
 
-  IdealGas(Real gm1, Real Cv)
+    IdealGas(Real gm1, Real Cv)
+
+Optionally, the reference temperature and density for the entropy calculation,
+can be provided in the constructor via ``EntropyT0`` and ``EntropyRho0``:
+
+.. code-block:: cpp
+
+    IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0)
+
+Note that these parameters are provided solely for the entropy calculation. When
+these values are not set, they will be the same as those returned by the
+:code:`ValuesAtReferenceState()` function. However, if the entropy reference
+conditions are given, the return values of the :code:`ValuesAtReferenceState()`
+function will not be the same.
 
 Gruneisen EOS
 `````````````
+
+.. warning::
+    Entropy is not available for this EOS
 
 One of the most commonly-used EOS to represent solids is the Steinberg variation
 of the Mie-Gruneisen EOS, often just shortened to "Gruneisen" EOS. This EOS
@@ -418,7 +498,8 @@ where :math:`P_0` is the reference pressure and :math:`c_0`, :math:`s_1`,
 Here :math:`U_s` is the shock velocity and :math:`u_p` is the particle
 velocity. For many materials, this relationship is roughly linear so only the
 :math:`s_1` parameter is needed. The units for :math:`c_0` are velocity while
-the rest are unitless.
+the rest are unitless. Note that the parameter :math:`s_1` is related to the
+fundamental derivative of shock physics as shown by `Wills <WillsThermo_>`_.
 
 Finally the energy along the Hugoniot is given by
 
@@ -459,17 +540,17 @@ There is an overload of the ``Gruneisen`` class which computes
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
 
-Extender Vinet EOS
-``````````````````
+Extendended Vinet EOS
+`````````````````````
 
-The extended Vinet EOS is a full EOS, extended in both temperature and density from the Vinet 
-universal EOS for solids (also called Rose cold curve). It is expected to work well in 
-compression but is untested in expansion. It is published in Appendix 2 
-in `J. Appl. Phys. 119, 015904 (2016)`_.
-           
-.. _J. Appl. Phys. 119, 015904 (2016): https://doi.org/10.1063/1.4939675
+The extended Vinet EOS is a full EOS, extended in both temperature and density
+from the Vinet universal EOS for solids (also called Rose cold curve). It is
+expected to work well in compression but is untested in expansion. It is
+published in Appendix 2 in `J. Appl. Phys. 119, 015904
+(2016) <ProbingOffHugoniotStates_>`_.
 
-While the Mie-Gruneisen EOS is based on a Hugoniot as reference curve, the Vinet is based on an isotherm:
+While the Mie-Gruneisen EOS is based on a Hugoniot as reference curve, the Vinet
+is based on an isotherm:
 
 .. math::
  
@@ -483,19 +564,20 @@ where the reference isotherm is
     X &= \left( \frac{\rho_0}{\rho} \right)^{1/3} \\
     Z &= 1-X
 
-Note that :math:`P_{ref}=0` when :math:`\rho = \rho_0`, the reference state on the reference
-isotherm is always at ambient pressure. However, the reference isotherm is not necessarily
-at room temperature.
+Note that :math:`P_{ref}=0` when :math:`\rho = \rho_0`, the reference state on
+the reference isotherm is always at ambient pressure. However, the reference
+isotherm is not necessarily at room temperature.
 
-It can be shown that :math:`B_0` is the isothermal bulk modulus, and :math:`\alpha_0` the 
-thermal expansion coefficient, at the reference state, and that
+It can be shown that :math:`B_0` is the isothermal bulk modulus,
+and :math:`\alpha_0` the thermal expansion coefficient, at the reference state,
+and that
 
 .. math::
 
     \eta_0 = \frac{3}{2}\left[ \left[ \frac{\partial B}{\partial P}\right]_0 -1\right] \, .
 
-By assuming that also the constant volume heat capacity is a constant, :math:`{C_V}_0`, an entropy
-can be derived
+By assuming that also the constant volume heat capacity is a constant,
+:math:`{C_V}_0`, an entropy can be derived
 
 .. math:: 
     
@@ -505,10 +587,12 @@ and from that a thermodynamic consistent energy
 
 .. math::
 
-  E(X,T) =& 9 \frac{B_0 V_0}{{\eta_0}^2}\left(f_0 - \exp[\eta_0 Z] \left(f_0 - \eta_0 Z \left(f_0 + \sum_{n=1}^N f_n Z^n \right)\right)\right) \\
+  E(X,T) =& 9 \frac{B_0 V_0}{{\eta_0}^2}\left(f_0 - \exp[\eta_0 Z] \left
+  (f_0 - \eta_0 Z \left(f_0 + \sum_{n=1}^N f_n Z^n \right)\right)\right) \\
           & - \alpha_0 B_0 V_0 (1-X^3) T_{ref} + {C_V}_0 (T - T_{ref}) + E_0
 
-where the energy coefficients :math:`f_n` are determined from the pressure coefficients :math:`d_n`, :math:`n\geq 2`, by
+where the energy coefficients :math:`f_n` are determined from the pressure
+coefficients :math:`d_n`, :math:`n\geq 2`, by
 
 .. math::
 
@@ -526,13 +610,18 @@ The constructor for the ``Vinet`` EOS has the signature
             const Real Cv0, const Real E0, const Real S0, const Real *expconsts)
 
 where ``rho0`` is :math:`\rho_0`, ``T0`` is :math:`T_{ref}`, ``B0`` is
-:math:`B_0`, ``BP0`` is :math:`(\partial B/\partial P)_0`, ``A0`` is :math:`\alpha_0`, 
-``Cv0`` is :math:`{C_V}_0`, ``E0`` is :math:`E_0`, ``S0`` is :math:`S_0`, and
-``expconsts`` is a pointer to the constant array of length 39 containing the expansion coefficients
-:math:`d_2` to :math:`d_{40}`. Expansion coefficients not used should be set to 0.0.
+:math:`B_0`, ``BP0`` is :math:`(\partial B/\partial P)_0`, ``A0``
+is :math:`\alpha_0`, ``Cv0`` is :math:`{C_V}_0`, ``E0`` is :math:`E_0`, ``S0``
+is :math:`S_0`, and ``expconsts`` is a pointer to the constant array of length
+39 containing the expansion coefficients
+:math:`d_2` to :math:`d_{40}`. Expansion coefficients not used should be set to
+0.0.
 
 JWL EOS
-````````
+``````````
+
+.. warning::
+    Entropy is not available for this EOS
 
 The Jones-Wilkins-Lee (JWL) EOS is used mainly for detonation products of high
 explosives. Similar to the other EOS here, the JWL EOS can be written in a
@@ -579,12 +668,13 @@ where ``A`` is :math:`A`, ``B`` is :math:`B`, ``R1`` is :math:`R_1`,
 and ``Cv`` is :math:`C_V`.
 
 Davis EOS
-`````````
+``````````
 
-The Davis reactants and products EOS are both of Mie-Gruneisen forms that use
-isentropes for the reference curves. The equations of state are typically used
-to represent high explosives and their detonation products and the reference
-curves are calibrated to several sets of experimental data.
+The `Davis reactants <DavisReactants_>`_ and products EOS are both of
+Mie-Gruneisen forms that use isentropes for the reference curves. The equations
+of state are typically used to represent high explosives and their detonation
+products and the reference curves are calibrated to several sets of
+experimental data.
 
 For both the reactants and products EOS, the pressure and energy take the forms
 
@@ -604,9 +694,12 @@ Information and Nomenclature>` section.
 Davis Reactants EOS
 '''''''''''''''''''
 
-The Davis reactants EOS uses an isentrope passing through a reference state
-and as the reference curve and then assumes that the heat capacity varies
-linearly with entropy such that
+.. warning::
+    Entropy is not yet available for this EOS
+
+The `Davis reactants EOS <DavisReactants_>` uses an isentrope passing through a
+reference state and as the reference curve and then assumes that the heat
+capacity varies linearly with entropy such that
 
 .. math::
 
@@ -692,6 +785,9 @@ heat capacity at the reference state.
 Davis Products EOS
 '''''''''''''''''''
 
+.. warning::
+    Entropy is not yet available for this EOS
+
 The Davis products EOS is created from the reference isentrope passing through
 the CJ state of the high explosive along with a constant heat capacity. The
 constant heat capacity leads to the energy being a simple funciton of the
@@ -766,6 +862,9 @@ where ``a`` is :math:`a`, ``b`` is :math:`b`, ``k`` is :math:`k`,
 
 Spiner EOS
 ````````````
+
+.. warning::
+    Entropy is not yet available for this EOS
 
 Spiner EOS is a tabulated reader for the `Sesame`_ database of material
 equations of state. Materials include things like water, dry air,
@@ -977,6 +1076,9 @@ which saves the current EOS data in ``sp5`` format.
 
 EOSPAC EOS
 ````````````
+
+.. warning::
+    Entropy is not yet available for this EOS
 
 This is a striaghtforward wrapper of the `EOSPAC`_ library for the
 `Sesame`_ database. The constructor for the ``EOSPAC`` model looks like
