@@ -53,7 +53,8 @@ namespace eos_base {
   using EosBase<EOSDERIVED>::PTofRE;                                                     \
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
-  using EosBase<EOSDERIVED>::EntropyFromDensityEnergy;
+  using EosBase<EOSDERIVED>::EntropyFromDensityEnergy;                                   \
+  using EosBase<EOSDERIVED>::EntropyIsNotEnabled;
 
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
