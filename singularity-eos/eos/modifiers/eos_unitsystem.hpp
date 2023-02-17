@@ -55,6 +55,8 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   using EosBase<UnitSystem<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<UnitSystem<T>>::PressureFromDensityTemperature;
   using EosBase<UnitSystem<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::EntropyFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<UnitSystem<T>>::SpecificHeatFromDensityTemperature;
   using EosBase<UnitSystem<T>>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<UnitSystem<T>>::BulkModulusFromDensityTemperature;
@@ -79,10 +81,12 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
              const Real sie_unit, const Real temp_unit)
       : t_(std::forward<T>(t)), rho_unit_(rho_unit), sie_unit_(sie_unit),
         temp_unit_(temp_unit), press_unit_(rho_unit * sie_unit),
+        entropy_unit(sie_unit / temp_unit),
         inv_rho_unit_(1 / rho_unit) // inverses computed to avoid division at runtime
         ,
         inv_sie_unit_(1 / sie_unit), inv_temp_unit_(1 / temp_unit),
         inv_press_unit_(1 / press_unit_),
+        inv_entropy_unit(1 / entropy_unit),
         inv_dpde_unit_(sie_unit / press_unit_) // thermo derivatives computed consistently
         ,
         inv_dvdt_unit_(rho_unit * temp_unit) // TODO(JMM): Is this convention weird?
@@ -129,6 +133,13 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     return inv_press_unit_ * P;
   }
   PORTABLE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Real *lambda = nullptr) const {
+    const Real S =
+        t_.EntropyFromDensityInternalEnergy(rho * rho_unit_, sie * sie_unit_, lambda);
+    return inv_entropy_unit_ * S;
+  }
+  PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda = nullptr) const {
     const Real cv = t_.SpecificHeatFromDensityInternalEnergy(rho * rho_unit_,
@@ -155,6 +166,12 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     const Real P =
         t_.PressureFromDensityTemperature(rho * rho_unit_, temp * temp_unit_, lambda);
     return inv_press_unit_ * P;
+  }
+  Real EntropyFromDensityTemperature(const Real rho, const Real temp,
+                                      Real *lambda = nullptr) const {
+    const Real S =
+        t_.EntropyFromDensityTemperature(rho * rho_unit_, temp * temp_unit_, lambda);
+    return inv_entropy_unit_ * S;
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temp,
@@ -249,8 +266,8 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   T t_;
 
   // JMM: The compiler deletes GetOnDevice if I make these const. So... they're not
-  Real rho_unit_, sie_unit_, temp_unit_, press_unit_;
-  Real inv_rho_unit_, inv_sie_unit_, inv_temp_unit_, inv_press_unit_;
+  Real rho_unit_, sie_unit_, temp_unit_, press_unit_, entropy_unit;
+  Real inv_rho_unit_, inv_sie_unit_, inv_temp_unit_, inv_press_unit_, inv_entropy_unit;
   Real inv_dpde_unit_, inv_dvdt_unit_, inv_dpdr_unit_, inv_dtdr_unit_, inv_dtde_unit_;
   Real inv_cv_unit_, inv_bmod_unit_;
 };
