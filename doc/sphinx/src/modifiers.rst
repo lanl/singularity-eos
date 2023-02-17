@@ -65,7 +65,44 @@ energy. The pressure is unchanged under the operation
 
 for some scale parameter :math:`s`.  The ``ScaledEOS`` applies this
 transformation to any equation of state, not just an ideal gas, where
-the pressure may change.
+the pressure may change for different scaling ratios.
+
+Another way of understanding scaling ratios is that the pressure can be written
+as
+
+.. math::
+
+  P = \left(\frac{\partial F}{\partial V} \right)_T
+
+where :math:`F` is the Helmholtz free energy. For a given scaling such that
+:math:`\rho_\mathrm{eos} = s\rho_\mathrm{in}`, the volume obeys the inverse
+scaling. Since the scaling ratio is constant, it can be substituted into the
+above expression so that
+
+.. math::
+
+  P = \left(\frac{\partial F_\mathrm{eos}}{\partial V_\mathrm{eos}} \right)_T
+    = \left(\frac{\partial F_\mathrm{in}}{\partial V_\mathrm{in}} \right)_T
+    = \left(\frac{\partial F_\mathrm{in}}{s \partial V_\mathrm{eos}} \right)_T
+    = \left(\frac{s\partial F_\mathrm{eos}}{s \partial V_\mathrm{eos}} \right)_T
+
+which implies that the Helmholtz free energy must scale in the same way as
+volume (inverse to density) in order to preserve the same pressure. Applying
+this scaling to the definition of the Helmholtz free energy yields
+
+.. math::
+
+  F_\mathrm{eos} = e_\mathrm{eos} - TS_\mathrm{eos} = \frac{1}{R} F_\mathrm{in}
+    = \frac{1}{R}e_\mathrm{in} - T\left(\frac{1}{R}S_\mathrm{in}\right),
+
+where the implicaiton is that this inverse the scaling ratio should also be
+applied to energy. The inverse scaling ratio must be applied to the entropy
+here in order to ensure that all other thermodynamic potentials
+(energy, entropy, and the Gibbs free energy) scale similarly.
+
+where :math:`e` is the internal energy and :math:`S` is the entropy. The
+implication is that the same scaling should be applied to the energy and entropy
+to maintain thermodynamic consistency.
 
 The constructor for ``ScaledEOS`` accepts the underlying model, and
 the scale parameter. For example, a shifted ideal gas might be
