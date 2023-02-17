@@ -19,7 +19,7 @@
 #include <cmath>
 #include <cstdio>
 #include <string>
-#include <math>
+#include <cmath>
 
 // Ports-of-call
 #include <ports-of-call/portability.hpp>
