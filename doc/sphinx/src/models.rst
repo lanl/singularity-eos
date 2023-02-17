@@ -329,12 +329,6 @@ Implemented EOS models
 Ideal Gas
 `````````
 
-.. note::
-
-    While entropy is definied for this EOS, it diverges to negative infinity at
-    absolute zero. Care should be taken using values significantly below that of
-    the reference state.
-
 The ideal gas (aka perfect or gamma-law gas) model in ``singularity-eos`` takes
 the form
 
@@ -370,6 +364,12 @@ The entropy for an ideal gas is given by
 
     S = C_V \ln\left(\frac{T}{T_0}\right) + \Gamma C_V \ln\left(\frac{\rho_0}
      {\rho}\right),
+
+.. note::
+
+    The entropy diverges to negative infinity at absolute zero due to the
+    constant heat capacity assumption. Care should be taken when using
+    temperatures significantly below that of the reference state.
 
 we have assumed that the entropy is zero at the reference state given
 by :math:`T_0` and :math:`\rho_0`. By default, :math:`T_0 = 298` K and the
@@ -599,8 +599,13 @@ coefficients :math:`d_n`, :math:`n\geq 2`, by
     f_N &= d_N \\
     f_n &= d_n - \frac{n+2}{\eta_0} f_{n+1} \\
     d_0 &= 1.0 \\
-    d_1 &= 0.0 
+    d_1 &= 0.0
 
+.. note::
+
+    The entropy diverges to negative infinity at absolute zero due to the
+    constant heat capacity assumption. Care should be taken when using
+    temperatures significantly below that of the reference state.
     
 The constructor for the ``Vinet`` EOS has the signature
 
