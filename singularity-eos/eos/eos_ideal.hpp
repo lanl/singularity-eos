@@ -54,7 +54,7 @@ class IdealGas : public EosBase<IdealGas> {
         _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(EntropyT0),
         _EntropyRho0(EntropyRho0)
   {
-    checkInputs();
+    checkParams();
   }
 
   IdealGas GetOnDevice() {
@@ -68,9 +68,9 @@ class IdealGas : public EosBase<IdealGas> {
     // Portable_require seems to do the opposite of what it should. Conditions
     // reflect this and the code should be changed when ports-of-call changes
     PORTABLE_ALWAYS_REQUIRE(_Cv <= 0, "Heat capacity must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_gm1 <= 0);
-    PORTABLE_ALWAYS_REQUIRE(_EntropyT0 <= 0);
-    PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 <= 0);
+    PORTABLE_ALWAYS_REQUIRE(_gm1 <= 0, "Gruneisen parameter must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_EntropyT0 <= 0, "Entropy reference temperature must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 <= 0, "Entropy reference density must be positive");
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
@@ -87,7 +87,7 @@ class IdealGas : public EosBase<IdealGas> {
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
     return _Cv * log(robust::ratio(temperature, _EntropyT0)) +
-      _gm1 * _Cv * log(robust::ratio(_EntropyRho0, density));
+      _gm1 * _Cv * log(robust::ratio(_EntropyRho0, rho));
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {

@@ -53,7 +53,7 @@ namespace eos_base {
   using EosBase<EOSDERIVED>::PTofRE;                                                     \
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
-  using EosBase<EOSDERIVED>::EntropyFromDensityEnergy;                                   \
+  using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
   using EosBase<EOSDERIVED>::EntropyIsNotEnabled;
 
 /*
@@ -297,7 +297,7 @@ class EosBase {
   Real RhoPmin(const Real temp) const { return 0.0; }
 
   // Default entropy behavior is to return an error
-  [[noreturn]] PORTABLE_FORCE_INLINE_FUNCTION
+  [[noreturn]] PORTABLE_FORCEINLINE_FUNCTION
   void EntropyIsNotEnabled() const {
     PORTABLE_ALWAYS_THROW_OR_ABORT(std::string("Entropy is not enabled for the '") + 
                                    std::string(typeid(CRTP).name()) +

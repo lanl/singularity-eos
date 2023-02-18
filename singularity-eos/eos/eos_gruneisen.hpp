@@ -338,8 +338,8 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityTemperature(
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-    const Real rho_in, const Real sie, Real *lambda = nullptr) const {
+PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityTemperature(
+    const Real rho_in, const Real temp, Real *lambda) const {
   const Real rho = std::min(rho_in, _rho_max);
   const Real sie = InternalEnergyFromDensityTemperature(rho, temp);
   return EntropyFromDensityInternalEnergy(rho, sie);
