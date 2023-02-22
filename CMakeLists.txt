@@ -232,7 +232,11 @@ if(SINGULARITY_USE_KOKKOS)
     message(WARNING "`Kokkos` version could not be inferred. Note that versions less than `3.3` are DEPRECATED and may not work properly.")
   endif() #Kokkos_VERSION_MAJOR
   ####
+else()
+  set(PORTABILITY_STRATEGY "None")
+  list(APPEND SINGULARITY_PUBLIC_DEFINES PORTABILITY_STRATEGY_NONE)
 endif() #SINGULARITY_USE_KOKKOS
+message(STATUS "Portability strategy set to ${PORTABILITY_STRATEGY}")
 
 # TODO(JMM): If linear algebra needs grow beyond mixed cell closures,
 # we may need to rename this variable.
@@ -263,7 +267,7 @@ singularity_import_dependency(
 )
 
 # ports-of-call
-# type: ghost submodule
+# type: soft submodule
 singularity_import_dependency(
   PKG ports-of-call
   TARGETS ports-of-call::ports-of-call
@@ -316,7 +320,7 @@ if (SINGULARITY_USE_EOSPAC)
   list(APPEND SINGULARITY_PUBLIC_LIBS eospac-wrapper)
   list(APPEND SINGULARITY_DEPS_PKGS EOSPAC)
 
-  add_subdirectory(eospac-wrapper)
+  list(APPEND _subdirs2add eospac-wrapper)
 endif ()
 
 
@@ -438,6 +442,7 @@ target_link_options(singularity-eos
     ${xlfix}
 )
 
+include(GNUInstallDirs)
 foreach(_sdir ${_subdirs2add})
   singularity_msg(STATUS "Adding ${_sdir}...")
   add_subdirectory(${_sdir})

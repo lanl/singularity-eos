@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -27,6 +27,8 @@
 #include <cstdlib>
 #include <cxxabi.h>
 #include <memory>
+
+#include <ports-of-call/portability.hpp>
 
 inline std::string demangle(const char *name) {
 
@@ -100,4 +102,12 @@ inline void compare_two_eoss(const EOS &test_e, const EOS &ref_e) {
   return;
 }
 
-#endif
+// Macro that checks for an exception or is a no-op depending on
+// whether or not a non-serial backend is supplied
+#ifdef PORTABILITY_STRATEGY_NONE
+#define REQUIRE_MAYBE_THROWS(...) REQUIRE_THROWS(__VA_ARGS__)
+#else
+#define REQUIRE_MAYBE_THROWS(...) ((void)0)
+#endif // PORTABILITY_STRATEGY_NONE
+
+#endif // _SINGULARITY_EOS_TEST_TEST_HELPERS_

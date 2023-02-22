@@ -104,6 +104,9 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
@@ -295,7 +298,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   static constexpr Real TNormal_ = 5 * GK2MeV_; // Threshold of NSE
   static constexpr Real rhoNormal_ = 2.e12;     // 1./100'th of nuclear density
   static constexpr Real YeNormal_ = 0.3517;     // Beta equilibrium value
-  Real sieNormal_, PNormal_;
+  Real sieNormal_, PNormal_, SNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
 
   // offsets must be non-negative
@@ -425,6 +428,7 @@ inline StellarCollapse StellarCollapse::GetOnDevice() {
   other.lEOffset_ = lEOffset_;
   other.sieNormal_ = sieNormal_;
   other.PNormal_ = PNormal_;
+  other.SNormal_ = SNormal_;
   other.CvNormal_ = CvNormal_;
   other.bModNormal_ = bModNormal_;
   other.dPdENormal_ = dPdENormal_;
@@ -487,6 +491,16 @@ Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho, const Re
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real lP = lP_.interpToReal(Ye, lT, lRho);
   return lP2P_(lP);
+}
+
+PORTABLE_INLINE_FUNCTION
+Real StellarCollapse::EntropyFromDensityTemperature(const Real rho,
+                                                    const Real temperature,
+                                                    Real *lambda) const {
+  Real lRho, lT, Ye;
+  getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+  const Real entropy = entropy_.interpToReal(Ye, lT, lRho);
+  return (entropy > robust::EPS() ? entropy : robust::EPS());
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -887,6 +901,9 @@ inline void StellarCollapse::setNormalValues_() {
 
   const Real lP = lP_.interpToReal(Ye, lT, lRho);
   PNormal_ = lP2P_(lP);
+
+  const Real entropy = entropy_.interpToReal(Ye, lT, lRho);
+  SNormal_ = entropy;
 
   const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
   CvNormal_ = (Cv > robust::EPS() ? Cv : robust::EPS());
