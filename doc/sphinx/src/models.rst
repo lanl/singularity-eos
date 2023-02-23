@@ -853,6 +853,9 @@ where ``matid`` is the unique material number in the database and
 ``invert_at_setup`` specifies whether or not pre-compute tables of
 temperature as a function of density and energy.
 
+Note for performance reasons this EOS uses a slightly different vector API.
+See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
+
 .. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
 
 .. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php

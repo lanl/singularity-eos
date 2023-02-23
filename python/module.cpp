@@ -113,7 +113,8 @@ PYBIND11_MODULE(singularity_eos, m) {
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
-  eos_class<EOSPAC>(m, "EOSPAC")
+  constexpr bool use_scratch = true;
+  eos_class<EOSPAC, use_scratch>(m, "EOSPAC")
     .def(py::init())
     .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
 #endif

@@ -240,6 +240,14 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return T::scratch_size(method, nelements);
+  }
+
+  static inline unsigned long max_scratch_size(unsigned int nelements) {
+    return T::max_scratch_size(nelements);
+  }
+
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();
     printf("Units = %e %e %e %e\n", rho_unit_, sie_unit_, temp_unit_, press_unit_);

@@ -221,6 +221,14 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return T::scratch_size(method, nelements);
+  }
+
+  static inline unsigned long max_scratch_size(unsigned int nelements) {
+    return T::max_scratch_size(nelements);
+  }
+
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();
     printf("Ramp Params:\nr0=%.14e\na=%.14e\nb=%.14e\nc=%.14e\n", r0_, a_, b_, c_);
