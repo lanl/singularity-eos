@@ -504,6 +504,8 @@ class Variant {
         [&rhos, &sies, &entropies, &num, &lambdas](const auto &eos) {
           return eos.EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
                                                        lambdas);
+        },
+        eos_);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -522,7 +524,7 @@ class Variant {
                                     RealIndexer &&entropies, Real *scratch, const int num,
                                     LambdaIndexer &&lambdas) const {
     return mpark::visit(
-        [&rhos, &sies, &pressures, &scratch, &num, &lambdas](const auto &eos) {
+        [&rhos, &sies, &entropies, &scratch, &num, &lambdas](const auto &eos) {
           return eos.EntropyFromDensityInternalEnergy(rhos, sies, entropies, scratch,
                                                        num, lambdas);
         },
