@@ -168,6 +168,13 @@ class EosBase {
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                 RealIndexer &&entropies, Real * /*scratch*/,
+                                 const int num, LambdaIndexer &&lambdas) const {
+    EntropyFromDensityTemperature(rhos, temperatures, entropies, num, lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                ConstRealIndexer &&sies,
                                                RealIndexer &&entropies, const int num,
@@ -180,6 +187,13 @@ class EosBase {
           entropies[i] =
               copy.EntropyFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                    RealIndexer &&entropies, Real * /*scratch*/,
+                                    const int num, LambdaIndexer &&lambdas) const {
+    EntropyFromDensityInternalEnergy(rhos, sies, entropies, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
