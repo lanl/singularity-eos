@@ -164,9 +164,21 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
 
 bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals[],
                         EOS_REAL yVals[], EOS_REAL var[], EOS_REAL dx[], EOS_REAL dy[],
-                        const char tablename[], Verbosity eospacWarn) {
+                        const char tablename[], Verbosity eospacWarn,
+                        EOS_INTEGER options[], EOS_REAL option_values[],
+                        EOS_INTEGER nopts) {
   EOS_INTEGER errorCode = EOS_OK;
   EOS_CHAR errorMessage[EOS_MaxErrMsgLen];
+
+  for (int i = 0; i < nopts; i++) {
+    eos_SetOption(table, &options[i], &(option_values[i]), &errorCode);
+    if (errorCode != EOS_OK) {
+      eos_GetErrorMessage(&errorCode, errorMessage);
+      std::cerr << "Table " << tablename << ":" << std::endl;
+      std::cerr << "eos_SetOption ERROR " << errorCode << ": " << errorMessage
+                << std::endl;
+    }
+  }
 
   eos_Interpolate(table, &nxypairs, xVals, yVals, var, dx, dy, &errorCode);
 #ifndef SINGULARITY_EOSPAC_SKIP_EXTRAP
@@ -184,7 +196,17 @@ bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals
       std::cerr << "y = " << yVals[i] << std::endl;
     }
   }
-#endif                          // SINGULARITY_EOSPAC_SKIP_EXTRAP
+#endif // SINGULARITY_EOSPAC_SKIP_EXTRAP
+
+  for (int i = 0; i < nopts; i++) {
+    eos_ResetOption(table, &options[i], &errorCode);
+    if (errorCode != EOS_OK) {
+      eos_GetErrorMessage(&errorCode, errorMessage);
+      std::cerr << "Table " << tablename << ":" << std::endl;
+      std::cerr << "eos_ResetOption ERROR " << errorCode << ": " << errorMessage
+                << std::endl;
+    }
+  }
   return (errorCode == EOS_OK); // 1 for no erros. 0 for errors.
 }
 
