@@ -67,10 +67,10 @@ class IdealGas : public EosBase<IdealGas> {
   PORTABLE_INLINE_FUNCTION void checkParams() const {
     // Portable_require seems to do the opposite of what it should. Conditions
     // reflect this and the code should be changed when ports-of-call changes
-    PORTABLE_ALWAYS_REQUIRE(_Cv <= 0, "Heat capacity must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_gm1 <= 0, "Gruneisen parameter must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_EntropyT0 <= 0, "Entropy reference temperature must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 <= 0, "Entropy reference density must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_EntropyT0 >= 0, "Entropy reference temperature must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 >= 0, "Entropy reference density must be positive");
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
