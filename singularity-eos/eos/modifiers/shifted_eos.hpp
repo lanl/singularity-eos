@@ -90,7 +90,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   }
   PORTABLE_FUNCTION
   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                         Real *lambda = nullptr) const {
+                                        Real *lambda = nullptr) const {
     return t_.EntropyFromDensityInternalEnergy(rho, sie - shift_, lambda);
   }
   PORTABLE_FUNCTION
@@ -115,7 +115,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   }
   PORTABLE_FUNCTION
   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
-                                      Real *lambda = nullptr) const {
+                                     Real *lambda = nullptr) const {
     return t_.EntropyFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION

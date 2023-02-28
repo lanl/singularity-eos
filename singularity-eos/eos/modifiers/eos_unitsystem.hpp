@@ -85,8 +85,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
         inv_rho_unit_(1 / rho_unit) // inverses computed to avoid division at runtime
         ,
         inv_sie_unit_(1 / sie_unit), inv_temp_unit_(1 / temp_unit),
-        inv_press_unit_(1 / press_unit_),
-        inv_entropy_unit_(1 / entropy_unit_),
+        inv_press_unit_(1 / press_unit_), inv_entropy_unit_(1 / entropy_unit_),
         inv_dpde_unit_(sie_unit / press_unit_) // thermo derivatives computed consistently
         ,
         inv_dvdt_unit_(rho_unit * temp_unit) // TODO(JMM): Is this convention weird?
@@ -134,7 +133,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   }
   PORTABLE_FUNCTION
   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                         Real *lambda = nullptr) const {
+                                        Real *lambda = nullptr) const {
     const Real S =
         t_.EntropyFromDensityInternalEnergy(rho * rho_unit_, sie * sie_unit_, lambda);
     return inv_entropy_unit_ * S;
@@ -168,7 +167,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     return inv_press_unit_ * P;
   }
   Real EntropyFromDensityTemperature(const Real rho, const Real temp,
-                                      Real *lambda = nullptr) const {
+                                     Real *lambda = nullptr) const {
     const Real S =
         t_.EntropyFromDensityTemperature(rho * rho_unit_, temp * temp_unit_, lambda);
     return inv_entropy_unit_ * S;
