@@ -202,7 +202,7 @@ singularityeos_content_declare(
   EXPECTED_TARGETS spiner::spiner
   GIT_REPO    https://github.com/lanl/spiner
   #  GIT_TAG     9e039f96b2dc2f2caf8972cc03b0a32fd84c6318
-  GIT_TAG 1d416b9270f07f0fdb3ef130c5bbacf9e0980fa0
+  GIT_TAG c496cb08165b29d3a78f2d3ed9d4bbf580d64d17
   NAMESPACE singularityeosDeps
   ENABLE_OPTS ${_singularity_spiner_opt}
   DISABLE_OPTS "BUILD_TESTING"
@@ -386,7 +386,6 @@ if (SINGULARITY_USE_FORTRAN)
     $<INSTALL_INTERFACE:include/singularity-eos/eos>
   )
 endif() # SINGULARITY_USE_FORTRAN
-
 
 target_include_directories(singularity-eos
   PUBLIC

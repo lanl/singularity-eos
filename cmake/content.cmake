@@ -34,7 +34,7 @@ include(FetchContent)
 # :: Arguments 
 #   pkg_name - the name of the package or content. usually the argument to `find_package(<pkg_name>)`
 #   options:
-#   - NO_FETCH - disables all download steps. If `find_package(<pkg_name>)` fails, produce an error
+#   - NO_seosFetch - disables all download steps. If `find_package(<pkg_name>)` fails, produce an error
 #   single_value:
 #   - GIT_REPO - the URL of the git repository to clone, if necessary
 #   - GIT_TAG  - the tag or commit to use 
@@ -64,67 +64,67 @@ function(singularityeos_content_declare pkg_name)
     DISABLE_OPTS
   )
 
-  cmake_parse_arguments(fp "${options}" "${one_value_args}" "${multi_value_args}" "${ARGN}")
+  cmake_parse_arguments(seos_fp "${options}" "${one_value_args}" "${multi_value_args}" "${ARGN}")
 
   string(TOUPPER ${pkg_name} pkg_CAP)
   string(REPLACE "-" "_" pkg_CAP "${pkg_CAP}")
   
   message(VERBOSE
-    "[${fp_NAMESPACE}::${pkg_name}] content declared"
+    "[${seos_fp_NAMESPACE}::${pkg_name}] content declared"
   )
   # because the signature is different between versions,
   # we build the cmake call beforehand
-  set(_fetch_content_cmd "FetchContent_Declare(${pkg_name}")
+  set(_seosFetch_content_cmd "FetchContent_Declare(${pkg_name}")
   
-  if(fp_NO_FETCH)
+  if(seos_fp_NO_FETCH)
     message(VERBOSE
       " :: \"${pkg_name}\" is specified not fetchable, will rely on `find_package` for population"
     )
-    string(APPEND _fetch_content_cmd " DOWNLOAD_COMMAND \":\"") 
-    set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_NOFETCH TRUE)
+    string(APPEND _seosFetch_content_cmd " DOWNLOAD_COMMAND \":\"") 
+    set(${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_NOFETCH TRUE PARENT_SCOPE)
   else()
     message(VERBOSE 
-      " :: \"${pkg_name}\" is fetchable, will fall-back to git clone [${fp_GIT_REPO}] if other population methods fail"
+      " :: \"${pkg_name}\" is fetchable, will fall-back to git clone [${seos_fp_GIT_REPO}] if other population methods fail"
     )
-    string(APPEND _fetch_content_cmd " GIT_REPOSITORY ${fp_GIT_REPO} GIT_TAG ${fp_GIT_TAG}")
+    string(APPEND _seosFetch_content_cmd " GIT_REPOSITORY ${seos_fp_GIT_REPO} GIT_TAG ${seos_fp_GIT_TAG}")
   endif()
 
-  if(fp_PATCH)
+  if(seos_fp_PATCH)
     message(VERBOSE 
-      " :: \"${pkg_name}\" has patch [${fp_PATCH}], will apply after update stage"
+      " :: \"${pkg_name}\" has patch [${seos_fp_PATCH}], will apply after update stage"
     )
     #NOTE: the ` || true` at the end of the command is a due to a bug where the apply fails if
     #      it has already been applied, so the command fails and cmake fails.
     #      https://gitlab.kitware.com/cmake/cmake/-/issues/21146
-    string(APPEND _fetch_content_cmd " PATCH_COMMAND git apply --ignore-space-change --ignore-whitespace ${fp_PATCH} || true")
+    string(APPEND _seosFetch_content_cmd " PATCH_COMMAND git apply --ignore-space-change --ignore-whitespace ${seos_fp_PATCH} || true")
   endif()
 
   # bifurcation on cmake version
   if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
     # versions >= 3.24 will do an implicit `find_package`, so pass on
     # requirements to declaration
-    string(APPEND _fetch_content_cmd " FIND_PACKAGE_ARGS COMPONENTS ${fp_COMPONENTS}")
+    string(APPEND _seosFetch_content_cmd " FIND_PACKAGE_ARGS COMPONENTS ${seos_fp_COMPONENTS}")
   endif()
 
   # close the command
-  string(APPEND _fetch_content_cmd ")")
+  string(APPEND _seosFetch_content_cmd ")")
 
-  message(DEBUG " :: FC cmd: ${_fetch_content_cmd}")
+  message(DEBUG " :: FC cmd: ${_seosFetch_content_cmd}")
   # execute the built `FetchContent_Declare(...)`
-  cmake_language(EVAL CODE "${_fetch_content_cmd}")
+  cmake_language(EVAL CODE "${_seosFetch_content_cmd}")
  
   # return some info
-  list(APPEND ${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT ${pkg_name})
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT "${${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT}" PARENT_SCOPE)
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_COMPONETS ${fp_COMPONENTS} PARENT_SCOPE)
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_ENABLEOPTS ${fp_ENABLE_OPTS} PARENT_SCOPE)
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_DISABLEOPTS ${fp_DISABLE_OPTS} PARENT_SCOPE)
-  set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_PRIORS ${fp_PRIORS} PARENT_SCOPE)
+  list(APPEND ${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT ${pkg_name})
+  set(${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT "${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT}" PARENT_SCOPE)
+  set(${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_COMPONETS ${seos_fp_COMPONENTS} PARENT_SCOPE)
+  set(${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_ENABLEOPTS ${seos_fp_ENABLE_OPTS} PARENT_SCOPE)
+  set(${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_DISABLEOPTS ${seos_fp_DISABLE_OPTS} PARENT_SCOPE)
+  set(${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_PRIORS ${seos_fp_PRIORS} PARENT_SCOPE)
 
-  if(fp_EXPECTED_TARGETS)
-    set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS ${fp_EXPECTED_TARGETS} PARENT_SCOPE)
+  if(seos_fp_EXPECTED_TARGETS)
+    set(${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS ${seos_fp_EXPECTED_TARGETS} PARENT_SCOPE)
   else()
-    set(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS "${pkg_name}::${pkg_name}" PARENT_SCOPE)
+    set(${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS "${pkg_name}::${pkg_name}" PARENT_SCOPE)
   endif()
 
 endfunction()
@@ -138,7 +138,7 @@ endfunction()
 #   single_value:
 #   - NAMESPACE - the namespace used in the corrisponding `singularity_content_declare` call
 #
-function(singularityeos_content_populate)
+macro(singularityeos_content_populate)
   set(options)
   set(one_value_args
     NAMESPACE
@@ -146,18 +146,18 @@ function(singularityeos_content_populate)
   set(multi_value_args
   )
 
-  cmake_parse_arguments(fp "${options}" "${one_value_args}" "${multi_value_args}" "${ARGN}")
+  cmake_parse_arguments(seos_fp "${options}" "${one_value_args}" "${multi_value_args}" "${ARGN}")
 
   # fill lists to populate
   # if cmake@3.24+, these are just the lists prepared in singularity_content_declare
   # otherwise, manually check `find_package` and remove content if found
-  foreach(pkg_name ${${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT})
+  foreach(pkg_name ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT})
     string(TOUPPER ${pkg_name} pkg_CAP)
     string(REPLACE "-" "_" pkg_CAP "${pkg_CAP}")
     # bifurcation on cmake version
     if (NOT CMAKE_VERSION VERSION_GREATER_EQUAL "3.24.0")
       find_package(${pkg_name}
-        COMPONENTS ${${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_COMPONETS}
+        COMPONENTS ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_COMPONETS}
         QUIET
       )
       if(${pkg_name}_FOUND)
@@ -168,7 +168,7 @@ function(singularityeos_content_populate)
       else()
         # if no fetching and not found, produce an error
         # conditionally include a custom error msg
-        if(${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_NOFETCH)
+        if(${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_NOFETCH)
           message(FATAL_ERROR
             "${pkg_name} is requested, but it was not located and is not declared as fetchable.\n"
             "if ${pkg_name} is installed, set \"-D${pkg_name}_ROOT=<install-dir>\""
@@ -178,41 +178,41 @@ function(singularityeos_content_populate)
           "${pkg_name} NOT located with `find_package`, appending to populate list."
           " Will attempt to clone repository when content is populated."
         )
-        list(APPEND _fetchList ${pkg_name})
-        list(APPEND _fetchOptsOn ${${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_ENABLEOPTS})
-        list(APPEND _fetchOptsOff ${${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_DISABLEOPTS})
-        list(APPEND _fetchTars ${${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS})
+        list(APPEND _seosFetchList ${pkg_name})
+        list(APPEND _seosFetchOptsOn ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_ENABLEOPTS})
+        list(APPEND _seosFetchOptsOff ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_DISABLEOPTS})
+        list(APPEND _seosFetchTars ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS})
 
       endif() # FOUND
     else()
-      list(APPEND _fetchList ${pkg_name})
-      list(APPEND _fetchOptsOn ${${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_ENABLEOPTS})
-      list(APPEND _fetchOptsOff ${${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_DISABLEOPTS})
-      list(APPEND _fetchTars ${${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS})
+      list(APPEND _seosFetchList ${pkg_name})
+      list(APPEND _seosFetchOptsOn ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_ENABLEOPTS})
+      list(APPEND _seosFetchOptsOff ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_DISABLEOPTS})
+      list(APPEND _seosFetchTars ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS})
     endif() #CMAKE_VERSION
     # collect all targets, reguardless of populated
-    list(APPEND _expectedTars ${${fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS})
+    list(APPEND _seosExpectedTars ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_${pkg_CAP}_TARGETS})
   endforeach()
 
   # for content to be populated, set some cache options given in singularity_content_declare
-  foreach(ext_opt ${_fetchOptsOn})
+  foreach(ext_opt ${_seosFetchOptsOn})
     message(DEBUG "setting \"${ext_opt}\"=ON")
     set(${ext_opt} ON CACHE INTERNAL "")
   endforeach()
-  foreach(ext_opt ${_fetchOptsOff})
+  foreach(ext_opt ${_seosFetchOptsOff})
     message(DEBUG "setting \"${ext_opt}\"=OFF")
     set(${ext_opt} OFF CACHE INTERNAL "")
   endforeach()
 
-  list(LENGTH ${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT _ntot)
+  list(LENGTH ${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT _ntot)
 
   message(STATUS 
-    "Content inventory for ${fp_NAMESPACE}")
+    "Content inventory for ${seos_fp_NAMESPACE}")
   message(STATUS
     " ${_ntot} total declared"
   )
   
-  foreach(_itr ${${fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT})
+  foreach(_itr ${${seos_fp_NAMESPACE}_DECLARED_EXTERNAL_CONTENT})
     message(STATUS
       "   ${_itr}")
   endforeach()
@@ -222,10 +222,10 @@ function(singularityeos_content_populate)
   )
 
   # populate
-  FetchContent_MakeAvailable(${_fetchList})
+  FetchContent_MakeAvailable(${_seosFetchList})
 
   # check that declared targets exist
-  foreach(expected_target ${_expectedTars})
+  foreach(expected_target ${_seosExpectedTars})
     if(NOT TARGET ${expected_target})
       message(FATAL_ERROR
           "target \"${expected_target}\" was expected, but does not exist after population!"
@@ -234,8 +234,15 @@ function(singularityeos_content_populate)
   endforeach()
 
   # return target list
-  set(${fp_NAMESPACE}_POPULATED_TARGETS ${_expectedTars} PARENT_SCOPE)
-endfunction()
+  set(${seos_fp_NAMESPACE}_POPULATED_TARGETS ${_seosExpectedTars})
+
+  unset(_seosFoundList)
+  unset(_seosFetchList)
+  unset(_seosFetchTars)
+  unset(_seosFetchOpts)
+  unset(_seosExpectedTars)  
+
+endmacro()
 
 
 # © 2021. Triad National Security, LLC. All rights reserved.  This
