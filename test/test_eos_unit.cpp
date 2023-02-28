@@ -517,15 +517,38 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       constexpr std::array<Real, num> heatcapacity_true{Cv, Cv, Cv};
       constexpr std::array<Real, num> gruneisen_true{gm1, gm1, gm1};
 
+      // Gold standard entropy doesn't produce round numbers so we need to
+      // calculate it from the device views so this requires a bit more work
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::View<Real[num]> v_entropy_true("True Entropy");
+#else
+      std::array<Real, num> entropy_true;
+      Real *v_entropy_true = entropy_true.data();
+#endif
+      constexpr Real P0 = 1e6; // microbar
+      constexpr Real T0 = 293; // K
+      constexpr Real rho0 = P0 / (gm1 * Cv * T0); // g/cm^3
+      portableFor(
+          "Calculate true entropy", 0, num, PORTABLE_LAMBDA(const int i) {
+            v_entropy_true[i] = Cv * log(v_energy[i] / Cv / T0) +
+                gm1 * Cv * log(rho0 / v_density[i]);
+      });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      auto entropy_true = Kokkos::create_mirror_view(v_entropy_true);
+      Kokkos::deep_copy(entropy_true, v_entropy_true);
+#endif
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
       Kokkos::View<Real[num]> v_temperature("Temperature");
       Kokkos::View<Real[num]> v_pressure("Pressure");
+      Kokkos::View<Real[num]> v_entropy("Entropy");
       Kokkos::View<Real[num]> v_heatcapacity("Cv");
       Kokkos::View<Real[num]> v_bulkmodulus("bmod");
       Kokkos::View<Real[num]> v_gruneisen("Gamma");
       auto h_temperature = Kokkos::create_mirror_view(v_temperature);
       auto h_pressure = Kokkos::create_mirror_view(v_pressure);
+      auto h_entropy = Kokkos::create_mirror_view(v_entropy);
       auto h_heatcapacity = Kokkos::create_mirror_view(v_heatcapacity);
       auto h_bulkmodulus = Kokkos::create_mirror_view(v_bulkmodulus);
       auto h_gruneisen = Kokkos::create_mirror_view(v_gruneisen);
@@ -534,12 +557,14 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       // will be passed to the functions in place of the Kokkos views
       std::array<Real, num> h_temperature;
       std::array<Real, num> h_pressure;
+      std::array<Real, num> h_entropy;
       std::array<Real, num> h_heatcapacity;
       std::array<Real, num> h_bulkmodulus;
       std::array<Real, num> h_gruneisen;
       // Just alias the existing pointers
       auto v_temperature = h_temperature.data();
       auto v_pressure = h_pressure.data();
+      auto v_entropy = h_entropy.data();
       auto v_heatcapacity = h_heatcapacity.data();
       auto v_bulkmodulus = h_bulkmodulus.data();
       auto v_gruneisen = h_gruneisen.data();
@@ -566,6 +591,18 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned P(rho, e) should be equal to the true pressure") {
           array_compare(num, density, energy, h_pressure, pressure_true, "Density",
+                        "Energy");
+        }
+      }
+
+      WHEN("An S(rho, e) lookup is performed") {
+        eos.EntropyFromDensityInternalEnergy(v_density, v_energy, v_entropy, num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_entropy, v_entropy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned S(rho, e) should be equal to the true entropy") {
+          array_compare(num, density, energy, h_entropy, entropy_true, "Density",
                         "Energy");
         }
       }
