@@ -24,6 +24,7 @@
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR223]](https://github.com/lanl/singularity-eos/pull/223) Update ports-of-call and add portable error handling
+- [[PR234]](https://github.com/lanl/singularity-eos/pull/234) update ports-of-call to correct for undefined behavior in error handling
 - [[PR219]](https://github.com/lanl/singularity-eos/pull/219) Removed static analysis from re-git pipeline
 
 ### Infrastructure (changes irrelevant to downstream codes)
