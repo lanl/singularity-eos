@@ -481,9 +481,10 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
       INFO("Entropy should be zero but it is " << entropy);
       CHECK(isClose(entropy, 0.0, 1.e-14));
     }
-    GIVEN("A state at the reference temperature and a density whose cube root is the reference density") {
+    GIVEN("A state at the reference temperature and a density whose cube root is the "
+          "reference density") {
       constexpr Real T = EntropyT0;
-      constexpr Real rho = 0.1;  // rho**3 = EntropyRho0
+      constexpr Real rho = 0.1; // rho**3 = EntropyRho0
       THEN("The entropy should be 2. / 3. * gm1 * Cv * log(EntropyRho0)") {
         constexpr Real entropy_true = 2. / 3. * gm1 * Cv * log(EntropyRho0);
         auto entropy = eos.EntropyFromDensityTemperature(rho, T);
@@ -491,8 +492,9 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
         CHECK(isClose(entropy, entropy_true, 1e-12));
       }
     }
-    GIVEN("A state at the reference density and a temperature whose square is the reference temperature") {
-      constexpr Real T = 10;  // T**2 = EntropyT0
+    GIVEN("A state at the reference density and a temperature whose square is the "
+          "reference temperature") {
+      constexpr Real T = 10; // T**2 = EntropyT0
       constexpr Real rho = EntropyRho0;
       THEN("The entropy should be -1. / 2. * Cv * log(EntropyT0)") {
         constexpr Real entropy_true = -1. / 2. * Cv * log(EntropyT0);
@@ -562,14 +564,14 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       std::array<Real, num> entropy_true;
       Real *v_entropy_true = entropy_true.data();
 #endif
-      constexpr Real P0 = 1e6; // microbar
-      constexpr Real T0 = 293; // K
+      constexpr Real P0 = 1e6;                    // microbar
+      constexpr Real T0 = 293;                    // K
       constexpr Real rho0 = P0 / (gm1 * Cv * T0); // g/cm^3
       portableFor(
           "Calculate true entropy", 0, num, PORTABLE_LAMBDA(const int i) {
-            v_entropy_true[i] = Cv * log(v_energy[i] / Cv / T0) +
-                gm1 * Cv * log(rho0 / v_density[i]);
-      });
+            v_entropy_true[i] =
+                Cv * log(v_energy[i] / Cv / T0) + gm1 * Cv * log(rho0 / v_density[i]);
+          });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       auto entropy_true = Kokkos::create_mirror_view(v_entropy_true);
       Kokkos::deep_copy(entropy_true, v_entropy_true);
@@ -732,14 +734,14 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       std::array<Real, num> entropy_true;
       Real *v_entropy_true = entropy_true.data();
 #endif
-      constexpr Real P0 = 1e6; // microbar
-      constexpr Real T0 = 293; // K
+      constexpr Real P0 = 1e6;                    // microbar
+      constexpr Real T0 = 293;                    // K
       constexpr Real rho0 = P0 / (gm1 * Cv * T0); // g/cm^3
       portableFor(
           "Calculate true entropy", 0, num, PORTABLE_LAMBDA(const int i) {
-            v_entropy_true[i] = Cv * log(v_temperature[i] / T0) +
-                gm1 * Cv * log(rho0 / v_density[i]);
-      });
+            v_entropy_true[i] =
+                Cv * log(v_temperature[i] / T0) + gm1 * Cv * log(rho0 / v_density[i]);
+          });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       auto entropy_true = Kokkos::create_mirror_view(v_entropy_true);
       Kokkos::deep_copy(entropy_true, v_entropy_true);

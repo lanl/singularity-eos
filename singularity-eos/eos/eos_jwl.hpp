@@ -122,8 +122,9 @@ PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(const Real 
                                                                      Real *lambda) const {
   return ReferencePressure(rho) + _w * rho * (sie - ReferenceEnergy(rho));
 }
-PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(const Real rho,
+                                                                    const Real sie,
+                                                                    Real *lambda) const {
   EntropyIsNotEnabled();
   return 1.0;
 }
@@ -155,8 +156,9 @@ PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityTemperature(const Real rho
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityTemperature(const Real rho,
+                                                                 const Real temp,
+                                                                 Real *lambda) const {
   EntropyIsNotEnabled();
   return 1.0;
 }
