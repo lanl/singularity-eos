@@ -47,6 +47,8 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   using EosBase<ScaledEOS<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::PressureFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::EntropyFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::BulkModulusFromDensityTemperature;

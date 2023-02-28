@@ -47,6 +47,8 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   using EosBase<ShiftedEOS<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<ShiftedEOS<T>>::PressureFromDensityTemperature;
   using EosBase<ShiftedEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<ShiftedEOS<T>>::EntropyFromDensityTemperature;
+  using EosBase<ShiftedEOS<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<ShiftedEOS<T>>::SpecificHeatFromDensityTemperature;
   using EosBase<ShiftedEOS<T>>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<ShiftedEOS<T>>::BulkModulusFromDensityTemperature;

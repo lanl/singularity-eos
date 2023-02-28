@@ -57,6 +57,8 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   using EosBase<UnitSystem<T>>::PressureFromDensityInternalEnergy;
   using EosBase<UnitSystem<T>>::EntropyFromDensityTemperature;
   using EosBase<UnitSystem<T>>::EntropyFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::EntropyFromDensityTemperature;
+  using EosBase<UnitSystem<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<UnitSystem<T>>::SpecificHeatFromDensityTemperature;
   using EosBase<UnitSystem<T>>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<UnitSystem<T>>::BulkModulusFromDensityTemperature;
