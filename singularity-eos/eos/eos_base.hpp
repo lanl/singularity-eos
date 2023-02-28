@@ -155,9 +155,9 @@ class EosBase {
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
-                                                ConstRealIndexer &&temperatures,
-                                                RealIndexer &&entropies, const int num,
-                                                LambdaIndexer &&lambdas) const {
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&entropies, const int num,
+                                            LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
     CRTP copy = *(static_cast<CRTP const *>(this));
@@ -170,8 +170,8 @@ class EosBase {
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void
   EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
-                                 RealIndexer &&entropies, Real * /*scratch*/,
-                                 const int num, LambdaIndexer &&lambdas) const {
+                                RealIndexer &&entropies, Real * /*scratch*/,
+                                const int num, LambdaIndexer &&lambdas) const {
     EntropyFromDensityTemperature(rhos, temperatures, entropies, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -191,8 +191,8 @@ class EosBase {
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void
   EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
-                                    RealIndexer &&entropies, Real * /*scratch*/,
-                                    const int num, LambdaIndexer &&lambdas) const {
+                                   RealIndexer &&entropies, Real * /*scratch*/,
+                                   const int num, LambdaIndexer &&lambdas) const {
     EntropyFromDensityInternalEnergy(rhos, sies, entropies, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -386,9 +386,8 @@ class EosBase {
   Real RhoPmin(const Real temp) const { return 0.0; }
 
   // Default entropy behavior is to return an error
-  [[noreturn]] PORTABLE_FORCEINLINE_FUNCTION
-  void EntropyIsNotEnabled() const {
-    PORTABLE_ALWAYS_THROW_OR_ABORT(std::string("Entropy is not enabled for the '") + 
+  [[noreturn]] PORTABLE_FORCEINLINE_FUNCTION void EntropyIsNotEnabled() const {
+    PORTABLE_ALWAYS_THROW_OR_ABORT(std::string("Entropy is not enabled for the '") +
                                    std::string(typeid(CRTP).name()) +
                                    std::string("' EOS"));
   }

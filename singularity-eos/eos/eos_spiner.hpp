@@ -948,15 +948,15 @@ Real SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy(const Real rho,
 
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::EntropyFromDensityTemperature(const Real rho,
-                                                          const Real temperature,
-                                                          Real *lambda) const {
+                                                         const Real temperature,
+                                                         Real *lambda) const {
   EntropyIsNotEnabled();
   return 1.0;
 }
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::EntropyFromDensityInternalEnergy(const Real rho,
-                                                             const Real sie,
-                                                             Real *lambda) const {
+                                                            const Real sie,
+                                                            Real *lambda) const {
   EntropyIsNotEnabled();
   return 1.0;
 }
@@ -1679,15 +1679,15 @@ Real SpinerEOSDependsRhoSie::PressureFromDensityInternalEnergy(const Real rho,
 
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::EntropyFromDensityTemperature(const Real rho,
-                                                          const Real temperature,
-                                                          Real *lambda) const {
+                                                           const Real temperature,
+                                                           Real *lambda) const {
   EntropyIsNotEnabled();
   return 1.0;
 }
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::EntropyFromDensityInternalEnergy(const Real rho,
-                                                             const Real sie,
-                                                             Real *lambda) const {
+                                                              const Real sie,
+                                                              Real *lambda) const {
   EntropyIsNotEnabled();
   return 1.0;
 }

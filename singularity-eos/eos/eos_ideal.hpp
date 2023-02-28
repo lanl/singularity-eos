@@ -41,24 +41,17 @@ class IdealGas : public EosBase<IdealGas> {
   PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv)
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
-        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(_T0),
-        _EntropyRho0(_rho0)
-  {
+        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(_T0), _EntropyRho0(_rho0) {
     checkParams();
   }
-  PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv, Real EntropyT0,
-                                    Real EntropyRho0)
+  PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0)
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
-        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(EntropyT0),
-        _EntropyRho0(EntropyRho0)
-  {
+        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(EntropyT0), _EntropyRho0(EntropyRho0) {
     checkParams();
   }
 
-  IdealGas GetOnDevice() {
-    return *this;
-  }
+  IdealGas GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return MYMAX(0.0, sie / _Cv);
@@ -68,8 +61,10 @@ class IdealGas : public EosBase<IdealGas> {
     // reflect this and the code should be changed when ports-of-call changes
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_EntropyT0 >= 0, "Entropy reference temperature must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 >= 0, "Entropy reference density must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_EntropyT0 >= 0,
+                            "Entropy reference temperature must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 >= 0,
+                            "Entropy reference density must be positive");
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
@@ -86,7 +81,7 @@ class IdealGas : public EosBase<IdealGas> {
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
     return _Cv * log(robust::ratio(temperature, _EntropyT0)) +
-      _gm1 * _Cv * log(robust::ratio(_EntropyRho0, rho));
+           _gm1 * _Cv * log(robust::ratio(_EntropyRho0, rho));
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {

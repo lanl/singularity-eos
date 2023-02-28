@@ -91,9 +91,9 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
     return t_.PressureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
   }
   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                         Real *lambda = nullptr) const {
-    return scale_ * 
-      t_.EntropyFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
+                                        Real *lambda = nullptr) const {
+    return scale_ *
+           t_.EntropyFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -120,7 +120,7 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   }
   PORTABLE_FUNCTION
   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
-                                      Real *lambda = nullptr) const {
+                                     Real *lambda = nullptr) const {
     return scale_ * t_.EntropyFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
