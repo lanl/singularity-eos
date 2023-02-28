@@ -19,7 +19,6 @@
 #include <cmath>
 #include <cstdio>
 #include <string>
-#include <cmath>
 
 // Ports-of-call
 #include <ports-of-call/portability.hpp>
@@ -92,7 +91,7 @@ class IdealGas : public EosBase<IdealGas> {
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-    return EntropyFromDensityTemperature(rho, sie, lambda);
+    return EntropyFromDensityTemperature(rho, temp, lambda);
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
