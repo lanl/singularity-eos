@@ -77,6 +77,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   using EosBase<SpinerEOSDependsRhoT>::InternalEnergyFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::EntropyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::EntropyFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityTemperature;
@@ -307,6 +309,8 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   using EosBase<SpinerEOSDependsRhoSie>::InternalEnergyFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::EntropyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::EntropyFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityTemperature;
