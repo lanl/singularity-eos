@@ -71,6 +71,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
   using EosBase<StellarCollapse>::PressureFromDensityTemperature;
   using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::EntropyFromDensityTemperature;
+  using EosBase<StellarCollapse>::EntropyFromDensityInternalEnergy;
   using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
   using EosBase<StellarCollapse>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<StellarCollapse>::BulkModulusFromDensityTemperature;
