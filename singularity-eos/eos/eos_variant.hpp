@@ -420,7 +420,7 @@ class Variant {
         eos_);
   }
 
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer>
   inline void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&sies,
                                                 RealIndexer &&pressures, Real *scratch,
