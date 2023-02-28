@@ -467,8 +467,7 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
   }
 }
 
-SCENARIO("Ideal entropy", "[IdealGas][Entropy]") {
-
+SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
   GIVEN("Parameters for an ideal gas with entropy reference states") {
     // Create ideal gas EOS ojbect
     constexpr Real Cv = 5.0;

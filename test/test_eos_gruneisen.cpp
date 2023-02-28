@@ -32,6 +32,34 @@ PORTABLE_INLINE_FUNCTION Real QuadFormulaMinus(Real a, Real b, Real c) {
   return (-b - std::sqrt(b * b - 4 * a * c)) / (2 * a);
 }
 
+SCENARIO("Gruneisen EOS entropy is disabled", "[GruneisenEOS][Entropy]") {
+  GIVEN("Parameters for a Gruneisen EOS") {
+    // Unit conversions
+    constexpr Real cm = 1.;
+    constexpr Real us = 1e-06;
+    constexpr Real Mbcc_per_g = 1e12;
+    // Gruneisen parameters for copper
+    constexpr Real C0 = 0.394 * cm / us;
+    constexpr Real S1 = 1.489;
+    constexpr Real S2 = 0.;
+    constexpr Real S3 = 0.;
+    constexpr Real Gamma0 = 2.02;
+    constexpr Real b = 0.47;
+    constexpr Real rho0 = 8.93;
+    constexpr Real T0 = 298.;
+    constexpr Real P0 = 0.;
+    constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
+    // Create the EOS
+    EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
+    EOS eos = host_eos.GetOnDevice();
+    THEN("A call to the entropy should throw an exception") {
+      using Catch::Matchers::Contains;
+      auto msg_matcher = Contains("Entropy is not enabled");
+      REQUIRE_THROWS_WITH(eos.EntropyFromDensityTemperature(1.0, 1.0), msg_matcher);
+    }
+  }
+}
+
 SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
   GIVEN("Parameters for a Gruneisen EOS") {
     // Unit conversions
