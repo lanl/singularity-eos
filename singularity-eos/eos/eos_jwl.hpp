@@ -50,6 +50,10 @@ class JWL : public EosBase<JWL> {
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
@@ -118,6 +122,11 @@ PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(const Real 
                                                                      Real *lambda) const {
   return ReferencePressure(rho) + _w * rho * (sie - ReferenceEnergy(rho));
 }
+PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *lambda) const {
+  EntropyIsNotEnabled();
+  return 1.0;
+}
 PORTABLE_INLINE_FUNCTION Real JWL::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   return (sie - ReferenceEnergy(rho)) / _Cv;
@@ -145,6 +154,11 @@ PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityTemperature(const Real rho
                                                                   Real *lambda) const {
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
+}
+PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityTemperature(
+    const Real rho, const Real temp, Real *lambda) const {
+  EntropyIsNotEnabled();
+  return 1.0;
 }
 PORTABLE_INLINE_FUNCTION Real JWL::SpecificHeatFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
