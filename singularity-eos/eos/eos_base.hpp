@@ -391,8 +391,8 @@ class EosBase {
   void EntropyIsNotEnabled(const char *eosname) const {
     // Construct the error message using char* so it works on device
     char msg[120] = "Entropy is not enabled for the '";
-    strcat(msg, eosname);
-    strcat(msg, "' EOS");
+    std::strcat(msg, eosname);
+    std::strcat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 };
