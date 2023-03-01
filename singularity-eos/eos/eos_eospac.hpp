@@ -819,7 +819,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(const Real 
 
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
     const Real rho, const Real temperature, Real *lambda) const {
-  EntropyIsNotEnabled();
+  EntropyIsNotEnabled("EOSPAC");
   return 1.0;
 }
 

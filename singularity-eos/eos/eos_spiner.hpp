@@ -954,14 +954,14 @@ PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::EntropyFromDensityTemperature(const Real rho,
                                                          const Real temperature,
                                                          Real *lambda) const {
-  EntropyIsNotEnabled();
+  EntropyIsNotEnabled("SpinerEOSDependsRhoT");
   return 1.0;
 }
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::EntropyFromDensityInternalEnergy(const Real rho,
                                                             const Real sie,
                                                             Real *lambda) const {
-  EntropyIsNotEnabled();
+  EntropyIsNotEnabled("SpinerEOSDependsRhoT");
   return 1.0;
 }
 
@@ -1685,14 +1685,14 @@ PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::EntropyFromDensityTemperature(const Real rho,
                                                            const Real temperature,
                                                            Real *lambda) const {
-  EntropyIsNotEnabled();
+  EntropyIsNotEnabled("SpinerEOSDependsRhoSie");
   return 1.0;
 }
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::EntropyFromDensityInternalEnergy(const Real rho,
                                                               const Real sie,
                                                               Real *lambda) const {
-  EntropyIsNotEnabled();
+  EntropyIsNotEnabled("SpinerEOSDependsRhoSie");
   return 1.0;
 }
 

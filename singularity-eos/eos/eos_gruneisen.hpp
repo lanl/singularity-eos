@@ -317,7 +317,7 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
 PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityInternalEnergy(
     const Real rho_in, const Real sie, Real *lambda) const {
   const Real rho = std::min(rho_in, _rho_max);
-  EntropyIsNotEnabled();
+  EntropyIsNotEnabled("Gruneisen");
   return 1.0;
 }
 PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(

@@ -16,6 +16,7 @@
 #define _SINGULARITY_EOS_EOS_EOS_BASE_
 
 #include <string>
+#include <cstring>
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
@@ -386,10 +387,13 @@ class EosBase {
   Real RhoPmin(const Real temp) const { return 0.0; }
 
   // Default entropy behavior is to return an error
-  [[noreturn]] PORTABLE_FORCEINLINE_FUNCTION void EntropyIsNotEnabled() const {
-    PORTABLE_ALWAYS_THROW_OR_ABORT(std::string("Entropy is not enabled for the '") +
-                                   std::string(typeid(CRTP).name()) +
-                                   std::string("' EOS"));
+  PORTABLE_FORCEINLINE_FUNCTION
+  void EntropyIsNotEnabled(const char* eosname) const {
+    // Construct the error message using char* so it works on device
+    char msg[120] = "Entropy is not enabled for the '";
+    strcat(msg, eosname);
+    strcat(msg, "' EOS");
+    PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 };
 } // namespace eos_base
