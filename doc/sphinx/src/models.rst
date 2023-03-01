@@ -205,12 +205,12 @@ in the :doc:`EOS API <using-eos>`.
 .. [#PT]
     Note: Using pressure and temperature as independent variables is fraught
     since both pressure and energy are often multi-valued in density for many
-    EOS due to the presence of phase changes (especially tabular EOS). For EOS
-    in ``singularity-eos`` where there is not an analytic inversion to
-    pressure-temperature space, a root-find is typically used that uses the
-    density at standard temperature and pressure (STP) as an initial guess. Thus
-    for a multivalued pressure, the returned density will most often be that
-    closest to the STP density.
+    EOS due to the presence of phase changes (especially tabular EOS). For
+    analytic EOS in ``singularity-eos`` where there is not an analytic inversion
+    to pressure-temperature space, a root-find is typically used that uses the
+    density at standard temperature and pressure (STP) as an initial guess. The
+    notable exceptions to this are the spiner EOS that allow the introduction of
+    an initial guess via the ``lambda`` function argument.
 
 A point of note is that "specific" implies that the quantity is intensive on a
 per unit mass basis. It should be assumed that the internal energy and entopry
