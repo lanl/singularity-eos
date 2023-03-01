@@ -486,7 +486,7 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
       constexpr Real T = EntropyT0;
       constexpr Real rho = 0.1; // rho**3 = EntropyRho0
       THEN("The entropy should be 2. / 3. * gm1 * Cv * log(EntropyRho0)") {
-        constexpr Real entropy_true = 2. / 3. * gm1 * Cv * log(EntropyRho0);
+        const Real entropy_true = 2. / 3. * gm1 * Cv * log(EntropyRho0);
         auto entropy = eos.EntropyFromDensityTemperature(rho, T);
         INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
         CHECK(isClose(entropy, entropy_true, 1e-12));
@@ -497,7 +497,7 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
       constexpr Real T = 10; // T**2 = EntropyT0
       constexpr Real rho = EntropyRho0;
       THEN("The entropy should be -1. / 2. * Cv * log(EntropyT0)") {
-        constexpr Real entropy_true = -1. / 2. * Cv * log(EntropyT0);
+        const Real entropy_true = -1. / 2. * Cv * log(EntropyT0);
         auto entropy = eos.EntropyFromDensityTemperature(rho, T);
         INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
         CHECK(isClose(entropy, entropy_true, 1e-12));
