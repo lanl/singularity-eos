@@ -32,6 +32,8 @@ PORTABLE_INLINE_FUNCTION Real QuadFormulaMinus(Real a, Real b, Real c) {
   return (-b - std::sqrt(b * b - 4 * a * c)) / (2 * a);
 }
 
+// Only run exception checking when we aren't offloading to the GPUs
+#ifdef PORTABILITY_STRATEGY_NONE
 SCENARIO("Gruneisen EOS entropy is disabled", "[GruneisenEOS][Entropy]") {
   GIVEN("Parameters for a Gruneisen EOS") {
     // Unit conversions
@@ -59,6 +61,7 @@ SCENARIO("Gruneisen EOS entropy is disabled", "[GruneisenEOS][Entropy]") {
     }
   }
 }
+#endif
 
 SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
   GIVEN("Parameters for a Gruneisen EOS") {
