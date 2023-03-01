@@ -73,13 +73,13 @@ Davis EOS use the material's isentrope. In ths way, the reference curve
 indicates the conditions under which you can expect the EOS to represent the
 intended behavior.
 
-Completing an Incomplete Equation of State and Consequences for Thermodynamic Consistency
-`````````````````````````````````````````````````````````````````````````````````````````
+Some Notes on Thermodynamic Consistency
+````````````````````````````````````````
 
 .. _Complete EOS:
 
 For the pure purpose of solving the Euler equations, an incomplete equation of
-state of the form :math:`P(rho, e)` is sufficient. In essence, this provides the
+state of the form :math:`P(\rho, e)` is sufficient. In essence, this provides the
 mechanical response of a material subjected to different types of compression
 and expansion. However, this EOS is lacking *thermal* information without an
 appropriate heat capacity relationship.
@@ -95,13 +95,13 @@ variables*, i.e.
     F =& F(\rho, T) \\
     G =& G(P, T) \\
 
-where all potentials are specific, :math:`e` is again the internal energy,
+where all potentials are specific. Here :math:`e` is again the internal energy,
 :math:`h` is the enthalpy, :math:`F` is the Helmholtz free energy, and :math:`G`
 is the Gibbs free energy. While equations of state formulated using the
 Helmholtz free energy can be particularly attractive (such as the sesame
-tables), finding a convenient form can be difficult. As such, the Mie Gruneisen
-form tends to dominate most analytic EOS and it becomes imperitive to extend the
-incomplete form to a complete equation of state.
+tables), finding a convenient form can be difficult. As such, it becomes
+imperitive to extend the Mie-Gruneisen form so that it can form a complete
+EOS.
 
 The heat capacity is defined as
 
@@ -165,42 +165,52 @@ The EOS models in ``singularity-eos`` are defined for the following sets of
 dependent and independent variables through various member functions described
 in the :doc:`EOS API <using-eos>`.
 
-+--------------------------+----------------------+--------------------------+
-| Function                 | Dependent Variable   | Independent Variables    |
-+==========================+======================+==========================+
-| :math:`T(\rho, e)`       | Temperature          | Density, Specific        |
-+--------------------------+----------------------+ Internal Energy          |
-| :math:`P(\rho, e)`       | Pressure             |                          |
-+--------------------------+----------------------+                          |
-| :math:`S(\rho, e)`       | Specific Entropy     |                          |
-+--------------------------+----------------------+--------------------------+
-| :math:`e(\rho, T)`       | Specific Internal    | Density, Temperature     |
-|                          | Energy               |                          |
-+--------------------------+----------------------+                          |
-| :math:`P(\rho, T)`       | Pressure             |                          |
-+--------------------------+----------------------+                          |
-| :math:`S(\rho, T)`       | Specific Entropy     |                          |
-+--------------------------+----------------------+--------------------------+
-| :math:`\rho(P, T)`       | Density              | Pressure, Temperature    |
-+--------------------------+----------------------+                          |
-| :math:`e(P, T)`          | Specific Internal    |                          |
-|                          | Energy               |                          |
-+--------------------------+----------------------+--------------------------+
-| :math:`C_V(\rho, T)`     | Constant Volume      | Density, Temperature     |
-+--------------------------+ Specific Heat        +--------------------------+
-| :math:`C_V(\rho, e)`     | Capacity             | Density, Specific        |
-|                          |                      | Internal Energy          |
-+--------------------------+----------------------+--------------------------+
-| :math:`B_S(\rho, T)`     | Isentropic Bulk      | Density, Temperature     |
-+--------------------------+ Modulus              +--------------------------+
-| :math:`B_S(\rho, e)`     |                      | Density, Specific        |
-|                          |                      | Internal Energy          |
-+--------------------------+----------------------+--------------------------+
-| :math:`\Gamma(\rho, T)`  | Gruneisen Parameter  | Density, Temperature     |
-+--------------------------+                      +--------------------------+
-| :math:`\Gamma(\rho, e)`  |                      | Density, Specific        |
-|                          |                      | Internal Energy          |
-+--------------------------+----------------------+--------------------------+
++---------------------------+----------------------+--------------------------+
+| Function                  | Dependent Variable   | Independent Variables    |
++===========================+======================+==========================+
+| :math:`T(\rho, e)`        | Temperature          | Density, Specific        |
++---------------------------+----------------------+ Internal Energy          |
+| :math:`P(\rho, e)`        | Pressure             |                          |
++---------------------------+----------------------+                          |
+| :math:`S(\rho, e)`        | Specific Entropy     |                          |
++---------------------------+----------------------+--------------------------+
+| :math:`e(\rho, T)`        | Specific Internal    | Density, Temperature     |
+|                           | Energy               |                          |
++---------------------------+----------------------+                          |
+| :math:`P(\rho, T)`        | Pressure             |                          |
++---------------------------+----------------------+                          |
+| :math:`S(\rho, T)`        | Specific Entropy     |                          |
++---------------------------+----------------------+--------------------------+
+| :math:`\rho(P, T)` [#PT]_ | Density              | Pressure, [#PT]_         |
++---------------------------+----------------------+ Temperature [#PT]_       |
+| :math:`e(P, T)` [#PT]_    | Specific Internal    |                          |
+|                           | Energy               |                          |
++---------------------------+----------------------+--------------------------+
+| :math:`C_V(\rho, T)`      | Constant Volume      | Density, Temperature     |
++---------------------------+ Specific Heat        +--------------------------+
+| :math:`C_V(\rho, e)`      | Capacity             | Density, Specific        |
+|                           |                      | Internal Energy          |
++---------------------------+----------------------+--------------------------+
+| :math:`B_S(\rho, T)`      | Isentropic Bulk      | Density, Temperature     |
++---------------------------+ Modulus              +--------------------------+
+| :math:`B_S(\rho, e)`      |                      | Density, Specific        |
+|                           |                      | Internal Energy          |
++---------------------------+----------------------+--------------------------+
+| :math:`\Gamma(\rho, T)`   | Gruneisen Parameter  | Density, Temperature     |
++---------------------------+                      +--------------------------+
+| :math:`\Gamma(\rho, e)`   |                      | Density, Specific        |
+|                           |                      | Internal Energy          |
++---------------------------+----------------------+--------------------------+
+
+.. [#PT]
+    Note: Using pressure and temperature as independent variables is fraught
+    since both pressure and energy are often multi-valued in density for many
+    EOS due to the presence of phase changes (especially tabular EOS). For EOS
+    in ``singularity-eos`` where there is not an analytic inversion to
+    pressure-temperature space, a root-find is typically used that uses the
+    density at standard temperature and pressure (STP) as an initial guess. Thus
+    for a multivalued pressure, the returned density will most often be that
+    closest to the STP density.
 
 A point of note is that "specific" implies that the quantity is intensive on a
 per unit mass basis. It should be assumed that the internal energy and entopry
@@ -673,7 +683,7 @@ where ``A`` is :math:`A`, ``B`` is :math:`B`, ``R1`` is :math:`R_1`,
 and ``Cv`` is :math:`C_V`.
 
 Davis EOS
-``````````
+```````````
 
 The `Davis reactants <DavisReactants_>`_ and products EOS are both of
 Mie-Gruneisen forms that use isentropes for the reference curves. The equations
@@ -702,7 +712,7 @@ Davis Reactants EOS
 .. warning::
     Entropy is not yet available for this EOS
 
-The `Davis reactants EOS <DavisReactants_>` uses an isentrope passing through a
+The `Davis reactants EOS <DavisReactants_>`_ uses an isentrope passing through a
 reference state and as the reference curve and then assumes that the heat
 capacity varies linearly with entropy such that
 
@@ -713,19 +723,7 @@ capacity varies linearly with entropy such that
 where subscript :math:`0` refers to the reference state and :math:`\alpha` is
 a dimensionless constant specified by the user.
 
-Using the fact that the heat capacity is defined by
-
-The :math:`e(\rho, P)` lookup is quite awkward, so the energy is
-more-conveniently cast in terms of termperature such that
-
-.. math::
-
-    e(\rho, T) = e_S(\rho) + \frac{C_{V,0} T_S(\rho)}{1 + \alpha}
-      \left( \left(\frac{T}{T_S(\rho)} \right)^{1 + \alpha} - 1 \right),
-
-which can easily be inverted to find :math:`T(\rho, e)`.
-
-The Gruneisen parameter takes on a linear form such that
+The Gruneisen parameter is given a linear form such that
 
 .. math::
 
@@ -736,14 +734,66 @@ The Gruneisen parameter takes on a linear form such that
       \end{cases}
 
 where :math:`Z` is a dimensionless parameter and :math:`y = 1 - \rho0/\rho`.
+Along an isentrope, the Gruneisen parameter can be expressed as
 
-Finally, the pressure, energy, and temperature along the isentrope are given by
+.. math::
+
+    \Gamma_S(\rho) = \frac{\rho}{T}
+                     \left(\frac{\partial T}{\partial \rho}\right)_S,
+
+which, upon integration can produce the temperature along the reference
+isentrope:
+
+.. math::
+
+    T_{S,0}(\rho) =
+      \begin{cases}
+        T_0\left(\frac{\rho}{\rho_0}\right)^{\Gamma_0}       & \rho < \rho_0 \\
+        T_0\exp\left(-Zy\right)\left(\frac{\rho}{\rho_0}\right)^{\Gamma_0 + Z}
+                                                             & \rho >= \rho_0
+      \end{cases}
+
+where :math:`T_{S,0}` is the temperature along the reference isentrope,
+:math:`S = S_0`.
+
+Using the fact that the heat capacity can be expressed as
+
+.. math::
+
+    C_V = T\left( \frac{\partial S}{\partial T} \right)_V,
+
+the temperature off of the reference isoentrope can be integrated from this
+identity to yield
+
+.. math::
+
+    T(\rho, S) = T_{S,0}(\rho) \left( \frac{C_V(S)}{C_{V,0}} \right)^{\frac{1}{\alpha}},
+
+Now requiring that the entropy go to zero at absolute zero in accordance with
+the Nernst postulate and the third law of thermodynamics, the entropy can be
+expressed as a function of temperature and density such that
+
+.. math::
+
+    S(\rho, T) = \frac{C_{V,0}}{\alpha} \left( \frac{T}{T_{S,0}(\rho)} \right)^\alpha.
+
+The :math:`e(\rho, P)` formulation can now be more-conveniently cast in terms of
+termperature such that
+
+.. math::
+
+    e(\rho, T) = e_S(\rho) + \frac{C_{V,0} T_S(\rho)}{1 + \alpha}
+      \left( \left(\frac{T}{T_S(\rho)} \right)^{1 + \alpha} - 1 \right),
+
+which can easily be inverted to find :math:`T(\rho, e)`.
+
+Finally, the pressure and energy along the isentrope are given by
 
 .. math::
 
     P_S(\rho) = P_0 + \frac{\rho_0 A^2}{4B}
       \begin{cases}
-        \mathrm{e} \left( 4By \right) -1   & \rho < \rho_0 \\
+        \exp \left( 4By \right) -1   & \rho < \rho_0 \\
         \sum\limits_{j=1}^3 \frac{(4By)^j}{j!} + C\frac{(4By)^4}{4!}
             + \frac{y^2}{(1-y)^4}    & \rho >= \rho0
       \end{cases}
@@ -751,16 +801,8 @@ Finally, the pressure, energy, and temperature along the isentrope are given by
 .. math::
 
     e_S(\rho) = e_0 + \int\limits_{\rho_0}^{\rho}
-      \frac{P_S(\bar{\rho})}{\bar{\rho^2}}~\mathrm{d}\bar{\rho}
+      \frac{P_S(\bar{\rho})}{\bar{\rho^2}}~\mathrm{d}\bar{\rho},
 
-.. math::
-
-    T_S(\rho)  = T_0
-      \begin{cases}
-        \left(\frac{\rho}{\rho_0} \right)^{\Gamma_0}  & \rho < \rho_0 \\
-        \mathrm{e} \left( -Zy \right) \left(\frac{\rho}{\rho_0} \right)^{\Gamma_0 + Z}
-                                                      & \rho >= \rho_0
-      \end{cases}
 
 where :math:`A`, :math:`B`, :math:`C`, :math:`y`, and :math:`Z` are all
 user-settable parameters and again quantities with a subcript of :math:`0`
