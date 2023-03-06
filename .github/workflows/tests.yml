@@ -31,6 +31,7 @@ jobs:
             mkdir -p ${HOME}/install
             cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
                   -DSINGULARITY_BUILD_TESTS=ON \
+                  -DSINGULARITY_BUILD_EXAMPLES=ON \
                   -DSINGULARITY_BUILD_PYTHON=ON \
                   -DSINGULARITY_USE_HDF5=ON \
                   -DSINGULARITY_TEST_SESAME=OFF \
