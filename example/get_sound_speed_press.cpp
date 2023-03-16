@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -16,6 +16,8 @@
 #include <cmath>
 #include <iostream>
 
+// This contains useful tools for preventing things like divide by zero
+#include <singularity-eos/base/robust_utils.hpp>
 // Needed to import the eos models
 #include <singularity-eos/eos/eos.hpp>
 // One way of initializing models with modifiers
@@ -23,8 +25,6 @@
 
 // For simplicity. Most things live in the singularity namespace
 using namespace singularity;
-
-constexpr double SMALL = 1e-20; // to avoid dividing by zero
 
 // Loop through a flattened list of cells and fill pressure and sound
 // speed using a given EOS. We make the call two different ways, once
@@ -48,10 +48,10 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
 
   // Loop through the cells and use the two function calls
   for (int i = 0; i < Ncells; ++i) {
-    double sie = uu[i] / (rho[i] + SMALL); // convert to specific internal energy
+    double sie = robust::ratio(uu[i], rho[i]); // convert to specific internal energy
     P[i] = eos.PressureFromDensityInternalEnergy(rho[i], sie, lambda.data());
     double bmod = eos.BulkModulusFromDensityInternalEnergy(rho[i], sie, lambda.data());
-    cs[i] = std::sqrt(bmod / (rho[i] + SMALL));
+    cs[i] = std::sqrt(robust::ratio(bmod, rho[i]));
   }
 
   /*
@@ -78,10 +78,10 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
     // FillEos is very general and is capable of modifying any of the inputs,
     // so const vars cannot be passed into it. However, it is often more performant
     // than making individual function calls.
-    Real sie = uu[i] / (rho[i] + SMALL); // convert to specific internal energy
+    Real sie = robust::ratio(uu[i], rho[i]); // convert to specific internal energy
     eos.FillEos(rho[i], temp, sie, P[i], cv, cs[i], output, lambda.data());
     // convert bulk modulus to cs
-    cs[i] = std::sqrt(cs[i] / (rho[i] + SMALL));
+    cs[i] = std::sqrt(robust::ratio(cs[i], rho[i]));
   }
 }
 
