@@ -84,9 +84,9 @@ mechanical response of a material subjected to different types of compression
 and expansion. However, this EOS is lacking *thermal* information without an
 appropriate heat capacity relationship.
 
-In general, an equation of state can be considered "complete" if it is
-constructed from one of the thermodynamic potentials using their *natural
-variables*, i.e.
+As discussed `by Mattsson <WillsThermo_>`_, an equation of state can be
+considered "complete" if it is constructed from one of the thermodynamic
+potentials using their *natural variables*, i.e.
 
 .. math::
 
