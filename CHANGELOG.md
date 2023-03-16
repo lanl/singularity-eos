@@ -2,12 +2,11 @@
 
 ## Current develop
 
-### Fixed (Repair, bugs, ect)
+### Fixed (Repair bugs, etc)
 - [[PR238]](https://github.com/lanl/singularity-eos/pull/238) Fixed broken examples
-- [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
-- [[PR228]](https://github.com/lanl/singularity-eos/pull/228) and [[PR229]](https://github.com/lanl/singularity-eos/pull/229) added untracked header files in cmake
 - [[PR228]](https://github.com/lanl/singularity-eos/pull/228) added untracked header files in cmake
 - [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
+- [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
 
 ### Added (new features/APIs/variables/...)
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
@@ -15,12 +14,15 @@
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
 - [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
 - [[PR214]](https://github.com/lanl/singularity-eos/pull/214) added documentation about adding a new EOS
+- [[PR228]](https://github.com/lanl/singularity-eos/pull/228) and [[PR229]](https://github.com/lanl/singularity-eos/pull/229) added untracked header files in cmake
+- [[PR233]](https://github.com/lanl/singularity-eos/pull/233) Added entropy infrastructure to singularity. Add entropy for the ideal gas and modifiers while throwing an error for EOS where entropy is not implemented yet
 - [[PR177]](https://github.com/lanl/singularity-eos/pull/177) added EOSPAC vector functions
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR223]](https://github.com/lanl/singularity-eos/pull/223) Update ports-of-call and add portable error handling
 - [[PR234]](https://github.com/lanl/singularity-eos/pull/234) update ports-of-call to correct for undefined behavior in error handling
 - [[PR219]](https://github.com/lanl/singularity-eos/pull/219) Removed static analysis from re-git pipeline
+- [[PR233]](https://github.com/lanl/singularity-eos/pull/233) Exposed entropy for the EOS type (now required for future EOS)
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR190]](https://github.com/lanl/singularity-eos/pull/190) update CI on re-git

@@ -47,6 +47,8 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   using EosBase<RelativisticEOS<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<RelativisticEOS<T>>::PressureFromDensityTemperature;
   using EosBase<RelativisticEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::EntropyFromDensityTemperature;
+  using EosBase<RelativisticEOS<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<RelativisticEOS<T>>::SpecificHeatFromDensityTemperature;
   using EosBase<RelativisticEOS<T>>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<RelativisticEOS<T>>::BulkModulusFromDensityTemperature;
@@ -92,6 +94,11 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
     return t_.PressureFromDensityInternalEnergy(rho, sie, lambda);
   }
   PORTABLE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const {
+    return t_.EntropyFromDensityInternalEnergy(rho, sie, lambda);
+  }
+  PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda = nullptr) const {
     return t_.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
@@ -113,6 +120,11 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
     return t_.PressureFromDensityTemperature(rho, temperature, lambda);
+  }
+  PORTABLE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const {
+    return t_.EntropyFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,

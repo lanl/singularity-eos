@@ -143,6 +143,11 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     return p_eos < p_ramp ? p_ramp : p_eos;
   }
   PORTABLE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const {
+    return t_.EntropyFromDensityInternalEnergy(rho, sie, lambda);
+  }
+  PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda = nullptr) const {
     return t_.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
@@ -167,6 +172,11 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     const Real p_ramp{get_ramp_pressure(rho)};
     const Real p_eos{t_.PressureFromDensityTemperature(rho, temperature, lambda)};
     return p_eos < p_ramp ? p_ramp : p_eos;
+  }
+  PORTABLE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const {
+    return t_.EntropyFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,

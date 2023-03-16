@@ -76,6 +76,10 @@ class Gruneisen : public EosBase<Gruneisen> {
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperatummmmmmre, Real *lambda = nullptr) const {
     return _Cv;
@@ -310,6 +314,12 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
   }
   return P_H + Gamma(rho) * rho * (sie - E_H);
 }
+PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityInternalEnergy(
+    const Real rho_in, const Real sie, Real *lambda) const {
+  const Real rho = std::min(rho_in, _rho_max);
+  EntropyIsNotEnabled("Gruneisen");
+  return 1.0;
+}
 PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
     const Real rho_in, const Real sie, Real *lambda) const {
   using namespace gruneisen_utils;
@@ -331,6 +341,12 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityTemperature(
   const Real rho = std::min(rho_in, _rho_max);
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
+}
+PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityTemperature(
+    const Real rho_in, const Real temp, Real *lambda) const {
+  const Real rho = std::min(rho_in, _rho_max);
+  const Real sie = InternalEnergyFromDensityTemperature(rho, temp);
+  return EntropyFromDensityInternalEnergy(rho, sie);
 }
 PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityTemperature(
     const Real rho_in, const Real temp, Real *lambda) const {

@@ -111,6 +111,25 @@ class Variant {
         },
         eos_);
   }
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const {
+    return mpark::visit(
+        [&rho, &temperature, &lambda](const auto &eos) {
+          return eos.EntropyFromDensityTemperature(rho, temperature, lambda);
+        },
+        eos_);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const {
+    return mpark::visit(
+        [&rho, &sie, &lambda](const auto &eos) {
+          return eos.EntropyFromDensityInternalEnergy(rho, sie, lambda);
+        },
+        eos_);
+  }
 
   PORTABLE_INLINE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
@@ -420,6 +439,93 @@ class Variant {
         [&rhos, &sies, &pressures, &scratch, &num, &lambdas](const auto &eos) {
           return eos.PressureFromDensityInternalEnergy(rhos, sies, pressures, scratch,
                                                        num, lambdas);
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void
+  EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                RealIndexer &&entropies, const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return EntropyFromDensityTemperature(rhos, temperatures, entropies, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&entropies, const int num,
+                                            LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &entropies, &num, &lambdas](const auto &eos) {
+          return eos.EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
+                                                   lambdas);
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&entropies, Real *scratch,
+                                            const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return EntropyFromDensityTemperature(rhos, temperatures, entropies, scratch, num,
+                                         lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                RealIndexer &&entropies, Real *scratch, const int num,
+                                LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &entropies, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.EntropyFromDensityTemperature(rhos, temperatures, entropies, scratch,
+                                                   num, lambdas);
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void
+  EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                   RealIndexer &&entropies, const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return EntropyFromDensityInternalEnergy(rhos, sies, entropies, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&entropies, const int num,
+                                               LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &entropies, &num, &lambdas](const auto &eos) {
+          return eos.EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
+                                                      lambdas);
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&entropies, Real *scratch,
+                                               const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return EntropyFromDensityInternalEnergy(rhos, sies, entropies, scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                   RealIndexer &&entropies, Real *scratch, const int num,
+                                   LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &entropies, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.EntropyFromDensityInternalEnergy(rhos, sies, entropies, scratch, num,
+                                                      lambdas);
         },
         eos_);
   }
