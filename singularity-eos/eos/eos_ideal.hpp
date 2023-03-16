@@ -26,6 +26,7 @@
 // Base stuff
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 #define MYMAX(a, b) a > b ? a : b
@@ -40,12 +41,30 @@ class IdealGas : public EosBase<IdealGas> {
   PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv)
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
-        _dvdt0(1. / (_rho0 * _T0)) {}
+        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(_T0), _EntropyRho0(_rho0) {
+    checkParams();
+  }
+  PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0)
+      : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
+        _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
+        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(EntropyT0), _EntropyRho0(EntropyRho0) {
+    checkParams();
+  }
 
   IdealGas GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return MYMAX(0.0, sie / _Cv);
+  }
+  PORTABLE_INLINE_FUNCTION void checkParams() const {
+    // Portable_require seems to do the opposite of what it should. Conditions
+    // reflect this and the code should be changed when ports-of-call changes
+    PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_EntropyT0 >= 0,
+                            "Entropy reference temperature must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 >= 0,
+                            "Entropy reference density must be positive");
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
@@ -58,6 +77,16 @@ class IdealGas : public EosBase<IdealGas> {
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return MYMAX(0.0, _gm1 * rho * sie);
+  }
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    return _Cv * log(robust::ratio(temperature, _EntropyT0)) +
+           _gm1 * _Cv * log(robust::ratio(_EntropyRho0, rho));
+  }
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
+    return EntropyFromDensityTemperature(rho, temp, lambda);
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
@@ -132,6 +161,8 @@ class IdealGas : public EosBase<IdealGas> {
   // static constexpr const char _eos_type[] = {"IdealGas"};
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
+  // optional entropy reference state variables
+  Real _EntropyT0, _EntropyRho0;
 };
 
 PORTABLE_INLINE_FUNCTION
