@@ -34,6 +34,25 @@ static inline auto member_func_name(const char *type_name, const char *func_name
 namespace singularity {
 namespace eos_base {
 
+namespace impl {
+PORTABLE_FORCEINLINE_FUNCTION
+char *StrCopy(char *dest, const char *src){
+  int i = 0;
+  do {
+    dest[i] = src[i];}
+  while (src[i++] != 0);
+  return dest;
+}
+
+PORTABLE_FORCEINLINE_FUNCTION
+char *StrCat(char *dest, const char *src){
+  int i = 0;
+  while (dest[i] != 0) i++;
+  StrCopy(dest+i, src);
+  return dest;
+}
+} // namespace impl
+
 // This Macro adds the `using` statements that allow for the base class
 // vector functionality to overload the scalar implementations in the derived
 // classes
@@ -391,8 +410,8 @@ class EosBase {
   void EntropyIsNotEnabled(const char *eosname) const {
     // Construct the error message using char* so it works on device
     char msg[120] = "Entropy is not enabled for the '";
-    std::strcat(msg, eosname);
-    std::strcat(msg, "' EOS");
+    impl::StrCat(msg, eosname);
+    impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 };

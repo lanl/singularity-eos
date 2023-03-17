@@ -475,9 +475,8 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
     constexpr Real EntropyT0 = 100;
     constexpr Real EntropyRho0 = 1e-03;
     EOS host_eos = IdealGas(gm1, Cv, EntropyT0, EntropyRho0);
-    EOS eos = host_eos.GetOnDevice();
     THEN("The entropy at the reference state should be zero") {
-      auto entropy = eos.EntropyFromDensityTemperature(EntropyRho0, EntropyT0);
+      auto entropy = host_eos.EntropyFromDensityTemperature(EntropyRho0, EntropyT0);
       INFO("Entropy should be zero but it is " << entropy);
       CHECK(isClose(entropy, 0.0, 1.e-14));
     }
@@ -487,7 +486,7 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
       constexpr Real rho = 0.1; // rho**3 = EntropyRho0
       THEN("The entropy should be 2. / 3. * gm1 * Cv * log(EntropyRho0)") {
         const Real entropy_true = 2. / 3. * gm1 * Cv * log(EntropyRho0);
-        auto entropy = eos.EntropyFromDensityTemperature(rho, T);
+        auto entropy = host_eos.EntropyFromDensityTemperature(rho, T);
         INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
         CHECK(isClose(entropy, entropy_true, 1e-12));
       }
@@ -498,7 +497,7 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
       constexpr Real rho = EntropyRho0;
       THEN("The entropy should be -1. / 2. * Cv * log(EntropyT0)") {
         const Real entropy_true = -1. / 2. * Cv * log(EntropyT0);
-        auto entropy = eos.EntropyFromDensityTemperature(rho, T);
+        auto entropy = host_eos.EntropyFromDensityTemperature(rho, T);
         INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
         CHECK(isClose(entropy, entropy_true, 1e-12));
       }
@@ -1111,7 +1110,6 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
   using singularity::IdealGas;
   using singularity::StellarCollapse;
   const std::string savename = "stellar_collapse_ideal_2.sp5";
-  static constexpr Real MeV2K_ = 1.e9 * 11.604525006;
   GIVEN("A stellar collapse EOS") {
     const std::string filename = "./goldfiles/stellar_collapse_ideal.h5";
     THEN("We can load the file") { // don't bother filtering bmod here.
