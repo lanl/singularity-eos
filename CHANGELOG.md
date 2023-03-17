@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Fixed (Repair bugs, etc)
+- [[PR239]](https://github.com/lanl/singularity-eos/pull/239#issuecomment-1473166925) Add JQuery to dependencies for docs to repair build
 - [[PR238]](https://github.com/lanl/singularity-eos/pull/238) Fixed broken examples
 - [[PR228]](https://github.com/lanl/singularity-eos/pull/228) added untracked header files in cmake
 - [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
