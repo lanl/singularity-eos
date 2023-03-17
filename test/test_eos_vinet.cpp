@@ -34,8 +34,6 @@ using singularity::Vinet;
 SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
   GIVEN("Parameters for a Vinet EOS") {
     // Unit conversions
-    constexpr Real cm = 1.;
-    constexpr Real us = 1e-06;
     constexpr Real Mbcc_per_g = 1e12;
     // Vinet parameters for copper
     constexpr Real rho0 = 8.93;
@@ -222,8 +220,6 @@ SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
 SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
   GIVEN("Parameters for a Vinet EOS") {
     // Unit conversions
-    constexpr Real cm = 1.;
-    constexpr Real us = 1e-06;
     constexpr Real Mbcc_per_g = 1e12;
     // Vinet parameters for copper
     constexpr Real rho0 = 8.93;
@@ -422,8 +418,6 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
 SCENARIO("Vinet EOS SetUp", "[VectorEOS][VinetEOS]") {
   GIVEN("Parameters for a Vinet EOS") {
     // Unit conversions
-    constexpr Real cm = 1.;
-    constexpr Real us = 1e-06;
     constexpr Real Mbcc_per_g = 1e12;
     // Vinet parameters for copper
     Real rho0 = 8.93;

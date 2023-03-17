@@ -156,7 +156,7 @@ inline void Vinet::CheckVinet() {
   }
 }
 
-PORTABLE_INLINE_FUNCTION void Vinet::InitializeVinet(const Real *d2tod40input) {
+inline void Vinet::InitializeVinet(const Real *d2tod40input) {
 
   // The PressureCoeffsd2tod40Size (=39) allowed d2 to d40 coefficients
   // for the pressure reference curve vs rho
