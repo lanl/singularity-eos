@@ -180,9 +180,8 @@ SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
 
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
 
-  GIVEN("A root counts object") {
+  GIVEN("Root finding") {
     using namespace RootFinding1D;
-    RootCounts counts;
 
     THEN("A root can be found for shift = 1, scale = 2, offset = 0.5") {
       int ntimes = 100;
@@ -208,9 +207,7 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
 #endif
       portableFor(
           "find roots", 0, ntimes, PORTABLE_LAMBDA(const int i) {
-            RootCounts per_thread_counts;
-            statuses(i) = regula_falsi(f, 0, guess, -1, 3, 1e-10, 1e-10, roots(i),
-                                       per_thread_counts);
+            statuses(i) = regula_falsi(f, 0, guess, -1, 3, 1e-10, 1e-10, roots(i));
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::View<Status> s_copy(statuses, 0);
@@ -226,7 +223,6 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
       PORTABLE_FREE(rootsp);
       REQUIRE(status == Status::SUCCESS);
       REQUIRE(isClose(root, 0.744658));
-      REQUIRE(100. * counts[counts.more()] / counts.total() <= 10);
     }
   }
 }
@@ -918,9 +914,6 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
     }
     // Failing to call finalize leads to a memory leak,
     // but otherwise behaviour is as expected.
-    // It's possible to this automatically clean up with
-    // some form of reference counting. If this is a priority,
-    // we can re-examine.
     steelEOS_host_polymorphic.Finalize(); // host and device must be
                                           // finalized separately.
     steelEOS.Finalize();                  // cleans up memory on device.

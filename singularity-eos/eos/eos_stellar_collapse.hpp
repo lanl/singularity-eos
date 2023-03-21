@@ -942,14 +942,20 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
   Real Ye = lambda[Lambda::Ye];
   Real lTGuess = lambda[Lambda::lT];
 
+  const RootFinding1D::RootCounts *pcounts = (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
+
   // If sie above hot curve or below cold curve, force it onto the table.
   // TODO(JMM): Rethink this as needed.
   if (sie <= eCold_.interpToReal(Ye, lRho)) {
     lT = lTGuess = lTMin_;
-    counts.increment(0);
+    if (pcounts != nullptr) {
+      pcounts->increment(0);
+    }
   } else if (sie >= eHot_.interpToReal(Ye, lRho)) {
     lT = lTGuess = lTMax_;
-    counts.increment(0);
+    if (pcounts != nullptr) {
+      pcounts->increment(0);
+    }
   } else {
     // if the guess isn't in the bounds, bound it
     if (!(lTMin_ <= lTGuess && lTGuess <= lTMax_)) {
@@ -959,7 +965,7 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
     Real lE = e2le_(sie);
     const callable_interp::LogT lEFunc(lE_, Ye, lRho);
     status = regula_falsi(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
-                          lT, counts);
+                          lT, pcounts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if STELLAR_COLLAPSE_EOS_VERBOSE
       std::stringstream errorMessage;
@@ -974,7 +980,9 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
       lT = lTGuess;
     }
   }
-  status_ = status;
+  if (memoryStatus_ != DataStatus::OnDevice) {
+    status_ = status;
+  }
   lambda[Lambda::lT] = lT;
   return lT;
 }

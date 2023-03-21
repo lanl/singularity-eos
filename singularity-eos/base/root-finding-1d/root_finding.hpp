@@ -148,7 +148,8 @@ template <typename T>
 PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
                                              const Real guess, Real a, Real b,
                                              const Real xtol, const Real ytol,
-                                             Real &xroot, const RootCounts &counts) {
+                                             Real &xroot,
+                                             const RootCounts *counts=nullptr) {
   constexpr int max_iter = SECANT_NITER_MAX;
   auto func = [&](const Real x) { return f(x) - ytarget; };
   Real ya = func(a);
@@ -215,10 +216,12 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
         "root finding reached the maximum number of iterations.  likely not converged\n");
     status = Status::FAIL;
   }
-  if (iteration_count < counts.nBins()) {
-    counts.increment(iteration_count);
-  } else {
-    counts.increment(counts.more());
+  if (counts != nullptr) {
+    if (iteration_count < counts->nBins()) {
+      counts->increment(iteration_count);
+    } else {
+      counts->increment(counts->more());
+    }
   }
   xroot = 0.5 * (a + b);
   return status;
@@ -228,7 +231,7 @@ template <typename T>
 PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xguess,
                                          const Real xmin, const Real xmax,
                                          const Real xtol, const Real ytol, Real &xroot,
-                                         const RootCounts &counts) {
+                                         const RootCounts *counts=nullptr) {
   Status status;
 
   // first check if we're at the max or min values
@@ -236,14 +239,18 @@ PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xg
   const Real errmax = fabs(fmax - ytarget) / (fabs(fmax) + ytol);
   if (errmax < ytol) {
     xroot = xmax;
-    counts.increment(0);
+    if (counts != nullptr) {
+      counts->increment(0);
+    }
     return Status::SUCCESS;
   }
   const Real fmin = f(xmin);
   const Real errmin = fabs(fmin - ytarget) / (fabs(fmin) + ytol);
   if (errmin < ytol) {
     xroot = xmin;
-    counts.increment(0);
+    if (counts != nullptr) {
+      counts->increment(0);
+    }
     return Status::SUCCESS;
   }
 
@@ -289,7 +296,7 @@ template <typename T>
 PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Real xguess,
                                        const Real xmin, const Real xmax, const Real xtol,
                                        const Real ytol, Real &xroot,
-                                       const RootCounts &counts) {
+                                       const RootCounts *counts=nullptr) {
   Real dx;
   Real x_last, y, yp, ym, dyNum, dyDen, dy;
 
@@ -330,17 +337,21 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
               xguess, ytarget, x, x_last, xmin, xmax, y, dx, yp, ym, dyNum, dyDen, dy,
               iter, (int)SINGULARITY_MY_SIGN(x));
 #endif
-      counts.increment(counts.more());
+      if (counts != nullptr) {
+        counts->increment(counts->more());
+      }
       return Status::FAIL;
     }
     if (fabs(x - x_last) / (fabs(x) + xtol) < xtol) break;
   }
   // increment iter
   ++iter;
-  if (iter < counts.nBins()) {
-    counts.increment(iter);
-  } else {
-    counts.increment(counts.more());
+  if (counts != nullptr) {
+    if (iter < counts->nBins()) {
+      counts->increment(iter);
+    } else {
+      counts->increment(counts->more());
+    }
   }
   xroot = x;
 
@@ -388,7 +399,7 @@ template <typename T>
 PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Real xguess,
                                        const Real xmin, const Real xmax, const Real xtol,
                                        const Real ytol, Real &xroot,
-                                       const RootCounts &counts) {
+                                       const RootCounts *counts=nullptr) {
   Real xl, xr, fl, fr, dx;
 
   Real grow = 0.01;

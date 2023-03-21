@@ -188,9 +188,8 @@ JWL::DensityEnergyFromPressureTemperature(const Real press, const Real temp, Rea
   auto PofRatT = [&](const Real r) { return _Cv * temp * r * _w + ReferencePressure(r); };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
-  RootFinding1D::RootCounts counts;
   auto status =
-      regula_falsi(PofRatT, press, rhoguess, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
+      regula_falsi(PofRatT, press, rhoguess, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("JWL::DensityEnergyFromPressureTemperature: "
