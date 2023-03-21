@@ -413,7 +413,11 @@ class EosBase {
   PORTABLE_FORCEINLINE_FUNCTION
   void EntropyIsNotEnabled(const char *eosname) const {
     // Construct the error message using char* so it works on device
-    char msg[120] = "Entropy is not enabled for the '";
+    // WARNING: This needs to be updated if EOS names get longer
+    // base msg length 32 + 5 chars = 37 chars
+    // + 1 char for null terminator
+    // maximum allowed EOS length = 44 chars
+    char msg[81] = "Entropy is not enabled for the '";
     impl::StrCat(msg, eosname);
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
