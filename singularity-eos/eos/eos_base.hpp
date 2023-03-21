@@ -42,8 +42,7 @@ char *StrCat(char *destination, const char *source) {
 
   // move to the end of the destination string
   // specifically avoid strlen, which isn't on GPU
-  for (i = 0; destination[i] != '\0'; i++)
-    ;
+  for (i = 0; destination[i] != '\0'; i++) {}
   // Appends characters of the source to the destination string
   for (j = 0; source[j] != '\0'; j++) {
     destination[i + j] = source[j];
