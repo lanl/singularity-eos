@@ -38,17 +38,15 @@ namespace impl {
 // Cuda doesn't have strcat, so we implement it ourselves
 PORTABLE_FORCEINLINE_FUNCTION
 char *StrCat(char *destination, const char *source) {
-  int i, j;
+  int i, j; // not in loops because they're re-used.
 
-  // move to the end of the destination string
   // specifically avoid strlen, which isn't on GPU
   for (i = 0; destination[i] != '\0'; i++) {
   }
-  // Appends characters of the source to the destination string
+  // assumes destination has enough memory allocated
   for (j = 0; source[j] != '\0'; j++) {
     destination[i + j] = source[j];
   }
-
   // null terminate destination string
   destination[i + j] = '\0';
 
