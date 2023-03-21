@@ -1172,7 +1172,8 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
   Real lRho;
   Real lRhoGuess = reproducible_ ? lRhoMax_ : 0.5 * (lRhoMin_ + lRhoMax_);
   // Real lRhoGuess = lRhoMin_ + 0.9*(lRhoMax_ - lRhoMin_);
-  const RootFinding1D::RootCounts *pcounts = (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   if (lambda != nullptr && lRhoMin_ <= lambda[Lambda::lRho] &&
       lambda[Lambda::lRho] <= lRhoMax_) {
     lRhoGuess = lambda[Lambda::lRho];
@@ -1224,7 +1225,8 @@ PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
                                           TableStatus &whereAmI, Real *lambda) const {
 
-  const RootFinding1D::RootCounts *pcounts = (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
   Real lT;
 
@@ -1284,7 +1286,8 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
                                         TableStatus &whereAmI, Real *lambda) const {
-  const RootFinding1D::RootCounts *pcounts = (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
   Real lT, lTGuess;
 
@@ -1860,7 +1863,8 @@ Real SpinerEOSDependsRhoSie::interpRhoSie_(const Real rho, const Real sie,
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
                                           Real *lambda) const {
-  const RootFinding1D::RootCounts *pcounts = (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   Real lRho;
   Real dPdRhoMax = dPdRhoMax_.interpToReal(lT);
   Real PMax = PlRhoMax_.interpToReal(lT);

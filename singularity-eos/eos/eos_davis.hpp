@@ -333,8 +333,7 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
   };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
-  auto status =
-      regula_falsi(PofRatT, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
+  auto status = regula_falsi(PofRatT, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
@@ -401,8 +400,7 @@ PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperatur
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
   const Real rho0 = 1.0 / _vc;
-  auto status =
-      regula_falsi(PofRatT, press, rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
+  auto status = regula_falsi(PofRatT, press, rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("DavisProducts::DensityEnergyFromPressureTemperature: "

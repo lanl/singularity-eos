@@ -149,7 +149,7 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
                                              const Real guess, Real a, Real b,
                                              const Real xtol, const Real ytol,
                                              Real &xroot,
-                                             const RootCounts *counts=nullptr) {
+                                             const RootCounts *counts = nullptr) {
   constexpr int max_iter = SECANT_NITER_MAX;
   auto func = [&](const Real x) { return f(x) - ytarget; };
   Real ya = func(a);
@@ -231,7 +231,7 @@ template <typename T>
 PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xguess,
                                          const Real xmin, const Real xmax,
                                          const Real xtol, const Real ytol, Real &xroot,
-                                         const RootCounts *counts=nullptr) {
+                                         const RootCounts *counts = nullptr) {
   Status status;
 
   // first check if we're at the max or min values
@@ -296,7 +296,7 @@ template <typename T>
 PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Real xguess,
                                        const Real xmin, const Real xmax, const Real xtol,
                                        const Real ytol, Real &xroot,
-                                       const RootCounts *counts=nullptr) {
+                                       const RootCounts *counts = nullptr) {
   Real dx;
   Real x_last, y, yp, ym, dyNum, dyDen, dy;
 
@@ -399,7 +399,7 @@ template <typename T>
 PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Real xguess,
                                        const Real xmin, const Real xmax, const Real xtol,
                                        const Real ytol, Real &xroot,
-                                       const RootCounts *counts=nullptr) {
+                                       const RootCounts *counts = nullptr) {
   Real xl, xr, fl, fr, dx;
 
   Real grow = 0.01;

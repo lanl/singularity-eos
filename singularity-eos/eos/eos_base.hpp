@@ -37,20 +37,21 @@ namespace eos_base {
 namespace impl {
 // Cuda doesn't have strcat, so we implement it ourselves
 PORTABLE_FORCEINLINE_FUNCTION
-char* StrCat(char* destination, const char* source) {
+char *StrCat(char *destination, const char *source) {
   int i, j;
-  
+
   // move to the end of the destination string
   // specifically avoid strlen, which isn't on GPU
-  for (i = 0; destination[i] != '\0'; i++);
+  for (i = 0; destination[i] != '\0'; i++)
+    ;
   // Appends characters of the source to the destination string
   for (j = 0; source[j] != '\0'; j++) {
     destination[i + j] = source[j];
   }
-  
+
   // null terminate destination string
   destination[i + j] = '\0';
-  
+
   // the destination is returned by standard `strcat()`
   return destination;
 }

@@ -942,7 +942,8 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
   Real Ye = lambda[Lambda::Ye];
   Real lTGuess = lambda[Lambda::lT];
 
-  const RootFinding1D::RootCounts *pcounts = (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
 
   // If sie above hot curve or below cold curve, force it onto the table.
   // TODO(JMM): Rethink this as needed.
