@@ -35,6 +35,7 @@ namespace singularity {
 namespace eos_base {
 
 namespace impl {
+constexpr std::size_t MAX_NUM_CHARS = 81;
 // Cuda doesn't have strcat, so we implement it ourselves
 PORTABLE_FORCEINLINE_FUNCTION
 char *StrCat(char *destination, const char *source) {
@@ -45,6 +46,9 @@ char *StrCat(char *destination, const char *source) {
   }
   // assumes destination has enough memory allocated
   for (j = 0; source[j] != '\0'; j++) {
+    // MAX_NUM_CHARS-1 to leave room for null terminator
+    PORTABLE_REQUIRE((i + j) < MAX_NUM_CHARS - 1,
+                     "Concat string must be within allowed size");
     destination[i + j] = source[j];
   }
   // null terminate destination string
@@ -415,7 +419,7 @@ class EosBase {
     // base msg length 32 + 5 chars = 37 chars
     // + 1 char for null terminator
     // maximum allowed EOS length = 44 chars
-    char msg[81] = "Entropy is not enabled for the '";
+    char msg[impl::MAX_NUM_CHARS] = "Entropy is not enabled for the '";
     impl::StrCat(msg, eosname);
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
