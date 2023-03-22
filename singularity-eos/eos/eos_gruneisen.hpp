@@ -243,13 +243,12 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real
       using RootFinding1D::regula_falsi;
       using RootFinding1D::RootCounts;
       using RootFinding1D::Status;
-      RootCounts counts;
       static constexpr Real factor = 100;
       static constexpr Real xtol = factor * EPS;
       static constexpr Real ytol = factor / 10 * EPS;
       static constexpr Real eta_guess = 0.001;
       auto status =
-          regula_falsi(poly, 0., eta_guess, minbound, maxbound, xtol, ytol, root, counts);
+          regula_falsi(poly, 0., eta_guess, minbound, maxbound, xtol, ytol, root);
       if (status != Status::SUCCESS) {
         // Root finder failed even though the solution was bracketed... this is an error
         EOS_ERROR("Gruneisen initialization: Cubic root find failed. Maximum "
@@ -368,9 +367,7 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     };
     using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
-    RootFinding1D::RootCounts counts;
-    auto status =
-        regula_falsi(PofRatE, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
+    auto status = regula_falsi(PofRatE, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
     if (status != Status::SUCCESS) {
       // Root finder failed even though the solution was bracketed... this is an error
       EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: "
