@@ -430,6 +430,8 @@ inline StellarCollapse StellarCollapse::GetOnDevice() {
   other.lTMax_ = lTMax_;
   other.YeMin_ = YeMin_;
   other.YeMax_ = YeMax_;
+  other.sieMin_ = sieMin_;
+  other.sieMax_ = sieMax_;
   other.lEOffset_ = lEOffset_;
   other.sieNormal_ = sieNormal_;
   other.PNormal_ = PNormal_;
@@ -816,6 +818,7 @@ inline void StellarCollapse::medianFilter_(Spiner::DataBox &db) {
   Spiner::DataBox tmp;
   tmp.copy(db);
   medianFilter_(tmp, db);
+  free(tmp);
 }
 
 inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
