@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -113,7 +113,8 @@ PYBIND11_MODULE(singularity_eos, m) {
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
-  eos_class<EOSPAC>(m, "EOSPAC")
+  constexpr bool use_scratch = true;
+  eos_class<EOSPAC, use_scratch>(m, "EOSPAC")
     .def(py::init())
     .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
 #endif

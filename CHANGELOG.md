@@ -2,22 +2,29 @@
 
 ## Current develop
 
-### Fixed (issue #227)
-- [[PR228]](https://github.com/lanl/singularity-eos/pull/228) and [[PR229]](https://github.com/lanl/singularity-eos/pull/229) added untracked header files in cmake
-
-### Added (entropy calculation for stellar collapse eos)
-- [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
-
 ### Fixed (Repair bugs, etc)
+- [[PR243]](https://github.com/lanl/singularity-eos/pull/243) Remove undefined behavior caused by diagnostic variables. Also fixed some compiler warnings.
+- [[PR239]](https://github.com/lanl/singularity-eos/pull/239#issuecomment-1473166925) Add JQuery to dependencies for docs to repair build
+- [[PR238]](https://github.com/lanl/singularity-eos/pull/238) Fixed broken examples
+- [[PR228]](https://github.com/lanl/singularity-eos/pull/228) added untracked header files in cmake
 - [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
+- [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
 
 ### Added (new features/APIs/variables/...)
+- [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
+- [[PR202]](https://github.com/lanl/singularity-eos/pull/202) added the Vinet analytical EOS wth test cases and documentation.
+- [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
 - [[PR209]](https://github.com/lanl/singularity-eos/pull/209) added more documentation around how to contribute to the project and also what a contributor can expect from the core team
 - [[PR214]](https://github.com/lanl/singularity-eos/pull/214) added documentation about adding a new EOS
+- [[PR228]](https://github.com/lanl/singularity-eos/pull/228) and [[PR229]](https://github.com/lanl/singularity-eos/pull/229) added untracked header files in cmake
+- [[PR233]](https://github.com/lanl/singularity-eos/pull/233) Added entropy infrastructure to singularity. Add entropy for the ideal gas and modifiers while throwing an error for EOS where entropy is not implemented yet
+- [[PR177]](https://github.com/lanl/singularity-eos/pull/177) added EOSPAC vector functions
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR223]](https://github.com/lanl/singularity-eos/pull/223) Update ports-of-call and add portable error handling
+- [[PR234]](https://github.com/lanl/singularity-eos/pull/234) update ports-of-call to correct for undefined behavior in error handling
 - [[PR219]](https://github.com/lanl/singularity-eos/pull/219) Removed static analysis from re-git pipeline
+- [[PR233]](https://github.com/lanl/singularity-eos/pull/233) Exposed entropy for the EOS type (now required for future EOS)
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR190]](https://github.com/lanl/singularity-eos/pull/190) update CI on re-git
@@ -83,7 +90,7 @@ Date: 07/07/2022
 
 This is the start of changelog
 
-© 2021-2022. Triad National Security, LLC. All rights reserved.  This
+© 2021-2023. Triad National Security, LLC. All rights reserved.  This
 program was produced under U.S. Government contract 89233218CNA000001
 for Los Alamos National Laboratory (LANL), which is operated by Triad
 National Security, LLC for the U.S.  Department of Energy/National

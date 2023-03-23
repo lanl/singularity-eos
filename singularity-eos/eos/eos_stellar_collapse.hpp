@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -71,6 +71,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
   using EosBase<StellarCollapse>::PressureFromDensityTemperature;
   using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::EntropyFromDensityTemperature;
+  using EosBase<StellarCollapse>::EntropyFromDensityInternalEnergy;
   using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
   using EosBase<StellarCollapse>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<StellarCollapse>::BulkModulusFromDensityTemperature;
@@ -107,6 +109,9 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                      Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
@@ -138,6 +143,10 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return 0;
+  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
@@ -421,6 +430,8 @@ inline StellarCollapse StellarCollapse::GetOnDevice() {
   other.lTMax_ = lTMax_;
   other.YeMin_ = YeMin_;
   other.YeMax_ = YeMax_;
+  other.sieMin_ = sieMin_;
+  other.sieMax_ = sieMax_;
   other.lEOffset_ = lEOffset_;
   other.sieNormal_ = sieNormal_;
   other.PNormal_ = PNormal_;
@@ -495,6 +506,15 @@ Real StellarCollapse::EntropyFromDensityTemperature(const Real rho,
                                                     Real *lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+  const Real entropy = entropy_.interpToReal(Ye, lT, lRho);
+  return (entropy > robust::EPS() ? entropy : robust::EPS());
+}
+
+PORTABLE_INLINE_FUNCTION
+Real StellarCollapse::EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                       Real *lambda) const {
+  Real lRho, lT, Ye;
+  getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real entropy = entropy_.interpToReal(Ye, lT, lRho);
   return (entropy > robust::EPS() ? entropy : robust::EPS());
 }
@@ -798,6 +818,7 @@ inline void StellarCollapse::medianFilter_(Spiner::DataBox &db) {
   Spiner::DataBox tmp;
   tmp.copy(db);
   medianFilter_(tmp, db);
+  free(tmp);
 }
 
 inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
@@ -924,14 +945,21 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
   Real Ye = lambda[Lambda::Ye];
   Real lTGuess = lambda[Lambda::lT];
 
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
+
   // If sie above hot curve or below cold curve, force it onto the table.
   // TODO(JMM): Rethink this as needed.
   if (sie <= eCold_.interpToReal(Ye, lRho)) {
     lT = lTGuess = lTMin_;
-    counts.increment(0);
+    if (pcounts != nullptr) {
+      pcounts->increment(0);
+    }
   } else if (sie >= eHot_.interpToReal(Ye, lRho)) {
     lT = lTGuess = lTMax_;
-    counts.increment(0);
+    if (pcounts != nullptr) {
+      pcounts->increment(0);
+    }
   } else {
     // if the guess isn't in the bounds, bound it
     if (!(lTMin_ <= lTGuess && lTGuess <= lTMax_)) {
@@ -941,7 +969,7 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
     Real lE = e2le_(sie);
     const callable_interp::LogT lEFunc(lE_, Ye, lRho);
     status = regula_falsi(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
-                          lT, counts);
+                          lT, pcounts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if STELLAR_COLLAPSE_EOS_VERBOSE
       std::stringstream errorMessage;
@@ -956,7 +984,9 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
       lT = lTGuess;
     }
   }
-  status_ = status;
+  if (memoryStatus_ != DataStatus::OnDevice) {
+    status_ = status;
+  }
   lambda[Lambda::lT] = lT;
   return lT;
 }

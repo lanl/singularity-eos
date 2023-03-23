@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -16,11 +16,15 @@
 #define _SINGULARITY_EOS_EOS_EOS_EOSPAC_HPP_
 #ifdef SINGULARITY_USE_EOSPAC
 
+#include <algorithm>
 #include <cstdio>
+#include <map>
 #include <string>
 #include <vector>
 
 #include <eos_Interface.h>
+// ports-of-call
+#include <ports-of-call/portability.hpp>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 #include <singularity-eos/base/constants.hpp>
@@ -50,6 +54,10 @@ class EOSPAC : public EosBase<EOSPAC> {
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
@@ -73,14 +81,13 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                        Real &dpde, Real &dvdt,
                                                        Real *lambda = nullptr) const;
 
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
+  // Generic (Scalar)
   using EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy;
   using EosBase<EOSPAC>::InternalEnergyFromDensityTemperature;
   using EosBase<EOSPAC>::PressureFromDensityTemperature;
   using EosBase<EOSPAC>::PressureFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::EntropyFromDensityTemperature;
+  using EosBase<EOSPAC>::EntropyFromDensityInternalEnergy;
   using EosBase<EOSPAC>::SpecificHeatFromDensityTemperature;
   using EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<EOSPAC>::BulkModulusFromDensityTemperature;
@@ -89,87 +96,607 @@ class EOSPAC : public EosBase<EOSPAC> {
   using EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<EOSPAC>::PTofRE;
   using EosBase<EOSPAC>::FillEos;
+  using EosBase<EOSPAC>::EntropyIsNotEnabled;
 
-  // TODO (JHP): Change EOSPAC vector implementations to be more performant
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-  //                                           ConstRealIndexer &&sies,
-  //                                           RealIndexer &&temperatures,
-  //                                           const int num,
-  //                                           LambdaIndexer &&lambdas) const;
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
-  //                                           ConstRealIndexer &&temperatures,
-  //                                           RealIndexer &&sies,
-  //                                           const int num,
-  //                                           LambdaIndexer &&lambdas) const;
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
-  //                                     ConstRealIndexer &&temperatures,
-  //                                     RealIndexer &&pressures,
-  //                                     const int num,
-  //                                     LambdaIndexer &&lambdas) const;
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-  //                                        ConstRealIndexer &&sies,
-  //                                        RealIndexer &&pressures,
-  //                                        const int num,
-  //                                        LambdaIndexer &&lambdas) const;
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
-  //                                         ConstRealIndexer &&temperatures,
-  //                                         RealIndexer &&cvs,
-  //                                         const int num,
-  //                                         LambdaIndexer &&lambdas) const;
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-  //                                            ConstRealIndexer &&sies,
-  //                                            RealIndexer &&cvs,
-  //                                            const int num,
-  //                                            LambdaIndexer &&lambdas) const;
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
-  //                                        ConstRealIndexer &&temperatures,
-  //                                        RealIndexer &&bmods,
-  //                                        const int num,
-  //                                        LambdaIndexer &&lambdas) const;
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-  //                                           ConstRealIndexer &&sies,
-  //                                           RealIndexer &&bmods,
-  //                                           const int num,
-  //                                           LambdaIndexer &&lambdas) const;
+  // EOSPAC vector implementations
+  template <typename LambdaIndexer>
+  inline void TemperatureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                   Real *temperatures, Real *scratch,
+                                                   const int num,
+                                                   LambdaIndexer /*lambdas*/) const {
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
+    EOS_REAL *T = &temperatures[0];
+    EOS_REAL *dTdr = scratch + 0 * num;
+    EOS_REAL *dTde = scratch + 1 * num;
 
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
-  //                                           ConstRealIndexer &&temperatures,
-  //                                           RealIndexer &&gm1s,
-  //                                           const int num,
-  //                                           LambdaIndexer &&lambdas) const;
+    EOS_INTEGER table = TofRE_table_;
+    EOS_INTEGER options[]{EOS_Y_CONVERT};
+    EOS_REAL values[]{sieFromSesame(1.0)};
+    EOS_INTEGER nopts = 1;
+    eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
+                       options, values, nopts);
+  }
 
-  // template<typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  // inline
-  // void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
-  //                                              ConstRealIndexer &&sies,
-  //                                              RealIndexer &&gm1s,
-  //                                              const int num,
-  //                                              LambdaIndexer &&lambdas) const;
+  inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                             Real *pressures, Real *scratch,
+                                             const int num, Real ** /*lambdas*/) const {
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
+    EOS_REAL *P = &pressures[0];
+    EOS_REAL *dPdr = scratch + 0 * num;
+    EOS_REAL *dPdT = scratch + 1 * num;
 
-  // template<typename RealIndexer, typename LambdaIndexer>
-  // inline
-  // void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
-  //              RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
-  //              const int num, const unsigned long output,
-  //              LambdaIndexer &&lambdas) const;
+    EOS_INTEGER table = PofRT_table_;
+    EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
+    EOS_REAL values[]{pressureFromSesame(1.0), 1.0};
+    EOS_INTEGER nopts = 2;
+
+    eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
+                       options, values, nopts);
+  }
+
+  template <typename LambdaIndexer>
+  inline void FillEos(Real *rhos, Real *temps, Real *energies, Real *presses, Real *cvs,
+                      Real *bmods, Real *scratch, const int num,
+                      const unsigned long output, LambdaIndexer /*lambdas*/) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
+    static auto const cname = name.c_str();
+    using namespace EospacWrapper;
+    EOS_REAL *R = &rhos[0];
+    EOS_REAL *T = &temps[0];
+    EOS_REAL *E = &energies[0];
+    EOS_REAL *P = &presses[0];
+    EOS_REAL *DPDT = scratch + 0 * num;
+    EOS_REAL *DPDR = scratch + 1 * num;
+    EOS_REAL *DEDT = scratch + 2 * num;
+    EOS_REAL *DEDR = scratch + 3 * num;
+    EOS_REAL *dx = DPDT;
+    EOS_REAL *dy = DPDR;
+
+    EOS_INTEGER nxypairs = num;
+
+    const unsigned long input = ~output;
+    if (output == thermalqs::none) {
+      UNDEFINED_ERROR;
+    }
+
+    if (output & thermalqs::density) {
+      if (input & thermalqs::pressure && input & thermalqs::temperature) {
+        EOS_INTEGER table = RofPT_table_;
+        EOS_INTEGER options[]{EOS_X_CONVERT};
+        EOS_REAL values[]{pressureFromSesame(1.0)};
+        EOS_INTEGER nopts = 1;
+        eosSafeInterpolate(&table, nxypairs, P, T, R, dx, dy, "RofPT", Verbosity::Quiet,
+                           options, values, nopts);
+      } else {
+        UNDEFINED_ERROR;
+      }
+    }
+    if (output & thermalqs::temperature) {
+      if (input & thermalqs::density && input & thermalqs::specific_internal_energy) {
+        EOS_INTEGER table = TofRE_table_;
+        EOS_INTEGER options[]{EOS_Y_CONVERT};
+        EOS_REAL values[]{sieFromSesame(1.0)};
+        EOS_INTEGER nopts = 1;
+        eosSafeInterpolate(&table, nxypairs, R, E, T, dx, dy, "TofRE", Verbosity::Quiet,
+                           options, values, nopts);
+      } else if (input & thermalqs::density && input & thermalqs::pressure) {
+        EOS_INTEGER table = TofRP_table_;
+        EOS_INTEGER options[]{EOS_Y_CONVERT};
+        EOS_REAL values[]{pressureFromSesame(1.0)};
+        EOS_INTEGER nopts = 1;
+        eosSafeInterpolate(&table, nxypairs, R, P, T, dx, dy, "TofRP", Verbosity::Quiet,
+                           options, values, nopts);
+      } else {
+        UNDEFINED_ERROR;
+      }
+    }
+    if ((output & thermalqs::specific_internal_energy) ||
+        (output & thermalqs::specific_heat || output & thermalqs::bulk_modulus)) {
+      EOS_INTEGER table = EofRT_table_;
+      EOS_INTEGER options[]{EOS_F_CONVERT};
+      EOS_REAL values[]{sieFromSesame(1.0)};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, nxypairs, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+    if ((output & thermalqs::pressure) || (output & thermalqs::bulk_modulus)) {
+      EOS_INTEGER table = PofRT_table_;
+      EOS_INTEGER options[]{EOS_F_CONVERT};
+      EOS_REAL values[]{pressureFromSesame(1.0)};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, nxypairs, R, T, P, DPDR, DPDT, "PofRT", Verbosity::Quiet,
+                         options, values, nopts);
+      // Thermodynamics: Bt = rho*dP/drho|T, Bs=Bt*Cv/Cp, Cv=dE/dT|v, and
+      // Cp-Cv=-T(dP/dT|v)^2/(dP/dV|T) or Cp-Cv=-T/rho^2 (dP/dT|v)^2/(dP/drho|T)
+      // Therefore: Bs=Bt Cv/(CV+above)
+      // BMOD = rho*dx[0]*CV/(CV-T[0]/(rho*rho)*dy[0]*dy[0]/dx[0]);
+    }
+    if (output & thermalqs::specific_heat) {
+      portableFor(
+          cname, 0, num, PORTABLE_LAMBDA(const int i) {
+            cvs[i] = std::max(DEDT[i], 0.0); // Here we do something to the data!
+          });
+    }
+    if (output & thermalqs::bulk_modulus) {
+      portableFor(
+          cname, 0, num, PORTABLE_LAMBDA(const int i) {
+            const Real rho = R[i];
+            Real BMOD = 0.0;
+            if (DEDT[i] > 0.0 && rho > 0.0) {
+              const Real DPDE = DPDT[i] / DEDT[i];
+              BMOD = rho * DPDR[i] + DPDE * (P[i] / rho - rho * DEDR[i]);
+            } else if (rho > 0.0) { // Case: DEDT <= 0
+              // We need a different DPDE call apparently????
+              // In xRAGE, they call out to P(rho,e) in this case to get the
+              // derivative directly from the half-inverted table.
+              // But upon further review,
+              // I think it will end up evaluating to BMOD_T in any case because cv will
+              // be zero! See eos_eospac.f90 line 1261 BMOD =
+              // BMOD_T+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+              // BMOD_T = std::max(rho * DPDR[i], 0.0);
+              // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+              BMOD = std::max(rho * DPDR[i], 0.0);
+            }
+            bmods[i] = std::max(BMOD, 0.0);
+          });
+    }
+  }
+
+  template <typename LambdaIndexer>
+  inline void InternalEnergyFromDensityTemperature(const Real *rhos,
+                                                   const Real *temperatures, Real *sies,
+                                                   Real *scratch, const int num,
+                                                   LambdaIndexer /*lambdas*/) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
+    static auto const cname = name.c_str();
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
+    EOS_REAL *E = &sies[0];
+    EOS_REAL *DEDT = scratch + 0 * num;
+    EOS_REAL *DEDR = scratch + 1 * num;
+
+    EOS_INTEGER table = EofRT_table_;
+    EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
+    EOS_REAL values[]{sieFromSesame(1.0), 1.0};
+    EOS_INTEGER nopts = 2;
+
+    eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
+                       options, values, nopts);
+  }
+
+  template <typename LambdaIndexer>
+  inline void PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                Real *pressures, Real *scratch,
+                                                const int num,
+                                                LambdaIndexer /*lambdas*/) const {
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
+    EOS_REAL *P = &pressures[0];
+    EOS_REAL *T = scratch + 0 * num;
+    EOS_REAL *dTdr = scratch + 1 * num;
+    EOS_REAL *dTde = scratch + 2 * num;
+    EOS_REAL *dPdr = dTdr;
+    EOS_REAL *dPdT = dTde;
+
+    EOS_INTEGER table = TofRE_table_;
+    {
+      EOS_INTEGER options[]{EOS_Y_CONVERT};
+      EOS_REAL values[]{sieFromSesame(1.0)};
+      EOS_INTEGER nopts = 1;
+
+      eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    table = PofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
+      EOS_REAL values[]{pressureFromSesame(1.0), 1.0};
+      EOS_INTEGER nopts = 2;
+      eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+  }
+
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityTemperature(const Real *rhos,
+                                                 const Real *temperatures, Real *cvs,
+                                                 Real *scratch, const int num,
+                                                 LambdaIndexer /*lambdas*/) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
+    static auto const cname = name.c_str();
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
+    EOS_REAL *E = scratch + 0 * num;
+    EOS_REAL *DEDT = &cvs[0];
+    EOS_REAL *DEDR = scratch + 1 * num;
+
+    EOS_INTEGER table = EofRT_table_;
+    EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
+    EOS_REAL values[]{cvFromSesame(1.0), 1.0};
+    EOS_INTEGER nopts = 2;
+    eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
+                       options, values, nopts);
+
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          cvs[i] = std::max(cvs[i], 0.0); // Here we do something to the data!
+        });
+  }
+
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                    Real *cvs, Real *scratch,
+                                                    const int num,
+                                                    LambdaIndexer /*lambdas*/) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
+    static auto const cname = name.c_str();
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
+    EOS_REAL *T = scratch + 0 * num;
+    EOS_REAL *dTdr = scratch + 1 * num;
+    EOS_REAL *dTde = scratch + 2 * num;
+    EOS_REAL *DEDT = dTdr;
+    EOS_REAL *DEDR = dTde;
+
+    EOS_INTEGER table = TofRE_table_;
+    {
+      EOS_INTEGER options[]{EOS_Y_CONVERT};
+      EOS_REAL values[]{sieFromSesame(1.0)};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    table = EofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
+      EOS_REAL values[]{1.0};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          cvs[i] =
+              cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
+        });
+  }
+
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityTemperature(const Real *rhos,
+                                                const Real *temperatures, Real *bmods,
+                                                Real *scratch, const int num,
+                                                LambdaIndexer /*lambdas*/) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
+    static auto const cname = name.c_str();
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
+    EOS_REAL *E = scratch + 0 * num;
+    EOS_REAL *P = scratch + 1 * num;
+    EOS_REAL *DPDT = scratch + 2 * num;
+    EOS_REAL *DPDR = scratch + 3 * num;
+    EOS_REAL *DEDT = scratch + 4 * num;
+    EOS_REAL *DEDR = scratch + 5 * num;
+
+    EOS_INTEGER table = EofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
+      EOS_REAL values[]{1.0};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    table = PofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
+      EOS_REAL values[]{1.0};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, T, P, DPDR, DPDT, "PofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    // Thermodynamics: Bt = rho*dP/drho|T, Bs=Bt*Cv/Cp, Cv=dE/dT|v, and
+    // Cp-Cv=-T(dP/dT|v)^2/(dP/dV|T) or Cp-Cv=-T/rho^2 (dP/dT|v)^2/(dP/drho|T)
+    // Therefore: Bs=Bt Cv/(CV+above)
+    // BMOD = rho*dx[0]*CV/(CV-T[0]/(rho*rho)*dy[0]*dy[0]/dx[0]);
+
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          const Real rho = R[i];
+          Real BMOD = 0.0;
+          if (DEDT[i] > 0.0 && rho > 0.0) {
+            const Real DPDE = DPDT[i] / DEDT[i];
+            BMOD = rho * DPDR[i] + DPDE * (P[i] / rho - rho * DEDR[i]);
+          } else if (rho > 0.0) { // Case: DEDT <= 0
+            // We need a different DPDE call apparently????
+            // In xRAGE, they call out to P(rho,e) in this case to get the
+            // derivative directly from the half-inverted table.
+            // But upon further review,
+            // I think it will end up evaluating to BMOD_T in any case because cv will
+            // be zero! See eos_eospac.f90 line 1261 BMOD =
+            // BMOD_T+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+            // BMOD_T = std::max(rho * DPDR[i], 0.0);
+            // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+            BMOD = std::max(rho * DPDR[i], 0.0);
+          }
+          bmods[i] = bulkModulusFromSesame(std::max(BMOD, 0.0));
+        });
+  }
+
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                   Real *bmods, Real *scratch,
+                                                   const int num,
+                                                   LambdaIndexer /*lambdas*/) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
+    static auto const cname = name.c_str();
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
+    EOS_REAL *T = scratch + 0 * num;
+    EOS_REAL *dTdr = scratch + 1 * num;
+    EOS_REAL *dTde = scratch + 2 * num;
+    EOS_REAL *Etmp = scratch + 3 * num;
+    EOS_REAL *DEDT = scratch + 4 * num;
+    EOS_REAL *DEDR = scratch + 5 * num;
+    EOS_REAL *P = Etmp;
+    EOS_REAL *DPDT = dTdr;
+    EOS_REAL *DPDR = dTde;
+
+    EOS_INTEGER table = TofRE_table_;
+    {
+      EOS_INTEGER options[]{EOS_Y_CONVERT};
+      EOS_REAL values[]{sieFromSesame(1.0)};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    table = EofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
+      EOS_REAL values[]{1.0};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, T, Etmp, DEDR, DEDT, "EofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    table = PofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
+      EOS_REAL values[]{1.0};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, T, P, DPDR, DPDT, "PofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    // Thermodynamics: Bt = rho*dP/drho|T, Bs=Bt*Cv/Cp, Cv=dE/dT|v, and
+    // Cp-Cv=-T(dP/dT|v)^2/(dP/dV|T) or Cp-Cv=-T/rho^2 (dP/dT|v)^2/(dP/drho|T)
+    // Therefore: Bs=Bt Cv/(CV+above)
+    // BMOD = rho*dx[0]*CV/(CV-T[0]/(rho*rho)*dy[0]*dy[0]/dx[0]);
+
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          const Real rho = R[i];
+          Real BMOD = 0.0;
+          if (DEDT[i] > 0.0 && rho > 0.0) {
+            const Real DPDE = DPDT[i] / DEDT[i];
+            BMOD = rho * DPDR[i] + DPDE * (P[i] / rho - rho * DEDR[i]);
+          } else if (rho > 0.0) { // Case: DEDT <= 0
+            // We need a different DPDE call apparently????
+            // In xRAGE, they call out to P(rho,e) in this case to get the
+            // derivative directly from the half-inverted table.
+            // But upon further review,
+            // I think it will end up evaluating to BMOD_T in any case because cv will
+            // be zero! See eos_eospac.f90 line 1261 BMOD =
+            // BMOD_T+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+            // BMOD_T = std::max(rho * DPDR[i], 0.0);
+            // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
+            BMOD = std::max(rho * DPDR[i], 0.0);
+          }
+          bmods[i] = bulkModulusFromSesame(std::max(BMOD, 0.0));
+        });
+  }
+
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityTemperature(const Real *rhos,
+                                                   const Real *temperatures, Real *gm1s,
+                                                   Real *scratch, const int num,
+                                                   LambdaIndexer /*lambdas*/) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
+    static auto const cname = name.c_str();
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
+    EOS_REAL *E = scratch + 0 * num;
+    EOS_REAL *dx = scratch + 1 * num;
+    EOS_REAL *DEDT = scratch + 2 * num;
+    EOS_REAL *DPDT = scratch + 3 * num;
+    EOS_REAL *P = E;
+
+    EOS_INTEGER table = EofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
+      EOS_REAL values[]{1.0};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, T, E, dx, DEDT, "EofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    table = PofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
+      EOS_REAL values[]{1.0};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, T, P, dx, DPDT, "PofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          const Real DPDE = DPDT[i] / DEDT[i];
+          gm1s[i] = robust::ratio(pressureFromSesame(sieToSesame(DPDE)), R[i]);
+        });
+  }
+
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                      Real *gm1s, Real *scratch,
+                                                      const int num,
+                                                      LambdaIndexer /*lambdas*/) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
+    static auto const cname = name.c_str();
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
+    EOS_REAL *T = scratch + 0 * num;
+    EOS_REAL *P = scratch + 1 * num;
+    EOS_REAL *dx = scratch + 2 * num;
+    EOS_REAL *DEDT = scratch + 3 * num;
+    EOS_REAL *DPDT = scratch + 4 * num;
+    EOS_REAL *Etmp = P;
+    EOS_REAL *dy = DEDT;
+
+    EOS_INTEGER table = TofRE_table_;
+    {
+      EOS_INTEGER options[]{EOS_Y_CONVERT};
+      EOS_REAL values[]{sieFromSesame(1.0)};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, E, T, dx, dy, "TofRE", Verbosity::Quiet, options,
+                         values, nopts);
+    }
+
+    table = EofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
+      EOS_REAL values[]{1.0};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, T, Etmp, dx, DEDT, "EofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    table = PofRT_table_;
+    {
+      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
+      EOS_REAL values[]{1.0};
+      EOS_INTEGER nopts = 1;
+      eosSafeInterpolate(&table, num, R, T, P, dx, DPDT, "PofRT", Verbosity::Quiet,
+                         options, values, nopts);
+    }
+
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          const Real DPDE = DPDT[i] / DEDT[i];
+          gm1s[i] = robust::ratio(pressureFromSesame(sieToSesame(DPDE)), R[i]);
+        });
+  }
+
+  template <typename LambdaIndexer>
+  inline void PTofRE(Real *rhos, Real *sies, Real *presses, Real *temps, Real *dpdrs,
+                     Real *dpdes, Real *dtdrs, Real *dtdes, Real *scratch, const int num,
+                     LambdaIndexer lambdas) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
+    static auto const cname = name.c_str();
+
+    PressureFromDensityInternalEnergy(rhos, sies, presses, scratch, num, lambdas);
+    TemperatureFromDensityInternalEnergy(rhos, sies, temps, scratch, num, lambdas);
+
+    Real *drho = scratch;
+    Real *de = scratch + num;
+    Real *Pr = scratch + 2 * num;
+    Real *Pe = scratch + 3 * num;
+    Real *Tr = scratch + 4 * num;
+    Real *Te = scratch + 5 * num;
+    Real *rho_p_drho = scratch + 6 * num;
+    Real *sie_p_de = scratch + 7 * num;
+
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          drho[i] = rhos[i] * 1.0e-6;
+          de[i] = sies[i] * 1.0e-6;
+          rho_p_drho[i] = rhos[i] + drho[i];
+          sie_p_de[i] = sies[i] + de[i];
+        });
+
+    Real *R = &rhos[0];
+    Real *E = &sies[0];
+
+    Real *internal_scratch = scratch + 8 * num;
+
+    PressureFromDensityInternalEnergy(rho_p_drho, E, Pr, internal_scratch, num, lambdas);
+    PressureFromDensityInternalEnergy(R, sie_p_de, Pe, internal_scratch, num, lambdas);
+    TemperatureFromDensityInternalEnergy(rho_p_drho, E, Tr, internal_scratch, num,
+                                         lambdas);
+    TemperatureFromDensityInternalEnergy(R, sie_p_de, Te, internal_scratch, num, lambdas);
+
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          dpdrs[i] = (Pr[i] - presses[i]) / drho[i];
+          dpdes[i] = (Pe[i] - presses[i]) / de[i];
+          dtdrs[i] = (Tr[i] - temps[i]) / drho[i];
+          dtdes[i] =
+              (Te[i] - temps[i]) /
+              de[i]; // Would it be better to skip the calculation of Te and return 1/cv?
+        });
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr,
+              Real &dpde, Real &dtdr, Real &dtde) const {
+
+    press = PressureFromDensityInternalEnergy(rho, sie, lambda);
+    temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
+    const Real drho = rho * 1.0e-6;
+    const Real de = sie * 1.0e-6;
+    const Real Pr = PressureFromDensityInternalEnergy(rho + drho, sie, lambda);
+    const Real Pe = PressureFromDensityInternalEnergy(rho, sie + de, lambda);
+    const Real Tr = TemperatureFromDensityInternalEnergy(rho + drho, sie, lambda);
+    const Real Te = TemperatureFromDensityInternalEnergy(rho, sie + de, lambda);
+    dpdr = (Pr - press) / drho;
+    dpde = (Pe - press) / de;
+    dtdr = (Tr - temp) / drho;
+    dtde = (Te - temp) /
+           de; // Would it be better to skip the calculation of Te and return 1/cv?
+    return;
+  }
+
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    auto nbuffers = scratch_nbuffers();
+    if (nbuffers.find(method) != nbuffers.end()) {
+      return sizeof(Real) * nbuffers[method] * nelements;
+    }
+    return 0;
+  }
+
+  static inline unsigned long max_scratch_size(unsigned int nelements) {
+    auto nbuffers = scratch_nbuffers();
+    auto e = std::max_element(
+        nbuffers.begin(), nbuffers.end(),
+        [](const auto &a, const auto &b) { return a.second < b.second; });
+    return scratch_size(e->first, nelements);
+  }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 0; }
   inline void Finalize() {}
@@ -202,6 +729,23 @@ class EOSPAC : public EosBase<EOSPAC> {
   Real dvdt_ref_ = 1;
   Real rho_min_ = 0;
   Real temp_min_ = 0;
+
+  static inline std::map<std::string, unsigned int> &scratch_nbuffers() {
+    static std::map<std::string, unsigned int> nbuffers = {
+        {"TemperatureFromDensityInternalEnergy", 2},
+        {"PressureFromDensityTemperature", 2},
+        {"FillEos", 4},
+        {"InternalEnergyFromDensityTemperature", 2},
+        {"PressureFromDensityInternalEnergy", 3},
+        {"SpecificHeatFromDensityTemperature", 2},
+        {"SpecificHeatFromDensityInternalEnergy", 3},
+        {"BulkModulusFromDensityTemperature", 6},
+        {"BulkModulusFromDensityInternalEnergy", 6},
+        {"GruneisenParamFromDensityTemperature", 4},
+        {"GruneisenParamFromDensityInternalEnergy", 5},
+        {"PTofRE", 11}};
+    return nbuffers;
+  }
 };
 
 // ======================================================================
@@ -271,6 +815,12 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(const Real 
   EOS_INTEGER table = PofRT_table_;
   eosSafeInterpolate(&table, nxypairs, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet);
   return Real(pressureFromSesame(P[0]));
+}
+
+PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
+    const Real rho, const Real temperature, Real *lambda) const {
+  EntropyIsNotEnabled("EOSPAC");
+  return 1.0;
 }
 
 PORTABLE_INLINE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie,
@@ -385,6 +935,12 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
   using namespace EospacWrapper;
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return PressureFromDensityTemperature(rho, temp, lambda);
+}
+PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
+    const Real rho, const Real sie, Real *lambda) const {
+  using namespace EospacWrapper;
+  const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
+  return EntropyFromDensityTemperature(rho, temp, lambda);
 }
 PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {

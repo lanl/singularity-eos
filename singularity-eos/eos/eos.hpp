@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -40,6 +40,7 @@
 #include <singularity-eos/eos/eos_jwl.hpp>
 #include <singularity-eos/eos/eos_spiner.hpp>
 #include <singularity-eos/eos/eos_stellar_collapse.hpp>
+#include <singularity-eos/eos/eos_vinet.hpp>
 
 // Modifiers
 #include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
@@ -62,7 +63,7 @@ using singularity::detail::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, JWL, DavisReactants, DavisProducts
+    tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts
 #ifdef SPINER_USE_HDF
        ,
        SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse

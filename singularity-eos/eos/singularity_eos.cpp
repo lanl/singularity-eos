@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -598,10 +598,9 @@ int get_sg_eos( // sizing information
             eos_v(pte_idxs(tid, 0))
                 .ValuesAtReferenceState(r_rho, r_temp, r_sie, r_press, r_cv, r_bmod,
                                         r_dpde, r_dvdt);
-            RootFinding1D::RootCounts co{};
             Real temp_i;
             RootFinding1D::findRoot(p_from_t, press_v(i), r_temp, 1.e-10 * r_temp,
-                                    1.e10 * r_temp, 1.e-12, 1.e-12, temp_i, co);
+                                    1.e10 * r_temp, 1.e-12, 1.e-12, temp_i);
             sie_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
                                   .InternalEnergyFromDensityTemperature(rho_pte(tid, 0),
                                                                         temp_i, cache[0]);

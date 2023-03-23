@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -60,6 +60,16 @@ class DavisReactants : public EosBase<DavisReactants> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return Ps(rho) + Gamma(rho) * rho * (sie - Es(rho));
   }
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    EntropyIsNotEnabled("DavisReactants");
+    return 1.0;
+  }
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    EntropyIsNotEnabled("DavisReactants");
+    return 1.0;
+  }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const {
     return SpecificHeatFromDensityInternalEnergy(
@@ -101,6 +111,10 @@ class DavisReactants : public EosBase<DavisReactants> {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return 0;
+  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisReactants Params: "};
     printf("%srho0:%e e0:%e P0:%e\nT0:%e A:%e B:%e\nC:%e G0:%e Z:%e\nalpha:%e "
@@ -148,6 +162,16 @@ class DavisProducts : public EosBase<DavisProducts> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return Ps(rho) + rho * Gamma(rho) * (sie - Es(rho));
   }
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    EntropyIsNotEnabled("DavisProducts");
+    return 1.0;
+  }
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    EntropyIsNotEnabled("DavisProducts");
+    return 1.0;
+  }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
     return _Cv;
@@ -187,6 +211,10 @@ class DavisProducts : public EosBase<DavisProducts> {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return 0;
+  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisProducts Params: "};
     printf("%sa:%e b:%e k:%e\nn:%e vc:%e pc:%e\nCv:%e E0:%e\n", s1, _a, _b, _k, _n, _vc,
@@ -305,9 +333,7 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
   };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
-  RootFinding1D::RootCounts counts;
-  auto status =
-      regula_falsi(PofRatT, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
+  auto status = regula_falsi(PofRatT, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
@@ -373,10 +399,8 @@ PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperatur
   };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
-  RootFinding1D::RootCounts counts;
   const Real rho0 = 1.0 / _vc;
-  auto status =
-      regula_falsi(PofRatT, press, rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
+  auto status = regula_falsi(PofRatT, press, rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("DavisProducts::DensityEnergyFromPressureTemperature: "

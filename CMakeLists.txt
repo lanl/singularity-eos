@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------#
-# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -232,7 +232,11 @@ if(SINGULARITY_USE_KOKKOS)
     message(WARNING "`Kokkos` version could not be inferred. Note that versions less than `3.3` are DEPRECATED and may not work properly.")
   endif() #Kokkos_VERSION_MAJOR
   ####
+else()
+  set(PORTABILITY_STRATEGY "None")
+  list(APPEND SINGULARITY_PUBLIC_DEFINES PORTABILITY_STRATEGY_NONE)
 endif() #SINGULARITY_USE_KOKKOS
+message(STATUS "Portability strategy set to ${PORTABILITY_STRATEGY}")
 
 # TODO(JMM): If linear algebra needs grow beyond mixed cell closures,
 # we may need to rename this variable.
@@ -438,6 +442,7 @@ target_link_options(singularity-eos
     ${xlfix}
 )
 
+include(GNUInstallDirs)
 foreach(_sdir ${_subdirs2add})
   singularity_msg(STATUS "Adding ${_sdir}...")
   add_subdirectory(${_sdir})

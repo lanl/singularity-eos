@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -498,6 +498,101 @@ class EOS_init_with_matid(unittest.TestCase, EOSTestBase):
 
     def tearDown(self):
         self.eos_spiner.Finalize()
+
+@unittest.skipIf('SpinerEOSDependsRhoT' not in dir(singularity_eos) or 'EOSPAC' not in dir(singularity_eos), "No Spiner or EOSPAC support")
+class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
+    "[Vector EOS][EOSPAC]"
+
+    def setUp(self):
+        "SpinerEOS and EOSPAC EOS for steel can be initialized with matid"
+        self.eosName = "../materials.sp5"
+        self.steelID = 4272
+        self.steelName = "stainless steel 347"
+
+        self.steelEOS_host = singularity_eos.SpinerEOSDependsRhoT(self.eosName, self.steelID)
+        self.eospac = singularity_eos.EOSPAC(self.steelID)
+
+        self.num = 3
+
+        self.density = np.zeros(self.num)
+        self.temperature = np.zeros(self.num)
+
+        # Populate the input arrays
+        self.density[0] = 1e0
+        self.density[1] = 1e0
+        self.density[2] = 1e0
+        self.temperature[0] = 1e6
+        self.temperature[1] = 1e6
+        self.temperature[2] = 1e6
+
+    def test_energy(self):
+        """[Vector EOS][Steel][Densities and temperatures] A e(rho, T) lookup is performed"""
+        energy_eospac = np.zeros(self.num)
+        energy_spiner = np.zeros(self.num)
+        num_scratch = int(self.eospac.scratch_size("InternalEnergyFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
+        self.eospac.InternalEnergyFromDensityTemperature(self.density, self.temperature, energy_eospac, scratch, self.num)
+        self.steelEOS_host.InternalEnergyFromDensityTemperature(self.density, self.temperature, energy_spiner, self.num)
+
+        for a, b in zip(energy_eospac, energy_eospac):
+            self.assertIsClose(a, b)
+
+    def test_pressure(self):
+        """[Vector EOS][Steel][Densities and temperatures] A P(rho, T) lookup is performed"""
+        pressure_eospac = np.zeros(self.num)
+        pressure_spiner = np.zeros(self.num)
+        num_scratch = int(self.eospac.scratch_size("PressureFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
+        self.eospac.PressureFromDensityTemperature(self.density, self.temperature, pressure_eospac, scratch, self.num)
+        self.steelEOS_host.PressureFromDensityTemperature(self.density, self.temperature, pressure_spiner, self.num)
+
+        for a, b in zip(pressure_eospac, pressure_eospac):
+            self.assertIsClose(a, b)
+
+    def test_cv(self):
+        """[Vector EOS][Steel][Densities and temperatures] A C_v(rho, T) lookup is performed"""
+        heatcapacity_eospac = np.zeros(self.num)
+        heatcapacity_spiner = np.zeros(self.num)
+        num_scratch = int(self.eospac.scratch_size("SpecificHeatFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
+        self.eospac.SpecificHeatFromDensityTemperature(self.density, self.temperature, heatcapacity_eospac, scratch, self.num)
+        self.steelEOS_host.SpecificHeatFromDensityTemperature(self.density, self.temperature, heatcapacity_spiner, self.num)
+
+        for a, b in zip(heatcapacity_eospac, heatcapacity_eospac):
+            self.assertIsClose(a, b)
+
+    def test_bmod(self):
+        """[Vector EOS][Steel][Densities and temperatures] A B_S(rho, T) lookup is performed"""
+        bulkmodulus_eospac = np.zeros(self.num)
+        bulkmodulus_spiner = np.zeros(self.num)
+        num_scratch = int(self.eospac.scratch_size("BulkModulusFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
+        self.eospac.BulkModulusFromDensityTemperature(self.density, self.temperature, bulkmodulus_eospac, scratch, self.num)
+        self.steelEOS_host.BulkModulusFromDensityTemperature(self.density, self.temperature, bulkmodulus_spiner, self.num)
+
+        for a, b in zip(bulkmodulus_eospac, bulkmodulus_eospac):
+            self.assertIsClose(a, b)
+
+    def test_gamma(self):
+        """[Vector EOS][Steel][Densities and temperatures] A Gamma(rho, T) lookup is performed"""
+        gruneisen_eospac = np.zeros(self.num)
+        gruneisen_spiner = np.zeros(self.num)
+        num_scratch = int(self.eospac.scratch_size("GruneisenParamFromDensityTemperature", self.num) / np.double(1).nbytes)
+        scratch = np.zeros(num_scratch)
+        self.eospac.GruneisenParamFromDensityTemperature(self.density, self.temperature, gruneisen_eospac, scratch, self.num)
+        self.steelEOS_host.GruneisenParamFromDensityTemperature(self.density, self.temperature, gruneisen_spiner, self.num)
+
+        for a, b in zip(gruneisen_eospac, gruneisen_eospac):
+            self.assertIsClose(a, b)
+
+    def tearDown(self):
+        # Failing to call finalize leads to a memory leak,
+        # but otherwise behaviour is as expected.
+        # It's possible to this automatically clean up with
+        # some form of reference counting. If this is a priority,
+        # we can re-examine.
+        self.steelEOS_host.Finalize()
+        self.eospac.Finalize()
 
 
 class VectorEOS_Gruneisen_Given_Rho_Sie(unittest.TestCase):
