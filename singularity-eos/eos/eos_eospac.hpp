@@ -175,7 +175,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   inline void Finalize() {}
   static std::string EosType() { return std::string("EOSPAC"); }
   static std::string EosPyType() { return EosType(); }
-  inline void PrintParams() const { printf("EOSPAC parameters:\nmatid = %s\n", matid_); }
+  inline void PrintParams() const { printf("EOSPAC parameters:\nmatid = %i\n", matid_); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
 

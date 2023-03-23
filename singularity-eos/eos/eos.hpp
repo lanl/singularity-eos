@@ -54,7 +54,7 @@ namespace singularity {
 template <typename... Ts>
 using tl = singularity::detail::type_list<Ts...>;
 
-template <template <typename> typename... Ts>
+template <template <typename> class... Ts>
 using al = singularity::detail::adapt_list<Ts...>;
 
 // transform variadic list: applies modifiers to eos's

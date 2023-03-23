@@ -41,12 +41,14 @@ set(EOS_SRCS
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
-  list(APPEND EOS_SRCS eos/singularity_eos.cpp)
-  list(APPEND EOS_HEADERS eos/singularity_eos.hpp closure/mixed_cell_models.hpp)
+  list(APPEND EOS_SRCS eos/get_sg_eos.cpp)
+  list(APPEND EOS_HEADERS closure/mixed_cell_models.hpp)
 endif()
 
 if (SINGULARITY_USE_FORTRAN)
   list(APPEND EOS_SRCS eos/singularity_eos.f90)
+  list(APPEND EOS_SRCS eos/singularity_eos.cpp)
+  list(APPEND EOS_HEADERS eos/singularity_eos.hpp)
   # would rather handle this more robustly, being sloppy for now
   list(APPEND EOS_MODS singularity_eos.mod singularity_eos_types.mod)
 endif()
