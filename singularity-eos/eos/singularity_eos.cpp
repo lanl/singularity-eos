@@ -156,44 +156,6 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                                 Cv0, def_en, def_v);
 }
 
-#ifdef SPINER_USE_HDF
-int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
-                              const int matid, int const *const enabled,
-                              double *const vals) {
-  assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(SpinerEOSDependsRhoT(std::string(filename), matid));
-  if (enabled[3] == 1) {
-    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-                                           vals[3], vals[4], vals[5]);
-  }
-  EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoT(std::string(filename), matid));
-  eos[matindex] = eos_.GetOnDevice();
-  return 0;
-}
-
-int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
-                              const int matid) {
-  return init_sg_SpinerDependsRhoT(matindex, eos, filename, matid, def_en, def_v);
-}
-
-int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filename,
-                                const int matid, int const *const enabled,
-                                double *const vals) {
-  assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(SpinerEOSDependsRhoSie(std::string(filename), matid));
-  if (enabled[3] == 1) {
-    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
-                                           vals[3], vals[4], vals[5]);
-  }
-  EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoSie(std::string(filename), matid));
-  eos[matindex] = eos_.GetOnDevice();
-  return 0;
-}
-int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filename,
-                                const int matid) {
-  return init_sg_SpinerDependsRhoSie(matindex, eos, filename, matid, def_en, def_v);
-}
-#endif
 
 #ifdef SINGULARITY_USE_EOSPAC
 int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const enabled,

@@ -37,8 +37,6 @@ module singularity_eos
     init_sg_JWL_f,&
     init_sg_DavisProducts_f,&
     init_sg_DavisReactants_f,&
-    init_sg_SpinerDependsRhoT_f,&
-    init_sg_SpinerDependsRhoSie_f,&
     init_sg_eospac_f,&
     get_sg_PressureFromDensityInternalEnergy_f,&
     get_sg_BulkModulusFromDensityInternalEnergy_f,&
@@ -121,32 +119,6 @@ module singularity_eos
                                                 Z, alpha, Cv0
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_DavisReactants
-  end interface
-
-  interface
-    integer(kind=c_int) function &
-      init_sg_SpinerDependsRhoT(matindex, eos, filename, id, sg_mods_enabled, &
-                                sg_mods_values) &
-      bind(C, name='init_sg_SpinerDependsRhoT')
-      import
-      integer(c_int), value, intent(in)      :: matindex, id
-      type(c_ptr), value, intent(in)         :: eos
-      character(kind=c_char), intent(in)     :: filename(*)
-      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
-    end function init_sg_SpinerDependsRhoT
-  end interface
-
-  interface
-    integer(kind=c_int) function &
-      init_sg_SpinerDependsRhoSie(matindex, eos, filename, id, &
-                                  sg_mods_enabled, sg_mods_values) &
-      bind(C, name='init_sg_SpinerDependsRhoSie')
-      import
-      integer(c_int), value, intent(in)      :: matindex, id
-      type(c_ptr), value, intent(in)         :: eos
-      character(kind=c_char), intent(in)     :: filename(*)
-      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
-    end function init_sg_SpinerDependsRhoSie
   end interface
 
   interface
@@ -369,37 +341,6 @@ contains
                                  C, G0, Z, alpha, Cv0, c_loc(sg_mods_enabled), &
                                  c_loc(sg_mods_values))
   end function init_sg_DavisReactants_f
-
-  integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
-                                               sg_mods_enabled, &
-                                               sg_mods_values) &
-    result(err)
-    integer(c_int), value, intent(in)         :: matindex
-    type(sg_eos_ary_t), intent(in)            :: eos
-    character(len=*, kind=c_char), intent(in) :: filename
-    integer(c_int), intent(inout)             :: id
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
-    err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
-                                    trim(filename)//C_NULL_CHAR, id, &
-                                    c_loc(sg_mods_enabled), &
-                                    c_loc(sg_mods_values))
-  end function init_sg_SpinerDependsRhoT_f
-
-  integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, &
-                                                 sg_mods_enabled, &
-                                                 sg_mods_values) &
-    result(err)
-    integer(c_int), value, intent(in)         :: matindex, id
-    type(sg_eos_ary_t), intent(in)            :: eos
-    character(len=*, kind=c_char), intent(in) :: filename
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
-    err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
-                                      trim(filename)//C_NULL_CHAR, id, &
-                                      c_loc(sg_mods_enabled), &
-                                      c_loc(sg_mods_values))
-  end function init_sg_SpinerDependsRhoSie_f
 
   integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
                                     sg_mods_values) &
