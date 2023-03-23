@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -50,6 +50,10 @@ class JWL : public EosBase<JWL> {
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
@@ -75,6 +79,10 @@ class JWL : public EosBase<JWL> {
                               Real &bmod, Real &dpde, Real &dvdt,
                               Real *lambda = nullptr) const;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return 0;
+  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"JWL Params: "};
     printf("%sA:%e B:%e R1: %e\nR2:%e w:%e rho0:%e\nCv:%e\n", s1, _A, _B, _R1, _R2, _w,
@@ -114,6 +122,12 @@ PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(const Real 
                                                                      Real *lambda) const {
   return ReferencePressure(rho) + _w * rho * (sie - ReferenceEnergy(rho));
 }
+PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(const Real rho,
+                                                                    const Real sie,
+                                                                    Real *lambda) const {
+  EntropyIsNotEnabled("JWL");
+  return 1.0;
+}
 PORTABLE_INLINE_FUNCTION Real JWL::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   return (sie - ReferenceEnergy(rho)) / _Cv;
@@ -142,6 +156,12 @@ PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityTemperature(const Real rho
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
+PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityTemperature(const Real rho,
+                                                                 const Real temp,
+                                                                 Real *lambda) const {
+  EntropyIsNotEnabled("JWL");
+  return 1.0;
+}
 PORTABLE_INLINE_FUNCTION Real JWL::SpecificHeatFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   return SpecificHeatFromDensityInternalEnergy(
@@ -168,9 +188,8 @@ JWL::DensityEnergyFromPressureTemperature(const Real press, const Real temp, Rea
   auto PofRatT = [&](const Real r) { return _Cv * temp * r * _w + ReferencePressure(r); };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
-  RootFinding1D::RootCounts counts;
   auto status =
-      regula_falsi(PofRatT, press, rhoguess, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
+      regula_falsi(PofRatT, press, rhoguess, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("JWL::DensityEnergyFromPressureTemperature: "

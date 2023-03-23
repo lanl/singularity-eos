@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -47,6 +47,8 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   using EosBase<ScaledEOS<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::PressureFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::EntropyFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::BulkModulusFromDensityTemperature;
@@ -90,6 +92,11 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
                                          Real *lambda = nullptr) const {
     return t_.PressureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
   }
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const {
+    return scale_ *
+           t_.EntropyFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
+  }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda = nullptr) const {
@@ -112,6 +119,11 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
     return t_.PressureFromDensityTemperature(scale_ * rho, temperature, lambda);
+  }
+  PORTABLE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const {
+    return scale_ * t_.EntropyFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
@@ -161,6 +173,14 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   int nlambda() const noexcept { return t_.nlambda(); }
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
+
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return T::scratch_size(method, nelements);
+  }
+
+  static inline unsigned long max_scratch_size(unsigned int nelements) {
+    return T::max_scratch_size(nelements);
+  }
 
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();

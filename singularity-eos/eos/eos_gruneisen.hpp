@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -76,6 +76,10 @@ class Gruneisen : public EosBase<Gruneisen> {
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperatummmmmmre, Real *lambda = nullptr) const {
     return _Cv;
@@ -109,6 +113,10 @@ class Gruneisen : public EosBase<Gruneisen> {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return 0;
+  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"Gruneisen Params: "};
     printf("%s C0:%e s1:%e s2:%e s3:%e\n  G0:%e b:%e rho0:%e T0:%e\n  P0:%eCv:%e "
@@ -235,13 +243,12 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::ComputeRhoMax(const Real s1, const Real
       using RootFinding1D::regula_falsi;
       using RootFinding1D::RootCounts;
       using RootFinding1D::Status;
-      RootCounts counts;
       static constexpr Real factor = 100;
       static constexpr Real xtol = factor * EPS;
       static constexpr Real ytol = factor / 10 * EPS;
       static constexpr Real eta_guess = 0.001;
       auto status =
-          regula_falsi(poly, 0., eta_guess, minbound, maxbound, xtol, ytol, root, counts);
+          regula_falsi(poly, 0., eta_guess, minbound, maxbound, xtol, ytol, root);
       if (status != Status::SUCCESS) {
         // Root finder failed even though the solution was bracketed... this is an error
         EOS_ERROR("Gruneisen initialization: Cubic root find failed. Maximum "
@@ -306,6 +313,12 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
   }
   return P_H + Gamma(rho) * rho * (sie - E_H);
 }
+PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityInternalEnergy(
+    const Real rho_in, const Real sie, Real *lambda) const {
+  const Real rho = std::min(rho_in, _rho_max);
+  EntropyIsNotEnabled("Gruneisen");
+  return 1.0;
+}
 PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
     const Real rho_in, const Real sie, Real *lambda) const {
   using namespace gruneisen_utils;
@@ -328,6 +341,12 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityTemperature(
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
+PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityTemperature(
+    const Real rho_in, const Real temp, Real *lambda) const {
+  const Real rho = std::min(rho_in, _rho_max);
+  const Real sie = InternalEnergyFromDensityTemperature(rho, temp);
+  return EntropyFromDensityInternalEnergy(rho, sie);
+}
 PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityTemperature(
     const Real rho_in, const Real temp, Real *lambda) const {
   const Real rho = std::min(rho_in, _rho_max);
@@ -348,9 +367,7 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     };
     using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
-    RootFinding1D::RootCounts counts;
-    auto status =
-        regula_falsi(PofRatE, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho, counts);
+    auto status = regula_falsi(PofRatE, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
     if (status != Status::SUCCESS) {
       // Root finder failed even though the solution was bracketed... this is an error
       EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: "

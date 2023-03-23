@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -50,20 +50,19 @@ void pAlpha2BilinearRampParams(const T &eos, const Real alpha0, const Real Pe,
   auto rmid_func = PORTABLE_LAMBDA(const Real x) {
     return eos.PressureFromDensityTemperature(alpha0 * x, T0);
   };
-  RootFinding1D::RootCounts co{};
   // get upper bound to density informed by the reference
   // bulk modulus
   const Real max_exp_arg = std::log(std::numeric_limits<Real>::max() * 0.99);
   const Real exp_arg = std::min(max_exp_arg, ratio((2.0 * Pc - P0), bmod0));
   const Real rho_ub = rho0 * std::exp(exp_arg);
   // finds where rmid_func = Pe
-  RootFinding1D::findRoot(rmid_func, Pe, rho0, r0, rho_ub, 1.e-12, 1.e-12, rmid, co);
+  RootFinding1D::findRoot(rmid_func, Pe, rho0, r0, rho_ub, 1.e-12, 1.e-12, rmid);
   // calculate r1
   auto r1_func = PORTABLE_LAMBDA(const Real x) {
     return eos.PressureFromDensityTemperature(x, T0);
   };
   // finds where r1_func = Pc
-  RootFinding1D::findRoot(r1_func, Pc, rmid, r0, rho_ub, 1.e-12, 1.e-12, r1, co);
+  RootFinding1D::findRoot(r1_func, Pc, rmid, r0, rho_ub, 1.e-12, 1.e-12, r1);
   // a
   a = ratio(r0 * Pe, rmid - r0);
   // b
@@ -143,6 +142,11 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     return p_eos < p_ramp ? p_ramp : p_eos;
   }
   PORTABLE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const {
+    return t_.EntropyFromDensityInternalEnergy(rho, sie, lambda);
+  }
+  PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda = nullptr) const {
     return t_.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
@@ -167,6 +171,11 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     const Real p_ramp{get_ramp_pressure(rho)};
     const Real p_eos{t_.PressureFromDensityTemperature(rho, temperature, lambda)};
     return p_eos < p_ramp ? p_ramp : p_eos;
+  }
+  PORTABLE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const {
+    return t_.EntropyFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
@@ -220,6 +229,14 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   int nlambda() const noexcept { return t_.nlambda(); }
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
+
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return T::scratch_size(method, nelements);
+  }
+
+  static inline unsigned long max_scratch_size(unsigned int nelements) {
+    return T::max_scratch_size(nelements);
+  }
 
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();

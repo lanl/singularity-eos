@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -17,6 +17,7 @@ add_executable(eos_unit_tests
   eos_unit_test_helpers.hpp
   test_eos_unit.cpp
   test_eos_gruneisen.cpp
+  test_eos_vinet.cpp
 )
 
 if(SINGULARITY_USE_HDF5)
@@ -28,7 +29,7 @@ if(SINGULARITY_USE_HDF5)
   endif()
 endif()
 
-target_link_libraries(eos_unit_tests 
+target_link_libraries(eos_unit_tests
   PRIVATE
     Catch2::Catch2
     singularity-eos::singularity-eos
@@ -82,4 +83,31 @@ if (SINGULARITY_BUILD_PYTHON AND SINGULARITY_TEST_PYTHON)
   add_test(NAME PythonBindings
            COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/python_bindings.py -v)
   set_tests_properties(PythonBindings PROPERTIES ENVIRONMENT "${PYTHON_TEST_ENVIRONMENT}")
+endif()
+
+add_executable(profile_eos profile_eos.cpp)
+target_link_libraries(profile_eos singularity-eos::singularity-eos)
+
+if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME AND NOT SINGULARITY_USE_CUDA)
+  set(METHODS_TO_TEST
+    TemperatureFromDensityInternalEnergy
+    PressureFromDensityTemperature
+    InternalEnergyFromDensityTemperature
+    PressureFromDensityInternalEnergy
+    SpecificHeatFromDensityTemperature
+    SpecificHeatFromDensityInternalEnergy
+    BulkModulusFromDensityTemperature
+    BulkModulusFromDensityInternalEnergy
+    GruneisenParamFromDensityTemperature
+    GruneisenParamFromDensityInternalEnergy
+  )
+
+  foreach(MUT IN LISTS METHODS_TO_TEST)
+    add_executable(profile_eospac_${MUT} profile_eospac.cpp)
+    target_compile_definitions(profile_eospac_${MUT} PUBLIC METHOD_UNDER_TEST=${MUT})
+    target_link_libraries(profile_eospac_${MUT} singularity-eos::singularity-eos)
+
+    add_test(NAME Profile_EOSPAC_${MUT}
+             COMMAND profile_eospac_${MUT} 100 16)
+  endforeach()
 endif()

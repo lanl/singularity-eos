@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -180,9 +180,8 @@ SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
 
 SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
 
-  GIVEN("A root counts object") {
+  GIVEN("Root finding") {
     using namespace RootFinding1D;
-    RootCounts counts;
 
     THEN("A root can be found for shift = 1, scale = 2, offset = 0.5") {
       int ntimes = 100;
@@ -208,9 +207,7 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
 #endif
       portableFor(
           "find roots", 0, ntimes, PORTABLE_LAMBDA(const int i) {
-            RootCounts per_thread_counts;
-            statuses(i) = regula_falsi(f, 0, guess, -1, 3, 1e-10, 1e-10, roots(i),
-                                       per_thread_counts);
+            statuses(i) = regula_falsi(f, 0, guess, -1, 3, 1e-10, 1e-10, roots(i));
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::View<Status> s_copy(statuses, 0);
@@ -226,7 +223,6 @@ SCENARIO("Rudimentary test of the root finder", "[RootFinding1D]") {
       PORTABLE_FREE(rootsp);
       REQUIRE(status == Status::SUCCESS);
       REQUIRE(isClose(root, 0.744658));
-      REQUIRE(100. * counts[counts.more()] / counts.total() <= 10);
     }
   }
 }
@@ -467,6 +463,44 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
   }
 }
 
+SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
+  GIVEN("Parameters for an ideal gas with entropy reference states") {
+    // Create ideal gas EOS ojbect
+    constexpr Real Cv = 5.0;
+    constexpr Real gm1 = 0.4;
+    constexpr Real EntropyT0 = 100;
+    constexpr Real EntropyRho0 = 1e-03;
+    EOS host_eos = IdealGas(gm1, Cv, EntropyT0, EntropyRho0);
+    THEN("The entropy at the reference state should be zero") {
+      auto entropy = host_eos.EntropyFromDensityTemperature(EntropyRho0, EntropyT0);
+      INFO("Entropy should be zero but it is " << entropy);
+      CHECK(isClose(entropy, 0.0, 1.e-14));
+    }
+    GIVEN("A state at the reference temperature and a density whose cube root is the "
+          "reference density") {
+      constexpr Real T = EntropyT0;
+      constexpr Real rho = 0.1; // rho**3 = EntropyRho0
+      THEN("The entropy should be 2. / 3. * gm1 * Cv * log(EntropyRho0)") {
+        const Real entropy_true = 2. / 3. * gm1 * Cv * log(EntropyRho0);
+        auto entropy = host_eos.EntropyFromDensityTemperature(rho, T);
+        INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
+        CHECK(isClose(entropy, entropy_true, 1e-12));
+      }
+    }
+    GIVEN("A state at the reference density and a temperature whose square is the "
+          "reference temperature") {
+      constexpr Real T = 10; // T**2 = EntropyT0
+      constexpr Real rho = EntropyRho0;
+      THEN("The entropy should be -1. / 2. * Cv * log(EntropyT0)") {
+        const Real entropy_true = -1. / 2. * Cv * log(EntropyT0);
+        auto entropy = host_eos.EntropyFromDensityTemperature(rho, T);
+        INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
+        CHECK(isClose(entropy, entropy_true, 1e-12));
+      }
+    }
+  }
+}
+
 SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
 
   GIVEN("Parameters for an ideal gas") {
@@ -517,15 +551,38 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       constexpr std::array<Real, num> heatcapacity_true{Cv, Cv, Cv};
       constexpr std::array<Real, num> gruneisen_true{gm1, gm1, gm1};
 
+      // Gold standard entropy doesn't produce round numbers so we need to
+      // calculate it from the device views so this requires a bit more work
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::View<Real[num]> v_entropy_true("True Entropy");
+#else
+      std::array<Real, num> entropy_true;
+      Real *v_entropy_true = entropy_true.data();
+#endif
+      constexpr Real P0 = 1e6;                    // microbar
+      constexpr Real T0 = 293;                    // K
+      constexpr Real rho0 = P0 / (gm1 * Cv * T0); // g/cm^3
+      portableFor(
+          "Calculate true entropy", 0, num, PORTABLE_LAMBDA(const int i) {
+            v_entropy_true[i] =
+                Cv * log(v_energy[i] / Cv / T0) + gm1 * Cv * log(rho0 / v_density[i]);
+          });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      auto entropy_true = Kokkos::create_mirror_view(v_entropy_true);
+      Kokkos::deep_copy(entropy_true, v_entropy_true);
+#endif
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
       Kokkos::View<Real[num]> v_temperature("Temperature");
       Kokkos::View<Real[num]> v_pressure("Pressure");
+      Kokkos::View<Real[num]> v_entropy("Entropy");
       Kokkos::View<Real[num]> v_heatcapacity("Cv");
       Kokkos::View<Real[num]> v_bulkmodulus("bmod");
       Kokkos::View<Real[num]> v_gruneisen("Gamma");
       auto h_temperature = Kokkos::create_mirror_view(v_temperature);
       auto h_pressure = Kokkos::create_mirror_view(v_pressure);
+      auto h_entropy = Kokkos::create_mirror_view(v_entropy);
       auto h_heatcapacity = Kokkos::create_mirror_view(v_heatcapacity);
       auto h_bulkmodulus = Kokkos::create_mirror_view(v_bulkmodulus);
       auto h_gruneisen = Kokkos::create_mirror_view(v_gruneisen);
@@ -534,12 +591,14 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       // will be passed to the functions in place of the Kokkos views
       std::array<Real, num> h_temperature;
       std::array<Real, num> h_pressure;
+      std::array<Real, num> h_entropy;
       std::array<Real, num> h_heatcapacity;
       std::array<Real, num> h_bulkmodulus;
       std::array<Real, num> h_gruneisen;
       // Just alias the existing pointers
       auto v_temperature = h_temperature.data();
       auto v_pressure = h_pressure.data();
+      auto v_entropy = h_entropy.data();
       auto v_heatcapacity = h_heatcapacity.data();
       auto v_bulkmodulus = h_bulkmodulus.data();
       auto v_gruneisen = h_gruneisen.data();
@@ -566,6 +625,18 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned P(rho, e) should be equal to the true pressure") {
           array_compare(num, density, energy, h_pressure, pressure_true, "Density",
+                        "Energy");
+        }
+      }
+
+      WHEN("An S(rho, e) lookup is performed") {
+        eos.EntropyFromDensityInternalEnergy(v_density, v_energy, v_entropy, num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_entropy, v_entropy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned S(rho, e) should be equal to the true entropy") {
+          array_compare(num, density, energy, h_entropy, entropy_true, "Density",
                         "Energy");
         }
       }
@@ -650,15 +721,38 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       constexpr std::array<Real, num> heatcapacity_true{Cv, Cv, Cv};
       constexpr std::array<Real, num> gruneisen_true{gm1, gm1, gm1};
 
+      // Gold standard entropy doesn't produce round numbers so we need to
+      // calculate it from the device views so this requires a bit more work
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::View<Real[num]> v_entropy_true("True Entropy");
+#else
+      std::array<Real, num> entropy_true;
+      Real *v_entropy_true = entropy_true.data();
+#endif
+      constexpr Real P0 = 1e6;                    // microbar
+      constexpr Real T0 = 293;                    // K
+      constexpr Real rho0 = P0 / (gm1 * Cv * T0); // g/cm^3
+      portableFor(
+          "Calculate true entropy", 0, num, PORTABLE_LAMBDA(const int i) {
+            v_entropy_true[i] =
+                Cv * log(v_temperature[i] / T0) + gm1 * Cv * log(rho0 / v_density[i]);
+          });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      auto entropy_true = Kokkos::create_mirror_view(v_entropy_true);
+      Kokkos::deep_copy(entropy_true, v_entropy_true);
+#endif
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
       Kokkos::View<Real[num]> v_energy("Energy");
       Kokkos::View<Real[num]> v_pressure("Pressure");
+      Kokkos::View<Real[num]> v_entropy("Entropy");
       Kokkos::View<Real[num]> v_heatcapacity("Cv");
       Kokkos::View<Real[num]> v_bulkmodulus("bmod");
       Kokkos::View<Real[num]> v_gruneisen("Gamma");
       auto h_energy = Kokkos::create_mirror_view(v_energy);
       auto h_pressure = Kokkos::create_mirror_view(v_pressure);
+      auto h_entropy = Kokkos::create_mirror_view(v_entropy);
       auto h_heatcapacity = Kokkos::create_mirror_view(v_heatcapacity);
       auto h_bulkmodulus = Kokkos::create_mirror_view(v_bulkmodulus);
       auto h_gruneisen = Kokkos::create_mirror_view(v_gruneisen);
@@ -667,12 +761,14 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
       // will be passed to the functions in place of the Kokkos views
       std::array<Real, num> h_energy;
       std::array<Real, num> h_pressure;
+      std::array<Real, num> h_entropy;
       std::array<Real, num> h_heatcapacity;
       std::array<Real, num> h_bulkmodulus;
       std::array<Real, num> h_gruneisen;
       // Just alias the existing pointers
       auto v_energy = h_energy.data();
       auto v_pressure = h_pressure.data();
+      auto v_entropy = h_entropy.data();
       auto v_heatcapacity = h_heatcapacity.data();
       auto v_bulkmodulus = h_bulkmodulus.data();
       auto v_gruneisen = h_gruneisen.data();
@@ -698,6 +794,18 @@ SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned P(rho, T) should be equal to the true pressure") {
           array_compare(num, density, temperature, h_pressure, pressure_true, "Density",
+                        "Temperature");
+        }
+      }
+
+      WHEN("An S(rho, T) lookup is performed") {
+        eos.EntropyFromDensityTemperature(v_density, v_temperature, v_entropy, num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_entropy, v_entropy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned S(rho, T) should be equal to the true entropy") {
+          array_compare(num, density, temperature, h_entropy, entropy_true, "Density",
                         "Temperature");
         }
       }
@@ -806,9 +914,6 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
     }
     // Failing to call finalize leads to a memory leak,
     // but otherwise behaviour is as expected.
-    // It's possible to this automatically clean up with
-    // some form of reference counting. If this is a priority,
-    // we can re-examine.
     steelEOS_host_polymorphic.Finalize(); // host and device must be
                                           // finalized separately.
     steelEOS.Finalize();                  // cleans up memory on device.
@@ -998,7 +1103,6 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
   using singularity::IdealGas;
   using singularity::StellarCollapse;
   const std::string savename = "stellar_collapse_ideal_2.sp5";
-  static constexpr Real MeV2K_ = 1.e9 * 11.604525006;
   GIVEN("A stellar collapse EOS") {
     const std::string filename = "./goldfiles/stellar_collapse_ideal.h5";
     THEN("We can load the file") { // don't bother filtering bmod here.
@@ -1127,6 +1231,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 #endif
 
             const int N = 123;
+            constexpr Real gamma = 1.4;
             const Real dY = (yemax - yemin) / (N + 1);
             const Real dlT = (ltmax - ltmin) / (N + 1);
             const Real dlR = (lrhomax - lrhomin) / (N + 1);
@@ -1139,7 +1244,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
                   Real lR = lrhomin + i * dlR;
                   Real T = std::pow(10., lT);
                   Real R = std::pow(10., lR);
-                  Real e1, e2, p1, p2, cv1, cv2, b1, b2;
+                  Real e1, e2, p1, p2, cv1, cv2, b1, b2, s1, s2;
                   unsigned long output =
                       (singularity::thermalqs::pressure |
                        singularity::thermalqs::specific_internal_energy |
@@ -1149,10 +1254,14 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
 
                   sc1_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
                   sc2_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);
+                  // Fill entropy. Will need to change later.
+                  s1 = sc1_d.EntropyFromDensityTemperature(R, T, lambda);
+                  s2 = p2 * std::pow(R, -gamma); // ideal
                   if (!isClose(e1, e2)) nwrong_d() += 1;
                   if (!isClose(p1, p2)) nwrong_d() += 1;
                   if (!isClose(cv1, cv2)) nwrong_d() += 1;
                   if (!isClose(b1, b2)) nwrong_d() += 1;
+                  if (!isClose(s1, s2)) nwrong_d() += 1;
                 });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
             Kokkos::deep_copy(nwrong_h, nwrong_d);

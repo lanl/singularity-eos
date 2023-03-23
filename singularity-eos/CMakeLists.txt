@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------#
-# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -13,27 +13,33 @@
 #------------------------------------------------------------------------------#
 
 set(EOS_HEADERS
-    base/constants.hpp
-    base/eos_error.hpp
+    closure/mixed_cell_models.hpp
     base/fast-math/logs.hpp
-    base/math_utils.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
+    base/variadic_utils.hpp
+    base/math_utils.hpp
+    base/constants.hpp
+    base/eos_error.hpp
+    base/sp5/singularity_eos_sp5.hpp
     eos/eos.hpp
-    eos/eos_builder.hpp
-    eos/eos_davis.hpp
-    eos/eos_eospac.hpp
-    eos/eos_gruneisen.hpp
-    eos/eos_ideal.hpp
-    eos/eos_jwl.hpp
-    eos/eos_spiner.hpp
-    eos/eos_stellar_collapse.hpp
     eos/eos_variant.hpp
-    eos/modifiers/eos_unitsystem.hpp
-    eos/modifiers/ramps_eos.hpp
-    eos/modifiers/scaled_eos.hpp
-    eos/modifiers/shifted_eos.hpp
+    eos/singularity_eos.hpp
+    eos/eos_stellar_collapse.hpp
+    eos/eos_ideal.hpp
+    eos/eos_spiner.hpp
+    eos/eos_davis.hpp
+    eos/eos_gruneisen.hpp
+    eos/eos_vinet.hpp
+    eos/eos_builder.hpp
+    eos/eos_jwl.hpp
     eos/modifiers/relativistic_eos.hpp
+    eos/modifiers/scaled_eos.hpp
+    eos/modifiers/ramps_eos.hpp
+    eos/modifiers/shifted_eos.hpp
+    eos/modifiers/eos_unitsystem.hpp
+    eos/eos_base.hpp
+    eos/eos_eospac.hpp
 )
 
 set(EOS_SRCS

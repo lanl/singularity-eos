@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -96,7 +96,9 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
 // output is boolean mask. 1 for no errors. 0 for errors.
 bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals[],
                         EOS_REAL yVals[], EOS_REAL var[], EOS_REAL dx[], EOS_REAL dy[],
-                        const char tablename[], Verbosity eospacWarn);
+                        const char tablename[], Verbosity eospacWarn,
+                        EOS_INTEGER options[] = nullptr,
+                        EOS_REAL option_values[] = nullptr, EOS_INTEGER nopts = 0);
 
 void eosSafeTableInfo(EOS_INTEGER *table, EOS_INTEGER numInfoItems,
                       EOS_INTEGER infoItems[], EOS_REAL infoVals[], Verbosity eospacWarn);

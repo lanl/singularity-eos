@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -222,8 +222,8 @@ int main(int argc, char *argv[]) {
 
     EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
     EOSBuilder::params_t params;
-    params["Cv"] = 1e7 * 0.716; // specific heat in ergs/(g K)
-    params["gm1"] = 0.4;        // gamma - 1
+    params["Cv"].emplace<Real>(1e7 * 0.716); // specific heat in ergs/(g K)
+    params["gm1"].emplace<Real>(0.4);        // gamma - 1
     EOS eos = EOSBuilder::buildEOS(type, params);
     get_timing(ncycles, ncells_1d, RHO_MIN, RHO_MAX, T_MIN, T_MAX, "IdealGas", eos);
 

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -77,6 +77,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   using EosBase<SpinerEOSDependsRhoT>::InternalEnergyFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoT>::EntropyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoT>::EntropyFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityTemperature;
@@ -85,6 +87,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoT>::PTofRE;
   using EosBase<SpinerEOSDependsRhoT>::FillEos;
+  using EosBase<SpinerEOSDependsRhoT>::EntropyIsNotEnabled;
 
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
                               bool reproduciblity_mode = false);
@@ -108,6 +111,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_INLINE_FUNCTION
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
                                           Real *lambda = nullptr) const;
@@ -142,6 +151,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real RhoPmin(const Real temp) const;
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return 0;
+  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   int matid() const { return matid_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
@@ -296,6 +309,8 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   using EosBase<SpinerEOSDependsRhoSie>::InternalEnergyFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityInternalEnergy;
+  using EosBase<SpinerEOSDependsRhoSie>::EntropyFromDensityTemperature;
+  using EosBase<SpinerEOSDependsRhoSie>::EntropyFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityTemperature;
@@ -304,6 +319,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoSie>::PTofRE;
   using EosBase<SpinerEOSDependsRhoSie>::FillEos;
+  using EosBase<SpinerEOSDependsRhoSie>::EntropyIsNotEnabled;
 
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
@@ -328,6 +344,12 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   PORTABLE_INLINE_FUNCTION
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real T,
                                           Real *lambda = nullptr) const;
@@ -358,6 +380,10 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
                               Real *lambda = nullptr) const;
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return 0;
+  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   int matid() const { return matid_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
@@ -864,7 +890,7 @@ inline void SpinerEOSDependsRhoT::setlTColdCrit_() {
       Real lTupper = bMod_.range(0).x(ilast + 1) + 1.0e-14;
       Real lTGuess = 0.5 * (lTlower + lTupper);
       auto status = ROOT_FINDER(sieFunc, sieCold, lTGuess, lTlower, lTupper, ROOT_THRESH,
-                                ROOT_THRESH, lT, counts);
+                                ROOT_THRESH, lT);
       if (status != RootFinding1D::Status::SUCCESS) {
         lT = lTGuess;
       }
@@ -922,6 +948,21 @@ Real SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy(const Real rho,
     P = P_.interpToReal(lRho, lT);
   }
   return P;
+}
+
+PORTABLE_INLINE_FUNCTION
+Real SpinerEOSDependsRhoT::EntropyFromDensityTemperature(const Real rho,
+                                                         const Real temperature,
+                                                         Real *lambda) const {
+  EntropyIsNotEnabled("SpinerEOSDependsRhoT");
+  return 1.0;
+}
+PORTABLE_INLINE_FUNCTION
+Real SpinerEOSDependsRhoT::EntropyFromDensityInternalEnergy(const Real rho,
+                                                            const Real sie,
+                                                            Real *lambda) const {
+  EntropyIsNotEnabled("SpinerEOSDependsRhoT");
+  return 1.0;
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -1131,6 +1172,8 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
   Real lRho;
   Real lRhoGuess = reproducible_ ? lRhoMax_ : 0.5 * (lRhoMin_ + lRhoMax_);
   // Real lRhoGuess = lRhoMin_ + 0.9*(lRhoMax_ - lRhoMin_);
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   if (lambda != nullptr && lRhoMin_ <= lambda[Lambda::lRho] &&
       lambda[Lambda::lRho] <= lRhoMax_) {
     lRhoGuess = lambda[Lambda::lRho];
@@ -1141,23 +1184,23 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
     status =
         ROOT_FINDER(PFunc, P, lRhoGuess,
                     // lRhoMin_, lRhoMax_,
-                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
+                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   } else if (lT >= lTMax_) { // ideal gas
     whereAmI = TableStatus::OffTop;
     const callable_interp::prod_interp_1d PFunc(gm1Max_, dEdTMax_, lT);
     status =
         ROOT_FINDER(PFunc, P, lRhoGuess,
                     // lRhoMin_, lRhoMax_,
-                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
+                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   } else { // on table
     whereAmI = TableStatus::OnTable;
     const callable_interp::l_interp PFunc(P_, lT);
     status =
         ROOT_FINDER(PFunc, P, lRhoGuess,
                     // lRhoMin_, lRhoMax_,
-                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, counts);
+                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   }
-  if (status_ != RootFinding1D::Status::SUCCESS) {
+  if (status != RootFinding1D::Status::SUCCESS) {
 #if EPINER_EOS_VERBOSE
     std::stringstream errorMessage;
     errorMessage << "inverting P table for logRho failed\n"
@@ -1182,6 +1225,8 @@ PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
                                           TableStatus &whereAmI, Real *lambda) const {
 
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
   Real lT;
 
@@ -1190,13 +1235,17 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
     // On the cold curve. No unique temperature.
     // return the minimum temperature in the table.
     lT = lTMin_;
-    counts.increment(0);
+    if (pcounts != nullptr) {
+      pcounts->increment(0);
+    }
   } else if (whereAmI == TableStatus::OffTop) { // Assume ideal gas
     const Real Cv = dEdTMax_.interpToReal(lRho);
     const Real e0 = sielTMax_.interpToReal(lRho);
     const Real T = TMax_ + robust::ratio(sie - e0, Cv);
     lT = lT_(T);
-    counts.increment(0);
+    if (pcounts != nullptr) {
+      pcounts->increment(0);
+    }
   } else {
     Real lTGuess = reproducible_ ? lTMin_ : 0.5 * (lTMin_ + lTMax_);
     if (lambda != nullptr && lTMin_ <= lambda[Lambda::lT] &&
@@ -1205,7 +1254,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
     }
     const callable_interp::r_interp sieFunc(sie_, lRho);
     status = ROOT_FINDER(sieFunc, sie, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
-                         lT, counts);
+                         lT, pcounts);
 
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
@@ -1227,7 +1276,9 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
     lambda[Lambda::lRho] = lRho;
     lambda[Lambda::lT] = lT;
   }
-  status_ = status;
+  if (memoryStatus_ != DataStatus::OnDevice) {
+    status_ = status;
+  }
   whereAmI_ = whereAmI;
   return lT;
 }
@@ -1235,6 +1286,8 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
                                         TableStatus &whereAmI, Real *lambda) const {
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
   Real lT, lTGuess;
 
@@ -1244,11 +1297,15 @@ Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
   if (press <= PCold) {
     whereAmI = TableStatus::OffBottom;
     lT = lTMin_;
-    counts.increment(0);
+    if (pcounts != nullptr) {
+      pcounts->increment(0);
+    }
   } else if (press >= PMax) {
     whereAmI = TableStatus::OffTop;
     lT = lTMax_;
-    counts.increment(0);
+    if (pcounts != nullptr) {
+      pcounts->increment(0);
+    }
   } else {
     whereAmI = TableStatus::OnTable;
     if (lambda != nullptr && lTMin_ <= lambda[Lambda::lT] &&
@@ -1259,7 +1316,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
     }
     const callable_interp::r_interp PFunc(P_, lRho);
     status = ROOT_FINDER(PFunc, press, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
-                         lT, counts);
+                         lT, pcounts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
@@ -1277,7 +1334,9 @@ Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
     lambda[Lambda::lRho] = lRho;
     lambda[Lambda::lT] = lT;
   }
-  status_ = status;
+  if (memoryStatus_ != DataStatus::OnDevice) {
+    status_ = status;
+  }
   whereAmI_ = whereAmI;
   return lT;
 }
@@ -1641,6 +1700,21 @@ Real SpinerEOSDependsRhoSie::PressureFromDensityInternalEnergy(const Real rho,
 }
 
 PORTABLE_INLINE_FUNCTION
+Real SpinerEOSDependsRhoSie::EntropyFromDensityTemperature(const Real rho,
+                                                           const Real temperature,
+                                                           Real *lambda) const {
+  EntropyIsNotEnabled("SpinerEOSDependsRhoSie");
+  return 1.0;
+}
+PORTABLE_INLINE_FUNCTION
+Real SpinerEOSDependsRhoSie::EntropyFromDensityInternalEnergy(const Real rho,
+                                                              const Real sie,
+                                                              Real *lambda) const {
+  EntropyIsNotEnabled("SpinerEOSDependsRhoSie");
+  return 1.0;
+}
+
+PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::SpecificHeatFromDensityTemperature(const Real rho,
                                                                 const Real T,
                                                                 Real *lambda) const {
@@ -1789,23 +1863,29 @@ Real SpinerEOSDependsRhoSie::interpRhoSie_(const Real rho, const Real sie,
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
                                           Real *lambda) const {
+  const RootFinding1D::RootCounts *pcounts =
+      (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   Real lRho;
   Real dPdRhoMax = dPdRhoMax_.interpToReal(lT);
   Real PMax = PlRhoMax_.interpToReal(lT);
   if (dPdRhoMax > 0 && P > PMax) {
     Real rho = (P - PMax) / dPdRhoMax + rhoMax_;
     lRho = toLog_(rho, lRhoOffset_);
-    counts.increment(0);
+    if (pcounts != nullptr) {
+      pcounts->increment(0);
+    }
   } else {
     Real lRhoGuess = reproducible_ ? lRhoMin_ : 0.5 * (lRhoMin_ + lRhoMax_);
     if (lambda != nullptr && lRhoMin_ <= *lambda && *lambda <= lRhoMax_) {
       lRhoGuess = *lambda;
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
-    status_ = ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
-                          robust::EPS(), lRho, counts);
-
-    if (status_ != RootFinding1D::Status::SUCCESS) {
+    auto status = ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
+                              robust::EPS(), lRho, pcounts);
+    if (memoryStatus_ != DataStatus::OnDevice) {
+      status_ = status;
+    }
+    if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
       errorMessage << "inverting P table for logRho failed\n"

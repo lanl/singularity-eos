@@ -33,15 +33,14 @@ with shared machines or python distributions.
 First, ensure that you are running a modern version of python (i.e. python 3 of
 some flavor)
 
-.. code-block::
-   :language:bash
+.. code-block:: bash
+
    $ python --version
    Python 3.9.7
 
 Then, use pip to install :code:`spinx` and the RTD theme
 
-.. code-block::
-   :language:bash
+.. code-block:: bash
 
    pip install --user sphinx sphinx-rtd-theme
 
@@ -49,6 +48,7 @@ Now, navigate to the :code:`../doc/sphinx` directory where a :code:`make help`
 shows all of the available ways to build the documentation
 
 .. code-block::
+
    :language:bash
 
    $ make help

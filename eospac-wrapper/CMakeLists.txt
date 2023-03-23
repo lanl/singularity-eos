@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -14,9 +14,18 @@
 
 option(SINGULARITY_EOSPAC_SKIP_EXTRAP "Skip extrapolation checks" OFF)
 
+# Fix for #228, tho should probably be part of singularity-eos lib
+list(APPEND EOSWRAPPER_HEADERS eospac_wrapper.hpp)
+list(APPEND EOSWRAPPER_SRCS eospac_wrapper.cpp)
+
 add_library(eospac-wrapper
-  eospac_wrapper.hpp
-  eospac_wrapper.cpp
+  ${EOSWRAPPER_SRCS} ${EOSWRAPPER_HEADERS}
+)
+
+target_include_directories(eospac-wrapper
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>
 )
 
 if (SINGULARITY_EOSPAC_SKIP_EXTRAP)
@@ -31,6 +40,25 @@ target_link_libraries(eospac-wrapper
     EOSPAC::eospac
 )
 
-#TODO: should this be here? not sure what's appropriate 
-# (could put line in top-level CMakeLists.txt)
-install(TARGETS eospac-wrapper EXPORT singularity-eosTargets DESTINATION lib)
+# install header file
+install(
+  FILES ${EOSWRAPPER_HEADERS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/eospac-wrapper/
+)
+
+install(
+  TARGETS eospac-wrapper EXPORT eospac-wrapperTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+install(
+  EXPORT eospac-wrapperTargets
+  FILE eospac-wrapperTargets.cmake
+  NAMESPACE singularity-eos::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos
+  )
+
+export(
+  EXPORT eospac-wrapperTargets
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/eospac-wrapperTargets.cmake
+  NAMESPACE singularity-eos::
+  )
