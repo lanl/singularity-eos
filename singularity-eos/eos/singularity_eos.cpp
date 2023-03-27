@@ -224,4 +224,3 @@ int finalize_sg_eos(const int nmat, EOS *&eos, const int own_kokkos) {
 #endif
   return 0;
 }
-
