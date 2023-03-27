@@ -14,9 +14,9 @@
 
 #include <map>
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/singularity_eos.hpp>
-#include <singularity-eos/closure/mixed_cell_models.hpp>
 
 using namespace singularity;
 
