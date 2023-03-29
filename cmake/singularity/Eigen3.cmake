@@ -1,0 +1,5 @@
+macro(singularityeos_enable_eigen3 target)
+  find_package(Eigen3 REQUIRED)
+  target_link_libraries(${target} PUBLIC Eigen3::Eigen)
+  set(SINGULARITY_EOS_ENABLE_MPARK-VARIANT ON)
+endmacro()

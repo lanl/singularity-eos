@@ -12,7 +12,7 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.20)
 
 project(singularity-eos VERSION 1.7.0 LANGUAGES NONE)
 
@@ -21,11 +21,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.6.2")
 set(SINGULARITY_GOLDFILE_HASH
   33ef74b29937cc1347b525f72662933dd2b0556550f6541f97fc1de8a01c3c2a)
-
-#------------------------------------------------------------------------------#
-# Use better messages
-#------------------------------------------------------------------------------#
-include(cmake/singularity_utils.cmake)
 
 #------------------------------------------------------------------------------#
 # Options
@@ -45,38 +40,43 @@ option (SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner
 option (SINGULARITY_BETTER_DEBUG_FLAGS
   "Better debug flags for singularity" ON)
 option (SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
-option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
 option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
 option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
 option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
 option (SINGULARITY_TEST_PYTHON "Test the Python bindings" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
-option (SINGULARITY_PATCH_MPARK_VARIANT "Apply GPU patch to mpark-variant submodule" ON)
+
+option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
+option (SINGULARITY_CUSTOM_KOKKOS "Use custom kokkos dir" OFF)
+
+#option (SINGULARITY_PATCH_MPARK_VARIANT "Apply GPU patch to mpark-variant submodule" ON)
 
 # Patches variant to be compatible with cuda
 # Assumes "patch" is present on system
-if(SINGULARITY_PATCH_MPARK_VARIANT)
-  message(STATUS "Patching mpark::variant to support GPUs")
-  execute_process(COMMAND patch -N -s -V never
-                  ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
-                  ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
-                  )
-endif()
+#if(SINGULARITY_PATCH_MPARK_VARIANT)
+#  message(STATUS "Patching mpark::variant to support GPUs")
+#  execute_process(COMMAND patch -N -s -V never
+#                  ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
+#                  ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
+#                  )
+#endif()
+#------------------------------------------------------------------------------#
+# singularity-eos Library
+#------------------------------------------------------------------------------#
 
-# keep config data stored in easily accessable vars,
-# only attaching them to targets as late as possible.
-# this allows for easier handling and manipulating, as
-# well as later info printing and debugging
-set(SINGULARITY_PUBLIC_DEFINES "")    # list to `target_compile_definitions()`
-set(SINGULARITY_PRIVATE_DEFINES "")   # """
-set(SINGULARITY_PUBLIC_INCS "")       # list to `target_include_directories()`
-set(SINGULARITY_PRIVATE_INCS "")      # """ 
-set(SINGULARITY_PUBLIC_LIBS "")       # list to `target_link_libraries()`
-set(SINGULARITY_PRIVATE_LIBS "")      # """
-set(SINGULARITY_EXPORT_TARGETS "")    # probably not useful
-set(SINGULARITY_COMPILEFLAGS "")      # TODO: actually use these
-set(SINGULARITY_DEP_PKGS "")          # a list of packages, used to generate import rules for installed targets. (may want to rename)
+include(singularity/Eigen3)
+include(singularity/eospac)
+include(singularity/hdf5)
+include(singularity/kokkos)
+include(singularity/mpark_variant)
+include(singularity/spiner)
+
+add_library(singularity-eos)
+add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
+
+#?
+target_include_directories(singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>)
 
 #------------------------------------------------------------------------------#
 # Compiler & language setup
@@ -154,27 +154,37 @@ endif()
 # side-projects
 if(SINGULARITY_USE_HDF5)
   if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
-    list(APPEND _subdirs2add stellarcollapse2spiner)
+    add_subdirectory(stellarcollapse2spiner)
   endif()
   if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
-    list(APPEND _subdirs2add sesame2spiner)
+    add_subdirectory(sesame2spiner)
   endif()
   if(SINGULARITY_BUILD_EXAMPLES)
-    list(APPEND _subdirs2add example)
+    add_subdirectory(example)
   endif()
 endif()
 
 if (SINGULARITY_BUILD_PYTHON)
-  list(APPEND _subdirs2add python)
+  add_subdirectory(python)
 endif()
 
 if(SINGULARITY_USE_SINGLE_LOGS)
-  list(APPEND TAR_DEFINES SINGULARITY_USE_SINGLE_LOGS)
+  target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_SINGLE_LOGS)
 endif()
 
 #------------------------------------------------------------------------------#
 # Handle dependencies
 #------------------------------------------------------------------------------#
+
+find_package(mpark_variant REQUIRED)
+target_link_libraries(singularity-eos PUBLIC mpark_variant)
+
+find_package(ports-of-call REQUIRED)
+target_link_libraries(singularity-eos PUBLIC ports-of-call::ports-of-call)
+
+#----------------------------------------------------------------------------#
+# Optional dependencies
+#----------------------------------------------------------------------------#
 
 # need this for consistant Catch2 up/downstream.
 # depending on how this develops, this could be wrapped
@@ -201,138 +211,32 @@ if(SINGULARITY_BUILD_TESTS)
   endif()
 endif()
 
-include(cmake/dependency.cmake)
 
 if(SINGULARITY_USE_KOKKOS)
-  # kokkos offloading
-  # type: soft submodule 
-  singularity_import_dependency(
-    PKG Kokkos
-    TARGETS Kokkos::kokkos
-    SUBDIR ${PROJECT_SOURCE_DIR}/utils/kokkos
-    )
-  set(PORTABILITY_STRATEGY "Kokkos")
-  set(SPINER_USE_KOKKOS ON)
-  list(APPEND SINGULARITY_PUBLIC_DEFINES PORTABILITY_STRATEGY_KOKKOS)
-  list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_KOKKOS)
-  ####
-  # TODO: Once it's oppurtune, we will
-  #       not support Kokkos < 3.3
-  if((${Kokkos_VERSION_MAJOR} MATCHES "^[0-9]+$") AND (${Kokkos_VERSION_MINOR} MATCHES "^[0-9]+$"))
-    if(${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR} VERSION_LESS "3.3")
-      message(WARNING "`Kokkos` version [${Kokkos_VERSION_MAJOR}.${Kokkos_VERSION_MINOR}] is DEPRECATED, and `singularity-eos` will not support versions < '3.3' in the very near future.")
-      if(SINGULARITY_USE_CUDA)
-        get_filename_component(_compiler_exe ${CMAKE_CXX_COMPILER} NAME)
-        if(NOT _compiler_exe STREQUAL "nvcc_wrapper")
-          message(FATAL_ERROR "To use CUDA offloading with `Kokkos` version <= 3.2, you must use `-DCMAKE_CXX_COMPILER=/path/to/kokkos/bin/nvcc_wrapper` when invoking `cmake`. You may also need to set a Kokkos target architecture via: https://github.com/kokkos/kokkos/wiki/Compiling.")
-        endif()
-     endif() #SINGULARITY_USE_CUDA
-    endif() #Kokkos_VERSION_MAJOR
-  else()
-    message(WARNING "`Kokkos` version could not be inferred. Note that versions less than `3.3` are DEPRECATED and may not work properly.")
-  endif() #Kokkos_VERSION_MAJOR
-  ####
-else()
-  set(PORTABILITY_STRATEGY "None")
-  list(APPEND SINGULARITY_PUBLIC_DEFINES PORTABILITY_STRATEGY_NONE)
-endif() #SINGULARITY_USE_KOKKOS
-message(STATUS "Portability strategy set to ${PORTABILITY_STRATEGY}")
+  singularity_enable_kokkos(singularity-eos)
+endif()
 
-# TODO(JMM): If linear algebra needs grow beyond mixed cell closures,
-# we may need to rename this variable.
-if (SINGULARITY_BUILD_CLOSURE)
-  if(SINGULARITY_USE_KOKKOSKERNELS)
-    # type: external
-    singularity_import_dependency(
-      PKG KokkosKernels
-      TARGETS Kokkos::kokkoskernels
-      )
-    list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_KOKKOSKERNELS)
-  else()
-    # type: soft submodule
-    singularity_import_dependency(
-      PKG Eigen3
-      TARGETS Eigen3::Eigen
-      SUBDIR ${PROJECT_SOURCE_DIR}/utils/eigen
-      )
-  endif() #SINGULARITY_USE_KOKKOS_KERNELS
-endif() #SINGULARITY_BUILD_CLOSURE
+if(SINGULARITY_USE_HDF5)
+  singularity_enable_hdf5(singularity-eos)
+endif()
 
-# variant for prior C++17
-# type: soft submodule
-singularity_import_dependency(
-  PKG mpark_variant
-  TARGETS mpark_variant
-  SUBDIR ${PROJECT_SOURCE_DIR}/utils/variant
-)
+if(SINGULARITY_USE_SPINER)
+  singularity_enable_spiner(singularity-eos)
+endif()
 
-# ports-of-call
-# type: soft submodule
-singularity_import_dependency(
-  PKG ports-of-call
-  TARGETS ports-of-call::ports-of-call
-  SUBDIR ${PROJECT_SOURCE_DIR}/utils/ports-of-call
-)
-
-# spiner
-# type: soft submodule
-singularity_import_dependency(
-  PKG spiner
-  TARGETS spiner::spiner
-  SUBDIR ${PROJECT_SOURCE_DIR}/utils/spiner
-)
-
-# only use hdf5 if spiner
-if (SINGULARITY_USE_HDF5)
-  # hdf5, for data interopability
-  # type: external
-  enable_language(C)
-  singularity_import_dependency(
-    PKG HDF5
-    COMPONENTS C HL
-    TARGETS hdf5::hdf5 hdf5::hdf5_hl
-  )
-
-  # make sure we use MPI
-  if (HDF5_IS_PARALLEL)
-    # Message passing interface
-    # type: external
-    singularity_import_dependency(
-      PKG MPI
-      COMPONENTS CXX
-      TARGETS MPI::MPI_CXX
-    )
-  endif()
-
-  list(APPEND SINGULARITY_PUBLIC_DEFINES SPINER_USE_HDF)
-  list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_HDF)
-endif() # SINGULARITY_USE_HDF5
-
-#NB: An edge-case (but an easy one), that doesn't slot
-#   easily into the `import_dependency()` setup.
-#   TODO: just do it correctly
-#TODO: Check: Does EOSPAC only pass into side-targets?
-if (SINGULARITY_USE_EOSPAC)
-  #TODO: should be strictly module mode
-  find_package(EOSPAC REQUIRED)
-  list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_EOSPAC)
-  list(APPEND SINGULARITY_PUBLIC_LIBS EOSPAC::eospac)
-  list(APPEND SINGULARITY_PUBLIC_LIBS eospac-wrapper)
-  list(APPEND SINGULARITY_DEPS_PKGS EOSPAC)
-
-  list(APPEND _subdirs2add eospac-wrapper)
-endif ()
-
+if(SINGULARITY_USE_EOSPAC)
+  singularity_enable_eospac(singularity-eos)
+endif()
 
 #TODO: this feels out-of-place here, though i haven't crawled into the source yet to see
 # what the point is.
 if (SINGULARITY_TEST_SESAME)
-  list(APPEND SINGULARITY_PRIVATE_DEFINES SINGULARITY_TEST_SESAME)
+  target_compile_definitions(singularity-eos PRIVATE SINGULARITY_TEST_SESAME)
 endif()
 if (SINGULARITY_BUILD_CLOSURE)
-  list(APPEND SINGULARITY_PRIVATE_DEFINES SINGULARITY_BUILD_CLOSURE)
+  target_compile_definitions(singularity-eos PRIVATE SINGULARITY_BUILD_CLOSURE)
 endif()
-
+###########################OLD
 #------------------------------------------------------------------------------#
 # singularity-eos library
 #------------------------------------------------------------------------------#
@@ -356,9 +260,7 @@ foreach(_src ${EOS_SRCS})
   list(APPEND _srcs singularity-eos/${_src})
 endforeach()
 
-# define the 
-add_library(singularity-eos ${_srcs} ${_headers})
-add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
+target_sources(singularity-eos PRIVATE ${_srcs} ${_headers})
 
 # make sure .mods are placed in build path, and installed
 # along with includes
@@ -443,20 +345,6 @@ target_link_options(singularity-eos
 )
 
 include(GNUInstallDirs)
-foreach(_sdir ${_subdirs2add})
-  singularity_msg(STATUS "Adding ${_sdir}...")
-  add_subdirectory(${_sdir})
-endforeach()
-
-
-# TODO either expand this or do feature_summary
-#singularity_msg(STATUS "Configuration")
-#message(STATUS "[== INFO: status so far ===============================")
-#message(STATUS "[== dependency list: ${SINGULARITY_DEP_PKGS}")
-#message(STATUS "[== library targets: ${SINGULARITY_PUBLIC_LIBS} ${SINGULARITY_PRIVATE_LIBS}")
-#message(STATUS "[== compiler definitions: ${SINGULARITY_PUBLIC_DEFINES} ${SINGULARITY_PRIVATE_DEFINES}")
-#message(STATUS "[======================================================")
-
 
 #----------------------------------------------------------------------------#
 # Export/install

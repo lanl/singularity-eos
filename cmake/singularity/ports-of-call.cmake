@@ -1,0 +1,6 @@
+macro(singularity_enable_ports-of-call target)
+  if(NOT TARGET ports-of-call::ports-of-call)
+    find_package(ports-of-call REQUIRED)
+  endif()
+  target_link_libraries(${target} PUBLIC ports-of-call::ports-of-call)
+endmacro()
