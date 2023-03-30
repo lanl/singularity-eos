@@ -2,8 +2,7 @@ macro(singularity_enable_kokkos target)
 
   if(SINGULARITY_CUSTOM_KOKKOS)
     message(WARNING "You have selected to use a custom source of Kokkos."
-    " This is not recommended, and developer support for this feature is not secured."
-    " To relieve potential issues in the future, you should reevaluate how your build system uses TPLs.")
+    " This is not recommended, and developer support for this feature is not secured.")
 
     _singularity_handle_custom_kokkos_tpl(
       NAME "Kokkos"

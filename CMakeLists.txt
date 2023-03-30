@@ -50,27 +50,19 @@ option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing
 option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
 option (SINGULARITY_CUSTOM_KOKKOS "Use custom kokkos dir" OFF)
 
-#option (SINGULARITY_PATCH_MPARK_VARIANT "Apply GPU patch to mpark-variant submodule" ON)
+option (SINGULARITY_PATCH_MPARK_VARIANT "Apply GPU patch to mpark-variant submodule" ON)
 
-# Patches variant to be compatible with cuda
-# Assumes "patch" is present on system
-#if(SINGULARITY_PATCH_MPARK_VARIANT)
-#  message(STATUS "Patching mpark::variant to support GPUs")
-#  execute_process(COMMAND patch -N -s -V never
-#                  ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
-#                  ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch
-#                  )
-#endif()
 #------------------------------------------------------------------------------#
 # singularity-eos Library
 #------------------------------------------------------------------------------#
 
+include(singularity/mpark_variant)
 include(singularity/Eigen3)
 include(singularity/eospac)
 include(singularity/hdf5)
 include(singularity/kokkos)
-include(singularity/mpark_variant)
 include(singularity/spiner)
+include(singularity/ports-of-call)
 
 add_library(singularity-eos)
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
@@ -176,11 +168,9 @@ endif()
 # Handle dependencies
 #------------------------------------------------------------------------------#
 
-find_package(mpark_variant REQUIRED)
-target_link_libraries(singularity-eos PUBLIC mpark_variant)
+singularity_enable_mpark_variant(singularity-eos)
 
-find_package(ports-of-call REQUIRED)
-target_link_libraries(singularity-eos PUBLIC ports-of-call::ports-of-call)
+singularity_enable_ports_of_call(singularity-eos)
 
 #----------------------------------------------------------------------------#
 # Optional dependencies

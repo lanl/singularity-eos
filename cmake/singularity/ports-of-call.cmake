@@ -1,4 +1,4 @@
-macro(singularity_enable_ports-of-call target)
+macro(singularity_enable_ports_of_call target)
   if(NOT TARGET ports-of-call::ports-of-call)
     find_package(ports-of-call REQUIRED)
   endif()
