@@ -79,8 +79,7 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::PTofRE;                                                     \
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
-  using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
-  using EosBase<EOSDERIVED>::EntropyIsNotEnabled;
+  using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;
 
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
