@@ -12,8 +12,18 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
-cmake_minimum_required(VERSION 3.20)
+# We want to stay near to latest, as more compilers
+# and third-party libraries are supported. However,
+# uptake of new CMake releases can be slow.
+# 20230403: version 3.19 is available on all testing platforms
+cmake_minimum_required(VERSION 3.19)
 
+# Disable "in-source" builds
+if( "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}" )
+  message( FATAL_ERROR "ERROR: Will not configure \"in-source\" builds. Create a seperate directory for building")
+endif()
+
+# declare the project name
 project(singularity-eos VERSION 1.7.0 LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -25,7 +35,9 @@ set(SINGULARITY_GOLDFILE_HASH
 #------------------------------------------------------------------------------#
 # Options
 #------------------------------------------------------------------------------#
-option (SINGULARITY_USE_HDF5 "Pull in hdf5" ON)
+
+#option (SINGULARITY_USE_HDF5 "Pull in hdf5" ON)
+
 option (SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option (SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option (SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
@@ -47,8 +59,9 @@ option (SINGULARITY_TEST_PYTHON "Test the Python bindings" OFF)
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
 
-option (SINGULARITY_SUBMODULE_MODE "Submodule mode" OFF)
-option (SINGULARITY_CUSTOM_KOKKOS "Use custom kokkos dir" OFF)
+option (SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
+# option (SINGULARITY_CUSTOM_KOKKOS "Use custom kokkos dir" OFF)
+
 
 option (SINGULARITY_PATCH_MPARK_VARIANT "Apply GPU patch to mpark-variant submodule" ON)
 
@@ -93,11 +106,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
 else()
-  if(NOT SINGULARITY_SUBMODULE_MODE)
-    message(WARNING "Detected that `singularity-eos` is a subproject, but `SINGULARITY_SUBMODULE_MODE` is not set or \
-    is set to OFF. We will force this option on.")
-    set(SINGULARITY_SUBMODULE_MODE ON CACHE BOOL "" FORCE)
-  endif()
+  message(STATUS "Detected that `singularity-eos` is a subproject, will configure build in submodule mode")
+  set(SINGULARITY_SUBMODULE_MODE ON)
+endif()
+
+if(SINGULARITY_FORCE_SUBMODULE_MODE)
+  message(STATUS "Building as though project was a submodule.")
+  set(SINGULARITY_SUBMODULE_MODE ON)
 endif()
 
 #------------------------------------------------------------------------------#
@@ -107,7 +122,7 @@ endif()
 # using this space for "immediate" logic that can be avoid messages getting
 # lost inside the brrrrrrrr of cmake.
 if(SINGULARITY_USE_KOKKOSKERNELS AND NOT SINGULARITY_USE_KOKKOS)
-  message(FATAL_ERROR "Kokkos is required for KokkosKernels.")
+  message(FATAL_ERROR "SINGULARITY_USE_KOKKOSKERNELS is enabled, but SINGULARITY_USE_KOKKOS is not set.")
 endif()
 
 if(SINGULARITY_USE_CUDA)
@@ -123,9 +138,10 @@ if(SINGULARITY_USE_CUDA)
 endif()
 
 if (SINGULARITY_USE_EOSPAC)
-  if (NOT SINGULARITY_USE_HDF5)
-    message(WARNING "EOSPAC enabled without hdf5.")
-  endif()
+  #TODO: MAUNEYC place this in spiner resolution
+  #  if (NOT SINGULARITY_USE_HDF5)
+  # message(WARNING "EOSPAC enabled without hdf5.")
+  #endif()
   if (SINGULARITY_USE_CUDA)
     message(WARNING "EOSPAC not supported with cuda. You may encounter errors.")
   endif()
@@ -135,6 +151,8 @@ endif()
 # Process some options
 #------------------------------------------------------------------------------#
 
+# if building in-tree as a subproject, disable standalone
+# options
 if (SINGULARITY_SUBMODULE_MODE)
   set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
   set(CMAKE_FIND_USE_PACKAGE_REGISTRY OFF CACHE BOOL "" FORCE)
@@ -144,17 +162,18 @@ if (SINGULARITY_SUBMODULE_MODE)
 endif()
 
 # side-projects
-if(SINGULARITY_USE_HDF5)
-  if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
-    add_subdirectory(stellarcollapse2spiner)
-  endif()
-  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
-    add_subdirectory(sesame2spiner)
-  endif()
-  if(SINGULARITY_BUILD_EXAMPLES)
-    add_subdirectory(example)
-  endif()
-endif()
+#TODO: hdf5 again
+#if(SINGULARITY_USE_HDF5)
+#  if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+#    add_subdirectory(stellarcollapse2spiner)
+#  endif()
+#  if(SINGULARITY_USE_EOSPAC AND SINGULARITY_BUILD_SESAME2SPINER)
+#    add_subdirectory(sesame2spiner)
+#  endif()
+#  if(SINGULARITY_BUILD_EXAMPLES)
+#    add_subdirectory(example)
+#  endif()
+#endif()
 
 if (SINGULARITY_BUILD_PYTHON)
   add_subdirectory(python)
@@ -168,9 +187,73 @@ endif()
 # Handle dependencies
 #------------------------------------------------------------------------------#
 
-singularity_enable_mpark_variant(singularity-eos)
+# There are two modes for building:
+# 1.) Submodule mode
+#     this mode is for projects where singularity-eos,
+#     and it's dependencies, are present in the source tree. 
+#     This mode is only appropriate for projects that have been
+#     designed around using git submodules for dependency
+#     management.
+#     Submodule mode disables all export/install steps.
+# 2.) Standalone mode
+#     this mode will build and install singularity-eos as
+#     as a complete software package for the intended platform. 
+#     In standalone mode, all dependencies are expected to be 
+#     found with `find_package`, and an error will be produced 
+#     if the packages required for building are not located outside
+#     of the source directory, except for explicit cases.
 
+if(SINGULARITY_SUBMODULE_MODE)
+  # add all submodules
+  message(STATUS "singularity-eos configuring in submodule mode.")
+  singularity_import_mpark_variant()
+  singularity_import_ports_of_call()
+  singularity_import_spiner()
+  if(SINGULARITY_USE_KOKKOS)
+    singularity_import_kokkos()
+  endif()
+  if(SINGULARITY_USE_KOKKOSKERNELS)
+    singularity_import_kokkoskernels()
+  else()
+    singularity_import_eigen()
+  endif()
+else()
+  singularity_find_mpark_variant()
+  singularity_find_ports_of_call()
+  singularity_find_spiner()
+  
+  if(SINGULARITY_USE_KOKKOS)
+    singularity_find_kokkos()
+  endif()
+  if(SINGULARITY_USE_KOKKOSKERNELS)
+    singularity_find_kokkoskernels()
+  else()
+    singularity_find_eigen()
+  endif()
+
+endif()
+
+singularity_enable_mpark_variant(singularity-eos)
 singularity_enable_ports_of_call(singularity-eos)
+singularity_enable_spiner(singularity-eos)
+
+if(SINGULARITY_USE_KOKKOS)
+  singularity_enable_kokkos(singularity-eos)
+endif()
+
+if(SINGULARITY_USE_KOKKOSKERNELS)
+  singularity_enable_kokkoskernels(singularity-eos)
+else()
+  singularity_enable_eigen(singularity-eos)
+endif()
+
+if(SPINER_USE_HDF)
+  singularity_enable_hdf5(singularity-eos)
+endif()
+
+if(SINGULARITY_USE_EOSPAC)
+  singularity_enable_eospac(singularity-eos)
+endif()
 
 #----------------------------------------------------------------------------#
 # Optional dependencies
@@ -201,22 +284,6 @@ if(SINGULARITY_BUILD_TESTS)
   endif()
 endif()
 
-
-if(SINGULARITY_USE_KOKKOS)
-  singularity_enable_kokkos(singularity-eos)
-endif()
-
-if(SINGULARITY_USE_HDF5)
-  singularity_enable_hdf5(singularity-eos)
-endif()
-
-if(SINGULARITY_USE_SPINER)
-  singularity_enable_spiner(singularity-eos)
-endif()
-
-if(SINGULARITY_USE_EOSPAC)
-  singularity_enable_eospac(singularity-eos)
-endif()
 
 #TODO: this feels out-of-place here, though i haven't crawled into the source yet to see
 # what the point is.
