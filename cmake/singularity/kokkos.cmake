@@ -4,7 +4,6 @@ macro(singularity_import_kokkos)
   if(SINGULARITY_USE_CUDA)
     set(Kokkos_ENABLE_CUDA ON CACHE BOOL "" FORCE)
     set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "" FORCE)
-    set(Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE ON CACHE BOOL "" FORCE)
   endif()
 
   if(NOT TARGET Kokkos::kokkos)
