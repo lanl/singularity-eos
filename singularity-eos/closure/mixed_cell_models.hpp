@@ -155,11 +155,6 @@ class CacheAccessor {
 
 template <typename EOSIndexer, typename RealIndexer>
 class PTESolverBase {
- friend class PTESolverRhoT;
- friend class PTESolverRhoU;
- friend class PTESolverRhoU;
- friend class PTESolverFixedP;
- friend class PTESolverFixedT;
  public:
   PTESolverBase() = delete;
   PORTABLE_INLINE_FUNCTION int Nmat() const { return nmat; }
