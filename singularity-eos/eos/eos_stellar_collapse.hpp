@@ -132,6 +132,14 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_INLINE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                             Real *lambda, Real &rho, Real &sie) const;
+
+  // Properties of an NSE EOS
+  PORTABLE_INLINE_FUNCTION
+  void MassFractionsFromDensityTemperature(const Real rho, const Real temperature,
+                                           Real &Xa, Real &Xh, Real &Xn, Real &Xp,
+                                           Real &Abar, Real &Zbar,
+                                           Real *lambda = nullptr) const;
+
   PORTABLE_INLINE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
                const unsigned long output, Real *lambda = nullptr) const;
@@ -588,6 +596,20 @@ void StellarCollapse::DensityEnergyFromPressureTemperature(const Real press,
                                                            const Real temp, Real *lambda,
                                                            Real &rho, Real &sie) const {
   EOS_ERROR("StellarCollapse::DensityEnergyFromPRessureTemperature is a stub");
+}
+
+PORTABLE_INLINE_FUNCTION
+void StellarCollapse::MassFractionsFromDensityTemperature(
+    const Real rho, const Real temperature, Real &Xa, Real &Xh, Real &Xn, Real &Xp,
+    Real &Abar, Real &Zbar, Real *lambda) const {
+  Real lRho, lT, Ye;
+  getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+  Xa = Xa_.interpToReal(Ye, lRho, lT);
+  Xh = Xh_.interpToReal(Ye, lRho, lT);
+  Xn = Xn_.interpToReal(Ye, lRho, lT);
+  Xp = Xp_.interpToReal(Ye, lRho, lT);
+  Abar = Abar_.interpToReal(Ye, lRho, lT);
+  Zbar = Zbar_.interpToReal(Ye, lRho, lT);
 }
 
 PORTABLE_INLINE_FUNCTION
