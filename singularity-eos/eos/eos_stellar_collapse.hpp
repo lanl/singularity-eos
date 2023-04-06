@@ -599,10 +599,9 @@ void StellarCollapse::DensityEnergyFromPressureTemperature(const Real press,
 }
 
 PORTABLE_INLINE_FUNCTION
-void StellarCollapse::MassFractionsFromDensityTemperature(const Real rho, const Real temperature,
-                                                          Real &Xa, Real &Xh, Real &Xn, Real &Xp,
-                                                          Real &Abar, Real &Zbar,
-                                                          Real *lambda = nullptr) const {
+void StellarCollapse::MassFractionsFromDensityTemperature(
+    const Real rho, const Real temperature, Real &Xa, Real &Xh, Real &Xn, Real &Xp,
+    Real &Abar, Real &Zbar, Real *lambda = nullptr) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
   Xa = Xa_.interpToReal(Ye, lRho, lT);

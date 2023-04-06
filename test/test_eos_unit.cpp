@@ -1120,7 +1120,8 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
           lambda[0] = Ye;
           REQUIRE(isClose(sie, sc.InternalEnergyFromDensityTemperature(rho, t, lambda)));
           Real Xa, Xh, Xn, Xp, Abar, Zbar;
-          sc.MassFractionsFromDensityTemperature(rho, t, Xa, Xh, Xn, Xp, Abar, Zbar, lambda);
+          sc.MassFractionsFromDensityTemperature(rho, t, Xa, Xh, Xn, Xp, Abar, Zbar,
+                                                 lambda);
           REQUIRE(isClose(Ye, Xp));
         }
         Real rhomin = sc.rhoMin();
