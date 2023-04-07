@@ -22,8 +22,6 @@ add_library(eospac-wrapper
   ${EOSWRAPPER_SRCS} ${EOSWRAPPER_HEADERS}
 )
 
-add_library(singularity-eos::eospac-wrapper ALIAS eospac-wrapper)
-
 target_include_directories(eospac-wrapper
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
@@ -49,18 +47,5 @@ install(
 )
 
 install(
-  TARGETS eospac-wrapper EXPORT eospac-wrapperTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  TARGETS eospac-wrapper EXPORT singularity-eosTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
-
-install(
-  EXPORT eospac-wrapperTargets
-  FILE eospac-wrapperTargets.cmake
-  NAMESPACE singularity-eos::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos
-  )
-
-export(
-  EXPORT eospac-wrapperTargets
-  FILE ${CMAKE_CURRENT_BINARY_DIR}/cmake/eospac-wrapperTargets.cmake
-  NAMESPACE singularity-eos::
-  )
