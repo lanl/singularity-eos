@@ -22,6 +22,8 @@ add_library(eospac-wrapper
   ${EOSWRAPPER_SRCS} ${EOSWRAPPER_HEADERS}
 )
 
+add_library(singularity-eos::eospac-wrapper ALIAS eospac-wrapper)
+
 target_include_directories(eospac-wrapper
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
