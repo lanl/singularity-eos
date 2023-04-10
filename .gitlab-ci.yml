@@ -97,7 +97,7 @@ before_script:
     - .job
   script:
     - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
-    - module load cuda/11.4.2
+    - module load cuda/${SINGULARITY_EOS_CUDA_VERSION}
     - |
       if [[ "${CI_COMMIT_BRANCH}" == "${CI_DEFAULT_BRANCH}" ]];
       then
