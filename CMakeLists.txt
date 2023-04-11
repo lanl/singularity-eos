@@ -318,7 +318,9 @@ if (SINGULARITY_USE_EOSPAC)
   list(APPEND SINGULARITY_PUBLIC_DEFINES SINGULARITY_USE_EOSPAC)
   list(APPEND SINGULARITY_PUBLIC_LIBS EOSPAC::eospac)
   list(APPEND SINGULARITY_PUBLIC_LIBS eospac-wrapper)
-  list(APPEND SINGULARITY_DEPS_PKGS EOSPAC)
+  list(APPEND SINGULARITY_DEP_PKGS EOSPAC)
+  # tell the singularity-eosConfig.cmake to get this target
+  set(SINGULARITY_DEP_TARGETS_EOSPAC "EOSPAC::eospac")
 
   list(APPEND _subdirs2add eospac-wrapper)
 endif ()
