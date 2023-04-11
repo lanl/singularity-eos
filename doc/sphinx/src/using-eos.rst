@@ -269,6 +269,31 @@ modifiers. However, note that modifiers do not commute, and only one
 order is supported. The ordering, inside-out, is ``UnitSystem`` or
 ``RelativisticEOS``, then ``ScaledEOS``, then ``ShiftedEOS``.
 
+Relevant to the broad ``singularity-eos`` API, EOS models provide
+introspection. To check if an EOS is modified, call
+
+.. cpp:function:: bool IsModified() const;
+
+This will return ``true`` for a modified model and ``false``
+otherwise. Modifiers can also be undone. To get a completely
+unmodified EOS model, call
+
+.. cpp:function:: auto GetUnmodifiedObject();
+
+The return value here will be either the type of the ``EOS`` variant
+type or the unmodified model (for example ``IdealGas``) or, depending
+on whether this method was callled within a variant or on a standalone
+model outside a variant.
+
+If you have chained modifiers, e.g.,
+``ShifedEOS<ScaledEOS<IdealGas>``, you can undo only one of the
+modifiers with the
+
+.. cpp-function:: auto UnmodifyOnce();
+
+method, which has the same return type pattern as above, but only
+undoes one level of modification.
+
 For more details on modifiers, see the :ref:`modifiers<modifiers>`
 section. If you need a combination of modifiers not supported by
 default, we recommend building a custom variant as described above.

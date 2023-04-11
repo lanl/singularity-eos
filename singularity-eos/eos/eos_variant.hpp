@@ -840,6 +840,22 @@ class Variant {
         eos_);
   }
 
+  // Tooling for modifiers
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool IsModified() const {
+    return mpark::visit([](const auto &eos) { return eos.IsModified(); }, eos_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Variant UnmodifyOnce() {
+    return mpark::visit(
+        [](auto &eos) { return eos_variant<EOSs...>(eos.UnmodifyOnce()); }, eos_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Variant GetUnmodifiedObject() {
+    return mpark::visit(
+        [](auto &eos) { return eos_variant<EOSs...>(eos.GetUnmodifiedObject()); }, eos_);
+  }
+
   PORTABLE_INLINE_FUNCTION
   unsigned long PreferredInput() const noexcept {
     return mpark::visit([](const auto &eos) { return eos.PreferredInput(); }, eos_);

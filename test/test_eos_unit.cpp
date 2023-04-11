@@ -232,7 +232,7 @@ SCENARIO("EOS Variant Type", "[Variant][EOS]") {
   std::cout << demangle(typeid(EOS).name()) << std::endl;
 }
 
-SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
+SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
 
   GIVEN("Parameters for a shifted and scaled ideal gas") {
     constexpr Real Cv = 2.0;
@@ -248,6 +248,14 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder],[Modifiers][IdealGas]") {
       THEN("The shift and scale parameters pass through correctly") {
 
         REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
+      }
+      THEN("We can UnmodifyOnce to get the shifted EOS object") {
+        EOS shifted = eos.UnmodifyOnce();
+        REQUIRE(shifted.IsType<ShiftedEOS<IdealGas>>());
+        AND_THEN("We can extract the unmodified object") {
+          EOS unmod = eos.GetUnmodifiedObject();
+          REQUIRE(unmod.IsType<IdealGas>());
+        }
       }
     }
     WHEN("We use the EOSBuilder") {
