@@ -289,7 +289,7 @@ If you have chained modifiers, e.g.,
 ``ShifedEOS<ScaledEOS<IdealGas>``, you can undo only one of the
 modifiers with the
 
-.. cpp-function:: auto UnmodifyOnce();
+.. cpp:function:: auto UnmodifyOnce();
 
 method, which has the same return type pattern as above, but only
 undoes one level of modification.
