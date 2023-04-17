@@ -192,6 +192,13 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     return t_.MinimumTemperature();
   }
 
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool IsModified() const { return true; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  T UnmodifyOnce() { return t_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  auto GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
+
  private:
   T t_;
   double shift_;

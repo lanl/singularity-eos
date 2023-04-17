@@ -269,6 +269,13 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     printf("Units = %e %e %e %e\n", rho_unit_, sie_unit_, temp_unit_, press_unit_);
   }
 
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool IsModified() const { return true; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  T UnmodifyOnce() { return t_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  auto GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
+
  private:
   T t_;
 

@@ -194,3 +194,14 @@ Modifiers can be composed. For example:
 
   using namespace singularity;
   auto my_eos = ShiftedEOS<ScaledEOS<IdealGas>>(ScaledEOS(IdealGas(gm1, Cv), scale), shift);
+
+Undoing Modifiers
+------------------
+
+Modifiers can also be undone, extracting the underlying EOS. Continuing the example above,
+
+.. code-block:: cpp
+
+   auto unmodified = my_eos.GetUnmodifiedObject();
+
+will extract the underlying ``IdealGas`` EOS model out from the scale and shift.
