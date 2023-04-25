@@ -13,99 +13,83 @@
 //------------------------------------------------------------------------------
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
+#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/get_sg_eos.hpp>
 #include <singularity-eos/eos/get_sg_eos_lambdas.hpp>
 
 namespace singularity {
-void get_sg_eos_p_t(const char* name, int ncell, int nmat, 
-                    indirection_v& offsets_v,
-		    indirection_v& eos_offsets_v,
-		    Kokkos::View<EOS *, Llft>& eos_v,
-                    dev_v& press_v,
-                    dev_v& pmax_v,
-                    dev_v& vol_v,
-                    dev_v& spvol_v,
-                    dev_v& sie_v,
-                    dev_v& temp_v,
-                    dev_v& bmod_v,
-                    dev_v& dpde_v,
-                    dev_v& cv_v,
-                    dev_frac_v& frac_mass_v,
-                    dev_frac_v& frac_vol_v,
-                    dev_frac_v& frac_ie_v,
-                    dev_frac_v& frac_bmod_v,
-                    dev_frac_v& frac_dpde_v,
-                    dev_frac_v& frac_cv_v,
-                    ScratchV<int>& pte_idxs,
-                    ScratchV<int>& pte_mats,
-                    ScratchV<double>& press_pte,
-                    ScratchV<double>& vfrac_pte,
-                    ScratchV<double>& rho_pte,
-                    ScratchV<double>& sie_pte,
-                    ScratchV<double>& temp_pte,
-                    ScratchV<double>& solver_scratch,
-                    Kokkos::Experimental::UniqueToken<DES, KGlobal>& tokens,
-		    bool small_loop,
-                    bool do_frac_bmod, bool do_frac_dpde, bool do_frac_cv) {
+void get_sg_eos_p_t(const char *name, int ncell, int nmat, indirection_v &offsets_v,
+                    indirection_v &eos_offsets_v, Kokkos::View<EOS *, Llft> &eos_v,
+                    dev_v &press_v, dev_v &pmax_v, dev_v &vol_v, dev_v &spvol_v,
+                    dev_v &sie_v, dev_v &temp_v, dev_v &bmod_v, dev_v &dpde_v,
+                    dev_v &cv_v, dev_frac_v &frac_mass_v, dev_frac_v &frac_vol_v,
+                    dev_frac_v &frac_ie_v, dev_frac_v &frac_bmod_v,
+                    dev_frac_v &frac_dpde_v, dev_frac_v &frac_cv_v,
+                    ScratchV<int> &pte_idxs, ScratchV<int> &pte_mats,
+                    ScratchV<double> &press_pte, ScratchV<double> &vfrac_pte,
+                    ScratchV<double> &rho_pte, ScratchV<double> &sie_pte,
+                    ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
+                    Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
+                    bool small_loop, bool do_frac_bmod, bool do_frac_dpde,
+                    bool do_frac_cv) {
   const auto final_lambda = SG_GET_SG_EOS_FINAL_LAMBDA_DECL;
   portableFor(
       name, 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
-          // cell offset
-          const int i{offsets_v(iloop) - 1};
-          // get "thread-id" like thing with optimization
-          // for small loops
-          const int32_t token{tokens.acquire()};
-          const int32_t tid{small_loop ? iloop : token};
-          // caching mechanism
-          singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0));
-          double mass_sum{0.0};
-          // normalize mass fractions
-          // first find the mass sum
-          // also set idxs as the decrement of the eos offsets
-          // to take into account 1 based indexing in fortran
-          for (int m = 0; m < nmat; ++m) {
-            mass_sum += frac_mass_v(i, m);
-            pte_idxs(tid, m) = eos_offsets_v(m) - 1;
-            pte_mats(tid, m) = m;
-            temp_pte(tid, m) = temp_v(i) * ev2k;
-            press_pte(tid, m) = press_v(i);
-          }
-          for (int m = 0; m < nmat; ++m) {
-            frac_mass_v(i, m) /= mass_sum;
-          }
-          // do r-e of pt for each mat
-          singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
-          Real vfrac_tot{0.0};
-          Real sie_tot{0.0};
-          for (int m = 0; m < nmat; ++m) {
-            // obtain rho and sie from P-T
-            eos_inx[m].DensityEnergyFromPressureTemperature(
-                press_pte(tid, m), temp_pte(tid, m), cache[m], rho_pte(tid, m),
-                sie_pte(tid, m));
-            // assign volume fractions
-            // this is a physical volume
-            vfrac_pte(tid, m) = frac_mass_v(i, m) / rho_pte(tid, m) * mass_sum;
-            vfrac_tot += vfrac_pte(tid, m);
-            // add internal energy component
-            sie_tot += sie_pte(tid, m) * frac_mass_v(i, m);
-          }
-          // assign volume, etc.
-          // total sie is known
-          sie_v(i) = sie_tot;
-          vol_v(i) = vfrac_tot;
-          spvol_v(i) = vol_v(i) / mass_sum;
-          for (int m = 0; m < nmat; ++m) {
-            vfrac_pte(tid, m) /= vfrac_tot;
-          }
-          // assign remaining outputs
-          final_lambda(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, cache);
-          // assign max pressure
-          pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
-          // release the token used for scratch arrays
-          tokens.release(token);
-        });
+        // cell offset
+        const int i{offsets_v(iloop) - 1};
+        // get "thread-id" like thing with optimization
+        // for small loops
+        const int32_t token{tokens.acquire()};
+        const int32_t tid{small_loop ? iloop : token};
+        // caching mechanism
+        singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0));
+        double mass_sum{0.0};
+        // normalize mass fractions
+        // first find the mass sum
+        // also set idxs as the decrement of the eos offsets
+        // to take into account 1 based indexing in fortran
+        for (int m = 0; m < nmat; ++m) {
+          mass_sum += frac_mass_v(i, m);
+          pte_idxs(tid, m) = eos_offsets_v(m) - 1;
+          pte_mats(tid, m) = m;
+          temp_pte(tid, m) = temp_v(i) * ev2k;
+          press_pte(tid, m) = press_v(i);
+        }
+        for (int m = 0; m < nmat; ++m) {
+          frac_mass_v(i, m) /= mass_sum;
+        }
+        // do r-e of pt for each mat
+        singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
+        Real vfrac_tot{0.0};
+        Real sie_tot{0.0};
+        for (int m = 0; m < nmat; ++m) {
+          // obtain rho and sie from P-T
+          eos_inx[m].DensityEnergyFromPressureTemperature(
+              press_pte(tid, m), temp_pte(tid, m), cache[m], rho_pte(tid, m),
+              sie_pte(tid, m));
+          // assign volume fractions
+          // this is a physical volume
+          vfrac_pte(tid, m) = frac_mass_v(i, m) / rho_pte(tid, m) * mass_sum;
+          vfrac_tot += vfrac_pte(tid, m);
+          // add internal energy component
+          sie_tot += sie_pte(tid, m) * frac_mass_v(i, m);
+        }
+        // assign volume, etc.
+        // total sie is known
+        sie_v(i) = sie_tot;
+        vol_v(i) = vfrac_tot;
+        spvol_v(i) = vol_v(i) / mass_sum;
+        for (int m = 0; m < nmat; ++m) {
+          vfrac_pte(tid, m) /= vfrac_tot;
+        }
+        // assign remaining outputs
+        final_lambda(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, cache);
+        // assign max pressure
+        pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
+        // release the token used for scratch arrays
+        tokens.release(token);
+      });
   return;
 }
 } // namespace singularity

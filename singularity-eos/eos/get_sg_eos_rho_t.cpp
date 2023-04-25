@@ -13,42 +13,26 @@
 //------------------------------------------------------------------------------
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
+#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/get_sg_eos.hpp>
 #include <singularity-eos/eos/get_sg_eos_lambdas.hpp>
 
 namespace singularity {
-void get_sg_eos_rho_t(const char* name, int ncell, int nmat, 
-                      indirection_v& offsets_v,
-		      indirection_v& eos_offsets_v,
-		      Kokkos::View<EOS *, Llft>& eos_v,
-                      dev_v& press_v,
-                      dev_v& pmax_v,
-                      dev_v& vol_v,
-                      dev_v& spvol_v,
-                      dev_v& sie_v,
-                      dev_v& temp_v,
-                      dev_v& bmod_v,
-                      dev_v& dpde_v,
-                      dev_v& cv_v,
-                      dev_frac_v& frac_mass_v,
-                      dev_frac_v& frac_vol_v,
-                      dev_frac_v& frac_ie_v,
-                      dev_frac_v& frac_bmod_v,
-                      dev_frac_v& frac_dpde_v,
-                      dev_frac_v& frac_cv_v,
-                      ScratchV<int>& pte_idxs,
-                      ScratchV<int>& pte_mats,
-                      ScratchV<double>& press_pte,
-                      ScratchV<double>& vfrac_pte,
-                      ScratchV<double>& rho_pte,
-                      ScratchV<double>& sie_pte,
-                      ScratchV<double>& temp_pte,
-                      ScratchV<double>& solver_scratch,
-                      Kokkos::Experimental::UniqueToken<DES, KGlobal>& tokens,
-		      bool small_loop,
-                      bool do_frac_bmod, bool do_frac_dpde, bool do_frac_cv) {
+void get_sg_eos_rho_t(const char *name, int ncell, int nmat, indirection_v &offsets_v,
+                      indirection_v &eos_offsets_v, Kokkos::View<EOS *, Llft> &eos_v,
+                      dev_v &press_v, dev_v &pmax_v, dev_v &vol_v, dev_v &spvol_v,
+                      dev_v &sie_v, dev_v &temp_v, dev_v &bmod_v, dev_v &dpde_v,
+                      dev_v &cv_v, dev_frac_v &frac_mass_v, dev_frac_v &frac_vol_v,
+                      dev_frac_v &frac_ie_v, dev_frac_v &frac_bmod_v,
+                      dev_frac_v &frac_dpde_v, dev_frac_v &frac_cv_v,
+                      ScratchV<int> &pte_idxs, ScratchV<int> &pte_mats,
+                      ScratchV<double> &press_pte, ScratchV<double> &vfrac_pte,
+                      ScratchV<double> &rho_pte, ScratchV<double> &sie_pte,
+                      ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
+                      Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
+                      bool small_loop, bool do_frac_bmod, bool do_frac_dpde,
+                      bool do_frac_cv) {
   const auto init_lambda = SG_GET_SG_EOS_INIT_LAMBDA_DECL;
   const auto final_lambda = SG_GET_SG_EOS_FINAL_LAMBDA_DECL;
   portableFor(
@@ -73,9 +57,9 @@ void get_sg_eos_rho_t(const char* name, int ncell, int nmat,
           // eos accessor
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
           PTESolverFixedT<singularity::EOSAccessor_, Real *, Real **> method(
-              npte, eos_inx, 1.0, temp_pte(tid, 0), &rho_pte(tid, 0),
-              &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0),
-              &press_pte(tid, 0), cache, &solver_scratch(tid, 0));
+              npte, eos_inx, 1.0, temp_pte(tid, 0), &rho_pte(tid, 0), &vfrac_pte(tid, 0),
+              &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), cache,
+              &solver_scratch(tid, 0));
           const bool res_{PTESolver(method)};
           // calculate total internal energy
           for (int mp = 0; mp < npte; ++mp) {
@@ -85,13 +69,13 @@ void get_sg_eos_rho_t(const char* name, int ncell, int nmat,
         } else {
           // pure cell (nmat = 1)
           // calculate sie from single eos
-          sie_pte(tid, 0) = eos_v(pte_idxs(tid, 0))\
+          sie_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
                                 .InternalEnergyFromDensityTemperature(
                                     rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
           // set total sie to material 0 value
           sie_tot_true = sie_pte(tid, 0);
           // set pressure
-          press_pte(tid, 0) = eos_v(pte_idxs(tid, 0))\
+          press_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
                                   .PressureFromDensityTemperature(
                                       rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
         }
