@@ -92,6 +92,7 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
                                          Real *lambda = nullptr) const {
     return t_.PressureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
   }
+  PORTABLE_FUNCTION
   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
                                         Real *lambda = nullptr) const {
     return scale_ *
