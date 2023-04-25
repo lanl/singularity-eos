@@ -62,6 +62,7 @@ constexpr auto KGlobal = Kokkos::Experimental::UniqueTokenScope::Global;
 static constexpr const double ev2k = 1.160451930280894026e4;
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
+#ifdef PORTABILITY_STRATEGY_KOKKOS
 namespace singularity {
 // rho t input
 void get_sg_eos_rho_t(const char* name, int ncell, int nmat, 
@@ -188,5 +189,6 @@ void get_sg_eos_rho_e(const char* name, int ncell, int nmat,
 		      bool small_loop,
                       bool do_frac_bmod, bool do_frac_dpde, bool do_frac_cv);
 } // namespace singularity
+#endif // PORTABILITY_STRATEGY_KOKKOS
 
 #endif // _SINGULARITY_EOS_EOS_GET_SG_EOS_HPP_
