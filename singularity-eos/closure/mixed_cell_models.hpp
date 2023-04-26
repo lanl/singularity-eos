@@ -206,7 +206,7 @@ class PTESolverBase {
     Cache = CacheAccessor(AssignIncrement(scratch, nmat * MAX_NUM_LAMBDAS));
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
+  PORTABLE_INLINE_FUNCTION
   void InitRhoBarandRho() {
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
@@ -217,7 +217,7 @@ class PTESolverBase {
     }
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
+  PORTABLE_INLINE_FUNCTION
   void SetVfracFromT(const Real T) {
     Real vsum = 0.0;
     // set volume fractions
@@ -233,7 +233,7 @@ class PTESolverBase {
     }
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
+  PORTABLE_INLINE_FUNCTION
   Real GetTguess() {
     // guess some non-zero temperature to start
     // If a guess was passed in, it's saved in Tnorm
@@ -272,9 +272,9 @@ class PTESolverBase {
     return Tguess;
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  static Real GetPressureFromPreferred(const EOS &eos, const Real rho, const Real T,
-                                       Real sie, Real *lambda, const bool do_e_lookup) {
+  PORTABLE_INLINE_FUNCTION
+  Real GetPressureFromPreferred(const EOS &eos, const Real rho, const Real T,
+                                       Real sie, Real *lambda, const bool do_e_lookup) const {
     Real P{};
     if (eos.PreferredInput() ==
         (thermalqs::density | thermalqs::specific_internal_energy)) {

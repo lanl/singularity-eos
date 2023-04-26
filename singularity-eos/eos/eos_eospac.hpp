@@ -862,7 +862,7 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, 
   EOS_REAL E[1] = {sie}, P[1] = {pressureToSesame(press)};
   EOS_REAL dx[1], dy[1];
   EOS_INTEGER nxypairs = 1;
-  Real CV, BMOD_T, BMOD, SIE, PRESS, DPDE, DPDT, DPDR, DEDT, DEDR;
+  Real /*CV,*/ BMOD_T, BMOD, SIE, PRESS, DPDE, DPDT, DPDR, DEDT, DEDR;
   const unsigned long input = ~output;
   if (output == thermalqs::none) {
     UNDEFINED_ERROR;
@@ -1034,7 +1034,7 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(const
   EOS_REAL T[1] = {temperatureToSesame(temp)};
   EOS_REAL dx[1], dy[1], R[1], E[1];
   EOS_INTEGER nxypairs = 1;
-  EOS_INTEGER errorCode;
+  //EOS_INTEGER errorCode;
   EOS_INTEGER table;
 
   table = RofPT_table_;

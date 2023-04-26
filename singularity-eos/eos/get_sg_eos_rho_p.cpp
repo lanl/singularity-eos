@@ -55,7 +55,7 @@ void get_sg_eos_rho_p(const char *name, int ncell, int nmat, indirection_v &offs
           // create solver lambda
           // eos accessor
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
-          PTESolverFixedP<singularity::EOSAccessor_, Real *, Real **> method(
+          PTESolverFixedP<singularity::EOSAccessor_, Real *, Real *, decltype(cache)> method(
               npte, eos_inx, 1.0, press_pte(tid, 0), &rho_pte(tid, 0), &vfrac_pte(tid, 0),
               &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), cache[0],
               &solver_scratch(tid, 0));
