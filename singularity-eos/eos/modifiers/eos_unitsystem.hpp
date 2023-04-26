@@ -166,6 +166,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
         t_.PressureFromDensityTemperature(rho * rho_unit_, temp * temp_unit_, lambda);
     return inv_press_unit_ * P;
   }
+  PORTABLE_FUNCTION
   Real EntropyFromDensityTemperature(const Real rho, const Real temp,
                                      Real *lambda = nullptr) const {
     const Real S =
