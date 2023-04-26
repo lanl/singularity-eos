@@ -42,7 +42,9 @@ using namespace eos_base;
 // Only really works in serial
 // Not really supported on device
 #if defined(__CUDACC__)
-#define SG_PIF_NOWARN #pragma nv_exec_check_disable PORTABLE_INLINE_FUNCTION
+#define SG_PIF_NOWARN \
+#pragma nv_exec_check_disable \
+PORTABLE_INLINE_FUNCTION
 #else
 #define SG_PIF_NOWARN PORTABLE_INLINE_FUNCTION
 #endif
