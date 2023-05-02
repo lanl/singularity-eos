@@ -424,6 +424,14 @@ class EosBase {
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
+
+  // Tooling for modifiers
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool IsModified() const { return false; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  auto UnmodifyOnce() { return *static_cast<CRTP *>(this); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  auto GetUnmodifiedObject() { return *static_cast<CRTP *>(this); }
 };
 } // namespace eos_base
 } // namespace singularity
