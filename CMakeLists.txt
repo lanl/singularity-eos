@@ -35,34 +35,47 @@ set(SINGULARITY_GOLDFILE_HASH
 #------------------------------------------------------------------------------#
 # Options
 #------------------------------------------------------------------------------#
-
-#option (SINGULARITY_USE_HDF5 "Pull in hdf5" ON)
+include (CMakeDependentOption)
+# dependcy options
+option (SINGULARITY_USE_SPINER "Use spiner EOS" OFF)
+cmake_dependent_option (SINGULARITY_USE_SPINER_WITH_HDF5 "Use HDF5 component of spiner" ON "SINGULARITY_USE_SPINER" OFF)
 
 option (SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option (SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option (SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
-option (SINGULARITY_USE_CUDA "Enable cuda support" OFF)
-option (SINGULARITY_USE_KOKKOSKERNELS
-  "Use kokkos-kernels for linear algebra" OFF)
+
+cmake_dependent_option (SINGULARITY_USE_CUDA "Use CUDA backend of Kokkos" ON "SINGULARITY_USE_KOKKOS;NOT SINGULARITY_USE_EOSPAC" OFF)
+cmake_dependent_option (SINGULARITY_USE_KOKKOSKERNELS "Use KokkosKernels for LA routines" ON "SINGULARITY_USE_KOKKOS" OFF)
+
+# option (SINGULARITY_USE_CUDA "Enable cuda support" OFF)
+
+#option (SINGULARITY_USE_KOKKOSKERNELS
+#  "Use kokkos-kernels for linear algebra" OFF)
+
+# extra build options
+option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
 option (SINGULARITY_BUILD_PYTHON "Compile Python bindings" OFF)
-option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
 option (SINGULARITY_BUILD_EXAMPLES "Compile examples" OFF)
 option (SINGULARITY_BUILD_SESAME2SPINER "Compile sesame2spiner" OFF)
 option (SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" OFF)
-option (SINGULARITY_BETTER_DEBUG_FLAGS
-  "Better debug flags for singularity" ON)
-option (SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
-option (SINGULARITY_BUILD_CLOSURE "Mixed cell closure" ON)
+
+# testing options
+option (SINGULARITY_BUILD_TESTS "Compile tests" OFF)
 option (SINGULARITY_TEST_SESAME "Test the Sesame table readers" OFF)
 option (SINGULARITY_TEST_STELLAR_COLLAPSE "Test the stellar collapse table readers" OFF)
 option (SINGULARITY_TEST_PYTHON "Test the Python bindings" OFF)
+
+# modify flags options
+option (SINGULARITY_BETTER_DEBUG_FLAGS
+  "Better debug flags for singularity" ON)
+option (SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
+
+# toggle code options
 option (SINGULARITY_USE_SINGLE_LOGS "Use single precision logs. Can harm accuracy." OFF)
 option (SINGULARITY_USE_TRUE_LOG_GRIDDING "Use grids that conform to log spacing." OFF)
 
+# misc options
 option (SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
-# option (SINGULARITY_CUSTOM_KOKKOS "Use custom kokkos dir" OFF)
-
-
 option (SINGULARITY_PATCH_MPARK_VARIANT "Apply GPU patch to mpark-variant submodule" ON)
 
 #------------------------------------------------------------------------------#
@@ -86,6 +99,7 @@ target_include_directories(singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_BINA
 #------------------------------------------------------------------------------#
 # Compiler & language setup
 #------------------------------------------------------------------------------#
+
 enable_language(CXX)
 include(CMakeDetermineCXXCompiler)
 if(SINGULARITY_USE_FORTRAN)
@@ -175,13 +189,23 @@ endif()
 #  endif()
 #endif()
 
+# add subdirs
 if (SINGULARITY_BUILD_PYTHON)
   add_subdirectory(python)
 endif()
 
+# defines
 if(SINGULARITY_USE_SINGLE_LOGS)
   target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_SINGLE_LOGS)
 endif()
+
+if (SINGULARITY_TEST_SESAME)
+  target_compile_definitions(singularity-eos PRIVATE SINGULARITY_TEST_SESAME)
+endif()
+if (SINGULARITY_BUILD_CLOSURE)
+  target_compile_definitions(singularity-eos PRIVATE SINGULARITY_BUILD_CLOSURE)
+endif()
+
 
 #------------------------------------------------------------------------------#
 # Handle dependencies
@@ -285,14 +309,6 @@ if(SINGULARITY_BUILD_TESTS)
 endif()
 
 
-#TODO: this feels out-of-place here, though i haven't crawled into the source yet to see
-# what the point is.
-if (SINGULARITY_TEST_SESAME)
-  target_compile_definitions(singularity-eos PRIVATE SINGULARITY_TEST_SESAME)
-endif()
-if (SINGULARITY_BUILD_CLOSURE)
-  target_compile_definitions(singularity-eos PRIVATE SINGULARITY_BUILD_CLOSURE)
-endif()
 ###########################OLD
 #------------------------------------------------------------------------------#
 # singularity-eos library
@@ -417,9 +433,6 @@ include(cmake/install.cmake)
 # Testing
 #----------------------------------------------------------------------------#
 
-#NOTE: `include(CTest)` comes "pre-set" with options and modules
-# to enable tests. It creates a "BUILD_TESTING" option, and runs
-# `enable_testing()`. See https://cmake.org/cmake/help/latest/module/CTest.html
 if(SINGULARITY_BUILD_TESTS)
   enable_testing()
   add_subdirectory(test)
