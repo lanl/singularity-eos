@@ -280,29 +280,17 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
     EOS_REAL *P = &pressures[0];
-    EOS_REAL *T = scratch + 0 * num;
-    EOS_REAL *dTdr = scratch + 1 * num;
-    EOS_REAL *dTde = scratch + 2 * num;
-    EOS_REAL *dPdr = dTdr;
-    EOS_REAL *dPdT = dTde;
+    EOS_REAL *dPdr = scratch + 1 * num;
+    EOS_REAL *dPde = scratch + 2 * num;
 
-    EOS_INTEGER table = TofRE_table_;
+    EOS_INTEGER table = PofRE_table_;
     {
-      EOS_INTEGER options[]{EOS_Y_CONVERT};
-      EOS_REAL values[]{sieFromSesame(1.0)};
-      EOS_INTEGER nopts = 1;
-
-      eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
-                         options, values, nopts);
-    }
-
-    table = PofRT_table_;
-    {
-      EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
-      EOS_REAL values[]{pressureFromSesame(1.0), 1.0};
+      EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
+      EOS_REAL values[]{1,1};//{sieToSesame(1.0), pressureFromSesame(1.0)};
       EOS_INTEGER nopts = 2;
-      eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
-                         options, values, nopts);
+
+      eosSafeInterpolate(&table, num, R, E, P, dPdr, dPdE, "PofRE", Verbosity::Quiet,
+			 options, values, nopts);
     }
   }
 
@@ -710,13 +698,13 @@ class EOSPAC : public EosBase<EOSPAC> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   int matid_;
-  static constexpr int NT = 5;
+  static constexpr int NT = 6;
   EOS_INTEGER PofRT_table_;
   EOS_INTEGER TofRE_table_;
   EOS_INTEGER EofRT_table_;
   EOS_INTEGER RofPT_table_;
   EOS_INTEGER TofRP_table_;
-  // EOS_INTEGER PofRE_table_;
+  EOS_INTEGER PofRE_table_;
   EOS_INTEGER tablehandle[NT];
   EOS_INTEGER EOS_Info_table_;
   static constexpr Real temp_ref_ = 293;
@@ -754,16 +742,17 @@ class EOSPAC : public EosBase<EOSPAC> {
 
 inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup) : matid_(matid) {
   using namespace EospacWrapper;
-  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT, EOS_T_DPt};
+  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT, EOS_T_DPt, EOS_Pt_DUt};
   eosSafeLoad(NT, matid, tableType, tablehandle,
               std::vector<std::string>(
-                  {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT", "EOS_T_DPt"}),
+		{"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT", "EOS_T_DPt", "EOS_Pt_DUt"}),
               Verbosity::Quiet, invert_at_setup);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
   RofPT_table_ = tablehandle[3];
   TofRP_table_ = tablehandle[4];
+  PofRE_table_ = tablehandle[5];
 
   // Set reference states and table bounds
   SesameMetadata m;
@@ -933,8 +922,16 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityTemperature(
 PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   using namespace EospacWrapper;
-  Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-  return PressureFromDensityTemperature(rho, temp, lambda);
+  EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
+  EOS_REAL values[]{sieToSesame(1.0), pressureFromSesame(1.0)};
+  EOS_INTEGER nopts = 2;
+  EOS_REAL R[1] = {rho}, E[1] = {sieToSesame(sie)}, P[1], dPdr[1], dPde[1];
+  EOS_INTEGER nxypairs = 1;
+  EOS_INTEGER table = PofRE_table_;
+  eosSafeInterpolate(&table, nxypairs, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
+		     options, values, nopts);
+		     
+  return Real(P[0]);
 }
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {

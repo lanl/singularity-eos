@@ -19,7 +19,6 @@
 #include <regex>
 #include <string>
 #include <vector>
-
 #include "eospac_wrapper.hpp"
 #include <eos_Interface.h>
 
@@ -181,6 +180,7 @@ bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals
   }
 
   eos_Interpolate(table, &nxypairs, xVals, yVals, var, dx, dy, &errorCode);
+
 #ifndef SINGULARITY_EOSPAC_SKIP_EXTRAP
   if (errorCode != EOS_OK && eospacWarn == Verbosity::Debug) {
     eos_GetErrorMessage(&errorCode, errorMessage);
