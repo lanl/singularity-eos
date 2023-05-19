@@ -168,7 +168,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
 
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();
-    printf("scaling_ratio = %f\n", shift_);
+    printf("shift_value = %f\n", shift_);
   }
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
