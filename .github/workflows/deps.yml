@@ -13,19 +13,19 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - name: Checkout this repo
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
           with:
             fetch-depth: 0
         - name: create build
           run: mkdir build
         - name: Checkout ports-of-call
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
           with:
             repository: lanl/ports-of-call
             path: build/ports-of-call
             fetch-depth: 0
         - name: Checkout spiner
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
           with:
             repository: lanl/spiner
             path: build/spiner
