@@ -121,17 +121,20 @@ before_script:
     - spack add ${SINGULARITY_EOS_SPACK_SPEC}
     - spack install -j $(nproc) --show-log-on-error --no-checksum --yes-to-all -u cmake
     - echo -e "\e[0Ksection_end:`date +%s`:spack_env\r\e[0K"
+    - export SINGULARITY_BUILD_TYPE="RelWithDebInfo"
     - |
       if [[ -n ${SINGULARITY_USE_CUDA} ]];
       then
         export SINGULARITY_NVCC_WRAPPER="$(which nvcc_wrapper)";
         export SINGULARITY_CMAKE_CXX_COMPILER_FLAG="-DCMAKE_CXX_COMPILER=${SINGULARITY_NVCC_WRAPPER}";
         echo "passing '${SINGULARITY_CMAKE_CXX_COMPILER_FLAG}' to cmake"
+        export SINGULARITY_BUILD_TYPE="Release"
       fi
     - mkdir -p build
     - cd build
     - |
       cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install ${SINGULARITY_CMAKE_CXX_COMPILER_FLAG} \
+            -DCMAKE_BUILD_TYPE=${SINGULARITY_BUILD_TYPE}
             -DSINGULARITY_USE_EOSPAC=ON \
             -DSINGULARITY_USE_HDF5=ON \
             -DSINGULARITY_BUILD_SESAME2SPINER=ON \
