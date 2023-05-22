@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Fixed (Repair bugs, etc)
+- [[PR258]](https://github.com/lanl/singularity-eos/pull/258) Fix EOSPAC vector performance and add warnings when slower version gets selected.
 - [[PR243]](https://github.com/lanl/singularity-eos/pull/243) Remove undefined behavior caused by diagnostic variables. Also fixed some compiler warnings.
 - [[PR239]](https://github.com/lanl/singularity-eos/pull/239#issuecomment-1473166925) Add JQuery to dependencies for docs to repair build
 - [[PR238]](https://github.com/lanl/singularity-eos/pull/238) Fixed broken examples

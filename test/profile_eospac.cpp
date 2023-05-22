@@ -293,7 +293,13 @@ inline bool get_timing(int ncycles, const ivec &ncells_1d, const double x_min,
     }
     std::cout << "\t\t\t...max difference (vector w scalar calls) = " << max_diff << "%"
               << std::endl;
-    success = success && (max_diff < 1.0);
+
+    if (durations_host_vec_scratch[n] >= durations_host_vec[n]) {
+      std::cout << "\t\t\t...ERROR: vector calls too slow" << std::endl;
+    }
+
+    success = success && (max_diff < 1.0) &&
+              durations_host_vec_scratch[n] < durations_host_vec[n];
   }
 
   prof_file.open(name + "_" + xstr(METHOD_UNDER_TEST) + "_timing.dat",
@@ -324,6 +330,7 @@ inline bool get_timing(int ncycles, const ivec &ncells_1d, const double x_min,
   prof_file.close();
 
   eos_d.Finalize();
+
   return success;
 }
 

@@ -106,18 +106,226 @@ class EOSPAC : public EosBase<EOSPAC> {
                                             Real *lambda = nullptr) const;
 
   // Generic (Scalar)
-  using EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::InternalEnergyFromDensityTemperature;
-  using EosBase<EOSPAC>::PressureFromDensityTemperature;
-  using EosBase<EOSPAC>::PressureFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::EntropyFromDensityTemperature;
-  using EosBase<EOSPAC>::EntropyFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::SpecificHeatFromDensityTemperature;
-  using EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::BulkModulusFromDensityTemperature;
-  using EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::GruneisenParamFromDensityTemperature;
-  using EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy;
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&temperatures, const int num,
+                                       LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void
+  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&temperatures, Real * /*scratch*/,
+                                       const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&sies, const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&sies, Real * /*scratch*/,
+                                                   const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
+                                             ConstRealIndexer &&temperatures,
+                                             RealIndexer &&pressures, const int num,
+                                             LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::PressureFromDensityTemperature(rhos, temperatures, pressures, num,
+                                                    lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void
+  PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                 RealIndexer &&pressures, Real * /*scratch*/,
+                                 const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::PressureFromDensityTemperature(rhos, temperatures, pressures, num,
+                                                    lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&sies,
+                                                RealIndexer &&pressures, const int num,
+                                                LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
+                                                       lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void
+  PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                    RealIndexer &&pressures, Real * /*scratch*/,
+                                    const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
+                                                       lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&entropies, const int num,
+                                            LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
+                                                   lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void
+  EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                RealIndexer &&entropies, Real * /*scratch*/,
+                                const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
+                                                   lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&entropies, const int num,
+                                               LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
+                                                      lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void
+  EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                   RealIndexer &&entropies, Real * /*scratch*/,
+                                   const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
+                                                      lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                 ConstRealIndexer &&temperatures,
+                                                 RealIndexer &&cvs, const int num,
+                                                 LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
+                                                        lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                 ConstRealIndexer &&temperatures,
+                                                 RealIndexer &&cvs, Real * /*scratch*/,
+                                                 const int num,
+                                                 LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
+                                                        lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                    ConstRealIndexer &&sies,
+                                                    RealIndexer &&cvs, const int num,
+                                                    LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void
+  SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                        RealIndexer &&cvs, Real * /*scratch*/,
+                                        const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                RealIndexer &&bmods, const int num,
+                                                LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
+                                                       lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                RealIndexer &&bmods, Real * /*scratch*/,
+                                                const int num,
+                                                LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
+                                                       lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&sies,
+                                                   RealIndexer &&bmods, const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void
+  BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&bmods, Real * /*scratch*/,
+                                       const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&gm1s, const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&gm1s, Real * /*scratch*/,
+                                                   const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                      ConstRealIndexer &&sies,
+                                                      RealIndexer &&gm1s, const int num,
+                                                      LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
+                                                             lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                      ConstRealIndexer &&sies,
+                                                      RealIndexer &&gm1s,
+                                                      Real * /*scratch*/, const int num,
+                                                      LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
+                                                             lambdas);
+  }
+
   using EosBase<EOSPAC>::PTofRE;
   using EosBase<EOSPAC>::FillEos;
   using EosBase<EOSPAC>::EntropyIsNotEnabled;
@@ -143,9 +351,11 @@ class EOSPAC : public EosBase<EOSPAC> {
                        options, values, nopts);
   }
 
+  template <typename LambdaIndexer>
   inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
                                              Real *pressures, Real *scratch,
-                                             const int num, Real ** /*lambdas*/) const {
+                                             const int num,
+                                             LambdaIndexer /*lambdas*/) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
