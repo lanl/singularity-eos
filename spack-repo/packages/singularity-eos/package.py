@@ -84,7 +84,7 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("spiner" + _flag, when="+kokkos" + _flag)
 
     # specfic specs when using GPU/cuda offloading
-    depends_on("kokkos +wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
+    depends_on("kokkos +wrapper+cuda_lambda", when="+cuda+kokkos")
 
     # fix for older spacks
     if spack.version.Version(spack.spack_version) >= spack.version.Version("0.17"):
