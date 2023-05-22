@@ -82,6 +82,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                        Real *lambda = nullptr) const;
 
   // Generic (Scalar)
+  using EosBase<EOSPAC>::is_raw_pointer;
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void
   TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
@@ -91,7 +92,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                           lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&temperatures, Real * /*scratch*/,
@@ -109,7 +110,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                           lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&temperatures,
                                                    RealIndexer &&sies, Real * /*scratch*/,
@@ -128,7 +129,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                     lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
                                  RealIndexer &&pressures, Real * /*scratch*/,
@@ -146,7 +147,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                        lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                     RealIndexer &&pressures, Real * /*scratch*/,
@@ -164,7 +165,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                    lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
                                 RealIndexer &&entropies, Real * /*scratch*/,
@@ -182,7 +183,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                       lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                    RealIndexer &&entropies, Real * /*scratch*/,
@@ -200,7 +201,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                         lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                  ConstRealIndexer &&temperatures,
                                                  RealIndexer &&cvs, Real * /*scratch*/,
@@ -218,7 +219,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                         RealIndexer &&cvs, Real * /*scratch*/,
@@ -235,7 +236,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                        lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 RealIndexer &&bmods, Real * /*scratch*/,
@@ -254,7 +255,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                           lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&bmods, Real * /*scratch*/,
@@ -272,7 +273,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                           lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&temperatures,
                                                    RealIndexer &&gm1s, Real * /*scratch*/,
@@ -291,7 +292,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                              lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
-            std::enable_if_t<!std::is_same<std::remove_cv_t<RealIndexer>, Real>::value>>
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                       ConstRealIndexer &&sies,
                                                       RealIndexer &&gm1s,

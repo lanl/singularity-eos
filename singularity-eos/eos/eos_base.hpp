@@ -93,6 +93,10 @@ member functions is to perform a `portableFor` loop over all of the input states
 template <typename CRTP>
 class EosBase {
  public:
+  template <typename T, typename R>
+  struct is_raw_pointer
+      : std::is_same<std::remove_reference_t<std::remove_cv_t<T>>, R *> {};
+
   // Vector member functions
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void
