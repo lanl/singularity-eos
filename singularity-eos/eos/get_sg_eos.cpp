@@ -226,46 +226,46 @@ int get_sg_eos( // sizing information
   // there is lots of room for performance optimization
   // in terms of when to copy and when not necessary
   // this is the return value (number of solve failures)
-  deep_copy(ret, res);
+  //deep_copy(ret, res);
   // copy pressure, this is not needed in all cases
   if (!p_is_inp) {
-    deep_copy(press_hv, press_v);
+    deep_copy(DES(), press_hv, press_v);
   }
   // return max pressure, this may be needed
-  deep_copy(pmax_hv, pmax_v);
+  deep_copy(DES(), pmax_hv, pmax_v);
   // I don't think the volume is necessary
-  deep_copy(vol_hv, vol_v);
+  deep_copy(DES(), vol_hv, vol_v);
   // specific volume, copy-back not needed in all cases
   if (!r_is_inp) {
-    deep_copy(spvol_hv, spvol_v);
+    deep_copy(DES(), spvol_hv, spvol_v);
   }
   // internal energy, copy-back not needed in all cases
   if (!s_is_inp) {
-    deep_copy(sie_hv, sie_v);
+    deep_copy(DES(), sie_hv, sie_v);
   }
   // temperature, copy-back not needed in all cases
   if (!t_is_inp) {
-    deep_copy(temp_hv, temp_v);
+    deep_copy(DES(), temp_hv, temp_v);
   }
   // bulk modulus, alwasy copy-back
-  deep_copy(bmod_hv, bmod_v);
+  deep_copy(DES(), bmod_hv, bmod_v);
   // dpde, always copy-back
-  deep_copy(dpde_hv, dpde_v);
+  deep_copy(DES(), dpde_hv, dpde_v);
   // specific heat, always copy-back
-  deep_copy(cv_hv, cv_v);
+  deep_copy(DES(), cv_hv, cv_v);
   // volume fractions, always copy-back (maybe not for pure cells)
-  deep_copy(frac_vol_hv, frac_vol_v);
+  deep_copy(DES(), frac_vol_hv, frac_vol_v);
   // component internal energies, always copy-back (maybe not for pure cells)
-  deep_copy(frac_ie_hv, frac_ie_v);
+  deep_copy(DES(), frac_ie_hv, frac_ie_v);
   // optionally copy-back the component bmod, dpde, and cv
   if (do_frac_bmod) {
-    deep_copy(frac_bmod_hv, frac_bmod_v);
+    deep_copy(DES(), frac_bmod_hv, frac_bmod_v);
   }
   if (do_frac_dpde) {
-    deep_copy(frac_dpde_hv, frac_dpde_v);
+    deep_copy(DES(), frac_dpde_hv, frac_dpde_v);
   }
   if (do_frac_cv) {
-    deep_copy(frac_cv_hv, frac_cv_v);
+    deep_copy(DES(), frac_cv_hv, frac_cv_v);
   }
 #endif // PORTABILITY_STRATEGY_KOKKOS
   return ret;
