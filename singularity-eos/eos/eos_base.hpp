@@ -80,7 +80,10 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
-  using EosBase<EOSDERIVED>::EntropyIsNotEnabled;
+  using EosBase<EOSDERIVED>::EntropyIsNotEnabled;                                        \
+  using EosBase<EOSDERIVED>::IsModified;                                                 \
+  using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
+  using EosBase<EOSDERIVED>::GetUnmodifiedObject;
 
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
@@ -426,12 +429,11 @@ class EosBase {
   }
 
   // Tooling for modifiers
-  PORTABLE_FORCEINLINE_FUNCTION
-  bool IsModified() const { return false; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  auto UnmodifyOnce() { return *static_cast<CRTP *>(this); }
-  PORTABLE_FORCEINLINE_FUNCTION
-  auto GetUnmodifiedObject() { return *static_cast<CRTP *>(this); }
+  inline constexpr bool IsModified() const { return false; }
+
+  inline constexpr decltype(auto) UnmodifyOnce() { return *static_cast<CRTP *>(this); }
+
+  inline constexpr decltype(auto) GetUnmodifiedObject() { return *static_cast<CRTP *>(this); }
 };
 } // namespace eos_base
 } // namespace singularity

@@ -841,17 +841,16 @@ class Variant {
   }
 
   // Tooling for modifiers
-  PORTABLE_FORCEINLINE_FUNCTION
-  bool IsModified() const {
+  inline constexpr bool IsModified() const {
     return mpark::visit([](const auto &eos) { return eos.IsModified(); }, eos_);
   }
-  PORTABLE_FORCEINLINE_FUNCTION
-  Variant UnmodifyOnce() {
+
+  inline constexpr Variant UnmodifyOnce() {
     return mpark::visit(
         [](auto &eos) { return eos_variant<EOSs...>(eos.UnmodifyOnce()); }, eos_);
   }
-  PORTABLE_FORCEINLINE_FUNCTION
-  Variant GetUnmodifiedObject() {
+
+  inline constexpr Variant GetUnmodifiedObject() {
     return mpark::visit(
         [](auto &eos) { return eos_variant<EOSs...>(eos.GetUnmodifiedObject()); }, eos_);
   }
