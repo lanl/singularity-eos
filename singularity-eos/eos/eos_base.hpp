@@ -433,7 +433,9 @@ class EosBase {
 
   inline constexpr decltype(auto) UnmodifyOnce() { return *static_cast<CRTP *>(this); }
 
-  inline constexpr decltype(auto) GetUnmodifiedObject() { return *static_cast<CRTP *>(this); }
+  inline constexpr decltype(auto) GetUnmodifiedObject() {
+    return *static_cast<CRTP *>(this);
+  }
 };
 } // namespace eos_base
 } // namespace singularity

@@ -144,8 +144,8 @@ int get_sg_eos( // sizing information
   ScratchV<double> solver_scratch;
 
   // create helper lambdas to reduce code duplication
-  //const auto init_lambda = SG_GET_SG_EOS_INIT_LAMBDA_DECL;
-  //const auto final_lambda = SG_GET_SG_EOS_FINAL_LAMBDA_DECL;
+  // const auto init_lambda = SG_GET_SG_EOS_INIT_LAMBDA_DECL;
+  // const auto final_lambda = SG_GET_SG_EOS_FINAL_LAMBDA_DECL;
   Kokkos::View<int, MemoryTraits<at_int>> res("PTE::num fails");
   Kokkos::View<int, MemoryTraits<at_int>> n_solves("PTE::num solves");
   const std::string perf_nums =
@@ -226,7 +226,7 @@ int get_sg_eos( // sizing information
   // there is lots of room for performance optimization
   // in terms of when to copy and when not necessary
   // this is the return value (number of solve failures)
-  //deep_copy(ret, res);
+  // deep_copy(ret, res);
   // copy pressure, this is not needed in all cases
   if (!p_is_inp) {
     deep_copy(DES(), press_hv, press_v);

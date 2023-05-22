@@ -196,7 +196,9 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
 
   inline constexpr T UnmodifyOnce() { return t_; }
 
-  inline constexpr decltype(auto) GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
+  inline constexpr decltype(auto) GetUnmodifiedObject() {
+    return t_.GetUnmodifiedObject();
+  }
 
  private:
   T t_;
