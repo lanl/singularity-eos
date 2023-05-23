@@ -1030,6 +1030,7 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]") {
 
       int nw_ie2{0}, nw_te2{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::fence();
       using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
       Kokkos::View<int, atomic_view> n_wrong_ie("wrong_ie");
       Kokkos::View<int, atomic_view> n_wrong_te("wrong_te");
@@ -1045,6 +1046,7 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]") {
             if (!isClose(te, 75594.6)) n_wrong_te() += 1;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::fence()
       Kokkos::deep_copy(nw_ie2, n_wrong_ie);
       Kokkos::deep_copy(nw_te2, n_wrong_te);
 #endif
