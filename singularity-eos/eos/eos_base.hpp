@@ -82,6 +82,35 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
   using EosBase<EOSDERIVED>::EntropyIsNotEnabled;
 
+class Factor {
+  Real value_ = 1.0;
+  bool is_set_ = false;
+
+ public:
+  bool is_set() const { return is_set_; }
+
+  Real get() const { return value_; }
+
+  void set(Real v) {
+    is_set_ = true;
+    value_ = v;
+  }
+
+  void apply(Real v) {
+    is_set_ = true;
+    value_ *= v;
+  }
+
+  void clear() {
+    is_set_ = false;
+    value_ = 1.0;
+  }
+};
+
+struct Transform {
+  Factor x, y, f;
+};
+
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
 various member functions can be defined.
@@ -127,8 +156,8 @@ class EosBase {
   template <typename LambdaIndexer>
   inline void TemperatureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                    Real *temperatures, Real * /*scratch*/,
-                                                   const int num,
-                                                   LambdaIndexer &&lambdas) const {
+                                                   const int num, LambdaIndexer &&lambdas,
+                                                   Transform && = Transform()) const {
     TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
                                          std::forward<LambdaIndexer>(lambdas));
   }
@@ -163,7 +192,8 @@ class EosBase {
   inline void InternalEnergyFromDensityTemperature(const Real *rhos,
                                                    const Real *temperatures, Real *sies,
                                                    Real * /*scratch*/, const int num,
-                                                   LambdaIndexer &&lambdas) const {
+                                                   LambdaIndexer &&lambdas,
+                                                   Transform && = Transform()) const {
     InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
                                          std::forward<LambdaIndexer>(lambdas));
   }
@@ -195,8 +225,8 @@ class EosBase {
   template <typename LambdaIndexer>
   inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
                                              Real *pressures, Real * /*scratch*/,
-                                             const int num,
-                                             LambdaIndexer &&lambdas) const {
+                                             const int num, LambdaIndexer &&lambdas,
+                                             Transform && = Transform()) const {
     PressureFromDensityTemperature(rhos, temperatures, pressures, num,
                                    std::forward<LambdaIndexer>(lambdas));
   }
@@ -227,8 +257,8 @@ class EosBase {
   template <typename LambdaIndexer>
   inline void PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                 Real *pressures, Real * /*scratch*/,
-                                                const int num,
-                                                LambdaIndexer &&lambdas) const {
+                                                const int num, LambdaIndexer &&lambdas,
+                                                Transform && = Transform()) const {
     PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
                                       std::forward<LambdaIndexer>(lambdas));
   }
@@ -260,8 +290,8 @@ class EosBase {
   template <typename LambdaIndexer>
   inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
                                             Real *entropies, Real * /*scratch*/,
-                                            const int num,
-                                            LambdaIndexer &&lambdas) const {
+                                            const int num, LambdaIndexer &&lambdas,
+                                            Transform && = Transform()) const {
     EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
                                   std::forward<LambdaIndexer>(lambdas));
   }
@@ -292,8 +322,8 @@ class EosBase {
   template <typename LambdaIndexer>
   inline void EntropyFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                Real *entropies, Real * /*scratch*/,
-                                               const int num,
-                                               LambdaIndexer &&lambdas) const {
+                                               const int num, LambdaIndexer &&lambdas,
+                                               Transform && = Transform()) const {
     EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
                                      std::forward<LambdaIndexer>(lambdas));
   }
@@ -327,7 +357,8 @@ class EosBase {
   inline void SpecificHeatFromDensityTemperature(const Real *rhos,
                                                  const Real *temperatures, Real *cvs,
                                                  Real * /*scratch*/, const int num,
-                                                 LambdaIndexer &&lambdas) const {
+                                                 LambdaIndexer &&lambdas,
+                                                 Transform && = Transform()) const {
     SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
                                        std::forward<LambdaIndexer>(lambdas));
   }
@@ -359,7 +390,8 @@ class EosBase {
   inline void SpecificHeatFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                     Real *cvs, Real * /*scratch*/,
                                                     const int num,
-                                                    LambdaIndexer &&lambdas) const {
+                                                    LambdaIndexer &&lambdas,
+                                                    Transform && = Transform()) const {
     SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num,
                                           std::forward<LambdaIndexer>(lambdas));
   }
@@ -393,7 +425,8 @@ class EosBase {
   inline void BulkModulusFromDensityTemperature(const Real *rhos,
                                                 const Real *temperatures, Real *bmods,
                                                 Real * /*scratch*/, const int num,
-                                                LambdaIndexer &&lambdas) const {
+                                                LambdaIndexer &&lambdas,
+                                                Transform && = Transform()) const {
     BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
                                       std::forward<LambdaIndexer>(lambdas));
   }
@@ -424,8 +457,8 @@ class EosBase {
   template <typename LambdaIndexer>
   inline void BulkModulusFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                    Real *bmods, Real * /*scratch*/,
-                                                   const int num,
-                                                   LambdaIndexer &&lambdas) const {
+                                                   const int num, LambdaIndexer &&lambdas,
+                                                   Transform && = Transform()) const {
     BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
                                          std::forward<LambdaIndexer>(lambdas));
   }
@@ -459,7 +492,8 @@ class EosBase {
   inline void GruneisenParamFromDensityTemperature(const Real *rhos,
                                                    const Real *temperatures, Real *gm1s,
                                                    Real * /*scratch*/, const int num,
-                                                   LambdaIndexer &&lambdas) const {
+                                                   LambdaIndexer &&lambdas,
+                                                   Transform && = Transform()) const {
     GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
                                          std::forward<LambdaIndexer>(lambdas));
   }
@@ -492,7 +526,8 @@ class EosBase {
   inline void GruneisenParamFromDensityInternalEnergy(const Real *rhos, const Real *sies,
                                                       Real *gm1s, Real * /*scratch*/,
                                                       const int num,
-                                                      LambdaIndexer &&lambdas) const {
+                                                      LambdaIndexer &&lambdas,
+                                                      Transform && = Transform()) const {
     GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
                                             std::forward<LambdaIndexer>(lambdas));
   }

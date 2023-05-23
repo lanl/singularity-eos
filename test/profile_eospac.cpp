@@ -51,9 +51,9 @@ using RMirror = typename RView::HostMirror;
 #endif
 
 constexpr Real RHO_MIN = 1e-2; // g/cm^3
-constexpr Real RHO_MAX = 1e2;
-constexpr Real T_MIN = 1e2; // Kelvin
-constexpr Real T_MAX = 1e4;
+constexpr Real RHO_MAX = 1e0;
+constexpr Real T_MIN = 1.8e2; // Kelvin
+constexpr Real T_MAX = 1e3;
 constexpr Real E_MIN = 1e9;
 constexpr Real E_MAX = 1e13;
 
@@ -374,6 +374,20 @@ int main(int argc, char *argv[]) {
                 success;
     }
 
+    {
+      auto eos = ScaledEOS<EOSPAC>(EOSPAC(airID), 2.0);
+      success = get_timing(ncycles, ncells_1d, 0.5 * X_MIN, 0.5 * X_MAX, Y_MIN, Y_MAX,
+                           "ScaledEOS<EOSPAC>", eos) &&
+                success;
+    }
+
+    {
+      auto eos =
+          ScaledEOS<ShiftedEOS<EOSPAC>>(ShiftedEOS<EOSPAC>(EOSPAC(airID), 0.3), 2.0);
+      success = get_timing(ncycles, ncells_1d, 0.5 * X_MIN, 0.5 * X_MAX, Y_MIN, Y_MAX,
+                           "ScaledEOS<ShiftedEOS<EOSPAC>>", eos) &&
+                success;
+    }
     std::cout << "Done." << std::endl;
   }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
