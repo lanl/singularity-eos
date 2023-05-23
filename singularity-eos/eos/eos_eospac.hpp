@@ -132,7 +132,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_INTEGER table = PofRT_table_;
     EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
     EOS_REAL values[]{pressureFromSesame(1.0), 1.0};
-    EOS_INTEGER nopts = 2;
+    EOS_INTEGER nopts = 1;
 
     eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
                        options, values, nopts);
@@ -286,7 +286,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_INTEGER table = PofRE_table_;
     {
       EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
-      EOS_REAL values[]{1,1};//{sieToSesame(1.0), pressureFromSesame(1.0)};
+      EOS_REAL values[]{sieFromSesame(1.0), pressureFromSesame(1.0)};
       EOS_INTEGER nopts = 2;
 
       eosSafeInterpolate(&table, num, R, E, P, dPdr, dPdE, "PofRE", Verbosity::Quiet,

@@ -170,6 +170,7 @@ bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals
   EOS_CHAR errorMessage[EOS_MaxErrMsgLen];
 
   for (int i = 0; i < nopts; i++) {
+    //    std::cout << "OPT" << tablename << " " << options[i] << " " << option_values[i] << std::endl;
     eos_SetOption(table, &options[i], &(option_values[i]), &errorCode);
     if (errorCode != EOS_OK) {
       eos_GetErrorMessage(&errorCode, errorMessage);
@@ -178,8 +179,11 @@ bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals
                 << std::endl;
     }
   }
+  //  std::cout << tablename << " x " << xVals[0] << " y " << yVals[0] << std::endl;
 
   eos_Interpolate(table, &nxypairs, xVals, yVals, var, dx, dy, &errorCode);
+
+  // std::cout << tablename << "x " << xVals[0] << " y " << yVals[0] << " f" << var[0] <<std::endl;
 
 #ifndef SINGULARITY_EOSPAC_SKIP_EXTRAP
   if (errorCode != EOS_OK && eospacWarn == Verbosity::Debug) {
