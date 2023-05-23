@@ -128,13 +128,13 @@ before_script:
         export SINGULARITY_NVCC_WRAPPER="$(which nvcc_wrapper)";
         export SINGULARITY_CMAKE_CXX_COMPILER_FLAG="-DCMAKE_CXX_COMPILER=${SINGULARITY_NVCC_WRAPPER}";
         echo "passing '${SINGULARITY_CMAKE_CXX_COMPILER_FLAG}' to cmake"
-        export SINGULARITY_BUILD_TYPE="Release"
+        export SINGULARITY_BUILD_TYPE="Release";
       fi
     - mkdir -p build
     - cd build
     - |
       cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install ${SINGULARITY_CMAKE_CXX_COMPILER_FLAG} \
-            -DCMAKE_BUILD_TYPE=${SINGULARITY_BUILD_TYPE}
+            -DCMAKE_BUILD_TYPE=${SINGULARITY_BUILD_TYPE} \
             -DSINGULARITY_USE_EOSPAC=ON \
             -DSINGULARITY_USE_HDF5=ON \
             -DSINGULARITY_BUILD_SESAME2SPINER=ON \
