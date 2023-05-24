@@ -388,6 +388,22 @@ int main(int argc, char *argv[]) {
                            "ScaledEOS<ShiftedEOS<EOSPAC>>", eos) &&
                 success;
     }
+
+    {
+      auto eos = BilinearRampEOS<EOSPAC>(EOSPAC(airID), 1.0, 1.0, 0.0, 0.0);
+      success = get_timing(ncycles, ncells_1d, X_MIN, X_MAX, Y_MIN, Y_MAX,
+                           "BilinearRampEOS<EOSPAC>", eos) &&
+                success;
+    }
+
+    {
+      auto eos = BilinearRampEOS<ScaledEOS<EOSPAC>>(ScaledEOS<EOSPAC>(EOSPAC(airID), 2.0),
+                                                    1.0, 1.0, 0.0, 0.0);
+      success = get_timing(ncycles, ncells_1d, 0.5 * X_MIN, 0.5 * X_MAX, Y_MIN, Y_MAX,
+                           "BilinearRampEOS<ScaledEOS<EOSPAC>>", eos) &&
+                success;
+    }
+
     std::cout << "Done." << std::endl;
   }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
