@@ -892,7 +892,7 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
 
         int nw_ie{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-	Kokkos::fence();
+        Kokkos::fence();
         using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
         Kokkos::View<int, atomic_view> n_wrong_ie("wrong_ie");
 #else
@@ -1085,7 +1085,7 @@ SCENARIO("EOS Builder and SpinerEOS",
         THEN("EOS calls match raw access") {
           int nw_bm{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-	  Kokkos::fence();
+          Kokkos::fence();
           using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
           Kokkos::View<int, atomic_view> n_wrong_bm("wrong_bm");
 #else

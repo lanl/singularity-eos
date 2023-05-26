@@ -205,18 +205,14 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
     // return out < lRhoMin_ ? lRhoMin_ : out;
   }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real lT_(const Real T) const noexcept {
-    return toLog_(T, lTOffset_);
-  }
+  Real lT_(const Real T) const noexcept { return toLog_(T, lTOffset_); }
   PORTABLE_FORCEINLINE_FUNCTION
   Real rho_(const Real lRho) const noexcept {
     Real rho = fromLog_(lRho, lRhoOffset_);
     return rho < 0 ? 0 : rho;
   }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real T_(const Real lT) const noexcept {
-    return fromLog_(lT, lTOffset_);
-  }
+  Real T_(const Real lT) const noexcept { return fromLog_(lT, lTOffset_); }
 
   PORTABLE_INLINE_FUNCTION
   Real lTFromlRhoSie_(const Real lRho, const Real sie, TableStatus &whereAmI,
@@ -1414,7 +1410,8 @@ Real SpinerEOSDependsRhoT::bModFromRholRhoTlT_(const Real rho, const Real lRho,
 }
 
 PORTABLE_INLINE_FUNCTION
-TableStatus SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) const {
+TableStatus SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho,
+                                                       const Real sie) const {
   TableStatus whereAmI;
   const Real sielTMax = sielTMax_.interpToReal(lRho);
   const Real sieCold = sieCold_.interpToReal(lRho);
