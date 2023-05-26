@@ -41,11 +41,13 @@ using namespace eos_base;
 
 // Only really works in serial
 // Not really supported on device
+#ifndef PORTABILITY_STRATEGY_NONE
 #if defined(__CUDACC__)
 #define SG_PIF_NOWARN #pragma nv_exec_check_disable
+#endif // __CUDACC__
 #else
 #define SG_PIF_NOWARN
-#endif
+#endif // PORTABILITY_STRATEGY_NONE
 
 class EOSPAC : public EosBase<EOSPAC> {
  public:
