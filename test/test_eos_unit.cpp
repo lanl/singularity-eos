@@ -892,13 +892,14 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
 
         int nw_ie{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
+	Kokkos::fence();
         using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
         Kokkos::View<int, atomic_view> n_wrong_ie("wrong_ie");
 #else
         PortableMDArray<int> n_wrong_ie(&nw_ie, 1);
 #endif
         portableFor(
-            "calc ie's", 0, 100, PORTABLE_LAMBDA(const int &i) {
+            "calc ie's steel", 0, 100, PORTABLE_LAMBDA(const int &i) {
               const double ie = steelEOS.InternalEnergyFromDensityTemperature(1e0, 1e6);
               if (!isClose(ie, sie_pac)) n_wrong_ie() += 1;
             });
@@ -943,13 +944,14 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
       REQUIRE(isClose(T, T_pac));
     }
     THEN("Quantities of rho and sie look sane on both host and device") {
-      Real gm1_host = airEOS_host.GruneisenParamFromDensityInternalEnergy(rho, sie);
-      Real T_host = airEOS_host.TemperatureFromDensityInternalEnergy(rho, sie);
-      Real cv_host = airEOS_host.SpecificHeatFromDensityInternalEnergy(rho, sie);
+      const Real gm1_host = airEOS_host.GruneisenParamFromDensityInternalEnergy(rho, sie);
+      const Real T_host = airEOS_host.TemperatureFromDensityInternalEnergy(rho, sie);
+      const Real cv_host = airEOS_host.SpecificHeatFromDensityInternalEnergy(rho, sie);
 
       int nw_gm1{0}, nw_cv{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
+      Kokkos::fence();
       Kokkos::View<int, atomic_view> n_wrong_gm1("wrong_gm1");
       Kokkos::View<int, atomic_view> n_wrong_cv("wrong_cv");
 #else
@@ -958,8 +960,8 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
 #endif
       portableFor(
           "calc gm1 and cv", 0, 100, PORTABLE_LAMBDA(const int &i) {
-            const double gm1 = airEOS.GruneisenParamFromDensityInternalEnergy(rho, sie);
-            const double cv = airEOS.SpecificHeatFromDensityInternalEnergy(rho, sie);
+            const Real gm1 = airEOS.GruneisenParamFromDensityInternalEnergy(rho, sie);
+            const Real cv = airEOS.SpecificHeatFromDensityInternalEnergy(rho, sie);
             if (!isClose(gm1, gm1_host)) n_wrong_gm1() += 1;
             if (!isClose(cv, cv_host)) n_wrong_cv() += 1;
           });
@@ -1039,14 +1041,13 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]") {
       PortableMDArray<int> n_wrong_te(&nw_te2, 1);
 #endif
       portableFor(
-          "calc ie's", 0, 100, PORTABLE_LAMBDA(const int &i) {
+          "calc ie's steel 2", 0, 100, PORTABLE_LAMBDA(const int &i) {
             const Real ie{steelEOS.InternalEnergyFromDensityTemperature(1e0, 1e6)};
             const Real te{steelEOS.TemperatureFromDensityInternalEnergy(1e0, 1e12)};
             if (!isClose(ie, 4.96415e13)) n_wrong_ie() += 1;
             if (!isClose(te, 75594.6)) n_wrong_te() += 1;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-      Kokkos::fence()
       Kokkos::deep_copy(nw_ie2, n_wrong_ie);
       Kokkos::deep_copy(nw_te2, n_wrong_te);
 #endif
@@ -1084,13 +1085,14 @@ SCENARIO("EOS Builder and SpinerEOS",
         THEN("EOS calls match raw access") {
           int nw_bm{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
+	  Kokkos::fence();
           using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
           Kokkos::View<int, atomic_view> n_wrong_bm("wrong_bm");
 #else
           PortableMDArray<int> n_wrong_bm(&nw_bm, 1);
 #endif
           portableFor(
-              "calc ie's", 0, 100, PORTABLE_LAMBDA(const int &i) {
+              "calc ie's steel 3", 0, 100, PORTABLE_LAMBDA(const int &i) {
                 const Real bm{eosDevice.BulkModulusFromDensityTemperature(1e0, 1e6)};
                 if (!isClose(bm, 2.55268e13)) n_wrong_bm() += 1;
               });

@@ -198,23 +198,23 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
     return FastMath::pow10(lx) - offset;
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  lRho_(const Real rho) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real lRho_(const Real rho) const noexcept {
     Real out = toLog_(rho, lRhoOffset_);
     return out;
     // return out < lRhoMin_ ? lRhoMin_ : out;
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  lT_(const Real T) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real lT_(const Real T) const noexcept {
     return toLog_(T, lTOffset_);
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  rho_(const Real lRho) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real rho_(const Real lRho) const noexcept {
     Real rho = fromLog_(lRho, lRhoOffset_);
     return rho < 0 ? 0 : rho;
   }
-  PORTABLE_INLINE_FUNCTION Real __attribute__((always_inline))
-  T_(const Real lT) const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real T_(const Real lT) const noexcept {
     return fromLog_(lT, lTOffset_);
   }
 
@@ -1201,7 +1201,7 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
                     lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   }
   if (status != RootFinding1D::Status::SUCCESS) {
-#if EPINER_EOS_VERBOSE
+#if SPINER_EOS_VERBOSE
     std::stringstream errorMessage;
     errorMessage << "inverting P table for logRho failed\n"
                  << "matid     = " << matid_ << "\n"
@@ -1216,8 +1216,10 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
     lambda[Lambda::lRho] = lRho;
     lambda[Lambda::lT] = lT;
   }
-  status_ = status;
-  whereAmI_ = whereAmI;
+  if (memoryStatus_ != DataStatus::OnDevice) {
+    status_ = status;
+    whereAmI_ = whereAmI;
+  }
   return lRho;
 }
 
@@ -1278,8 +1280,8 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
   }
   if (memoryStatus_ != DataStatus::OnDevice) {
     status_ = status;
+    whereAmI_ = whereAmI;
   }
-  whereAmI_ = whereAmI;
   return lT;
 }
 
@@ -1336,8 +1338,8 @@ Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
   }
   if (memoryStatus_ != DataStatus::OnDevice) {
     status_ = status;
+    whereAmI_ = whereAmI;
   }
-  whereAmI_ = whereAmI;
   return lT;
 }
 
@@ -1411,8 +1413,8 @@ Real SpinerEOSDependsRhoT::bModFromRholRhoTlT_(const Real rho, const Real lRho,
   return bMod > robust::EPS() ? bMod : robust::EPS();
 }
 
-PORTABLE_INLINE_FUNCTION TableStatus
-SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) const {
+PORTABLE_INLINE_FUNCTION
+TableStatus SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) const {
   TableStatus whereAmI;
   const Real sielTMax = sielTMax_.interpToReal(lRho);
   const Real sieCold = sieCold_.interpToReal(lRho);
@@ -1424,7 +1426,9 @@ SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho, const Real sie) cons
   } else {
     whereAmI = TableStatus::OnTable;
   }
-  whereAmI_ = whereAmI;
+  if (memoryStatus_ != DataStatus::OnDevice) {
+    whereAmI_ = whereAmI;
+  }
   return whereAmI;
 }
 
@@ -1437,7 +1441,9 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
     whereAmI = TableStatus::OffTop;
   else
     whereAmI = TableStatus::OnTable;
-  whereAmI_ = whereAmI;
+  if (memoryStatus_ != DataStatus::OnDevice) {
+    whereAmI_ = whereAmI;
+  }
   return whereAmI;
 }
 
