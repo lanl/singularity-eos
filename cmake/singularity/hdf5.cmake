@@ -30,8 +30,11 @@ macro(singularity_enable_hdf5 target)
   target_link_libraries(${target} PUBLIC ${HDF5_LIBRARIES})
 
   if(HDF5_IS_PARALLEL)
+    #    find_package(MPI COMPONENTS C CXX REQUIRED)
+    #    target_link_libraries(${target} PUBLIC MPI::MPI_C MPI::MPI_CXX)
+    enable_language(C)
     find_package(MPI COMPONENTS C CXX REQUIRED)
-    target_link_libraries(${target} PUBLIC MPI::MPI_C MPI::MPI_CXX)
+    target_link_libraries(${target} PUBLIC MPI::MPI_CXX)
   endif()
 
   target_compile_definitions(${target} PUBLIC SPINER_USE_HDF5)

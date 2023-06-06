@@ -1115,6 +1115,23 @@ whether or not to apply the above-described median filter.
 
 which saves the current EOS data in ``sp5`` format.
 
+The ``StellarCollapse`` model, if used alone, also provides several
+additional functions of interest for those running, e.g., supernova
+simulations:
+
+.. cpp:function:: void MassFractionsFromDensityTemperature(const Real rho, const Real temperature, Real &Xa, Real &Xn, Real &Xp, Real &Abar, Real &Zbar, Real *lambda = nullptr) const
+
+which returns the mass fractions for alpha particles, ``Xa``, heavy
+ions ``Xh``, neutrons ``Xn``, and protons ``Xp``, as well as the
+average atomic mass ``Abar`` and atomic number ``Zbar`` for heavy
+ions, assuming nuclear statistical equilibrium.
+
+In addition, the user may query the bounds of the table via the
+functions ``lRhoMin()``, ``lRhoMax()``, ``lTMin()``, ``lTMax()``,
+``TMin()``, ``TMax()``, ``YeMin()``, ``YeMax()``, ``sieMin()``, and
+``sieMax()``, which all return a ``Real`` number. The ``l`` prefix
+indicates log base 10.
+
 .. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
 
 .. _OConnor and Ott: https://doi.org/10.1088/0264-9381/27/11/114103
