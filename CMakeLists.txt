@@ -51,7 +51,7 @@ option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
 
 cmake_dependent_option(SINGULARITY_USE_CUDA "Use CUDA backend of Kokkos" ON
-                       "SINGULARITY_USE_KOKKOS;NOT SINGULARITY_USE_EOSPAC" OFF)
+                       "SINGULARITY_USE_KOKKOS" OFF)
 cmake_dependent_option(
   SINGULARITY_USE_KOKKOSKERNELS "Use KokkosKernels for LA routines" ON
   "SINGULARITY_USE_KOKKOS" OFF)
