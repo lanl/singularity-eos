@@ -88,6 +88,8 @@ target_include_directories(singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_BINA
 #------------------------------------------------------------------------------#
 enable_language(CXX)
 include(CMakeDetermineCXXCompiler)
+enable_language(C)
+include(CMakeDetermineCCompiler)
 if(SINGULARITY_USE_FORTRAN)
   enable_language(Fortran)
   include(CMakeDetermineFortranCompiler)
