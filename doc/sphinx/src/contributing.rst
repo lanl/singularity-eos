@@ -122,6 +122,11 @@ submit issues on the relevant github pages. However, if you can't
 figure out where an issue belongs, no big deal. Submit where you can
 and we'll engage with you to figure out how to proceed.
 
+.. note::
+   There are scheduled workflows triggered by GitHub actions that will
+   automatically check ``spiner`` and ``ports-of-call`` for Spack updates.  If
+   detected, the GitHub action bot will create a PR with the necessary changes.
+
 Process for adding a new EOS
 ----------------------------
 

@@ -82,28 +82,238 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                        Real *lambda = nullptr) const;
 
   // Generic (Scalar)
-  using EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::InternalEnergyFromDensityTemperature;
-  using EosBase<EOSPAC>::PressureFromDensityTemperature;
-  using EosBase<EOSPAC>::PressureFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::EntropyFromDensityTemperature;
-  using EosBase<EOSPAC>::EntropyFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::SpecificHeatFromDensityTemperature;
-  using EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::BulkModulusFromDensityTemperature;
-  using EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<EOSPAC>::GruneisenParamFromDensityTemperature;
-  using EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<EOSPAC>::is_raw_pointer;
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&temperatures, const int num,
+                                       LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&temperatures, Real * /*scratch*/,
+                                       const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&sies, const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&sies, Real * /*scratch*/,
+                                                   const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
+                                             ConstRealIndexer &&temperatures,
+                                             RealIndexer &&pressures, const int num,
+                                             LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::PressureFromDensityTemperature(rhos, temperatures, pressures, num,
+                                                    lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                 RealIndexer &&pressures, Real * /*scratch*/,
+                                 const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::PressureFromDensityTemperature(rhos, temperatures, pressures, num,
+                                                    lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&sies,
+                                                RealIndexer &&pressures, const int num,
+                                                LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
+                                                       lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                    RealIndexer &&pressures, Real * /*scratch*/,
+                                    const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
+                                                       lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&entropies, const int num,
+                                            LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
+                                                   lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                RealIndexer &&entropies, Real * /*scratch*/,
+                                const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
+                                                   lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&entropies, const int num,
+                                               LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
+                                                      lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                   RealIndexer &&entropies, Real * /*scratch*/,
+                                   const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
+                                                      lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                 ConstRealIndexer &&temperatures,
+                                                 RealIndexer &&cvs, const int num,
+                                                 LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
+                                                        lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                 ConstRealIndexer &&temperatures,
+                                                 RealIndexer &&cvs, Real * /*scratch*/,
+                                                 const int num,
+                                                 LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
+                                                        lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                    ConstRealIndexer &&sies,
+                                                    RealIndexer &&cvs, const int num,
+                                                    LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                        RealIndexer &&cvs, Real * /*scratch*/,
+                                        const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                RealIndexer &&bmods, const int num,
+                                                LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
+                                                       lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                RealIndexer &&bmods, Real * /*scratch*/,
+                                                const int num,
+                                                LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
+                                                       lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&sies,
+                                                   RealIndexer &&bmods, const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&bmods, Real * /*scratch*/,
+                                       const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&gm1s, const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&gm1s, Real * /*scratch*/,
+                                                   const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
+                                                          lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                      ConstRealIndexer &&sies,
+                                                      RealIndexer &&gm1s, const int num,
+                                                      LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
+                                                             lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                      ConstRealIndexer &&sies,
+                                                      RealIndexer &&gm1s,
+                                                      Real * /*scratch*/, const int num,
+                                                      LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
+                                                             lambdas);
+  }
+
   using EosBase<EOSPAC>::PTofRE;
   using EosBase<EOSPAC>::FillEos;
   using EosBase<EOSPAC>::EntropyIsNotEnabled;
 
   // EOSPAC vector implementations
   template <typename LambdaIndexer>
-  inline void TemperatureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                   Real *temperatures, Real *scratch,
-                                                   const int num,
-                                                   LambdaIndexer /*lambdas*/) const {
+  inline void
+  TemperatureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                       Real *temperatures, Real *scratch, const int num,
+                                       LambdaIndexer /*lambdas*/,
+                                       Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
@@ -112,16 +322,38 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *dTde = scratch + 1 * num;
 
     EOS_INTEGER table = TofRE_table_;
-    EOS_INTEGER options[]{EOS_Y_CONVERT};
-    EOS_REAL values[]{sieFromSesame(1.0)};
-    EOS_INTEGER nopts = 1;
+    EOS_INTEGER options[3];
+    EOS_REAL values[3];
+    EOS_INTEGER nopts = 0;
+
+    if (transform.x.is_set()) {
+      options[nopts] = EOS_X_CONVERT;
+      values[nopts] = 1.0 / transform.x.get();
+      ++nopts;
+    }
+
+    options[nopts] = EOS_Y_CONVERT;
+    values[nopts] = sieFromSesame(1.0);
+    if (transform.y.is_set()) {
+      values[nopts] /= transform.y.get();
+    }
+    ++nopts;
+
+    if (transform.f.is_set()) {
+      options[nopts] = EOS_F_CONVERT;
+      values[nopts] = transform.f.get();
+      ++nopts;
+    }
+
     eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                        options, values, nopts);
   }
 
+  template <typename LambdaIndexer>
   inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
                                              Real *pressures, Real *scratch,
-                                             const int num, Real ** /*lambdas*/) const {
+                                             const int num, LambdaIndexer /*lambdas*/,
+                                             Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
@@ -130,9 +362,35 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *dPdT = scratch + 1 * num;
 
     EOS_INTEGER table = PofRT_table_;
-    EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
-    EOS_REAL values[]{pressureFromSesame(1.0), 1.0};
-    EOS_INTEGER nopts = 2;
+    EOS_INTEGER options[3];
+    EOS_REAL values[3];
+    EOS_INTEGER nopts = 0;
+
+    if (!transform.x.is_set() && !transform.y.is_set()) {
+      options[nopts] = EOS_XY_PASSTHRU;
+      values[nopts] = 1.0;
+      ++nopts;
+    } else {
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+
+      if (transform.y.is_set()) {
+        options[nopts] = EOS_Y_CONVERT;
+        values[nopts] = 1.0 / transform.y.get();
+        ++nopts;
+      }
+    }
+
+    options[nopts] = EOS_F_CONVERT;
+    values[nopts] = pressureFromSesame(1.0);
+
+    if (transform.f.is_set()) {
+      values[nopts] *= transform.f.get();
+    }
+    ++nopts;
 
     eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
                        options, values, nopts);
@@ -248,10 +506,11 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename LambdaIndexer>
-  inline void InternalEnergyFromDensityTemperature(const Real *rhos,
-                                                   const Real *temperatures, Real *sies,
-                                                   Real *scratch, const int num,
-                                                   LambdaIndexer /*lambdas*/) const {
+  inline void
+  InternalEnergyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                       Real *sies, Real *scratch, const int num,
+                                       LambdaIndexer /*lambdas*/,
+                                       Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -263,19 +522,44 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *DEDR = scratch + 1 * num;
 
     EOS_INTEGER table = EofRT_table_;
-    EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
-    EOS_REAL values[]{sieFromSesame(1.0), 1.0};
-    EOS_INTEGER nopts = 2;
+    EOS_INTEGER options[3];
+    EOS_REAL values[3];
+    EOS_INTEGER nopts = 0;
+
+    if (!transform.x.is_set() && !transform.y.is_set()) {
+      options[nopts] = EOS_XY_PASSTHRU;
+      values[nopts] = 1.0;
+      ++nopts;
+    } else {
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+
+      if (transform.y.is_set()) {
+        options[nopts] = EOS_Y_CONVERT;
+        values[nopts] = 1.0 / transform.y.get();
+        ++nopts;
+      }
+    }
+
+    options[nopts] = EOS_F_CONVERT;
+    values[nopts] = sieFromSesame(1.0);
+
+    if (transform.f.is_set()) {
+      values[nopts] *= transform.f.get();
+    }
+    ++nopts;
 
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
   }
 
   template <typename LambdaIndexer>
-  inline void PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                Real *pressures, Real *scratch,
-                                                const int num,
-                                                LambdaIndexer /*lambdas*/) const {
+  inline void PressureFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *pressures, Real *scratch, const int num,
+      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
@@ -288,9 +572,23 @@ class EOSPAC : public EosBase<EOSPAC> {
 
     EOS_INTEGER table = TofRE_table_;
     {
-      EOS_INTEGER options[]{EOS_Y_CONVERT};
-      EOS_REAL values[]{sieFromSesame(1.0)};
-      EOS_INTEGER nopts = 1;
+      EOS_INTEGER options[2];
+      EOS_REAL values[2];
+      EOS_INTEGER nopts = 0;
+
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+
+      options[nopts] = EOS_Y_CONVERT;
+      values[nopts] = sieFromSesame(1.0);
+
+      if (transform.y.is_set()) {
+        values[nopts] /= transform.y.get();
+      }
+      ++nopts;
 
       eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                          options, values, nopts);
@@ -298,19 +596,36 @@ class EOSPAC : public EosBase<EOSPAC> {
 
     table = PofRT_table_;
     {
-      EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
-      EOS_REAL values[]{pressureFromSesame(1.0), 1.0};
-      EOS_INTEGER nopts = 2;
+      EOS_INTEGER options[2];
+      EOS_REAL values[2];
+      EOS_INTEGER nopts = 0;
+
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+      } else {
+        options[nopts] = EOS_XY_PASSTHRU;
+        values[nopts] = 1.0;
+      }
+      ++nopts;
+
+      options[nopts] = EOS_F_CONVERT;
+      values[nopts] = pressureFromSesame(1.0);
+
+      if (transform.f.is_set()) {
+        values[nopts] *= transform.f.get();
+      }
+      ++nopts;
+
       eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
                          options, values, nopts);
     }
   }
 
   template <typename LambdaIndexer>
-  inline void SpecificHeatFromDensityTemperature(const Real *rhos,
-                                                 const Real *temperatures, Real *cvs,
-                                                 Real *scratch, const int num,
-                                                 LambdaIndexer /*lambdas*/) const {
+  inline void SpecificHeatFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch, const int num,
+      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -322,9 +637,36 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *DEDR = scratch + 1 * num;
 
     EOS_INTEGER table = EofRT_table_;
-    EOS_INTEGER options[]{EOS_F_CONVERT, EOS_XY_PASSTHRU};
-    EOS_REAL values[]{cvFromSesame(1.0), 1.0};
-    EOS_INTEGER nopts = 2;
+
+    EOS_INTEGER options[3];
+    EOS_REAL values[3];
+    EOS_INTEGER nopts = 0;
+
+    if (!transform.x.is_set() && !transform.y.is_set()) {
+      options[nopts] = EOS_XY_PASSTHRU;
+      values[nopts] = 1.0;
+      ++nopts;
+    } else {
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+      if (transform.y.is_set()) {
+        options[nopts] = EOS_Y_CONVERT;
+        values[nopts] = 1.0 / transform.y.get();
+        ++nopts;
+      }
+    }
+
+    options[nopts] = EOS_F_CONVERT;
+    values[nopts] = cvFromSesame(1.0);
+
+    if (transform.f.is_set()) {
+      values[nopts] *= transform.f.get();
+    }
+    ++nopts;
+
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
 
@@ -335,10 +677,10 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   template <typename LambdaIndexer>
-  inline void SpecificHeatFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                    Real *cvs, Real *scratch,
-                                                    const int num,
-                                                    LambdaIndexer /*lambdas*/) const {
+  inline void SpecificHeatFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *cvs, Real *scratch, const int num,
+      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -348,39 +690,67 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *T = scratch + 0 * num;
     EOS_REAL *dTdr = scratch + 1 * num;
     EOS_REAL *dTde = scratch + 2 * num;
+    EOS_REAL *NE = scratch + 3 * num;
     EOS_REAL *DEDT = dTdr;
     EOS_REAL *DEDR = dTde;
 
     EOS_INTEGER table = TofRE_table_;
     {
-      EOS_INTEGER options[]{EOS_Y_CONVERT};
-      EOS_REAL values[]{sieFromSesame(1.0)};
-      EOS_INTEGER nopts = 1;
+      EOS_INTEGER options[2];
+      EOS_REAL values[2];
+      EOS_INTEGER nopts = 0;
+
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+
+      options[nopts] = EOS_Y_CONVERT;
+      values[nopts] = sieFromSesame(1.0);
+      if (transform.y.is_set()) {
+        values[nopts] /= transform.y.get();
+      }
+      ++nopts;
+
       eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                          options, values, nopts);
     }
 
     table = EofRT_table_;
     {
-      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
-      EOS_REAL values[]{1.0};
-      EOS_INTEGER nopts = 1;
-      eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
+      EOS_INTEGER options[2];
+      EOS_REAL values[2];
+      EOS_INTEGER nopts = 0;
+
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+      } else {
+        options[nopts] = EOS_XY_PASSTHRU;
+        values[nopts] = 1.0;
+      }
+      ++nopts;
+
+      eosSafeInterpolate(&table, num, R, T, NE, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                          options, values, nopts);
     }
 
+    const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
+
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] =
-              cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
+          cvs[i] = f * cvFromSesame(
+                           std::max(DEDT[i], 0.0)); // Here we do something to the data!
         });
   }
 
   template <typename LambdaIndexer>
-  inline void BulkModulusFromDensityTemperature(const Real *rhos,
-                                                const Real *temperatures, Real *bmods,
-                                                Real *scratch, const int num,
-                                                LambdaIndexer /*lambdas*/) const {
+  inline void
+  BulkModulusFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                    Real *bmods, Real *scratch, const int num,
+                                    LambdaIndexer /*lambdas*/,
+                                    Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -394,28 +764,44 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *DEDT = scratch + 4 * num;
     EOS_REAL *DEDR = scratch + 5 * num;
 
-    EOS_INTEGER table = EofRT_table_;
-    {
-      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
-      EOS_REAL values[]{1.0};
-      EOS_INTEGER nopts = 1;
-      eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
-                         options, values, nopts);
+    EOS_INTEGER options[2];
+    EOS_REAL values[2];
+    EOS_INTEGER nopts = 0;
+
+    if (!transform.x.is_set() && !transform.y.is_set()) {
+      options[nopts] = EOS_XY_PASSTHRU;
+      values[nopts] = 1.0;
+      ++nopts;
+    } else {
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+      if (transform.y.is_set()) {
+        options[nopts] = EOS_Y_CONVERT;
+        values[nopts] = 1.0 / transform.y.get();
+        ++nopts;
+      }
     }
 
+    EOS_INTEGER table = EofRT_table_;
+    eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
+                       options, values, nopts);
+
     table = PofRT_table_;
-    {
-      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
-      EOS_REAL values[]{1.0};
-      EOS_INTEGER nopts = 1;
-      eosSafeInterpolate(&table, num, R, T, P, DPDR, DPDT, "PofRT", Verbosity::Quiet,
-                         options, values, nopts);
-    }
+    eosSafeInterpolate(&table, num, R, T, P, DPDR, DPDT, "PofRT", Verbosity::Quiet,
+                       options, values, nopts);
+
+    // WARNING: DEDR and DPDR are divided by EOS_X_CONVERT
+    // This is why the BMOD calculation was changed below compared to the scalar version.
 
     // Thermodynamics: Bt = rho*dP/drho|T, Bs=Bt*Cv/Cp, Cv=dE/dT|v, and
     // Cp-Cv=-T(dP/dT|v)^2/(dP/dV|T) or Cp-Cv=-T/rho^2 (dP/dT|v)^2/(dP/drho|T)
     // Therefore: Bs=Bt Cv/(CV+above)
     // BMOD = rho*dx[0]*CV/(CV-T[0]/(rho*rho)*dy[0]*dy[0]/dx[0]);
+    const Real x = transform.x.is_set() ? transform.x.get() : 1.0;
+    const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
@@ -423,7 +809,7 @@ class EOSPAC : public EosBase<EOSPAC> {
           Real BMOD = 0.0;
           if (DEDT[i] > 0.0 && rho > 0.0) {
             const Real DPDE = DPDT[i] / DEDT[i];
-            BMOD = rho * DPDR[i] + DPDE * (P[i] / rho - rho * DEDR[i]);
+            BMOD = rho * DPDR[i] + DPDE * (P[i] / (rho * x) - rho * DEDR[i]);
           } else if (rho > 0.0) { // Case: DEDT <= 0
             // We need a different DPDE call apparently????
             // In xRAGE, they call out to P(rho,e) in this case to get the
@@ -436,15 +822,14 @@ class EOSPAC : public EosBase<EOSPAC> {
             // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
             BMOD = std::max(rho * DPDR[i], 0.0);
           }
-          bmods[i] = bulkModulusFromSesame(std::max(BMOD, 0.0));
+          bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
         });
   }
 
   template <typename LambdaIndexer>
-  inline void BulkModulusFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                   Real *bmods, Real *scratch,
-                                                   const int num,
-                                                   LambdaIndexer /*lambdas*/) const {
+  inline void BulkModulusFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *bmods, Real *scratch, const int num,
+      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -463,35 +848,53 @@ class EOSPAC : public EosBase<EOSPAC> {
 
     EOS_INTEGER table = TofRE_table_;
     {
-      EOS_INTEGER options[]{EOS_Y_CONVERT};
-      EOS_REAL values[]{sieFromSesame(1.0)};
-      EOS_INTEGER nopts = 1;
+      EOS_INTEGER options[2];
+      EOS_REAL values[2];
+      EOS_INTEGER nopts = 0;
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+      options[nopts] = EOS_Y_CONVERT;
+      values[nopts] = sieFromSesame(1.0);
+      if (transform.y.is_set()) {
+        values[nopts] /= transform.y.get();
+      }
+      ++nopts;
       eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                          options, values, nopts);
     }
 
-    table = EofRT_table_;
-    {
-      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
-      EOS_REAL values[]{1.0};
-      EOS_INTEGER nopts = 1;
-      eosSafeInterpolate(&table, num, R, T, Etmp, DEDR, DEDT, "EofRT", Verbosity::Quiet,
-                         options, values, nopts);
+    EOS_INTEGER options[1];
+    EOS_REAL values[1];
+    EOS_INTEGER nopts = 0;
+    if (transform.x.is_set()) {
+      options[nopts] = EOS_X_CONVERT;
+      values[nopts] = 1.0 / transform.x.get();
+    } else {
+      options[nopts] = EOS_XY_PASSTHRU;
+      values[nopts] = 1.0;
     }
+    ++nopts;
+
+    table = EofRT_table_;
+    eosSafeInterpolate(&table, num, R, T, Etmp, DEDR, DEDT, "EofRT", Verbosity::Quiet,
+                       options, values, nopts);
 
     table = PofRT_table_;
-    {
-      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
-      EOS_REAL values[]{1.0};
-      EOS_INTEGER nopts = 1;
-      eosSafeInterpolate(&table, num, R, T, P, DPDR, DPDT, "PofRT", Verbosity::Quiet,
-                         options, values, nopts);
-    }
+    eosSafeInterpolate(&table, num, R, T, P, DPDR, DPDT, "PofRT", Verbosity::Quiet,
+                       options, values, nopts);
+
+    // WARNING: DEDR and DPDR are divided by EOS_X_CONVERT
+    // This is why the BMOD calculation was changed below compared to the scalar version.
 
     // Thermodynamics: Bt = rho*dP/drho|T, Bs=Bt*Cv/Cp, Cv=dE/dT|v, and
     // Cp-Cv=-T(dP/dT|v)^2/(dP/dV|T) or Cp-Cv=-T/rho^2 (dP/dT|v)^2/(dP/drho|T)
     // Therefore: Bs=Bt Cv/(CV+above)
     // BMOD = rho*dx[0]*CV/(CV-T[0]/(rho*rho)*dy[0]*dy[0]/dx[0]);
+    const Real x = transform.x.is_set() ? transform.x.get() : 1.0;
+    const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
@@ -499,7 +902,7 @@ class EOSPAC : public EosBase<EOSPAC> {
           Real BMOD = 0.0;
           if (DEDT[i] > 0.0 && rho > 0.0) {
             const Real DPDE = DPDT[i] / DEDT[i];
-            BMOD = rho * DPDR[i] + DPDE * (P[i] / rho - rho * DEDR[i]);
+            BMOD = rho * DPDR[i] + DPDE * (P[i] / (rho * x) - rho * DEDR[i]);
           } else if (rho > 0.0) { // Case: DEDT <= 0
             // We need a different DPDE call apparently????
             // In xRAGE, they call out to P(rho,e) in this case to get the
@@ -512,15 +915,16 @@ class EOSPAC : public EosBase<EOSPAC> {
             // BMOD = BMOD_T; //+DPDE*DPDE*std::max(DEDT,0.0)*T[0]/rho;
             BMOD = std::max(rho * DPDR[i], 0.0);
           }
-          bmods[i] = bulkModulusFromSesame(std::max(BMOD, 0.0));
+          bmods[i] = f * bulkModulusFromSesame(std::max(BMOD, 0.0));
         });
   }
 
   template <typename LambdaIndexer>
-  inline void GruneisenParamFromDensityTemperature(const Real *rhos,
-                                                   const Real *temperatures, Real *gm1s,
-                                                   Real *scratch, const int num,
-                                                   LambdaIndexer /*lambdas*/) const {
+  inline void
+  GruneisenParamFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                       Real *gm1s, Real *scratch, const int num,
+                                       LambdaIndexer /*lambdas*/,
+                                       Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -533,36 +937,48 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *DPDT = scratch + 3 * num;
     EOS_REAL *P = E;
 
-    EOS_INTEGER table = EofRT_table_;
-    {
-      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
-      EOS_REAL values[]{1.0};
-      EOS_INTEGER nopts = 1;
-      eosSafeInterpolate(&table, num, R, T, E, dx, DEDT, "EofRT", Verbosity::Quiet,
-                         options, values, nopts);
+    EOS_INTEGER options[2];
+    EOS_REAL values[2];
+    EOS_INTEGER nopts = 0;
+
+    if (!transform.x.is_set() && !transform.y.is_set()) {
+      options[nopts] = EOS_XY_PASSTHRU;
+      values[nopts] = 1.0;
+      ++nopts;
+    } else {
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+      if (transform.y.is_set()) {
+        options[nopts] = EOS_Y_CONVERT;
+        values[nopts] = 1.0 / transform.y.get();
+        ++nopts;
+      }
     }
+    EOS_INTEGER table = EofRT_table_;
+    eosSafeInterpolate(&table, num, R, T, E, dx, DEDT, "EofRT", Verbosity::Quiet, options,
+                       values, nopts);
 
     table = PofRT_table_;
-    {
-      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
-      EOS_REAL values[]{1.0};
-      EOS_INTEGER nopts = 1;
-      eosSafeInterpolate(&table, num, R, T, P, dx, DPDT, "PofRT", Verbosity::Quiet,
-                         options, values, nopts);
-    }
+    eosSafeInterpolate(&table, num, R, T, P, dx, DPDT, "PofRT", Verbosity::Quiet, options,
+                       values, nopts);
+
+    const Real x = transform.x.is_set() ? transform.x.get() : 1.0;
+    const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           const Real DPDE = DPDT[i] / DEDT[i];
-          gm1s[i] = robust::ratio(pressureFromSesame(sieToSesame(DPDE)), R[i]);
+          gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
         });
   }
 
   template <typename LambdaIndexer>
-  inline void GruneisenParamFromDensityInternalEnergy(const Real *rhos, const Real *sies,
-                                                      Real *gm1s, Real *scratch,
-                                                      const int num,
-                                                      LambdaIndexer /*lambdas*/) const {
+  inline void GruneisenParamFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *gm1s, Real *scratch, const int num,
+      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
@@ -579,35 +995,52 @@ class EOSPAC : public EosBase<EOSPAC> {
 
     EOS_INTEGER table = TofRE_table_;
     {
-      EOS_INTEGER options[]{EOS_Y_CONVERT};
-      EOS_REAL values[]{sieFromSesame(1.0)};
-      EOS_INTEGER nopts = 1;
+      EOS_INTEGER options[3];
+      EOS_REAL values[3];
+      EOS_INTEGER nopts = 0;
+
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+
+      options[nopts] = EOS_Y_CONVERT;
+      values[nopts] = sieFromSesame(1.0);
+      if (transform.y.is_set()) {
+        values[nopts] /= transform.y.get();
+      }
+      ++nopts;
       eosSafeInterpolate(&table, num, R, E, T, dx, dy, "TofRE", Verbosity::Quiet, options,
                          values, nopts);
     }
 
-    table = EofRT_table_;
-    {
-      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
-      EOS_REAL values[]{1.0};
-      EOS_INTEGER nopts = 1;
-      eosSafeInterpolate(&table, num, R, T, Etmp, dx, DEDT, "EofRT", Verbosity::Quiet,
-                         options, values, nopts);
+    EOS_INTEGER options[1];
+    EOS_REAL values[1];
+    EOS_INTEGER nopts = 0;
+    if (transform.x.is_set()) {
+      options[nopts] = EOS_X_CONVERT;
+      values[nopts] = 1.0 / transform.x.get();
+    } else {
+      options[nopts] = EOS_XY_PASSTHRU;
+      values[nopts] = 1.0;
     }
+    ++nopts;
+    table = EofRT_table_;
+    eosSafeInterpolate(&table, num, R, T, Etmp, dx, DEDT, "EofRT", Verbosity::Quiet,
+                       options, values, nopts);
 
     table = PofRT_table_;
-    {
-      EOS_INTEGER options[]{EOS_XY_PASSTHRU};
-      EOS_REAL values[]{1.0};
-      EOS_INTEGER nopts = 1;
-      eosSafeInterpolate(&table, num, R, T, P, dx, DPDT, "PofRT", Verbosity::Quiet,
-                         options, values, nopts);
-    }
+    eosSafeInterpolate(&table, num, R, T, P, dx, DPDT, "PofRT", Verbosity::Quiet, options,
+                       values, nopts);
+
+    const Real x = transform.x.is_set() ? transform.x.get() : 1.0;
+    const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
 
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           const Real DPDE = DPDT[i] / DEDT[i];
-          gm1s[i] = robust::ratio(pressureFromSesame(sieToSesame(DPDE)), R[i]);
+          gm1s[i] = f * robust::ratio(pressureFromSesame(sieToSesame(DPDE)), x * R[i]);
         });
   }
 
@@ -738,7 +1171,7 @@ class EOSPAC : public EosBase<EOSPAC> {
         {"InternalEnergyFromDensityTemperature", 2},
         {"PressureFromDensityInternalEnergy", 3},
         {"SpecificHeatFromDensityTemperature", 2},
-        {"SpecificHeatFromDensityInternalEnergy", 3},
+        {"SpecificHeatFromDensityInternalEnergy", 4},
         {"BulkModulusFromDensityTemperature", 6},
         {"BulkModulusFromDensityInternalEnergy", 6},
         {"GruneisenParamFromDensityTemperature", 4},

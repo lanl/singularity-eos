@@ -1,0 +1,55 @@
+name: Check Spack dependencies for updates
+
+on:
+  # for manual jobs
+  workflow_dispatch:
+  # triggers at around 15:00 UTC (with some delay)
+  schedule:
+   - cron: '0 15 * * *'
+
+jobs:
+    deps:
+      name:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout this repo
+          uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+        - name: create build
+          run: mkdir build
+        - name: Checkout ports-of-call
+          uses: actions/checkout@v3
+          with:
+            repository: lanl/ports-of-call
+            path: build/ports-of-call
+            fetch-depth: 0
+        - name: Checkout spiner
+          uses: actions/checkout@v3
+          with:
+            repository: lanl/spiner
+            path: build/spiner
+            fetch-depth: 0
+        - name: copy over spack-repo/packages
+          run: |
+            # assume ports-of-call may be newer than spiner
+            cp -R build/spiner/spack-repo/packages/* spack-repo/packages/
+            cp -R build/ports-of-call/spack-repo/packages/* spack-repo/packages/
+        - name: is there a difference?
+          run: git diff --exit-code --compact-summary
+          id: no_change
+        - name: create branch
+          if: ${{ steps.no_change.conclusion == 'failure' }}
+          run: |
+            git config user.name 'github-actions[bot]'
+            git config user.email 'github-actions[bot]@users.noreply.github.com'
+            git branch -D github-bot/update_spackages || true
+            git checkout -b github-bot/update_spackages
+            git add spack-repo
+            git commit -m "spack updates"
+            git push -f --set-upstream origin github-bot/update_spackages
+        - name: create pull request
+          if: ${{ steps.no_change.conclusion == 'failure' }}
+          run: gh pr create -B main -H github-bot/update_spackages --title 'Update spackages' --body 'Created by Github action'
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
