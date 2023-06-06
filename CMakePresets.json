@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build"
+    },
+    {
+      "name": "with_eospac",
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_USE_EOSPAC": "ON"
+      }
+    },
+    {
+      "name": "with_spiner",
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_USE_SPINER": "ON"
+      }
+    },
+    {
+      "name": "with_kokkosgpu",
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_USE_KOKKOS": "ON"
+      }
+    },
+    {
+      "name": "with_testing",
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "with_extras",
+      "inherits": ["with_spiner","with_eospac"],
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_BUILD_SESAME2SPINER": "ON",
+        "SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER": "ON"
+      }
+    },
+    {
+      "name": "kokkos_gpu_tests",
+      "inherits": ["base", "with_kokkosgpu","with_extras","with_testing"]
+    }
+  ]
+}
