@@ -26,8 +26,21 @@ macro(singularity_enable_hdf5 target)
     find_package(HDF5 COMPONENTS C HL REQUIRED)
   endif()
 
+  # I'm bailing out here if these arn't filled in. I don't know if this is correct
+  # for every downstream use, but right now we need to enforce some kind of uniformity,
+  # otherwise we will need 100s of toolchain files JUST for hdf5
+
+  if(NOT HDF5_LIBRARIES OR NOT HDF5_HL_LIBRARIES)
+    message(STATUS "Could not locate the required HDF5 LIBRARIES!")
+    message(STATUS " HDF5_LIBRARIES=\"${HDF5_LIBRARIES}\"")
+    message(STATUS " HDF5_HL_LIBRARIES=\"${HDF5_HL_LIBRARIES}\"")
+    message(STATUS "If this is possibly in error, then set \"HDF5_LIBRARIES\" and \"HDF5_HL_LIBRARIES\" to a non-empty value")
+    message(FATAL_ERROR "Cannot continue without HDF5 and HDF5_HL libraries!")
+  endif()
+
   target_include_directories(${target} SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
-  target_link_libraries(${target} PUBLIC ${HDF5_LIBRARIES})
+  target_link_libraries(${target} PUBLIC ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+
 
   if(HDF5_IS_PARALLEL)
     #    find_package(MPI COMPONENTS C CXX REQUIRED)
