@@ -35,6 +35,7 @@ jobs:
                   -DSINGULARITY_BUILD_EXAMPLES=ON \
                   -DSINGULARITY_BUILD_PYTHON=ON \
                   -DSINGULARITY_TEST_SESAME=OFF \
+                  -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   ..
                   #-DSINGULARITY_TEST_PYTHON=ON \
                   #-DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
