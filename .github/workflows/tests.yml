@@ -29,7 +29,7 @@ jobs:
             mkdir -p bin
             cd bin
             mkdir -p ${HOME}/install
-            cmake --debug-find-pkg=HDF5 -DCMAKE_INSTALL_PREFIX=${HOME}/install \
+            cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
                   -DSINGULARITY_USE_SPINER=ON \
                   -DSINGULARITY_BUILD_TESTS=ON \
                   -DSINGULARITY_BUILD_EXAMPLES=ON \

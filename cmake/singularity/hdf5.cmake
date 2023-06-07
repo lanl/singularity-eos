@@ -1,9 +1,16 @@
 macro(singularity_enable_hdf5 target)
+  #TODO
+  # not sure how useful this snippet is. I was fine with just leaving it be,
+  # but then INCLUDE_DIRS started to go wild and screw up CMake on the CI, so 
+  # it may be worth blanking.
   if(NOT HDF5_ROOT)
-    find_path(HDF5_INCLUDE_DIRS hdf5.h
+    # changed from HDF5_INCLUDE_DIRS to avoid collision with
+    # `find_package(HDF5)`
+    find_path(_TMP_HDF5_DIR hdf5.h
       HINTS ENV HDF5_ROOT
       PATH_SUFFIXES include)
-    get_filename_component(HDF5_ROOT ${HDF5_INCLUDE_DIRS} DIRECTORY)
+    #TODO dont set if _TMP_HDF5_DIR-NOTFOUND is set
+    get_filename_component(HDF5_ROOT ${_TMP_HDF5_DIR} DIRECTORY)
   endif()
 
   # mauneyc 20230525
@@ -30,19 +37,26 @@ macro(singularity_enable_hdf5 target)
   # for every downstream use, but right now we need to enforce some kind of uniformity,
   # otherwise we will need 100s of toolchain files JUST for hdf5
 
-  if(NOT HDF5_LIBRARIES)
-    message(SEND_ERROR "Could not locate the required HDF5 LIBRARIES!")
+  if(NOT HDF5_LIBRARIES OR NOT HDF5_INCLUDE_DIRS)
+    message(SEND_ERROR "Could not locate the required HDF5 libraries!")
     message(SEND_ERROR "-- HDF5_LIBRARIES=\"${HDF5_LIBRARIES}\"")
-    message(FATAL_ERROR "Cannot continue without HDF5 and HDF5_HL libraries!")
-  else()
-    if(NOT HDF5_HL_LIBRARIES)
-      string(FIND ${HDF5_LIBRARIES} "hdf5_hl" _hl_in_libs)
-      if(_hl_in_libs LESS 0)
-        message(SEND_ERROR "Found HDF5 libraries, but could not locate required HDF5_HL libraries!")
-        message(SEND_ERROR "-- HDF5_LIBRARIES=\"${HDF5_LIBRARIES}\"")
-        message(SEND_ERROR "-- HDF5_HL_LIBRARIES=\"${HDF5_HL_LIBRARIES}\"")
-        message(FATAL_ERROR "Cannot continue without HDF5 and HDF5_HL libraries!")
-      endif()
+    message(SEND_ERROR "-- HDF5_INCLUDE_DIRS=\"${HDF5_INCLUDE_DIRS}\"")
+    message(FATAL_ERROR "Cannot continue without HDF5 libraries!")
+  endif()
+
+  # NOTE: `HDF5_LIBRARIES` should have "all requested bindings" according to docs, but 
+  # some distributions completely seperate the HL libs to `HDF5_HL_LIBRARIES`.
+  # or sometimes they don't.
+  # So, check for HL, if it's not set, then check if they are placed in HDF5_LIBRARIES
+  # (simple substring search). If, finally, they're not found then bail.
+  if(NOT HDF5_HL_LIBRARIES)
+    string(FIND ${HDF5_LIBRARIES} "hdf5_hl" _hl_in_libs)
+    # if HL libs are not found in HDF5_LIBRARIES, then bail
+    if(_hl_in_libs LESS 0)
+      message(SEND_ERROR "Found HDF5 libraries, but could not locate required HDF5_HL libraries!")
+      message(SEND_ERROR "-- HDF5_LIBRARIES=\"${HDF5_LIBRARIES}\"")
+      message(SEND_ERROR "-- HDF5_HL_LIBRARIES=\"${HDF5_HL_LIBRARIES}\"")
+      message(FATAL_ERROR "Cannot continue without HDF5 and HDF5_HL libraries!")
     endif()
   endif()
 
