@@ -35,9 +35,10 @@ jobs:
                   -DSINGULARITY_BUILD_EXAMPLES=ON \
                   -DSINGULARITY_BUILD_PYTHON=ON \
                   -DSINGULARITY_TEST_SESAME=OFF \
+                  ..
                   #-DSINGULARITY_TEST_PYTHON=ON \
                   #-DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
-                  ..
+                  #..
             make
             make install
             make test
