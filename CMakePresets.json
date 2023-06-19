@@ -2,7 +2,8 @@
   "version": 1,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 19
+    "minor": 19,
+    "patch": 0
   },
   "configurePresets": [
     {
@@ -41,7 +42,10 @@
     },
     {
       "name": "with_extras",
-      "inherits": ["with_spiner","with_eospac"],
+      "inherits": [
+        "with_spiner",
+        "with_eospac"
+      ],
       "hidden": true,
       "cacheVariables": {
         "SINGULARITY_BUILD_SESAME2SPINER": "ON",
@@ -49,8 +53,28 @@
       }
     },
     {
+      "name": "basic",
+      "inhertis": [
+        "with_spiner",
+        "with_eospac",
+        "with_testing"
+      ]
+    },
+    {
+      "name": "basic_no_spiner",
+      "inherits": [
+        "with_eospac",
+        "with_testing"
+      ]
+    },
+    {
       "name": "kokkos_gpu_tests",
-      "inherits": ["base", "with_kokkosgpu","with_extras","with_testing"]
+      "inherits": [
+        "base",
+        "with_kokkosgpu",
+        "with_extras",
+        "with_testing"
+      ]
     }
   ]
 }
