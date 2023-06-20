@@ -67,7 +67,8 @@ class Helmholtz : public EosBase<Helmholtz> {
     InitSpeciesFile_(species_file);
   }
 
-  
+  inline Helmholtz GetOnDevice();  
+  inline void Finalize();
 
  private:
   inline void InitDataFile_(const std::string &filename);
@@ -166,6 +167,59 @@ inline void Helmholtz::InitDataFile_(const std::string &filename) {
   for (int i = 0; i < NTEMP; ++i) {
     T_(i) = math_utils::pow10(lTRange.x(i));
   }
+}
+
+inline Helmholtz Helmholtz::GetOnDevice() {
+  Helmholtz other;
+  other.rho_ = Spiner::getOnDeviceDataBox(rho_);
+  other.T_ = Spiner::getOnDeviceDataBox(T_);
+  other.f_ = Spiner::getOnDeviceDataBox(f_);
+  other.fd_ = Spiner::getOnDeviceDataBox(fd_);
+  other.ft_ = Spiner::getOnDeviceDataBox(ft_);
+  other.fdd_ = Spiner::getOnDeviceDataBox(fdd_);
+  other.ftt_ = Spiner::getOnDeviceDataBox(ftt_);
+  other.fdt_ = Spiner::getOnDeviceDataBox(fdt_);
+  other.fdd_ = Spiner::getOnDeviceDataBox(fdd_);
+  other.fdtt_ = Spiner::getOnDeviceDataBox(fdtt_);
+  other.fddtt_ = Spiner::getOnDeviceDataBox(fddtt_);
+  other.dpdf_ = Spiner::getOnDeviceDataBox(dpdf_);
+  other.dpdfd_ = Spiner::getOnDeviceDataBox(dpdfd_);
+  other.dpdft_ = Spiner::getOnDeviceDataBox(dpdft_);
+  other.dpdfdt_ = Spiner::getOnDeviceDataBox(dpdfdt_);
+  other.ef_ = Spiner::getOnDeviceDataBox(ef_);
+  other.efd_ = Spiner::getOnDeviceDataBox(efd_);
+  other.eft_ = Spiner::getOnDeviceDataBox(eftf_);
+  other.efdtf_ = Spiner::getOnDeviceDataBox(efdt_);
+  other.xf_ = Spiner::getOnDeviceDataBox(xf_);
+  other.xfd_ = Spiner::getOnDeviceDataBox(xfd_);
+  other.xft_ = Spiner::getOnDeviceDataBox(xft_);
+  other.xfdt_ = Spiner::getOnDeviceDataBox(xfdt_);
+}
+
+inline void Helmholtz::Finalize() {
+  rho_.finalize();
+  T_.finalize();
+  f_.finalize();
+  fd_.finalize();
+  ft_.finalize();
+  fdd_.finalize();
+  ftt_.finalize();
+  fdt_.finalize();
+  fdd_.finalize();
+  fdtt_.finalize();
+  fddtt_.finalize();
+  dpdf_.finalize();
+  dpdfd_.finalize();
+  dpdft_.finalize();
+  dpdfdt_.finalize();
+  ef_.finalize();
+  efd_.finalize();
+  eft_.finalize();
+  efdtf_.finalize();
+  xf_.finalize();
+  xfd_.finalize();
+  xft_.finalize();
+  xfdt_.finalize();
 }
 
 PORTABLE_INLINE_FUNCTION
