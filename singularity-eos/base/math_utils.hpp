@@ -50,6 +50,11 @@ PORTABLE_FORCEINLINE_FUNCTION constexpr auto pow<4>(const Real x) {
   return pow<2>(x) * pow<2>(x);
 }
 
+PORTABLE_FORCEINLINE_FUNCTION auto pow10(const Real x) {
+  constexpr Real ln10 = 2.30258509299405e+00;
+  return std::exp(ln10*x);
+}
+
 } // namespace math_utils
 } // namespace singularity
 
