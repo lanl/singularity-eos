@@ -85,6 +85,35 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
   using EosBase<EOSDERIVED>::GetUnmodifiedObject;
 
+class Factor {
+  Real value_ = 1.0;
+  bool is_set_ = false;
+
+ public:
+  bool is_set() const { return is_set_; }
+
+  Real get() const { return value_; }
+
+  void set(Real v) {
+    is_set_ = true;
+    value_ = v;
+  }
+
+  void apply(Real v) {
+    is_set_ = true;
+    value_ *= v;
+  }
+
+  void clear() {
+    is_set_ = false;
+    value_ = 1.0;
+  }
+};
+
+struct Transform {
+  Factor x, y, f;
+};
+
 /*
 This is a CRTP that allows for static inheritance so that default behavior for
 various member functions can be defined.
@@ -96,6 +125,10 @@ member functions is to perform a `portableFor` loop over all of the input states
 template <typename CRTP>
 class EosBase {
  public:
+  template <typename T, typename R>
+  struct is_raw_pointer
+      : std::is_same<std::remove_reference_t<std::remove_cv_t<T>>, R *> {};
+
   // Vector member functions
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void
@@ -111,13 +144,27 @@ class EosBase {
               copy.TemperatureFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&temperatures, Real * /*scratch*/,
                                        const int num, LambdaIndexer &&lambdas) const {
-    TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num, lambdas);
+    TemperatureFromDensityInternalEnergy(std::forward<ConstRealIndexer>(rhos),
+                                         std::forward<ConstRealIndexer>(sies),
+                                         std::forward<RealIndexer>(temperatures), num,
+                                         std::forward<LambdaIndexer>(lambdas));
   }
+
+  template <typename LambdaIndexer>
+  inline void TemperatureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                   Real *temperatures, Real * /*scratch*/,
+                                                   const int num, LambdaIndexer &&lambdas,
+                                                   Transform && = Transform()) const {
+    TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
+                                         std::forward<LambdaIndexer>(lambdas));
+  }
+
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&temperatures,
@@ -132,13 +179,26 @@ class EosBase {
                                                               lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&temperatures,
                                                    RealIndexer &&sies, Real * /*scratch*/,
                                                    const int num,
                                                    LambdaIndexer &&lambdas) const {
-    InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num, lambdas);
+    InternalEnergyFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                         std::forward<ConstRealIndexer>(temperatures),
+                                         std::forward<RealIndexer>(sies), num,
+                                         std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void InternalEnergyFromDensityTemperature(const Real *rhos,
+                                                   const Real *temperatures, Real *sies,
+                                                   Real * /*scratch*/, const int num,
+                                                   LambdaIndexer &&lambdas,
+                                                   Transform && = Transform()) const {
+    InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
+                                         std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -154,12 +214,24 @@ class EosBase {
               copy.PressureFromDensityTemperature(rhos[i], temperatures[i], lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
                                  RealIndexer &&pressures, Real * /*scratch*/,
                                  const int num, LambdaIndexer &&lambdas) const {
-    PressureFromDensityTemperature(rhos, temperatures, pressures, num, lambdas);
+    PressureFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                   std::forward<ConstRealIndexer>(temperatures),
+                                   std::forward<RealIndexer>(pressures), num,
+                                   std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                             Real *pressures, Real * /*scratch*/,
+                                             const int num, LambdaIndexer &&lambdas,
+                                             Transform && = Transform()) const {
+    PressureFromDensityTemperature(rhos, temperatures, pressures, num,
+                                   std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
@@ -175,12 +247,23 @@ class EosBase {
               copy.PressureFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                     RealIndexer &&pressures, Real * /*scratch*/,
                                     const int num, LambdaIndexer &&lambdas) const {
-    PressureFromDensityInternalEnergy(rhos, sies, pressures, num, lambdas);
+    PressureFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(pressures), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                Real *pressures, Real * /*scratch*/,
+                                                const int num, LambdaIndexer &&lambdas,
+                                                Transform && = Transform()) const {
+    PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
+                                      std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -196,12 +279,24 @@ class EosBase {
               copy.EntropyFromDensityTemperature(rhos[i], temperatures[i], lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
                                 RealIndexer &&entropies, Real * /*scratch*/,
                                 const int num, LambdaIndexer &&lambdas) const {
-    EntropyFromDensityTemperature(rhos, temperatures, entropies, num, lambdas);
+    EntropyFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                  std::forward<ConstRealIndexer>(temperatures),
+                                  std::forward<RealIndexer>(entropies), num,
+                                  std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                            Real *entropies, Real * /*scratch*/,
+                                            const int num, LambdaIndexer &&lambdas,
+                                            Transform && = Transform()) const {
+    EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
+                                  std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
@@ -217,12 +312,23 @@ class EosBase {
               copy.EntropyFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                    RealIndexer &&entropies, Real * /*scratch*/,
                                    const int num, LambdaIndexer &&lambdas) const {
-    EntropyFromDensityInternalEnergy(rhos, sies, entropies, num, lambdas);
+    EntropyFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(entropies), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void EntropyFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                               Real *entropies, Real * /*scratch*/,
+                                               const int num, LambdaIndexer &&lambdas,
+                                               Transform && = Transform()) const {
+    EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
+                                     std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -238,13 +344,26 @@ class EosBase {
                                                            lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
                                                  ConstRealIndexer &&temperatures,
                                                  RealIndexer &&cvs, Real * /*scratch*/,
                                                  const int num,
                                                  LambdaIndexer &&lambdas) const {
-    SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num, lambdas);
+    SpecificHeatFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                       std::forward<ConstRealIndexer>(temperatures),
+                                       std::forward<RealIndexer>(cvs), num,
+                                       std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityTemperature(const Real *rhos,
+                                                 const Real *temperatures, Real *cvs,
+                                                 Real * /*scratch*/, const int num,
+                                                 LambdaIndexer &&lambdas,
+                                                 Transform && = Transform()) const {
+    SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
+                                       std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
@@ -260,12 +379,24 @@ class EosBase {
               copy.SpecificHeatFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                         RealIndexer &&cvs, Real * /*scratch*/,
                                         const int num, LambdaIndexer &&lambdas) const {
-    SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
+    SpecificHeatFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(cvs), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                    Real *cvs, Real * /*scratch*/,
+                                                    const int num,
+                                                    LambdaIndexer &&lambdas,
+                                                    Transform && = Transform()) const {
+    SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num,
+                                          std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -281,13 +412,26 @@ class EosBase {
                                                             lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
                                                 ConstRealIndexer &&temperatures,
                                                 RealIndexer &&bmods, Real * /*scratch*/,
                                                 const int num,
                                                 LambdaIndexer &&lambdas) const {
-    BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num, lambdas);
+    BulkModulusFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                      std::forward<ConstRealIndexer>(temperatures),
+                                      std::forward<RealIndexer>(bmods), num,
+                                      std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityTemperature(const Real *rhos,
+                                                const Real *temperatures, Real *bmods,
+                                                Real * /*scratch*/, const int num,
+                                                LambdaIndexer &&lambdas,
+                                                Transform && = Transform()) const {
+    BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
+                                      std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
@@ -303,12 +447,23 @@ class EosBase {
               copy.BulkModulusFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
   BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&bmods, Real * /*scratch*/,
                                        const int num, LambdaIndexer &&lambdas) const {
-    BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num, lambdas);
+    BulkModulusFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(bmods), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                   Real *bmods, Real * /*scratch*/,
+                                                   const int num, LambdaIndexer &&lambdas,
+                                                   Transform && = Transform()) const {
+    BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
+                                         std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -324,13 +479,26 @@ class EosBase {
                                                               lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
                                                    ConstRealIndexer &&temperatures,
                                                    RealIndexer &&gm1s, Real * /*scratch*/,
                                                    const int num,
                                                    LambdaIndexer &&lambdas) const {
-    GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num, lambdas);
+    GruneisenParamFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                         std::forward<ConstRealIndexer>(temperatures),
+                                         std::forward<RealIndexer>(gm1s), num,
+                                         std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityTemperature(const Real *rhos,
+                                                   const Real *temperatures, Real *gm1s,
+                                                   Real * /*scratch*/, const int num,
+                                                   LambdaIndexer &&lambdas,
+                                                   Transform && = Transform()) const {
+    GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
+                                         std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
@@ -346,13 +514,25 @@ class EosBase {
               copy.GruneisenParamFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
   }
-  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
                                                       ConstRealIndexer &&sies,
                                                       RealIndexer &&gm1s,
                                                       Real * /*scratch*/, const int num,
                                                       LambdaIndexer &&lambdas) const {
-    GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num, lambdas);
+    GruneisenParamFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(gm1s), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                      Real *gm1s, Real * /*scratch*/,
+                                                      const int num,
+                                                      LambdaIndexer &&lambdas,
+                                                      Transform && = Transform()) const {
+    GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
+                                            std::forward<LambdaIndexer>(lambdas));
   }
   template <typename RealIndexer, typename LambdaIndexer>
   inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,

@@ -51,9 +51,9 @@ using RMirror = typename RView::HostMirror;
 #endif
 
 constexpr Real RHO_MIN = 1e-2; // g/cm^3
-constexpr Real RHO_MAX = 1e2;
-constexpr Real T_MIN = 1e2; // Kelvin
-constexpr Real T_MAX = 1e4;
+constexpr Real RHO_MAX = 1e0;
+constexpr Real T_MIN = 1.8e2; // Kelvin
+constexpr Real T_MAX = 1e3;
 constexpr Real E_MIN = 1e9;
 constexpr Real E_MAX = 1e13;
 
@@ -105,9 +105,12 @@ constexpr Real Y_MAX = E_MAX;
 #define xstr(s) str(s)
 #define str(s) #s
 
+template <typename T>
 inline bool get_timing(int ncycles, const ivec &ncells_1d, const double x_min,
                        const double x_max, const double y_min, const double y_max,
-                       const std::string &name, EOS &eos_h) {
+                       const std::string &name, T &eos) {
+  // use variant for testing
+  EOS eos_h = eos;
   bool success = true;
   std::cout << "\t...Profiling EOS: " << name << " (" << xstr(METHOD_UNDER_TEST)
             << ") ..." << std::endl;
@@ -141,7 +144,7 @@ inline bool get_timing(int ncycles, const ivec &ncells_1d, const double x_min,
 
     const int nc1d = ncells_1d[n];
     const int nc = ncells[n];
-    dvec scratch(EOSPAC::scratch_size(xstr(METHOD_UNDER_TEST), nc) / sizeof(double));
+    dvec scratch(T::scratch_size(xstr(METHOD_UNDER_TEST), nc) / sizeof(double));
     DataBox F_h(nc1d, nc1d, nc1d);
     DataBox F_hvec(nc1d, nc1d, nc1d);
     DataBox F_hscratch(nc1d, nc1d, nc1d);
@@ -358,8 +361,48 @@ int main(int argc, char *argv[]) {
               << "Beginning profiling..." << std::endl;
 
     constexpr int airID = 5030;
-    EOS eos = EOSPAC(airID);
-    success = get_timing(ncycles, ncells_1d, X_MIN, X_MAX, Y_MIN, Y_MAX, "EOSPAC", eos);
+
+    {
+      auto eos = EOSPAC(airID);
+      success = get_timing(ncycles, ncells_1d, X_MIN, X_MAX, Y_MIN, Y_MAX, "EOSPAC", eos);
+    }
+
+    {
+      auto eos = ShiftedEOS<EOSPAC>(EOSPAC(airID), 1.0);
+      success = get_timing(ncycles, ncells_1d, X_MIN, X_MAX, Y_MIN, Y_MAX,
+                           "ShiftedEOS<EOSPAC>", eos) &&
+                success;
+    }
+
+    {
+      auto eos = ScaledEOS<EOSPAC>(EOSPAC(airID), 2.0);
+      success = get_timing(ncycles, ncells_1d, 0.5 * X_MIN, 0.5 * X_MAX, Y_MIN, Y_MAX,
+                           "ScaledEOS<EOSPAC>", eos) &&
+                success;
+    }
+
+    {
+      auto eos =
+          ScaledEOS<ShiftedEOS<EOSPAC>>(ShiftedEOS<EOSPAC>(EOSPAC(airID), 0.3), 2.0);
+      success = get_timing(ncycles, ncells_1d, 0.5 * X_MIN, 0.5 * X_MAX, Y_MIN, Y_MAX,
+                           "ScaledEOS<ShiftedEOS<EOSPAC>>", eos) &&
+                success;
+    }
+
+    {
+      auto eos = BilinearRampEOS<EOSPAC>(EOSPAC(airID), 1.0, 1.0, 0.0, 0.0);
+      success = get_timing(ncycles, ncells_1d, X_MIN, X_MAX, Y_MIN, Y_MAX,
+                           "BilinearRampEOS<EOSPAC>", eos) &&
+                success;
+    }
+
+    {
+      auto eos = BilinearRampEOS<ScaledEOS<EOSPAC>>(ScaledEOS<EOSPAC>(EOSPAC(airID), 2.0),
+                                                    1.0, 1.0, 0.0, 0.0);
+      success = get_timing(ncycles, ncells_1d, 0.5 * X_MIN, 0.5 * X_MAX, Y_MIN, Y_MAX,
+                           "BilinearRampEOS<ScaledEOS<EOSPAC>>", eos) &&
+                success;
+    }
 
     std::cout << "Done." << std::endl;
   }

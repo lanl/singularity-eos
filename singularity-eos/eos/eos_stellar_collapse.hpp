@@ -604,12 +604,12 @@ void StellarCollapse::MassFractionsFromDensityTemperature(
     Real &Abar, Real &Zbar, Real *lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
-  Xa = Xa_.interpToReal(Ye, lRho, lT);
-  Xh = Xh_.interpToReal(Ye, lRho, lT);
-  Xn = Xn_.interpToReal(Ye, lRho, lT);
-  Xp = Xp_.interpToReal(Ye, lRho, lT);
-  Abar = Abar_.interpToReal(Ye, lRho, lT);
-  Zbar = Zbar_.interpToReal(Ye, lRho, lT);
+  Xa = Xa_.interpToReal(Ye, lT, lRho);
+  Xh = Xh_.interpToReal(Ye, lT, lRho);
+  Xn = Xn_.interpToReal(Ye, lT, lRho);
+  Xp = Xp_.interpToReal(Ye, lT, lRho);
+  Abar = Abar_.interpToReal(Ye, lT, lRho);
+  Zbar = Zbar_.interpToReal(Ye, lT, lRho);
 }
 
 PORTABLE_INLINE_FUNCTION
