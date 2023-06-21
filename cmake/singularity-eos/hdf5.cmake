@@ -79,9 +79,10 @@ macro(singularity_enable_hdf5 target)
       COMPONENTS C CXX
       REQUIRED)
     target_link_libraries(${target} PUBLIC MPI::MPI_CXX)
+    set(SINGLUARITY_USE_SPINER_WITH_PARALLEL_HDF5 TRUE)
   endif()
 
-  target_compile_definitions(${target} PUBLIC SPINER_USE_HDF5)
+  target_compile_definitions(${target} PUBLIC SPINER_USE_HDF)
   target_compile_definitions(${target} PUBLIC SINGULARITY_USE_HDF5)
 
 endmacro()

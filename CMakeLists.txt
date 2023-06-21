@@ -40,6 +40,7 @@ set(SINGULARITY_GOLDFILE_HASH
 # Options
 # ------------------------------------------------------------------------------#
 include(CMakeDependentOption)
+
 # dependcy options
 option(SINGULARITY_USE_SPINER "Use spiner EOS" OFF)
 cmake_dependent_option(
@@ -93,28 +94,26 @@ option(SINGULARITY_USE_TRUE_LOG_GRIDDING
 
 # misc options
 option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
-# TODO
-# This is an edge-case, but still used (e.g. github CI), but need to work out
-# a way to do SUBMODULE_MODE (use submodules for upstream deps) but also do a 
-# proper install (FORCE_ disables the install/export stages).
-# I may come back to this, but there isn't a lot of clamoring for this right now
-# so could return to it in a later PR.
-# something like cmake_dependent_option(SINGULARITY_SUBMODULE_MODE_INSTALL ...)
+# TODO This is an edge-case, but still used (e.g. github CI), but need to work
+# out a way to do SUBMODULE_MODE (use submodules for upstream deps) but also do
+# a proper install (FORCE_ disables the install/export stages). I may come back
+# to this, but there isn't a lot of clamoring for this right now so could return
+# to it in a later PR. something like
+# cmake_dependent_option(SINGULARITY_SUBMODULE_MODE_INSTALL ...)
 option(SINGULARITY_PATCH_MPARK_VARIANT
        "Apply GPU patch to mpark-variant submodule" ON)
-
 
 # ------------------------------------------------------------------------------#
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
 
-include(singularity/mpark_variant)
-include(singularity/Eigen3)
-include(singularity/eospac)
-include(singularity/hdf5)
-include(singularity/kokkos)
-include(singularity/spiner)
-include(singularity/ports-of-call)
+include(singularity-eos/mpark_variant)
+include(singularity-eos/Eigen3)
+include(singularity-eos/eospac)
+include(singularity-eos/hdf5)
+include(singularity-eos/kokkos)
+include(singularity-eos/spiner)
+include(singularity-eos/ports-of-call)
 
 add_library(singularity-eos)
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
@@ -135,6 +134,8 @@ if(SINGULARITY_USE_FORTRAN)
   enable_language(Fortran)
   include(CMakeDetermineFortranCompiler)
 endif()
+
+include(GNUInstallDirs)
 
 if(SINGULARITY_BUILD_PYTHON)
   # need position independent code for Python shared library
@@ -405,15 +406,15 @@ target_compile_options(
 
 target_link_options(singularity-eos PRIVATE ${xlfix})
 
-include(GNUInstallDirs)
-
 # ----------------------------------------------------------------------------#
 # Export/install
 # ----------------------------------------------------------------------------#
 
-# placed into a module file. NB: exporting is done too, so even submodule mode
-# should include this file.
-include(cmake/install.cmake)
+# if in submod mode, assume `add_subdirectory` has been done and do not generate
+# export files or install anything
+if(NOT SINGULARITY_SUBMODULE_MODE)
+  include(cmake/install.cmake)
+endif()
 
 # ----------------------------------------------------------------------------#
 # Testing
