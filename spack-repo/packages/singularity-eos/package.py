@@ -52,6 +52,8 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     variant("eospac", default=True, description="Pull in EOSPAC")
 
+    variant("hdf5", default=False, description="Use hdf5")
+
     # building/testing/docs
     depends_on("cmake@3.14:")
     depends_on("catch2@2.13.7", when="+tests")
@@ -66,6 +68,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("spiner")
     depends_on("ports-of-call@1.4.2:")
     depends_on("spiner +kokkos", when="+kokkos")
+    depends_on("spiner +hdf5", when="+hdf5")
 
     depends_on("mpark-variant")
     depends_on(
@@ -107,9 +110,9 @@ class SingularityEos(CMakePackage, CudaPackage):
     # NOTE: these are set so that dependencies in downstream projects share
     # common MPI dependence
     for _flag in ("~mpi", "+mpi"):
-        depends_on("hdf5~cxx+hl" + _flag, when=_flag)
+        depends_on("hdf5~cxx+hl" + _flag, when="+hdf5" + _flag)
         depends_on("py-h5py" + _flag, when="@:1.6.2 " + _flag)
-        depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos" + _flag)
+#        depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos" + _flag)
 
     def cmake_args(self):
         args = [

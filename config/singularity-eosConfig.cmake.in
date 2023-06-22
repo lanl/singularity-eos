@@ -52,6 +52,7 @@ if(@SINGULARITY_USE_SPINER@)
         COMPONENTS C CXX
         REQUIRED)
     endif()
+    set(SPINER_USE_HDF ON)
   endif()
 endif()
 
