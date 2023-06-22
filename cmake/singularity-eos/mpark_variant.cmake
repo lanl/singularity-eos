@@ -14,6 +14,9 @@ endmacro()
 
 macro(singularity_find_mpark_variant)
   find_package(mpark_variant REQUIRED)
+  #TODO
+  # Check that imported `mpark_variant` has been correctly patched
+  # This may require some additions upstream
 endmacro()
 
 macro(singularity_enable_mpark_variant target)

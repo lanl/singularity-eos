@@ -82,7 +82,6 @@ macro(singularity_enable_hdf5 target)
     set(SINGLUARITY_USE_SPINER_WITH_PARALLEL_HDF5 TRUE)
   endif()
 
-  target_compile_definitions(${target} PUBLIC SPINER_USE_HDF)
   target_compile_definitions(${target} PUBLIC SINGULARITY_USE_HDF5)
 
 endmacro()
