@@ -55,8 +55,9 @@ class Helmholtz : public EosBase<Helmholtz> {
       Ye = 0,   // electron fraction zbar/abar
       Ytot = 1, // 1.0 / abar
       De = 2,   // Electron density rho * Ye
-      lDe = 3
-    }; // log10(De)
+      lDe = 3,  // log10(De)
+      lT = 4 // log10 temperature. used for root finding.
+    }; 
   };
 
   inline Helmholtz(const std::string &filename) {
