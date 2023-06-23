@@ -94,17 +94,15 @@ option(SINGULARITY_USE_TRUE_LOG_GRIDDING
 
 # misc options
 option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
-#TODO 
-# This is an edge-case, but still used (e.g. github CI), but need to work
+# TODO This is an edge-case, but still used (e.g. github CI), but need to work
 # out a way to do SUBMODULE_MODE (use submodules for upstream deps) but also do
 # a proper install (FORCE_ disables the install/export stages). I may come back
 # to this, but there isn't a lot of clamoring for this right now so could return
 # to it in a later PR. something like
 # cmake_dependent_option(SINGULARITY_SUBMODULE_MODE_INSTALL ...)
 
-#TODO
-# This should depend on using offloading (`SINGULARITY_USE_CUDA` &t)
-# Also, patching in the source tree is messy, this should be done in the build dir
+# TODO This should depend on using offloading (`SINGULARITY_USE_CUDA` &t) Also,
+# patching in the source tree is messy, this should be done in the build dir
 option(SINGULARITY_PATCH_MPARK_VARIANT
        "Apply GPU patch to mpark-variant submodule" ON)
 
@@ -286,8 +284,7 @@ else()
 endif()
 
 if(SINGULARITY_USE_EOSPAC)
-  # NB
-  # This will add the `eospac-wrapper` directory. 
+  # NB This will add the `eospac-wrapper` directory.
   singularity_enable_eospac(singularity-eos)
 endif()
 
@@ -406,7 +403,7 @@ target_compile_options(
          -use_fast_math
          > # release
          > # cuda
-)
+  PUBLIC -fmax-errors=3)
 
 target_link_options(singularity-eos PRIVATE ${xlfix})
 

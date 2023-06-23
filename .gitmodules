@@ -3,7 +3,8 @@
 	url = https://gitlab.com/libeigen/eigen.git
 [submodule "utils/spiner"]
 	path = utils/spiner
-	url = https://github.com/lanl/spiner
+  url = https://github.com/lanl/spiner
+  branch = mauneyc/fix-poc-already-present-error
 [submodule "utils/variant"]
 	path = utils/variant
 	url = https://github.com/mpark/variant.git

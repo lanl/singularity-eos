@@ -42,7 +42,6 @@ using namespace singularity;
 using duration = std::chrono::microseconds;
 using dvec = std::vector<double>;
 using ivec = std::vector<int>;
-using Spiner::DataBox;
 using Spiner::RegularGrid1D;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -71,16 +70,16 @@ inline double get_duration(Function function) {
 // METHOD_UNDER_TEST. CMake will configure multiple targets each defining one
 // of these.
 
-//#define METHOD_UNDER_TEST TemperatureFromDensityInternalEnergy
-//#define METHOD_UNDER_TEST PressureFromDensityTemperature
-//#define METHOD_UNDER_TEST InternalEnergyFromDensityTemperature
-//#define METHOD_UNDER_TEST PressureFromDensityInternalEnergy
-//#define METHOD_UNDER_TEST SpecificHeatFromDensityTemperature
-//#define METHOD_UNDER_TEST SpecificHeatFromDensityInternalEnergy
-//#define METHOD_UNDER_TEST BulkModulusFromDensityTemperature
-//#define METHOD_UNDER_TEST BulkModulusFromDensityInternalEnergy
-//#define METHOD_UNDER_TEST GruneisenParamFromDensityTemperature
-//#define METHOD_UNDER_TEST GruneisenParamFromDensityInternalEnergy
+// #define METHOD_UNDER_TEST TemperatureFromDensityInternalEnergy
+// #define METHOD_UNDER_TEST PressureFromDensityTemperature
+// #define METHOD_UNDER_TEST InternalEnergyFromDensityTemperature
+// #define METHOD_UNDER_TEST PressureFromDensityInternalEnergy
+// #define METHOD_UNDER_TEST SpecificHeatFromDensityTemperature
+// #define METHOD_UNDER_TEST SpecificHeatFromDensityInternalEnergy
+// #define METHOD_UNDER_TEST BulkModulusFromDensityTemperature
+// #define METHOD_UNDER_TEST BulkModulusFromDensityInternalEnergy
+// #define METHOD_UNDER_TEST GruneisenParamFromDensityTemperature
+// #define METHOD_UNDER_TEST GruneisenParamFromDensityInternalEnergy
 
 #if METHOD_UNDER_TEST == PressureFromDensityTemperature ||                               \
     METHOD_UNDER_TEST == InternalEnergyFromDensityTemperature ||                         \
@@ -227,9 +226,9 @@ inline bool get_timing(int ncycles, const ivec &ncells_1d, const double x_min,
     throughputs_host_vec_scratch[n] = 1e6 / durations_host_vec_scratch[n];
     //    throughputs_device[n] = 1e6 / durations_device[n];
     //
-    //#ifdef PORTABILITY_STRATEGY_KOKKOS
+    // #ifdef PORTABILITY_STRATEGY_KOKKOS
     //    Kokkos::deep_copy(F_v_hm, F_v);
-    //#endif
+    // #endif
     Real F_min = std::numeric_limits<Real>::max();
     Real F_max = std::numeric_limits<Real>::min();
     for (int k = 0; k < nc1d; k++) {

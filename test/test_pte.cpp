@@ -32,7 +32,6 @@ constexpr int NPTS = NTRIAL * NMAT;
 constexpr int HIST_SIZE = 10;
 
 using namespace singularity;
-using Spiner::DataBox;
 
 template <typename T>
 class LinearIndexer {

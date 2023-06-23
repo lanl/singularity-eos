@@ -40,7 +40,6 @@ using namespace singularity;
 using duration = std::chrono::microseconds;
 using dvec = std::vector<double>;
 using ivec = std::vector<int>;
-using Spiner::DataBox;
 using Spiner::RegularGrid1D;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS

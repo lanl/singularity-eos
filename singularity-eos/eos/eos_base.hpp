@@ -21,6 +21,15 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#include <spiner/databox.hpp>
+namespace singularity {
+
+using DataBox = Spiner::DataBox<Real, std::true_type>;
+
+} // namespace singularity
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5
+
 namespace singularity {
 namespace mfuncname {
 static inline auto member_func_name(const char *type_name, const char *func_name) {

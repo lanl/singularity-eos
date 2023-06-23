@@ -50,7 +50,7 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                            const double Cv0, int const *const enabled,
                            double *const vals);
 
-#ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int id, int const *const enabled, double *const vals);
 
@@ -111,7 +111,7 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                            const double G0, const double Z, const double alpha,
                            const double Cv0);
 
-#ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int id);
 

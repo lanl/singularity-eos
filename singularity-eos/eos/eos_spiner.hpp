@@ -14,7 +14,8 @@
 
 #ifndef _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
-#ifdef SPINER_USE_HDF
+#include <type_traits>
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
 #include <algorithm>
 #include <cstdlib>
@@ -252,12 +253,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] {"SpinerEOSDependsRhoT"};
   static constexpr const int numDataBoxes_ = 12;
-  Spiner::DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
-  Spiner::DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
-  Spiner::DataBox lTColdCrit_;
-  Spiner::DataBox PCold_, sieCold_, bModCold_;
-  Spiner::DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
-  Spiner::DataBox rho_at_pmin_;
+  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
+  DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
+  DataBox lTColdCrit_;
+  DataBox PCold_, sieCold_, bModCold_;
+  DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
+  DataBox rho_at_pmin_;
   int numRho_, numT_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lRhoMinSearch_;
@@ -299,7 +300,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
  public:
   struct SP5Tables {
-    Spiner::DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
+    DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
   };
   // Generic functions provided by the base class. These contain
   // e.g. the vector overloads that use the scalar versions declared
@@ -437,23 +438,23 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     return FastMath::pow10(lx) - offset;
   }
   PORTABLE_INLINE_FUNCTION
-  Real interpRhoT_(const Real rho, const Real T, const Spiner::DataBox &db,
+  Real interpRhoT_(const Real rho, const Real T, const DataBox &db,
                    Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
-  Real interpRhoSie_(const Real rho, const Real sie, const Spiner::DataBox &db,
+  Real interpRhoSie_(const Real rho, const Real sie, const DataBox &db,
                      Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
   Real lRhoFromPlT_(const Real P, const Real lT, Real *lambda) const;
 
-  Spiner::DataBox sie_; // depends on (rho,T)
-  Spiner::DataBox T_;   // depends on (rho, sie)
+  DataBox sie_; // depends on (rho,T)
+  DataBox T_;   // depends on (rho, sie)
   SP5Tables dependsRhoT_;
   SP5Tables dependsRhoSie_;
   int numRho_;
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
-  Spiner::DataBox PlRhoMax_, dPdRhoMax_;
+  DataBox PlRhoMax_, dPdRhoMax_;
 
   Real lRhoOffset_, lTOffset_, lEOffset_; // offsets must be non-negative
 
@@ -482,13 +483,12 @@ namespace callable_interp {
 
 class l_interp {
  private:
-  const Spiner::DataBox &field;
+  const DataBox &field;
   const Real fixed;
 
  public:
   PORTABLE_INLINE_FUNCTION
-  l_interp(const Spiner::DataBox &field_, const Real fixed_)
-      : field{field_}, fixed{fixed_} {}
+  l_interp(const DataBox &field_, const Real fixed_) : field{field_}, fixed{fixed_} {}
 
   PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
     return field.interpToReal(x, fixed);
@@ -497,13 +497,12 @@ class l_interp {
 
 class r_interp {
  private:
-  const Spiner::DataBox &field;
+  const DataBox &field;
   const Real fixed;
 
  public:
   PORTABLE_INLINE_FUNCTION
-  r_interp(const Spiner::DataBox &field_, const Real fixed_)
-      : field{field_}, fixed{fixed_} {}
+  r_interp(const DataBox &field_, const Real fixed_) : field{field_}, fixed{fixed_} {}
 
   PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
     return field.interpToReal(fixed, x);
@@ -512,13 +511,12 @@ class r_interp {
 
 class prod_interp_1d {
  private:
-  const Spiner::DataBox &field1, field2;
+  const DataBox &field1, field2;
   const Real r;
 
  public:
   PORTABLE_INLINE_FUNCTION
-  prod_interp_1d(const Spiner::DataBox &field1_, const Spiner::DataBox &field2_,
-                 const Real r_)
+  prod_interp_1d(const DataBox &field1_, const DataBox &field2_, const Real r_)
       : field1{field1_}, field2{field2_}, r{r_} {}
   PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
     return field1.interpToReal(x) * field2.interpToReal(x) * r * x;
@@ -527,11 +525,11 @@ class prod_interp_1d {
 
 class interp {
  private:
-  const Spiner::DataBox &field;
+  const DataBox &field;
 
  public:
   PORTABLE_INLINE_FUNCTION
-  interp(const Spiner::DataBox &field_) : field(field_) {}
+  interp(const DataBox &field_) : field(field_) {}
   PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
     return field.interpToReal(x);
   }
@@ -597,29 +595,29 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
 
 inline SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
   SpinerEOSDependsRhoT other;
-  other.P_ = Spiner::getOnDeviceDataBox(P_);
-  other.sie_ = Spiner::getOnDeviceDataBox(sie_);
-  other.bMod_ = Spiner::getOnDeviceDataBox(bMod_);
-  other.dPdRho_ = Spiner::getOnDeviceDataBox(dPdRho_);
-  other.dPdE_ = Spiner::getOnDeviceDataBox(dPdE_);
-  other.dTdRho_ = Spiner::getOnDeviceDataBox(dTdRho_);
-  other.dTdE_ = Spiner::getOnDeviceDataBox(dTdE_);
-  other.dEdRho_ = Spiner::getOnDeviceDataBox(dEdRho_);
-  other.dEdT_ = Spiner::getOnDeviceDataBox(dEdT_);
-  other.PMax_ = Spiner::getOnDeviceDataBox(PMax_);
-  other.sielTMax_ = Spiner::getOnDeviceDataBox(sielTMax_);
-  other.dEdTMax_ = Spiner::getOnDeviceDataBox(dEdTMax_);
-  other.gm1Max_ = Spiner::getOnDeviceDataBox(gm1Max_);
-  other.PCold_ = Spiner::getOnDeviceDataBox(PCold_);
-  other.sieCold_ = Spiner::getOnDeviceDataBox(sieCold_);
-  other.bModCold_ = Spiner::getOnDeviceDataBox(bModCold_);
-  other.dPdRhoCold_ = Spiner::getOnDeviceDataBox(dPdRhoCold_);
-  other.dPdECold_ = Spiner::getOnDeviceDataBox(dPdECold_);
-  other.dTdRhoCold_ = Spiner::getOnDeviceDataBox(dTdRhoCold_);
-  other.dTdECold_ = Spiner::getOnDeviceDataBox(dTdECold_);
-  other.dEdTCold_ = Spiner::getOnDeviceDataBox(dEdTCold_);
-  other.lTColdCrit_ = Spiner::getOnDeviceDataBox(lTColdCrit_);
-  other.rho_at_pmin_ = Spiner::getOnDeviceDataBox(rho_at_pmin_);
+  other.P_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(P_);
+  other.sie_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(sie_);
+  other.bMod_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(bMod_);
+  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdRho_);
+  other.dPdE_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdE_);
+  other.dTdRho_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dTdRho_);
+  other.dTdE_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dTdE_);
+  other.dEdRho_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dEdRho_);
+  other.dEdT_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dEdT_);
+  other.PMax_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(PMax_);
+  other.sielTMax_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(sielTMax_);
+  other.dEdTMax_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dEdTMax_);
+  other.gm1Max_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(gm1Max_);
+  other.PCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(PCold_);
+  other.sieCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(sieCold_);
+  other.bModCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(bModCold_);
+  other.dPdRhoCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdRhoCold_);
+  other.dPdECold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdECold_);
+  other.dTdRhoCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dTdRhoCold_);
+  other.dTdECold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dTdECold_);
+  other.dEdTCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dEdTCold_);
+  other.lTColdCrit_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(lTColdCrit_);
+  other.rho_at_pmin_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(rho_at_pmin_);
   other.lRhoMin_ = lRhoMin_;
   other.lRhoMax_ = lRhoMax_;
   other.rhoMax_ = rhoMax_;
@@ -1608,28 +1606,37 @@ inline void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
 inline SpinerEOSDependsRhoSie SpinerEOSDependsRhoSie::GetOnDevice() {
   SpinerEOSDependsRhoSie other;
   using Spiner::getOnDeviceDataBox;
-  other.sie_ = getOnDeviceDataBox(sie_);
-  other.T_ = getOnDeviceDataBox(T_);
-  other.dependsRhoT_.P = getOnDeviceDataBox(dependsRhoT_.P);
-  other.dependsRhoT_.bMod = getOnDeviceDataBox(dependsRhoT_.bMod);
-  other.dependsRhoT_.dPdRho = getOnDeviceDataBox(dependsRhoT_.dPdRho);
-  other.dependsRhoT_.dPdE = getOnDeviceDataBox(dependsRhoT_.dPdE);
-  other.dependsRhoT_.dTdRho = getOnDeviceDataBox(dependsRhoT_.dTdRho);
-  other.dependsRhoT_.dTdE = getOnDeviceDataBox(dependsRhoT_.dTdE);
-  other.dependsRhoT_.dEdRho = getOnDeviceDataBox(dependsRhoT_.dEdRho);
-  other.dependsRhoSie_.P = getOnDeviceDataBox(dependsRhoSie_.P);
-  other.dependsRhoSie_.bMod = getOnDeviceDataBox(dependsRhoSie_.bMod);
-  other.dependsRhoSie_.dPdRho = getOnDeviceDataBox(dependsRhoSie_.dPdRho);
-  other.dependsRhoSie_.dPdE = getOnDeviceDataBox(dependsRhoSie_.dPdE);
-  other.dependsRhoSie_.dTdRho = getOnDeviceDataBox(dependsRhoSie_.dTdRho);
-  other.dependsRhoSie_.dTdE = getOnDeviceDataBox(dependsRhoSie_.dTdE);
-  other.dependsRhoSie_.dEdRho = getOnDeviceDataBox(dependsRhoSie_.dEdRho);
+  other.sie_ = getOnDeviceDataBox<Real, std::true_type>(sie_);
+  other.T_ = getOnDeviceDataBox<Real, std::true_type>(T_);
+  other.dependsRhoT_.P = getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.P);
+  other.dependsRhoT_.bMod = getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.bMod);
+  other.dependsRhoT_.dPdRho =
+      getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dPdRho);
+  other.dependsRhoT_.dPdE = getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dPdE);
+  other.dependsRhoT_.dTdRho =
+      getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dTdRho);
+  other.dependsRhoT_.dTdE = getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dTdE);
+  other.dependsRhoT_.dEdRho =
+      getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dEdRho);
+  other.dependsRhoSie_.P = getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.P);
+  other.dependsRhoSie_.bMod =
+      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.bMod);
+  other.dependsRhoSie_.dPdRho =
+      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dPdRho);
+  other.dependsRhoSie_.dPdE =
+      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dPdE);
+  other.dependsRhoSie_.dTdRho =
+      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dTdRho);
+  other.dependsRhoSie_.dTdE =
+      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dTdE);
+  other.dependsRhoSie_.dEdRho =
+      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dEdRho);
   other.numRho_ = numRho_;
   other.lRhoMin_ = lRhoMin_;
   other.lRhoMax_ = lRhoMax_;
   other.rhoMax_ = rhoMax_;
-  other.PlRhoMax_ = getOnDeviceDataBox(PlRhoMax_);
-  other.dPdRhoMax_ = getOnDeviceDataBox(dPdRhoMax_);
+  other.PlRhoMax_ = getOnDeviceDataBox<Real, std::true_type>(PlRhoMax_);
+  other.dPdRhoMax_ = getOnDeviceDataBox<Real, std::true_type>(dPdRhoMax_);
   other.lRhoOffset_ = lRhoOffset_;
   other.lTOffset_ = lTOffset_;
   other.lEOffset_ = lEOffset_;
@@ -1838,8 +1845,8 @@ void SpinerEOSDependsRhoSie::ValuesAtReferenceState(Real &rho, Real &temp, Real 
 }
 
 PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::interpRhoT_(const Real rho, const Real T,
-                                         const Spiner::DataBox &db, Real *lambda) const {
+Real SpinerEOSDependsRhoSie::interpRhoT_(const Real rho, const Real T, const DataBox &db,
+                                         Real *lambda) const {
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lT = toLog_(T, lTOffset_);
   if (lambda != nullptr) {
@@ -1850,8 +1857,7 @@ Real SpinerEOSDependsRhoSie::interpRhoT_(const Real rho, const Real T,
 
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::interpRhoSie_(const Real rho, const Real sie,
-                                           const Spiner::DataBox &db,
-                                           Real *lambda) const {
+                                           const DataBox &db, Real *lambda) const {
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lE = toLog_(sie, lEOffset_);
   if (lambda != nullptr) {
@@ -1904,5 +1910,5 @@ Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
 
 } // namespace singularity
 
-#endif // SPINER_USE_HDF
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #endif // _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
