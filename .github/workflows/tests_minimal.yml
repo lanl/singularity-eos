@@ -29,6 +29,7 @@ jobs:
             mkdir -p ${HOME}/install
             cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
                   -DSINGULARITY_USE_SPINER=ON \
+                  -DSINGULARITY_USE_SPINER_WITH_HDF5=OFF \
                   -DSINGULARITY_BUILD_TESTS=ON \
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   ..
