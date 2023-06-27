@@ -65,8 +65,9 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("eigen@3.3.8", when="~cuda")
 
     depends_on("eospac", when="+eospac")
-    depends_on("spiner")
+    depends_on("spiner@main", when="@main")
     depends_on("ports-of-call@1.4.2:")
+    depends_on("ports-of-call@main", when="@main")
     depends_on("spiner +kokkos", when="+kokkos")
     depends_on("spiner +hdf5", when="+hdf5")
 
@@ -80,10 +81,14 @@ class SingularityEos(CMakePackage, CudaPackage):
         when="+cuda",
     )
 
+    for _myver,_kver in zip(("@:1.6.2","@1.7.0:"),("@3.2:","@3.3:")):
+        depends_on("kokkos" + _kver, when=_myver)
+        depends_on("kokkos-kernels" + _kver, when=_myver)
+
     # set up kokkos offloading dependencies
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
-        depends_on("kokkos@3.2: ~shared" + _flag, when="+kokkos" + _flag)
-        depends_on("kokkos-kernels@3.2:" + _flag, when="+kokkos-kernels" + _flag)
+        depends_on("kokkos ~shared" + _flag, when="+kokkos" + _flag)
+        depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
         depends_on("spiner" + _flag, when="+kokkos" + _flag)
 
     # specfic specs when using GPU/cuda offloading

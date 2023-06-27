@@ -229,6 +229,15 @@ endif()
 # building are not located outside of the source directory, except for explicit
 # cases.
 
+if(SINGULARITY_USE_SPINER_WITH_HDF5)
+  singularity_enable_hdf5(singularity-eos)
+endif()
+
+if(SINGULARITY_USE_EOSPAC)
+  # NB This will add the `eospac-wrapper` directory.
+  singularity_enable_eospac(singularity-eos)
+endif()
+
 if(SINGULARITY_SUBMODULE_MODE)
   # add all submodules
   message(STATUS "singularity-eos configuring in submodule mode.")
@@ -269,9 +278,8 @@ singularity_enable_ports_of_call(singularity-eos)
 
 if(SINGULARITY_USE_SPINER)
   singularity_enable_spiner(singularity-eos)
-  if(SINGULARITY_USE_SPINER_WITH_HDF5)
-    singularity_enable_hdf5(singularity-eos)
-  endif()
+  # if(SINGULARITY_USE_SPINER_WITH_HDF5)
+  # singularity_enable_hdf5(singularity-eos) endif()
 endif()
 
 if(SINGULARITY_USE_KOKKOS)
@@ -281,11 +289,6 @@ if(SINGULARITY_USE_KOKKOS)
   endif()
 else()
   singularity_enable_eigen(singularity-eos)
-endif()
-
-if(SINGULARITY_USE_EOSPAC)
-  # NB This will add the `eospac-wrapper` directory.
-  singularity_enable_eospac(singularity-eos)
 endif()
 
 # ----------------------------------------------------------------------------#

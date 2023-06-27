@@ -9,32 +9,32 @@ endmacro()
 macro(singularity_import_spiner)
   if(NOT TARGET spiner::spiner)
     _singularity_set_spiner_opt(SINGULARITY_USE_SPINER_WITH_HDF5 SPINER_USE_HDF)
-    _singularity_set_spiner_opt(SINGULARITY_USE_CUDA SPINER_USE_CUDA)
+    # TODO I dunno if these are used
     _singularity_set_spiner_opt(SINGULARITY_USE_KOKKOS SPINER_USE_KOKKOS)
+    _singularity_set_spiner_opt(SINGULARITY_USE_CUDA SPINER_USE_CUDA)
     add_subdirectory(utils/spiner)
   endif()
 endmacro()
 
 macro(singularity_find_spiner)
-  find_package(spiner REQUIRED)
+  find_package(spiner 1.6 REQUIRED)
 endmacro()
 
 macro(_singularity_chk_spiner_opt singularity_opt spiner_opt)
   if(${singularity_opt} AND NOT ${spiner_opt})
     message(
-      WARNING
+      FATAL_ERROR
         "\"${singularity_opt}\" is ON,
-      and a \"spiner\" target is already defined, but
-      \"${spiner_opt}\" is either unset or set to OFF.
-      The configuration will continue, but you will likely
-      experience issues building and running.")
+        but \"${spiner_opt}\" is OFF.
+      Please ensure your \"spiner\" installation is configured with
+      \"-D${spiner_opt}=ON\"")
   endif()
 endmacro()
 
 macro(singularity_enable_spiner target)
   _singularity_chk_spiner_opt(SINGULARITY_USE_SPINER_WITH_HDF5 SPINER_USE_HDF)
-  _singularity_chk_spiner_opt(SINGULARITY_USE_CUDA SPINER_USE_CUDA)
-  _singularity_chk_spiner_opt(SINGULARITY_USE_KOKKOS SPINER_USE_KOKKOS)
+  # _singularity_chk_spiner_opt(SINGULARITY_USE_CUDA SPINER_USE_CUDA)
+  # _singularity_chk_spiner_opt(SINGULARITY_USE_KOKKOS SPINER_USE_KOKKOS)
 
   target_compile_definitions(
     ${target}
