@@ -21,6 +21,9 @@
 
 #ifndef _SINGULARITY_EOS_EOS_HELMHOLTZ_HPP_
 #define _SINGULARITY_EOS_EOS_HELMHOLTZ_HPP_
+
+// TODO(JMM): Currently spiner and HDf5 are entangled. But really this
+// model should depend only on spiner and NOT HDF5.
 #ifdef SPINER_USE_HDF
 
 #include <cstdio>
@@ -40,97 +43,114 @@
 #include <singularity-eos/base/hermite.hpp>
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
 
+#define ROOT_FINDER (RootFinding1D::regula_falsi)
+
 namespace singularity {
 using namespace eos_base;
 
-class Helmholtz : public EosBase<Helmholtz> {
+// TODO(JMM): Maybe want to move these utility functions into something like an
+// ASCII-utils file. Worth considering at some later date.
+namespace HelmUtils {
+using DataBox = HelmUtils::DataBox;
+constexpr std::size_t NDERIV = 5;
+enum DERIV { VAL = 0, DDR = 1, DDT = 2, DDA = 3, DDZ = 4 };
+// Tail-recursive resize tables
+inline void ResizeTables(int n1, Real r1min, Real r1max, int n0, Real r0min, Real r0max,
+                         DataBox &db) {
+  db.resize(n1, n0); // set shape and log bounds
+  db.setRange(1, r1min, r1max, n1);
+  db.setRange(0, r0min, r0max, n0);
+}
+template <typename... Args>
+inline void ResizeTables(int n1, Real r1min, Real r1max, int n0, Real r0min, Real r0max,
+                         DataBox &head, Args &&...tail) {
+  ResizeTables(n1, r1min, r1max, n0, r0min, r0max, head);
+  ResizeTables(n1, r1min, r1max, n0, r0min, r0max, std::forward<Args>(tail)...);
+}
+// Tail-recursive read one i,j from text file
+template <typename Msg_t, typename T>
+inline void Read(std::ifstream &file, Msg_t &error_msg, T &var) {
+  if (!(file >> var)) {
+    file.close(); // is this needed?
+    PORTABLE_ALWAYS_THROW_OR_ABORT(error_msg);
+  }
+}
+template <typename Msg_t, typename... Args>
+inline void Read(std::ifstream &file, Msg_t &error_msg, T &head, Args &&...tail) {
+  Read(file, msg, head);
+  Read(file, msg, std::forward<Args>(tail)...);
+}
+// Read all i,j from text file
+template <typename... Args>
+inline void SetTablesFromFile(std::ifstream &file, int n1, Real r1min, Real r1max, int n0,
+                              Real r0min, Real r0max, Args &&...tables) {
+  ResizeTables(n1, r1min, r1max, n0, r0min, r0max, std::forward<Args>(tables)...);
+  for (int j = 0; j < NTEMP; ++j) {
+    for (int i = 0; i < NTEMP; ++i) {
+      std::stringstream error_msg;
+      msg << "Error reading the Helmholtz free energy table at j = " << j << ", i = " << i
+          << std::endl;
+      Read(file, error_msg, tables(j, i)...);
+    }
+  }
+}
+} // namespace HelmUtils
+
+class HelmholtzElectrons {
  public:
-  // These are the indexes in the lambda array
-  struct Lambda {
-    enum Index {
-      Ye = 0,   // electron fraction zbar/abar
-      Ytot = 1, // 1.0 / abar
-      De = 2,   // Electron density rho * Ye
-      lDe = 3,  // log10(De)
-      lT = 4 // log10 temperature. used for root finding.
-    }; 
-  };
+  // may change with time
+  using DataBox = HelmUtils::DataBox;
+  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
-  inline Helmholtz(const std::string &filename) {
-    InitDataFile_(filename);
-  }
-  inline Helmholtz(const std::string &data_file, const std::string &species_file) {
-    InitDataFile_(data_life);
-    InitSpeciesFile_(species_file);
-  }
+  inline HelmholtzElectrons(const std::string &filename) { InitDataFile_(filename); }
 
-  inline Helmholtz GetOnDevice();  
+  inline HelmholtzElectrons GetOnDevice();
   inline void Finalize();
+
+  PORTABLE_INLINE_FUNCTION
+  void GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Ytot, Real De, Real lDe,
+                                 Real pele[NDERIV], Real eele[NDERIV], Real sele[NDERIV],
+                                 Real etaele[NDERIV], Real xne[NDERIV],
+                                 bool only_e = false) const;
+
+  // We COULD just expose the const vars under the hood, but I think
+  // this is safer if, for example, the table size ever changes under
+  // the hood.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real lTMin() const { return lTMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real lTMax() const { return lTMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real lRhoMin() const { return lRhoMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real lRhoMax() const { return lRhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real rhoMin() const { return rhoMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real rhoMax() const { return rhoMax_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  std::size_t numTemp() const { return NTEMP; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  std::size_t numRho() const { return NRHO; }
 
  private:
   inline void InitDataFile_(const std::string &filename);
-  inline void InitSpeciesFile_(const std::string &filename) {
-    PORTABLE_ALWAYS_THROW_OR_ABORT("Stub");
-  }
-
-  PORTABLE_INLINE_FUNCTION
-  void GetAll_(Real rho, Real T, Real lT, Real Ye, Real Ytot, Real De, Real lDe,
-               double pele[5], double eele[5], double sele[5], double etaele[5],
-               double xne[5], bool only_e = false) const;
-
-  // Tail-recursive resize tables
-  inline void ResizeTables_(Spiner::DataBox &db) {
-    db.resize(NTEMP, NRHO); // set shape and log bounds
-    db.setRange(1, lTMin_, lTMax_, NTEMP);
-    db.setRange(0, lRhoMin_, lRhoMax_, NRHO);
-  }
-  template <typename... Args>
-  inline void ResizeTables_(Spiner::DataBox &head, Args &&...tail) {
-    ResizeTables_(head);
-    ResizeTables_(std::forward<Args>(tail)...);
-  }
-  // Tail-recursive read one i,j from text file
-  template <typename Msg_t, typename T>
-  inline void Read_(std::ifstream &file, Msg_t &error_msg, T &var) {
-    if (!(file >> var)) {
-      file.close(); // is this needed?
-      PORTABLE_ALWAYS_THROW_OR_ABORT(error_msg);
-    }
-  }
-  template <typename Msg_t, typename... Args>
-  inline void Read_(std::ifstream &file, Msg_t &error_msg, T &head, Args &&...tail) {
-    Read_(file, msg, head);
-    Read_(file, msg, std::forward<Args>(tail)...);
-  }
-  // Read all i,j from text file
-  template <typename... Args>
-  inline void SetTablesFromFile_(std::ifstream &file, Args &&...tables) {
-    ResizeTables(std::forward<Args>(tables)...);
-    for (int j = 0; j < NTEMP; ++j) {
-      for (int i = 0; i < NTEMP; ++i) {
-        std::stringstream error_msg;
-        msg << "Error reading the Helmholtz free energy table at j = " << j
-            << ", i = " << i << std::endl;
-        Read_(file, error_msg, tables(j, i)...);
-      }
-    }
-  }
 
   // rho and T caches (to go between log/linear scale)
-  Spiner::DataBox rho_, T_;
+  DataBox rho_, T_;
   // Free energy and derivatives
-  Spiner::DataBox f_, fd_, ft_, fdd_, ftt_, fdt_, fddt_, fdtt_, fddtt_;
+  DataBox f_, fd_, ft_, fdd_, ftt_, fdt_, fddt_, fdtt_, fddtt_;
   // derivatives
-  Spiner::DataBox dpdf_, dpdfd_, dpdft_, dpdfdt_;
+  DataBox dpdf_, dpdfd_, dpdft_, dpdfdt_;
   // chemical potential
-  Spiner::DataBox ef_, efd_, eft_, efdt_;
+  DataBox ef_, efd_, eft_, efdt_;
   // number density
-  Spiner::DataBox xf_, xfd_, xft_, xfdt_;
-  // TODO(JMM): Add species file
+  DataBox xf_, xfd_, xft_, xfdt_;
 
   constexpr std::size_t NTEMP = 101;
   constexpr std::size_t NRHO = 271;
@@ -149,13 +169,202 @@ class Helmholtz : public EosBase<Helmholtz> {
   const Real rhoMax_ = math_utils::pow10(rhoMax_);
 };
 
-inline void Helmholtz::InitDataFile_(const std::string &filename) {
+// Currently trivial. But we may want to swap this out at some point,
+// which is why I made it a class. We may also want to write a full
+// radiation EOS at some point.
+class HelmRad {
+ public:
+  constexpr Real STEFAN_BOLTZMANN_CONSTANT = 5.670374419e-5; // erg/cm^2/s/K^4
+  constexpr Real CL = 2.998e10;                              // speed of light. cm/s
+  constexpr Real SIG_O_C = STEFAN_BOLTZMANN_CONSTANT / CL;
+  constexpr Real PREFACTOR = (4. / 3.) * SIG_O_C;
+  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
+
+  HelmRad() = default;
+  HelmRad GetOnDevice() { return *this; }
+  void Finalize() {}
+
+  PORTABLE_INLINE_FUNCTION
+  void GetFromDensityTemperature(const Real rho, const Real temp, Real prad[NDERIV],
+                                 Real erad[NDERIV], Real srad[NDERIV]) const;
+};
+
+// TODO(JMM): Use singularity's built in ideal gas EOS
+// rather than this hardcoded one
+class HelmIon {
+ public:
+  constexpr Real KB = 1.3806505e-16; // Boltzmann constant in cgs
+  constexpr Real NA = 6.02214129e23; // Avogadro's number. 1/mol
+  constexpr Real KBNA = KB * NA;
+  constexpr REAL KBi = 1.0 / KB;
+  constexpr Real UNIFIED_ATOMIC_MASS = 1.660538782e-24; /* g */
+  constexpr Real PLANCK_H = 6.62606896e-27;             /* g cm^2 / s */
+  const Real LSWOT15 =
+      1.5 * std::log((2.0 * M_PI * UNIFIED_ATOMIC_MASS * KB) / (PLANCK_H * PLANCK_H));
+  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
+
+  HelmIon() = default;
+  HelmIon GetOnDevice() { return *this; }
+  void Finalize() {}
+
+  PORTABLE_INLINE_FUNCTION
+  void GetFromDensityTemperature(const Real rho, const Real temp, const Real y,
+                                 const Real ytot, const Real xni, const Real dxnidd,
+                                 const Real dxnida, Real pion[NDERIV], Real eion[NDERIV],
+                                 Real sion[NDERIV]) const;
+};
+
+// Coulomb corrections. Again extraneous to make it a class. But
+// perhaps that will make it easier to swap out down the line.
+class HelmCoulomb {
+ public:
+  constexpr Real ELECTRON_CHARGE_ESU = 4.80320427e-10;
+  constexpr Real KB = 1.3806505e-16; // Boltzmann constant in cgs
+  constexpr Real NA = 6.02214129e23; // Avogadro's number. 1/mol
+  constexpr Real KBNA = KB * NA;
+  constexpr Real M_LN10 = 2.30258509299404568401799145468; /* ln(10) */
+  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
+
+  HelmCoulomb() = default;
+  HelmCoulomb GetOnDevice() { return *this; }
+  void Finalize() {}
+
+  PORTABLE_INLINE_FUNCTION
+  void GetFromDensityTemperature(const Real rho, const Real temp, const Real ytot,
+                                 const Real abar, const Real zbar, const Real xni,
+                                 const Real dxnidd, const Real dxnida, Real pcoul[NDERIV],
+                                 Real ecoul[NDERIV], Real scoul[NDERIV]) const;
+
+ private:
+  template <int n>
+  PORTABLE_INLINE_FUNCTION void butterworth(Real freq, double cfreq, Real &g,
+                                            Real &dgdf) const {
+    g = robust::ratio(1.0, 1.0 + math_utils::pow<2 * n>(robust::ratio(freq, cfreq)));
+    dgdf = robust::ratio(-math_utils::pow<2>(g) * 2 * n, math_utils<2 * n>(cfreq)) *
+           math_utils::pow<2 * n - 1>(freq);
+  }
+};
+
+// The reason to separate out the full Helmholtz EOS and the
+// electrons bit is that this should make things easier to
+// mix/match/compose in the future. For example if more advanced ion
+// corrections are desired.
+class Helmholtz : public EosBase<Helmholtz> {
+ public:
+  // These are the indexes in the lambda array
+  struct Lambda {
+    enum Index {
+      Abar = 0, // Average atomic mass
+      Zbar = 1, // Average atomic number
+      lT = 4    // log10 temperature. used for root finding.
+    };
+  };
+  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
+
+  // Options struct. You can create one of these and modify it to set
+  // options at initialization
+  struct Options {
+    bool ENABLE_RAD = true;
+    bool ENABLE_GAS = true;
+    bool ENABLE_COULOMB_CORRECTIONS = true;
+    bool GAS_IONIZED = true;
+    bool GAS_DEGENERATE = true;
+  }
+
+  Helmholtz(const std::string &filename)
+      : electrons_(filename) {
+  }
+  Helmholtz(const std::string &filename, Options options)
+      : electrons_(filename), options_(options) {}
+  inline Helmholtz GetOnDevice() {
+    Helmholtz other;
+    other.rad_ = rad_.GetOnDevice();
+    other.ions_ = ions_.GetOnDevice();
+    other.coul_ = coul_.GetOnDevice();
+    other.electrons_ = electrons_.GetOnDevice();
+    other.options_ = options_;
+    return other;
+  }
+  inline void Finalize() {
+    rad_.Finalize();
+    ions_.Finalize();
+    coul_.Finalize();
+    electrons_.Finalize();
+  }
+
+  void GetMassFractions(const Real rho, const Real temp, const Real ytot, Real &xni,
+                        Real &dxnidd, Real &dxnida) const {
+    xni = ions_.NA * ytot * rho;
+    dxnidd = ions_.NA * ytot;
+    dxnida = -xni * ytot;
+  }
+
+ private:
+  PORTABLE_INLINE_FUNCTION
+  Real lTAnalytic_(const Real rho, const Real e, const Real ni, const Real ne) const {
+    return (2.0 / 3.0) * robust::ratio(e * rho, ni + ne) * ions_.KBi;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  void GetFromDensityLogTemperature_(
+      const Real rho, const Real lT, const Real abar, const Real zbar, const Real ye,
+      const Real ytot, const Real ywot, const Real De, const Real lDe, Real p[NDERIV],
+      Real e[NDERIV], Real s[NDERIV], Real etaele[NDERIV], Real nep[NDERIV],
+      // TODO(JMM): Decide which of the quantities below to keep
+      const bool only_e = false) const;
+
+  PORTABLE_INLINE_FUNCTION
+  Real lTFromRhoSie_(const Real rho, const Real e, const Real abar, const Real zbar,
+                     const Real ye, const Real ytot, const Real ywot, const Real De,
+                     const Real lDe, Real *lambda) const {
+    const Real abari = robust::ratio(1.0, abar);
+    const Real ni = abari * rho * ions_.NA;
+    const Real ne = zbar * ni;
+    Real lT;
+
+    if (options_.ENABLE_RAD || options_.GAS_DEGENERATE ||
+        options_.ENABLE_COULOMB_CORRECTIONS) {
+      Real lTguess = lambda[Lambda::lT];
+      if (!((electrons_.lTMin() <= lTguess) && (lTguess <= electrons_.lTMax()))) {
+        lTguess = lTAnalytic(rho, e, ni, ne);
+      }
+      auto &copy = *this; // stupid C++17 workaround
+      auto status = ROOT_FINDER([&](Real lT) {
+        Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+        copy.GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s, etaele, nep, true);
+        return e[VAR];
+      }, e, lTguess, electrons_.lTMin(), electrons_.lTMax(), ROOT_THRESH, ROOT_THRESH, lT);
+      if (status != Rootfinding1D::Status::SUCCESS) {
+        lT = lTAnalytic(rho, e, ni, options_.GAS_IONIZED * ne);
+      }
+    } else {
+      lT = lTAnalytic(rho, e, ni, options_.GAS_IONIZED * ne);
+    }
+    lambda[Lambda::lT] = lT;
+    return lT;
+  }
+
+  constexpr Real ROOT_THRESH = 1e-14;
+  Options options_;
+  HelmRad rad_;
+  HelmIon ions_;
+  HelmCoulomb coul_;
+  HelmholtzEelctrons electrons_;
+};
+
+inline void HelmholtzElectrons::InitDataFile_(const std::string &filename) {
+  using namespace HelmUtils;
   std::ifstream file(filename);
-  PORTABLE_ALWAYS_REQUIRE(file.is_open(), "Helmholtz file " + filename + " not found!");
-  SetTablesFromFile_(file, f_, fd_, ft_, fdd_, ftt_, fdt_, fddt_, fdtt_, fddtt_);
-  SetTablesFromFile_(file, dpdf_, dpdfd_, dpdft_, dpdfdt_);
-  SetTablesFromFile_(file, ef_, efd_, eft_, efdt_);
-  SetTablesFromFile_(file, xf_, xfd_, xft_, xfdt_);
+  PORTABLE_ALWAYS_REQUIRE(file.is_open(),
+                          "HelmholtzElectrons file " + filename + " not found!");
+  SetTablesFromFile(file, NTEMP, lTMin_, lTMax_, NRHO, lRhoMin_, lRhoMax_, f_, fd_, ft_,
+                    fdd_, ftt_, fdt_, fddt_, fdtt_, fddtt_);
+  SetTablesFromFile(file, NTEMP, lTMin_, lTMax_, NRHO, lRhoMin_, lRhoMax_, dpdf_, dpdfd_,
+                    dpdft_, dpdfdt_);
+  SetTablesFromFile(file, NTEMP, lTMin_, lTMax_, NRHO, lRhoMin_, lRhoMax_, ef_, efd_,
+                    eft_, efdt_);
+  SetTablesFromFile(file, NTEMP, lTMin_, lTMax_, NRHO, lRhoMin_, lRhoMax_, xf_, xfd_,
+                    xft_, xfdt_);
   file.close();
 
   auto &lRhoRange = f_.range(0);
@@ -170,8 +379,8 @@ inline void Helmholtz::InitDataFile_(const std::string &filename) {
   }
 }
 
-inline Helmholtz Helmholtz::GetOnDevice() {
-  Helmholtz other;
+inline HelmholtzElectrons HelmholtzElectrons::GetOnDevice() {
+  HelmholtzElectrons other;
   other.rho_ = Spiner::getOnDeviceDataBox(rho_);
   other.T_ = Spiner::getOnDeviceDataBox(T_);
   other.f_ = Spiner::getOnDeviceDataBox(f_);
@@ -197,7 +406,7 @@ inline Helmholtz Helmholtz::GetOnDevice() {
   other.xfdt_ = Spiner::getOnDeviceDataBox(xfdt_);
 }
 
-inline void Helmholtz::Finalize() {
+inline void HelmholtzElectrons::Finalize() {
   rho_.finalize();
   T_.finalize();
   f_.finalize();
@@ -224,15 +433,16 @@ inline void Helmholtz::Finalize() {
 }
 
 PORTABLE_INLINE_FUNCTION
-void Helmholtz::GetAll_(Real rho, Real T, Real lT, Real Ye, Real Ytot, Real De, Real lDe,
-                        double pele[5], double eele[5], double sele[5], double etaele[5],
-                        double xne[5], bool only_e = false) const {
+void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Ytot,
+                                                   Real De, Real lDe, Real pele[NDERIV],
+                                                   Real eele[NDERIV], Real sele[NDERIV],
+                                                   Real etaele[NDERIV], Real xne[NDERIV],
+                                                   bool only_e = false) const {
   // Bound lRho, lT
   rho = std::min(rhoMax_, std::max(rhoMin_, rho));
   De = std::min(rhoMax_, std::max(rhoMin_, De));
   lDe = std::min(lRhoMax_, std::max(lRhoMin_, lDe));
-  T = std::min(TMax_, std::max(TMin_, T));
-  lT = std::min(lTMax_, std::max(lTMin_, lT));
+  Real T = std::pow10(lT);
 
   // Find central indexes in table
   auto &lRhoRange = f_.range(0);
@@ -505,7 +715,296 @@ void Helmholtz::GetAll_(Real rho, Real T, Real lT, Real Ye, Real Ytot, Real De, 
   eele[4] = Ytot * (free_en + Ye * df_d * rho) + T * sele[4];
 }
 
+PORTABLE_INLINE_FUNCTION
+void HelmRad::GetFromDensityTemperature(const Real rho, const Real temp,
+                                        Real prad[NDERIV], Real erad[NDERIV],
+                                        Real srad[NDERIV]) const {
+  using namespace HelmUtils;
+  const Real rhoi = robust::ratio(1.0, rho);
+  const Real tempi = robust::ratio(1.0, temp);
+  const Real T3 = math_utils::pow<3>(temp);
+  const Real T4 = T3 * T;
+  // pressure
+  Real P = PREFACTOR * T4;
+  Real dPdT = 4.0 * PREFACTOR * T3;
+  prad[VAL] = P;
+  prad[DDR] = 0;
+  prad[DDT] = dPdT;
+  prad[DDA] = 0;
+  prad[DDZ] = 0;
+
+  // free energy
+  const Real PoR = P * rhoi;
+  Real e = 3.0 * PoR;
+  Real dedR = -e * rhoi;
+  Real dedT = 3.0 * dPdT * rhoi;
+  erad[VAL] = e;
+  erad[DDR] dedR;
+  erad[DDT] = dedT;
+  erad[DDA] = 0;
+  erad[DDZ] = 0;
+
+  // entropy
+  constexpr Real dPdR = 0;
+  Real s = (PoR + e) * tempi;
+  Real dsdR = ((dPdR - PoR) * rhoi + dEdR) * tempi;
+  Real dsdT = (dPdT * rhoi + dedT - s) * tempi;
+  srad[VAL] = s;
+  srad[DDR] = dsdR;
+  srad[DDT] = dsdT;
+  srad[DDA] = 0;
+  srad[DDZ] = 0;
+}
+
+PORTABLE_INLINE_FUNCTION
+void HelmIon::GetFromDensityTemperature(const Real rho, const Real temp, const Real y,
+                                        const Real ytot, const Real xni,
+                                        const Real dxnidd, const Real dxnida,
+                                        Real pion[NDERIV], Real eion[NDERIV],
+                                        Real sion[NDERIV]) const {
+  const Real kbT = KB * temp;
+  // pressure
+  P = xni * kbT;
+  dPdR = dxnidd * kbT;
+  dPdT = xni * KB;
+  dPdA = dxnida * kbT;
+  pion[VAL] = P;
+  pion[DDR] = dPdR;
+  pion[DDT] = dPdT;
+  pion[DDA] = dPdA;
+  pion[DDZ] = 0;
+
+  // energy
+  const Real rhoi = robust::ratio(1.0, rho);
+  const Real PoR = P * rhoi;
+  e = 1.5 * PoR;
+  dedR = (1.5 * dPdR - e) * rhoi;
+  dedT = 1.5 * dPdT * rhoi;
+  dedA = 1.5 * dPdA * rhoi;
+  eion[VAL] = e;
+  eion[DDR] = dedR;
+  eion[DDT] = dedT;
+  eion[DDA] = dedA;
+  eion[DDZ] = 0;
+
+  // entropy
+  const Real tempi = robust::ratio(1.0, temp);
+  const Real KBNAY = KBNA * ytot;
+  s = (PoR + e) * itemp + KBNAY * y;
+  dsdR = (dPdR * rhoi - P * rhoi * rhoi + dedR) * tempi - KBNAY * rhoi;
+  dsdT = (dPdT * rhoi + dedT) * tempi - (PoR + e) * tempi * tempi + 1.5 * KBNAY * tempi;
+  dsdA = (dPdA * rhoi + dedA) * tempi + KBNAY * ytot * (2.5 - y);
+  sion[VAL] = s;
+  sion[DDR] = dsdR;
+  sion[DDT] = dsdT;
+  sion[DDA] = dsdA;
+  sion[DDZ] = 0;
+}
+
+PORTABLE_INLINE_FUNCTION
+void HelmCoulomb::GetFromDensityTemperature(const Real rho, const Real temp,
+                                            const Real ytot, const Real abar,
+                                            const Real zbar, const Real xni,
+                                            const Real dxnidd, const Real dxnida,
+                                            Real pcoul[NDERIV], Real ecoul[NDERIV],
+                                            Real scoul[NDERIV]) const {
+  // fitting parameters
+  constexpr Real a1 = -0.898004;
+  constexpr Real b1 = 0.96786;
+  constexpr Real c1 = 0.220703;
+  constexpr Real d1 = -0.86097;
+  constexpr Real e1 = 2.5269;
+  constexpr Real a2 = 0.29561;
+  constexpr Real b2 = 1.9885;
+  constexpr Real c2 = 0.288675;
+
+  // TODO(JMM): This is computed right out of the ion class. should
+  // this be unified with the ion code?
+  const Real kbT = KB * temp;
+  const Real pion = xni * kbT;
+  const Real dpiondd = dxnidd * kbT;
+  const Real dpionda = dxnida * kbT;
+
+  constexpr Real four_thirds = 4.0 / 3.0;
+  constexpr Real ftpi = four_thirds * M_PI;
+  const Real s = ftpi * xni;
+  const Real dsdd = ftpi * dxnidd;
+  const Real dsda = ftpi * dxnida;
+
+  constexpr Real one_third = 1.0 / 3.0;
+  const Real si = robust::ratio(1.0, s);
+  const Real lami = robust::ratio(1.0, std::cbrt(s));
+  const Real lamidd = -lami * one_third * dsdd * si;
+  const Real lamida = -lami * one_third * dsda * si;
+
+  const Real plasg = math_utils::pow<2>(ELECTRON_CHARGE_ESU * zbar) / (kt * lami);
+  const Real plasg_o_lami = robust::ratio(plasg, lami);
+  const Real plasgdd = -plasg_o_lami * lamidd;
+  const Real plasgda = -plasg_o_lami * lamida;
+  const Real plasgdt = -robust::ratio(plasg, temp);
+  const Real plasgdz = 2.0 * robust::ratio(plasg, zbar);
+
+  // TODO(JMM): Might be able to vectorize this with masking but
+  // probably not worth it.
+  const Real abari = robust::ratio(1, abar);
+  if (plasg >= 0) {
+    const Real x = std::sqrt(std::sqrt(plasg));
+    Real y = KBNA * ytot;
+    const Real c1_o_x = robust::ratio(c1, x);
+    ecoul[VAL] = y * temp * (a1 * plasg + b1 * x + c1_o_x + d1);
+    pcoul[VAL] = one_third * rho * ecoul[0];
+    scoul[VAL] = -y * (3.0 * b1 * x - 5.0 * c1_o_x + d1 * (std::log(plasg) - 1.0) - e1);
+
+    y = KBNA * temp * ytot * (a1 + robust::ratio(0.25, plasg) * (b1 * x - c1_o_x));
+    ecoul[DDR] = y * plasgdd;
+    ecoul[DDT] = y * plasgdt + robust::ratio(ecoul[0], temp);
+    ecoul[DDA] = y * plasgda - ecoul[0] * abari;
+    ecoul[DDZ] = y * plasgdz;
+
+    y = one_third * rho;
+    pcoul[DDR] = one_third * ecoul[0] + y * ecoul[1];
+    pcoul[DDT] = y * ecoul[2];
+    pcoul[DDA] = y * ecoul[3];
+    pcoul[DDZ] = y * ecoul[4];
+
+    y = -KBNA * plasg * abari * (0.75 * b1 * x + 1.25 * c1_o_x + d1);
+    scoul[DDR] = y * plasgdd;
+    scoul[DDT] = y * plasgdt;
+    scoul[DDA] = y * plasgda - scoul[0] * abari;
+    scoul[DDZ] = y * plasgdz;
+  } else {
+    const Real x = plasg * std::sqrt(std::abs(plasg));
+    const Real y = std::pow(plasg, b2);
+    const Real z = c2 * x - one_third * a2 * y;
+
+    const Real plasgi = robust::ratio(1., plasg);
+    const Real rhoi = robust::ratio(1.0, rho);
+
+    pcoul[VAL] = -pion * z;
+    ecoul[VAL] = 3.0 * pcoul[0] * rhoi;
+    scoul[VAL] = -KBNA * abari * (c2 * x - a2 * robust::ratio(b2 - 1.0, b2) * y);
+
+    s = 1.5 * c2 * x * plasgi - one_third * a2 * b2 * y * plasgi;
+    pcoul[DDR] = -dpiondd * z - pion * s * plasgdd;
+    pcoul[DDT] = -dpiondt * z - pion * s * plasgdt;
+    pcoul[DDA] = -dpionda * z - pion * s * plasgda;
+    pcoul[DDZ] = -dpiondz * z - pion * s * plasgdz;
+
+    s = 3.0 * rhoi;
+    ecoul[DDR] = s * pcoul[1] - ecoul[0] * rhoi;
+    ecoul[DDT] = s * pcoul[2];
+    ecoul[DDA] = s * pcoul[3];
+    ecoul[DDZ] = s * pcoul[4];
+
+    s = -KBNA * abari * plasgi * (1.5 * c2 * x - a2 * (b2 - 1.0) * y);
+    scoul[DDR] = s * plasgdd;
+    scoul[DDT] = s * plasgdt;
+    scoul[DDA] = s * plasgda - scoul[0] * abari;
+    scoul[DDZ] = s * plasgdz;
+  }
+
+  // butterworth bomb proofing by ^_^ : beware the butterbomb
+  Real g_r, dgdf_r, g_t, dgdf_t;
+  butterworth<12>(log10(temp) - 4.5, 3.0, g_r, dgdf_r);
+  butterworth<12>(log10(rho) + 1.0, 6.0, g_t, dgdf_t);
+
+  // derivatives (and conversion from logarithmic derivative)
+  Real gain = (1.0 - g_t * g_r);
+  Real dgaindt = -robust::ratio(g_r * dgdf_t, temp * M_LN10);
+  Real dgaindd = -robust::ratio(g_t * dgdf_r, rho * M_LN10);
+
+  // straight up gain
+  pcoul[VAL] = pcoul[VAL] * gain;
+  ecoul[VAL] = ecoul[VAL] * gain;
+  scoul[VAL] = scoul[VAL] * gain;
+
+  // derivatives via chain rule
+  pcoul[DDR] = gain * pcoul[DDR] + robust::ratio(pcoul[VAL] * dgaindd, gain);
+  pcoul[DDT] = gain * pcoul[DDT] + robust::ratio(pcoul[VAL] * dgaindt, gain);
+  pcoul[DDA] = gain * pcoul[DDA];
+  pcoul[DDZ] = gain * pcoul[DDZ];
+
+  ecoul[DDR] = gain * ecoul[DDR] + robust::ratio(ecoul[VAL] * dgaindd, gain);
+  ecoul[DDT] = gain * ecoul[DDT] + robust::ratio(ecoul[VAL] * dgaindt, gain);
+  ecoul[DDA] = gain * ecoul[DDA];
+  ecoul[DDZ] = gain * ecoul[DDZ];
+
+  scoul[DDR] = gain * scoul[DDR] + robust::ratio(scoul[VAL] * dgaindd, gain);
+  scoul[DDT] = gain * scoul[DDT] + robust::ratio(scoul[VAL] * dgaindt, gain);
+  scoul[DDA] = gain * scoul[DDA];
+  scoul[DDZ] = gain * scoul[DDZ];
+}
+
+PORTABLE_INLINE_FUNCTION
+void Helmholtz::GetFromDensityLogTemperature_(
+    const Real rho, const Real lT, const Real abar, const Real zbar, const Real ye,
+    const Real ytot, const Real ywot, const Real De, const Real lDe, Real p[NDERIV],
+    Real e[NDERIV], Real s[NDERIV], Real etaele[NDERIV], Real nep[NDERIV],
+    // TODO(JMM): Decide which of the quantities below to keep
+    const bool only_e = false) const {
+  double prad[NDERIV] = {0}, pion[NDERIV] = {0}, pele[NDERIV] = {0}, pcoul[NDERIV] = {0};
+  double erad[NDERIV] = {0}, eion[NDERIV] = {0}, eele[NDERIV] = {0}, ecoul[NDERIV] = {0};
+  double srad[NDERIV] = {0}, sion[NDERIV] = {0}, sele[NDERIV] = {0}, scoul[NDERIV] = {0};
+  // electron chemical potential and electron + positron number density
+  for (int i = 0; i < 5; ++i) {
+    etaele[i] = nep[i] = 0;
+  }
+
+  const Real log10e = std::log10(e);
+  const Real lnT = lT / log10e;
+  Real T = std::pow10(lT);
+  if (options_.ENABLE_RAD) {
+    rad_.GetFromDensityTemperature(rho, T, prad, erad, srad);
+  }
+  if (options_.ENABLE_GAS) {
+    // If gas is not ionized, just use ideal gas for ions
+    // If gas is ionized but the electrons are not degenerate, modify ideal gas
+    // coefficient If gas is ionized and the electrons are degenerate, do ideal gas for
+    // ions and add degerate fermi gas
+    bool do_unmodified_ions =
+        (options_.GAS_IONIZED && options_.GAS_DEGENERATE) || !options_.GAS_IONIZED;
+    if (do_unmodified_ions) { // ionized plasma. ions and electrons treated separately
+      Real xni, dxnidd, dxnida;
+      GetMassFractions(rho, T, ytot, xni, dxnidd, dxnida);
+      const Real y = ywot + ions_.LSWOT15 + 1.5 * lnT;
+      ions_.GetFromDensityTemperature(rho, T, y, ytot, xni, dxnidd, dxnida, pion, eion,
+                                      sion);
+    } else { // modify ideal gas to include ions + electrons
+      const Real abar_ion = robust::ratio(abar, zbar + 1);
+      const Real zbar_ion = zbar;
+      const Real ytot_ion = robust::ratio(1.0, abar_ion);
+      const Real ywot_ion = robust::ratio(
+          std::log(abar_ion * abar_ion * std::sqrt(abar_ion)), rho * ions_.NA);
+      const Real y_ion = ywot_ion + ions_.LSWOT15 + 1.5 * lnT;
+      Real xni, dxnidd, dxnida;
+      GetMassFractions(rho, T, ytot_ion, xni, dxnidd, dxnida);
+      ions_.GetFromDensityTemperature(rho, T, y_ion, ytot_ion, xni, dxnidd, dxnida, pion,
+                                      eion, sion);
+    }
+    if (options_.GAS_DEGENERATE) { // treat degenerate electron gas
+      electrons_.GetFromDensityTemperature(rho, lT, ye, ytot, De, lDe, pele, eele, sele,
+                                           etaele, nep, onle_e);
+      if (options_.ENABLE_COULOMB_CORRECTIONS) {
+        Real xni, dxnidd, dxnida;
+        GetMassFractions(rho, T, ytot, xni, dxnidd, dxnida);
+        coul_.GetFromDensityTemperature(rho, T, ytot, abar, zbar, xni, dxnidd, dxnida,
+                                        pcoul, ecoul, scoul);
+      }
+    }
+  }
+  for (int i = 0; i < 5; ++i) {
+    e[i] = erad[i] + eion[i] + eele[i] + ecoul[i];
+  }
+  if (!only_e) {
+    for (int i = 0; i < 5; ++i) {
+      p[i] = prad[i] + pion[i] + pele[i] + pcoul[i];
+      s[i] = srad[i] + sion[i] + sele[i] + scoul[i];
+    }
+  }
+}
+
 }; // namespace singularity
 
+#undef ROOT_FINDER
 #endif // SPINER_USE_HDF
 #endif // _SINGULARITY_EOS_EOS_HELMHOLTZ_HPP_
