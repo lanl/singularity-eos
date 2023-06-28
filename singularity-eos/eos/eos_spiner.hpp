@@ -53,7 +53,7 @@ namespace singularity {
 
 using namespace eos_base;
 
-using DataBox = Spiner::DataBox<Real, std::true_type>;
+using DataBox = Spiner::DataBox<Real>;
 
 /*
   Tables all have indep. variables log10(rho), log10(T)
@@ -597,29 +597,29 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
 
 inline SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
   SpinerEOSDependsRhoT other;
-  other.P_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(P_);
-  other.sie_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(sie_);
-  other.bMod_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(bMod_);
-  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdRho_);
-  other.dPdE_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdE_);
-  other.dTdRho_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dTdRho_);
-  other.dTdE_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dTdE_);
-  other.dEdRho_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dEdRho_);
-  other.dEdT_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dEdT_);
-  other.PMax_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(PMax_);
-  other.sielTMax_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(sielTMax_);
-  other.dEdTMax_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dEdTMax_);
-  other.gm1Max_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(gm1Max_);
-  other.PCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(PCold_);
-  other.sieCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(sieCold_);
-  other.bModCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(bModCold_);
-  other.dPdRhoCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdRhoCold_);
-  other.dPdECold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdECold_);
-  other.dTdRhoCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dTdRhoCold_);
-  other.dTdECold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dTdECold_);
-  other.dEdTCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dEdTCold_);
-  other.lTColdCrit_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(lTColdCrit_);
-  other.rho_at_pmin_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(rho_at_pmin_);
+  other.P_ = Spiner::getOnDeviceDataBox<Real>(P_);
+  other.sie_ = Spiner::getOnDeviceDataBox<Real>(sie_);
+  other.bMod_ = Spiner::getOnDeviceDataBox<Real>(bMod_);
+  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real>(dPdRho_);
+  other.dPdE_ = Spiner::getOnDeviceDataBox<Real>(dPdE_);
+  other.dTdRho_ = Spiner::getOnDeviceDataBox<Real>(dTdRho_);
+  other.dTdE_ = Spiner::getOnDeviceDataBox<Real>(dTdE_);
+  other.dEdRho_ = Spiner::getOnDeviceDataBox<Real>(dEdRho_);
+  other.dEdT_ = Spiner::getOnDeviceDataBox<Real>(dEdT_);
+  other.PMax_ = Spiner::getOnDeviceDataBox<Real>(PMax_);
+  other.sielTMax_ = Spiner::getOnDeviceDataBox<Real>(sielTMax_);
+  other.dEdTMax_ = Spiner::getOnDeviceDataBox<Real>(dEdTMax_);
+  other.gm1Max_ = Spiner::getOnDeviceDataBox<Real>(gm1Max_);
+  other.PCold_ = Spiner::getOnDeviceDataBox<Real>(PCold_);
+  other.sieCold_ = Spiner::getOnDeviceDataBox<Real>(sieCold_);
+  other.bModCold_ = Spiner::getOnDeviceDataBox<Real>(bModCold_);
+  other.dPdRhoCold_ = Spiner::getOnDeviceDataBox<Real>(dPdRhoCold_);
+  other.dPdECold_ = Spiner::getOnDeviceDataBox<Real>(dPdECold_);
+  other.dTdRhoCold_ = Spiner::getOnDeviceDataBox<Real>(dTdRhoCold_);
+  other.dTdECold_ = Spiner::getOnDeviceDataBox<Real>(dTdECold_);
+  other.dEdTCold_ = Spiner::getOnDeviceDataBox<Real>(dEdTCold_);
+  other.lTColdCrit_ = Spiner::getOnDeviceDataBox<Real>(lTColdCrit_);
+  other.rho_at_pmin_ = Spiner::getOnDeviceDataBox<Real>(rho_at_pmin_);
   other.lRhoMin_ = lRhoMin_;
   other.lRhoMax_ = lRhoMax_;
   other.rhoMax_ = rhoMax_;
@@ -1608,37 +1608,28 @@ inline void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
 inline SpinerEOSDependsRhoSie SpinerEOSDependsRhoSie::GetOnDevice() {
   SpinerEOSDependsRhoSie other;
   using Spiner::getOnDeviceDataBox;
-  other.sie_ = getOnDeviceDataBox<Real, std::true_type>(sie_);
-  other.T_ = getOnDeviceDataBox<Real, std::true_type>(T_);
-  other.dependsRhoT_.P = getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.P);
-  other.dependsRhoT_.bMod = getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.bMod);
-  other.dependsRhoT_.dPdRho =
-      getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dPdRho);
-  other.dependsRhoT_.dPdE = getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dPdE);
-  other.dependsRhoT_.dTdRho =
-      getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dTdRho);
-  other.dependsRhoT_.dTdE = getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dTdE);
-  other.dependsRhoT_.dEdRho =
-      getOnDeviceDataBox<Real, std::true_type>(dependsRhoT_.dEdRho);
-  other.dependsRhoSie_.P = getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.P);
-  other.dependsRhoSie_.bMod =
-      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.bMod);
-  other.dependsRhoSie_.dPdRho =
-      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dPdRho);
-  other.dependsRhoSie_.dPdE =
-      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dPdE);
-  other.dependsRhoSie_.dTdRho =
-      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dTdRho);
-  other.dependsRhoSie_.dTdE =
-      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dTdE);
-  other.dependsRhoSie_.dEdRho =
-      getOnDeviceDataBox<Real, std::true_type>(dependsRhoSie_.dEdRho);
+  other.sie_ = getOnDeviceDataBox<Real>(sie_);
+  other.T_ = getOnDeviceDataBox<Real>(T_);
+  other.dependsRhoT_.P = getOnDeviceDataBox<Real>(dependsRhoT_.P);
+  other.dependsRhoT_.bMod = getOnDeviceDataBox<Real>(dependsRhoT_.bMod);
+  other.dependsRhoT_.dPdRho = getOnDeviceDataBox<Real>(dependsRhoT_.dPdRho);
+  other.dependsRhoT_.dPdE = getOnDeviceDataBox<Real>(dependsRhoT_.dPdE);
+  other.dependsRhoT_.dTdRho = getOnDeviceDataBox<Real>(dependsRhoT_.dTdRho);
+  other.dependsRhoT_.dTdE = getOnDeviceDataBox<Real>(dependsRhoT_.dTdE);
+  other.dependsRhoT_.dEdRho = getOnDeviceDataBox<Real>(dependsRhoT_.dEdRho);
+  other.dependsRhoSie_.P = getOnDeviceDataBox<Real>(dependsRhoSie_.P);
+  other.dependsRhoSie_.bMod = getOnDeviceDataBox<Real>(dependsRhoSie_.bMod);
+  other.dependsRhoSie_.dPdRho = getOnDeviceDataBox<Real>(dependsRhoSie_.dPdRho);
+  other.dependsRhoSie_.dPdE = getOnDeviceDataBox<Real>(dependsRhoSie_.dPdE);
+  other.dependsRhoSie_.dTdRho = getOnDeviceDataBox<Real>(dependsRhoSie_.dTdRho);
+  other.dependsRhoSie_.dTdE = getOnDeviceDataBox<Real>(dependsRhoSie_.dTdE);
+  other.dependsRhoSie_.dEdRho = getOnDeviceDataBox<Real>(dependsRhoSie_.dEdRho);
   other.numRho_ = numRho_;
   other.lRhoMin_ = lRhoMin_;
   other.lRhoMax_ = lRhoMax_;
   other.rhoMax_ = rhoMax_;
-  other.PlRhoMax_ = getOnDeviceDataBox<Real, std::true_type>(PlRhoMax_);
-  other.dPdRhoMax_ = getOnDeviceDataBox<Real, std::true_type>(dPdRhoMax_);
+  other.PlRhoMax_ = getOnDeviceDataBox<Real>(PlRhoMax_);
+  other.dPdRhoMax_ = getOnDeviceDataBox<Real>(dPdRhoMax_);
   other.lRhoOffset_ = lRhoOffset_;
   other.lTOffset_ = lTOffset_;
   other.lEOffset_ = lEOffset_;

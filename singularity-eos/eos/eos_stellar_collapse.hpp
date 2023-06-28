@@ -49,7 +49,7 @@
 namespace singularity {
 using namespace eos_base;
 
-using DataBox = Spiner::DataBox<Real, std::true_type>;
+using DataBox = Spiner::DataBox<Real>;
 
 // Note the Stellar Collapse tables have units of:
 // 1. Ye (unitless)
@@ -417,21 +417,21 @@ inline void StellarCollapse::Save(const std::string &filename) {
 
 inline StellarCollapse StellarCollapse::GetOnDevice() {
   StellarCollapse other;
-  other.lP_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(lP_);
-  other.lE_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(lE_);
-  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdRho_);
-  other.dPdE_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dPdE_);
-  other.dEdT_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(dEdT_);
-  other.entropy_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(entropy_);
-  other.Xa_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(Xa_);
-  other.Xh_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(Xh_);
-  other.Xn_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(Xn_);
-  other.Xp_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(Xp_);
-  other.Abar_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(Abar_);
-  other.Zbar_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(Zbar_);
-  other.lBMod_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(lBMod_);
-  other.eCold_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(eCold_);
-  other.eHot_ = Spiner::getOnDeviceDataBox<Real, std::true_type>(eHot_);
+  other.lP_ = Spiner::getOnDeviceDataBox<Real>(lP_);
+  other.lE_ = Spiner::getOnDeviceDataBox<Real>(lE_);
+  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real>(dPdRho_);
+  other.dPdE_ = Spiner::getOnDeviceDataBox<Real>(dPdE_);
+  other.dEdT_ = Spiner::getOnDeviceDataBox<Real>(dEdT_);
+  other.entropy_ = Spiner::getOnDeviceDataBox<Real>(entropy_);
+  other.Xa_ = Spiner::getOnDeviceDataBox<Real>(Xa_);
+  other.Xh_ = Spiner::getOnDeviceDataBox<Real>(Xh_);
+  other.Xn_ = Spiner::getOnDeviceDataBox<Real>(Xn_);
+  other.Xp_ = Spiner::getOnDeviceDataBox<Real>(Xp_);
+  other.Abar_ = Spiner::getOnDeviceDataBox<Real>(Abar_);
+  other.Zbar_ = Spiner::getOnDeviceDataBox<Real>(Zbar_);
+  other.lBMod_ = Spiner::getOnDeviceDataBox<Real>(lBMod_);
+  other.eCold_ = Spiner::getOnDeviceDataBox<Real>(eCold_);
+  other.eHot_ = Spiner::getOnDeviceDataBox<Real>(eHot_);
   other.memoryStatus_ = DataStatus::OnDevice;
   other.numRho_ = numRho_;
   other.numT_ = numT_;
