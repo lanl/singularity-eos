@@ -49,6 +49,8 @@
 namespace singularity {
 using namespace eos_base;
 
+using DataBox = Spiner::DataBox<Real, std::true_type>;
+
 // Note the Stellar Collapse tables have units of:
 // 1. Ye (unitless)
 // 2. log(MeV) for temperature

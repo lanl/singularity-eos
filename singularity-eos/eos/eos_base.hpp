@@ -21,7 +21,8 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 
-#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#if 0
+//#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #include <spiner/databox.hpp>
 namespace singularity {
 

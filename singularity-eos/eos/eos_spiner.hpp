@@ -15,8 +15,8 @@
 #ifndef _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
 #include <type_traits>
-#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #include <algorithm>
 #include <cstdlib>
 #include <iomanip>
@@ -52,6 +52,8 @@
 namespace singularity {
 
 using namespace eos_base;
+
+using DataBox = Spiner::DataBox<Real, std::true_type>;
 
 /*
   Tables all have indep. variables log10(rho), log10(T)
