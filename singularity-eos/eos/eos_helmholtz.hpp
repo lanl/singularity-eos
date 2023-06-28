@@ -276,6 +276,27 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
   Helmholtz(const std::string &filename, Options options)
       : electrons_(filename), options_(options) {}
+
+  PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
+  static constexpr unsigned long PreferredInput() {
+    return thermalqs::density | thermalqs::temperature;
+  }
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return 0;
+  }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
+
+  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+    printf("Helmholtz Parameters:\n"
+           "ENABLE_RAD = %d\n"
+           "ENABLE_GAS = %d\n"
+           "ENABLE_COULOMB_CORRECTIONS = %d\n"
+           "GAS_IONIZED = %d\n"
+           "GAS_DEGENERATE = %d\n",
+           options_.ENABLE_RAD, options_.ENABLE_GAS, options_.ENABLE_COULOMB_CORRECTIONS,
+           options_.GAS_IONIZED, options_.GAS_DEGENERATE);
+  }
+
   inline Helmholtz GetOnDevice() {
     Helmholtz other;
     other.rad_ = rad_.GetOnDevice();
@@ -292,6 +313,7 @@ class Helmholtz : public EosBase<Helmholtz> {
     electrons_.Finalize();
   }
 
+  PORTABLE_INLINE_FUNCTION
   void GetMassFractions(const Real rho, const Real temp, const Real ytot, Real &xni,
                         Real &dxnidd, Real &dxnida) const {
     xni = ions_.NA * ytot * rho;
@@ -299,7 +321,116 @@ class Helmholtz : public EosBase<Helmholtz> {
     dxnida = -xni * ytot;
   }
 
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    Real temperature, p, cv, bmod;
+    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::temperature, lambda);
+    return temperature;
+  }
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    Real sie, p, cv, bmod;
+    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::specific_internal_energy,
+            lambda);
+    return sie;
+  }
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    Real sie, p, cv, bmod;
+    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::pressure, lambda);
+    return p;
+  }
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    Real temperature, p, cv, bmod;
+    FillEos(rho, temperature, sie, p, cv, bmod,
+            thermalqs::pressure | thermalqs::temperature, lambda);
+    return p;
+  }
+  // TODO: Do entropy
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    Real sie, p, cv, bmod;
+    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::specific_heat, lambda);
+    return cv;
+  }
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    Real temperature, p, cv, bmod;
+    FillEos(rho, temperature, sie, p, cv, bmod,
+            thermalqs::specific_heat | thermalqs::temperature, lambda);
+    return cv
+  }
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    Real sie, p, cv, bmod;
+    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::bulk_modulus, lambda);
+    return bmod;
+  }
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    Real temperature, p, cv, bmod;
+    FillEos(rho, temperature, sie, p, cv, bmod,
+            thermalqs::bulk_modulus | thermalqs::temperature, lambda);
+    return bmod;
+  }
+  // TODO: Do Gruneisen
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    // const Real dPdE = robust::ratio(p[DDR], e[DDR]) + robust::ratio(p[DDT], e[DDT]);
+  }
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const;
+
+  PORTABLE_INLINE_FUNCTION
+  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Real *lambda = nullptr) const;
+
+  PORTABLE_INLINE_FUNCTION
+  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
+                              Real *lambda = nullptr) const {
+    // JMM: I'm not sure what to put here or if it matters. Some
+    // reference state, maybe stellar denity, would be appropriate.
+    PORTABLE_ALWAYS_ABORT("Stub");
+  }
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
+                                       Real &rho, Real &sie) const {
+    // This is only used for mixed cell closures. Stubbing it out for now.
+    PORTABLE_ALWAYS_ABORT("Stub");
+  }
+  static std::string EosType() { return std::string("Helmholtz"); }
+  static std::string EosPyType() { return EosType(); }
+
+  SG_ADD_ABSE_CLASS_USINGS(Helmholtz)
  private:
+  PORTABLE_INLINE_FUNCTION
+  Real ComputeGamma1_(const Real rho, const Real T, const Real p[NDERIV],
+                      const Real e[NDERIV]) {
+    using namespace HelmUtils;
+    const Real chit = robust::ratio(T, p[0]) * p[DDT];
+    const Real chid = robust::ratio(p[DDR] * rho, p[0]);
+    const Real x = robust::ratio(p[0] * chit, rho * T * e[DDT]);
+    return chit * x + chid;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  void GetElectronDenities_(const Real rho, const Real abar, const Real zbar, Real &ytot,
+                            Real &ye, Real &ywot, Real &De, Real &lDe) const {
+    ytot = robust::ratio(1.0, abar);
+    ye = zbar * ytot;
+    // TODO(JMM): should we be passing around logrho maybe?
+    ywot = std::log(robust::ratio(abar * abar * std::sqrt(abar), rho * ions_.NA));
+    De = rho * ye;
+    lDe = std::log10(De);
+  }
+
   PORTABLE_INLINE_FUNCTION
   Real lTAnalytic_(const Real rho, const Real e, const Real ni, const Real ne) const {
     return (2.0 / 3.0) * robust::ratio(e * rho, ni + ne) * ions_.KBi;
@@ -316,33 +447,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   PORTABLE_INLINE_FUNCTION
   Real lTFromRhoSie_(const Real rho, const Real e, const Real abar, const Real zbar,
                      const Real ye, const Real ytot, const Real ywot, const Real De,
-                     const Real lDe, Real *lambda) const {
-    const Real abari = robust::ratio(1.0, abar);
-    const Real ni = abari * rho * ions_.NA;
-    const Real ne = zbar * ni;
-    Real lT;
-
-    if (options_.ENABLE_RAD || options_.GAS_DEGENERATE ||
-        options_.ENABLE_COULOMB_CORRECTIONS) {
-      Real lTguess = lambda[Lambda::lT];
-      if (!((electrons_.lTMin() <= lTguess) && (lTguess <= electrons_.lTMax()))) {
-        lTguess = lTAnalytic(rho, e, ni, ne);
-      }
-      auto &copy = *this; // stupid C++17 workaround
-      auto status = ROOT_FINDER([&](Real lT) {
-        Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
-        copy.GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s, etaele, nep, true);
-        return e[VAR];
-      }, e, lTguess, electrons_.lTMin(), electrons_.lTMax(), ROOT_THRESH, ROOT_THRESH, lT);
-      if (status != Rootfinding1D::Status::SUCCESS) {
-        lT = lTAnalytic(rho, e, ni, options_.GAS_IONIZED * ne);
-      }
-    } else {
-      lT = lTAnalytic(rho, e, ni, options_.GAS_IONIZED * ne);
-    }
-    lambda[Lambda::lT] = lT;
-    return lT;
-  }
+                     const Real lDe, Real *lambda) const;
 
   constexpr Real ROOT_THRESH = 1e-14;
   Options options_;
@@ -351,6 +456,89 @@ class Helmholtz : public EosBase<Helmholtz> {
   HelmCoulomb coul_;
   HelmholtzEelctrons electrons_;
 };
+
+PORTABLE_INLINE_FUNCTION
+void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
+                        Real &bmod, const unsigned long output,
+                        Real *lambda = nullptr) const {
+  using namespace HelmUtils;
+  bool need_temp = (output & thermalqs::temperature);
+  bool need_sie = (output & thermalqs::specific_internal_energy);
+  bool need_rho = (output & thermalqs::density);
+  PROTABLE_REQUIRE(!need_rho, "Density output not supported by this EOS");
+  PORTABLE_REQUIRE(!(need_temp && need_sie),
+                   "Either specific internal energy or temperature must be provided.");
+  Real abar = lambda[Lambda::Abar];
+  Real zbar = lambda[Lambda::Zbar];
+  Real ytot, ye, ywot, De, lDe;
+  GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
+  if (need_temp) {
+    lT = lTFromRhoSie_(rho, energy, abar, zbar, ye, ytot, ywot, De, lDe, lambda);
+  } else {
+    lT = std::log10(temp);
+    lambda[Lambda::lT] = lT;
+  }
+  Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+  GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
+                                etaele, nep);
+  if (output & thermalqs::temperature) {
+    temperature = math_utils::pow10(lT);
+  }
+  if (output & thermalqs::specific_internal_energy) {
+    energy = e[0];
+  }
+  if (output & thermalqs::pressure) {
+    press = p[0];
+  }
+  if (output & thermalqs::specific_heat) {
+    cv = e[DDT];
+  }
+  if (output & thermalqs::bulk_modulus) {
+    Real gamma1 = ComputeGamma1_(rho, temperature, p, e);
+    // Note this is the bulk modulus, not the sound speed. To compute
+    // the sound speed, you must take this value and divide by the
+    // enthalpy. In particular:
+    // c_s = sqrt(bmod / (w)) = sqrt(bmod / (h rho))
+    // see page 108 of Rezzolla and Zanotti
+    bmod = std::max(robust::EPS(), press * gamma1);
+  }
+  if (output & thermalqs
+}
+
+PORTABLE_INLINE_FUNCTION
+Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
+                              const Real zbar, const Real ye, const Real ytot,
+                              const Real ywot, const Real De, const Real lDe,
+                              Real *lambda) const {
+  const Real abari = robust::ratio(1.0, abar);
+  const Real ni = abari * rho * ions_.NA;
+  const Real ne = zbar * ni;
+  Real lT;
+
+  if (options_.ENABLE_RAD || options_.GAS_DEGENERATE ||
+      options_.ENABLE_COULOMB_CORRECTIONS) {
+    Real lTguess = lambda[Lambda::lT];
+    if (!((electrons_.lTMin() <= lTguess) && (lTguess <= electrons_.lTMax()))) {
+      lTguess = lTAnalytic(rho, e, ni, ne);
+    }
+    auto &copy = *this; // stupid C++17 workaround
+    auto status = ROOT_FINDER(
+        [&](Real lT) {
+          Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+          copy.GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe,
+                                             p, e, s, etaele, nep, true);
+          return e[VAR];
+        },
+        e, lTguess, electrons_.lTMin(), electrons_.lTMax(), ROOT_THRESH, ROOT_THRESH, lT);
+    if (status != Rootfinding1D::Status::SUCCESS) {
+      lT = lTAnalytic(rho, e, ni, options_.GAS_IONIZED * ne);
+    }
+  } else {
+    lT = lTAnalytic(rho, e, ni, options_.GAS_IONIZED * ne);
+  }
+  lambda[Lambda::lT] = lT;
+  return lT;
+}
 
 inline void HelmholtzElectrons::InitDataFile_(const std::string &filename) {
   using namespace HelmUtils;
