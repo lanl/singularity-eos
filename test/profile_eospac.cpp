@@ -43,6 +43,7 @@ using duration = std::chrono::microseconds;
 using dvec = std::vector<double>;
 using ivec = std::vector<int>;
 using Spiner::RegularGrid1D;
+using DataBox = Spiner::DataBox<Real>;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using RView = Kokkos::View<Real *>;

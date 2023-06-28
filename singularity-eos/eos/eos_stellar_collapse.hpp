@@ -49,8 +49,6 @@
 namespace singularity {
 using namespace eos_base;
 
-using DataBox = Spiner::DataBox<Real>;
-
 // Note the Stellar Collapse tables have units of:
 // 1. Ye (unitless)
 // 2. log(MeV) for temperature
@@ -60,6 +58,8 @@ using DataBox = Spiner::DataBox<Real>;
 // is linear extrapolation in log-log space. We should reconsider this
 // and introduce extrapolation as needed.
 class StellarCollapse : public EosBase<StellarCollapse> {
+  using DataBox = Spiner::DataBox<Real>;
+
  public:
   // A weakly typed index map for lambdas
   struct Lambda {

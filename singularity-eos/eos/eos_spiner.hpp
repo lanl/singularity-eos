@@ -53,8 +53,6 @@ namespace singularity {
 
 using namespace eos_base;
 
-using DataBox = Spiner::DataBox<Real>;
-
 /*
   Tables all have indep. variables log10(rho), log10(T)
 
@@ -67,6 +65,8 @@ using DataBox = Spiner::DataBox<Real>;
   we use log-linear extrapolation.
 */
 class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
+  using DataBox = Spiner::DataBox<Real>;
+
  public:
   // A weakly typed index map for lambdas
   struct Lambda {
@@ -300,6 +300,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
 class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
+  using DataBox = Spiner::DataBox<Real>;
+
  public:
   struct SP5Tables {
     DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
@@ -483,6 +485,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 // replace lambdas with callable
 namespace callable_interp {
 
+using DataBox = Spiner::DataBox<Real>;
 class l_interp {
  private:
   const DataBox &field;
