@@ -453,7 +453,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   HelmRad rad_;
   HelmIon ions_;
   HelmCoulomb coul_;
-  HelmholtzEelctrons electrons_;
+  HelmholtzElectrons electrons_;
 };
 
 PORTABLE_INLINE_FUNCTION
@@ -1139,7 +1139,7 @@ void Helmholtz::GetFromDensityLogTemperature_(
     etaele[i] = nep[i] = 0;
   }
 
-  const Real log10e = std::log10(e);
+  const Real log10e = std::log10(M_E);
   const Real lnT = lT / log10e;
   Real T = math_utils::pow10(lT);
   if (options_.ENABLE_RAD) {
