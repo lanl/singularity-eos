@@ -270,6 +270,7 @@ class Helmholtz : public EosBase<Helmholtz> {
     bool GAS_DEGENERATE = true;
   };
 
+  Helmholtz() = default;
   Helmholtz(const std::string &filename)
       : electrons_(filename) {
   }
