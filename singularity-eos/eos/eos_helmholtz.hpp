@@ -660,8 +660,8 @@ void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, R
   Real T = math_utils::pow10(lT);
 
   // Find central indexes in table
-  auto &lRhoRange = f_.range(0);
-  auto &lTRange = f_.range(1);
+  auto lRhoRange = f_.range(0);
+  auto lTRange = f_.range(1);
   int iat = lRhoRange.index(lDe); // auto bounded
   int jat = lTRange.index(lT);
 
