@@ -175,7 +175,7 @@ class HelmholtzElectrons {
 class HelmRad {
  public:
   static constexpr Real STEFAN_BOLTZMANN_CONSTANT = 5.670374419e-5; // erg/cm^2/s/K^4
-  static constexpr Real CL = 2.998e10;                              // speed of light. cm/s
+  static constexpr Real CL = 2.998e10; // speed of light. cm/s
   static constexpr Real SIG_O_C = STEFAN_BOLTZMANN_CONSTANT / CL;
   static constexpr Real PREFACTOR = (4. / 3.) * SIG_O_C;
   static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
@@ -218,11 +218,11 @@ class HelmIon {
 // perhaps that will make it easier to swap out down the line.
 class HelmCoulomb {
  public:
+  static constexpr Real LN10 = 2.30258509299404568401799145468; // ln(10)
   static constexpr Real ELECTRON_CHARGE_ESU = 4.80320427e-10;
   static constexpr Real KB = 1.3806505e-16; // Boltzmann constant in cgs
   static constexpr Real NA = 6.02214129e23; // Avogadro's number. 1/mol
   static constexpr Real KBNA = KB * NA;
-  static constexpr Real M_LN10 = 2.30258509299404568401799145468; /* ln(10) */
   static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
   HelmCoulomb() = default;
@@ -240,7 +240,7 @@ class HelmCoulomb {
   PORTABLE_INLINE_FUNCTION void butterworth(Real freq, double cfreq, Real &g,
                                             Real &dgdf) const {
     g = robust::ratio(1.0, 1.0 + math_utils::pow<2 * n>(robust::ratio(freq, cfreq)));
-    dgdf = robust::ratio(-math_utils::pow<2>(g) * 2 * n, math_utils<2 * n>(cfreq)) *
+    dgdf = robust::ratio(-math_utils::pow<2>(g) * 2 * n, math_utils::pow<2 * n>(cfreq)) *
            math_utils::pow<2 * n - 1>(freq);
   }
 };
@@ -251,6 +251,7 @@ class HelmCoulomb {
 // corrections are desired.
 class Helmholtz : public EosBase<Helmholtz> {
  public:
+  static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
   // These are the indexes in the lambda array
   struct Lambda {
     enum Index {
@@ -259,8 +260,6 @@ class Helmholtz : public EosBase<Helmholtz> {
       lT = 4    // log10 temperature. used for root finding.
     };
   };
-  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
-
   // Options struct. You can create one of these and modify it to set
   // options at initialization
   struct Options {
@@ -269,7 +268,7 @@ class Helmholtz : public EosBase<Helmholtz> {
     bool ENABLE_COULOMB_CORRECTIONS = true;
     bool GAS_IONIZED = true;
     bool GAS_DEGENERATE = true;
-  }
+  };
 
   Helmholtz(const std::string &filename)
       : electrons_(filename) {
@@ -408,7 +407,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   static std::string EosType() { return std::string("Helmholtz"); }
   static std::string EosPyType() { return EosType(); }
 
-  SG_ADD_ABSE_CLASS_USINGS(Helmholtz)
+  SG_ADD_BASE_CLASS_USINGS(Helmholtz)
  private:
   PORTABLE_INLINE_FUNCTION
   Real ComputeGamma1_(const Real rho, const Real T, const Real p[NDERIV],
@@ -880,7 +879,7 @@ void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, R
   // dpepdd at high temperatures and low densities is below the
   // floating point limit of the subtraction of two large terms.
   // since dpresdd doesn't enter the maxwell relations at all, use the
-  // bicubic interpolation done above instead of this one
+  // bicubic interpolation done above instead of this one225
   x = De * De;
   pele[0] = x * df_d;
   pele[2] = x * df_dt;
@@ -1098,8 +1097,8 @@ void HelmCoulomb::GetFromDensityTemperature(const Real rho, const Real temp,
 
   // derivatives (and conversion from logarithmic derivative)
   Real gain = (1.0 - g_t * g_r);
-  Real dgaindt = -robust::ratio(g_r * dgdf_t, temp * M_LN10);
-  Real dgaindd = -robust::ratio(g_t * dgdf_r, rho * M_LN10);
+  Real dgaindt = -robust::ratio(g_r * dgdf_t, temp * LN10);
+  Real dgaindd = -robust::ratio(g_t * dgdf_r, rho * LN10);
 
   // straight up gain
   pcoul[VAL] = pcoul[VAL] * gain;
