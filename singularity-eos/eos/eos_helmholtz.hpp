@@ -39,11 +39,11 @@
 
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/eos_base.hpp>
 #include <singularity-eos/base/hermite.hpp>
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -56,7 +56,7 @@ using namespace eos_base;
 // TODO(JMM): Maybe want to move these utility functions into something like an
 // ASCII-utils file. Worth considering at some later date.
 namespace HelmUtils {
-using DataBox = HelmUtils::DataBox;
+using DataBox = Spiner::DataBox;
 constexpr std::size_t NDERIV = 5;
 enum DERIV { VAL = 0, DDR = 1, DDT = 2, DDA = 3, DDZ = 4 };
 // Tail-recursive resize tables
@@ -68,11 +68,11 @@ inline void ResizeTables(int n1, Real r1min, Real r1max, int n0, Real r0min, Rea
 }
 template <typename... Args>
 inline void ResizeTables(int n1, Real r1min, Real r1max, int n0, Real r0min, Real r0max,
-                         DataBox &head, Args &&...tail) {
+                         DataBox &head, Args &&... tail) {
   ResizeTables(n1, r1min, r1max, n0, r0min, r0max, head);
   ResizeTables(n1, r1min, r1max, n0, r0min, r0max, std::forward<Args>(tail)...);
 }
-// Tail-recursive read one i,j from text file
+// Tail-recursive read one i,j from ASCII text file
 template <typename Msg_t, typename T>
 inline void Read(std::ifstream &file, Msg_t &error_msg, T &var) {
   if (!(file >> var)) {
@@ -80,21 +80,21 @@ inline void Read(std::ifstream &file, Msg_t &error_msg, T &var) {
     PORTABLE_ALWAYS_THROW_OR_ABORT(error_msg);
   }
 }
-template <typename Msg_t, typename... Args>
-inline void Read(std::ifstream &file, Msg_t &error_msg, T &head, Args &&...tail) {
-  Read(file, msg, head);
-  Read(file, msg, std::forward<Args>(tail)...);
+template <typename Msg_t, typename T, typename... Args>
+inline void Read(std::ifstream &file, Msg_t &error_msg, T &head, Args &&... tail) {
+  Read(file, error_msg, head);
+  Read(file, error_msg, std::forward<Args>(tail)...);
 }
 // Read all i,j from text file
 template <typename... Args>
 inline void SetTablesFromFile(std::ifstream &file, int n1, Real r1min, Real r1max, int n0,
-                              Real r0min, Real r0max, Args &&...tables) {
+                              Real r0min, Real r0max, Args &&... tables) {
   ResizeTables(n1, r1min, r1max, n0, r0min, r0max, std::forward<Args>(tables)...);
-  for (int j = 0; j < NTEMP; ++j) {
-    for (int i = 0; i < NTEMP; ++i) {
+  for (int j = 0; j < n1; ++j) {
+    for (int i = 0; i < n0; ++i) {
       std::stringstream error_msg;
-      msg << "Error reading the Helmholtz free energy table at j = " << j << ", i = " << i
-          << std::endl;
+      error_msg << "Error reading the Helmholtz free energy table at j = " << j
+                << ", i = " << i << std::endl;
       Read(file, error_msg, tables(j, i)...);
     }
   }
@@ -105,7 +105,7 @@ class HelmholtzElectrons {
  public:
   // may change with time
   using DataBox = HelmUtils::DataBox;
-  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
+  static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
   inline HelmholtzElectrons(const std::string &filename) { InitDataFile_(filename); }
 
@@ -152,16 +152,16 @@ class HelmholtzElectrons {
   // number density
   DataBox xf_, xfd_, xft_, xfdt_;
 
-  constexpr std::size_t NTEMP = 101;
-  constexpr std::size_t NRHO = 271;
+  static constexpr std::size_t NTEMP = 101;
+  static constexpr std::size_t NRHO = 271;
 
-  constexpr Real lTMin_ = 3.0;
-  constexpr Real lTMax_ = 13.0;
-  constexpr Real lRhoMin_ = -12.0;
-  constexpr Real lRhoMax_ = 15.0;
+  static constexpr Real lTMin_ = 3.0;
+  static constexpr Real lTMax_ = 13.0;
+  static constexpr Real lRhoMin_ = -12.0;
+  static constexpr Real lRhoMax_ = 15.0;
 
-  constexpr Real dlT_ = (lTMax_ - lTMin_) / (static_cast<Real>(NTEMP) - 1.0);
-  constexpr Real dlRho_ = (lRhoMax_ - lRhoMin_) / (static_cast<Real>(NRHO) - 1.0);
+  static constexpr Real dlT_ = (lTMax_ - lTMin_) / (static_cast<Real>(NTEMP) - 1.0);
+  static constexpr Real dlRho_ = (lRhoMax_ - lRhoMin_) / (static_cast<Real>(NRHO) - 1.0);
 
   const Real TMin_ = math_utils::pow10(lTMin_);
   const Real TMax_ = math_utils::pow10(lTMax_);
@@ -174,11 +174,11 @@ class HelmholtzElectrons {
 // radiation EOS at some point.
 class HelmRad {
  public:
-  constexpr Real STEFAN_BOLTZMANN_CONSTANT = 5.670374419e-5; // erg/cm^2/s/K^4
-  constexpr Real CL = 2.998e10;                              // speed of light. cm/s
-  constexpr Real SIG_O_C = STEFAN_BOLTZMANN_CONSTANT / CL;
-  constexpr Real PREFACTOR = (4. / 3.) * SIG_O_C;
-  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
+  static constexpr Real STEFAN_BOLTZMANN_CONSTANT = 5.670374419e-5; // erg/cm^2/s/K^4
+  static constexpr Real CL = 2.998e10;                              // speed of light. cm/s
+  static constexpr Real SIG_O_C = STEFAN_BOLTZMANN_CONSTANT / CL;
+  static constexpr Real PREFACTOR = (4. / 3.) * SIG_O_C;
+  static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
   HelmRad() = default;
   HelmRad GetOnDevice() { return *this; }
@@ -193,15 +193,15 @@ class HelmRad {
 // rather than this hardcoded one
 class HelmIon {
  public:
-  constexpr Real KB = 1.3806505e-16; // Boltzmann constant in cgs
-  constexpr Real NA = 6.02214129e23; // Avogadro's number. 1/mol
-  constexpr Real KBNA = KB * NA;
-  constexpr REAL KBi = 1.0 / KB;
-  constexpr Real UNIFIED_ATOMIC_MASS = 1.660538782e-24; /* g */
-  constexpr Real PLANCK_H = 6.62606896e-27;             /* g cm^2 / s */
+  static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
+  static constexpr Real KB = 1.3806505e-16; // Boltzmann constant in cgs
+  static constexpr Real NA = 6.02214129e23; // Avogadro's number. 1/mol
+  static constexpr Real KBNA = KB * NA;
+  static constexpr Real KBi = 1.0 / KB;
+  static constexpr Real UNIFIED_ATOMIC_MASS = 1.660538782e-24; /* g */
+  static constexpr Real PLANCK_H = 6.62606896e-27;             /* g cm^2 / s */
   const Real LSWOT15 =
       1.5 * std::log((2.0 * M_PI * UNIFIED_ATOMIC_MASS * KB) / (PLANCK_H * PLANCK_H));
-  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
   HelmIon() = default;
   HelmIon GetOnDevice() { return *this; }
@@ -218,12 +218,12 @@ class HelmIon {
 // perhaps that will make it easier to swap out down the line.
 class HelmCoulomb {
  public:
-  constexpr Real ELECTRON_CHARGE_ESU = 4.80320427e-10;
-  constexpr Real KB = 1.3806505e-16; // Boltzmann constant in cgs
-  constexpr Real NA = 6.02214129e23; // Avogadro's number. 1/mol
-  constexpr Real KBNA = KB * NA;
-  constexpr Real M_LN10 = 2.30258509299404568401799145468; /* ln(10) */
-  constexpr std::size_t NDERIV = HelmUtils::NDERIV;
+  static constexpr Real ELECTRON_CHARGE_ESU = 4.80320427e-10;
+  static constexpr Real KB = 1.3806505e-16; // Boltzmann constant in cgs
+  static constexpr Real NA = 6.02214129e23; // Avogadro's number. 1/mol
+  static constexpr Real KBNA = KB * NA;
+  static constexpr Real M_LN10 = 2.30258509299404568401799145468; /* ln(10) */
+  static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
   HelmCoulomb() = default;
   HelmCoulomb GetOnDevice() { return *this; }
@@ -449,7 +449,7 @@ class Helmholtz : public EosBase<Helmholtz> {
                      const Real ye, const Real ytot, const Real ywot, const Real De,
                      const Real lDe, Real *lambda) const;
 
-  constexpr Real ROOT_THRESH = 1e-14;
+  static constexpr Real ROOT_THRESH = 1e-14;
   Options options_;
   HelmRad rad_;
   HelmIon ions_;
@@ -649,42 +649,42 @@ void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, R
 
   // contiguous cache of values for helm interp
   Real fi[36];
-  fi[0] = f_[jat][iat];
-  fi[1] = f_[jat + 1][iat];
-  fi[2] = f_[jat][iat + 1];
-  fi[3] = f_[jat + 1][iat + 1];
-  fi[4] = ft_[jat][iat];
-  fi[5] = ft_[jat + 1][iat];
-  fi[6] = ft_[jat][iat + 1];
-  fi[7] = ft_[jat + 1][iat + 1];
-  fi[8] = ftt_[jat][iat];
-  fi[9] = ftt_[jat + 1][iat];
-  fi[10] = ftt_[jat][iat + 1];
-  fi[11] = ftt_[jat + 1][iat + 1];
-  fi[12] = fd_[jat][iat];
-  fi[13] = fd_[jat + 1][iat];
-  fi[14] = fd_[jat][iat + 1];
-  fi[15] = fd_[jat + 1][iat + 1];
-  fi[16] = fdd_[jat][iat];
-  fi[17] = fdd_[jat + 1][iat];
-  fi[18] = fdd_[jat][iat + 1];
-  fi[19] = fdd_[jat + 1][iat + 1];
-  fi[20] = fdt_[jat][iat];
-  fi[21] = fdt_[jat + 1][iat];
-  fi[22] = fdt_[jat][iat + 1];
-  fi[23] = fdt_[jat + 1][iat + 1];
-  fi[24] = fddt_[jat][iat];
-  fi[25] = fddt_[jat + 1][iat];
-  fi[26] = fddt_[jat][iat + 1];
-  fi[27] = fddt_[jat + 1][iat + 1];
-  fi[28] = fdtt_[jat][iat];
-  fi[29] = fdtt_[jat + 1][iat];
-  fi[30] = fdtt_[jat][iat + 1];
-  fi[31] = fdtt_[jat + 1][iat + 1];
-  fi[32] = fddtt_[jat][iat];
-  fi[33] = fddtt_[jat + 1][iat];
-  fi[34] = fddtt_[jat][iat + 1];
-  fi[35] = fddtt_[jat + 1][iat + 1];
+  fi[0] = f_(jat, iat);
+  fi[1] = f_(jat + 1, iat);
+  fi[2] = f_(jat, iat + 1);
+  fi[3] = f_(jat + 1, iat + 1);
+  fi[4] = ft_(jat, iat);
+  fi[5] = ft_(jat + 1, iat);
+  fi[6] = ft_(jat, iat + 1);
+  fi[7] = ft_(jat + 1, iat + 1);
+  fi[8] = ftt_(jat, iat);
+  fi[9] = ftt_(jat + 1, iat);
+  fi[10] = ftt_(jat, iat + 1);
+  fi[11] = ftt_(jat + 1, iat + 1);
+  fi[12] = fd_(jat, iat);
+  fi[13] = fd_(jat + 1, iat);
+  fi[14] = fd_(jat, iat + 1);
+  fi[15] = fd_(jat + 1, iat + 1);
+  fi[16] = fdd_(jat, iat);
+  fi[17] = fdd_(jat + 1, iat);
+  fi[18] = fdd_(jat, iat + 1);
+  fi[19] = fdd_(jat + 1, iat + 1);
+  fi[20] = fdt_(jat, iat);
+  fi[21] = fdt_(jat + 1, iat);
+  fi[22] = fdt_(jat, iat + 1);
+  fi[23] = fdt_(jat + 1, iat + 1);
+  fi[24] = fddt_(jat, iat);
+  fi[25] = fddt_(jat + 1, iat);
+  fi[26] = fddt_(jat, iat + 1);
+  fi[27] = fddt_(jat + 1, iat + 1);
+  fi[28] = fdtt_(jat, iat);
+  fi[29] = fdtt_(jat + 1, iat);
+  fi[30] = fdtt_(jat, iat + 1);
+  fi[31] = fdtt_(jat + 1, iat + 1);
+  fi[32] = fddtt_(jat, iat);
+  fi[33] = fddtt_(jat + 1, iat);
+  fi[34] = fddtt_(jat, iat + 1);
+  fi[35] = fddtt_(jat + 1, iat + 1);
 
   // differences
   Real xt = std::max(0.0, (T - T_(jat)) * dti);
@@ -789,44 +789,44 @@ void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, R
   dsi1md = hermite::xdpsi1(mxd);
 
   // Re-use cache
-  fi[0] = dpdf_[jat][iat];
-  fi[1] = dpdf_[jat + 1][iat];
-  fi[2] = dpdf_[jat][iat + 1];
-  fi[3] = dpdf_[jat + 1][iat + 1];
-  fi[4] = dpdft_[jat][iat];
-  fi[5] = dpdft_[jat + 1][iat];
-  fi[6] = dpdft_[jat][iat + 1];
-  fi[7] = dpdft_[jat + 1][iat + 1];
-  fi[8] = dpdfd_[jat][iat];
-  fi[9] = dpdfd_[jat + 1][iat];
-  fi[10] = dpdfd_[jat][iat + 1];
-  fi[11] = dpdfd_[jat + 1][iat + 1];
-  fi[12] = dpdfdt_[jat][iat];
-  fi[13] = dpdfdt_[jat + 1][iat];
-  fi[14] = dpdfdt_[jat][iat + 1];
-  fi[15] = dpdfdt_[jat + 1][iat + 1];
+  fi[0] = dpdf_(jat, iat);
+  fi[1] = dpdf_(jat + 1, iat);
+  fi[2] = dpdf_(jat, iat + 1);
+  fi[3] = dpdf_(jat + 1, iat + 1);
+  fi[4] = dpdft_(jat, iat);
+  fi[5] = dpdft_(jat + 1, iat);
+  fi[6] = dpdft_(jat, iat + 1);
+  fi[7] = dpdft_(jat + 1, iat + 1);
+  fi[8] = dpdfd_(jat, iat);
+  fi[9] = dpdfd_(jat + 1, iat);
+  fi[10] = dpdfd_(jat, iat + 1);
+  fi[11] = dpdfd_(jat + 1, iat + 1);
+  fi[12] = dpdfdt_(jat, iat);
+  fi[13] = dpdfdt_(jat + 1, iat);
+  fi[14] = dpdfdt_(jat, iat + 1);
+  fi[15] = dpdfdt_(jat + 1, iat + 1);
 
   // pressure derivative with respect to density
   pele[1] = std::max(
       0.0, Ye * hermite::h3(fi, si0t, si1t, si0mt, si1mt, si0d, si1d, si0md, si1md));
 
   // chemical potentials
-  fi[0] = ef_[jat][iat];
-  fi[1] = ef_[jat + 1][iat];
-  fi[2] = ef_[jat][iat + 1];
-  fi[3] = ef_[jat + 1][iat + 1];
-  fi[4] = eft_[jat][iat];
-  fi[5] = eft_[jat + 1][iat];
-  fi[6] = eft_[jat][iat + 1];
-  fi[7] = eft_[jat + 1][iat + 1];
-  fi[8] = efd_[jat][iat];
-  fi[9] = efd_[jat + 1][iat];
-  fi[10] = efd_[jat][iat + 1];
-  fi[11] = efd_[jat + 1][iat + 1];
-  fi[12] = efdt_[jat][iat];
-  fi[13] = efdt_[jat + 1][iat];
-  fi[14] = efdt_[jat][iat + 1];
-  fi[15] = efdt_[jat + 1][iat + 1];
+  fi[0] = ef_(jat, iat);
+  fi[1] = ef_(jat + 1, iat);
+  fi[2] = ef_(jat, iat + 1);
+  fi[3] = ef_(jat + 1, iat + 1);
+  fi[4] = eft_(jat, iat);
+  fi[5] = eft_(jat + 1, iat);
+  fi[6] = eft_(jat, iat + 1);
+  fi[7] = eft_(jat + 1, iat + 1);
+  fi[8] = efd_(jat, iat);
+  fi[9] = efd_(jat + 1, iat);
+  fi[10] = efd_(jat, iat + 1);
+  fi[11] = efd_(jat + 1, iat + 1);
+  fi[12] = efdt_(jat, iat);
+  fi[13] = efdt_(jat + 1, iat);
+  fi[14] = efdt_(jat, iat + 1);
+  fi[15] = efdt_(jat + 1, iat + 1);
 
   // electron chemical potential etaele
   etaele[0] = hermite::h3(fi, si0t, si1t, si0mt, si1mt, si0d, si1d, si0md, si1md);
@@ -843,22 +843,22 @@ void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, R
   etaele[4] = x * rho * Ytot;
 
   // look in the number density table only once
-  fi[0] = xf_[jat][iat];
-  fi[1] = xf_[jat + 1][iat];
-  fi[2] = xf_[jat][iat + 1];
-  fi[3] = xf_[jat + 1][iat + 1];
-  fi[4] = xft_[jat][iat];
-  fi[5] = xft_[jat + 1][iat];
-  fi[6] = xft_[jat][iat + 1];
-  fi[7] = xft_[jat + 1][iat + 1];
-  fi[8] = xfd_[jat][iat];
-  fi[9] = xfd_[jat + 1][iat];
-  fi[10] = xfd_[jat][iat + 1];
-  fi[11] = xfd_[jat + 1][iat + 1];
-  fi[12] = xfdt_[jat][iat];
-  fi[13] = xfdt_[jat + 1][iat];
-  fi[14] = xfdt_[jat][iat + 1];
-  fi[15] = xfdt_[jat + 1][iat + 1];
+  fi[0] = xf_(jat, iat);
+  fi[1] = xf_(jat + 1, iat);
+  fi[2] = xf_(jat, iat + 1);
+  fi[3] = xf_(jat + 1, iat + 1);
+  fi[4] = xft_(jat, iat);
+  fi[5] = xft_(jat + 1, iat);
+  fi[6] = xft_(jat, iat + 1);
+  fi[7] = xft_(jat + 1, iat + 1);
+  fi[8] = xfd_(jat, iat);
+  fi[9] = xfd_(jat + 1, iat);
+  fi[10] = xfd_(jat, iat + 1);
+  fi[11] = xfd_(jat + 1, iat + 1);
+  fi[12] = xfdt_(jat, iat);
+  fi[13] = xfdt_(jat + 1, iat);
+  fi[14] = xfdt_(jat, iat + 1);
+  fi[15] = xfdt_(jat + 1, iat + 1);
 
   // electron + positron number densities
   xne[0] = hermite::h3(fi, si0t, si1t, si0mt, si1mt, si0d, si1d, si0md, si1md);
