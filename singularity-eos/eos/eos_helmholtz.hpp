@@ -420,7 +420,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
 
   PORTABLE_INLINE_FUNCTION
-  void GetElectronDenities_(const Real rho, const Real abar, const Real zbar, Real &ytot,
+  void GetElectronDensities_(const Real rho, const Real abar, const Real zbar, Real &ytot,
                             Real &ye, Real &ywot, Real &De, Real &lDe) const {
     ytot = robust::ratio(1.0, abar);
     ye = zbar * ytot;
@@ -464,7 +464,7 @@ void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &
   bool need_temp = (output & thermalqs::temperature);
   bool need_sie = (output & thermalqs::specific_internal_energy);
   bool need_rho = (output & thermalqs::density);
-  PROTABLE_REQUIRE(!need_rho, "Density output not supported by this EOS");
+  PORTABLE_REQUIRE(!need_rho, "Density output not supported by this EOS");
   PORTABLE_REQUIRE(!(need_temp && need_sie),
                    "Either specific internal energy or temperature must be provided.");
   Real abar = lambda[Lambda::Abar];
@@ -493,7 +493,7 @@ void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &
     cv = e[DDT];
   }
   if (output & thermalqs::bulk_modulus) {
-    Real gamma1 = ComputeGamma1_(rho, temperature, p, e);
+    Real gamma1 = ComputeGamma1_(rho, temp, p, e);
     // Note this is the bulk modulus, not the sound speed. To compute
     // the sound speed, you must take this value and divide by the
     // enthalpy. In particular:
@@ -629,7 +629,7 @@ void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, R
   rho = std::min(rhoMax_, std::max(rhoMin_, rho));
   De = std::min(rhoMax_, std::max(rhoMin_, De));
   lDe = std::min(lRhoMax_, std::max(lRhoMin_, lDe));
-  Real T = std::pow10(lT);
+  Real T = math_utils::pow10(lT);
 
   // Find central indexes in table
   auto &lRhoRange = f_.range(0);
@@ -926,7 +926,7 @@ void HelmRad::GetFromDensityTemperature(const Real rho, const Real temp,
   Real dedR = -e * rhoi;
   Real dedT = 3.0 * dPdT * rhoi;
   erad[VAL] = e;
-  erad[DDR] dedR;
+  erad[DDR] = dedR;
   erad[DDT] = dedT;
   erad[DDA] = 0;
   erad[DDZ] = 0;
@@ -949,6 +949,7 @@ void HelmIon::GetFromDensityTemperature(const Real rho, const Real temp, const R
                                         const Real dxnidd, const Real dxnida,
                                         Real pion[NDERIV], Real eion[NDERIV],
                                         Real sion[NDERIV]) const {
+  using namespace HelmUtils;
   const Real kbT = KB * temp;
   // pressure
   P = xni * kbT;
@@ -995,6 +996,7 @@ void HelmCoulomb::GetFromDensityTemperature(const Real rho, const Real temp,
                                             const Real dxnidd, const Real dxnida,
                                             Real pcoul[NDERIV], Real ecoul[NDERIV],
                                             Real scoul[NDERIV]) const {
+  using namespace HelmUtils;
   // fitting parameters
   constexpr Real a1 = -0.898004;
   constexpr Real b1 = 0.96786;
@@ -1139,7 +1141,7 @@ void Helmholtz::GetFromDensityLogTemperature_(
 
   const Real log10e = std::log10(e);
   const Real lnT = lT / log10e;
-  Real T = std::pow10(lT);
+  Real T = math_utils::pow10(lT);
   if (options_.ENABLE_RAD) {
     rad_.GetFromDensityTemperature(rho, T, prad, erad, srad);
   }
@@ -1170,7 +1172,7 @@ void Helmholtz::GetFromDensityLogTemperature_(
     }
     if (options_.GAS_DEGENERATE) { // treat degenerate electron gas
       electrons_.GetFromDensityTemperature(rho, lT, ye, ytot, De, lDe, pele, eele, sele,
-                                           etaele, nep, onle_e);
+                                           etaele, nep, only_e);
       if (options_.ENABLE_COULOMB_CORRECTIONS) {
         Real xni, dxnidd, dxnida;
         GetMassFractions(rho, T, ytot, xni, dxnidd, dxnida);
