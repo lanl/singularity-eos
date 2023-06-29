@@ -373,27 +373,35 @@ class Helmholtz : public EosBase<Helmholtz> {
 
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    Real rl = rho;
+    Real tl = temperature;
     Real sie, p, cv, bmod;
-    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::specific_heat, lambda);
+    FillEos(rl, tl, sie, p, cv, bmod, thermalqs::specific_heat, lambda);
     return cv;
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
+    Real rl = rho;
+    Real el = sie;
     Real temperature, p, cv, bmod;
-    FillEos(rho, temperature, sie, p, cv, bmod,
+    FillEos(rl, temperature, el, p, cv, bmod,
             thermalqs::specific_heat | thermalqs::temperature, lambda);
-    return cv
+    return cv;
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    Real rl = rho;
+    Real tl = temperature;
     Real sie, p, cv, bmod;
-    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::bulk_modulus, lambda);
+    FillEos(rl, tl, sie, p, cv, bmod, thermalqs::bulk_modulus, lambda);
     return bmod;
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
+    Real rl = rho;
+    Real el = sie;
     Real temperature, p, cv, bmod;
-    FillEos(rho, temperature, sie, p, cv, bmod,
+    FillEos(rl, temperature, el, p, cv, bmod,
             thermalqs::bulk_modulus | thermalqs::temperature, lambda);
     return bmod;
   }
@@ -430,7 +438,7 @@ class Helmholtz : public EosBase<Helmholtz> {
  private:
   PORTABLE_INLINE_FUNCTION
   Real ComputeGamma1_(const Real rho, const Real T, const Real p[NDERIV],
-                      const Real e[NDERIV]) {
+                      const Real e[NDERIV]) const {
     using namespace HelmUtils;
     const Real chit = robust::ratio(T, p[0]) * p[DDT];
     const Real chid = robust::ratio(p[DDR] * rho, p[0]);
@@ -478,7 +486,7 @@ class Helmholtz : public EosBase<Helmholtz> {
 PORTABLE_INLINE_FUNCTION
 void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
                         Real &bmod, const unsigned long output,
-                        Real *lambda = nullptr) const {
+                        Real *lambda) const {
   using namespace HelmUtils;
   bool need_temp = (output & thermalqs::temperature);
   bool need_sie = (output & thermalqs::specific_internal_energy);
@@ -488,7 +496,7 @@ void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &
                    "Either specific internal energy or temperature must be provided.");
   Real abar = lambda[Lambda::Abar];
   Real zbar = lambda[Lambda::Zbar];
-  Real ytot, ye, ywot, De, lDe;
+  Real ytot, ye, ywot, De, lDe, lT;
   GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
   if (need_temp) {
     lT = lTFromRhoSie_(rho, energy, abar, zbar, ye, ytot, ywot, De, lDe, lambda);
@@ -500,7 +508,7 @@ void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &
   GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
                                 etaele, nep);
   if (output & thermalqs::temperature) {
-    temperature = math_utils::pow10(lT);
+    temp = math_utils::pow10(lT);
   }
   if (output & thermalqs::specific_internal_energy) {
     energy = e[0];
@@ -520,7 +528,6 @@ void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &
     // see page 108 of Rezzolla and Zanotti
     bmod = std::max(robust::EPS(), press * gamma1);
   }
-  if (output & thermalqs
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -528,6 +535,7 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
                               const Real zbar, const Real ye, const Real ytot,
                               const Real ywot, const Real De, const Real lDe,
                               Real *lambda) const {
+  using namespace HelmUtils;
   const Real abari = robust::ratio(1.0, abar);
   const Real ni = abari * rho * ions_.NA;
   const Real ne = zbar * ni;
@@ -537,7 +545,7 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
       options_.ENABLE_COULOMB_CORRECTIONS) {
     Real lTguess = lambda[Lambda::lT];
     if (!((electrons_.lTMin() <= lTguess) && (lTguess <= electrons_.lTMax()))) {
-      lTguess = lTAnalytic(rho, e, ni, ne);
+      lTguess = lTAnalytic_(rho, e, ni, ne);
     }
     auto &copy = *this; // stupid C++17 workaround
     auto status = ROOT_FINDER(
@@ -545,14 +553,14 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
           Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
           copy.GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe,
                                              p, e, s, etaele, nep, true);
-          return e[VAR];
+          return e[VAL];
         },
         e, lTguess, electrons_.lTMin(), electrons_.lTMax(), ROOT_THRESH, ROOT_THRESH, lT);
-    if (status != Rootfinding1D::Status::SUCCESS) {
-      lT = lTAnalytic(rho, e, ni, options_.GAS_IONIZED * ne);
+    if (status != RootFinding1D::Status::SUCCESS) {
+      lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
     }
   } else {
-    lT = lTAnalytic(rho, e, ni, options_.GAS_IONIZED * ne);
+    lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
   }
   lambda[Lambda::lT] = lT;
   return lT;
@@ -604,12 +612,13 @@ inline HelmholtzElectrons HelmholtzElectrons::GetOnDevice() {
   other.dpdfdt_ = Spiner::getOnDeviceDataBox(dpdfdt_);
   other.ef_ = Spiner::getOnDeviceDataBox(ef_);
   other.efd_ = Spiner::getOnDeviceDataBox(efd_);
-  other.eft_ = Spiner::getOnDeviceDataBox(eftf_);
-  other.efdtf_ = Spiner::getOnDeviceDataBox(efdt_);
+  other.eft_ = Spiner::getOnDeviceDataBox(eft_);
+  other.efdt_ = Spiner::getOnDeviceDataBox(efdt_);
   other.xf_ = Spiner::getOnDeviceDataBox(xf_);
   other.xfd_ = Spiner::getOnDeviceDataBox(xfd_);
   other.xft_ = Spiner::getOnDeviceDataBox(xft_);
   other.xfdt_ = Spiner::getOnDeviceDataBox(xfdt_);
+  return other;
 }
 
 inline void HelmholtzElectrons::Finalize() {
@@ -631,7 +640,7 @@ inline void HelmholtzElectrons::Finalize() {
   ef_.finalize();
   efd_.finalize();
   eft_.finalize();
-  efdtf_.finalize();
+  efdt_.finalize();
   xf_.finalize();
   xfd_.finalize();
   xft_.finalize();
@@ -643,7 +652,7 @@ void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, R
                                                    Real De, Real lDe, Real pele[NDERIV],
                                                    Real eele[NDERIV], Real sele[NDERIV],
                                                    Real etaele[NDERIV], Real xne[NDERIV],
-                                                   bool only_e = false) const {
+                                                   bool only_e) const {
   // Bound lRho, lT
   rho = std::min(rhoMax_, std::max(rhoMin_, rho));
   De = std::min(rhoMax_, std::max(rhoMin_, De));
