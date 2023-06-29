@@ -107,6 +107,7 @@ class HelmholtzElectrons {
   using DataBox = HelmUtils::DataBox;
   static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
+  HelmholtzElectrons() = default;
   inline HelmholtzElectrons(const std::string &filename) { InitDataFile_(filename); }
 
   inline HelmholtzElectrons GetOnDevice();
@@ -155,18 +156,26 @@ class HelmholtzElectrons {
   static constexpr std::size_t NTEMP = 101;
   static constexpr std::size_t NRHO = 271;
 
-  static constexpr Real lTMin_ = 3.0;
-  static constexpr Real lTMax_ = 13.0;
-  static constexpr Real lRhoMin_ = -12.0;
-  static constexpr Real lRhoMax_ = 15.0;
+  // JMM: Following trick only works because the powers are even powers of 10.
+  // This is to get compile-time values for log10/powers of 10
+  // integer powers
+  static constexpr int ilTMin_ = 3;
+  static constexpr int ilTMax_ = 13;
+  static constexpr int ilRhoMin_ = -12;
+  static constexpr int ilRhoMax_ = 15;
+  // real values to auto-cast correctly
+  static constexpr Real lTMin_ = ilTMin_;
+  static constexpr Real lTMax_ = ilTMax_;
+  static constexpr Real lRhoMin_ = ilRhoMin_;
+  static constexpr Real lRhoMax_ = ilRhoMax_;
 
   static constexpr Real dlT_ = (lTMax_ - lTMin_) / (static_cast<Real>(NTEMP) - 1.0);
   static constexpr Real dlRho_ = (lRhoMax_ - lRhoMin_) / (static_cast<Real>(NRHO) - 1.0);
 
-  const Real TMin_ = math_utils::pow10(lTMin_);
-  const Real TMax_ = math_utils::pow10(lTMax_);
-  const Real rhoMin_ = math_utils::pow10(lRhoMin_);
-  const Real rhoMax_ = math_utils::pow10(rhoMax_);
+  static constexpr Real TMin_ = math_utils::ipow10<ilTMin_>();
+  static constexpr Real TMax_ = math_utils::ipow10<ilTMax_>();
+  static constexpr Real rhoMin_ = math_utils::ipow10<ilRhoMin_>();
+  static constexpr Real rhoMax_ = math_utils::ipow10<ilRhoMax_>();
 };
 
 // Currently trivial. But we may want to swap this out at some point,
@@ -200,8 +209,9 @@ class HelmIon {
   static constexpr Real KBi = 1.0 / KB;
   static constexpr Real UNIFIED_ATOMIC_MASS = 1.660538782e-24; /* g */
   static constexpr Real PLANCK_H = 6.62606896e-27;             /* g cm^2 / s */
-  const Real LSWOT15 =
-      1.5 * std::log((2.0 * M_PI * UNIFIED_ATOMIC_MASS * KB) / (PLANCK_H * PLANCK_H));
+  // 1.5 * std::log((2.0 * M_PI * UNIFIED_ATOMIC_MASS * KB) / (PLANCK_H * PLANCK_H));
+  static constexpr Real LSWOT15 = 4.66826127417042e+01;
+
 
   HelmIon() = default;
   HelmIon GetOnDevice() { return *this; }
@@ -323,27 +333,35 @@ class Helmholtz : public EosBase<Helmholtz> {
 
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
+    Real rl= rho;
+    Real el = sie;
     Real temperature, p, cv, bmod;
-    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::temperature, lambda);
+    FillEos(rl, temperature, el, p, cv, bmod, thermalqs::temperature, lambda);
     return temperature;
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    Real rl = rho;
+    Real tl = temperature;
     Real sie, p, cv, bmod;
-    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::specific_internal_energy,
+    FillEos(rl, tl, sie, p, cv, bmod, thermalqs::specific_internal_energy,
             lambda);
     return sie;
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    Real rl = rho;
+    Real tl = temperature;
     Real sie, p, cv, bmod;
-    FillEos(rho, temperature, sie, p, cv, bmod, thermalqs::pressure, lambda);
+    FillEos(rl, tl, sie, p, cv, bmod, thermalqs::pressure, lambda);
     return p;
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
+    Real rl = rho;
+    Real el = sie;
     Real temperature, p, cv, bmod;
-    FillEos(rho, temperature, sie, p, cv, bmod,
+    FillEos(rl, temperature, el, p, cv, bmod,
             thermalqs::pressure | thermalqs::temperature, lambda);
     return p;
   }
