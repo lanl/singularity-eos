@@ -34,7 +34,5 @@
 using singularity::Helmholtz;
 const std::string filename = "helm_table.dat";
 SCENARIO("Helmholtz equation of state", "[HelmholtzEOS]") {
-  GIVEN("A helholtz EOS") {
-    Helmholtz eos(filename);
-  }
+  GIVEN("A helholtz EOS") { Helmholtz eos(filename); }
 }

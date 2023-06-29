@@ -68,7 +68,7 @@ inline void ResizeTables(int n1, Real r1min, Real r1max, int n0, Real r0min, Rea
 }
 template <typename... Args>
 inline void ResizeTables(int n1, Real r1min, Real r1max, int n0, Real r0min, Real r0max,
-                         DataBox &head, Args &&... tail) {
+                         DataBox &head, Args &&...tail) {
   ResizeTables(n1, r1min, r1max, n0, r0min, r0max, head);
   ResizeTables(n1, r1min, r1max, n0, r0min, r0max, std::forward<Args>(tail)...);
 }
@@ -81,14 +81,14 @@ inline void Read(std::ifstream &file, Msg_t &error_msg, T &var) {
   }
 }
 template <typename Msg_t, typename T, typename... Args>
-inline void Read(std::ifstream &file, Msg_t &error_msg, T &head, Args &&... tail) {
+inline void Read(std::ifstream &file, Msg_t &error_msg, T &head, Args &&...tail) {
   Read(file, error_msg, head);
   Read(file, error_msg, std::forward<Args>(tail)...);
 }
 // Read all i,j from text file
 template <typename... Args>
 inline void SetTablesFromFile(std::ifstream &file, int n1, Real r1min, Real r1max, int n0,
-                              Real r0min, Real r0max, Args &&... tables) {
+                              Real r0min, Real r0max, Args &&...tables) {
   ResizeTables(n1, r1min, r1max, n0, r0min, r0max, std::forward<Args>(tables)...);
   for (int j = 0; j < n1; ++j) {
     for (int i = 0; i < n0; ++i) {
@@ -212,7 +212,6 @@ class HelmIon {
   // 1.5 * std::log((2.0 * M_PI * UNIFIED_ATOMIC_MASS * KB) / (PLANCK_H * PLANCK_H));
   static constexpr Real LSWOT15 = 4.66826127417042e+01;
 
-
   HelmIon() = default;
   HelmIon GetOnDevice() { return *this; }
   void Finalize() {}
@@ -281,9 +280,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   };
 
   Helmholtz() = default;
-  Helmholtz(const std::string &filename)
-      : electrons_(filename) {
-  }
+  Helmholtz(const std::string &filename) : electrons_(filename) {}
   Helmholtz(const std::string &filename, Options options)
       : electrons_(filename), options_(options) {}
 
@@ -333,7 +330,7 @@ class Helmholtz : public EosBase<Helmholtz> {
 
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    Real rl= rho;
+    Real rl = rho;
     Real el = sie;
     Real temperature, p, cv, bmod;
     FillEos(rl, temperature, el, p, cv, bmod, thermalqs::temperature, lambda);
@@ -344,8 +341,7 @@ class Helmholtz : public EosBase<Helmholtz> {
     Real rl = rho;
     Real tl = temperature;
     Real sie, p, cv, bmod;
-    FillEos(rl, tl, sie, p, cv, bmod, thermalqs::specific_internal_energy,
-            lambda);
+    FillEos(rl, tl, sie, p, cv, bmod, thermalqs::specific_internal_energy, lambda);
     return sie;
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
@@ -448,7 +444,7 @@ class Helmholtz : public EosBase<Helmholtz> {
 
   PORTABLE_INLINE_FUNCTION
   void GetElectronDensities_(const Real rho, const Real abar, const Real zbar, Real &ytot,
-                            Real &ye, Real &ywot, Real &De, Real &lDe) const {
+                             Real &ye, Real &ywot, Real &De, Real &lDe) const {
     ytot = robust::ratio(1.0, abar);
     ye = zbar * ytot;
     // TODO(JMM): should we be passing around logrho maybe?
@@ -485,8 +481,7 @@ class Helmholtz : public EosBase<Helmholtz> {
 
 PORTABLE_INLINE_FUNCTION
 void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-                        Real &bmod, const unsigned long output,
-                        Real *lambda) const {
+                        Real &bmod, const unsigned long output, Real *lambda) const {
   using namespace HelmUtils;
   bool need_temp = (output & thermalqs::temperature);
   bool need_sie = (output & thermalqs::specific_internal_energy);
@@ -1009,7 +1004,8 @@ void HelmIon::GetFromDensityTemperature(const Real rho, const Real temp, const R
   const Real KBNAY = KBNA * ytot;
   const Real s = (PoR + e) * tempi + KBNAY * y;
   const Real dsdR = (dPdR * rhoi - P * rhoi * rhoi + dedR) * tempi - KBNAY * rhoi;
-  const Real dsdT = (dPdT * rhoi + dedT) * tempi - (PoR + e) * tempi * tempi + 1.5 * KBNAY * tempi;
+  const Real dsdT =
+      (dPdT * rhoi + dedT) * tempi - (PoR + e) * tempi * tempi + 1.5 * KBNAY * tempi;
   const Real dsdA = (dPdA * rhoi + dedA) * tempi + KBNAY * ytot * (2.5 - y);
   sion[VAL] = s;
   sion[DDR] = dsdR;
@@ -1041,11 +1037,13 @@ void HelmCoulomb::GetFromDensityTemperature(const Real rho, const Real temp,
   const Real kbT = KB * temp;
   const Real pion = xni * kbT;
   const Real dpiondd = dxnidd * kbT;
+  const Real dpiondt = xni * KB;
   const Real dpionda = dxnida * kbT;
+  constexpr Real dpiondz = 0.0;
 
   constexpr Real four_thirds = 4.0 / 3.0;
   constexpr Real ftpi = four_thirds * M_PI;
-  const Real s = ftpi * xni;
+  Real s = ftpi * xni;
   const Real dsdd = ftpi * dxnidd;
   const Real dsda = ftpi * dxnida;
 
@@ -1055,7 +1053,7 @@ void HelmCoulomb::GetFromDensityTemperature(const Real rho, const Real temp,
   const Real lamidd = -lami * one_third * dsdd * si;
   const Real lamida = -lami * one_third * dsda * si;
 
-  const Real plasg = math_utils::pow<2>(ELECTRON_CHARGE_ESU * zbar) / (kt * lami);
+  const Real plasg = math_utils::pow<2>(ELECTRON_CHARGE_ESU * zbar) / (kbT * lami);
   const Real plasg_o_lami = robust::ratio(plasg, lami);
   const Real plasgdd = -plasg_o_lami * lamidd;
   const Real plasgda = -plasg_o_lami * lamida;
@@ -1159,7 +1157,7 @@ void Helmholtz::GetFromDensityLogTemperature_(
     const Real ytot, const Real ywot, const Real De, const Real lDe, Real p[NDERIV],
     Real e[NDERIV], Real s[NDERIV], Real etaele[NDERIV], Real nep[NDERIV],
     // TODO(JMM): Decide which of the quantities below to keep
-    const bool only_e = false) const {
+    const bool only_e) const {
   double prad[NDERIV] = {0}, pion[NDERIV] = {0}, pele[NDERIV] = {0}, pcoul[NDERIV] = {0};
   double erad[NDERIV] = {0}, eion[NDERIV] = {0}, eele[NDERIV] = {0}, ecoul[NDERIV] = {0};
   double srad[NDERIV] = {0}, sion[NDERIV] = {0}, sele[NDERIV] = {0}, scoul[NDERIV] = {0};
