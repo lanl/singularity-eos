@@ -912,7 +912,7 @@ void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, R
   pele[0] = x * df_d;
   pele[2] = x * df_dt;
   // pele[1]  = ye * (x * df_dd + 2.0 * din * df_d);
-  s = pele[1] / Ye - 2.0 * De * df_d;
+  Real s = pele[1] / Ye - 2.0 * De * df_d;
   pele[3] = -Ytot * (2.0 * pele[0] + s * De);
   pele[4] = rho * Ytot * (2.0 * De * df_d + s);
 
@@ -938,7 +938,7 @@ void HelmRad::GetFromDensityTemperature(const Real rho, const Real temp,
   const Real rhoi = robust::ratio(1.0, rho);
   const Real tempi = robust::ratio(1.0, temp);
   const Real T3 = math_utils::pow<3>(temp);
-  const Real T4 = T3 * T;
+  const Real T4 = T3 * temp;
   // pressure
   Real P = PREFACTOR * T4;
   Real dPdT = 4.0 * PREFACTOR * T3;
@@ -961,6 +961,7 @@ void HelmRad::GetFromDensityTemperature(const Real rho, const Real temp,
 
   // entropy
   constexpr Real dPdR = 0;
+  const Real dEdR = erad[DDR];
   Real s = (PoR + e) * tempi;
   Real dsdR = ((dPdR - PoR) * rhoi + dEdR) * tempi;
   Real dsdT = (dPdT * rhoi + dedT - s) * tempi;
@@ -980,10 +981,10 @@ void HelmIon::GetFromDensityTemperature(const Real rho, const Real temp, const R
   using namespace HelmUtils;
   const Real kbT = KB * temp;
   // pressure
-  P = xni * kbT;
-  dPdR = dxnidd * kbT;
-  dPdT = xni * KB;
-  dPdA = dxnida * kbT;
+  const Real P = xni * kbT;
+  const Real dPdR = dxnidd * kbT;
+  const Real dPdT = xni * KB;
+  const Real dPdA = dxnida * kbT;
   pion[VAL] = P;
   pion[DDR] = dPdR;
   pion[DDT] = dPdT;
@@ -993,10 +994,10 @@ void HelmIon::GetFromDensityTemperature(const Real rho, const Real temp, const R
   // energy
   const Real rhoi = robust::ratio(1.0, rho);
   const Real PoR = P * rhoi;
-  e = 1.5 * PoR;
-  dedR = (1.5 * dPdR - e) * rhoi;
-  dedT = 1.5 * dPdT * rhoi;
-  dedA = 1.5 * dPdA * rhoi;
+  const Real e = 1.5 * PoR;
+  const Real dedR = (1.5 * dPdR - e) * rhoi;
+  const Real dedT = 1.5 * dPdT * rhoi;
+  const Real dedA = 1.5 * dPdA * rhoi;
   eion[VAL] = e;
   eion[DDR] = dedR;
   eion[DDT] = dedT;
@@ -1006,10 +1007,10 @@ void HelmIon::GetFromDensityTemperature(const Real rho, const Real temp, const R
   // entropy
   const Real tempi = robust::ratio(1.0, temp);
   const Real KBNAY = KBNA * ytot;
-  s = (PoR + e) * itemp + KBNAY * y;
-  dsdR = (dPdR * rhoi - P * rhoi * rhoi + dedR) * tempi - KBNAY * rhoi;
-  dsdT = (dPdT * rhoi + dedT) * tempi - (PoR + e) * tempi * tempi + 1.5 * KBNAY * tempi;
-  dsdA = (dPdA * rhoi + dedA) * tempi + KBNAY * ytot * (2.5 - y);
+  const Real s = (PoR + e) * tempi + KBNAY * y;
+  const Real dsdR = (dPdR * rhoi - P * rhoi * rhoi + dedR) * tempi - KBNAY * rhoi;
+  const Real dsdT = (dPdT * rhoi + dedT) * tempi - (PoR + e) * tempi * tempi + 1.5 * KBNAY * tempi;
+  const Real dsdA = (dPdA * rhoi + dedA) * tempi + KBNAY * ytot * (2.5 - y);
   sion[VAL] = s;
   sion[DDR] = dsdR;
   sion[DDT] = dsdT;
