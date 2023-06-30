@@ -117,7 +117,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
 
   PORTABLE_INLINE_FUNCTION
   Real get_ramp_dpdrho(Real rho) const {
-    const Real dpdr{rho < r0_ ? 0.0 : rho < rmid_ ? ratio(a_, r0_) : ratio(b_, r0_)};
+    const Real dpdr{rho < rmid_ ? ratio(a_, r0_) : ratio(b_, r0_)};
     return dpdr;
   }
 
@@ -158,7 +158,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     const Real p_eos{t_.PressureFromDensityInternalEnergy(rho, sie, lambda)};
 
     return p_eos < p_ramp ? rho * get_ramp_dpdrho(rho)
-                          : t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
+		   : t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
