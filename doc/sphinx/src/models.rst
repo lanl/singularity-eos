@@ -1164,7 +1164,15 @@ the Helmholtz EOS requires two additional indepenent variables, the
 average atomic mass, Abar, and the average atomic number, Zbar. These
 are passed in through the lambda pointer. As with the other tabulated
 EOS's, the log of the temperature is also stored in the lambda pointer
-as a cache for root finding.
+as a cache for root finding. Helmholtz provides an enum for indexing
+into the lambda:
+
+* ``Helmholtz::Lambda::Abar`` indexes into the ``Abar`` component of
+  the lambda array.
+* ``Helmholtz::Lambda::Zbar`` indexes into the ``Zbar`` component of
+  the lambda array.
+* ``Helmholtz::Lambda::lT`` indexes into the log temperature cache
+  inside the lambda array.
 
 The degenerate electron term is computed via thermodynamic derivatives
 of the Helmholtz free energy (hence the name Helmholtz EOS). The free

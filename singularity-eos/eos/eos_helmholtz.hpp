@@ -230,6 +230,11 @@ class HelmElectrons {
   // rho and T caches (to go between log/linear scale)
   DataBox rho_, T_;
   // Free energy and derivatives
+  // Convention:
+  // fd_ = df/drho
+  // fdd_ = d^2 f/d rho^2
+  // fdt_ = d^2 f/d rho dT
+  // etc
   DataBox f_, fd_, ft_, fdd_, ftt_, fdt_, fddt_, fdtt_, fddtt_;
   // derivatives
   DataBox dpdf_, dpdfd_, dpdft_, dpdfdt_;
@@ -351,7 +356,7 @@ class Helmholtz : public EosBase<Helmholtz> {
     enum Index {
       Abar = 0, // Average atomic mass
       Zbar = 1, // Average atomic number
-      lT = 4    // log10 temperature. used for root finding.
+      lT = 3    // log10 temperature. used for root finding.
     };
   };
   // Options struct. You can create one of these and modify it to set
