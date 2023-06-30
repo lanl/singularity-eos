@@ -32,7 +32,10 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::Helmholtz;
-const std::string filename = "helm_table.dat";
+const std::string filename = "test/helmholtz/helm_table.dat";
 SCENARIO("Helmholtz equation of state", "[HelmholtzEOS]") {
-  GIVEN("A helholtz EOS") { Helmholtz eos(filename); }
+  GIVEN("A helholtz EOS") {
+    Helmholtz eos(filename);
+    THEN("We loaded the file!") { REQUIRE(true); }
+  }
 }

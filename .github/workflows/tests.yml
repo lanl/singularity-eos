@@ -37,6 +37,7 @@ jobs:
                   -DSINGULARITY_TEST_SESAME=OFF \
                   -DSINGULARITY_TEST_PYTHON=ON \
                   -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
+                  -DSINGULARITY_TEST_HELMHOLTZ=ON \
                   ..
             make
             make install

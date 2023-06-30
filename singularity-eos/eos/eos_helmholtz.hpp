@@ -50,6 +50,87 @@
 
 #define ROOT_FINDER (RootFinding1D::regula_falsi)
 
+/*
+ * The singularity-eos implementation of the Helmhotlz equation of state
+ * provided by Timmes, and Swesty
+ * Astrophysical Journal Supplements, Volume 126, Issue 2, Page 501 (2000).
+ *
+ * Port primarily by Jonah Miller with assistance from Philipp
+ * Edelmann, Sam Jones, and the 2023 Co-Design Summer School.
+ *
+ * The Helmholtz EOS is a three part thermodynamically consistent EOS
+ * for a hot, ionized gas. It consists of a thermal radiation term:
+ *
+ * P = sigma T^4
+ *
+ * an ions term, treated as an ideal gas:
+ *
+ * P = (gamma - 1) rho e
+ *
+ * and a degenerate electron term. Additionally, coulomb force
+ * corrections can be applied on top of the full model.
+ *
+ * This multi-component model depends on the relative abundances of
+ * electrons and ions, as well as the atomic mass and charge of the
+ * ions. As such, the Helmholtz EOS requires two additional indepenent
+ * variables, the average atomic mass, Abar, and the average atomic
+ * number, Zbar. These are passed in through the lambda pointer. As
+ * with the other tabulated EOS's, the log of the temperature is also
+ * stored in the lambda pointer as a cache for root finding.
+ *
+ * From the density, Abar, and Zbar, several convenient derived
+ * quantities can be comnputed, which are used internally. These are:
+ *
+ * - the ratio of electron number to Baryon number, called electron
+ *   fraction, or Ye,
+ * - The ion number fraction Ytot
+ * - The electron number density De
+ * - The log10 of De, lDe
+ * - Additionally a convenience ration, ywot, is used to set atomic
+ *   mass for the EOS if the gas is not ionized.
+ *
+ * The degenerate electron term is computed via thermodynamic
+ * derivatives of the Helmholtz free energy (hence the name Helmholtz
+ * EOS). The free energy is pre-computed via integrals over the Fermi
+ * sphere and tabulated in a file, helmholtz/helm_table.dat, provided
+ * from
+ *
+ * https://cococubed.com/code_pages/eos.shtml
+ *
+ * The table is a simple small ascii file. To ensure thermodyanic
+ * consistency, the table is interpolated using either biquintic or
+ * bicubic Hermite polynomials, which are sufficiently high order that
+ * their high-order derivatives match the underlying data.
+ *
+ * The implication of interpolating from the free energy is that each
+ * EOS evaluation provides ALL relevant EOS data and thermodynamic
+ * derivatives. Thus the per-quantity EOS calls are relatively
+ * inefficient, and it is instead better to use the FillEos call to
+ * get the entire model at once.
+ *
+ * For this reason, each internal EOS function fills 5 arrays, each
+ * containing relevant thermodynamic quantities and their derivatives
+ * with respect to the independent variables, density, temperature,
+ * abar, and zbar (in that order):
+ * - p = pressure
+ * - e = specific internal energy
+ * - s = entropy
+ * - etaele = checmical potential of electrons
+ * - xne = number density of electron + positron pairs
+ *
+ * From a design standpoint, I have split each piece of the EOS off
+ * and only combined them in the final "Helmholtz" class. The
+ * component classes are HelmRad, HelmIons, HelmCoul, and
+ * HelmElectrons. Right now, they are hardcoded, but I chose this
+ * modular design with the intent, that these classes might be
+ * hot-swapped with more sophisticated treatments down the line.
+ *
+ * Note that while singularity-eos has an ideal gas EOS, it's not
+ * written in terms of fundamental quantities like atomic mass, which
+ * made the translation cumbersom, so I just ported the reference
+ * implementation.
+ */
+
 namespace singularity {
 using namespace eos_base;
 
@@ -57,8 +138,12 @@ using namespace eos_base;
 // ASCII-utils file. Worth considering at some later date.
 namespace HelmUtils {
 using DataBox = Spiner::DataBox;
+
+// Components of the arrays returned by internal routines:
+// Variable, derivs w.r.t density, temperature, abar, zbar
 constexpr std::size_t NDERIV = 5;
 enum DERIV { VAL = 0, DDR = 1, DDT = 2, DDA = 3, DDZ = 4 };
+
 // Tail-recursive resize tables
 inline void ResizeTables(int n1, Real r1min, Real r1max, int n0, Real r0min, Real r0max,
                          DataBox &db) {
@@ -101,16 +186,16 @@ inline void SetTablesFromFile(std::ifstream &file, int n1, Real r1min, Real r1ma
 }
 } // namespace HelmUtils
 
-class HelmholtzElectrons {
+class HelmElectrons {
  public:
   // may change with time
   using DataBox = HelmUtils::DataBox;
   static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
-  HelmholtzElectrons() = default;
-  inline HelmholtzElectrons(const std::string &filename) { InitDataFile_(filename); }
+  HelmElectrons() = default;
+  inline HelmElectrons(const std::string &filename) { InitDataFile_(filename); }
 
-  inline HelmholtzElectrons GetOnDevice();
+  inline HelmElectrons GetOnDevice();
   inline void Finalize();
 
   PORTABLE_INLINE_FUNCTION
@@ -361,11 +446,19 @@ class Helmholtz : public EosBase<Helmholtz> {
             thermalqs::pressure | thermalqs::temperature, lambda);
     return p;
   }
-  // TODO: Do entropy
+
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+    GetFromDensityTemperature_(rho, temperature, lambda, p, e, s, etaele, nep);
+    return s[HelmUtils::VAL];
+  }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+    GetFromDensityInternalEnergy_(rho, sie, lambda, p, e, s, etaele, nep);
+    return s[HelmUtils::VAL];
+  }
 
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
@@ -401,13 +494,23 @@ class Helmholtz : public EosBase<Helmholtz> {
             thermalqs::bulk_modulus | thermalqs::temperature, lambda);
     return bmod;
   }
-  // TODO: Do Gruneisen
+
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    // const Real dPdE = robust::ratio(p[DDR], e[DDR]) + robust::ratio(p[DDT], e[DDT]);
+    using namespace HelmUtils;
+    Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+    GetFromDensityTemperature_(rho, temperature, lambda, p, e, s, etaele, nep);
+    const Real dPdE = robust::ratio(p[DDR], e[DDR]) + robust::ratio(p[DDT], e[DDT]);
+    return robust::ratio(dPdE, rho);
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    using namespace HelmUtils;
+    Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+    GetFromDensityInternalEnergy_(rho, sie, lambda, p, e, s, etaele, nep);
+    const Real dPdE = robust::ratio(p[DDR], e[DDR]) + robust::ratio(p[DDT], e[DDT]);
+    return robust::ratio(dPdE, rho);
+  }
 
   PORTABLE_INLINE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
@@ -459,6 +562,33 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
 
   PORTABLE_INLINE_FUNCTION
+  void GetFromDensityTemperature_(const Real rho, const Real temperature, Real *lambda,
+                                  Real p[NDERIV], Real e[NDERIV], Real s[NDERIV],
+                                  Real etaele[NDERIV], Real nep[NDERIV]) const {
+    Real abar = lambda[Lambda::Abar];
+    Real zbar = lambda[Lambda::Zbar];
+    Real lT = std::log10(temperature);
+    lambda[Lambda::lT] = lT;
+    Real ytot, ye, ywot, De, lDe;
+    GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
+    GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
+                                  etaele, nep);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  void GetFromDensityInternalEnergy_(const Real rho, const Real sie, Real *lambda,
+                                     Real p[NDERIV], Real e[NDERIV], Real s[NDERIV],
+                                     Real etaele[NDERIV], Real nep[NDERIV]) const {
+    Real abar = lambda[Lambda::Abar];
+    Real zbar = lambda[Lambda::Zbar];
+    Real ytot, ye, ywot, De, lDe;
+    GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
+    Real lT = lTFromRhoSie_(rho, sie, abar, zbar, ye, ytot, ywot, De, lDe, lambda);
+    GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
+                                  etaele, nep);
+  }
+
+  PORTABLE_INLINE_FUNCTION
   void GetFromDensityLogTemperature_(
       const Real rho, const Real lT, const Real abar, const Real zbar, const Real ye,
       const Real ytot, const Real ywot, const Real De, const Real lDe, Real p[NDERIV],
@@ -476,7 +606,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   HelmRad rad_;
   HelmIon ions_;
   HelmCoulomb coul_;
-  HelmholtzElectrons electrons_;
+  HelmElectrons electrons_;
 };
 
 PORTABLE_INLINE_FUNCTION
@@ -561,11 +691,11 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
   return lT;
 }
 
-inline void HelmholtzElectrons::InitDataFile_(const std::string &filename) {
+inline void HelmElectrons::InitDataFile_(const std::string &filename) {
   using namespace HelmUtils;
   std::ifstream file(filename);
   PORTABLE_ALWAYS_REQUIRE(file.is_open(),
-                          "HelmholtzElectrons file " + filename + " not found!");
+                          "HelmElectrons file " + filename + " not found!");
   SetTablesFromFile(file, NTEMP, lTMin_, lTMax_, NRHO, lRhoMin_, lRhoMax_, f_, fd_, ft_,
                     fdd_, ftt_, fdt_, fddt_, fdtt_, fddtt_);
   SetTablesFromFile(file, NTEMP, lTMin_, lTMax_, NRHO, lRhoMin_, lRhoMax_, dpdf_, dpdfd_,
@@ -588,8 +718,8 @@ inline void HelmholtzElectrons::InitDataFile_(const std::string &filename) {
   }
 }
 
-inline HelmholtzElectrons HelmholtzElectrons::GetOnDevice() {
-  HelmholtzElectrons other;
+inline HelmElectrons HelmElectrons::GetOnDevice() {
+  HelmElectrons other;
   other.rho_ = Spiner::getOnDeviceDataBox(rho_);
   other.T_ = Spiner::getOnDeviceDataBox(T_);
   other.f_ = Spiner::getOnDeviceDataBox(f_);
@@ -616,7 +746,7 @@ inline HelmholtzElectrons HelmholtzElectrons::GetOnDevice() {
   return other;
 }
 
-inline void HelmholtzElectrons::Finalize() {
+inline void HelmElectrons::Finalize() {
   rho_.finalize();
   T_.finalize();
   f_.finalize();
@@ -643,11 +773,11 @@ inline void HelmholtzElectrons::Finalize() {
 }
 
 PORTABLE_INLINE_FUNCTION
-void HelmholtzElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Ytot,
-                                                   Real De, Real lDe, Real pele[NDERIV],
-                                                   Real eele[NDERIV], Real sele[NDERIV],
-                                                   Real etaele[NDERIV], Real xne[NDERIV],
-                                                   bool only_e) const {
+void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Ytot,
+                                              Real De, Real lDe, Real pele[NDERIV],
+                                              Real eele[NDERIV], Real sele[NDERIV],
+                                              Real etaele[NDERIV], Real xne[NDERIV],
+                                              bool only_e) const {
   // Bound lRho, lT
   rho = std::min(rhoMax_, std::max(rhoMin_, rho));
   De = std::min(rhoMax_, std::max(rhoMin_, De));
