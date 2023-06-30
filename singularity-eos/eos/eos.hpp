@@ -64,7 +64,7 @@ using singularity::detail::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts
+    tl<IdealGas, Gruneisen, Helmholtz, Vinet, JWL, DavisReactants, DavisProducts
 #ifdef SPINER_USE_HDF
        ,
        SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
