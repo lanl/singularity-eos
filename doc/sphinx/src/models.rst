@@ -1138,6 +1138,63 @@ indicates log base 10.
 
 .. _median filter: https://en.wikipedia.org/wiki/Median_filter
 
+Helmholtz EOS
+``````````````
+
+This is a performance portable implementation of the Helmholtz
+equation of state provided by `Timmes and Swesty`_.  The Helmholtz EOS
+is a three part thermodynamically consistent EOS for a hot, ionized
+gas. It consists of a thermal radiation term:
+
+.. math::
+
+   P = sigma T^4
+
+an ions term, treated as an ideal gas:
+
+.. math::
+
+   P = (gamma - 1) rho e
+
+and a degenerate electron term. Additionally, coulomb force
+corrections can be applied on top of the full model.  This
+multi-component model depends on the relative abundances of electrons
+and ions, as well as the atomic mass and charge of the ions. As such,
+the Helmholtz EOS requires two additional indepenent variables, the
+average atomic mass, Abar, and the average atomic number, Zbar. These
+are passed in through the lambda pointer. As with the other tabulated
+EOS's, the log of the temperature is also stored in the lambda pointer
+as a cache for root finding.
+
+The degenerate electron term is computed via thermodynamic derivatives
+of the Helmholtz free energy (hence the name Helmholtz EOS). The free
+energy is pre-computed via integrals over the Fermi sphere and
+tabulated in a file provided from `Frank Timmes's website`_.
+
+The table is a simple small ascii file. To ensure thermodyanic
+consistency, the table is interpolated using either biquintic or
+bicubic Hermite polynomials, which are sufficiently high order that
+their high-order derivatives match the underlying data.
+
+.. note::
+
+   The implication of interpolating from the free energy is that each
+   EOS evaluation provides ALL relevant EOS data and thermodynamic
+   derivatives. Thus the per-quantity EOS calls are relatively
+   inefficient, and it is instead better to use the FillEos call to
+   get the entire model at once.
+
+The Helmholtz EOS is instantiated by passing in the path to the
+relevant table:
+
+.. code-block::
+
+   Helmholtz(const std::string &filename)
+
+.. _Timmes and Swesty: https://doi.org/10.1086/313304
+
+.. _Frank Timmes's website: https://cococubed.com/code_pages/eos.shtml
+
 EOSPAC EOS
 ````````````
 
