@@ -3,6 +3,8 @@
 ## Current develop
 
 ### Fixed (Repair bugs, etc)
+- [[PR263]](https://github.com/lanl/singularity-eos/pull/263) Fix stellar collapse mass fraction interpolation
+- [[PR258]](https://github.com/lanl/singularity-eos/pull/258) Fix EOSPAC vector performance and add warnings when slower version gets selected.
 - [[PR243]](https://github.com/lanl/singularity-eos/pull/243) Remove undefined behavior caused by diagnostic variables. Also fixed some compiler warnings.
 - [[PR239]](https://github.com/lanl/singularity-eos/pull/239#issuecomment-1473166925) Add JQuery to dependencies for docs to repair build
 - [[PR238]](https://github.com/lanl/singularity-eos/pull/238) Fixed broken examples
@@ -11,6 +13,8 @@
 - [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
 
 ### Added (new features/APIs/variables/...)
+- [[PR254]](https://github.com/lanl/singularity-eos/pull/254) added ability to peel off modifiers as needed
+- [[PR250]](https://github.com/lanl/singularity-eos/pull/250) added mass fraction output to stellar collapse eos
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
 - [[PR202]](https://github.com/lanl/singularity-eos/pull/202) added the Vinet analytical EOS wth test cases and documentation.
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos

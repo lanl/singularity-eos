@@ -123,12 +123,14 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_eospac(matindex, eos, id, sg_mods_enabled, sg_mods_values) &
+      init_sg_eospac(matindex, eos, id, eospac_opts_enabled, eospac_opts_values, &
+      sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_eospac')
       import
       integer(c_int), value, intent(in) :: matindex, id
       type(c_ptr), value, intent(in)    :: eos
       type(c_ptr), value, intent(in)    :: sg_mods_enabled, sg_mods_values
+      type(c_ptr), value, intent(in)    :: eospac_opts_enabled, eospac_opts_values
     end function init_sg_eospac
   end interface
 
@@ -342,16 +344,20 @@ contains
                                  c_loc(sg_mods_values))
   end function init_sg_DavisReactants_f
 
-  integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
-                                    sg_mods_values) &
+  integer function init_sg_eospac_f(matindex, eos, id, eospac_opts_enabled, eospac_opts_values, &
+       sg_mods_enabled, sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex, id
     type(sg_eos_ary_t), intent(in)    :: eos
     integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
-    err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled), &
-                         c_loc(sg_mods_values))
+    integer(kind=c_int), dimension(:), target, intent(inout) :: eospac_opts_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: eospac_opts_values
+    err = init_sg_eospac(matindex-1, eos%ptr, id, &
+         c_loc(eospac_opts_enabled) ,c_loc(eospac_opts_values), &
+         c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_eospac_f
+
 integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
     eos, rhos, sies, pressures, len) &
     result(err)

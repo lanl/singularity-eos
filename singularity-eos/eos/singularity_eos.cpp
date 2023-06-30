@@ -158,20 +158,23 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
 
 
 #ifdef SINGULARITY_USE_EOSPAC
-int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const enabled,
+int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const eospac_enabled,
+                   double *const eospac_vals, int const *const enabled,
                    double *const vals) {
   assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(EOSPAC(id));
+  bool invert_at_setup=eospac_enabled[0];
+  EOS eosi = SGAPPLYMODSIMPLE(EOSPAC(id, invert_at_setup = invert_at_setup));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
   }
-  EOS eos_ = SGAPPLYMOD(EOSPAC(id));
+  EOS eos_ = SGAPPLYMOD(EOSPAC(id, invert_at_setup = invert_at_setup));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
-}
-int init_sg_eospac(const int matindex, EOS *eos, const int id) {
-  return init_sg_eospac(matindex, eos, id, def_en, def_v);
+} 
+int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const eospac_enabled,
+                   double *const eospac_vals ) {
+  return init_sg_eospac(matindex, eos, id, eospac_enabled, eospac_vals, def_en, def_v);
 }
 #endif // SINGULARITY_USE_EOSPAC
 
