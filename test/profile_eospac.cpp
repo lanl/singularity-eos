@@ -368,6 +368,16 @@ int main(int argc, char *argv[]) {
     }
 
     {
+      constexpr Real rho_unit = 1e1;
+      constexpr Real sie_unit = 1e-1;
+      constexpr Real temp_unit = 0.75;
+      auto eos = UnitSystem<EOSPAC>(EOSPAC(airID), eos_units_init::ThermalUnitsInit(),
+                                    rho_unit, sie_unit, temp_unit);
+      success = get_timing(ncycles, ncells_1d, X_MIN, X_MAX, Y_MIN, Y_MAX,
+                           "UnitSystem<EOSPAC>", eos);
+    }
+
+    {
       auto eos = ShiftedEOS<EOSPAC>(EOSPAC(airID), 1.0);
       success = get_timing(ncycles, ncells_1d, X_MIN, X_MAX, Y_MIN, Y_MAX,
                            "ShiftedEOS<EOSPAC>", eos) &&
