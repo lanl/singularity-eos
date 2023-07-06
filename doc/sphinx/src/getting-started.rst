@@ -3,7 +3,7 @@
 Getting Started
 ===============
 
-At it's most basic, you can download and install ``singularity-eos`` with:
+At it's most basic, you can download and compile ``singularity-eos`` with:
 
 .. code-block:: bash
 
@@ -12,7 +12,7 @@ At it's most basic, you can download and install ``singularity-eos`` with:
   mkdir bin
   cd bin
   cmake ..
-  make install
+  make
 
 This will downloady singularity-eos with no optional dependencies and
 compile the capabilities available in that form.

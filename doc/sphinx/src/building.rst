@@ -95,7 +95,7 @@ At it's simplest, the cmake build process looks like this:
    mkdir bin
    cd bin
    cmake ..
-   make install
+   make
 
 You can set options on the cmake line via, e.g.,
 
@@ -192,7 +192,7 @@ Building ``singularity-eos`` with Python wrappers in a virtual environment:
    cd build
    cmake -DSINGULARITY_USE_HDF55=ON -DSINGULARITY_BUILD_PYTHON=ON -DCMAKE_INSTALL_PREFIX=$VIRTUAL_ENV ../..
    make -j
-   make install
+   make install  # Only install if you have the correct permissions
 
 
 Dependencies
