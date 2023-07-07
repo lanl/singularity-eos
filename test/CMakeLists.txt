@@ -17,6 +17,7 @@ add_executable(eos_unit_tests
   eos_unit_test_helpers.hpp
   test_eos_unit.cpp
   test_eos_gruneisen.cpp
+  test_eos_polynomial.cpp
   test_eos_vinet.cpp
 )
 
