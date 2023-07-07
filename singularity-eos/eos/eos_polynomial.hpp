@@ -94,6 +94,14 @@ class Polynomial : public EosBase<Polynomial> {
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
     return 0.0;
   }
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    return 0.0;
+  }
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    return 0.0;
+  }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     const Real mu = rho/_rho0 - 1;
