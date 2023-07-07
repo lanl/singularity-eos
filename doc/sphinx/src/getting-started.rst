@@ -12,7 +12,8 @@ At it's most basic, you can download and compile ``singularity-eos`` with:
   mkdir bin
   cd bin
   cmake ..
-  make
+  make -j 
+  make install # optional: install into directory defined via CMAKE_INSTALL_PREFIX
 
 This will downloady singularity-eos with no optional dependencies and
 compile the capabilities available in that form.
