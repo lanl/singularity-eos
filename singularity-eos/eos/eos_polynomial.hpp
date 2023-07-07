@@ -36,9 +36,10 @@ using namespace eos_base;
 class Polynomial : public EosBase<Polynomial> {
  public:
   Polynomial() = default;
-  PORTABLE_INLINE_FUNCTION Polynomial(Real rho0,
-                                      Real a0, Real a1, Real a2c, Real a2e, Real a3,
-                                      Real b0, Real b1, Real b2c, Real b2e, Real b3)
+  PORTABLE_INLINE_FUNCTION 
+  Polynomial(const Real rho0,
+             const Real a0, const Real a1, const Real a2c, const Real a2e, const Real a3,
+             const Real b0, const Real b1, const Real b2c, const Real b2e, const Real b3)
     : _rho0(rho0),
       _a0(a0), _a1(a1), _a2c(a2c), _a2e(a2e), _a3(a3),  
       _b0(b0), _b1(b1), _b2c(b2c), _b2e(b2e), _b3(b3)  {
@@ -46,15 +47,14 @@ class Polynomial : public EosBase<Polynomial> {
   }
 
   Polynomial GetOnDevice() { return *this; }
-  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return 0.0;
-  }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
     // Portable_require seems to do the opposite of what it should. Conditions
     // reflect this and the code should be changed when ports-of-call changes
-    // PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_rho0 >= 0, "Reference density must be non-negative");
+  }
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Real *lambda = nullptr) const {
+    return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
