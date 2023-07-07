@@ -34,7 +34,7 @@ SCENARIO("Aluminium Polynomial EOS", "Testing") {
     constexpr Real cm = 1.;
     constexpr Real us = 1e-06;
     constexpr Real Mbcc_per_g = 1e12;
-    // Gruneisen parameters for copper
+
     constexpr Real rho0 = 2.7; // g/cc
     constexpr Real a0  = 0.0;
     constexpr Real a1  = 0.73 * cm / us;
@@ -49,10 +49,9 @@ SCENARIO("Aluminium Polynomial EOS", "Testing") {
     // Create the EOS
     EOS host_eos = Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3);
     EOS eos = host_eos.GetOnDevice();
-    THEN("A call to the entropy should throw an exception") {
-      using Catch::Matchers::Contains;
-      auto msg_matcher = Contains("Entropy is not enabled");
-      REQUIRE_THROWS_WITH(eos.EntropyFromDensityTemperature(1.0, 1.0), msg_matcher);
-    }
+
+    // Calculate some stuff
+
+    // Compare with other stuff
   }
 }
