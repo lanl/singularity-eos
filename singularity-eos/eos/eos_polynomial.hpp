@@ -100,7 +100,11 @@ class Polynomial : public EosBase<Polynomial> {
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return 0.0;
+    const Real mu = rho/_rho0 - 1;
+    if (mu >= 0) // Compression
+      return  _b0 + _b1*mu + _b2c*mu*mu + _b3*mu*mu*mu;
+    else
+      return  _b0 + _b1*mu + _b2e*mu*mu + _b3*mu*mu*mu;
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
