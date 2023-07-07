@@ -224,7 +224,7 @@ existing EOS-specific unit tests.
 After creating your tests, you will need to include the ``.cpp`` for your new
 test in the ``CMakeLists.txt`` file, 
 
-.. code-block cmake
+.. code-block:: cmake
 
     add_executable(eos_unit_tests
         catch2_define.cpp
