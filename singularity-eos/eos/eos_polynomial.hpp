@@ -66,7 +66,7 @@ class Polynomial : public EosBase<Polynomial> {
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    const Real mu = rho/_rho0 - 1;
+    const Real mu = MuFromDensity(rho);
     if (mu >= 0) // Compression
       return    _a0 + _a1*mu + _a2c*mu*mu + _a3*mu*mu*mu +
         sie * ( _b0 + _b1*mu + _b2c*mu*mu + _b3*mu*mu*mu );
@@ -100,7 +100,7 @@ class Polynomial : public EosBase<Polynomial> {
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    const Real mu = rho/_rho0 - 1;
+    const Real mu = MuFromDensity(rho);
     if (mu >= 0) // Compression
       return  _b0 + _b1*mu + _b2c*mu*mu + _b3*mu*mu*mu;
     else
@@ -119,6 +119,10 @@ class Polynomial : public EosBase<Polynomial> {
                               _a1 + 2*_a2e*mu + 3*_a3*mu*mu +
                       sie * ( _b1 + 2*_b2e*mu + 3*_b3*mu*mu )
                       );
+  }
+  PORTABLE_INLINE_FUNCTION Real MuFromDensity(
+      const Real rho, Real *lambda = nullptr) const {
+    return rho/_rho0 - 1;
   }
 
   // gss: what does this do?
@@ -153,7 +157,18 @@ class Polynomial : public EosBase<Polynomial> {
   }
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
-    printf("Polynomial EOS Parameters:\na0 = %g\na1    = %g\n", _a0, _a1);
+    printf("Polynomial EOS Parameters:\n");
+    printf("    rho0  = %g\n", _rho0);
+    printf("      a0  = %g\n", _a0);
+    printf("      a1  = %g\n", _a1);
+    printf("      a2c = %g\n", _a2c);
+    printf("      a2e = %g\n", _a2e);
+    printf("      a3  = %g\n", _a3);
+    printf("      b0  = %g\n", _b0);
+    printf("      b1  = %g\n", _b1);
+    printf("      b2c = %g\n", _b2c);
+    printf("      b2e = %g\n", _b2e);
+    printf("      b3  = %g\n", _b3);
   }
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,

@@ -50,6 +50,7 @@ SCENARIO("Aluminium Polynomial EOS", "Testing") {
     EOS host_eos = Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3);
     EOS eos = host_eos.GetOnDevice();
 
+    host_eos.PrintParams();
     // Calculate some stuff
 
     // Compare with other stuff
