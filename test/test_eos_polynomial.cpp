@@ -28,7 +28,7 @@
 using singularity::EOS;
 using singularity::Polynomial;
 
-SCENARIO("Aluminium Polynomial EOS", "Testing") {
+SCENARIO("Aluminium Polynomial EOS", "Check if eos returns expected values") {
   GIVEN("Parameters for a Polynomial EOS") {
     // Unit conversions
     constexpr Real cm = 1.;
