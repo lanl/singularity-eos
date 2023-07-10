@@ -1,5 +1,7 @@
 .. _contributing-doc:
 
+.. _Catch2: https://github.com/catchorg/Catch2/blob/devel/docs/tutorial.md
+
 Contributing
 =============
 
@@ -213,7 +215,30 @@ Note the placement of commas and angle brackets. This example excludes
 Step 3: Create tests for your EOS
 `````````````````````````````````
 
-**Important:** this is a sublty that highlights the importance of unit tests!
+The first step is to create a new ``.cpp`` file for testing your new EOS using
+the `Catch2 <Catch2_>`_ framework to design your test. We make use of the
+Behavior Driven Development (BDD) style for Catch2, so we recommend you do the
+same. In general, we recommend you copy the general structure of one of the
+existing EOS-specific unit tests.
+
+After creating your tests, you will need to include the ``.cpp`` for your new
+test in the ``CMakeLists.txt`` file, 
+
+.. code-block:: cmake
+
+    add_executable(eos_unit_tests
+        catch2_define.cpp
+        eos_unit_test_helpers.hpp
+        test_eos_unit.cpp
+        test_eos_gruneisen.cpp
+        test_eos_vinet.cpp
+        test_my_new_eos.cpp
+    )
+
+in order for the test to be compiled. If your EOS requires any special
+dependencies, be sure to block off the test using ``#IFDEF`` blocks.
+
+**Important:** this is a subtlety that highlights the importance of unit tests!
 Since our library is header only, the unit tests are often the only place where
 a specific EOS may be instantiated when ``singularity-eos`` is compiled. Unit
 tests _must_ make use of the ``EOS`` type, i.e.
