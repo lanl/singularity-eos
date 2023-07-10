@@ -103,8 +103,8 @@ before_script:
       then
         echo -e "\e[0Ksection_start:`date +%s`:spack_build[collapsed=true]\r\e[0K${COLOR_CYAN}Building via Spack${COLOR_PLAIN}"
         mkdir -p spack_build_env
-        spack env create -d spack_build_env
-        spack env activate -d spack_build_env
+        spack env create spack_build_env
+        spack env activate spack_build_env
         spack repo add spack-repo
         spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
         spack dev-build -j $(nproc) ${SINGULARITY_EOS_SPACK_SPEC}
@@ -113,8 +113,8 @@ before_script:
       fi
     - echo -e "\e[0Ksection_start:`date +%s`:spack_env[collapsed=true]\r\e[0K${COLOR_CYAN}Creating Spack environment${COLOR_PLAIN}"
     - mkdir -p spack_env
-    - spack env create -d spack_env
-    - spack env activate -d spack_env
+    - spack env create spack_env
+    - spack env activate spack_env
     - spack repo add spack-repo
     - spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
     - spack spec -I ${SINGULARITY_EOS_SPACK_SPEC}
