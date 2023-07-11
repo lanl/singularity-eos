@@ -33,6 +33,8 @@ constexpr int HIST_SIZE = 10;
 
 using namespace singularity;
 
+using DataBox = Spiner::DataBox<Real>;
+
 template <typename T>
 class LinearIndexer {
  public:
