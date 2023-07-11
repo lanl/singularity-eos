@@ -110,6 +110,10 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def_property_readonly("YeMax", &StellarCollapse::YeMax)
     .def_property_readonly("sieMin", &StellarCollapse::sieMin)
     .def_property_readonly("sieMax", &StellarCollapse::sieMax);
+  
+  eos_class<Helmholtz>(m, "Helmholtz")
+    .def(py::init())
+    .def(py::init<std::string&>());
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
