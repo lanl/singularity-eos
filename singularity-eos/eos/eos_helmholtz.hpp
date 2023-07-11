@@ -784,9 +784,9 @@ void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Y
                                               Real etaele[NDERIV], Real xne[NDERIV],
                                               bool only_e) const {
   // Bound lRho, lT
-  rho = std::min(rhoMax_, std::max(rhoMin_, rho));
-  De = std::min(rhoMax_, std::max(rhoMin_, De));
-  lDe = std::min(lRhoMax_, std::max(lRhoMin_, lDe));
+  rho = std::min(rhoMax(), std::max(rhoMin(), rho));
+  De = std::min(rhoMax(), std::max(rhoMin(), De));
+  lDe = std::min(lRhoMax(), std::max(lRhoMin(), lDe));
   Real T = math_utils::pow10(lT);
 
   // Find central indexes in table
