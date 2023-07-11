@@ -807,40 +807,40 @@ void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Y
   // contiguous cache of values for helm interp
   Real fi[36];
   fi[0] = f_(jat, iat);
-  fi[1] = f_(jat + 1, iat);
-  fi[2] = f_(jat, iat + 1);
+  fi[1] = f_(jat, iat+1);
+  fi[2] = f_(jat+1, iat);
   fi[3] = f_(jat + 1, iat + 1);
   fi[4] = ft_(jat, iat);
-  fi[5] = ft_(jat + 1, iat);
-  fi[6] = ft_(jat, iat + 1);
+  fi[5] = ft_(jat, iat + 1);
+  fi[6] = ft_(jat + 1, iat);
   fi[7] = ft_(jat + 1, iat + 1);
   fi[8] = ftt_(jat, iat);
-  fi[9] = ftt_(jat + 1, iat);
-  fi[10] = ftt_(jat, iat + 1);
+  fi[9] = ftt_(jat, iat + 1);
+  fi[10] = ftt_(jat + 1, iat);
   fi[11] = ftt_(jat + 1, iat + 1);
   fi[12] = fd_(jat, iat);
-  fi[13] = fd_(jat + 1, iat);
-  fi[14] = fd_(jat, iat + 1);
+  fi[13] = fd_(jat, iat + 1);
+  fi[14] = fd_(jat + 1, iat);
   fi[15] = fd_(jat + 1, iat + 1);
   fi[16] = fdd_(jat, iat);
-  fi[17] = fdd_(jat + 1, iat);
-  fi[18] = fdd_(jat, iat + 1);
+  fi[17] = fdd_(jat, iat + 1);
+  fi[18] = fdd_(jat + 1, iat);
   fi[19] = fdd_(jat + 1, iat + 1);
   fi[20] = fdt_(jat, iat);
-  fi[21] = fdt_(jat + 1, iat);
-  fi[22] = fdt_(jat, iat + 1);
+  fi[21] = fdt_(jat, iat + 1);
+  fi[22] = fdt_(jat + 1, iat);
   fi[23] = fdt_(jat + 1, iat + 1);
   fi[24] = fddt_(jat, iat);
-  fi[25] = fddt_(jat + 1, iat);
-  fi[26] = fddt_(jat, iat + 1);
+  fi[25] = fddt_(jat, iat + 1);
+  fi[26] = fddt_(jat + 1, iat);
   fi[27] = fddt_(jat + 1, iat + 1);
   fi[28] = fdtt_(jat, iat);
-  fi[29] = fdtt_(jat + 1, iat);
-  fi[30] = fdtt_(jat, iat + 1);
+  fi[29] = fdtt_(jat, iat + 1);
+  fi[30] = fdtt_(jat + 1, iat);
   fi[31] = fdtt_(jat + 1, iat + 1);
   fi[32] = fddtt_(jat, iat);
-  fi[33] = fddtt_(jat + 1, iat);
-  fi[34] = fddtt_(jat, iat + 1);
+  fi[33] = fddtt_(jat, iat + 1);
+  fi[34] = fddtt_(jat + 1, iat);
   fi[35] = fddtt_(jat + 1, iat + 1);
 
   // differences
@@ -947,20 +947,20 @@ void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Y
 
   // Re-use cache
   fi[0] = dpdf_(jat, iat);
-  fi[1] = dpdf_(jat + 1, iat);
-  fi[2] = dpdf_(jat, iat + 1);
+  fi[1] = dpdf_(jat, iat + 1);
+  fi[2] = dpdf_(jat 1 +, iat);
   fi[3] = dpdf_(jat + 1, iat + 1);
   fi[4] = dpdft_(jat, iat);
-  fi[5] = dpdft_(jat + 1, iat);
-  fi[6] = dpdft_(jat, iat + 1);
+  fi[5] = dpdft_(jat, iat + 1);
+  fi[6] = dpdft_(jat + 1, iat);
   fi[7] = dpdft_(jat + 1, iat + 1);
   fi[8] = dpdfd_(jat, iat);
-  fi[9] = dpdfd_(jat + 1, iat);
-  fi[10] = dpdfd_(jat, iat + 1);
+  fi[9] = dpdfd_(jat, iat + 1);
+  fi[10] = dpdfd_(jat + 1, iat);
   fi[11] = dpdfd_(jat + 1, iat + 1);
   fi[12] = dpdfdt_(jat, iat);
-  fi[13] = dpdfdt_(jat + 1, iat);
-  fi[14] = dpdfdt_(jat, iat + 1);
+  fi[13] = dpdfdt_(jat, iat + 1);
+  fi[14] = dpdfdt_(jat + 1, iat);
   fi[15] = dpdfdt_(jat + 1, iat + 1);
 
   // pressure derivative with respect to density
@@ -969,20 +969,20 @@ void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Y
 
   // chemical potentials
   fi[0] = ef_(jat, iat);
-  fi[1] = ef_(jat + 1, iat);
-  fi[2] = ef_(jat, iat + 1);
+  fi[1] = ef_(jat, iat + 1);
+  fi[2] = ef_(jat + 1, iat);
   fi[3] = ef_(jat + 1, iat + 1);
   fi[4] = eft_(jat, iat);
-  fi[5] = eft_(jat + 1, iat);
-  fi[6] = eft_(jat, iat + 1);
+  fi[5] = eft_(jat, iat + 1);
+  fi[6] = eft_(jat + 1, iat);
   fi[7] = eft_(jat + 1, iat + 1);
   fi[8] = efd_(jat, iat);
-  fi[9] = efd_(jat + 1, iat);
-  fi[10] = efd_(jat, iat + 1);
+  fi[9] = efd_(jat, iat + 1);
+  fi[10] = efd_(jat + 1, iat);
   fi[11] = efd_(jat + 1, iat + 1);
   fi[12] = efdt_(jat, iat);
-  fi[13] = efdt_(jat + 1, iat);
-  fi[14] = efdt_(jat, iat + 1);
+  fi[13] = efdt_(jat, iat + 1);
+  fi[14] = efdt_(jat + 1, iat);
   fi[15] = efdt_(jat + 1, iat + 1);
 
   // electron chemical potential etaele
@@ -1001,20 +1001,20 @@ void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Y
 
   // look in the number density table only once
   fi[0] = xf_(jat, iat);
-  fi[1] = xf_(jat + 1, iat);
-  fi[2] = xf_(jat, iat + 1);
+  fi[1] = xf_(jat, iat + 1);
+  fi[2] = xf_(jat + 1, iat);
   fi[3] = xf_(jat + 1, iat + 1);
   fi[4] = xft_(jat, iat);
-  fi[5] = xft_(jat + 1, iat);
-  fi[6] = xft_(jat, iat + 1);
+  fi[5] = xft_(jat, iat + 1);
+  fi[6] = xft_(jat + 1, iat);
   fi[7] = xft_(jat + 1, iat + 1);
   fi[8] = xfd_(jat, iat);
-  fi[9] = xfd_(jat + 1, iat);
-  fi[10] = xfd_(jat, iat + 1);
+  fi[9] = xfd_(jat, iat + 1);
+  fi[10] = xfd_(jat + 1, iat);
   fi[11] = xfd_(jat + 1, iat + 1);
   fi[12] = xfdt_(jat, iat);
-  fi[13] = xfdt_(jat + 1, iat);
-  fi[14] = xfdt_(jat, iat + 1);
+  fi[13] = xfdt_(jat, iat + 1);
+  fi[14] = xfdt_(jat + 1, iat);
   fi[15] = xfdt_(jat + 1, iat + 1);
 
   // electron + positron number densities
