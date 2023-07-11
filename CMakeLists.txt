@@ -202,6 +202,10 @@ if(SINGULARITY_BUILD_PYTHON)
   add_subdirectory(python)
 endif()
 
+if(SINGULARITY_BUILD_SESAME2SPINER)
+  add_subdirectory(sesame2spiner)
+endif()
+
 # defines
 if(SINGULARITY_USE_SINGLE_LOGS)
   target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_SINGLE_LOGS)
