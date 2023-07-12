@@ -362,6 +362,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   // Options struct. You can create one of these and modify it to set
   // options at initialization
   struct Options {
+    Options() = default;
     Options(const bool rad, const bool gas, const bool coul, const bool ion,
             const bool electron)
         : ENABLE_RAD(rad), ENABLE_GAS(gas), ENABLE_COULOMB_CORRECTIONS(coul),
