@@ -362,6 +362,10 @@ class Helmholtz : public EosBase<Helmholtz> {
   // Options struct. You can create one of these and modify it to set
   // options at initialization
   struct Options {
+    Options(const bool rad, const bool gas, const bool coul, const bool ion,
+            const bool electron)
+        : ENABLE_RAD(rad), ENABLE_GAS(gas), ENABLE_COULOMB_CORRECTIONS(coul),
+          GAS_IONIZED(ion), GAS_DEGENERATE(electron) {}
     bool ENABLE_RAD = true;
     bool ENABLE_GAS = true;
     bool ENABLE_COULOMB_CORRECTIONS = true;
@@ -373,6 +377,9 @@ class Helmholtz : public EosBase<Helmholtz> {
   Helmholtz(const std::string &filename) : electrons_(filename) {}
   Helmholtz(const std::string &filename, Options options)
       : electrons_(filename), options_(options) {}
+  Helmholtz(const std::string &filename, const bool rad, const bool gas, const bool coul,
+            const bool ion, const bool ele)
+      : electrons_(filename), options_(rad, gas, coul, ion, ele) {}
 
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
   static constexpr unsigned long PreferredInput() {
