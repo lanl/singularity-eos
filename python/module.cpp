@@ -113,7 +113,8 @@ PYBIND11_MODULE(singularity_eos, m) {
   
   eos_class<Helmholtz>(m, "Helmholtz")
     .def(py::init())
-    .def(py::init<std::string&>());
+    .def(py::init<std::string&>())
+    .def(py::init<std::string&,bool,bool,bool,bool,bool>());
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
