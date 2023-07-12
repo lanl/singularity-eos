@@ -814,7 +814,7 @@ void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Y
   // contiguous cache of values for helm interp
   Real fi[36];
   fi[0] = f_(jat, iat);
-  fi[1] = f_(jat, iat+1);
+  fi[1] = f_(jat, iat + 1);
   fi[2] = f_(jat+1, iat);
   fi[3] = f_(jat + 1, iat + 1);
   fi[4] = ft_(jat, iat);
@@ -955,7 +955,7 @@ void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Y
   // Re-use cache
   fi[0] = dpdf_(jat, iat);
   fi[1] = dpdf_(jat, iat + 1);
-  fi[2] = dpdf_(jat 1 +, iat);
+  fi[2] = dpdf_(jat + 1, iat);
   fi[3] = dpdf_(jat + 1, iat + 1);
   fi[4] = dpdft_(jat, iat);
   fi[5] = dpdft_(jat, iat + 1);
