@@ -1129,7 +1129,10 @@ class EOSPAC : public EosBase<EOSPAC> {
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 0; }
-  inline void Finalize() {}
+  inline void Finalize() {
+    using namespace EospacWrapper;
+    eosSafeDestroy(NT, tablehandle, Verbosity::Quiet);
+  }
   static std::string EosType() { return std::string("EOSPAC"); }
   static std::string EosPyType() { return EosType(); }
   inline void PrintParams() const { printf("EOSPAC parameters:\nmatid = %d\n", matid_); }
