@@ -273,8 +273,8 @@ class HelmElectrons {
 // radiation EOS at some point.
 class HelmRad {
  public:
-  static constexpr Real STEFAN_BOLTZMANN_CONSTANT = 5.670374419e-5; // erg/cm^2/s/K^4
-  static constexpr Real CL = 2.998e10; // speed of light. cm/s
+  static constexpr Real STEFAN_BOLTZMANN_CONSTANT = 5.67040047374e-5; /* g / K^4 s^3 */
+  static constexpr Real CL = 2.99792458e10; // speed of light. cm/s
   static constexpr Real SIG_O_C = STEFAN_BOLTZMANN_CONSTANT / CL;
   static constexpr Real PREFACTOR = (4. / 3.) * SIG_O_C;
   static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
@@ -293,14 +293,14 @@ class HelmRad {
 class HelmIon {
  public:
   static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
-  static constexpr Real KB = 1.3806505e-16; // Boltzmann constant in cgs
-  static constexpr Real NA = 6.02214129e23; // Avogadro's number. 1/mol
+  static constexpr Real KB = 1.3806504e-16; // Boltzmann constant in cgs
+  static constexpr Real NA = 6.02214199e23; // Avogadro's number. 1/mol
   static constexpr Real KBNA = KB * NA;
   static constexpr Real KBi = 1.0 / KB;
   static constexpr Real UNIFIED_ATOMIC_MASS = 1.660538782e-24; /* g */
   static constexpr Real PLANCK_H = 6.62606896e-27;             /* g cm^2 / s */
-  // 1.5 * std::log((2.0 * M_PI * UNIFIED_ATOMIC_MASS * KB) / (PLANCK_H * PLANCK_H));
-  static constexpr Real LSWOT15 = 4.66826127417042e+01;
+  // 1.5 * ln((2.0 * M_PI * UNIFIED_ATOMIC_MASS * KB) / (PLANCK_H * PLANCK_H));
+  static constexpr Real LSWOT15 = 4.1628328334193+01;
 
   HelmIon() = default;
   HelmIon GetOnDevice() { return *this; }
@@ -317,10 +317,10 @@ class HelmIon {
 // perhaps that will make it easier to swap out down the line.
 class HelmCoulomb {
  public:
-  static constexpr Real LN10 = 2.30258509299404568401799145468; // ln(10)
+  static constexpr Real LN10 = 2.30258509299405e+00; // ln(10)
   static constexpr Real ELECTRON_CHARGE_ESU = 4.80320427e-10;
-  static constexpr Real KB = 1.3806505e-16; // Boltzmann constant in cgs
-  static constexpr Real NA = 6.02214129e23; // Avogadro's number. 1/mol
+  static constexpr Real KB = 1.3806504e-16; // Boltzmann constant in cgs
+  static constexpr Real NA = 6.02214199e23; // Avogadro's number. 1/mol
   static constexpr Real KBNA = KB * NA;
   static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
