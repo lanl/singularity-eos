@@ -571,7 +571,7 @@ class Helmholtz : public EosBase<Helmholtz> {
 
   PORTABLE_INLINE_FUNCTION
   Real lTAnalytic_(const Real rho, const Real e, const Real ni, const Real ne) const {
-    return (2.0 / 3.0) * robust::ratio(e * rho, ni + ne) * ions_.KBi;
+    return std::log10((2.0 / 3.0) * robust::ratio(e * rho, ni + ne) * ions_.KBi);
   }
 
   PORTABLE_INLINE_FUNCTION
