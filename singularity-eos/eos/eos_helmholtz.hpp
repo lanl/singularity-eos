@@ -300,7 +300,7 @@ class HelmIon {
   static constexpr Real UNIFIED_ATOMIC_MASS = 1.660538782e-24; /* g */
   static constexpr Real PLANCK_H = 6.62606896e-27;             /* g cm^2 / s */
   // 1.5 * ln((2.0 * M_PI * UNIFIED_ATOMIC_MASS * KB) / (PLANCK_H * PLANCK_H));
-  static constexpr Real LSWOT15 = 4.1628328334193+01;
+  static constexpr Real LSWOT15 = 46.682612633059801;
 
   HelmIon() = default;
   HelmIon GetOnDevice() { return *this; }
@@ -816,7 +816,7 @@ void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Y
   Real fi[36];
   fi[0] = f_(jat, iat);
   fi[1] = f_(jat, iat + 1);
-  fi[2] = f_(jat+1, iat);
+  fi[2] = f_(jat + 1, iat);
   fi[3] = f_(jat + 1, iat + 1);
   fi[4] = ft_(jat, iat);
   fi[5] = ft_(jat, iat + 1);
