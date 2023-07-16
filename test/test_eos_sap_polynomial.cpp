@@ -26,10 +26,10 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::EOS;
-using singularity::Polynomial;
+using singularity::SAP_Polynomial;
 
-SCENARIO("Aluminium Polynomial EOS", "Check if eos returns expected values") {
-  GIVEN("Parameters for a Polynomial EOS") {
+SCENARIO("Aluminium SAP_Polynomial EOS", "Check if eos returns expected values") {
+  GIVEN("Parameters for a SAP_Polynomial EOS") {
     // Unit conversions
     constexpr Real cm = 1.;
     constexpr Real us = 1e-06;
@@ -47,7 +47,7 @@ SCENARIO("Aluminium Polynomial EOS", "Check if eos returns expected values") {
     constexpr Real b2e = 0.0;
     constexpr Real b3  = 0.0;
     // Create the EOS
-    EOS host_eos = Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3);
+    EOS host_eos = SAP_Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3);
     EOS eos = host_eos.GetOnDevice();
 
     host_eos.PrintParams();
