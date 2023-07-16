@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_EOS_EOS_POLYNOMIAL_HPP_
-#define _SINGULARITY_EOS_EOS_EOS_POLYNOMIAL_HPP_
+#ifndef _SINGULARITY_EOS_EOS_EOS_SAP_POLYNOMIAL_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_SAP_POLYNOMIAL_HPP_
 
 // stdlib
 #include <cmath>
@@ -33,11 +33,11 @@ namespace singularity {
 
 using namespace eos_base;
 
-class Polynomial : public EosBase<Polynomial> {
+class SAP_Polynomial : public EosBase<SAP_Polynomial> {
  public:
-  Polynomial() = default;
+  SAP_Polynomial() = default;
   PORTABLE_INLINE_FUNCTION 
-  Polynomial(const Real rho0,
+  SAP_Polynomial(const Real rho0,
              const Real a0, const Real a1, const Real a2c, const Real a2e, const Real a3,
              const Real b0, const Real b1, const Real b2c, const Real b2e, const Real b3)
     : _rho0(rho0),
@@ -46,7 +46,7 @@ class Polynomial : public EosBase<Polynomial> {
     checkParams();
   }
 
-  Polynomial GetOnDevice() { return *this; }
+  SAP_Polynomial GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
     // Portable_require seems to do the opposite of what it should. Conditions
     // reflect this and the code should be changed when ports-of-call changes
@@ -148,7 +148,7 @@ class Polynomial : public EosBase<Polynomial> {
   }
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(Polynomial)
+  SG_ADD_BASE_CLASS_USINGS(SAP_Polynomial)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -157,7 +157,7 @@ class Polynomial : public EosBase<Polynomial> {
   }
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
-    printf("Polynomial EOS Parameters:\n");
+    printf("SAP_Polynomial EOS Parameters:\n");
     printf("    rho0  = %g\n", _rho0);
     printf("      a0  = %g\n", _a0);
     printf("      a1  = %g\n", _a1);
@@ -177,7 +177,7 @@ class Polynomial : public EosBase<Polynomial> {
     rho = 0.0;
   }
   inline void Finalize() {}
-  static std::string EosType() { return std::string("Polynomial"); }
+  static std::string EosType() { return std::string("SAP_Polynomial"); }
   static std::string EosPyType() { return EosType(); }
 
  private:
@@ -200,7 +200,7 @@ class Polynomial : public EosBase<Polynomial> {
 };
 
 PORTABLE_INLINE_FUNCTION
-void Polynomial::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+void SAP_Polynomial::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                        Real &bmod, const unsigned long output, Real *lambda) const {
   if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
     if (output & thermalqs::pressure || output & thermalqs::temperature) {
@@ -232,4 +232,4 @@ void Polynomial::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv
 
 
 
-#endif // _SINGULARITY_EOS_EOS_EOS_POLYNOMIAL_HPP_
+#endif // _SINGULARITY_EOS_EOS_EOS_SAP_POLYNOMIAL_HPP_
