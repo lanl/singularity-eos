@@ -106,16 +106,19 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
 
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[], Verbosity eospacWarn,
-                        bool invert_at_setup) {
+                        bool invert_at_setup, double insert_data, double monotonicity, 
+			bool apply_smoothing, double apply_splitting, bool linear_interp) {
   std::vector<std::string> empty;
   return eosSafeLoad(ntables, matid, tableType, tableHandle, empty, eospacWarn,
-                     invert_at_setup);
+                     invert_at_setup, insert_data, monotonicity, apply_smoothing, 
+		     apply_splitting, linear_interp);
 }
 
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[],
                         const std::vector<std::string> &table_names, Verbosity eospacWarn,
-                        bool invert_at_setup) {
+                        bool invert_at_setup, double insert_data, double monotonicity, 
+			bool apply_smoothing, double apply_splitting, bool linear_interp) {
   EOS_INTEGER NTABLES[] = {ntables};
   std::vector<EOS_INTEGER> MATID(ntables, matid);
 
@@ -126,19 +129,78 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
   eos_CreateTables(NTABLES, tableType, MATID.data(), tableHandle, &errorCode);
 
   if (invert_at_setup) {
-    EOS_INTEGER options[] = {EOS_INVERT_AT_SETUP, EOS_INSERT_DATA};
-    EOS_REAL values[] = {1., 4.};
+    EOS_REAL values[] = {1.};
     for (int i = 0; i < ntables; i++) {
-      if (tableType[i] == EOS_T_DUt) {
-        eos_SetOption(&(tableHandle[i]), &(options[0]), &(values[0]), &errorCode);
-        eos_SetOption(&(tableHandle[i]), &(options[1]), &(values[1]), &errorCode);
+      if (tableType[i] !=EOS_Uc_D and tableType[i] !=EOS_Pc_D and tableType[i] !=EOS_Pt_DT and tableType[i] !=EOS_Ut_DT) {
+        eos_SetOption(&(tableHandle[i]), &EOS_INVERT_AT_SETUP, &(values[0]), &errorCode);
+	eosCheckError(errorCode, "eospac options: eos_invert_at_setup", eospacWarn);
       }
     }
   }
 
+  if (insert_data>0) {
+    EOS_REAL values[] = {insert_data};
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_INSERT_DATA, &(values[0]), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_insert_data", eospacWarn);
+    } 
+  }
+
+
+  //choice of which table types setOption is called on mimics SAP. Some table types are incmopatible whiel others lead to numerical issues. 
+  if (monotonicity==1 || monotonicity==2) {
+    for (int i = 0; i < ntables; i++) {
+      if (tableType[i]!=EOS_Uc_D and tableType[i]!=EOS_Ut_DT and tableType[i]!=EOS_Ut_DPt){
+	eos_SetOption(&(tableHandle[i]), &EOS_MONOTONIC_IN_X,  &(EOS_NullVal), &errorCode);
+	eosCheckError(errorCode, "eospac options: eos_monotonic_in_x", eospacWarn);
+      } 
+    }
+  }
+
+  if (monotonicity==2 || monotonicity==3) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_MONOTONIC_IN_Y,  &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_monotonic_in_y", eospacWarn);
+    } 
+  }
+
+  if (apply_smoothing) {
+    for (int i = 0; i < ntables; i++) {
+      if (tableType[i]==EOS_Pt_DUt || tableType[i]==EOS_T_DUt || tableType[i]==EOS_Ut_DPt){
+	eos_SetOption(&(tableHandle[i]), &EOS_SMOOTH,  &(EOS_NullVal), &errorCode);
+	eosCheckError(errorCode, "eospac options: eos_smooth", eospacWarn);
+      }
+    }
+  }
+ 
+  if (abs(apply_splitting) == 1) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_NUM_PROP, &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_split_num_prop", eospacWarn);    }
+  } else if (abs(apply_splitting) == 2) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_IDEAL_GAS,  &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_split_ideal_gas", eospacWarn);
+    }
+  } else if (abs(apply_splitting) == 3) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_COWAN,  &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_split_cowan", eospacWarn);
+    }
+  }
+
+  if (linear_interp) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_LINEAR,  &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: linear_interp", eospacWarn);
+    }
+  }
+
+
 #ifdef SINGULARITY_EOSPAC_SKIP_EXTRAP
   for (int i = 0; i < ntables; i++) {
-    eos_SetOption(&(tableHandle[i]), &EOS_SKIP_EXTRAP_CHECK, NULL, &errorCode);
+    eos_SetOption(&(tableHandle[i]), &EOS_SKIP_EXTRAP_CHECK,  &(EOS_NullVal), &errorCode);
+    eosCheckError(errorCode, "eos_skip_extrap_check", eospacWarn);
   }
 #endif // SINGULARITY_EOSPAC_SKIP_EXTRAP
 

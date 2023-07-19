@@ -61,7 +61,7 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
 
 #ifdef SINGULARITY_USE_EOSPAC
 // capitalize? eospaceos Eospac Eospaceos EOSPAC EOSPACeos?
-  int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const eospac_enabled,
+  int init_sg_eospac(const int matindex, EOS *eos, const int id,
 		     double *const eospac_vals,  int const *const enabled,
 		     double *const vals);
 #endif // SINGULARITY_USE_EOSPAC
@@ -136,7 +136,7 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
 
 #ifdef SINGULARITY_USE_EOSPAC
 // capitalize? eospaceos Eospac Eospaceos EOSPAC EOSPACeos?
-int init_sg_eospac(const int matindex, EOS *eos, const int id, const int *eospac_enabled, const double *eospac_vals);
+int init_sg_eospac(const int matindex, EOS *eos, const int id, const double *eospac_vals);
 #endif // SINGULARITY_USE_EOSPAC
 
 #endif // EOS_SINGULARITY_EOS_HPP_

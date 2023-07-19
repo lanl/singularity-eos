@@ -158,23 +158,31 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
 
 
 #ifdef SINGULARITY_USE_EOSPAC
-int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const eospac_enabled,
+int init_sg_eospac(const int matindex, EOS *eos, const int id,
                    double *const eospac_vals, int const *const enabled,
                    double *const vals) {
   assert(matindex >= 0);
-  bool invert_at_setup=eospac_enabled[0];
-  EOS eosi = SGAPPLYMODSIMPLE(EOSPAC(id, invert_at_setup = invert_at_setup));
+  bool invert_at_setup=eospac_vals[0];
+  double insert_data=eospac_vals[1];
+  double monotonicity=eospac_vals[2];
+  bool apply_smoothing=eospac_vals[3];
+  double apply_splitting=eospac_vals[4];
+  bool linear_interp=eospac_vals[5];
+  bool apply_cc_fix=eospac_vals[6];
+
+
+  EOS eosi = SGAPPLYMODSIMPLE(EOSPAC(id, invert_at_setup = invert_at_setup, insert_data=insert_data, monotonicity=monotonicity, apply_smoothing=apply_smoothing, apply_splitting=apply_splitting, linear_interp=linear_interp, apply_cc_fix=apply_cc_fix));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
   }
-  EOS eos_ = SGAPPLYMOD(EOSPAC(id, invert_at_setup = invert_at_setup));
+  EOS eos_ = SGAPPLYMOD(EOSPAC(id, invert_at_setup = invert_at_setup, insert_data=insert_data, monotonicity=monotonicity, apply_smoothing=apply_smoothing, apply_splitting=apply_splitting, linear_interp=linear_interp, apply_cc_fix=apply_cc_fix));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 } 
-int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const eospac_enabled,
+int init_sg_eospac(const int matindex, EOS *eos, const int id,
                    double *const eospac_vals ) {
-  return init_sg_eospac(matindex, eos, id, eospac_enabled, eospac_vals, def_en, def_v);
+  return init_sg_eospac(matindex, eos, id, eospac_vals, def_en, def_v);
 }
 #endif // SINGULARITY_USE_EOSPAC
 

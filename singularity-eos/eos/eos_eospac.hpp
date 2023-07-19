@@ -44,7 +44,9 @@ using namespace eos_base;
 class EOSPAC : public EosBase<EOSPAC> {
  public:
   inline EOSPAC() = default;
-  inline EOSPAC(int matid, bool invert_at_setup = false, bool apply_cc_fix = true);
+
+  ////add options here... and elsewhere
+  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0, Real monotonicity = 0.0, bool apply_smoothing = false, Real apply_splitting = 0.0, bool linear_interp = false, bool apply_cc_fix = false);
   inline EOSPAC GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
@@ -1163,13 +1165,13 @@ class EOSPAC : public EosBase<EOSPAC> {
 // Implementation details below
 // ======================================================================
 
-  inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, bool apply_cc_fix) : matid_(matid) {
+  inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data, Real monotonicity, bool apply_smoothing, Real apply_splitting, bool linear_interp, bool apply_cc_fix) : matid_(matid) {
   using namespace EospacWrapper;
   EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT, EOS_T_DPt, EOS_Pt_DUt, EOS_Uc_D};
   eosSafeLoad(NT, matid, tableType, tablehandle,
               std::vector<std::string>(
 		{"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT", "EOS_T_DPt", "EOS_Pt_DUt","EOS_Uc_D"}),
-              Verbosity::Quiet, invert_at_setup);
+              Verbosity::Quiet, invert_at_setup=invert_at_setup, insert_data=insert_data, monotonicity=monotonicity, apply_smoothing=apply_smoothing, linear_interp=linear_interp);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
@@ -1351,18 +1353,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
   EOS_INTEGER nopts = 2;
   EOS_REAL R[1] = {rho}, E[1] = {sieToSesame(sie)}, P[1], dPdr[1], dPde[1], Ec[1];
   EOS_INTEGER nxypairs = 1;
-  EOS_INTEGER table;
-
-  /*  if (apply_cc_fix){
-    EOS_INTEGER options_c[]{EOS_Y_CONVERT, EOS_F_CONVERT};
-    EOS_REAL values_c[]{sieToSesame(1.0), 1./sieToSesame(1.0)};
-    EOS_INTEGER nopts_c = 2;
-    table = UcofD_table_;
-    eosSafeInterpolate(&table, nxypairs, R, R, Ec, dPdr, dPde, "UcofD", Verbosity::Quiet,
-                     options, values, nopts);
-    E=E<Ec?Ec:E;
-    }*/
-  table = PofRE_table_;
+  EOS_INTEGER table = PofRE_table_;
   eosSafeInterpolate(&table, nxypairs, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
 		     options, values, nopts);
 		     
