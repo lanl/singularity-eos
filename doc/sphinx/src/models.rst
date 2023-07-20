@@ -1047,8 +1047,8 @@ with
 
   \mu = \frac{\rho}{\rho_0} - 1
 
-The constants $a_2^*$ and $b_2^*$ can assume different values in
-expansion and compression.
+The constants :math:`a_2^*` and :math:`b_2^*` can assume different
+values in expansion and compression.
 
 .. math::
 
