@@ -742,6 +742,7 @@ inline HelmElectrons HelmElectrons::GetOnDevice() {
   other.ftt_ = Spiner::getOnDeviceDataBox(ftt_);
   other.fdt_ = Spiner::getOnDeviceDataBox(fdt_);
   other.fdd_ = Spiner::getOnDeviceDataBox(fdd_);
+  other.fddt_ = Spiner::getOnDeviceDataBox(fddt_);
   other.fdtt_ = Spiner::getOnDeviceDataBox(fdtt_);
   other.fddtt_ = Spiner::getOnDeviceDataBox(fddtt_);
   other.dpdf_ = Spiner::getOnDeviceDataBox(dpdf_);
@@ -769,6 +770,7 @@ inline void HelmElectrons::Finalize() {
   ftt_.finalize();
   fdt_.finalize();
   fdd_.finalize();
+  fddt_.finalize();
   fdtt_.finalize();
   fddtt_.finalize();
   dpdf_.finalize();
