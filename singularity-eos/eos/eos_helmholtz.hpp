@@ -1331,7 +1331,7 @@ void Helmholtz::GetFromDensityLogTemperature_(
     if (do_unmodified_ions) { // ionized plasma. ions and electrons treated separately
       Real xni, dxnidd, dxnida;
       GetMassFractions(rho, T, ytot, xni, dxnidd, dxnida);
-      const Real y = ywot + ions_.LSWOT15 + 1.5 * lnT;
+      const Real y = ywot + ions_.LSWOT15 * lnT;
       ions_.GetFromDensityTemperature(rho, T, y, ytot, xni, dxnidd, dxnida, pion, eion,
                                       sion);
     } else { // modify ideal gas to include ions + electrons
@@ -1340,7 +1340,7 @@ void Helmholtz::GetFromDensityLogTemperature_(
       const Real ytot_ion = robust::ratio(1.0, abar_ion);
       const Real ywot_ion = robust::ratio(
           std::log(abar_ion * abar_ion * std::sqrt(abar_ion)), rho * ions_.NA);
-      const Real y_ion = ywot_ion + ions_.LSWOT15 + 1.5 * lnT;
+      const Real y_ion = ywot_ion + ions_.LSWOT15 * lnT;
       Real xni, dxnidd, dxnida;
       GetMassFractions(rho, T, ytot_ion, xni, dxnidd, dxnida);
       ions_.GetFromDensityTemperature(rho, T, y_ion, ytot_ion, xni, dxnidd, dxnida, pion,
