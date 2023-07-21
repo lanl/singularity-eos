@@ -32,7 +32,6 @@ SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
   GIVEN("Parameters for a SAP_Polynomial EOS") {
     // Unit conversions
     constexpr Real ubar_per_Mbar = 1e12;
-    constexpr Real Mbcc_per_g = 1e12;
 
     // Constants of the form 0.0? are zero for the original eos
     constexpr Real rho0 = 16.6;
