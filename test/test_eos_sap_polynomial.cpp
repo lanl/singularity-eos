@@ -50,11 +50,7 @@ SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
     EOS host_eos = SAP_Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3);
     EOS eos = host_eos.GetOnDevice();
 
-    // gss: Why is this printed thrice?
-    host_eos.PrintParams();
 
-
-    // Calculate some stuff
     GIVEN("Densities and energies") {
 
       // Size of input
@@ -160,8 +156,6 @@ SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
           array_compare(num, rho, sie, gamma, gamma_expected, "Density", "Energy");
         }
       }
-
-
     }
   }
 }
