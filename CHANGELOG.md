@@ -1,6 +1,7 @@
 # Changelog
 
 ## Current develop
+- [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
 - [[PR263]](https://github.com/lanl/singularity-eos/pull/263) Fix stellar collapse mass fraction interpolation
