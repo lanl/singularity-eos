@@ -124,13 +124,13 @@ module singularity_eos
   
   interface
     integer(kind=c_int) function &
-      init_sg_StiffGas(matindex, eos, gm1, Cv, Pinf, qq, qp, sg_mods_enabled, &
+      init_sg_StiffGas(matindex, eos, gm1, Cv, Pinf, qq, sg_mods_enabled, &
                        sg_mods_values) &
       bind(C, name='init_sg_StiffGas')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
-      real(kind=c_double), value, intent(in) :: gm1, Cv, Pinf, qq, qp
+      real(kind=c_double), value, intent(in) :: gm1, Cv, Pinf, qq
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_StiffGas
   end interface
@@ -359,15 +359,15 @@ contains
   end function init_sg_DavisReactants_f
   
   integer function init_sg_StiffGas_f(matindex, eos, gm1, Cv, &
-                                      Pinf, qq, qp, &
+                                      Pinf, qq, &
                                       sg_mods_enabled, sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
-    real(kind=8), value, intent(in)   :: gm1, Cv, Pinf, qq, qp
+    real(kind=8), value, intent(in)   :: gm1, Cv, Pinf, qq
     integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
-    err = init_sg_StiffGas(matindex-1, eos%ptr, gm1, Cv, Pinf, qq, qp, &
+    err = init_sg_StiffGas(matindex-1, eos%ptr, gm1, Cv, Pinf, qq, &
                            c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_StiffGas_f
   

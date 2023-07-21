@@ -157,22 +157,22 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
 }
 
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
-                     const double Pinf, const double qq, const double qp,
-                     int const *const enabled, double *const vals) {
+                     const double Pinf, const double qq, int const *const enabled,
+                     double *const vals) {
   assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(StiffGas(gm1, Cv, Pinf, qq, qp));
+  EOS eosi = SGAPPLYMODSIMPLE(StiffGas(gm1, Cv, Pinf, qq));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
   }
-  EOS eos_ = SGAPPLYMOD(StiffGas(gm1, Cv, Pinf, qq, qp));
+  EOS eos_ = SGAPPLYMOD(StiffGas(gm1, Cv, Pinf, qq));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
 
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
-                     const double Pinf, const double qq, const double qp) {
-  return init_sg_StiffGas(matindex, eos, gm1, Cv, Pinf, qq, qp, def_en, def_v);
+                     const double Pinf, const double qq) {
+  return init_sg_StiffGas(matindex, eos, gm1, Cv, Pinf, qq, def_en, def_v);
 }
 
 #ifdef SPINER_USE_HDF

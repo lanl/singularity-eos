@@ -36,16 +36,23 @@ using namespace eos_base;
 class StiffGas : public EosBase<StiffGas> {
  public:
   StiffGas() = default;
-  PORTABLE_INLINE_FUNCTION StiffGas(Real gm1, Real Cv, Real Pinf, Real qq, Real qp)
-      : _Cv(Cv), _gm1(gm1), _Pinf(Pinf), _qq(qq), _qp(qp),
-        _rho0(robust::ratio((_P0 + _Pinf), (_gm1 * _Cv * _T0))),
-        _sie0(robust::ratio((_P0 + (_gm1 + 1.0) * _Pinf), (_P0 + _Pinf)) * _Cv * _T0 +
-              _qq),
-        _entr0(_Cv * std::log(robust::ratio(_T0, (std::pow(_rho0 * _gm1 * _Cv, _gm1))) +
-                              robust::SMALL()) +
-               _qp),
-        _bmod0(std::pow(_rho0, _gm1) * std::pow(_Cv, _gm1 + 1.0) *
-               std::pow(_gm1, _gm1 + 2.0) * exp((_entr0 - _qp) / _Cv)),
+  PORTABLE_INLINE_FUNCTION StiffGas(Real gm1, Real Cv, Real Pinf, Real qq)
+      : _Cv(Cv), _gm1(gm1), _Pinf(Pinf), _qq(qq), _T0(ROOM_TEMPERATURE),
+        _P0(ATMOSPHERIC_PRESSURE), _qp(0.0),
+        _rho0(robust::ratio(_P0 + Pinf, gm1 * Cv * _T0)),
+        _vol0(robust::ratio(gm1 * Cv * _T0, _P0 + Pinf)),
+        _sie0(robust::ratio(_P0 + (gm1 + 1.0) * Pinf, _P0 + Pinf) * Cv * _T0 + qq),
+        _bmod0(gm1 * (gm1 + 1.0) * robust::ratio(_P0 + Pinf, gm1 * Cv * _T0) * Cv * _T0),
+        _dpde0(_rho0 * _gm1) {
+    checkParams();
+  }
+  PORTABLE_INLINE_FUNCTION StiffGas(Real gm1, Real Cv, Real Pinf, Real qq, Real qp,
+                                    Real T0, Real P0)
+      : _Cv(Cv), _gm1(gm1), _Pinf(Pinf), _qq(qq), _T0(T0), _P0(P0), _qp(qp),
+        _rho0(robust::ratio(P0 + Pinf, gm1 * Cv * T0)),
+        _vol0(robust::ratio(gm1 * Cv * _T0, _P0 + Pinf)),
+        _sie0(robust::ratio(P0 + (gm1 + 1.0) * Pinf, P0 + Pinf) * Cv * T0 + qq),
+        _bmod0(gm1 * (gm1 + 1.0) * robust::ratio(P0 + Pinf, gm1 * Cv * T0) * Cv * T0),
         _dpde0(_rho0 * _gm1) {
     checkParams();
   }
@@ -55,37 +62,36 @@ class StiffGas : public EosBase<StiffGas> {
     return std::max(robust::SMALL(), (rho * (sie - _qq) - _Pinf) / (rho * _Cv));
   }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
+    // Portable_require seems to do the opposite of what it should. Conditions
+    // reflect this and the code should be changed when ports-of-call changes
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    return std::max(robust::SMALL(),
-                    robust::ratio(rho * _Cv * temperature + _Pinf, rho) + _qq);
+    return std::max(-_qq, robust::ratio(rho * _Cv * temperature + _Pinf, rho) + _qq);
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    return std::max(robust::SMALL(), _gm1 * rho * _Cv * temperature - _Pinf);
+    return std::max(-_Pinf, _gm1 * rho * _Cv * temperature - _Pinf);
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return std::max(robust::SMALL(), _gm1 * rho * (sie - _qq) - (_gm1 + 1.0) * _Pinf);
+    return std::max(-_Pinf, _gm1 * rho * (sie - _qq) - (_gm1 + 1.0) * _Pinf);
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    return _Cv * std::log(robust::ratio(temperature, std::pow(rho * _gm1 * _Cv, _gm1)) +
-                          robust::SMALL()) +
-           _qp;
+    return _Cv * std::log(robust::ratio(temperature, _T0) + robust::SMALL()) +
+           _gm1 * _Cv * std::log(robust::ratio(_rho0, rho) + robust::SMALL()) + _qp;
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    // const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-    // return EntropyFromDensityTemperature(rho, temp, lambda);
-    return _Cv * std::log(robust::ratio(rho * (sie - _qq) - _Pinf,
-                                        std::pow(_Cv * rho, _gm1 + 1.0) *
-                                            std::pow(_gm1, _gm1)) +
+    const Real vol = robust::ratio(1.0, rho);
+    return _Cv * std::log(robust::ratio(
+                              (sie - _qq - _Pinf * vol) * (sie - _qq - _Pinf * vol),
+                              (_sie0 - _qq - _Pinf * vol) * (sie - _qq - _Pinf * _vol0)) +
                           robust::SMALL()) +
-           _qp;
+           _Cv * _gm1 * std::log(robust::ratio(vol, _vol0) + robust::SMALL()) + _qp;
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
@@ -97,17 +103,11 @@ class StiffGas : public EosBase<StiffGas> {
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    const Real entr = EntropyFromDensityTemperature(rho, temperature, lambda);
-    return std::max(robust::SMALL(), std::pow(rho, _gm1) * std::pow(_Cv, _gm1 + 1.0) *
-                                         std::pow(_gm1, _gm1 + 2.0) *
-                                         exp((entr - _qp) / _Cv));
+    return std::max(robust::SMALL(), _gm1 * (_gm1 + 1.0) * rho * _Cv * temperature);
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    const Real entr = EntropyFromDensityInternalEnergy(rho, sie, lambda);
-    return std::max(robust::SMALL(), std::pow(rho, _gm1) * std::pow(_Cv, _gm1 + 1.0) *
-                                         std::pow(_gm1, _gm1 + 2.0) *
-                                         exp((entr - _qp) / _Cv));
+    return std::max(robust::SMALL(), _gm1 * (_gm1 + 1.0) * (rho * (sie - _qq) - _Pinf));
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
@@ -145,32 +145,31 @@ class StiffGas : public EosBase<StiffGas> {
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Stiff Gas Parameters:\nGamma = %g\nCv    = %g\nPinf  = %g\nq     = "
-           "%g\nqprime= %g\n",
-           _gm1 + 1.0, _Cv, _Pinf, _qq, _qp);
+           "%g\n",
+           _gm1 + 1.0, _Cv, _Pinf, _qq);
   }
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
                                        Real &rho, Real &sie) const {
-    sie = std::max(robust::SMALL(),
-                   robust::ratio((press + (_gm1 + 1.0) * _Pinf), (press + _Pinf)) * _Cv *
-                           temp +
-                       _qq);
-    rho = std::max(robust::SMALL(), robust::ratio((press + _Pinf), (_gm1 * _Cv * temp)));
+    sie = std::max(
+        -_qq,
+        robust::ratio(press + (_gm1 + 1.0) * _Pinf, press + _Pinf) * _Cv * temp + _qq);
+    rho = std::max(robust::SMALL(), robust::ratio(press + _Pinf, _gm1 * _Cv * temp));
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("StiffGas"); }
   static std::string EosPyType() { return EosType(); }
 
  private:
-  Real _Cv, _gm1, _Pinf, _qq, _qp;
+  Real _Cv, _gm1, _Pinf, _qq;
+  // optional reference state variables
+  Real _T0, _P0, _qp;
   // reference values
-  Real _rho0, _sie0, _bmod0, _dpde0, _entr0;
-  static constexpr const Real _T0 = ROOM_TEMPERATURE;
-  static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
-  // static constexpr const char _eos_type[] = {"StiffGas"};
+  Real _rho0, _vol0, _sie0, _bmod0, _dpde0;
+  // static constexpr const Real _T0 = ROOM_TEMPERATURE;
+  // static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
-  // optional reference state variables
 };
 
 PORTABLE_INLINE_FUNCTION
@@ -189,7 +188,7 @@ void StiffGas::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
     sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
   }
   if (output & thermalqs::temperature && output & thermalqs::specific_internal_energy) {
-    sie = robust::ratio((press + (_gm1 + 1.0) * _Pinf), (_gm1 * rho)) + _qq;
+    sie = robust::ratio(press + (_gm1 + 1.0) * _Pinf, _gm1 * rho) + _qq;
   }
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::temperature)

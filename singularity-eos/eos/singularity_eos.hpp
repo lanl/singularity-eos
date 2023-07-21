@@ -51,8 +51,8 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                            double *const vals);
 
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
-                     const double Pinf, const double qq, const double qp,
-                     int const *const enabled, double *const vals);
+                     const double Pinf, const double qq, int const *const enabled,
+                     double *const vals);
 
 #ifdef SPINER_USE_HDF
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
@@ -116,7 +116,7 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                            const double Cv0);
 
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
-                     const double Pinf, const double qq, const double qp);
+                     const double Pinf, const double qq);
 
 #ifdef SPINER_USE_HDF
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
