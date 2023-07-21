@@ -69,7 +69,7 @@ class StiffGas : public EosBase<StiffGas> {
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    return std::max(-_qq, robust::ratio(rho * _Cv * temperature + _Pinf, rho) + _qq);
+    return std::max(_qq, robust::ratio(rho * _Cv * temperature + _Pinf, rho) + _qq);
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
@@ -152,7 +152,7 @@ class StiffGas : public EosBase<StiffGas> {
   DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
                                        Real &rho, Real &sie) const {
     sie = std::max(
-        -_qq,
+        _qq,
         robust::ratio(press + (_gm1 + 1.0) * _Pinf, press + _Pinf) * _Cv * temp + _qq);
     rho = std::max(robust::SMALL(), robust::ratio(press + _Pinf, _gm1 * _Cv * temp));
   }
