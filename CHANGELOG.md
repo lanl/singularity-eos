@@ -4,6 +4,7 @@
 - [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
+- [[PR267]](https://github.com/lanl/singularity-eos/pull/267) Add missing eosSafeDestroy call in EOSPAC::Finalize
 - [[PR263]](https://github.com/lanl/singularity-eos/pull/263) Fix stellar collapse mass fraction interpolation
 - [[PR258]](https://github.com/lanl/singularity-eos/pull/258) Fix EOSPAC vector performance and add warnings when slower version gets selected.
 - [[PR243]](https://github.com/lanl/singularity-eos/pull/243) Remove undefined behavior caused by diagnostic variables. Also fixed some compiler warnings.
