@@ -659,12 +659,13 @@ void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &
   }
   if (output & thermalqs::bulk_modulus) {
     Real gamma1 = ComputeGamma1_(rho, temp, p, e);
+
     // Note this is the bulk modulus, not the sound speed. To compute
     // the sound speed, you must take this value and divide by the
     // enthalpy. In particular:
     // c_s = sqrt(bmod / (w)) = sqrt(bmod / (h rho))
     // see page 108 of Rezzolla and Zanotti
-    bmod = std::max(robust::EPS(), press * gamma1);
+    bmod = std::max(robust::EPS(), p[0] * gamma1);
   }
 }
 
