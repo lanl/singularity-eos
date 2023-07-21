@@ -1057,7 +1057,7 @@ values in expansion and compression.
              a_2^e & \mu <    0 \text{ (expansion)}\\
           \end{cases}
 
-and similar expressions for $b_2^*$.
+and similar expressions for :math:`b_2^*`.
 
 
 
