@@ -584,8 +584,8 @@ class Helmholtz : public EosBase<Helmholtz> {
     lambda[Lambda::lT] = lT;
     Real ytot, ye, ywot, De, lDe;
     GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
-    GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
-                                  etaele, nep);
+    GetFromDensityLogTemperature_(rho, temperature, abar, zbar, ye, ytot, ywot, De, lDe,
+                                  p, e, s, etaele, nep);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -597,13 +597,14 @@ class Helmholtz : public EosBase<Helmholtz> {
     Real ytot, ye, ywot, De, lDe;
     GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
     Real lT = lTFromRhoSie_(rho, sie, abar, zbar, ye, ytot, ywot, De, lDe, lambda);
-    GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
+    Real T = math_utils::pow10(lT);
+    GetFromDensityLogTemperature_(rho, T, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
                                   etaele, nep);
   }
 
   PORTABLE_INLINE_FUNCTION
   void GetFromDensityLogTemperature_(
-      const Real rho, const Real lT, const Real abar, const Real zbar, const Real ye,
+      const Real rho, const Real T, const Real abar, const Real zbar, const Real ye,
       const Real ytot, const Real ywot, const Real De, const Real lDe, Real p[NDERIV],
       Real e[NDERIV], Real s[NDERIV], Real etaele[NDERIV], Real nep[NDERIV],
       // TODO(JMM): Decide which of the quantities below to keep
@@ -638,16 +639,14 @@ void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &
   GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
   if (need_temp) {
     lT = lTFromRhoSie_(rho, energy, abar, zbar, ye, ytot, ywot, De, lDe, lambda);
+    temp = math_utils::pow10(lT);
   } else {
     lT = std::log10(temp);
     lambda[Lambda::lT] = lT;
   }
   Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
-  GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
+  GetFromDensityLogTemperature_(rho, temp, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
                                 etaele, nep);
-  if (output & thermalqs::temperature) {
-    temp = math_utils::pow10(lT);
-  }
   if (output & thermalqs::specific_internal_energy) {
     energy = e[0];
   }
@@ -679,6 +678,7 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
   const Real ni = abari * rho * ions_.NA;
   const Real ne = zbar * ni;
   Real lT;
+  Real T;
 
   if (options_.ENABLE_RAD || options_.GAS_DEGENERATE ||
       options_.ENABLE_COULOMB_CORRECTIONS) {
@@ -690,21 +690,26 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
         lTguess = 7;
       }
     }
+    Real Tguess = math_utils::pow10(lTguess);
     auto &copy = *this; // stupid C++17 workaround
     auto status = ROOT_FINDER(
-        [&](Real lT) {
+        [&](Real T) {
           Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
-          copy.GetFromDensityLogTemperature_(rho, lT, abar, zbar, ye, ytot, ywot, De, lDe,
+          copy.GetFromDensityLogTemperature_(rho, T, abar, zbar, ye, ytot, ywot, De, lDe,
                                              p, e, s, etaele, nep, true);
           return e[VAL];
         },
-        e, lTguess, electrons_.lTMin(), electrons_.lTMax(), ROOT_THRESH, ROOT_THRESH, lT);
+        e, Tguess, math_utils::pow10(electrons_.lTMin()),
+        math_utils::pow10(electrons_.lTMax()), ROOT_THRESH, ROOT_THRESH, T);
     if (status != RootFinding1D::Status::SUCCESS) {
       lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
+      T = math_utils::pow10(lT);
     }
   } else {
     lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
+    T = math_utils::pow10(lT);
   }
+  lT = std::log10(T);
   lambda[Lambda::lT] = lT;
   return lT;
 }
@@ -1303,7 +1308,7 @@ void HelmCoulomb::GetFromDensityTemperature(const Real rho, const Real temp,
 
 PORTABLE_INLINE_FUNCTION
 void Helmholtz::GetFromDensityLogTemperature_(
-    const Real rho, const Real lT, const Real abar, const Real zbar, const Real ye,
+    const Real rho, const Real T, const Real abar, const Real zbar, const Real ye,
     const Real ytot, const Real ywot, const Real De, const Real lDe, Real p[NDERIV],
     Real e[NDERIV], Real s[NDERIV], Real etaele[NDERIV], Real nep[NDERIV],
     // TODO(JMM): Decide which of the quantities below to keep
@@ -1315,10 +1320,10 @@ void Helmholtz::GetFromDensityLogTemperature_(
   for (int i = 0; i < 5; ++i) {
     etaele[i] = nep[i] = 0;
   }
+  Real lT = std::log10(T);
 
   const Real log10e = std::log10(M_E);
   const Real lnT = lT / log10e;
-  Real T = math_utils::pow10(lT);
   if (options_.ENABLE_RAD) {
     rad_.GetFromDensityTemperature(rho, T, prad, erad, srad);
   }
