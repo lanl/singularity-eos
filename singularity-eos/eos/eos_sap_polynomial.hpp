@@ -48,8 +48,6 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
 
   SAP_Polynomial GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
-    // Portable_require seems to do the opposite of what it should. Conditions
-    // reflect this and the code should be changed when ports-of-call changes
     PORTABLE_ALWAYS_REQUIRE(_rho0 >= 0, "Reference density must be non-negative");
   }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
