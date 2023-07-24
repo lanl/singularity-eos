@@ -46,7 +46,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   inline EOSPAC() = default;
 
   ////add options here... and elsewhere
-  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0, Real monotonicity = 0.0, bool apply_smoothing = false, Real apply_splitting = 0.0, bool linear_interp = false, bool apply_cc_fix = false);
+  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0, Real monotonicity = 0.0, bool apply_smoothing = false, Real apply_splitting = 0.0, bool linear_interp = false);
   inline EOSPAC GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
@@ -1165,7 +1165,7 @@ class EOSPAC : public EosBase<EOSPAC> {
 // Implementation details below
 // ======================================================================
 
-  inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data, Real monotonicity, bool apply_smoothing, Real apply_splitting, bool linear_interp, bool apply_cc_fix) : matid_(matid) {
+  inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data, Real monotonicity, bool apply_smoothing, Real apply_splitting, bool linear_interp) : matid_(matid) {
   using namespace EospacWrapper;
   EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT, EOS_T_DPt, EOS_Pt_DUt, EOS_Uc_D};
   eosSafeLoad(NT, matid, tableType, tablehandle,

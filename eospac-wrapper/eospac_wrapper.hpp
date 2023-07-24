@@ -56,7 +56,6 @@ class SesameMetadata {
   double TConversionFactor;
   double sieConversionFactor;
   int numRho, numT;
-  bool apply_cc_fix;
   std::string comments;
   std::string name;
   friend std::ostream &operator<<(std::ostream &os, const SesameMetadata &m) {

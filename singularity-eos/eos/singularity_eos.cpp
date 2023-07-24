@@ -168,15 +168,13 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
   bool apply_smoothing=eospac_vals[3];
   double apply_splitting=eospac_vals[4];
   bool linear_interp=eospac_vals[5];
-  bool apply_cc_fix=eospac_vals[6];
 
-
-  EOS eosi = SGAPPLYMODSIMPLE(EOSPAC(id, invert_at_setup = invert_at_setup, insert_data=insert_data, monotonicity=monotonicity, apply_smoothing=apply_smoothing, apply_splitting=apply_splitting, linear_interp=linear_interp, apply_cc_fix=apply_cc_fix));
+  EOS eosi = SGAPPLYMODSIMPLE(EOSPAC(id, invert_at_setup = invert_at_setup, insert_data=insert_data, monotonicity=monotonicity, apply_smoothing=apply_smoothing, apply_splitting=apply_splitting, linear_interp=linear_interp));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
   }
-  EOS eos_ = SGAPPLYMOD(EOSPAC(id, invert_at_setup = invert_at_setup, insert_data=insert_data, monotonicity=monotonicity, apply_smoothing=apply_smoothing, apply_splitting=apply_splitting, linear_interp=linear_interp, apply_cc_fix=apply_cc_fix));
+  EOS eos_ = SGAPPLYMOD(EOSPAC(id, invert_at_setup = invert_at_setup, insert_data=insert_data, monotonicity=monotonicity, apply_smoothing=apply_smoothing, apply_splitting=apply_splitting, linear_interp=linear_interp));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 } 
