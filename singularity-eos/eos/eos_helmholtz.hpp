@@ -719,6 +719,19 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
     T = math_utils::pow10(lT);
   }
   lT = std::log10(T);
+  // Make sure the result is within the table bounds
+  if (lT < electrons_.lTMin()) {
+    if (options_.VERBOSE) {
+      printf("Temperature below table limit, setting lT = lTMin. (lT = %f)\n", lT);
+    }
+    lT = electrons_.lTMin();
+  }
+  if (lT > electrons_.lTMax()) {
+    if (options_.VERBOSE) {
+      printf("Temperature above table limit, setting lT = lTMax. (lT = %f)\n", lT);
+    }
+    lT = electrons_.lTMax();
+  }
   lambda[Lambda::lT] = lT;
   return lT;
 }
