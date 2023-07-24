@@ -367,11 +367,16 @@ class Helmholtz : public EosBase<Helmholtz> {
             const bool electron)
         : ENABLE_RAD(rad), ENABLE_GAS(gas), ENABLE_COULOMB_CORRECTIONS(coul),
           GAS_IONIZED(ion), GAS_DEGENERATE(electron) {}
+    Options(const bool rad, const bool gas, const bool coul, const bool ion,
+            const bool electron, const bool verbose)
+        : ENABLE_RAD(rad), ENABLE_GAS(gas), ENABLE_COULOMB_CORRECTIONS(coul),
+          GAS_IONIZED(ion), GAS_DEGENERATE(electron), VERBOSE(verbose) {}
     bool ENABLE_RAD = true;
     bool ENABLE_GAS = true;
     bool ENABLE_COULOMB_CORRECTIONS = true;
     bool GAS_IONIZED = true;
     bool GAS_DEGENERATE = true;
+    bool VERBOSE = false;
   };
 
   Helmholtz() = default;
@@ -381,6 +386,9 @@ class Helmholtz : public EosBase<Helmholtz> {
   Helmholtz(const std::string &filename, const bool rad, const bool gas, const bool coul,
             const bool ion, const bool ele)
       : electrons_(filename), options_(rad, gas, coul, ion, ele) {}
+  Helmholtz(const std::string &filename, const bool rad, const bool gas, const bool coul,
+            const bool ion, const bool ele, const bool verbose)
+      : electrons_(filename), options_(rad, gas, coul, ion, ele, verbose) {}
 
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
   static constexpr unsigned long PreferredInput() {
@@ -700,7 +708,8 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
           return e[VAL];
         },
         e, Tguess, math_utils::pow10(electrons_.lTMin()),
-        math_utils::pow10(electrons_.lTMax()), ROOT_THRESH, ROOT_THRESH, T);
+        math_utils::pow10(electrons_.lTMax()), ROOT_THRESH, ROOT_THRESH, T, nullptr,
+        options_.VERBOSE);
     if (status != RootFinding1D::Status::SUCCESS) {
       lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
       T = math_utils::pow10(lT);
