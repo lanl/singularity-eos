@@ -125,13 +125,11 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
     return rho/_rho0 - 1;
   }
 
-  // gss: what does this do?
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
                                         Real *lambda = nullptr) const;
 
 
-  // gss: what does this do?
   PORTABLE_INLINE_FUNCTION
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
@@ -184,19 +182,10 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   Real _a0, _a1, _a2c, _a2e, _a3, _b0, _b1, _b2c, _b2e, _b3;
   // reference values
   Real _rho0;
-  // gss: Dont think i need these
-  //  static constexpr const Real _T0 = ROOM_TEMPERATURE;
-  //  static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
-  // static constexpr const char _eos_type[] = {"IdealGas"};
 
-  // gss: what does this do?
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
 
-
-  // gss: Dont think i need these
-  // optional entropy reference state variables
-  //Real _EntropyT0, _EntropyRho0;
 };
 
 PORTABLE_INLINE_FUNCTION
