@@ -36,13 +36,12 @@ using namespace eos_base;
 class SAP_Polynomial : public EosBase<SAP_Polynomial> {
  public:
   SAP_Polynomial() = default;
-  PORTABLE_INLINE_FUNCTION 
-  SAP_Polynomial(const Real rho0,
-             const Real a0, const Real a1, const Real a2c, const Real a2e, const Real a3,
-             const Real b0, const Real b1, const Real b2c, const Real b2e, const Real b3)
-    : _rho0(rho0),
-      _a0(a0), _a1(a1), _a2c(a2c), _a2e(a2e), _a3(a3),  
-      _b0(b0), _b1(b1), _b2c(b2c), _b2e(b2e), _b3(b3)  {
+  PORTABLE_INLINE_FUNCTION
+  SAP_Polynomial(const Real rho0, const Real a0, const Real a1, const Real a2c,
+                 const Real a2e, const Real a3, const Real b0, const Real b1,
+                 const Real b2c, const Real b2e, const Real b3)
+      : _rho0(rho0), _a0(a0), _a1(a1), _a2c(a2c), _a2e(a2e), _a3(a3), _b0(b0), _b1(b1),
+        _b2c(b2c), _b2e(b2e), _b3(b3) {
     checkParams();
   }
 
@@ -66,11 +65,11 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     const Real mu = MuFromDensity(rho);
     if (mu >= 0) // Compression
-      return    _a0 + _a1*mu + _a2c*mu*mu + _a3*mu*mu*mu +
-        sie * ( _b0 + _b1*mu + _b2c*mu*mu + _b3*mu*mu*mu );
+      return _a0 + _a1 * mu + _a2c * mu * mu + _a3 * mu * mu * mu +
+             sie * (_b0 + _b1 * mu + _b2c * mu * mu + _b3 * mu * mu * mu);
     else
-      return    _a0 + _a1*mu + _a2e*mu*mu + _a3*mu*mu*mu +
-        sie * ( _b0 + _b1*mu + _b2e*mu*mu + _b3*mu*mu*mu );
+      return _a0 + _a1 * mu + _a2e * mu * mu + _a3 * mu * mu * mu +
+             sie * (_b0 + _b1 * mu + _b2e * mu * mu + _b3 * mu * mu * mu);
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
@@ -100,33 +99,28 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     const Real mu = MuFromDensity(rho);
     if (mu >= 0) // Compression
-      return  _b0 + _b1*mu + _b2c*mu*mu + _b3*mu*mu*mu;
+      return _b0 + _b1 * mu + _b2c * mu * mu + _b3 * mu * mu * mu;
     else
-      return  _b0 + _b1*mu + _b2e*mu*mu + _b3*mu*mu*mu;
+      return _b0 + _b1 * mu + _b2e * mu * mu + _b3 * mu * mu * mu;
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    const Real mu = rho/_rho0 - 1;
+    const Real mu = rho / _rho0 - 1;
     if (mu >= 0) // Compression
-      return  (1+mu)*(
-                              _a1 + 2*_a2c*mu + 3*_a3*mu*mu +
-                      sie * ( _b1 + 2*_b2c*mu + 3*_b3*mu*mu )
-                      );
+      return (1 + mu) * (_a1 + 2 * _a2c * mu + 3 * _a3 * mu * mu +
+                         sie * (_b1 + 2 * _b2c * mu + 3 * _b3 * mu * mu));
     else
-      return  (1+mu)*(
-                              _a1 + 2*_a2e*mu + 3*_a3*mu*mu +
-                      sie * ( _b1 + 2*_b2e*mu + 3*_b3*mu*mu )
-                      );
+      return (1 + mu) * (_a1 + 2 * _a2e * mu + 3 * _a3 * mu * mu +
+                         sie * (_b1 + 2 * _b2e * mu + 3 * _b3 * mu * mu));
   }
-  PORTABLE_INLINE_FUNCTION Real MuFromDensity(
-      const Real rho, Real *lambda = nullptr) const {
-    return rho/_rho0 - 1;
+  PORTABLE_INLINE_FUNCTION Real MuFromDensity(const Real rho,
+                                              Real *lambda = nullptr) const {
+    return rho / _rho0 - 1;
   }
 
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
                                         Real *lambda = nullptr) const;
-
 
   PORTABLE_INLINE_FUNCTION
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
@@ -183,12 +177,11 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
 
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
-
 };
 
 PORTABLE_INLINE_FUNCTION
 void SAP_Polynomial::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                       Real &bmod, const unsigned long output, Real *lambda) const {
+                             Real &bmod, const unsigned long output, Real *lambda) const {
   if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
     if (output & thermalqs::pressure || output & thermalqs::temperature) {
       UNDEFINED_ERROR;
@@ -213,10 +206,6 @@ void SAP_Polynomial::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
 }
 
-
 } // namespace singularity
-
-
-
 
 #endif // _SINGULARITY_EOS_EOS_EOS_SAP_POLYNOMIAL_HPP_

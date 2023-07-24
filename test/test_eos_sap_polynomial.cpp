@@ -35,21 +35,20 @@ SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
 
     // Constants of the form 0.0? are zero for the original eos
     constexpr Real rho0 = 16.6;
-    constexpr Real a0   = 0.01 * ubar_per_Mbar;
-    constexpr Real a1   = 1.09 * ubar_per_Mbar;
-    constexpr Real a2c  = 0.90 * ubar_per_Mbar;
-    constexpr Real a2e  = 0.02 * ubar_per_Mbar;
-    constexpr Real a3   = 1.80 * ubar_per_Mbar;
-    constexpr Real b0   = 1.90 * ubar_per_Mbar;
-    constexpr Real b1   = 0.01 * ubar_per_Mbar;
-    constexpr Real b2c  = 0.02 * ubar_per_Mbar;
-    constexpr Real b2e  = 0.03 * ubar_per_Mbar;
-    constexpr Real b3   = 0.04 * ubar_per_Mbar;
+    constexpr Real a0 = 0.01 * ubar_per_Mbar;
+    constexpr Real a1 = 1.09 * ubar_per_Mbar;
+    constexpr Real a2c = 0.90 * ubar_per_Mbar;
+    constexpr Real a2e = 0.02 * ubar_per_Mbar;
+    constexpr Real a3 = 1.80 * ubar_per_Mbar;
+    constexpr Real b0 = 1.90 * ubar_per_Mbar;
+    constexpr Real b1 = 0.01 * ubar_per_Mbar;
+    constexpr Real b2c = 0.02 * ubar_per_Mbar;
+    constexpr Real b2e = 0.03 * ubar_per_Mbar;
+    constexpr Real b3 = 0.04 * ubar_per_Mbar;
 
     // Create the EOS
     EOS host_eos = SAP_Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3);
     EOS eos = host_eos.GetOnDevice();
-
 
     GIVEN("Densities and energies") {
 
@@ -83,43 +82,36 @@ SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
       auto v_gamma = gamma.data();
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
-
       // Fill input arrays
       portableFor(
-                  "Initialize rho, siw", 0,1, PORTABLE_LAMBDA(int i) {
-                    v_rho[0] = 15.4;
-                    v_rho[1] = 16.0;
-                    v_rho[2] = 16.6;
-                    v_rho[3] = 17.2;
-                    v_rho[4] = 17.8;
+          "Initialize rho, siw", 0, 1, PORTABLE_LAMBDA(int i) {
+            v_rho[0] = 15.4;
+            v_rho[1] = 16.0;
+            v_rho[2] = 16.6;
+            v_rho[3] = 17.2;
+            v_rho[4] = 17.8;
 
-                    v_sie[0] = 1e-3;
-                    v_sie[1] = 1e-3;
-                    v_sie[2] = 1e-3;
-                    v_sie[3] = 1e-3;
-                    v_sie[4] = 1e-3;
-                  });
+            v_sie[0] = 1e-3;
+            v_sie[1] = 1e-3;
+            v_sie[2] = 1e-3;
+            v_sie[3] = 1e-3;
+            v_sie[4] = 1e-3;
+          });
 
       // Expected values from calculations
       constexpr std::array<Real, num> P_expected{
-         -6.747122099662988281250000000000e+10,
-         -2.755678257812800216674804687500e+10,
-          1.190000000000000000000000000000e+10,
-          5.255876399778214263916015625000e+10,
+          -6.747122099662988281250000000000e+10, -2.755678257812800216674804687500e+10,
+          1.190000000000000000000000000000e+10, 5.255876399778214263916015625000e+10,
           9.607914667524797058105468750000e+10};
 
       constexpr std::array<Real, num> B_expected{
-          1.034707096191414062500000000000e+12,
-          1.056016317964556762695312500000e+12,
-          1.090010000000000122070312500000e+12,
-          1.204131143205424072265625000000e+12,
+          1.034707096191414062500000000000e+12, 1.056016317964556762695312500000e+12,
+          1.090010000000000122070312500000e+12, 1.204131143205424072265625000000e+12,
           1.338595278608992675781250000000e+12};
 
       constexpr std::array<Real, num> gamma_expected{
-          1.899418769576782958984375000000e+12,
-          1.899675858317870117187500000000e+12,
-          1.900000000000000000000000000000e+12,
-          1.900389463209202148437500000000e+12,
+          1.899418769576782958984375000000e+12, 1.899675858317870117187500000000e+12,
+          1.900000000000000000000000000000e+12, 1.900389463209202148437500000000e+12,
           1.900842516531505615234375000000e+12};
 
       WHEN("A P(rho, e) lookup is performed") {
@@ -133,7 +125,6 @@ SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
         }
       }
 
-
       WHEN("A B(rho, e) lookup is performed") {
         eos.BulkModulusFromDensityInternalEnergy(v_rho, v_sie, v_B, num);
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -144,7 +135,6 @@ SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
           array_compare(num, rho, sie, B, B_expected, "Density", "Energy");
         }
       }
-
 
       WHEN("A gamma(rho, e) lookup is performed") {
         eos.GruneisenParamFromDensityInternalEnergy(v_rho, v_sie, v_gamma, num);
