@@ -199,6 +199,19 @@ int get_sg_PressureFromDensityInternalEnergy(int matindex,
 
 }
 
+int get_sg_MinInternalEnergyFromDensity(int matindex,
+            EOS *eos,
+            const double* rhos,
+	    double*  sies,
+            const int len
+               )
+{
+  eos[matindex].MinInternalEnergyFromDensity(rhos, sies, len);
+  return 0; 
+
+}
+
+
 int get_sg_BulkModulusFromDensityInternalEnergy(int matindex,
             EOS *eos,
             const double* rhos,

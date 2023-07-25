@@ -56,6 +56,8 @@ class EOSPAC : public EosBase<EOSPAC> {
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
@@ -148,6 +150,13 @@ class EOSPAC : public EosBase<EOSPAC> {
     EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
                                                        lambdas);
   }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos,
+                                                RealIndexer &&sies, const int num,
+                                                LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num,
+                                                       lambdas);
+  }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
             typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
   inline void
@@ -156,6 +165,15 @@ class EOSPAC : public EosBase<EOSPAC> {
                                     const int num, LambdaIndexer &&lambdas) const {
     PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
     EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
+                                                       lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies, Real * /*scratch*/,
+                                    const int num, LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num,
                                                        lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -598,6 +616,43 @@ class EOSPAC : public EosBase<EOSPAC> {
     ++nopts;
 
     eosSafeInterpolate(&table, num, R, E, P, dPdr, dPdE, "PofRE", Verbosity::Quiet,
+			 options, values, nopts);
+  }
+
+  template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(
+      const Real *rhos, Real *sies, Real *scratch, const int num,
+      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *S = &pressures[0];
+    EOS_REAL *dSdr = scratch + 1 * num;
+
+    EOS_INTEGER table = EcofD_table_;
+    EOS_INTEGER options[3];
+    EOS_REAL values[3];
+    EOS_INTEGER nopts = 0;
+    if (!transform.x.is_set()) {
+      options[nopts] = EOS_XY_PASSTHRU;
+      values[nopts] = 1.0;
+      ++nopts;
+    } else {
+      if (transform.x.is_set()) {
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+        ++nopts;
+      }
+    }
+
+    options[nopts] = EOS_F_CONVERT;
+    values[nopts] = pressureFromSesame(1.0);
+
+    if (transform.f.is_set()) {
+      values[nopts] *= transform.f.get();
+    }
+    ++nopts;
+
+    eosSafeInterpolate(&table, num, R, E, R, dSdr, dSdR, "EcofD", Verbosity::Quiet,
 			 options, values, nopts);
   }
 
@@ -1361,6 +1416,20 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
 		     options, values, nopts);
 		     
   return Real(P[0]);
+}
+PORTABLE_INLINE_FUNCTION Real EOSPAC::MinInternalEnergyFromDensity(
+    const Real rho, Real *lambda) const {
+  using namespace EospacWrapper;
+  EOS_INTEGER options[]{EOS_F_CONVERT};
+  EOS_REAL values[]{sieFromSesame(1.0)};
+  EOS_INTEGER nopts = 1;
+  EOS_REAL R[1] = {rho}, S[1], dSdr[1];
+  EOS_INTEGER nxypairs = 1;
+  EOS_INTEGER table = EcofD_table_;
+  eosSafeInterpolate(&table, nxypairs, R, S, S, dSdr, dSdr, "EcofD", Verbosity::Quiet,
+		     options, values, nopts);
+		     
+  return Real(S[0]);
 }
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {

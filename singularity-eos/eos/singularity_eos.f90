@@ -39,6 +39,7 @@ module singularity_eos
     init_sg_DavisReactants_f,&
     init_sg_eospac_f,&
     get_sg_PressureFromDensityInternalEnergy_f,&
+    get_sg_MinInternalEnergyFromDensity_f,&
     get_sg_BulkModulusFromDensityInternalEnergy_f,&
     get_sg_eos_f,&
     finalize_sg_eos_f
@@ -145,6 +146,18 @@ module singularity_eos
        type(c_ptr), value, intent(in) :: pressures
     end function
   end interface
+
+  interface
+   integer(kind=c_int) function &
+       get_sg_MinInternalEnergyFromDensity(matindex, eos, rhos, sies,&
+                                           len) &
+       bind(C, name='get_sg_MinInternalEnergyFromDensity')
+       import
+       integer(c_int), value, intent(in) :: matindex, len
+       type(c_ptr), value, intent(in) :: eos, rhos, sies
+    end function
+  end interface
+
 
   interface
      integer(kind=c_int) function &
@@ -366,6 +379,18 @@ integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
     err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
   end function get_sg_PressureFromDensityInternalEnergy_f
+
+
+integer function get_sg_MinInternalEnergyFromDensity_f(matindex, &
+    eos, rhos, sies, len) &
+    result(err)
+    integer(c_int), intent(in) :: matindex, len
+    real(kind=8), dimension(:,:,:), intent(in), target:: rhos
+    real(kind=8), dimension(:,:,:), intent(inout), target:: sies
+    type(sg_eos_ary_t), intent(in)    :: eos
+    err = get_sg_MinInternalEnergyFromDensity(matindex-1, &
+           eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), len)
+  end function get_sg_MinInternalEnergyFromDensity_f
 
   integer function get_sg_BulkModulusFromDensityInternalEnergy_f(matindex, &
     eos, rhos, sies, bmods, len) &
