@@ -317,8 +317,8 @@ contains
          optional, intent(in)         :: sg_mods_values
     
     ! arrays for if optionals aren't included
-    integer(kind=c_int), dimension(2) :: zero_mods
-    real(kind=8), dimension(2)     :: zero_values
+    integer(kind=c_int), dimension(2), target :: zero_mods
+    real(kind=8),        dimension(2), target :: zero_values
     ! use arrays if present, else use 0s
     if (present(sg_mods_enabled) .and. present(sg_mods_values)) then
        err = init_sg_IdealGas(matindex-1, eos%ptr, gm1, Cv, &
@@ -347,8 +347,8 @@ contains
          optional, intent(in)         :: sg_mods_values
     
     ! arrays for if optionals aren't included
-    integer(kind=c_int), dimension(2) :: zero_mods
-    real(kind=8), dimension(2)     :: zero_values
+    integer(kind=c_int), dimension(2), target :: zero_mods
+    real(kind=8),        dimension(2), target :: zero_values
     ! use arrays if present, else use 0s
     if (present(sg_mods_enabled) .and. present(sg_mods_values)) then
        err = init_sg_Gruneisen(matindex-1, eos%ptr, C0, s1, s2, s3, G0, b, &
@@ -377,8 +377,8 @@ contains
          optional, intent(in)         :: sg_mods_values
     
     ! arrays for if optionals aren't included
-    integer(kind=c_int), dimension(2) :: zero_mods
-    real(kind=8), dimension(2)     :: zero_values
+    integer(kind=c_int), dimension(2), target :: zero_mods
+    real(kind=8),        dimension(2), target :: zero_values
     ! use arrays if present, else use 0s
     if (present(sg_mods_enabled) .and. present(sg_mods_values)) then
        err = init_sg_JWL(matindex-1, eos%ptr, A, B, R1, R2, w, rho0, Cv, &
@@ -406,8 +406,8 @@ contains
          optional, intent(in)         :: sg_mods_values
     
     ! arrays for if optionals aren't included
-    integer(kind=c_int), dimension(2) :: zero_mods
-    real(kind=8), dimension(2)     :: zero_values
+    integer(kind=c_int), dimension(2), target :: zero_mods
+    real(kind=8),        dimension(2), target :: zero_values
     ! use arrays if present, else use 0s
     if (present(sg_mods_enabled) .and. present(sg_mods_values)) then
        err = init_sg_DavisProducts(matindex-1, eos%ptr, a, b, k, n, vc, pc, &
@@ -438,8 +438,8 @@ contains
          optional, intent(in)         :: sg_mods_values
     
     ! arrays for if optionals aren't included
-    integer(kind=c_int), dimension(2) :: zero_mods
-    real(kind=8), dimension(2)     :: zero_values
+    integer(kind=c_int), dimension(2), target :: zero_mods
+    real(kind=8),        dimension(2), target :: zero_values
     ! use arrays if present, else use 0s
     if (present(sg_mods_enabled) .and. present(sg_mods_values)) then
        err = init_sg_DavisReactants(matindex-1, eos%ptr, rho0, e0, P0, T0, A, &
@@ -472,8 +472,8 @@ contains
          optional, intent(in)                 :: sg_mods_values
     
     ! arrays for if optionals aren't included
-    integer(kind=c_int), dimension(2) :: zero_mods
-    real(kind=8), dimension(2)     :: zero_values
+    integer(kind=c_int), dimension(2), target :: zero_mods
+    real(kind=8),        dimension(2), target :: zero_values
     ! use arrays if present, else use 0s
     if (present(sg_mods_enabled) .and. present(sg_mods_values)) then
        err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
@@ -505,8 +505,8 @@ contains
          optional, intent(in)                 :: sg_mods_values
     
     ! arrays for if optionals aren't included
-    integer(kind=c_int), dimension(2) :: zero_mods
-    real(kind=8), dimension(2)     :: zero_values
+    integer(kind=c_int), dimension(2), target :: zero_mods
+    real(kind=8),        dimension(2), target :: zero_values
     ! use arrays if present, else use 0s
     if (present(sg_mods_enabled) .and. present(sg_mods_values)) then
        err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
@@ -536,8 +536,8 @@ contains
          optional, intent(in)         :: sg_mods_values
     
     ! arrays for if optionals aren't included
-    integer(kind=c_int), dimension(2) :: zero_mods
-    real(kind=8), dimension(2)     :: zero_values
+    integer(kind=c_int), dimension(2), target :: zero_mods
+    real(kind=8),        dimension(2), target :: zero_values
     ! use arrays if present, else use 0s
     if (present(sg_mods_enabled) .and. present(sg_mods_values)) then
        err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled), &
