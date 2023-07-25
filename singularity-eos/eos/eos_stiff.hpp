@@ -62,8 +62,6 @@ class StiffGas : public EosBase<StiffGas> {
     return std::max(robust::SMALL(), (rho * (sie - _qq) - _Pinf) / (rho * _Cv));
   }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
-    // Portable_require seems to do the opposite of what it should. Conditions
-    // reflect this and the code should be changed when ports-of-call changes
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
   }
