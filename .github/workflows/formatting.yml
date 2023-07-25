@@ -13,11 +13,12 @@ jobs:
 
       steps:      
         - name: Checkout code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
         - name: Set system to non-interactive mode
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
           run: |
-            sudo apt-get install -y --force-yes -qq git clang-format
+            sudo apt-get update -y -qq
+            sudo apt-get install -y --force-yes -qq git clang-format-12
         - name: check formatting
-          run: find . -regex '.*\.\(cpp\|hpp\)' | xargs clang-format -style=file -i && git diff --exit-code --ignore-submodules
+          run: find . -regex '.*\.\(cpp\|hpp\)' | xargs clang-format-12 -style=file -i && git diff --exit-code --ignore-submodules

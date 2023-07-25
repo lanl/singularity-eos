@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------------
-! © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+! © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 ! program was produced under U.S. Government contract 89233218CNA000001
 ! for Los Alamos National Laboratory (LANL), which is operated by Triad
 ! National Security, LLC for the U.S.  Department of Energy/National
@@ -309,7 +309,6 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: gm1, Cv
-
     integer(kind=c_int), &
          dimension(:), target, &
          optional, intent(in)         :: sg_mods_enabled
@@ -362,7 +361,6 @@ contains
                                rho0, T0, P0, Cv, c_loc(zero_mods), &
                                c_loc(zero_values))
     endif
-
   end function init_sg_Gruneisen_f
 
   integer function init_sg_JWL_f(matindex, eos, A, B, R1, R2, w, rho0, Cv, &
@@ -391,7 +389,6 @@ contains
        err = init_sg_JWL(matindex-1, eos%ptr, A, B, R1, R2, w, rho0, Cv, &
                          c_loc(zero_mods), c_loc(zero_values))
     endif
-
   end function init_sg_JWL_f
   
   integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc, &
@@ -423,7 +420,6 @@ contains
                                    Cv, E0, c_loc(zero_mods), &
                                    c_loc(zero_values))
     endif
-
   end function init_sg_DavisProducts_f
 
   integer function init_sg_DavisReactants_f(matindex, eos, rho0, e0, P0, T0, &
@@ -458,7 +454,6 @@ contains
                                     c_loc(zero_mods), &
                                     c_loc(zero_values))
     endif
-
   end function init_sg_DavisReactants_f
 
   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
@@ -493,7 +488,6 @@ contains
                                        c_loc(zero_mods), &
                                        c_loc(zero_values))
     endif
-
   end function init_sg_SpinerDependsRhoT_f
 
   integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, &
@@ -527,7 +521,6 @@ contains
                                          c_loc(zero_mods), &
                                          c_loc(zero_values))
     endif
-
   end function init_sg_SpinerDependsRhoSie_f
 
   integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
@@ -555,7 +548,6 @@ contains
        err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(zero_mods), &
                             c_loc(zero_values))
     endif
-
   end function init_sg_eospac_f
 
   integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &

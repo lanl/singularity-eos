@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -15,9 +15,9 @@
 #ifndef EOS_VARIANT_HPP
 #define EOS_VARIANT_HPP
 
+#include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
-#include <variant/include/mpark/variant.hpp>
 
 using Real = double;
 
@@ -108,6 +108,25 @@ class Variant {
     return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
+        },
+        eos_);
+  }
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const {
+    return mpark::visit(
+        [&rho, &temperature, &lambda](const auto &eos) {
+          return eos.EntropyFromDensityTemperature(rho, temperature, lambda);
+        },
+        eos_);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const {
+    return mpark::visit(
+        [&rho, &sie, &lambda](const auto &eos) {
+          return eos.EntropyFromDensityInternalEnergy(rho, sie, lambda);
         },
         eos_);
   }
@@ -224,6 +243,11 @@ class Variant {
         eos_);
   }
 
+  PORTABLE_INLINE_FUNCTION
+  Real RhoPmin(const Real temp) const {
+    return mpark::visit([&temp](const auto &eos) { return eos.RhoPmin(temp); }, eos_);
+  }
+
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const {
     return mpark::visit([](const auto &eos) { return eos.MinimumDensity(); }, eos_);
@@ -247,7 +271,9 @@ class Variant {
   TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&temperatures, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num, lambdas);
+    return TemperatureFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(temperatures), num, lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -257,8 +283,35 @@ class Variant {
                                        LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &sies, &temperatures, &num, &lambdas](const auto &eos) {
-          return eos.TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
-                                                          lambdas);
+          return eos.TemperatureFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(temperatures), num,
+              std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&sies,
+                                                   RealIndexer &&temperatures,
+                                                   Real *scratch, const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return TemperatureFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(temperatures), scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&temperatures, Real *scratch,
+                                       const int num, LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &temperatures, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.TemperatureFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(temperatures), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -269,7 +322,10 @@ class Variant {
                                                    RealIndexer &&sies,
                                                    const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num, lambdas);
+    return InternalEnergyFromDensityTemperature(
+        std::forward<ConstRealIndexer>(rhos),
+        std::forward<ConstRealIndexer>(temperatures), std::forward<RealIndexer>(sies),
+        num, lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -279,8 +335,37 @@ class Variant {
                                                    LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &temperatures, &sies, &num, &lambdas](const auto &eos) {
-          return eos.InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
-                                                          lambdas);
+          return eos.InternalEnergyFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(sies), num, std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&sies, Real *scratch,
+                                                   const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return InternalEnergyFromDensityTemperature(
+        std::forward<ConstRealIndexer>(rhos),
+        std::forward<ConstRealIndexer>(temperatures), sies, scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void InternalEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&sies, Real *scratch,
+                                                   const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &sies, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.InternalEnergyFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures), sies, scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -290,7 +375,10 @@ class Variant {
   PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
                                  RealIndexer &&pressures, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return PressureFromDensityTemperature(rhos, temperatures, pressures, num, lambdas);
+    return PressureFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                          std::forward<ConstRealIndexer>(temperatures),
+                                          std::forward<RealIndexer>(pressures), num,
+                                          lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -300,8 +388,39 @@ class Variant {
                                              LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &temperatures, &pressures, &num, &lambdas](const auto &eos) {
-          return eos.PressureFromDensityTemperature(rhos, temperatures, pressures, num,
-                                                    lambdas);
+          return eos.PressureFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(pressures), num,
+              std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void PressureFromDensityTemperature(ConstRealIndexer &&rhos,
+                                             ConstRealIndexer &&temperatures,
+                                             RealIndexer &&pressures, Real *scratch,
+                                             const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return PressureFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                          std::forward<ConstRealIndexer>(temperatures),
+                                          std::forward<RealIndexer>(pressures), scratch,
+                                          num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                 RealIndexer &&pressures, Real *scratch, const int num,
+                                 LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &pressures, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.PressureFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(pressures), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -311,7 +430,9 @@ class Variant {
   PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                     RealIndexer &&pressures, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return PressureFromDensityInternalEnergy(rhos, sies, pressures, num, lambdas);
+    return PressureFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(pressures), num, lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -321,8 +442,142 @@ class Variant {
                                                 LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &sies, &pressures, &num, &lambdas](const auto &eos) {
-          return eos.PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
-                                                       lambdas);
+          return eos.PressureFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(pressures), num,
+              std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&sies,
+                                                RealIndexer &&pressures, Real *scratch,
+                                                const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return PressureFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(pressures), scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                    RealIndexer &&pressures, Real *scratch, const int num,
+                                    LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &pressures, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.PressureFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(pressures), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void
+  EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                RealIndexer &&entropies, const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return EntropyFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                         std::forward<ConstRealIndexer>(temperatures),
+                                         std::forward<RealIndexer>(entropies), num,
+                                         lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&entropies, const int num,
+                                            LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &entropies, &num, &lambdas](const auto &eos) {
+          return eos.EntropyFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(entropies), num,
+              std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                            ConstRealIndexer &&temperatures,
+                                            RealIndexer &&entropies, Real *scratch,
+                                            const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return EntropyFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                         std::forward<ConstRealIndexer>(temperatures),
+                                         std::forward<RealIndexer>(entropies), scratch,
+                                         num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
+                                RealIndexer &&entropies, Real *scratch, const int num,
+                                LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &entropies, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.EntropyFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(entropies), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void
+  EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                   RealIndexer &&entropies, const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return EntropyFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(entropies), num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&entropies, const int num,
+                                               LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &entropies, &num, &lambdas](const auto &eos) {
+          return eos.EntropyFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(entropies), num,
+              std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                               ConstRealIndexer &&sies,
+                                               RealIndexer &&entropies, Real *scratch,
+                                               const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return EntropyFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(entropies), scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                   RealIndexer &&entropies, Real *scratch, const int num,
+                                   LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &entropies, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.EntropyFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(entropies), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -332,7 +587,10 @@ class Variant {
                                                  ConstRealIndexer &&temperatures,
                                                  RealIndexer &&cvs, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num, lambdas);
+    return SpecificHeatFromDensityTemperature(
+        std::forward<ConstRealIndexer>(rhos),
+        std::forward<ConstRealIndexer>(temperatures), std::forward<RealIndexer>(cvs), num,
+        lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -342,8 +600,39 @@ class Variant {
                                                  LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &temperatures, &cvs, &num, &lambdas](const auto &eos) {
-          return eos.SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
-                                                        lambdas);
+          return eos.SpecificHeatFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(cvs), num, std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                 ConstRealIndexer &&temperatures,
+                                                 RealIndexer &&cvs, Real *scratch,
+                                                 const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return SpecificHeatFromDensityTemperature(
+        std::forward<ConstRealIndexer>(rhos),
+        std::forward<ConstRealIndexer>(temperatures), std::forward<RealIndexer>(cvs),
+        scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void SpecificHeatFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                 ConstRealIndexer &&temperatures,
+                                                 RealIndexer &&cvs, Real *scratch,
+                                                 const int num,
+                                                 LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &cvs, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.SpecificHeatFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(cvs), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -353,7 +642,9 @@ class Variant {
   SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                         RealIndexer &&cvs, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
+    return SpecificHeatFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(cvs), num, lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -363,7 +654,34 @@ class Variant {
                                                     LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &sies, &cvs, &num, &lambdas](const auto &eos) {
-          return eos.SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
+          return eos.SpecificHeatFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(cvs), num, std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                    ConstRealIndexer &&sies,
+                                                    RealIndexer &&cvs, Real *scratch,
+                                                    const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return SpecificHeatFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(cvs), scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                        RealIndexer &&cvs, Real *scratch, const int num,
+                                        LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &cvs, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.SpecificHeatFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(cvs), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -374,7 +692,10 @@ class Variant {
                                                 RealIndexer &&bmods,
                                                 const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num, lambdas);
+    return BulkModulusFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                             std::forward<ConstRealIndexer>(temperatures),
+                                             std::forward<RealIndexer>(bmods), num,
+                                             lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -384,8 +705,39 @@ class Variant {
                                                 LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &temperatures, &bmods, &num, &lambdas](const auto &eos) {
-          return eos.BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
-                                                       lambdas);
+          return eos.BulkModulusFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(bmods), num,
+              std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                RealIndexer &&bmods, Real *scratch,
+                                                const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return BulkModulusFromDensityTemperature(std::forward<ConstRealIndexer>(rhos),
+                                             std::forward<ConstRealIndexer>(temperatures),
+                                             std::forward<RealIndexer>(bmods), scratch,
+                                             num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void BulkModulusFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&temperatures,
+                                                RealIndexer &&bmods, Real *scratch,
+                                                const int num,
+                                                LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &bmods, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.BulkModulusFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(bmods), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -395,7 +747,9 @@ class Variant {
   BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&bmods, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num, lambdas);
+    return BulkModulusFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(bmods), num, lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -405,8 +759,36 @@ class Variant {
                                                    LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &sies, &bmods, &num, &lambdas](const auto &eos) {
-          return eos.BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
-                                                          lambdas);
+          return eos.BulkModulusFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(bmods), num,
+              std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&sies,
+                                                   RealIndexer &&bmods, Real *scratch,
+                                                   const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return BulkModulusFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(bmods), scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void
+  BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
+                                       RealIndexer &&bmods, Real *scratch, const int num,
+                                       LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &bmods, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.BulkModulusFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(bmods), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -417,7 +799,10 @@ class Variant {
                                                    RealIndexer &&gm1s,
                                                    const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num, lambdas);
+    return GruneisenParamFromDensityTemperature(
+        std::forward<ConstRealIndexer>(rhos),
+        std::forward<ConstRealIndexer>(temperatures), std::forward<RealIndexer>(gm1s),
+        num, lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -427,8 +812,39 @@ class Variant {
                                                    LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &temperatures, &gm1s, &num, &lambdas](const auto &eos) {
-          return eos.GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
-                                                          lambdas);
+          return eos.GruneisenParamFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(gm1s), num, std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&gm1s, Real *scratch,
+                                                   const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return GruneisenParamFromDensityTemperature(
+        std::forward<ConstRealIndexer>(rhos),
+        std::forward<ConstRealIndexer>(temperatures), std::forward<RealIndexer>(gm1s),
+        scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GruneisenParamFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                   ConstRealIndexer &&temperatures,
+                                                   RealIndexer &&gm1s, Real *scratch,
+                                                   const int num,
+                                                   LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &temperatures, &gm1s, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.GruneisenParamFromDensityTemperature(
+              std::forward<ConstRealIndexer>(rhos),
+              std::forward<ConstRealIndexer>(temperatures),
+              std::forward<RealIndexer>(gm1s), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -439,7 +855,9 @@ class Variant {
                                                       RealIndexer &&gm1s,
                                                       const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num, lambdas);
+    return GruneisenParamFromDensityInternalEnergy(std::forward<ConstRealIndexer>(rhos),
+                                                   std::forward<ConstRealIndexer>(sies),
+                                                   gm1s, num, lambdas);
   }
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -449,8 +867,36 @@ class Variant {
                                                       LambdaIndexer &&lambdas) const {
     return mpark::visit(
         [&rhos, &sies, &gm1s, &lambdas, &num](const auto &eos) {
-          return eos.GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
-                                                             lambdas);
+          return eos.GruneisenParamFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(gm1s), num, std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                      ConstRealIndexer &&sies,
+                                                      RealIndexer &&gm1s, Real *scratch,
+                                                      const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return GruneisenParamFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(gm1s), scratch, num, lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                      ConstRealIndexer &&sies,
+                                                      RealIndexer &&gm1s, Real *scratch,
+                                                      const int num,
+                                                      LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &gm1s, &scratch, &lambdas, &num](const auto &eos) {
+          return eos.GruneisenParamFromDensityInternalEnergy(
+              std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+              std::forward<RealIndexer>(gm1s), scratch, num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -460,7 +906,10 @@ class Variant {
                       RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                       const int num, const unsigned long output) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return FillEos(rhos, temps, energies, presses, cvs, bmods, num, output, lambdas);
+    return FillEos(std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
+                   std::forward<RealIndexer>(energies),
+                   std::forward<RealIndexer>(presses), std::forward<RealIndexer>(cvs),
+                   std::forward<RealIndexer>(bmods), num, output, lambdas);
   }
 
   template <typename RealIndexer, typename LambdaIndexer>
@@ -471,8 +920,11 @@ class Variant {
     return mpark::visit(
         [&rhos, &temps, &energies, &presses, &cvs, &bmods, &num, &output,
          &lambdas](const auto &eos) {
-          return eos.FillEos(rhos, temps, energies, presses, cvs, bmods, num, output,
-                             lambdas);
+          return eos.FillEos(
+              std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(temps),
+              std::forward<RealIndexer>(energies), std::forward<RealIndexer>(presses),
+              std::forward<RealIndexer>(cvs), std::forward<RealIndexer>(bmods), num,
+              output, std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
@@ -482,7 +934,11 @@ class Variant {
                      RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
                      RealIndexer &&dtdrs, RealIndexer &&dtdes, const int num) const {
     NullIndexer lambdas{}; // Returns null pointer for every index
-    return PTofRE(rhos, sies, presses, temps, dpdrs, dpdes, dtdrs, dtdes, num, lambdas);
+    return PTofRE(std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(sies),
+                  std::forward<RealIndexer>(presses), std::forward<RealIndexer>(temps),
+                  std::forward<RealIndexer>(dpdrs), std::forward<RealIndexer>(dpdes),
+                  std::forward<RealIndexer>(dtdrs), std::forward<RealIndexer>(dtdes), num,
+                  lambdas);
   }
 
   template <typename RealIndexer, typename LambdaIndexer>
@@ -493,15 +949,47 @@ class Variant {
     return mpark::visit(
         [&rhos, &sies, &presses, &temps, &dpdrs, &dpdes, &dtdrs, &dtdes, &num,
          &lambdas](const auto &eos) {
-          return eos.PTofRE(rhos, sies, presses, temps, dpdrs, dpdes, dtdrs, dtdes, num,
-                            lambdas);
+          return eos.PTofRE(
+              std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(sies),
+              std::forward<RealIndexer>(presses), std::forward<RealIndexer>(temps),
+              std::forward<RealIndexer>(dpdrs), std::forward<RealIndexer>(dpdes),
+              std::forward<RealIndexer>(dtdrs), std::forward<RealIndexer>(dtdes), num,
+              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
+  }
+
+  // Tooling for modifiers
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool IsModified() const {
+    return mpark::visit([](const auto &eos) { return eos.IsModified(); }, eos_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Variant UnmodifyOnce() {
+    return mpark::visit(
+        [](auto &eos) { return eos_variant<EOSs...>(eos.UnmodifyOnce()); }, eos_);
+  }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Variant GetUnmodifiedObject() {
+    return mpark::visit(
+        [](auto &eos) { return eos_variant<EOSs...>(eos.GetUnmodifiedObject()); }, eos_);
   }
 
   PORTABLE_INLINE_FUNCTION
   unsigned long PreferredInput() const noexcept {
     return mpark::visit([](const auto &eos) { return eos.PreferredInput(); }, eos_);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return mpark::visit(
+        [&](const auto &eos) { return eos.scratch_size(method, nelements); }, eos_);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  unsigned long max_scratch_size(unsigned int nelements) {
+    return mpark::visit([&](const auto &eos) { return eos.max_scratch_size(nelements); },
+                        eos_);
   }
 
   PORTABLE_INLINE_FUNCTION

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -47,6 +47,8 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   using EosBase<ShiftedEOS<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<ShiftedEOS<T>>::PressureFromDensityTemperature;
   using EosBase<ShiftedEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<ShiftedEOS<T>>::EntropyFromDensityTemperature;
+  using EosBase<ShiftedEOS<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<ShiftedEOS<T>>::SpecificHeatFromDensityTemperature;
   using EosBase<ShiftedEOS<T>>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<ShiftedEOS<T>>::BulkModulusFromDensityTemperature;
@@ -55,6 +57,15 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<ShiftedEOS<T>>::PTofRE;
   using EosBase<ShiftedEOS<T>>::FillEos;
+
+  using BaseType = T;
+
+  // give me std::format or fmt::format...
+  static std::string EosType() {
+    return std::string("ShiftedEOS<") + T::EosType() + std::string(">");
+  }
+
+  static std::string EosPyType() { return std::string("Shifted") + T::EosPyType(); }
 
   // move semantics ensures dynamic memory comes along for the ride
   ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
@@ -80,6 +91,11 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     return t_.PressureFromDensityInternalEnergy(rho, sie - shift_, lambda);
   }
   PORTABLE_FUNCTION
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const {
+    return t_.EntropyFromDensityInternalEnergy(rho, sie - shift_, lambda);
+  }
+  PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda = nullptr) const {
     return t_.SpecificHeatFromDensityInternalEnergy(rho, sie - shift_, lambda);
@@ -98,6 +114,11 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
     return t_.PressureFromDensityTemperature(rho, temperature, lambda);
+  }
+  PORTABLE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const {
+    return t_.EntropyFromDensityTemperature(rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
@@ -132,15 +153,175 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     }
   }
 
+  // vector implementations
+  inline void shift_sies(const Real *sies, Real *shifted, const int num) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
+    static auto const cname = name.c_str();
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) { shifted[i] = sies[i] - shift_; });
+  }
+
+  inline void unshift_sies(Real *sies, const int num) const {
+    static auto const name =
+        singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
+    static auto const cname = name.c_str();
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_; });
+  }
+
+  template <typename LambdaIndexer>
+  inline void TemperatureFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *temperatures, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    Real *shifted_sies = scratch;
+    shift_sies(sies, shifted_sies, num);
+    t_.TemperatureFromDensityInternalEnergy(
+        rhos, shifted_sies, temperatures, &scratch[num], num,
+        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                             Real *pressures, Real *scratch,
+                                             const int num, LambdaIndexer &&lambdas,
+                                             Transform &&transform = Transform()) const {
+    t_.PressureFromDensityTemperature(rhos, temperatures, pressures, scratch, num,
+                                      std::forward<LambdaIndexer>(lambdas),
+                                      std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void
+  PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *pressures,
+                                    Real *scratch, const int num, LambdaIndexer &&lambdas,
+                                    Transform &&transform = Transform()) const {
+    Real *shifted_sies = scratch;
+    shift_sies(sies, shifted_sies, num);
+    t_.PressureFromDensityInternalEnergy(rhos, shifted_sies, pressures, &scratch[num],
+                                         num, std::forward<LambdaIndexer>(lambdas),
+                                         std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch, const int num,
+      LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    t_.SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, scratch, num,
+                                          std::forward<LambdaIndexer>(lambdas),
+                                          std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *cvs, Real *scratch, const int num,
+      LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    Real *shifted_sies = scratch;
+    shift_sies(sies, shifted_sies, num);
+    t_.SpecificHeatFromDensityInternalEnergy(rhos, shifted_sies, cvs, &scratch[num], num,
+                                             std::forward<LambdaIndexer>(lambdas),
+                                             std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *bmods, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    t_.BulkModulusFromDensityTemperature(rhos, temperatures, bmods, scratch, num,
+                                         std::forward<LambdaIndexer>(lambdas),
+                                         std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *bmods, Real *scratch, const int num,
+      LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    Real *shifted_sies = scratch;
+    shift_sies(sies, shifted_sies, num);
+    t_.BulkModulusFromDensityInternalEnergy(rhos, shifted_sies, bmods, &scratch[num], num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *gm1s, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    t_.GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *gm1s, Real *scratch, const int num,
+      LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    Real *shifted_sies = scratch;
+    shift_sies(sies, shifted_sies, num);
+    t_.GruneisenParamFromDensityInternalEnergy(rhos, shifted_sies, gm1s, &scratch[num],
+                                               num, std::forward<LambdaIndexer>(lambdas),
+                                               std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void InternalEnergyFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *sies, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    t_.InternalEnergyFromDensityTemperature(rhos, temperatures, sies, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
+    unshift_sies(sies, num);
+  }
+
+  template <typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                            Real *entropies, Real *scratch, const int num,
+                                            LambdaIndexer &&lambdas,
+                                            Transform &&transform = Transform()) const {
+    t_.EntropyFromDensityTemperature(rhos, temperatures, entropies, scratch, num,
+                                     std::forward<LambdaIndexer>(lambdas),
+                                     std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void
+  EntropyFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *entropies,
+                                   Real *scratch, const int num, LambdaIndexer &&lambdas,
+                                   Transform &&transform = Transform()) const {
+    Real *shifted_sies = scratch;
+    shift_sies(sies, shifted_sies, num);
+    t_.EntropyFromDensityInternalEnergy(rhos, sies, entropies, &scratch[num], num,
+                                        std::forward<LambdaIndexer>(lambdas),
+                                        std::forward<Transform>(transform));
+  }
+
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return t_.nlambda(); }
 
-  PORTABLE_FUNCTION
-  unsigned long PreferredInput() const { return t_.PreferredInput(); }
+  static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
+
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    constexpr char suffix[] = "FromDensityInternalEnergy";
+    if (method.rfind(suffix) == method.length() - sizeof(suffix) + 1) {
+      return T::scratch_size(method, nelements) + (sizeof(Real) * nelements);
+    }
+    return T::scratch_size(method, nelements);
+  }
+
+  static inline unsigned long max_scratch_size(unsigned int nelements) {
+    unsigned long m = T::max_scratch_size(nelements);
+    for (auto &&meth :
+         {"TemperatureFromDensityInternalEnergy", "PressureFromDensityInternalEnergy",
+          "SpecificHeatFromDensityInternalEnergy", "BulkModulusFromDensityInternalEnergy",
+          "GruneisenParamFromDensityInternalEnergy"}) {
+      m = std::max(m, scratch_size(meth, nelements));
+    }
+    return m;
+  }
 
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();
-    printf("scaling_ratio = %f\n", shift_);
+    printf("shift_value = %f\n", shift_);
   }
   PORTABLE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
@@ -164,6 +345,13 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     return t_.MinimumTemperature();
   }
 
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool IsModified() const { return true; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  T UnmodifyOnce() { return t_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  auto GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
+
  private:
   T t_;
   double shift_;
@@ -171,4 +359,4 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
 
 } // namespace singularity
 
-#endif _SINGULARITY_EOS_EOS_SHIFTED_EOS_
+#endif // _SINGULARITY_EOS_EOS_SHIFTED_EOS_

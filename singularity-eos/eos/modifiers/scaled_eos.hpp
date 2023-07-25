@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -47,6 +47,8 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   using EosBase<ScaledEOS<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::PressureFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::EntropyFromDensityTemperature;
+  using EosBase<ScaledEOS<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::BulkModulusFromDensityTemperature;
@@ -55,6 +57,15 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::PTofRE;
   using EosBase<ScaledEOS<T>>::FillEos;
+
+  using BaseType = T;
+
+  // give me std::format or fmt::format...
+  static std::string EosType() {
+    return std::string("ScaledEOS<") + T::EosType() + std::string(">");
+  }
+
+  static std::string EosPyType() { return std::string("Scaled") + T::EosPyType(); }
 
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
@@ -81,6 +92,11 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
                                          Real *lambda = nullptr) const {
     return t_.PressureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
   }
+  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                        Real *lambda = nullptr) const {
+    return scale_ *
+           t_.EntropyFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
+  }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
                                              Real *lambda = nullptr) const {
@@ -103,6 +119,11 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
                                       Real *lambda = nullptr) const {
     return t_.PressureFromDensityTemperature(scale_ * rho, temperature, lambda);
+  }
+  PORTABLE_FUNCTION
+  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                     Real *lambda = nullptr) const {
+    return scale_ * t_.EntropyFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   PORTABLE_FUNCTION
   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
@@ -148,11 +169,151 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
     sie *= scale_;
   }
 
+  // vector implementations
+  template <typename LambdaIndexer>
+  inline void TemperatureFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *temperatures, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    transform.y.apply(inv_scale_);
+    t_.TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void PressureFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                             Real *pressures, Real *scratch,
+                                             const int num, LambdaIndexer &&lambdas,
+                                             Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    t_.PressureFromDensityTemperature(rhos, temperatures, pressures, scratch, num,
+                                      std::forward<LambdaIndexer>(lambdas),
+                                      std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void
+  PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *pressures,
+                                    Real *scratch, const int num, LambdaIndexer &&lambdas,
+                                    Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    transform.y.apply(inv_scale_);
+    t_.PressureFromDensityInternalEnergy(rhos, sies, pressures, scratch, num,
+                                         std::forward<LambdaIndexer>(lambdas),
+                                         std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch, const int num,
+      LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    t_.SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, scratch, num,
+                                          std::forward<LambdaIndexer>(lambdas),
+                                          std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void SpecificHeatFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *cvs, Real *scratch, const int num,
+      LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    transform.y.apply(inv_scale_);
+    t_.SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, scratch, num,
+                                             std::forward<LambdaIndexer>(lambdas),
+                                             std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *bmods, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    t_.BulkModulusFromDensityTemperature(rhos, temperatures, bmods, scratch, num,
+                                         std::forward<LambdaIndexer>(lambdas),
+                                         std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void BulkModulusFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *bmods, Real *scratch, const int num,
+      LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    transform.y.apply(inv_scale_);
+    t_.BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *gm1s, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    t_.GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void GruneisenParamFromDensityInternalEnergy(
+      const Real *rhos, const Real *sies, Real *gm1s, Real *scratch, const int num,
+      LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    transform.y.apply(inv_scale_);
+    t_.GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, scratch, num,
+                                               std::forward<LambdaIndexer>(lambdas),
+                                               std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void InternalEnergyFromDensityTemperature(
+      const Real *rhos, const Real *temperatures, Real *sies, Real *scratch,
+      const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
+    transform.f.apply(scale_);
+    t_.InternalEnergyFromDensityTemperature(rhos, temperatures, sies, scratch, num,
+                                            std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                            Real *entropies, Real *scratch, const int num,
+                                            LambdaIndexer &&lambdas,
+                                            Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    transform.f.apply(scale_);
+    t_.EntropyFromDensityTemperature(rhos, temperatures, entropies, scratch, num,
+                                     std::forward<LambdaIndexer>(lambdas),
+                                     std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void
+  EntropyFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *entropies,
+                                   Real *scratch, const int num, LambdaIndexer &&lambdas,
+                                   Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    transform.y.apply(inv_scale_);
+    transform.f.apply(scale_);
+    t_.EntropyFromDensityInternalEnergy(rhos, sies, entropies, scratch, num,
+                                        std::forward<LambdaIndexer>(lambdas),
+                                        std::forward<Transform>(transform));
+  }
+
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return t_.nlambda(); }
 
-  PORTABLE_FUNCTION
-  unsigned long PreferredInput() const { return t_.PreferredInput(); }
+  static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
+
+  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
+    return T::scratch_size(method, nelements);
+  }
+
+  static inline unsigned long max_scratch_size(unsigned int nelements) {
+    return T::max_scratch_size(nelements);
+  }
 
   PORTABLE_FUNCTION void PrintParams() const {
     t_.PrintParams();
@@ -172,6 +333,13 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return t_.MinimumTemperature();
   }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool IsModified() const { return true; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  T UnmodifyOnce() { return t_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  auto GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
 
  private:
   T t_;

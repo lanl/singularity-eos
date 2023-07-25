@@ -3,37 +3,41 @@
 ###################
 
 stages:
-  - static_analysis
   - build_n_test
 
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
-  SINGULARITY_EOS_OPENMPI_VERSION: "4.0.5"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests%gcc@${SINGULARITY_EOS_GCC_VERSION}"
+  SINGULARITY_EOS_OPENMPI_VERSION: "4.1.3"
+  SINGULARITY_EOS_CUDA_VERSION: "11.6.0"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  COLOR_CYAN: '\033[1;36m'
+  COLOR_PLAIN: '\033[0m'
+  # set to different spack upstream for testing
+  SINGULARITY_EOS_TEMP_SPACK_DIR: ""
+  # uncomment for debugging the CI and persist the Spack installation
+  # SPACK_USER_CACHE_PATH: "${CI_PROJECT_DIR}/spack-local"
+  # DEVEL_SPACK_CHECKOUT: "${CI_PROJECT_DIR}/spack"
 
 before_script:
-  - export HOME=${CI_PROJECT_DIR}
-  - export TMPDIR=${CI_PROJECT_DIR}
-  - cd ${CI_PROJECT_DIR}
-  - unset SPACK_ROOT
-  - echo "Spack Version:" ${XCAP_OSS_SPACK_REF}
-  - git clone https://github.com/spack/spack.git
-  - cd spack && git checkout ${XCAP_OSS_SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
-  - export SPACK_ARCH=`./spack/bin/spack arch`
-  - echo ${SPACK_ARCH}
-  - export PLATFORM="${SPACK_ARCH%%-*}"
-  - echo ${PLATFORM}
-  - mkdir -p ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}
-  - cp ${XCAP_OSS_SPACK_DIR}/etc/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
-  - cp ${CI_PROJECT_DIR}/.gitlab-ci/config/spack/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/
-  - sed -i "s;XCAP_OSS_SPACK_DIR_TMP;${XCAP_OSS_SPACK_DIR};g" "${CI_PROJECT_DIR}/spack/etc/spack/upstreams.yaml"
-  - rm ${CI_PROJECT_DIR}/spack/etc/spack/repos.yaml ${CI_PROJECT_DIR}/spack/etc/spack/packages.yaml
-  - cp ${XCAP_OSS_SPACK_DIR}/etc/spack/${PLATFORM}/*.yaml ${CI_PROJECT_DIR}/spack/etc/spack/${PLATFORM}/
-  - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
+  - export SPACK_DISABLE_LOCAL_CONFIG=true
+  - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH:-/tmp/spack-local}
+  - export DEVEL_SPACK_CHECKOUT=${DEVEL_SPACK_CHECKOUT:-/tmp/spack}
+  - export SINGULARITY_EOS_SPACK_DIR=${SINGULARITY_EOS_TEMP_SPACK_DIR:=$XCAP_OSS_SPACK_DIR}
+  - echo -e "\e[0Ksection_start:`date +%s`:spack_init[collapsed=true]\r\e[0K${COLOR_CYAN}Creating Spack instance at ${DEVEL_SPACK_CHECKOUT}${COLOR_PLAIN}"
+  - |
+    rsync -rpl \
+        --exclude=".git" \
+        --exclude="etc/spack/repos.yaml" \
+        --exclude="etc/spack/packages.yaml" \
+        --include="etc/spack/**" \
+        --include="lib/spack/**" \
+        --exclude-from=${SINGULARITY_EOS_SPACK_DIR}/.gitignore \
+        ${SINGULARITY_EOS_SPACK_DIR}/ ${DEVEL_SPACK_CHECKOUT}/
+  - source ${DEVEL_SPACK_CHECKOUT}/share/spack/setup-env.sh
+  - spack --version
   - spack compiler list
-  - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
-  - spack repo list
+  - echo -e "\e[0Ksection_end:`date +%s`:spack_init\r\e[0K"
 
 ##########################
 # Build Matrix Variables #
@@ -46,9 +50,8 @@ before_script:
   BUILD_TYPE: "Release"
 
 .gpu: &gpu
-  DO_GPU: "true"
   SINGULARITY_USE_CUDA: "true"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"
@@ -60,10 +63,13 @@ before_script:
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
 
 .power9: &power9
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=power9"
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=power9-rhel7"
 
 .x86volta: &x86volta
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86"
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86 -C cpu_family:haswell"
+
+.python: &python
+    SINGULARITY_BUILD_PYTHON: "ON"
 
 #################
 # General Setup #
@@ -81,147 +87,101 @@ before_script:
   except:
     refs:
 
-.artifacts: &artifacts_def
-  artifacts:
-    name: "singularity-eos-${CI_COMMIT_REF_SLUG}-${CI_JOB_NAME}-${CI_JOB_ID}"
-    paths:
-      - ${CI_PROJECT_DIR}/build
-      - ${CI_PROJECT_DIR}/spack
-      - ${CI_PROJECT_DIR}/spack_env
-    when: always
-    expire_in: 3 hours
-  dependencies: []
-
 #######################
 # Job Script Template #
 #######################
-
-.clang-format:
-  stage: static_analysis
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
-  script:
-    - cd ${CI_PROJECT_DIR}
-    - mkdir clang_format_env
-    - spack env create --without-view -d ${CI_PROJECT_DIR}/clang_format_env
-    - spack env activate -d ${CI_PROJECT_DIR}/clang_format_env
-    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+format%gcc@${SINGULARITY_EOS_GCC_VERSION}^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - spack module tcl refresh -y
-    - spack env loads -r -x singularity-eos
-    - source ${CI_PROJECT_DIR}/clang_format_env/loads
-    - clang-format -version
-    - find ${CI_PROJECT_DIR} -regex '.*\.\(cpp\|hpp\)' | xargs clang-format -style=file -i && git diff --exit-code --ignore-submodules
-
-.sphinx-doc:
-  stage: static_analysis
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
-  script:
-    - cd ${CI_PROJECT_DIR}
-    - mkdir sphinx_doc_env
-    - spack env create --without-view -d ${CI_PROJECT_DIR}/sphinx_doc_env
-    - spack env activate -d ${CI_PROJECT_DIR}/sphinx_doc_env
-    - spack install --show-log-on-error --no-checksum --yes-to-all singularity-eos+mpi+doc%gcc@${SINGULARITY_EOS_GCC_VERSION}
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - spack module tcl refresh -y
-    - spack env loads -r -x singularity-eos
-    - source ${CI_PROJECT_DIR}/sphinx_doc_env/loads
-    - cd ${CI_PROJECT_DIR}/doc/sphinx
-    - make html
-    - rm -rf ${CI_PROJECT_DIR}/public
-    - mv _build/html ${CI_PROJECT_DIR}/public
 
 .test:
   stage: build_n_test
   extends:
     - .job
   script:
-    - mkdir -p ${CI_PROJECT_DIR}/spack_env
-    - spack env create --without-view -d ${CI_PROJECT_DIR}/spack_env
-    - spack env activate -d ${CI_PROJECT_DIR}/spack_env
-    - spack dev-build -q ${SINGULARITY_EOS_SPACK_SPEC} || ( cat spack-build-out.txt && exit 1 )
-    - export SINGULARITY_EOS_CMD="spack install --show-log-on-error --no-checksum --yes-to-all ${SINGULARITY_EOS_SPACK_SPEC}"
-    - ( echo "$SINGULARITY_EOS_CMD" && $SINGULARITY_EOS_CMD )
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - spack module tcl refresh -y
-    - spack env loads -r -x singularity-eos
-    - export modName="${CI_PROJECT_DIR}/spack_env/loads"
-    - sed -i "1s;^;module load gcc/${SINGULARITY_EOS_GCC_VERSION}\n;" ${modName}
-    - sed -i "1s;^;#%Module\n;" ${modName}
-    - module use ${CI_PROJECT_DIR}/spack_env
-    - module load loads # module load compiler, deps, etc.
-    - if [ "$DO_GPU" = "true" ]; then module load cuda; fi
-    - module list
-    - mkdir -p build install
+    - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
+    - module load cuda/${SINGULARITY_EOS_CUDA_VERSION}
+    - |
+      if [[ "${CI_COMMIT_BRANCH}" == "${CI_DEFAULT_BRANCH}" ]];
+      then
+        echo -e "\e[0Ksection_start:`date +%s`:spack_build[collapsed=true]\r\e[0K${COLOR_CYAN}Building via Spack${COLOR_PLAIN}"
+        mkdir -p spack_build_env
+        spack env create -d spack_build_env
+        spack env activate -d spack_build_env
+        spack repo add spack-repo
+        spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
+        spack dev-build -j $(nproc) ${SINGULARITY_EOS_SPACK_SPEC}
+        spack env deactivate
+        echo -e "\e[0Ksection_end:`date +%s`:spack_build\r\e[0K"
+      fi
+    - echo -e "\e[0Ksection_start:`date +%s`:spack_env[collapsed=true]\r\e[0K${COLOR_CYAN}Creating Spack environment${COLOR_PLAIN}"
+    - mkdir -p spack_env
+    - spack env create -d spack_env
+    - spack env activate -d spack_env
+    - spack repo add spack-repo
+    - spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
+    - spack spec -I ${SINGULARITY_EOS_SPACK_SPEC}
+    - spack add ${SINGULARITY_EOS_SPACK_SPEC}
+    - spack install -j $(nproc) --show-log-on-error --no-checksum --yes-to-all -u cmake
+    - echo -e "\e[0Ksection_end:`date +%s`:spack_env\r\e[0K"
+    - |
+      if [[ -n ${SINGULARITY_USE_CUDA} ]];
+      then
+        export SINGULARITY_NVCC_WRAPPER="$(which nvcc_wrapper)";
+        export SINGULARITY_CMAKE_CXX_COMPILER_FLAG="-DCMAKE_CXX_COMPILER=${SINGULARITY_NVCC_WRAPPER}";
+        echo "passing '${SINGULARITY_CMAKE_CXX_COMPILER_FLAG}' to cmake"
+      fi
+    - mkdir -p build
     - cd build
     - |
-      cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install \
+      cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install ${SINGULARITY_CMAKE_CXX_COMPILER_FLAG} \
             -DSINGULARITY_USE_EOSPAC=ON \
             -DSINGULARITY_USE_HDF5=ON \
             -DSINGULARITY_BUILD_SESAME2SPINER=ON \
             -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
+            -DSINGULARITY_BUILD_PYTHON=${SINGULARITY_BUILD_PYTHON:-OFF} \
             -DSINGULARITY_BUILD_TESTS=ON \
+            -DSINGULARITY_BUILD_EXAMPLES=ON \
             -DSINGULARITY_TEST_SESAME=ON \
             -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
+            -DSINGULARITY_TEST_PYTHON=${SINGULARITY_BUILD_PYTHON:-OFF} \
             -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_KOKKOSKERNELS=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_FORTRAN=${SINGULARITY_USE_FORTRAN:-OFF} \
             ..
-    - make -j
+    - make -j $(nproc) || make VERBOSE=1
     - |
       if [[ ${CI_JOB_NAME} =~ "install" ]];
       then
-        make install;
+        make install
+        touch tests.xml
       else
         ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat;
         ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat;
-        make test;
+        export CTEST_OUTPUT_ON_FAILURE=1
+        ctest --output-junit tests.xml
       fi
+  artifacts:
+    paths:
+      - build/tests.xml
+    reports:
+      junit: build/tests.xml
 
 ########
 # Jobs #
 ########
-
-format:
-  <<: *job_def
-  extends: .clang-format
-  allow_failure: true
-
-pages_check:
-  <<: *job_def
-  extends: .sphinx-doc
-  only:
-    refs:
-      - merge_requests
-      - pipelines
-  except:
-
-pages:
-  <<: *job_def
-  extends: .sphinx-doc
-  artifacts:
-    paths:
-      - public
-  only:
-    refs:
-      - main
-  except:
-    refs:
-      - pipelines
 
 test_gnu_skylake:
   <<: *job_def
   extends: .test
   variables:
     <<: *skylake
+    <<: *python
 
 test_gnu_power9:
   <<: *job_def
   extends: .test
   variables:
     <<: *power9
+    <<: *python
 
 test_gnu_power9_gpu:
   <<: *job_def
@@ -230,12 +190,9 @@ test_gnu_power9_gpu:
     <<: *power9
     <<: *gpu
 
-# TODO(JMM): This test doesn't work
-# and needs to be repaired.
 test_x86_volta_gpu:
   <<: *job_def
   extends: .test
-  allow_failure: true
   variables:    
     <<: *x86volta
     <<: *gpu
@@ -245,6 +202,7 @@ install_gnu_skylake_fort:
   extends: .test
   variables:
     <<: *skylake
+    <<: *python
     <<: *fort
 
 install_gnu_skylake_nofort:
@@ -252,68 +210,5 @@ install_gnu_skylake_nofort:
   extends: .test
   variables:
     <<: *skylake
+    <<: *python
     <<: *nofort
-
-# Temporary job that builds everything
-# for the x86-volta nodes from scratch
-test_x86_volta_gpu_temp:
-  stage: build_n_test
-  tags:
-    - darwin-slurm-shared
-  only:
-    refs:
-      - main
-      - merge_requests
-  variables:
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86"
-    SINGULARITY_USE_CUDA: "true"
-    SINGULARITY_USE_FORTRAN: "false"
-    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION}"
-  script:
-    - echo "Starting script"
-    - unset SPACK_ROOT
-    - rm -rf spack ${HOME}/.spack
-    - echo "Spack Version:" ${XCAP_OSS_SPACK_REF}
-    - git clone https://github.com/spack/spack.git
-    - cd spack && git checkout ${XCAP_OSS_SPACK_REF##*-} && cd ${CI_PROJECT_DIR}
-    - source ${CI_PROJECT_DIR}/spack/share/spack/setup-env.sh
-    - export SPACK_ARCH=`./spack/bin/spack arch`
-    - echo ${SPACK_ARCH}
-    - export PLATFORM="${SPACK_ARCH%%-*}"
-    - echo ${PLATFORM}
-    - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
-    - module load cuda
-    - module load cmake
-    - module list
-    - spack compiler find
-    - spack external find
-    - spack repo add --scope site ${CI_PROJECT_DIR}/spack-repo
-    - spack repo list
-    - spack install --only dependencies ${SINGULARITY_EOS_SPACK_SPEC}
-    - spack load kokkos-nvcc-wrapper kokkos kokkos-kernels eospac hdf5+hl py-h5py py-numpy
-    - mkdir -p bin && cd bin
-    - rm -rf ./*
-    - |
-      cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install \
-            -DSINGULARITY_USE_EOSPAC=ON \
-            -DSINGULARITY_USE_HDF5=ON \
-            -DSINGULARITY_BUILD_SESAME2SPINER=ON \
-            -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
-            -DSINGULARITY_BUILD_TESTS=ON \
-            -DSINGULARITY_TEST_SESAME=ON \
-            -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
-            -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_KOKKOSKERNELS=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_FORTRAN=${SINGULARITY_USE_FORTRAN:-OFF} \
-            ..
-    - make -j
-    - |
-      if [[ ${CI_JOB_NAME} =~ "install" ]];
-      then
-        make install;
-      else
-        ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat;
-        ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat;
-        make test;
-      fi

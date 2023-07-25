@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------
-# © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -14,21 +14,38 @@
 
 option(SINGULARITY_EOSPAC_SKIP_EXTRAP "Skip extrapolation checks" OFF)
 
-if (SINGULARITY_EOSPAC_INSTALL_DIR)
-  list(APPEND CMAKE_PREFIX_PATH "${SINGULARITY_EOSPAC_INSTALL_DIR}")
-  set(EOSPAC_INCLUDE_DIR "${SINGULARITY_EOSPAC_INSTALL_DIR}/include")
-endif()
-find_package(EOSPAC)
+# Fix for #228, tho should probably be part of singularity-eos lib
+list(APPEND EOSWRAPPER_HEADERS eospac_wrapper.hpp)
+list(APPEND EOSWRAPPER_SRCS eospac_wrapper.cpp)
 
 add_library(eospac-wrapper
-  eospac_wrapper.hpp
-  eospac_wrapper.cpp
-  )
+  ${EOSWRAPPER_SRCS} ${EOSWRAPPER_HEADERS}
+)
+
+target_include_directories(eospac-wrapper
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:include>
+)
 
 if (SINGULARITY_EOSPAC_SKIP_EXTRAP)
   target_compile_definitions(eospac-wrapper
-    SINGULARITY_EOSPAC_SKIP_EXTRAP
-    )
-endif()
+    PRIVATE
+      SINGULARITY_EOSPAC_SKIP_EXTRAP
+  )
+endif() #SINGULARITY_EOSPAC_SKIP_EXTRAP
 
-target_link_libraries(eospac-wrapper EOSPAC::eospac)
+target_link_libraries(eospac-wrapper 
+  PUBLIC
+    EOSPAC::eospac
+)
+
+# install header file
+install(
+  FILES ${EOSWRAPPER_HEADERS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/eospac-wrapper/
+)
+
+install(
+  TARGETS eospac-wrapper EXPORT singularity-eosTargets DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)

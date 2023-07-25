@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Singularity-EOS'
-copyright = '2021-2022. Triad National Security'
+copyright = '2021-2023. Triad National Security'
 author = 'The Singularity-EOS Team'
 
 
@@ -28,7 +28,9 @@ author = 'The Singularity-EOS Team'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autodoc',
     'sphinx.ext.autosectionlabel',
+    'sphinx_rtd_theme',
     'sphinx_multiversion'
 ]
 

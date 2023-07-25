@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -16,11 +16,11 @@
 #define _SINGULARITY_EOS_EOS_EOS_BUILDER_HPP_
 
 #include <map>
+#include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <string>
 #include <unordered_set>
-#include <variant/include/mpark/variant.hpp>
 
 namespace singularity {
 
@@ -43,7 +43,7 @@ enum class EOSType {
   StellarCollapse
 #endif
 };
-enum class EOSModifier { Scaled, Shifted, Relativistic, UnitSystem };
+enum class EOSModifier { Scaled, Shifted, Relativistic, UnitSystem, BilinearRamp };
 
 // evil type erasure
 using param_t = mpark::variant<bool, int, Real, std::string>;
@@ -51,6 +51,7 @@ using params_t = std::map<std::string, param_t>;
 using modifiers_t = std::map<EOSModifier, params_t>;
 const params_t NO_PARAMS;
 
+// TODO: Extend if needed
 const std::unordered_set<EOSType> modifiable({EOSType::IdealGas
 #ifdef SPINER_USE_HDF
                                               ,
@@ -84,19 +85,8 @@ EOS makeRelativistic(T &&eos, Real cl) {
 }
 
 template <typename T>
-EOS applyScaleAndShift(T &&eos, bool scaled, bool shifted, Real scale, Real shift) {
-  if (shifted && scaled) {
-    ScaledEOS<T> a(std::move(eos), scale);
-    ShiftedEOS<ScaledEOS<T>> b(std::move(a), shift);
-    return b;
-  }
-  if (shifted) {
-    return ShiftedEOS<T>(std::move(eos), shift);
-  }
-  if (scaled) {
-    return ScaledEOS<T>(std::move(eos), scale);
-  }
-  return eos;
+EOS makeBilinearRamp(T &&eos, Real r0, Real a, Real b, Real c) {
+  return BilinearRampEOS<T>(std::forward<T>(eos), r0, a, b, c);
 }
 
 template <typename T>
@@ -113,6 +103,38 @@ EOS applyShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shif
     return ScaledEOS<T>(std::forward<T>(eos), scale);
   }
   return eos;
+}
+
+template <typename T, template <typename> class W, typename... ARGS>
+EOS applyWrappedShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shift,
+                              ARGS... args) {
+  if (shifted && scaled) {
+    ShiftedEOS<T> a(std::forward<T>(eos), shift);
+    ScaledEOS<ShiftedEOS<T>> b(std::move(a), scale);
+    W<ScaledEOS<ShiftedEOS<T>>> c(std::move(b), args...);
+    return c;
+  }
+  if (shifted) {
+    ShiftedEOS<T> sh_eos(std::forward<T>(eos), shift);
+    return W<ShiftedEOS<T>>(std::move(sh_eos), args...);
+  }
+  if (scaled) {
+    ScaledEOS<T> sc_eos(std::forward<T>(eos), scale);
+    return W<ScaledEOS<T>>(std::move(sc_eos), args...);
+  }
+  return W<T>(std::forward<T>(eos), args...);
+}
+
+template <typename T>
+EOS applyShiftAndScaleAndBilinearRamp(T &&eos, bool scaled, bool shifted, bool ramped,
+                                      Real scale, Real shift, Real r0, Real a, Real b,
+                                      Real c) {
+  if (ramped) {
+    return applyWrappedShiftAndScale<T, BilinearRampEOS>(
+        std::forward<T>(eos), scaled, shifted, scale, shift, r0, a, b, c);
+  } else {
+    return applyShiftAndScale(std::forward<T>(eos), scaled, shifted, scale, shift);
+  }
 }
 } // namespace EOSBuilder
 

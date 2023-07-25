@@ -5,6 +5,89 @@
 How to Use Sphinx for Writing Docs
 ===================================
 
+How to have github build your documentation for you
+----------------------------------------------------
+
+Github can automatically build your documentation for you through the continuous integration pipeline.
+After you submit a pull request with your .rst changes for documentation on `Github Singularity-EOS`_, 
+the documentation will automatically get built. You will see a "build and deploy documentation" job
+at the bottom of the pull request page. If this passes, your documentation will have been generated.
+
+On the bottom left of the documentation page on `github-pages`_, you can select the branch/build
+of the documentation, one of which should be the branch you wrote your changes on.
+
+Documentation is available on `github-pages`_.
+
+.. _Github Singularity-EOS: https://github.com/lanl/singularity-eos
+
+.. _github-pages: https://lanl.github.io/singularity-eos/
+
+Building documentation locally
+------------------------------
+
+While you can rely on the CI to build the documentation associated with your
+branch, you can also very easily build sphinx documentation locally through
+python. These instructions also _do not_ require admin access and are usable
+with shared machines or python distributions.
+
+First, ensure that you are running a modern version of python (i.e. python 3 of
+some flavor)
+
+.. code-block:: bash
+
+   $ python --version
+   Python 3.9.7
+
+Then, use pip to install :code:`spinx` and the RTD theme
+
+.. code-block:: bash
+
+   pip install --user sphinx sphinx-rtd-theme
+
+Now, navigate to the :code:`../doc/sphinx` directory where a :code:`make help`
+shows all of the available ways to build the documentation
+
+.. code-block::
+
+   :language:bash
+
+   $ make help
+   Sphinx v4.2.0
+   Please use `make target' where target is one of
+     html        to make standalone HTML files
+     dirhtml     to make HTML files named index.html in directories
+     singlehtml  to make a single large HTML file
+     pickle      to make pickle files
+     json        to make JSON files
+     htmlhelp    to make HTML files and an HTML help project
+     qthelp      to make HTML files and a qthelp project
+     devhelp     to make HTML files and a Devhelp project
+     epub        to make an epub
+     latex       to make LaTeX files, you can set PAPER=a4 or PAPER=letter
+     latexpdf    to make LaTeX and PDF files (default pdflatex)
+     latexpdfja  to make LaTeX files and run them through platex/dvipdfmx
+     text        to make text files
+     man         to make manual pages
+     texinfo     to make Texinfo files
+     info        to make Texinfo files and run them through makeinfo
+     gettext     to make PO message catalogs
+     changes     to make an overview of all changed/added/deprecated items
+     xml         to make Docutils-native XML files
+     pseudoxml   to make pseudoxml-XML files for display purposes
+     linkcheck   to check all external links for integrity
+     doctest     to run all doctests embedded in the documentation (if enabled)
+     coverage    to run coverage check of the documentation (if enabled)
+     clean       to remove everything in the build directory
+
+Making the documentation will create a new directory, :code:`_build` in the
+:code:`sphinx` directory along with whichever type of documentation you wanted
+to build.
+
+For example, building the HTML documentation with :code:`make html` produces the
+:code:`../doc/sphinx/_build/html` directory with an :code:`index.html` file that
+you can point a browser to in order to view the documenation.
+
+
 How to Get the Dependencies
 ---------------------------
 
@@ -60,23 +143,6 @@ from :code:`.gitlab-ci.yml`
 
 .. note:: 
    You can view the documentation webpage locally on your web browser by passing in the URL as :code:`file:///path/to/singularity-eos/doc/sphinx/_build/html/index.html`
-
-How to Deploy
--------------
-
-#. Submit a PR with your .rst changes for documentation on `Github Singularity-EOS`_
-#. Get your PR reviewed and merged into main
-#. Make sure the :code:`pages` CI job passes in the CI pipeline
-
-.. _Github Singularity-EOS: https://github.com/lanl/singularity-eos
-
-As soon as the PR is merged into main, this will trigger the Pages deployment automatically if the :code:`pages` CI job passes.
-
-Documentation is available on `github-pages`_ and on `re-git`_
-
-.. _github-pages: https://lanl.github.io/singularity-eos/
-
-.. _re-git: http://xcap.re-pages.lanl.gov/oss/singularity-eos
 
 More Info.
 ----------

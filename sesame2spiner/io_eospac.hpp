@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -29,10 +29,10 @@
 #error "HDF5 must be enabled"
 #endif
 
-#include <fast-math/logs.hpp>
+#include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
-#include <spiner/ports-of-call/portability.hpp>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 
@@ -65,15 +65,15 @@ class Bounds {
       min += offset;
       max += offset;
 
-      min = std::log10(std::abs(min));
-      max = std::log10(std::abs(max));
+      min = singularity::FastMath::log10(std::abs(min));
+      max = singularity::FastMath::log10(std::abs(max));
       Real delta = max - min;
       min += 0.5 * shrinkRange * delta;
       max -= 0.5 * shrinkRange * delta;
 
       if (!(std::isnan(anchor_point))) {
         anchor_point += offset;
-        anchor_point = std::log10(std::abs(anchor_point));
+        anchor_point = singularity::FastMath::log10(std::abs(anchor_point));
       }
     }
 
@@ -93,7 +93,7 @@ class Bounds {
     grid = RegularGrid1D(min, max, N);
   }
 
-  inline Real log2lin(Real xl) const { return pow(10., xl) - offset; }
+  inline Real log2lin(Real xl) const { return singularity::FastMath::pow10(xl) - offset; }
   inline Real i2lin(int i) const { return log2lin(grid.x(i)); }
 
   friend std::ostream &operator<<(std::ostream &os, const Bounds &b) {

@@ -1,4 +1,4 @@
-name: Tests
+name: Tests Full
 
 on:
   push:
@@ -13,14 +13,15 @@ jobs:
 
       steps:
         - name: Checkout code
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
           with:
             submodules: recursive
         - name: Set system to non-interactive mode
           run: export DEBIAN_FRONTEND=noninteractive
         - name: install dependencies
           run: |
-            sudo apt-get install -y --force-yes -qq build-essential gfortran libhdf5-serial-dev
+            sudo apt-get update -y -qq
+            sudo apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages -qq build-essential gfortran libhdf5-serial-dev
             pip install numpy
             pip install h5py
         - name: build and run tests
@@ -28,7 +29,15 @@ jobs:
             mkdir -p bin
             cd bin
             mkdir -p ${HOME}/install
-            cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install -DSINGULARITY_BUILD_TESTS=ON -DSINGULARITY_USE_HDF5=ON -DSINGULARITY_TEST_SESAME=OFF -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON ..
-            make -j
+            cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
+                  -DSINGULARITY_BUILD_TESTS=ON \
+                  -DSINGULARITY_BUILD_EXAMPLES=ON \
+                  -DSINGULARITY_BUILD_PYTHON=ON \
+                  -DSINGULARITY_USE_HDF5=ON \
+                  -DSINGULARITY_TEST_SESAME=OFF \
+                  -DSINGULARITY_TEST_PYTHON=ON \
+                  -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
+                  ..
+            make
             make install
             make test

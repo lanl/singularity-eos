@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2022. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -35,7 +35,7 @@
 #include <hdf5_hl.h>
 
 #include <ports-of-call/portability.hpp>
-#include <sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
@@ -257,12 +257,11 @@ int main(int argc, char *argv[]) {
       std::cout << "\t\tsie bounds = [" << sieMin << ", " << sieMax << "]" << std::endl;
 
       EOS_INTEGER tableHandle[NT];
-      EOS_INTEGER eospacPofRT, eospacTofRE, eospacEofRT;
+      EOS_INTEGER eospacPofRT, eospacTofRE;
       EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT};
       eosSafeLoad(NT, matid, tableType, tableHandle, Verbosity::Debug);
       eospacPofRT = tableHandle[0];
       eospacTofRE = tableHandle[1];
-      eospacEofRT = tableHandle[2];
 
       std::cout << "\t\tGenerating interpolation points for rho-T tables" << std::endl;
       start = std::chrono::high_resolution_clock::now();

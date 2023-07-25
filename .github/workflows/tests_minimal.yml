@@ -1,0 +1,41 @@
+name: Tests Minimal
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+    tests-minimal:
+      name: Run minimal set of tests, to constrain minimal build
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+          with:
+            submodules: recursive
+        - name: Set system to non-interactive mode
+          run: export DEBIAN_FRONTEND=noninteractive
+        - name: install dependencies
+          run: |
+            sudo apt-get update -y -qq
+            sudo apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages -qq build-essential
+        - name: build and run tests
+          run: |
+            mkdir -p bin
+            cd bin
+            mkdir -p ${HOME}/install
+            cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
+                  -DSINGULARITY_BUILD_TESTS=ON \
+                  -DSINGULARITY_BUILD_PYTHON=OFF \
+                  -DSINGULARITY_USE_HDF5=OFF \
+                  -DSINGULARITY_BUILD_CLOSURE=OFF \
+                  -DSINGULARITY_TEST_SESAME=OFF \
+                  -DSINGULARITY_TEST_PYTHON=OFF \
+                  -DSINGULARITY_TEST_STELLAR_COLLAPSE=OFF \
+                  ..
+            make
+            make install
+            make test

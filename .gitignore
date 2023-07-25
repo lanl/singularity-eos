@@ -5,3 +5,9 @@ utils/variant
 *__pycache__*
 .vscode
 .cache
+cmake-gen*
+spack-build-*
+spack-configure-*
+._*
+*.sublime*
+
