@@ -85,9 +85,8 @@ class StiffGas : public EosBase<StiffGas> {
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     const Real vol = robust::ratio(1.0, rho);
-    return _Cv * std::log(robust::ratio(
-                              (sie - _qq - _Pinf * vol) * (sie - _qq - _Pinf * vol),
-                              (_sie0 - _qq - _Pinf * vol) * (sie - _qq - _Pinf * _vol0)) +
+    return _Cv * std::log(robust::ratio((sie - _qq - _Pinf * vol),
+                                        (_sie0 - _qq - _Pinf * _vol0)) +
                           robust::SMALL()) +
            _Cv * _gm1 * std::log(robust::ratio(vol, _vol0) + robust::SMALL()) + _qp;
   }

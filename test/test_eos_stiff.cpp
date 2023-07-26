@@ -473,3 +473,102 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
     }
   }
 }
+
+SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas5]") {
+  GIVEN("Parameters for a StiffGas EOS") {
+    constexpr Real gm1 = 1.35;
+    constexpr Real Cv = 1816.e4;
+    constexpr Real Pinf = 1.0e9;
+    constexpr Real qq = 2030.00e+07;
+    constexpr Real qp = -23.0e+7;
+    constexpr Real T0 = 200.0;
+    constexpr Real P0 = 1000000.0;
+    //  Create the EOS
+    EOS host_eos = StiffGas(gm1, Cv, Pinf, qq, qp, T0, P0);
+    EOS eos = host_eos.GetOnDevice();
+    GIVEN("Densities and energies") {
+      constexpr int num = 1;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create Kokkos views on device for the input arrays
+      Kokkos::View<Real[num]> v_density("density");
+      Kokkos::View<Real[num]> v_energy("density");
+#else
+      // Otherwise just create arrays to contain values and create pointers to
+      // be passed to the functions in place of the Kokkos views
+      std::array<Real, num> density;
+      std::array<Real, num> energy;
+      auto v_density = density.data();
+      auto v_energy = energy.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      // Populate the input arrays
+      portableFor(
+          "Initialize density and energy", 0, 1, PORTABLE_LAMBDA(int i) {
+            v_density[0] = 1.0218087167564040e-01;
+            v_energy[0] = 3.7350567520918861e+10;
+          });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create host-side mirrors of the inputs and copy the inputs. These are
+      // just used for the comparisons
+      auto density = Kokkos::create_mirror_view(v_density);
+      auto energy = Kokkos::create_mirror_view(v_energy);
+      Kokkos::deep_copy(density, v_density);
+      Kokkos::deep_copy(energy, v_energy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      // Gold standard values for a subset of lookups
+      constexpr std::array<Real, num> pressure_true{2.0265000000000000e+06};
+      constexpr std::array<Real, num> temperature_true{4.0000000000000000e+02};
+      constexpr std::array<Real, num> entropy_true{-2.0044437857420778e+08};
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create device views for outputs and mirror those views on the host
+      Kokkos::View<Real[num]> v_temperature("Temperature");
+      Kokkos::View<Real[num]> v_pressure("Pressure");
+      Kokkos::View<Real[num]> v_entropy("entr");
+      Kokkos::View<Real[num]> v_local_temp("temp");
+      auto h_temperature = Kokkos::create_mirror_view(v_temperature);
+      auto h_pressure = Kokkos::create_mirror_view(v_pressure);
+      auto h_entropy = Kokkos::create_mirror_view(v_entropy);
+      auto h_local_temp = Kokkos::create_mirror_view(v_local_temp);
+#else
+      // Create arrays for the outputs and then pointers to those arrays that
+      // will be passed to the functions in place of the Kokkos views
+      std::array<Real, num> h_temperature;
+      std::array<Real, num> h_pressure;
+      std::array<Real, num> h_entropy;
+      std::array<Real, num> h_local_temp;
+      // Just alias the existing pointers
+      auto v_temperature = h_temperature.data();
+      auto v_pressure = h_pressure.data();
+      auto v_entropy = h_entropy.data();
+      auto v_local_temp = h_local_temp.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      WHEN("A S(rho, e) lookup is performed") {
+        eos.EntropyFromDensityInternalEnergy(v_density, v_energy, v_entropy, num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_entropy, v_entropy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned S(rho, e) should be equal to the true value") {
+          array_compare(num, density, energy, h_entropy, entropy_true, "Density",
+                        "Energy");
+        }
+      }
+      WHEN("A S(rho, T(rho,e)) lookup is performed") {
+        eos.TemperatureFromDensityInternalEnergy(v_density, v_energy, v_local_temp, num);
+        // printf("\nT_look = %g\n",v_local_temp[0]); // T_look returns the right value
+        eos.EntropyFromDensityTemperature(v_density, v_local_temp, v_entropy, num);
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_entropy, v_entropy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned S(rho, e) should be equal to the true value") {
+          array_compare(num, density, energy, h_entropy, entropy_true, "Density",
+                        "Energy");
+        }
+      }
+    }
+  }
+}
