@@ -597,7 +597,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     }
     ++nopts;
 
-    eosSafeInterpolate(&table, num, R, E, P, dPdr, dPdE, "PofRE", Verbosity::Quiet,
+    eosSafeInterpolate(&table, num, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
 			 options, values, nopts);
   }
 
