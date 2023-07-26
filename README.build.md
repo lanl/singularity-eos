@@ -222,6 +222,13 @@ using namespace singularity;
 
 `singularity-eos` will build (along with internal dependencies) and be linked directly to your executable.
 
+The git submoudles may change during development, either by changing the pinned hash, addition or removal of submodules. If you 
+have errors that appear to be the result of incompatible code, make sure you have updated your submodules with 
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Building in _standalone mode_ 
 
 For _standalone_ mode, all required and optional dependencies are expected to be discoverable by CMake. This can be done several ways
@@ -231,5 +238,291 @@ For _standalone_ mode, all required and optional dependencies are expected to be
 3. Hand-build to a local filesystem, and configure your shell or CMake invocation to be aware of these installs
 
 _standalone_ mode is the mode used to install `singularity-eos` to a system as a common library. If, for example, you use Spack to to install packages, `singularity-eos` will be built and installed in _standalone_ mode.
+
+### Building with Spack 
+
+Spack is a package management tool that is designed specifically for HPC environments, but may be used in any compute environment. It 
+is useful for gathering, configuring and installing software and it's dependencies self-consistently, and can use existing software installed 
+on the system or do a "full" install of all required (even system) packages in a local directory.
+
+Spack remains under active development, and is subject to rapid change in interface, design, and functionality. Here we will provide an overview 
+of how to use Spack to develop and deploy `singularigy-eos`, but for more in-depth information, please refer to the [official Spack documentation](spack.readthedocs.io).
+
+#### Preperation
+
+First, we need to clone the Spack repository. You can place this anywhere, but note that by default Spack will download and install 
+software under this directory. This default behavior can be changed, please refer to the documentation for information of customizing 
+your Spack instance.
+
+```bash 
+$> cd ~
+$> git clone https://github.com/spack/spack.git
+```
+
+To start using Spack, we use the provided activation script 
+
+```bash
+# equivalent scripts for tcsh, fish are located here as well 
+$> source ~/spack/share/spack/setup-env.sh
+```
+
+You will always need to _activate_ spack for each new shell. You may find it convienant to invoke this Spack setup in your 
+login script, though be aware that Spack will prepend paths to your environment which may cause conflicts with other 
+package tools and software.
+
+The first time a Spack command is invoked, it will need to bootstrap itself to be able to start *concretizing package specs*.
+This will download pre-built packages and create a `${HOME}/.spack` directory. This directory is important and is where 
+your _primary_ Spack configuration data will be located. If at any point this configuration becomes corrupted or 
+too complicated to easily fix, you may safely remove this directory to restore the default configuration, or just 
+to try a new approach. Again, refer to the Spack documentaion for more information.
+
+#### Setup compilers 
+
+To use Spack effectively, we need to configure it for the HPC environment we're using. This can be done manually
+(by editing `packages.yaml`, `compilers.yaml`, and perhaps a few others). This is ideal if you understand how your 
+software environment is installed on the HPC system, and you are fluent in the Spack configuration schema.
+
+However, Spack has put in a lot of effort to be able to automatically discover the available tools and software on 
+any given system. While not perfect, we can get a fairly robust starting point.
+
+Assume we are on an HPC system that has Envionrmental Modules that provides compilers, MPI implementations, and sundry 
+other common tools. To help Spack find these, let's load a specific configuration into the active shell environment.
+
+```bash
+$> module load cmake/3.19.2 gcc/11.2.0 openmpi/4.1.1 python/3.10
+$> module list
+
+Currently Loaded Modules:
+  1) cmake/3.19.2   2) gcc/11.2.0   3) openmpi/4.1.1   4) python/3.10-anaconda-2023.03
+```
+
+First, let's find the available compilers. (If this is the first Spack command you've run, it will need to bootstrap)
+
+```bash
+$> spack compiler find
+==> Added 2 new compilers to ${HOME}/.spack/linux/compilers.yaml
+    gcc@4.8.5  gcc@11.2.0
+==> Compilers are defined in the following files:
+    ${HOME}/.spack/linux/compilers.yaml
+```
+
+Here, we find the default system compiler (`gcc@4.8.5`), along with the compiler from the module we loaded. Also notice 
+that the `${HOME}/.spack` directory has been modified with some new YAML config files. These are information on 
+the compilers and how Spack will use them. You are free to modify these files, but for now let's leave them as is.
+
+_NB_: You can repeat this procedure for other compilers and packages, though if you need to use many different 
+combinations of compiler/software, you will find using Spack _environments_ [more convenient](https://spack.readthedocs.io/en/latest/environments.html).
+
+#### Setup system-provided packages 
+
+Next, we will try and find system software (e.g. `ncurses`,`git`,`zlib`) that we can use instead of needing to 
+build our own. This will also find the module software we loaded (`cmake`,`openmpi`,`python`).
+(This command will take a couple minutes to complete).
+
+```bash
+$> spack external find --all --not-buildable
+==> The following specs have been detected on this system and added to ${HOME}/.spack/packages.yaml
+autoconf@2.69       bzip2@1.0.6     coreutils@8.22  dos2unix@6.0.3    gcc@11.2.0        go@1.16.5            hdf5@1.8.12      libfuse@3.6.1         ncurses@6.4.20221231   openssl@1.1.1t     python@3.10.9   sqlite@3.7.17      texlive@20130530
+automake@1.13.4     bzip2@1.0.8     cpio@2.11       doxygen@1.8.5     gettext@0.19.8.1  go@1.18.4            hdf5@1.10.6      libtool@2.4.2         ninja@1.10.2           perl@5.16.3        rdma-core@22.4  sqlite@3.40.1      which@2.20
+bash@4.2.46         ccache@3.7.7    curl@7.29.0     file@5.11         ghostscript@9.25  go-bootstrap@1.16.5  krb5@1.15.1      lustre@2.12.9         opencv@2.4.5           pkg-config@0.27.1  rsync@3.1.2     subversion@1.7.14  xz@5.2.2
+berkeley-db@5.3.21  cmake@2.8.12.2  curl@7.87.0     findutils@4.5.11  git@2.18.4        go-bootstrap@1.18.4  krb5@1.19.4      m4@1.4.16             openjdk@1.8.0_372-b07  python@2.7.5       ruby@2.0.0      swig@2.0.10        xz@5.2.10
+binutils@2.27.44    cmake@3.17.5    cvs@1.11.23     flex@2.5.37       git-lfs@2.10.0    gpgme@1.3.2          libfabric@1.7.2  maven@3.0.5           openssh@7.4p1          python@3.4.10      sed@4.2.2       tar@1.26           zip@3.0
+bison@3.0.4         cmake@3.19.2    diffutils@3.3   gawk@4.0.2        gmake@3.82        groff@1.22.2         libfuse@2.9.2    ncurses@5.9.20130511  openssl@1.0.2k-fips    python@3.6.8       slurm@23.02.1   texinfo@5.1
+
+-- no arch / gcc@11.2.0 -----------------------------------------
+openmpi@4.1.1
+```
+
+*Generally* you will want to use as much system-provided software as you can get away with (in Spack speak, these are called _externals_,
+though _external packages_ are not limited to system provided ones and can point to, e.g., a manual install). In the above command, 
+we told Spack to mark any packages it can find as `not-buildable`, which means that Spack will never attempt to build that package and 
+will always use the external one. This _may_ cause issues in resolving packages specs when the external is not compatible with 
+the requirements of an downstream package.
+
+As a first pass, we will use `--not-buildable` for `spack external find`, but if you 
+have any issues with concretizing then start this guide over (remove `${HOME}/.spack` and go back to compilers) and do not use 
+`--not-buildable` in the previous command. You may also manually edit the `packages.yaml` file to switch the `buildable` flag 
+for the troublesome package, but you will need to be a least familiar with YAML schema.
+
+#### First install with spack 
+
+Let's walk through a simple Spack workflow for installing. First, we want to look at the options available for a package.
+The Spack team and package developers have worked over the years to provide an impressive selection of packages.
+This example will use `hypre`, a parallel library for multigrid methods. 
+
+```bash
+$> spack info hypre
+AutotoolsPackage:   hypre
+
+Description:
+    Hypre is a library of high performance preconditioners that features
+    parallel multigrid methods for both structured and unstructured grid
+    problems.
+
+Homepage: https://llnl.gov/casc/hypre
+
+Preferred version:
+    2.28.0     https://github.com/hypre-space/hypre/archive/v2.28.0.tar.gz
+
+Safe versions:
+    develop    [git] https://github.com/hypre-space/hypre.git on branch master
+    2.28.0     https://github.com/hypre-space/hypre/archive/v2.28.0.tar.gz
+
+# ... more versions listed 
+
+Variants:
+    Name [Default]              When       Allowed values          Description
+    ========================    =======    ====================    ==============================================
+
+    amdgpu_target [none]        [+rocm]    none, gfx900,           AMD GPU architecture
+                                           gfx1030, gfx90c,
+                                           gfx90a, gfx1101,
+                                           gfx908, gfx1010,
+# ... lots of amd targets listed 
+    build_system [autotools]    --         autotools               Build systems supported by the package
+    caliper [off]               --         on, off                 Enable Caliper support
+    complex [off]               --         on, off                 Use complex values
+    cuda [off]                  --         on, off                 Build with CUDA
+    cuda_arch [none]            [+cuda]    none, 62, 80, 90,       CUDA architecture
+                                           20, 32, 35, 37, 87,
+                                           10, 21, 30, 12, 61,
+                                           11, 72, 13, 60, 53,
+                                           52, 75, 70, 89, 86,
+                                           50
+    debug [off]                 --         on, off                 Build debug instead of optimized version
+    fortran [on]                --         on, off                 Enables fortran bindings
+    gptune [off]                --         on, off                 Add the GPTune hookup code
+    int64 [off]                 --         on, off                 Use 64bit integers
+    internal-superlu [off]      --         on, off                 Use internal SuperLU routines
+    mixedint [off]              --         on, off                 Use 64bit integers while reducing memory use
+    mpi [on]                    --         on, off                 Enable MPI support
+    openmp [off]                --         on, off                 Enable OpenMP support
+    rocm [off]                  --         on, off                 Enable ROCm support
+    shared [on]                 --         on, off                 Build shared library (disables static library)
+    superlu-dist [off]          --         on, off                 Activates support for SuperLU_Dist library
+    sycl [off]                  --         on, off                 Enable SYCL support
+    umpire [off]                --         on, off                 Enable Umpire support
+    unified-memory [off]        --         on, off                 Use unified memory
+
+Build Dependencies:
+    blas  caliper  cuda  gnuconfig  hip  hsa-rocr-dev  lapack  llvm-amdgpu  mpi  rocprim  rocrand  rocsparse  rocthrust  superlu-dist  umpire
+
+Link Dependencies:
+    blas  caliper  cuda  hip  hsa-rocr-dev  lapack  llvm-amdgpu  mpi  rocprim  rocrand  rocsparse  rocthrust  superlu-dist  umpire
+
+Run Dependencies:
+    None
+```
+
+The `spack info` commands gives us three important data-points we need. First, it tells the versions available. If you do not specify a version, 
+the _preferred_ version is default.
+
+Next and most important are the *variants*. These are used to control how to build the package, i.e. to build with MPI, to build a fortran interface, 
+and so on. These will have default values, and in practice you will only need to provide a small number for any particular system.
+
+Finally, we are given the *dependencies* of the package. The dependencies listed are for _all_ configurations, so some dependencies may not 
+be necessary for your particular install. (For instance, if you do not build with `cuda`, then `cuda` will not be necessary to install)
+
+Let's look at what Spack will do when we want to install. We will start with the default configuration (that is, all variants are left to default).
+The `spack spec` command will try to use the active Spack configuration to determine which packages are needed to install `hypre`, and will print 
+the dependency tree out.
+
+```bash
+$> spack spec hypre
+Input spec
+--------------------------------
+ -   hypre
+
+Concretized
+--------------------------------
+ -   hypre@2.28.0%gcc@11.2.0~caliper~complex~cuda~debug+fortran~gptune~int64~internal-superlu~mixedint+mpi~openmp~rocm+shared~superlu-dist~sycl~umpire~unified-memory build_system=autotools arch=linux-rhel7-broadwell
+ -       ^openblas@0.3.23%gcc@11.2.0~bignuma~consistent_fpcsr+fortran~ilp64+locking+pic+shared build_system=makefile symbol_suffix=none threads=none arch=linux-rhel7-broadwell
+[e]          ^perl@5.16.3%gcc@11.2.0+cpanm+opcode+open+shared+threads build_system=generic patches=0eac10e,3bbd7d6 arch=linux-rhel7-broadwell
+[e]      ^openmpi@4.1.1%gcc@11.2.0~atomics~cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~internal-pmix~java~legacylaunchers~lustre~memchecker~openshmem~orterunprefix+pmi+romio+rsh~singularity+static+vt~wrapper-rpath build_system=autotools fabrics=ofi,psm,psm2 schedulers=slurm arch=linux-rhel7-broadwell
+```
+
+Here, we see the full default Spack *spec*, which as a rough guide is structured as `<package>@<version>%<compiler>@<compiler_version>{[+/~]variants} <arch_info>`.
+The `+,~` variant prefixes are used to turn on/off variants with binary values, while variants with a set of values are given similar to keyword values 
+(e.g. `+cuda cuda_arch=70 ~shared`)
+
+If we wanted to install a different configuration, in this case say we want `complex` and `openmp` enabled, but we don't need `fortran`.
+
+```bash
+$> spack spec hypre+complex+openmp~fortran
+Input spec
+--------------------------------
+ -   hypre+complex~fortran+openmp
+
+Concretized
+--------------------------------
+ -   hypre@2.28.0%gcc@11.2.0~caliper+complex~cuda~debug~fortran~gptune~int64~internal-superlu~mixedint+mpi+openmp~rocm+shared~superlu-dist~sycl~umpire~unified-memory build_system=autotools arch=linux-rhel7-broadwell
+ -       ^openblas@0.3.23%gcc@11.2.0~bignuma~consistent_fpcsr+fortran~ilp64+locking+pic+shared build_system=makefile symbol_suffix=none threads=none arch=linux-rhel7-broadwell
+[e]          ^perl@5.16.3%gcc@11.2.0+cpanm+opcode+open+shared+threads build_system=generic patches=0eac10e,3bbd7d6 arch=linux-rhel7-broadwell
+[e]      ^openmpi@4.1.1%gcc@11.2.0~atomics~cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~internal-pmix~java~legacylaunchers~lustre~memchecker~openshmem~orterunprefix+pmi+romio+rsh~singularity+static+vt~wrapper-rpath build_system=autotools fabrics=ofi,psm,psm2 schedulers=slurm arch=linux-rhel7-broadwell
+```
+
+Here, you can see the full spec has out supplied variants. In general, variants can control build options and features, and can change which dependencies are needed.
+
+Notice also the left-aligned string starting each line for a package. 
+` - ` indicates that Spack isn't aware that this package is installed (which is expected). 
+`[+]` indicates that the package has been previously installed.
+`[e]` indicates that the package has been marked as externally installed.
+
+Finally, we can install it. Because `perl` and `openmpi` are already present, Spack will not need to download, build, and install these packages. This can save lots of time!
+Note, however, that external packages are loosely constrained and may not be correctly configured for the requested package.
+
+*NB*: By default, Spack will try to download the package source from the repository associated with the package. 
+This behavior can be overrided with Spack _mirrors_ , but that is beyond the scope of this doc.
+
+```bash
+
+```
+
+Now, we can use Spack similarly to `module load`,
+
+```bash
+$> spack load hypre
+$> spack find --loaded
+```
+
+Other options are available for integrating Spack installed packages into your environment. For more, head over to [https://spack.readthedocs.io](https://spack.readthedocs.io)
+
+#### Developing `singularigy-eos` using Spack 
+
+Spack is a powerful tool that can help develop `singularigy-eos` for a variety of platforms and hardware.
+
+1. Install the dependencies `singularigy-eos` needs using Spack
+
+```bash
+$> spack install -u cmake singularity-eos@main%gcc@13+hdf5+eospac+mpi+kokkos+kokkos-kernels+openmp^eospac@6.4.0
+```
+
+This command will initiate an install of `singularity-eos` using Spack, but will stop right before 
+`singularity-eos` starts to build (`-u cmake` means `until cmake`). This ensures all the necessary 
+dependencies are installed and visible to Spack
+
+2. Use Spack to construct an _ad-hoc_ shell environment
+
+```bash
+$> spack build-env singularity-eos@main%gcc@13+hdf5+eospac+mpi+kokkos+kokkos-kernels+openmp^eospac@6.4.0 -- bash
+```
+
+This command will construct a shell environment in `bash` that has all the dependency information populated 
+(e.g. `PREFIX_PATH`, `CMAKE_PREFIX_PATH`, `LD_LIBRARY_PATH`, and so on). Even external packages from 
+a module system will be correctly loaded. Thus, we can build for a specific combination of dependencies, 
+compilers, and portability strategies.
+
+```bash
+$> salloc -p scaling
+# ...
+$> source ~/spack/share/spack/setup-env.sh
+$> spack build-env singularity-eos@main%gcc@12+hdf5+eospac+mpi+kokkos+kokkos-kernels+openmp^eospac@6.4.0 -- bash
+$> mkdir -p build_gpu_mpi ; cd build_gpu_mpi
+$> cmake .. --preset="kokkos_nogpu_with_testing"
+```
+
+
+
+
 
 
