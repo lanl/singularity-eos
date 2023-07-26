@@ -71,6 +71,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
   using EosBase<StellarCollapse>::PressureFromDensityTemperature;
   using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::MinInternalEnergyFromDensity;
   using EosBase<StellarCollapse>::EntropyFromDensityTemperature;
   using EosBase<StellarCollapse>::EntropyFromDensityInternalEnergy;
   using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
@@ -105,6 +106,9 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_INLINE_FUNCTION
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION 
+  Real MinInternalEnergyFromDensity(const Real rho, 
+				    Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                      Real *lambda = nullptr) const;
@@ -506,6 +510,11 @@ Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho, const Re
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real lP = lP_.interpToReal(Ye, lT, lRho);
   return lP2P_(lP);
+}
+PORTABLE_INLINE_FUNCTION
+Real StellarCollapse::MinInternalEnergyFromDensity(const Real rho, 
+                                                        Real *lambda) const {
+  return 0.0;
 }
 
 PORTABLE_INLINE_FUNCTION

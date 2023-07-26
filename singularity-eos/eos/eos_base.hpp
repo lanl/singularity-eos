@@ -68,6 +68,7 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::InternalEnergyFromDensityTemperature;                       \
   using EosBase<EOSDERIVED>::PressureFromDensityTemperature;                             \
   using EosBase<EOSDERIVED>::PressureFromDensityInternalEnergy;                          \
+  using EosBase<EOSDERIVED>::MinInternalEnergyFromDensity;                          \
   using EosBase<EOSDERIVED>::SpecificHeatFromDensityTemperature;                         \
   using EosBase<EOSDERIVED>::SpecificHeatFromDensityInternalEnergy;                      \
   using EosBase<EOSDERIVED>::BulkModulusFromDensityTemperature;                          \
@@ -262,6 +263,39 @@ class EosBase {
     PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
                                       std::forward<LambdaIndexer>(lambdas));
   }
+  ///
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos,
+                                               RealIndexer &&sies, const int num,
+                                               LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          sies[i] =
+              copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                   Real * /*scratch*/,
+                                   const int num, LambdaIndexer &&lambdas) const {
+    MinInternalEnergyFromDensity(
+        std::forward<ConstRealIndexer>(rhos), std::forward<RealIndexer>(sies),
+        num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies,
+                                               Real * /*scratch*/,
+                                               const int num, LambdaIndexer &&lambdas,
+                                               Transform && = Transform()) const {
+    MinInternalEnergyFromDensity(rhos, entropies, num,
+                                     std::forward<LambdaIndexer>(lambdas));
+  }
+  ///
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
