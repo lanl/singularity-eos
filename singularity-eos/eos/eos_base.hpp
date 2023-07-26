@@ -292,8 +292,7 @@ class EosBase {
                                                Real * /*scratch*/,
                                                const int num, LambdaIndexer &&lambdas,
                                                Transform && = Transform()) const {
-    MinInternalEnergyFromDensity(rhos, entropies, num,
-                                     std::forward<LambdaIndexer>(lambdas));
+    MinInternalEnergyFromDensity(rhos, num, std::forward<LambdaIndexer>(lambdas));
   }
   ///
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
