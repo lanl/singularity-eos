@@ -625,8 +625,8 @@ class EOSPAC : public EosBase<EOSPAC> {
       LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
-    EOS_REAL *S = &pressures[0];
-    EOS_REAL *dSdr = scratch + 1 * num;
+    EOS_REAL *E = &sies[0];
+    EOS_REAL *dedr = scratch + 1 * num;
 
     EOS_INTEGER table = EcofD_table_;
     EOS_INTEGER options[3];
@@ -652,7 +652,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     }
     ++nopts;
 
-    eosSafeInterpolate(&table, num, R, E, R, dSdr, dSdR, "EcofD", Verbosity::Quiet,
+    eosSafeInterpolate(&table, num, R, R, E, dedr, dedr, "EcofD", Verbosity::Quiet,
 			 options, values, nopts);
   }
 
@@ -1214,6 +1214,7 @@ class EOSPAC : public EosBase<EOSPAC> {
         {"BulkModulusFromDensityInternalEnergy", 6},
         {"GruneisenParamFromDensityTemperature", 4},
         {"GruneisenParamFromDensityInternalEnergy", 5},
+        {"MinInternalEnergyFromDensity", 1},
         {"PTofRE", 11}};
     return nbuffers;
   }
