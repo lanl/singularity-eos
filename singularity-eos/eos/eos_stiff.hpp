@@ -59,7 +59,7 @@ class StiffGas : public EosBase<StiffGas> {
   StiffGas GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return std::max(robust::SMALL(), robust::ratio( rho * (sie - _qq) - _Pinf , rho*_Cv ) );
+    return std::max(robust::SMALL(), robust::ratio(rho * (sie - _qq) - _Pinf, rho * _Cv));
   }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
