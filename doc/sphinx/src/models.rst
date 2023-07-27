@@ -1178,7 +1178,7 @@ the form
 
     e = \frac{ P + \gamma P_{\infty} }{ P + P_{\infty} } C_V T + q,
 
-where quantities are largely the same as ideal gas with the exception of :math:`P_{\infty}` and :math:`q`, which can be thought of as an offset pressure and energy, respectively.
+where quantities are largely the same as ideal gas with the exception of :math:`P_{\infty}` and :math:`q`, which can be thought of as an offset pressure and internal energy, respectively.
 
 The entropy for a stiffened gas can be expressed as
 
@@ -1187,7 +1187,7 @@ The entropy for a stiffened gas can be expressed as
     S = C_V \ln\left(\frac{T}{T_0}\right) + (\gamma-1) C_V \ln\left(\frac{\rho_0}
      {\rho}\right) + q',
 
-we have assumed that the entropy is zero at the reference state given
+we have assumed that the entropy and offset :math:`q'` are zero at the reference state given
 by :math:`T_0` and :math:`\rho_0`. By default, :math:`T_0 = 298` K and the
 reference density is given by
 
@@ -1214,7 +1214,7 @@ can be provided in the constructor via ``qp``, ``T0``, and ``P0``:
 
 .. code-block:: cpp
 
-    IdealGas(Real gm1, Real Cv, Real Pinf, Real q, Real qp, Real T0, Real P0)
+    StiffGas(Real gm1, Real Cv, Real Pinf, Real q, Real qp, Real T0, Real P0)
 
 Note that these parameters are provided solely for the entropy calculation. When
 these values are not set, they will be the same as those returned by the
