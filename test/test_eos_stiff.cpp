@@ -28,7 +28,7 @@
 using singularity::EOS;
 using singularity::StiffGas;
 
-SCENARIO("StiffGas1", "[StiffGas1]") {
+SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
   GIVEN("Parameters for a StiffGas EOS") {
     // Stiff gas parameters for liquid water [O. Le Metayer et al. 2003]
     constexpr Real gm1 = 1.35e+00;   // gamma - 1
@@ -164,7 +164,7 @@ SCENARIO("StiffGas1", "[StiffGas1]") {
   }
 }
 
-SCENARIO("StiffGas2", "[StiffGas2]") {
+SCENARIO("StiffGas2", "[StiffGas][StiffGas2]") {
   GIVEN("Parameters for a StiffGas EOS") {
     // Stiff gas parameters for water vapor [O. Le Metayer et al. 2003]
     // slight modification to test the optional parameters
@@ -353,7 +353,7 @@ SCENARIO("Isentropic Bulk Modulus Analytic vs. FD", "[StiffGas3]") {
   }
 }
 
-SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
+SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas][StiffGas4]") {
   GIVEN("Parameters for a StiffGas EOS") {
     constexpr Real gm1 = 0.33e+00;          // gamma - 1
     constexpr Real Cv = 13985539.645862306; // Cv
@@ -362,6 +362,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
     //  Create the EOS
     EOS host_eos = StiffGas(gm1, Cv, Pinf, qq);
     EOS eos = host_eos.GetOnDevice();
+    EOS ideal_eos = singularity::IdealGas(gm1, Cv);
     GIVEN("Densities and energies") {
       constexpr int num = 1;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -392,11 +393,11 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
       Kokkos::deep_copy(energy, v_energy);
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
-      // Gold standard values for a subset of lookups
-      constexpr std::array<Real, num> pressure_true{2.0265000000000000e+06};
-      constexpr std::array<Real, num> bulkmodulus_true{2.6952450000000000e+06};
-      constexpr std::array<Real, num> temperature_true{4.0000000000000000e+02};
-      constexpr std::array<Real, num> gruneisen_true{0.33};
+      // values for a subset of lookups
+      std::array<Real, num> pressure_true;
+      std::array<Real, num> bulkmodulus_true;
+      std::array<Real, num> temperature_true;
+      std::array<Real, num> gruneisen_true;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -415,6 +416,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
       std::array<Real, num> h_pressure;
       std::array<Real, num> h_bulkmodulus;
       std::array<Real, num> h_gruneisen;
+      int i;
       // Just alias the existing pointers
       auto v_temperature = h_temperature.data();
       auto v_pressure = h_pressure.data();
@@ -429,6 +431,10 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
         Kokkos::deep_copy(h_pressure, v_pressure);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned P(rho, e) should be equal to the true value") {
+          for (i = 0; i < num; i++) {
+            pressure_true[i] =
+                ideal_eos.PressureFromDensityInternalEnergy(density[i], energy[i]);
+          }
           array_compare(num, density, energy, h_pressure, pressure_true, "Density",
                         "Energy");
         }
@@ -441,6 +447,10 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
         Kokkos::deep_copy(h_bulkmodulus, v_bulkmodulus);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
+          for (i = 0; i < num; i++) {
+            bulkmodulus_true[i] =
+                ideal_eos.BulkModulusFromDensityInternalEnergy(density[i], energy[i]);
+          }
           array_compare(num, density, energy, h_bulkmodulus, bulkmodulus_true, "Density",
                         "Energy");
         }
@@ -452,7 +462,11 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
         Kokkos::fence();
         Kokkos::deep_copy(h_temperature, v_temperature);
 #endif // PORTABILITY_STRATEGY_KOKKOS
-        THEN("The returned B_S(rho, e) should be equal to the true value") {
+        THEN("The returned T(rho, e) should be equal to the true value") {
+          for (i = 0; i < num; i++) {
+            temperature_true[i] =
+                ideal_eos.TemperatureFromDensityInternalEnergy(density[i], energy[i]);
+          }
           array_compare(num, density, energy, h_temperature, temperature_true, "Density",
                         "Energy");
         }
@@ -466,6 +480,10 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
         Kokkos::deep_copy(h_gruneisen, v_gruneisen);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned Gamma(rho, e) should be equal to the true value") {
+          for (i = 0; i < num; i++) {
+            gruneisen_true[i] =
+                ideal_eos.GruneisenParamFromDensityInternalEnergy(density[i], energy[i]);
+          }
           array_compare(num, density, energy, h_gruneisen, gruneisen_true, "Density",
                         "Energy");
         }
@@ -474,7 +492,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas4]") {
   }
 }
 
-SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas5]") {
+SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas][StiffGas5]") {
   GIVEN("Parameters for a StiffGas EOS") {
     constexpr Real gm1 = 1.35;
     constexpr Real Cv = 1816.e4;
@@ -558,7 +576,6 @@ SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas5]") {
       }
       WHEN("A S(rho, T(rho,e)) lookup is performed") {
         eos.TemperatureFromDensityInternalEnergy(v_density, v_energy, v_local_temp, num);
-        // printf("\nT_look = %g\n",v_local_temp[0]); // T_look returns the right value
         eos.EntropyFromDensityTemperature(v_density, v_local_temp, v_entropy, num);
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::fence();
