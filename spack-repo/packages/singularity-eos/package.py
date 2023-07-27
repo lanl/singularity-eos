@@ -128,6 +128,8 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_USE_FORTRAN", "fortran"),
             self.define_from_variant("SINGULARITY_BUILD_CLOSURE", "fortran"),
             self.define_from_variant("SINGULARITY_BUILD_PYTHON", "python"),
+            self.define_from_variant("SINGULARITY_USE_SPINER", "hdf5"),
+            self.define_from_variant("SINGULARITY_USE_SPINER_WITH_HDF5", "hdf5"),
             self.define("SINGULARITY_BUILD_TESTS", self.run_tests),
             self.define(
                 "SINGULARITY_BUILD_SESAME2SPINER", "sesame" in self.spec.variants["build_extra"].value
