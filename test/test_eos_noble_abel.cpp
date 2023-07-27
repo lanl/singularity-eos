@@ -414,7 +414,6 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[NobleAbel][NobleAbel4]") {
       std::array<Real, num> h_pressure;
       std::array<Real, num> h_bulkmodulus;
       std::array<Real, num> h_gruneisen;
-      int i;
       // Just alias the existing pointers
       auto v_temperature = h_temperature.data();
       auto v_pressure = h_pressure.data();
@@ -429,7 +428,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[NobleAbel][NobleAbel4]") {
         Kokkos::deep_copy(h_pressure, v_pressure);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned P(rho, e) should be equal to the true value") {
-          for (i = 0; i < num; i++) {
+          for (int i = 0; i < num; i++) {
             pressure_true[i] =
                 ideal_eos.PressureFromDensityInternalEnergy(density[i], energy[i]);
           }
@@ -445,7 +444,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[NobleAbel][NobleAbel4]") {
         Kokkos::deep_copy(h_bulkmodulus, v_bulkmodulus);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
-          for (i = 0; i < num; i++) {
+          for (int i = 0; i < num; i++) {
             bulkmodulus_true[i] =
                 ideal_eos.BulkModulusFromDensityInternalEnergy(density[i], energy[i]);
           }
@@ -461,7 +460,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[NobleAbel][NobleAbel4]") {
         Kokkos::deep_copy(h_temperature, v_temperature);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned T(rho, e) should be equal to the true value") {
-          for (i = 0; i < num; i++) {
+          for (int i = 0; i < num; i++) {
             temperature_true[i] =
                 ideal_eos.TemperatureFromDensityInternalEnergy(density[i], energy[i]);
           }
@@ -478,7 +477,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[NobleAbel][NobleAbel4]") {
         Kokkos::deep_copy(h_gruneisen, v_gruneisen);
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned Gamma(rho, e) should be equal to the true value") {
-          for (i = 0; i < num; i++) {
+          for (int i = 0; i < num; i++) {
             gruneisen_true[i] =
                 ideal_eos.GruneisenParamFromDensityInternalEnergy(density[i], energy[i]);
           }
