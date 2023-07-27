@@ -446,7 +446,7 @@ The entropy for the Noble-Abel EoS is given by
 .. math::
 
     S = C_V \ln\left(\frac{T}{T_0}\right) + C_V (\gamma-1) \ln\left(\frac{v - b}
-     {v_0 - b}\right),
+     {v_0 - b}\right) + q',
 
 where :math:`S(\rho_0,T_0)=q'`. By default, :math:`T_0 = 298` K and the
 reference density is given by
