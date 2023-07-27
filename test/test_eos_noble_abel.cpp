@@ -301,7 +301,7 @@ SCENARIO("NobleAbel2", "[NobleAbel][NobleAbel2]") {
   }
 }
 
-SCENARIO("Isentropic Bulk Modulus Analytic vs. FD", "[NobleAbel][NobleAbel3]") {
+SCENARIO("NobleAbel Isentropic Bulk Modulus Analytic vs. FD", "[NobleAbel][NobleAbel3]") {
   GIVEN("Parameters for a N-A Gas EOS") {
     constexpr Real gm1 = 2.1102314250913520e-01;
     constexpr Real Cv = 1.6420000000000000e+07;
@@ -351,7 +351,7 @@ SCENARIO("Isentropic Bulk Modulus Analytic vs. FD", "[NobleAbel][NobleAbel3]") {
   }
 }
 
-SCENARIO("Recover Ideal Gas from Stiff Gas", "[NobleAbel][NobleAbel4]") {
+SCENARIO("Recover Ideal Gas from NobleAbel", "[NobleAbel][NobleAbel4]") {
   GIVEN("Parameters for a NobleAbel EOS") {
     constexpr Real gm1 = 2.1102314250913520e-01;
     constexpr Real Cv = 1.6420000000000000e+07;
@@ -489,7 +489,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[NobleAbel][NobleAbel4]") {
   }
 }
 
-SCENARIO("Test Stiff Gas Entropy Calls", "[NobleAbel][NobleAbel5]") {
+SCENARIO("Test NobleAbel Entropy Calls", "[NobleAbel][NobleAbel5]") {
   GIVEN("Parameters for a NobleAbel EOS") {
     constexpr Real gm1 = 2.1102314250913520e-01;
     constexpr Real Cv = 1.6420000000000000e+07;

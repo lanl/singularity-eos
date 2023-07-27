@@ -302,7 +302,7 @@ SCENARIO("StiffGas2", "[StiffGas][StiffGas2]") {
   }
 }
 
-SCENARIO("Isentropic Bulk Modulus Analytic vs. FD", "[StiffGas3]") {
+SCENARIO("StiffGas Isentropic Bulk Modulus Analytic vs. FD", "[StiffGas][StiffGas3]") {
   GIVEN("Parameters for a Stiffened Gas EOS") {
     // Stiff gas parameters for liquid water [O. Le Metayer et al. 2003]
     constexpr Real gm1 = 1.35e+00;
