@@ -448,8 +448,7 @@ The entropy for a stiffened gas can be expressed as
     S = C_V \ln\left(\frac{T}{T_0}\right) + (\gamma-1) C_V \ln\left(\frac{\rho_0}
      {\rho}\right) + q',
 
-we have assumed that the entropy and offset :math:`q'` are zero at the reference state given
-by :math:`T_0` and :math:`\rho_0`. By default, :math:`T_0 = 298` K and the
+where :math:`S(\rho_0,T_0)=q'`. By default, :math:`T_0 = 298` K and the
 reference density is given by
 
 .. math::
