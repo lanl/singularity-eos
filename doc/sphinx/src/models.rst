@@ -15,6 +15,8 @@
 
 .. _WillsThermo: https://www.osti.gov/biblio/1561015
 
+.. _StiffGas: https://doi.org/10.1016/j.ijthermalsci.2003.09.002
+
 
 EOS Models
 ===========
@@ -416,6 +418,63 @@ can be provided in the constructor via ``EntropyT0`` and ``EntropyRho0``:
 .. code-block:: cpp
 
     IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0)
+
+Note that these parameters are provided solely for the entropy calculation. When
+these values are not set, they will be the same as those returned by the
+:code:`ValuesAtReferenceState()` function. However, if the entropy reference
+conditions are given, the return values of the :code:`ValuesAtReferenceState()`
+function will not be the same.
+
+Stiffened Gas
+`````````````
+
+The following implementation was guided by the reference `StiffGas`_. The stiffened gas model in ``singularity-eos`` takes
+the form
+
+.. math::
+
+    P = \Gamma \rho (e-q) - \gamma P_{\infty}
+
+.. math::
+
+    e = \frac{ P + \gamma P_{\infty} }{ P + P_{\infty} } C_V T + q,
+
+where quantities are largely the same as ideal gas with the exception of :math:`P_{\infty}` and :math:`q`, which can be thought of as an offset pressure and internal energy, respectively.
+
+The entropy for a stiffened gas can be expressed as
+
+.. math::
+
+    S = C_V \ln\left(\frac{T}{T_0}\right) + (\gamma-1) C_V \ln\left(\frac{\rho_0}
+     {\rho}\right) + q',
+
+where :math:`S(\rho_0,T_0)=q'`. By default, :math:`T_0 = 298` K and the
+reference density is given by
+
+.. math::
+
+    \rho_0 = \frac{P_0 + P_{\infty}}{(\gamma-1) C_V T_0},
+
+where the reference pressure, :math:`P_0`, is 1 bar by default.
+
+The settable parameters for this EOS are the Gruneisen parameter, :math:`\gamma-1`, specific
+heat capacity, :math:`C_V`, offset pressure, :math:`P_{\infty}`, and the offset internal energy, :math:`q`. Optionally, the reference state for the entropy calculation can
+be provided by setting values for the reference temperature, pressure, and offset entropy (:math:`q'`).
+
+The ``StiffGas`` EOS constructor has four arguments, ``gm1``, which is
+the Gruneisen parameter :math:`\Gamma`, ``Cv``, which is the
+specific heat :math:`C_V`, ``P_{\infty}`` which is the offset pressure, and ``q`` which is the offset internal energy:
+
+.. code-block:: cpp
+
+    StiffGas(Real gm1, Real Cv, Real Pinf, Real q)
+
+Optionally, the reference temperature and density for the entropy calculation,
+can be provided in the constructor via ``qp``, ``T0``, and ``P0``:
+
+.. code-block:: cpp
+
+    StiffGas(Real gm1, Real Cv, Real Pinf, Real q, Real qp, Real T0, Real P0)
 
 Note that these parameters are provided solely for the entropy calculation. When
 these values are not set, they will be the same as those returned by the
@@ -1161,3 +1220,5 @@ See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
 .. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
 
 .. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
+
+
