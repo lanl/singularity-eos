@@ -416,7 +416,6 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas][StiffGas4]") {
       std::array<Real, num> h_pressure;
       std::array<Real, num> h_bulkmodulus;
       std::array<Real, num> h_gruneisen;
-      int i;
       // Just alias the existing pointers
       auto v_temperature = h_temperature.data();
       auto v_pressure = h_pressure.data();
