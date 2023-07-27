@@ -18,6 +18,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     maintainers = ["rbberger"]
 
+    # allow `main` version for development
     version("main", branch="main")
     version("1.7.0", sha256="ce0825db2e9d079503e98cecf1c565352be696109042b3a0941762b35f36dc49")
     version("1.6.2", sha256="9c85fca679139a40cc9c72fcaeeca78a407cc1ca184734785236042de364b942")
@@ -50,8 +51,11 @@ class SingularityEos(CMakePackage, CudaPackage):
     # build the Python bindings
     variant("python", default=False, description="Enable building Python bindings")
 
+    # link to EOSPAC for table reads
     variant("eospac", default=True, description="Pull in EOSPAC")
 
+    # enable/disable HDF5 - used to control upstream `spiner` 
+    # configuration 
     variant("hdf5", default=False, description="Use hdf5")
 
     # building/testing/docs
@@ -62,14 +66,32 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("py-pybind11@2.9.1:", when="+python")
 
     # linear algebra when not using GPUs
+    # TODO we can do LA with +kokkos+kokkos-kernels~cuda,
+    # so maybe this should be `when="~kokkos-kernels~cuda"`
     depends_on("eigen@3.3.8", when="~cuda")
 
+    # eospac when asked for 
     depends_on("eospac", when="+eospac")
-    depends_on("spiner@main", when="@main")
-    depends_on("ports-of-call@1.4.2:")
+
+    # ports-of-call for kernel wrappers 
+    depends_on("ports-of-call@1.4.2:", when="@:1.7.0")
+    depends_on("ports-of-call@1.5.1:", when="@1.7.1:") #TODO make sure version is correct
+    # request the HEAD of the main branch 
     depends_on("ports-of-call@main", when="@main")
+
+    # spiner for sp5 table reading
+    # TODO: the `+kokkos` variant of spiner is not 
+    # operative (all `kokkos` code moved to `ports-of-call`).
+    # Should make a plan to restrict this variant to 
+    # older `spiner` versions
+    # (although having it is harmless)
     depends_on("spiner +kokkos", when="+kokkos")
+    # tell spiner to use HDF5 
     depends_on("spiner +hdf5", when="+hdf5")
+
+    depends_on("spiner@:1.6.0", when="@:1.7.0")
+    depends_on("spiner@1.6.1:", when="@:1.7.1") #TODO version
+    depends_on("spiner@main", when="@main")
 
     depends_on("mpark-variant")
     depends_on(
@@ -92,6 +114,7 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("spiner" + _flag, when="+kokkos" + _flag)
 
     # specfic specs when using GPU/cuda offloading
+    # TODO Do we need `+aggressive_vectorization`, `+cuda_constexpr`, `~compiler_warnings` ?
     depends_on("kokkos +wrapper+cuda_lambda+cuda_relocatable_device_code", when="+cuda+kokkos")
 
     # fix for older spacks
@@ -119,6 +142,8 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("py-h5py" + _flag, when="@:1.6.2 " + _flag)
 #        depends_on("kokkos-nvcc-wrapper" + _flag, when="+cuda+kokkos" + _flag)
 
+    # TODO some options are now version specific. For now it should be 
+    # benign, but good practice to do some version guards.
     def cmake_args(self):
         args = [
             self.define("SINGULARITY_PATCH_MPARK_VARIANT", False),
@@ -156,6 +181,9 @@ class SingularityEos(CMakePackage, CudaPackage):
 
         return args
 
+    # TODO everything past here may not be needed, 
+    # except the pythonpath setting 
+    #
     # specify the name of the auto-generated cmake cache config
     @property
     def cmake_config_fname(self):
