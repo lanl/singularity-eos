@@ -20,6 +20,7 @@ variables:
   # DEVEL_SPACK_CHECKOUT: "${CI_PROJECT_DIR}/spack"
 
 before_script:
+  - export PYTHONNOUSERSITE=1
   - export SPACK_DISABLE_LOCAL_CONFIG=true
   - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH:-/tmp/spack-local}
   - export DEVEL_SPACK_CHECKOUT=${DEVEL_SPACK_CHECKOUT:-/tmp/spack}

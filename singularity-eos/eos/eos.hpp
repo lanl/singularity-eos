@@ -40,6 +40,7 @@
 #include <singularity-eos/eos/eos_jwl.hpp>
 #include <singularity-eos/eos/eos_spiner.hpp>
 #include <singularity-eos/eos/eos_stellar_collapse.hpp>
+#include <singularity-eos/eos/eos_stiff.hpp>
 #include <singularity-eos/eos/eos_vinet.hpp>
 
 // Modifiers
@@ -63,7 +64,6 @@ using singularity::detail::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
        ,
        SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
