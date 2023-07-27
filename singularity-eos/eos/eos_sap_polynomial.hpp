@@ -51,14 +51,17 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
@@ -73,26 +76,32 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
@@ -163,6 +172,7 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
                                        Real &rho, Real &sie) const {
+    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     sie = 0.0;
     rho = 0.0;
   }
