@@ -65,14 +65,13 @@ using singularity::detail::transform_variadic_list;
 // all eos's
 static constexpr const auto full_eos_list =
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-       ,
-       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+    , SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_EOSPAC
-       ,
-       EOSPAC
+    ,
+                            EOSPAC
 #endif // SINGULARITY_USE_EOSPAC
-       >{};
+                                > {};
 // eos's that get relativistic and unit system modifiers
 static constexpr const auto partial_eos_list =
     tl<IdealGas
