@@ -425,6 +425,63 @@ these values are not set, they will be the same as those returned by the
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
 
+Noble-Abel
+``````````
+
+The implementation here was influenced by the reference `NobleAbel`_. The Noble-Abel (aka Clausius I or Hirn) model in ``singularity-eos`` takes
+the form
+
+.. math::
+
+    P = \frac{ \rho (e-q) (\gamma-1) }{ 1 - b \rho }
+
+.. math::
+
+    e = C_V T + q,
+
+where quantities are similar to the ideal gas law with the exception of covolume (:math:`b`) and offset internal energy (:math:`q`). It should be noted that covolume is of physical significance, and is a required positive (or zero) quantity.
+
+The entropy for the Noble-Abel EoS is given by
+
+.. math::
+
+    S = C_V \ln\left(\frac{T}{T_0}\right) + C_V (\gamma-1) \ln\left(\frac{v - b}
+     {v_0 - b}\right),
+
+we have assumed that the entropy is zero at the reference state given
+by :math:`T_0` and :math:`\rho_0`. By default, :math:`T_0 = 298` K and the
+reference density is given by
+
+.. math::
+
+    \rho_0 = \frac{P_0}{C_V T_0(\gamma-1) + bP_0},
+
+where :math:`P_0` is by default 1 bar.
+
+The settable parameters for this EOS are :math:`\gamma-1`, specific
+heat capacity (:math:`C_V`), covolume (:math:`b`) and offset internal energy (:math:`q`). Optionally, the reference state for the entropy calculation can
+be provided by setting the reference temperature, pressure, and entropy offset.
+
+The ``IdealGas`` EOS constructor has four arguments, ``gm1``, which is :math:`\gamma-1`, ``Cv``, the
+specific heat :math:`C_V`, :math:`b`, the covolume, and :math:`q`, the internal energy offset:
+
+.. code-block:: cpp
+
+    NobleAbel(Real gm1, Real Cv, Real b, Real q)
+
+Optionally, the reference state for the entropy calculation,
+can be provided in the constructor via ``qp``, ``T0`` and ``P0``:
+
+.. code-block:: cpp
+
+    NobleAbel(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0)
+
+Note that these parameters are provided solely for the entropy calculation. When
+these values are not set, they will be the same as those returned by the
+:code:`ValuesAtReferenceState()` function. However, if the entropy reference
+conditions are given, the return values of the :code:`ValuesAtReferenceState()`
+function will not be the same.
+
 Gruneisen EOS
 `````````````
 
@@ -1164,60 +1221,5 @@ See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
 
 .. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
 
-Noble-Abel
-``````````
 
-The implementation here was influenced by the reference `NobleAbel`_. The Noble-Abel (aka Clausius I or Hirn) model in ``singularity-eos`` takes
-the form
-
-.. math::
-
-    P = \frac{ \rho (e-q) (\gamma-1) }{ 1 - b \rho }
-
-.. math::
-
-    e = C_V T + q,
-
-where quantities are similar to the ideal gas law with the exception of covolume (:math:`b`) and offset internal energy (:math:`q`). It should be noted that covolume is of physical significance, and is a required positive (or zero) quantity.
-
-The entropy for the Noble-Abel EoS is given by
-
-.. math::
-
-    S = C_V \ln\left(\frac{T}{T_0}\right) + C_V (\gamma-1) \ln\left(\frac{v - b}
-     {v_0 - b}\right),
-
-we have assumed that the entropy is zero at the reference state given
-by :math:`T_0` and :math:`\rho_0`. By default, :math:`T_0 = 298` K and the
-reference density is given by
-
-.. math::
-
-    \rho_0 = \frac{P_0}{C_V T_0(\gamma-1) + bP_0},
-
-where :math:`P_0` is by default 1 bar.
-
-The settable parameters for this EOS are :math:`\gamma-1`, specific
-heat capacity (:math:`C_V`), covolume (:math:`b`) and offset internal energy (:math:`q`). Optionally, the reference state for the entropy calculation can
-be provided by setting the reference temperature, pressure, and entropy offset.
-
-The ``IdealGas`` EOS constructor has four arguments, ``gm1``, which is :math:`\gamma-1`, ``Cv``, the
-specific heat :math:`C_V`, :math:`b`, the covolume, and :math:`q`, the internal energy offset:
-
-.. code-block:: cpp
-
-    NobleAbel(Real gm1, Real Cv, Real b, Real q)
-
-Optionally, the reference state for the entropy calculation,
-can be provided in the constructor via ``qp``, ``T0`` and ``P0``:
-
-.. code-block:: cpp
-
-    NobleAbel(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0)
-
-Note that these parameters are provided solely for the entropy calculation. When
-these values are not set, they will be the same as those returned by the
-:code:`ValuesAtReferenceState()` function. However, if the entropy reference
-conditions are given, the return values of the :code:`ValuesAtReferenceState()`
-function will not be the same.
 
