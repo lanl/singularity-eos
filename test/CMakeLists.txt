@@ -18,6 +18,7 @@ add_executable(eos_unit_tests
   test_eos_unit.cpp
   test_eos_gruneisen.cpp
   test_eos_vinet.cpp
+  test_eos_noble_abel.cpp
 )
 
 if(SINGULARITY_USE_HDF5)
