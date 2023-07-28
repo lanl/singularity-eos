@@ -48,7 +48,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   ////add options here... and elsewhere
   inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
                 Real monotonicity = 0.0, bool apply_smoothing = false,
-                Real apply_splitting = 0.0, bool linear_interp = false);
+                eosSplit apply_splitting = eosSplit::none, bool linear_interp = false);
   inline EOSPAC GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
@@ -1224,7 +1224,7 @@ class EOSPAC : public EosBase<EOSPAC> {
 // ======================================================================
 
 inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
-                      Real monotonicity, bool apply_smoothing, Real apply_splitting,
+                      Real monotonicity, bool apply_smoothing, eosSplit apply_splitting,
                       bool linear_interp)
     : matid_(matid) {
   using namespace EospacWrapper;

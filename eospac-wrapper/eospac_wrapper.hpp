@@ -39,6 +39,7 @@ inline double getBulkModulus(const double rho, const double P, const double DPDR
   return rho * DPDR_T + DPDE_R * ((P / rho) - rho * DEDR_T);
 }
 
+enum class eosSplit { none=0, splitNumProp=1, splitIdealGas=2, splitCowan=3 };
 enum class Verbosity { Quiet, Verbose, Debug };
 
 class SesameMetadata {
@@ -89,13 +90,13 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[], Verbosity eospacWarn,
                         bool invert_at_setup = false, EOS_REAL insert_data = 0.0,
                         EOS_REAL monotonicity = 0.0, bool apply_smoothing = false,
-                        EOS_REAL apply_splitting = 0.0, bool linear_interp = false);
+                        eosSplit apply_splitting = eosSplit::none, bool linear_interp = false);
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[],
                         const std::vector<std::string> &table_names, Verbosity eospacWarn,
                         bool invert_at_setup = false, EOS_REAL insert_data = 0.0,
                         EOS_REAL monotonicity = 0.0, bool apply_smoothing = false,
-                        EOS_REAL apply_splitting = 0.0, bool linear_interp = false);
+                        eosSplit apply_splitting = eosSplit::none, bool linear_interp = false);
 
 // output is boolean mask. 1 for no errors. 0 for errors.
 bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals[],
