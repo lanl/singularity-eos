@@ -133,8 +133,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     return inv_press_unit_ * P;
   }
   Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
-    const Real S =
-        t_.MinInternalEnergyFromDensity(rho * rho_unit_, lambda);
+    const Real S = t_.MinInternalEnergyFromDensity(rho * rho_unit_, lambda);
     return inv_sie_unit_ * S;
   }
   PORTABLE_FUNCTION

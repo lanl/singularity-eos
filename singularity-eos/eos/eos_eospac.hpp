@@ -46,7 +46,9 @@ class EOSPAC : public EosBase<EOSPAC> {
   inline EOSPAC() = default;
 
   ////add options here... and elsewhere
-  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0, Real monotonicity = 0.0, bool apply_smoothing = false, Real apply_splitting = 0.0, bool linear_interp = false);
+  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
+                Real monotonicity = 0.0, bool apply_smoothing = false,
+                Real apply_splitting = 0.0, bool linear_interp = false);
   inline EOSPAC GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
@@ -56,8 +58,8 @@ class EOSPAC : public EosBase<EOSPAC> {
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
@@ -151,11 +153,9 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                        lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
-  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos,
-                                                RealIndexer &&sies, const int num,
-                                                LambdaIndexer &&lambdas) const {
-    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num,
-                                                       lambdas);
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
             typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
@@ -169,12 +169,11 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
             typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
-  inline void
-  MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies, Real * /*scratch*/,
-                                    const int num, LambdaIndexer &&lambdas) const {
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas) const {
     PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
-    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num,
-                                                       lambdas);
+    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -616,13 +615,13 @@ class EOSPAC : public EosBase<EOSPAC> {
     ++nopts;
 
     eosSafeInterpolate(&table, num, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
-			 options, values, nopts);
+                       options, values, nopts);
   }
 
   template <typename LambdaIndexer>
-  inline void MinInternalEnergyFromDensity(
-      const Real *rhos, Real *sies, Real *scratch, const int num,
-      LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer /*lambdas*/,
+                                           Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = &sies[0];
@@ -653,7 +652,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     ++nopts;
 
     eosSafeInterpolate(&table, num, R, R, E, dedr, dedr, "EcofD", Verbosity::Quiet,
-			 options, values, nopts);
+                       options, values, nopts);
   }
 
   template <typename LambdaIndexer>
@@ -1224,13 +1223,20 @@ class EOSPAC : public EosBase<EOSPAC> {
 // Implementation details below
 // ======================================================================
 
-  inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data, Real monotonicity, bool apply_smoothing, Real apply_splitting, bool linear_interp) : matid_(matid) {
+inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
+                      Real monotonicity, bool apply_smoothing, Real apply_splitting,
+                      bool linear_interp)
+    : matid_(matid) {
   using namespace EospacWrapper;
-  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT, EOS_T_DPt, EOS_Pt_DUt, EOS_Uc_D};
-  eosSafeLoad(NT, matid, tableType, tablehandle,
-              std::vector<std::string>(
-		{"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT", "EOS_T_DPt", "EOS_Pt_DUt","EOS_Uc_D"}),
-              Verbosity::Quiet, invert_at_setup=invert_at_setup, insert_data=insert_data, monotonicity=monotonicity, apply_smoothing=apply_smoothing, linear_interp=linear_interp);
+  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt,  EOS_Ut_DT, EOS_D_PtT,
+                               EOS_T_DPt, EOS_Pt_DUt, EOS_Uc_D};
+  eosSafeLoad(
+      NT, matid, tableType, tablehandle,
+      std::vector<std::string>({"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT",
+                                "EOS_T_DPt", "EOS_Pt_DUt", "EOS_Uc_D"}),
+      Verbosity::Quiet, invert_at_setup = invert_at_setup, insert_data = insert_data,
+      monotonicity = monotonicity, apply_smoothing = apply_smoothing,
+      linear_interp = linear_interp);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
@@ -1414,12 +1420,12 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
   EOS_INTEGER nxypairs = 1;
   EOS_INTEGER table = PofRE_table_;
   eosSafeInterpolate(&table, nxypairs, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
-		     options, values, nopts);
-		     
+                     options, values, nopts);
+
   return Real(P[0]);
 }
-PORTABLE_INLINE_FUNCTION Real EOSPAC::MinInternalEnergyFromDensity(
-    const Real rho, Real *lambda) const {
+PORTABLE_INLINE_FUNCTION Real EOSPAC::MinInternalEnergyFromDensity(const Real rho,
+                                                                   Real *lambda) const {
   using namespace EospacWrapper;
   EOS_INTEGER options[]{EOS_F_CONVERT};
   EOS_REAL values[]{sieFromSesame(1.0)};
@@ -1428,8 +1434,8 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::MinInternalEnergyFromDensity(
   EOS_INTEGER nxypairs = 1;
   EOS_INTEGER table = EcofD_table_;
   eosSafeInterpolate(&table, nxypairs, R, S, S, dSdr, dSdr, "EcofD", Verbosity::Quiet,
-		     options, values, nopts);
-		     
+                     options, values, nopts);
+
   return Real(S[0]);
 }
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(

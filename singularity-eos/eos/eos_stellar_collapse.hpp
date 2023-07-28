@@ -106,9 +106,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_INLINE_FUNCTION
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION 
-  Real MinInternalEnergyFromDensity(const Real rho, 
-				    Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                      Real *lambda = nullptr) const;
@@ -512,8 +511,7 @@ Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho, const Re
   return lP2P_(lP);
 }
 PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::MinInternalEnergyFromDensity(const Real rho, 
-                                                        Real *lambda) const {
+Real StellarCollapse::MinInternalEnergyFromDensity(const Real rho, Real *lambda) const {
   return 0.0;
 }
 

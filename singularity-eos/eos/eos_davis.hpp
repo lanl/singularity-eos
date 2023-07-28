@@ -61,7 +61,8 @@ class DavisReactants : public EosBase<DavisReactants> {
     return Ps(rho) + Gamma(rho) * rho * (sie - Es(rho));
   }
 
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
@@ -166,8 +167,8 @@ class DavisProducts : public EosBase<DavisProducts> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return Ps(rho) + rho * Gamma(rho) * (sie - Es(rho));
   }
-    PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Real *lambda = nullptr) const {
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(

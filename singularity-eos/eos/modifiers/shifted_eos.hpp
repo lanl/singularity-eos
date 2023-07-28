@@ -209,13 +209,12 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   }
 
   template <typename LambdaIndexer>
-  inline void
-    MinInternalEnergyFromDensity(const Real *rhos, Real *sies,
-				 Real *scratch, const int num, LambdaIndexer &&lambdas,
-				 Transform &&transform = Transform()) const {
-    t_.MinInternalEnergyFromDensity(rhos, sies, &scratch[num],
-                                         num, std::forward<LambdaIndexer>(lambdas),
-                                         std::forward<Transform>(transform));
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
+    t_.MinInternalEnergyFromDensity(rhos, sies, &scratch[num], num,
+                                    std::forward<LambdaIndexer>(lambdas),
+                                    std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>

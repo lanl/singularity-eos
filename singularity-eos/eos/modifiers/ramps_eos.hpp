@@ -162,7 +162,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     const Real p_eos{t_.PressureFromDensityInternalEnergy(rho, sie, lambda)};
 
     return p_eos < p_ramp ? rho * get_ramp_dpdrho(rho)
-		   : t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
+                          : t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
   }
   PORTABLE_FUNCTION
   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -278,13 +278,12 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   }
 
   template <typename LambdaIndexer>
-  inline void
-    MinInternalEnergyFromDensity(const Real *rhos, Real *sies, 
-				 Real *scratch, const int num, LambdaIndexer &&lambdas,
-				 Transform &&transform = Transform()) const {
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
     t_.MinInternalEnergyFromDensity(rhos, sies, scratch, num,
-                                         std::forward<LambdaIndexer>(lambdas),
-                                         std::forward<Transform>(transform));
+                                    std::forward<LambdaIndexer>(lambdas),
+                                    std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>

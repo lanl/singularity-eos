@@ -210,14 +210,13 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   }
 
   template <typename LambdaIndexer>
-  inline void
-   MinInternalEnergyFromDensity(const Real *rhos, Real *sies,
-				Real *scratch, const int num, LambdaIndexer &&lambdas,
-				Transform &&transform = Transform()) const {
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
     transform.x.apply(scale_);
     t_.MinInternalEnergyFromDensity(rhos, sies, scratch, num,
-                                         std::forward<LambdaIndexer>(lambdas),
-                                         std::forward<Transform>(transform));
+                                    std::forward<LambdaIndexer>(lambdas),
+                                    std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>

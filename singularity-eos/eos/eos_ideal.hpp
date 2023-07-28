@@ -78,7 +78,8 @@ class IdealGas : public EosBase<IdealGas> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return MYMAX(0.0, _gm1 * rho * sie);
   }
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
     return 0.0;
   };
 

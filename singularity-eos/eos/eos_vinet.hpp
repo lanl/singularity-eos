@@ -55,8 +55,8 @@ class Vinet : public EosBase<Vinet> {
       const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(const Real rho, 
-				    Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
   // Entropy added AEM Dec. 2022
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const;
@@ -306,8 +306,8 @@ PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityInternalEnergy(
   Vinet_F_DT_func(rho, temp, output);
   return output[1];
 }
-PORTABLE_INLINE_FUNCTION Real Vinet::MinInternalEnergyFromDensity(
-    const Real rho, Real *lambda) const {
+PORTABLE_INLINE_FUNCTION Real Vinet::MinInternalEnergyFromDensity(const Real rho,
+                                                                  Real *lambda) const {
   return 0.0;
 }
 PORTABLE_INLINE_FUNCTION Real Vinet::EntropyFromDensityInternalEnergy(
