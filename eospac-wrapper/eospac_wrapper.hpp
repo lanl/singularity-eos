@@ -87,15 +87,15 @@ void eosGetMetadata(int matid, SesameMetadata &metadata,
 
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[], Verbosity eospacWarn,
-                        bool invert_at_setup = false, EOS_REAL insert_data=0.0,
-			EOS_REAL monotonicity=0.0, bool apply_smoothing=false,
-			EOS_REAL apply_splitting=0.0, bool linear_interp=false);
+                        bool invert_at_setup = false, EOS_REAL insert_data = 0.0,
+                        EOS_REAL monotonicity = 0.0, bool apply_smoothing = false,
+                        EOS_REAL apply_splitting = 0.0, bool linear_interp = false);
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[],
                         const std::vector<std::string> &table_names, Verbosity eospacWarn,
-                        bool invert_at_setup = false, EOS_REAL insert_data=0.0,
-			EOS_REAL monotonicity=0.0, bool apply_smoothing=false,
-			EOS_REAL apply_splitting=0.0, bool linear_interp=false);
+                        bool invert_at_setup = false, EOS_REAL insert_data = 0.0,
+                        EOS_REAL monotonicity = 0.0, bool apply_smoothing = false,
+                        EOS_REAL apply_splitting = 0.0, bool linear_interp = false);
 
 // output is boolean mask. 1 for no errors. 0 for errors.
 bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals[],
@@ -108,7 +108,6 @@ void eosSafeTableInfo(EOS_INTEGER *table, EOS_INTEGER numInfoItems,
                       EOS_INTEGER infoItems[], EOS_REAL infoVals[], Verbosity eospacWarn);
 
 void eosSafeTableCmnts(EOS_INTEGER *table, EOS_CHAR *comments, Verbosity eospacWarn);
-
 
 void eosCheckError(EOS_INTEGER errorCode, const std::string &name, Verbosity eospacWarn);
 std::string eosErrorString(EOS_INTEGER errorCode);
