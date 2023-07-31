@@ -1089,6 +1089,37 @@ location of the ``sesame`` database need not be provided by the
 command line. For how to specify `sesame`_ file locations, see the
 `eospac`_ manual.
 
+SAP Polynomial EOS
+``````````````````
+
+This model is specific to the Safety Applications Project (SAP). It is
+an imcomplete EOS, and is a simple analytical form used to fit
+experimental data:
+
+.. math::
+
+   P = a_0 + a_1\mu + a_2^* \mu^2 + a_3 \mu^3 + \varepsilon(b_0 + b_1\mu + b_2^*\mu^2 + b_3\mu^3)
+
+with
+
+.. math::
+
+  \mu = \frac{\rho}{\rho_0} - 1
+
+The constants :math:`a_2^*` and :math:`b_2^*` can assume different
+values in expansion and compression.
+
+.. math::
+
+  a_2^* = \begin{cases}
+             a_2^c & \mu \geq 0 \text{ (compression)}\\
+             a_2^e & \mu <    0 \text{ (expansion)}\\
+          \end{cases}
+
+and similar expressions for :math:`b_2^*`.
+
+
+
 Stellar Collapse EOS
 ````````````````````
 
