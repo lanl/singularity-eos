@@ -73,14 +73,17 @@ class SingularityEos(CMakePackage, CudaPackage):
     # eospac when asked for 
     depends_on("eospac", when="+eospac")
 
-    depends_on("spiner@1.6.0") # set to pinned version
-    depends_on("ports-of-call@1.4.2:")
+    depends_on("ports-of-call@1.4.2:", when="@:1.7.0")
+    depends_on("ports-of-call@1.5.1:", when="@1.7.1:")
+    # request HEAD of main branch
+    depends_on("ports-of-call@main", when="@main")
+    
     depends_on("spiner +kokkos", when="+kokkos")
     # tell spiner to use HDF5 
     depends_on("spiner +hdf5", when="+hdf5")
 
     depends_on("spiner@:1.6.0", when="@:1.7.0")
-    depends_on("spiner@1.6.1:", when="@:1.7.1") #TODO version
+    depends_on("spiner@1.6.1:", when="@1.7.1:") #TODO version
     depends_on("spiner@main", when="@main")
 
     depends_on("mpark-variant")
