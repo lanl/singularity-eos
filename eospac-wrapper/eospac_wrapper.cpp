@@ -86,7 +86,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
 
     comments.resize(static_cast<int>(commentLen));
     metadata.comments.resize(comments.size());
-    eosSafeTableCmnts(&eospacComments, comments.data(), eospacWarn);
+    
+    if (commentLen>0)    eosSafeTableCmnts(&eospacComments, comments.data(), eospacWarn);
     for (size_t i = 0; i < comments.size(); i++) {
       metadata.comments[i] = comments[i];
     }
