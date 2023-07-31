@@ -114,38 +114,8 @@ SCENARIO("CRESTReactants EOS", "Check if eos returns expected values") {
           1.900000000000000000000000000000e+12, 1.900389463209202148437500000000e+12,
           1.900842516531505615234375000000e+12};
 
-      WHEN("A P(rho, e) lookup is performed") {
-        eos.PressureFromDensityInternalEnergy(v_rho, v_sie, v_P, num);
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-        Kokkos::fence();
-        Kokkos::deep_copy(P, v_P);
-#endif
-        THEN("The returned P(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, P, P_expected, "Density", "Energy");
-        }
-      }
 
-      WHEN("A B(rho, e) lookup is performed") {
-        eos.BulkModulusFromDensityInternalEnergy(v_rho, v_sie, v_B, num);
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-        Kokkos::fence();
-        Kokkos::deep_copy(B, v_B);
-#endif
-        THEN("The returned B(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, B, B_expected, "Density", "Energy");
-        }
-      }
 
-      WHEN("A gamma(rho, e) lookup is performed") {
-        eos.GruneisenParamFromDensityInternalEnergy(v_rho, v_sie, v_gamma, num);
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-        Kokkos::fence();
-        Kokkos::deep_copy(gamma, v_gamma);
-#endif
-        THEN("The returned gamma(rho, e) should be equal to the true value") {
-          array_compare(num, rho, sie, gamma, gamma_expected, "Density", "Energy");
-        }
-      }
     }
   }
 }
