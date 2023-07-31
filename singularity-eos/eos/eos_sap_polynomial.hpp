@@ -114,7 +114,7 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    const Real mu = rho / _rho0 - 1;
+    const Real mu = MuFromDensity(rho);
     if (mu >= 0) // Compression
       return (1 + mu) * (_a1 + 2 * _a2c * mu + 3 * _a3 * mu * mu +
                          sie * (_b1 + 2 * _b2c * mu + 3 * _b3 * mu * mu));
