@@ -73,18 +73,8 @@ class SingularityEos(CMakePackage, CudaPackage):
     # eospac when asked for 
     depends_on("eospac", when="+eospac")
 
-    # ports-of-call for kernel wrappers 
-    depends_on("ports-of-call@1.4.2:", when="@:1.7.0")
-    depends_on("ports-of-call@1.5.1:", when="@1.7.1:") #TODO make sure version is correct
-    # request the HEAD of the main branch 
-    depends_on("ports-of-call@main", when="@main")
-
-    # spiner for sp5 table reading
-    # TODO: the `+kokkos` variant of spiner is not 
-    # operative (all `kokkos` code moved to `ports-of-call`).
-    # Should make a plan to restrict this variant to 
-    # older `spiner` versions
-    # (although having it is harmless)
+    depends_on("spiner@1.6.0") # set to pinned version
+    depends_on("ports-of-call@1.4.2:")
     depends_on("spiner +kokkos", when="+kokkos")
     # tell spiner to use HDF5 
     depends_on("spiner +hdf5", when="+hdf5")
