@@ -121,7 +121,7 @@ SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
       auto sie = Kokkos::create_mirror_view(v_sie);
       Kokkos::deep_copy(rho, v_rho);
       Kokkos::deep_copy(sie, v_sie);
-#endif // PORTABILITY_STRATEGY_KOKKOS      
+#endif // PORTABILITY_STRATEGY_KOKKOS
 
       WHEN("A P(rho, e) lookup is performed") {
         eos.PressureFromDensityInternalEnergy(v_rho, v_sie, v_P, num);
