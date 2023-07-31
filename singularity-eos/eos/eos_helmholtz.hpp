@@ -356,7 +356,7 @@ class Helmholtz : public EosBase<Helmholtz> {
     enum Index {
       Abar = 0, // Average atomic mass
       Zbar = 1, // Average atomic number
-      lT = 3    // log10 temperature. used for root finding.
+      lT = 2    // log10 temperature. used for root finding.
     };
   };
   // Options struct. You can create one of these and modify it to set
