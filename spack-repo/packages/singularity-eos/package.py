@@ -63,7 +63,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on("eigen@3.3.8", when="~cuda")
 
     depends_on("eospac", when="+eospac")
-    depends_on("spiner")
+    depends_on("spiner@1.6.0") # This should be removed 
     depends_on("ports-of-call@1.4.2:")
     depends_on("spiner +kokkos", when="+kokkos")
 
