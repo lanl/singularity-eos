@@ -538,7 +538,7 @@ class Helmholtz : public EosBase<Helmholtz> {
     Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
     GetFromDensityTemperature_(rho, temperature, lambda, p, e, s, etaele, nep);
     Real gamma3 = ComputeGamma3_(rho, temperature, p, e);
-    return gamma3 + 1.0;
+    return gamma3;
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
@@ -553,7 +553,7 @@ class Helmholtz : public EosBase<Helmholtz> {
     GetFromDensityLogTemperature_(rho, T, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
                                   etaele, nep);
     Real gamma3 = ComputeGamma3_(rho, T, p, e);
-    return gamma3 + 1.0;
+    return gamma3;
   }
 
   PORTABLE_INLINE_FUNCTION
