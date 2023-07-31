@@ -1,6 +1,7 @@
 # Changelog
 
 ## Current develop
+- [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
 - [[PR267]](https://github.com/lanl/singularity-eos/pull/267) Add missing eosSafeDestroy call in EOSPAC::Finalize
