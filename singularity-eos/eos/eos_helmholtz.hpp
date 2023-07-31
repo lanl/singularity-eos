@@ -129,6 +129,22 @@
  * written in terms of fundamental quantities like atomic mass, which
  * made the translation cumbersom, so I just ported the reference
  * implementation.
+ *
+ * Note that e.g. the Gruneisenparameter is defined differently
+ * compared to other EOSs. Here the Gruneisenparameter is the
+ * Gamma3 of Cox & Giuli 1968 (Princiiples of Stellar Structure),
+ * c&g in the following. I.e.
+ * Gamma3 - 1 = (d ln T / d ln rho)|ad
+ *
+ * Some important formulas to be used when using this EOS:
+ * - the temperature and density exponents (c&g 9.81 9.82)
+ * - the specific heat at constant volume (c&g 9.92)
+ * - the third adiabatic exponent (c&g 9.93)
+ * - the first adiabatic exponent (c&g 9.97)
+ * - the second adiabatic exponent (c&g 9.105)
+ * - the specific heat at constant pressure (c&g 9.98)
+ * - and relativistic formula for the sound speed (c&g 14.29)
+ *
  */
 
 namespace singularity {
@@ -521,16 +537,23 @@ class Helmholtz : public EosBase<Helmholtz> {
     using namespace HelmUtils;
     Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
     GetFromDensityTemperature_(rho, temperature, lambda, p, e, s, etaele, nep);
-    const Real dPdE = robust::ratio(p[DDR], e[DDR]) + robust::ratio(p[DDT], e[DDT]);
-    return robust::ratio(dPdE, rho);
+    Real gamma3 = ComputeGamma3_(rho, temperature, p, e);
+    return gamma3 + 1.0;
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     using namespace HelmUtils;
     Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
-    GetFromDensityInternalEnergy_(rho, sie, lambda, p, e, s, etaele, nep);
-    const Real dPdE = robust::ratio(p[DDR], e[DDR]) + robust::ratio(p[DDT], e[DDT]);
-    return robust::ratio(dPdE, rho);
+    Real abar = lambda[Lambda::Abar];
+    Real zbar = lambda[Lambda::Zbar];
+    Real ytot, ye, ywot, De, lDe;
+    GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
+    Real lT = lTFromRhoSie_(rho, sie, abar, zbar, ye, ytot, ywot, De, lDe, lambda);
+    Real T = math_utils::pow10(lT);
+    GetFromDensityLogTemperature_(rho, T, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
+                                  etaele, nep);
+    Real gamma3 = ComputeGamma3_(rho, T, p, e);
+    return gamma3 + 1.0;
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -560,10 +583,21 @@ class Helmholtz : public EosBase<Helmholtz> {
   Real ComputeGamma1_(const Real rho, const Real T, const Real p[NDERIV],
                       const Real e[NDERIV]) const {
     using namespace HelmUtils;
+    // Gamma1 (c&g 9.97)
     const Real chit = robust::ratio(T, p[0]) * p[DDT];
     const Real chid = robust::ratio(p[DDR] * rho, p[0]);
     const Real x = robust::ratio(p[0] * chit, rho * T * e[DDT]);
     return chit * x + chid;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real ComputeGamma3_(const Real rho, const Real T, const Real p[NDERIV],
+                      const Real e[NDERIV]) const {
+    using namespace HelmUtils;
+    // Gamma3 (c&g 9.93)
+    const Real chit = robust::ratio(T, p[0]) * p[DDT];
+    const Real x = robust::ratio(p[0] * chit, rho * T * e[DDT]);
+    return x + 1.0;
   }
 
   PORTABLE_INLINE_FUNCTION
