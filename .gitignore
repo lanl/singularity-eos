@@ -11,4 +11,5 @@ spack-configure-*
 ._*
 *.sublime*
 CMakeUserPresets.json
+build/
 
