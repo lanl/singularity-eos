@@ -38,6 +38,7 @@ module singularity_eos
     init_sg_DavisProducts_f,&
     init_sg_DavisReactants_f,&
     init_sg_SAP_Polynomial_f,&
+    init_sg_CRESTReactants_f,&
     init_sg_StiffGas_f,&
     init_sg_SpinerDependsRhoT_f,&
     init_sg_SpinerDependsRhoSie_f,&
@@ -148,6 +149,20 @@ module singularity_eos
                                                 b0, b1, b2c, b2e, b3
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_SAP_Polynomial
+  end interface
+
+  interface
+    integer(kind=c_int) function &
+      init_sg_CRESTReactants(matindex, eos, rho0, a0, a1, a2c, a2e, a3, b0, b1,&
+                             b2c, b2e, b3, sg_mods_enabled, sg_mods_values) &
+      bind(C, name='init_sg_CRESTReactants')
+      import
+      integer(c_int), value, intent(in)      :: matindex
+      type(c_ptr), value, intent(in)         :: eos
+      real(kind=c_double), value, intent(in) :: rho0, a0, a1, a2c, a2e, a3,&
+                                                b0, b1, b2c, b2e, b3
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
+    end function init_sg_CRESTReactants
   end interface
 
   interface
@@ -387,6 +402,21 @@ contains
                                  a3, b0, b1, b2c, b2e, b3, &
                                  c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_SAP_Polynomial_f
+  
+  integer function init_sg_CRESTReactants_f(matindex, eos, rho0, a0, a1, a2c, &
+                                            a2e, a3, b0, b1, b2c, b2e, b3, &
+                                            sg_mods_enabled, sg_mods_values) &
+    result(err)
+    integer(c_int), value, intent(in) :: matindex
+    type(sg_eos_ary_t), intent(in)    :: eos
+    real(kind=8), value, intent(in)   :: rho0, a0, a1, a2c, a2e, a3,&
+             b0, b1, b2c, b2e, b3
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    err = init_sg_CRESTReactants(matindex-1, eos%ptr, rho0, a0, a1, a2c, a2e, &
+                                 a3, b0, b1, b2c, b2e, b3, &
+                                 c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+  end function init_sg_CRESTReactants_f
   
   integer function init_sg_StiffGas_f(matindex, eos, gm1, Cv, &
                                       Pinf, qq, &

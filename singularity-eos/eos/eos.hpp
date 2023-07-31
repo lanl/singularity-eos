@@ -33,6 +33,7 @@
 #include <singularity-eos/base/variadic_utils.hpp>
 
 // EOS models
+#include <singularity-eos/eos/eos_crest.hpp>
 #include <singularity-eos/eos/eos_davis.hpp>
 #include <singularity-eos/eos/eos_eospac.hpp>
 #include <singularity-eos/eos/eos_gruneisen.hpp>
@@ -66,7 +67,8 @@ using singularity::detail::transform_variadic_list;
 // all eos's
 static constexpr const auto full_eos_list =
     tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts, StiffGas,
-       SAP_Polynomial
+       SAP_Polynomial,
+       CRESTReactants
 #ifdef SPINER_USE_HDF
        ,
        SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
