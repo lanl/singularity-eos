@@ -17,7 +17,9 @@ add_executable(eos_unit_tests
   eos_unit_test_helpers.hpp
   test_eos_unit.cpp
   test_eos_gruneisen.cpp
+  test_eos_sap_polynomial.cpp
   test_eos_vinet.cpp
+  test_eos_stiff.cpp
 )
 
 if(SINGULARITY_USE_HDF5)
