@@ -49,7 +49,7 @@ cmake_dependent_option(
 
 option(SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
-option(SINGULARITY_USE_EOSPAC "Pull in eospac" OFF)
+option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
 
 cmake_dependent_option(SINGULARITY_USE_CUDA "Use CUDA backend of Kokkos" ON
                        "SINGULARITY_USE_KOKKOS" OFF)
