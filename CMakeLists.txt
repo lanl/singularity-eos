@@ -51,14 +51,13 @@ option(SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
 
+option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON)
+
 cmake_dependent_option(SINGULARITY_USE_CUDA "Use CUDA backend of Kokkos" ON
                        "SINGULARITY_USE_KOKKOS" OFF)
 cmake_dependent_option(
   SINGULARITY_USE_KOKKOSKERNELS "Use KokkosKernels for LA routines" ON
-  "SINGULARITY_USE_KOKKOS" OFF)
-cmake_dependent_option(
-  SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON
-  "SINGULARITY_USE_KOKKOSKERNELS;SINGULARITY_USE_KOKKOS" OFF)
+  "SINGULARITY_USE_KOKKOS;SINGULARITY_BUILD_CLOSURE" OFF)
 
 # extra build options
 option(SINGULARITY_BUILD_PYTHON "Compile Python bindings" OFF)
@@ -167,6 +166,16 @@ if(SINGULARITY_FORCE_SUBMODULE_MODE)
   set(SINGULARITY_SUBMODULE_MODE ON)
 endif()
 
+if(SINGULARITY_BUILD_CLOSURE AND NOT SINGULARITY_USE_KOKKOSKERNELS)
+  set(SINGULARITY_USE_EIGEN
+      ON
+      CACHE BOOL "" FORCE)
+else()
+  set(SINGULARITY_USE_EIGEN
+      OFF
+      CACHE BOOL "" FORCE)
+endif()
+
 # ------------------------------------------------------------------------------#
 # De-thaw some options
 # ------------------------------------------------------------------------------#
@@ -255,15 +264,13 @@ if(SINGULARITY_SUBMODULE_MODE)
   endif()
   if(SINGULARITY_USE_KOKKOS)
     singularity_import_kokkos()
-    if(SINGULARITY_BUILD_CLOSURE)
-      if(SINGULARITY_USE_KOKKOSKERNELS)
-        singularity_import_kokkoskernels()
-      endif()
+    if(SINGULARITY_USE_KOKKOSKERNELS)
+      singularity_import_kokkoskernels()
     endif()
-  else()
-    if(SINGULARITY_BUILD_CLOSURE)
-      singularity_import_eigen()
-    endif()
+  endif()
+
+  if(SINGULARITY_USE_EIGEN)
+    singularity_import_eigen()
   endif()
 else()
   # use system packages
@@ -278,7 +285,8 @@ else()
     if(SINGULARITY_USE_KOKKOSKERNELS)
       singularity_find_kokkoskernels()
     endif()
-  else()
+  endif()
+  if(SINGULARITY_USE_EIGEN)
     singularity_find_eigen()
   endif()
 
@@ -298,7 +306,8 @@ if(SINGULARITY_USE_KOKKOS)
   if(SINGULARITY_USE_KOKKOSKERNELS)
     singularity_enable_kokkoskernels(singularity-eos)
   endif()
-else()
+endif()
+if(SINGULARITY_USE_EIGEN)
   singularity_enable_eigen(singularity-eos)
 endif()
 
