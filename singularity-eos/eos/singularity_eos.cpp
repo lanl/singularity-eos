@@ -164,7 +164,7 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id, double *const eos
   double insert_data = eospac_vals[1];
   double monotonicity = eospac_vals[2];
   bool apply_smoothing = eospac_vals[3];
-  double apply_splitting = eospac_vals[4];
+  int apply_splitting = eospac_vals[4];
   bool linear_interp = eospac_vals[5];
 
   EOS eosi = SGAPPLYMODSIMPLE(

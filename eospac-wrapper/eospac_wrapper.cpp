@@ -108,7 +108,7 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[], Verbosity eospacWarn,
                         bool invert_at_setup, double insert_data, double monotonicity,
-                        bool apply_smoothing, double apply_splitting,
+                        bool apply_smoothing, eosSplit apply_splitting,
                         bool linear_interp) {
   std::vector<std::string> empty;
   return eosSafeLoad(ntables, matid, tableType, tableHandle, empty, eospacWarn,
@@ -120,7 +120,7 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[],
                         const std::vector<std::string> &table_names, Verbosity eospacWarn,
                         bool invert_at_setup, double insert_data, double monotonicity,
-                        bool apply_smoothing, double apply_splitting,
+                        bool apply_smoothing, eosSplit apply_splitting,
                         bool linear_interp) {
   EOS_INTEGER NTABLES[] = {ntables};
   std::vector<EOS_INTEGER> MATID(ntables, matid);
@@ -179,17 +179,17 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
     }
   }
 
-  if (abs(apply_splitting) == 1) {
+  if (apply_splitting == eosSplit::splitNumProp) {
     for (int i = 0; i < ntables; i++) {
       eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_NUM_PROP, &(EOS_NullVal), &errorCode);
       eosCheckError(errorCode, "eospac options: eos_split_num_prop", eospacWarn);
     }
-  } else if (abs(apply_splitting) == 2) {
+  } else if (apply_splitting == eosSplit::splitIdealGas) {
     for (int i = 0; i < ntables; i++) {
       eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_IDEAL_GAS, &(EOS_NullVal), &errorCode);
       eosCheckError(errorCode, "eospac options: eos_split_ideal_gas", eospacWarn);
     }
-  } else if (abs(apply_splitting) == 3) {
+  } else if (apply_splitting == eosSplit::splitCowan) {
     for (int i = 0; i < ntables; i++) {
       eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_COWAN, &(EOS_NullVal), &errorCode);
       eosCheckError(errorCode, "eospac options: eos_split_cowan", eospacWarn);
