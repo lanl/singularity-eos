@@ -50,6 +50,10 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                            const double Cv0, int const *const enabled,
                            double *const vals);
 
+int init_sg_SAP_Polynomial(const int matindex, EOS *eos, const double rho0, const double a0, const double a1, const double a2c, const double a2e,
+                           const double a3, const double b0, const double b1, const double b2c, const double b2e, const double b3, int const *const enabled,
+                     double *const vals);
+
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
                      const double Pinf, const double qq, int const *const enabled,
                      double *const vals);
