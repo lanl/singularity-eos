@@ -499,7 +499,7 @@ the form
     e = C_V T + q,
 
 where quantities are similar to the ideal gas law with the exception of covolume (:math:`b`) and offset internal energy (:math:`q`).
-It should be noted that covolume is of physical significance, and is a required positive (or zero) quantity.
+It should be noted that covolume is physically significant as it represents the maximum compressibility of the gas, and as a result it should be non-negative.
 
 The entropy for the Noble-Abel EoS is given by
 
