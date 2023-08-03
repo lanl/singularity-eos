@@ -159,12 +159,14 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
 #ifdef SINGULARITY_USE_EOSPAC
 int init_sg_eospac(const int matindex, EOS *eos, const int id, double *const eospac_vals,
                    int const *const enabled, double *const vals) {
+
+  using namespace EospacWrapper;
   assert(matindex >= 0);
   bool invert_at_setup = eospac_vals[0];
   double insert_data = eospac_vals[1];
-  double monotonicity = eospac_vals[2];
+  eospacMonotonicity monotonicity = static_cast<eospacMonotonicity>(eospac_vals[2]);
   bool apply_smoothing = eospac_vals[3];
-  int apply_splitting = eospac_vals[4];
+  eospacSplit apply_splitting = static_cast<eospacSplit>(eospac_vals[4]);
   bool linear_interp = eospac_vals[5];
 
   EOS eosi = SGAPPLYMODSIMPLE(
@@ -178,7 +180,7 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id, double *const eos
   EOS eos_ = SGAPPLYMOD(
       EOSPAC(id, invert_at_setup = invert_at_setup, insert_data = insert_data,
              monotonicity = monotonicity, apply_smoothing = apply_smoothing,
-             apply_splitting = apply_splitting, linear_interp = linear_interp));
+	     apply_splitting = apply_splitting, linear_interp = linear_interp));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }

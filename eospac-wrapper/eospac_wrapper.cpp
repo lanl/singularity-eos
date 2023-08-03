@@ -107,8 +107,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
 
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[], Verbosity eospacWarn,
-                        bool invert_at_setup, double insert_data, double monotonicity,
-                        bool apply_smoothing, eosSplit apply_splitting,
+                        bool invert_at_setup, double insert_data, eospacMonotonicity monotonicity,
+                        bool apply_smoothing, eospacSplit apply_splitting,
                         bool linear_interp) {
   std::vector<std::string> empty;
   return eosSafeLoad(ntables, matid, tableType, tableHandle, empty, eospacWarn,
@@ -119,8 +119,8 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[],
                         const std::vector<std::string> &table_names, Verbosity eospacWarn,
-                        bool invert_at_setup, double insert_data, double monotonicity,
-                        bool apply_smoothing, eosSplit apply_splitting,
+                        bool invert_at_setup, double insert_data, eospacMonotonicity monotonicity,
+                        bool apply_smoothing, eospacSplit apply_splitting,
                         bool linear_interp) {
   EOS_INTEGER NTABLES[] = {ntables};
   std::vector<EOS_INTEGER> MATID(ntables, matid);
@@ -152,7 +152,7 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
 
   // choice of which table types setOption is called on mimics SAP. Some table types are
   // incmopatible whiel others lead to numerical issues.
-  if (monotonicity == 1 || monotonicity == 2) {
+  if (monotonicity == eospacMonotonicity::monotonicityX || monotonicity ==eospacMonotonicity::monotonicityXY ) {
     for (int i = 0; i < ntables; i++) {
       if (tableType[i] != EOS_Uc_D and tableType[i] != EOS_Ut_DT and
           tableType[i] != EOS_Ut_DPt) {
@@ -162,7 +162,7 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
     }
   }
 
-  if (monotonicity == 2 || monotonicity == 3) {
+  if (monotonicity ==eospacMonotonicity::monotonicityXY || monotonicity == eospacMonotonicity::monotonicityY) {
     for (int i = 0; i < ntables; i++) {
       eos_SetOption(&(tableHandle[i]), &EOS_MONOTONIC_IN_Y, &(EOS_NullVal), &errorCode);
       eosCheckError(errorCode, "eospac options: eos_monotonic_in_y", eospacWarn);
@@ -179,17 +179,17 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
     }
   }
 
-  if (apply_splitting == eosSplit::splitNumProp) {
+  if (apply_splitting == eospacSplit::splitNumProp) {
     for (int i = 0; i < ntables; i++) {
       eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_NUM_PROP, &(EOS_NullVal), &errorCode);
       eosCheckError(errorCode, "eospac options: eos_split_num_prop", eospacWarn);
     }
-  } else if (apply_splitting == eosSplit::splitIdealGas) {
+  } else if (apply_splitting == eospacSplit::splitIdealGas) {
     for (int i = 0; i < ntables; i++) {
       eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_IDEAL_GAS, &(EOS_NullVal), &errorCode);
       eosCheckError(errorCode, "eospac options: eos_split_ideal_gas", eospacWarn);
     }
-  } else if (apply_splitting == eosSplit::splitCowan) {
+  } else if (apply_splitting == eospacSplit::splitCowan) {
     for (int i = 0; i < ntables; i++) {
       eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_COWAN, &(EOS_NullVal), &errorCode);
       eosCheckError(errorCode, "eospac options: eos_split_cowan", eospacWarn);

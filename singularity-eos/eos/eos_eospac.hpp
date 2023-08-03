@@ -33,7 +33,11 @@
 
 namespace singularity {
 
+
+
 using namespace eos_base;
+using namespace EospacWrapper;
+  
 
 // How do I make a destructor? How do I free the EOS memory if more than one
 // points to the same table? Does EOSPAC give me multiple (reference-counted)
@@ -42,13 +46,14 @@ using namespace eos_base;
 // Only really works in serial
 // Not really supported on device
 class EOSPAC : public EosBase<EOSPAC> {
+
  public:
   inline EOSPAC() = default;
 
   ////add options here... and elsewhere
   inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
-                Real monotonicity = 0.0, bool apply_smoothing = false,
-                eosSplit apply_splitting = eosSplit::none, bool linear_interp = false);
+                eospacMonotonicity monotonicity = eospacMonotonicity::none, bool apply_smoothing = false,
+                eospacSplit apply_splitting = eospacSplit::none, bool linear_interp = false);
   inline EOSPAC GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
@@ -1224,7 +1229,7 @@ class EOSPAC : public EosBase<EOSPAC> {
 // ======================================================================
 
 inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
-                      Real monotonicity, bool apply_smoothing, eosSplit apply_splitting,
+                      EospacWrapper::eospacMonotonicity monotonicity, bool apply_smoothing, EospacWrapper::eospacSplit apply_splitting,
                       bool linear_interp)
     : matid_(matid) {
   using namespace EospacWrapper;
@@ -1235,7 +1240,7 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
       std::vector<std::string>({"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT",
                                 "EOS_T_DPt", "EOS_Pt_DUt", "EOS_Uc_D"}),
       Verbosity::Quiet, invert_at_setup = invert_at_setup, insert_data = insert_data,
-      monotonicity = monotonicity, apply_smoothing = apply_smoothing,
+      monotonicity = monotonicity, apply_smoothing = apply_smoothing, apply_splitting=apply_splitting,
       linear_interp = linear_interp);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
