@@ -114,6 +114,15 @@ SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
           1.900000000000000000000000000000e+12, 1.900389463209202148437500000000e+12,
           1.900842516531505615234375000000e+12};
 
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create host-side mirrors of the inputs and copy the inputs. These are
+      // just used for the comparisons
+      auto rho = Kokkos::create_mirror_view(v_rho);
+      auto sie = Kokkos::create_mirror_view(v_sie);
+      Kokkos::deep_copy(rho, v_rho);
+      Kokkos::deep_copy(sie, v_sie);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
       WHEN("A P(rho, e) lookup is performed") {
         eos.PressureFromDensityInternalEnergy(v_rho, v_sie, v_P, num);
 #ifdef PORTABILITY_STRATEGY_KOKKOS

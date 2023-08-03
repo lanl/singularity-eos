@@ -36,7 +36,7 @@ enum class EOSType {
   JWL,
   DavisReactants,
   DavisProducts
-#ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
   ,
   SpinerEOSDependsRhoT,
   SpinerEOSDependsRhoSie,
@@ -53,7 +53,7 @@ const params_t NO_PARAMS;
 
 // TODO: Extend if needed
 const std::unordered_set<EOSType> modifiable({EOSType::IdealGas
-#ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
                                               ,
                                               EOSType::SpinerEOSDependsRhoT,
                                               EOSType::SpinerEOSDependsRhoSie,
