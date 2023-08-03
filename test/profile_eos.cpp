@@ -34,15 +34,15 @@
 
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
+#include <type_traits>
 
 using namespace singularity;
 
 using duration = std::chrono::microseconds;
 using dvec = std::vector<double>;
 using ivec = std::vector<int>;
-using Spiner::DataBox;
 using Spiner::RegularGrid1D;
-
+using DataBox = Spiner::DataBox<Real>;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using RView = Kokkos::View<Real *>;
 using RMirror = typename RView::HostMirror;
