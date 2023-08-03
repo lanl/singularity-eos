@@ -1461,7 +1461,6 @@ EOSPAC::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
   EOS_REAL T[1] = {temperatureToSesame(temp)};
   EOS_REAL dx[1], dy[1], R[1], E[1];
   EOS_INTEGER nxypairs = 1;
-  // EOS_INTEGER errorCode;
   EOS_INTEGER table;
 
   table = RofPT_table_;

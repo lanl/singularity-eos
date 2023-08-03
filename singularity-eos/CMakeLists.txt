@@ -46,19 +46,22 @@ set(EOS_SRCS
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
-  list(APPEND EOS_SRCS 
-       eos/get_sg_eos.cpp)
-  if (SINGULARITY_USE_KOKKOS)
-    list(APPEND EOS_SRCS 
-         eos/get_sg_eos_p_t.cpp
-         eos/get_sg_eos_rho_t.cpp
-         eos/get_sg_eos_rho_p.cpp
-         eos/get_sg_eos_rho_e.cpp)
-  endif()
   list(APPEND EOS_HEADERS
-       closure/mixed_cell_models.hpp
-       eos/get_sg_eos.hpp
-       eos/get_sg_eos_lambdas.hpp)
+       closure/mixed_cell_models.hpp)
+  if (SINGULARITY_USE_FORTRAN OR SINGULARITY_BUILD_TESTS)
+    list(APPEND EOS_SRCS 
+         eos/get_sg_eos.cpp)
+    if (SINGULARITY_USE_KOKKOS)
+      list(APPEND EOS_SRCS 
+           eos/get_sg_eos_p_t.cpp
+           eos/get_sg_eos_rho_t.cpp
+           eos/get_sg_eos_rho_p.cpp
+           eos/get_sg_eos_rho_e.cpp)
+    endif()
+    list(APPEND EOS_HEADERS
+         eos/get_sg_eos.hpp
+         eos/get_sg_eos_lambdas.hpp)
+  endif()
 endif()
 
 if (SINGULARITY_USE_FORTRAN)
