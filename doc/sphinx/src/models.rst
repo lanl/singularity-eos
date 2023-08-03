@@ -522,8 +522,8 @@ The settable parameters for this EOS are :math:`\gamma-1`, specific
 heat capacity (:math:`C_V`), covolume (:math:`b`) and offset internal energy (:math:`q`). Optionally, the reference state for the entropy calculation can
 be provided by setting the reference temperature, pressure, and entropy offset.
 
-The ``NobleAbel`` EOS constructor has four arguments, ``gm1``, which is :math:`\gamma-1`, ``Cv``, the
-specific heat :math:`C_V`, :math:`b`, the covolume, and :math:`q`, the internal energy offset:
+The ``NobleAbel`` EOS constructor has four arguments: ``gm1``, which is :math:`\gamma-1`; ``Cv``, the
+specific heat :math:`C_V`; :math:`b`, the covolume; and :math:`q`, the internal energy offset.
 
 .. code-block:: cpp
 
