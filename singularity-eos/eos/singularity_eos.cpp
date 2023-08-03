@@ -193,7 +193,7 @@ int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const doubl
   return init_sg_StiffGas(matindex, eos, gm1, Cv, Pinf, qq, def_en, def_v);
 }
 
-#ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int matid, int const *const enabled,
                               double *const vals) {
