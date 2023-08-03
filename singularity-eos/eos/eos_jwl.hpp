@@ -126,6 +126,10 @@ PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(const Real 
 }
 PORTABLE_INLINE_FUNCTION Real JWL::MinInternalEnergyFromDensity(const Real rho,
                                                                 Real *lambda) const {
+#ifndef NDEBUG
+      printf(
+          "WARNING: MinInternalEnergtyFromDensity is not defined for JWL EOS.");
+#endif
   return 0.0;
 }
 PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(const Real rho,

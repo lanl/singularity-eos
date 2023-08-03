@@ -961,6 +961,10 @@ Real SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy(const Real rho,
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoT::MinInternalEnergyFromDensity(const Real rho,
                                                         Real *lambda) const {
+#ifndef NDEBUG
+      printf(
+          "WARNING: MinInternalEnergtyFromDensity is not defined for Spiner EOS.");
+#endif
   return 0.0;
 }
 PORTABLE_INLINE_FUNCTION

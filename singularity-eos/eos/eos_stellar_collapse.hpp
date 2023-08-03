@@ -512,6 +512,11 @@ Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho, const Re
 }
 PORTABLE_INLINE_FUNCTION
 Real StellarCollapse::MinInternalEnergyFromDensity(const Real rho, Real *lambda) const {
+#ifndef NDEBUG
+      printf(
+          "WARNING: MinInternalEnergtyFromDensity is not defined for stellar collapse EOS.");
+#endif
+
   return 0.0;
 }
 

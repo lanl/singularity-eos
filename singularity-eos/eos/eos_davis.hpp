@@ -63,6 +63,10 @@ class DavisReactants : public EosBase<DavisReactants> {
 
   PORTABLE_INLINE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+#ifndef NDEBUG
+      printf(
+          "WARNING: MinInternalEnergtyFromDensity is not defined for Davis EOS.");
+#endif
     return 0.0;
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
