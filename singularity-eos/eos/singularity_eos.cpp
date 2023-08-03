@@ -156,6 +156,45 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                                 Cv0, def_en, def_v);
 }
 
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
+                              const int matid, int const *const enabled,
+                              double *const vals) {
+  assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(SpinerEOSDependsRhoT(std::string(filename), matid));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
+  EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoT(std::string(filename), matid));
+  eos[matindex] = eos_.GetOnDevice();
+  return 0;
+}
+
+int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
+                              const int matid) {
+  return init_sg_SpinerDependsRhoT(matindex, eos, filename, matid, def_en, def_v);
+}
+
+int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filename,
+                                const int matid, int const *const enabled,
+                                double *const vals) {
+  assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(SpinerEOSDependsRhoSie(std::string(filename), matid));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
+  EOS eos_ = SGAPPLYMOD(SpinerEOSDependsRhoSie(std::string(filename), matid));
+  eos[matindex] = eos_.GetOnDevice();
+  return 0;
+}
+int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filename,
+                                const int matid) {
+  return init_sg_SpinerDependsRhoSie(matindex, eos, filename, matid, def_en, def_v);
+}
+#endif
+
 #ifdef SINGULARITY_USE_EOSPAC
 int init_sg_eospac(const int matindex, EOS *eos, const int id, double *const eospac_vals,
                    int const *const enabled, double *const vals) {
@@ -190,27 +229,45 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
 }
 #endif // SINGULARITY_USE_EOSPAC
 
-#undef SGAPPLYMOD
 
-int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
-                                             const double *sies, double *pressures,
-                                             const int len) {
-  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
+
+int init_sg_SAP_Polynomial(const int matindex, EOS *eos, const double rho0,
+                           const double a0, const double a1, const double a2c,
+                           const double a2e, const double a3, const double b0,
+                           const double b1, const double b2c, const double b2e,
+                           const double b3, int const *const enabled,
+                           double *const vals) {
+  assert(matindex >= 0);
+  EOS eosi =
+      SGAPPLYMODSIMPLE(SAP_Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
+  EOS eos_ = SGAPPLYMOD(SAP_Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3));
+  eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
 
-int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos,
-                                        double *sies, const int len) {
-  eos[matindex].MinInternalEnergyFromDensity(rhos, sies, len);
+int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
+                     const double Pinf, const double qq, int const *const enabled,
+                     double *const vals) {
+  assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(StiffGas(gm1, Cv, Pinf, qq));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
+  EOS eos_ = SGAPPLYMOD(StiffGas(gm1, Cv, Pinf, qq));
+  eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
 
-int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos,
-                                                const double *rhos, const double *sies,
-                                                double *bmods, const int len) {
-  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
-  return 0;
+int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
+                     const double Pinf, const double qq) {
+  return init_sg_StiffGas(matindex, eos, gm1, Cv, Pinf, qq, def_en, def_v);
 }
+
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using Lrgt = Kokkos::LayoutRight;
@@ -789,6 +846,30 @@ int get_sg_eos( // sizing information
 #endif // PORTABILITY_STRATEGY_KOKKOS
   return ret;
 }
+
+
+#undef SGAPPLYMOD
+
+int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
+                                             const double *sies, double *pressures,
+                                             const int len) {
+  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
+  return 0;
+}
+
+int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos,
+                                        double *sies, const int len) {
+  eos[matindex].MinInternalEnergyFromDensity(rhos, sies, len);
+  return 0;
+}
+
+int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos,
+                                                const double *rhos, const double *sies,
+                                                double *bmods, const int len) {
+  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
+  return 0;
+}
+
 
 int finalize_sg_eos(const int nmat, EOS *&eos, const int own_kokkos) {
   {

@@ -37,6 +37,10 @@ module singularity_eos
     init_sg_JWL_f,&
     init_sg_DavisProducts_f,&
     init_sg_DavisReactants_f,&
+    init_sg_SAP_Polynomial_f,&
+    init_sg_StiffGas_f,&
+!    init_sg_SpinerDependsRhoT_f,&
+!    init_sg_SpinerDependsRhoSie_f,&
     init_sg_eospac_f,&
     get_sg_PressureFromDensityInternalEnergy_f,&
     get_sg_MinInternalEnergyFromDensity_f,&
@@ -120,6 +124,33 @@ module singularity_eos
                                                 Z, alpha, Cv0
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_DavisReactants
+  end interface
+  
+  interface
+    integer(kind=c_int) function &
+      init_sg_StiffGas(matindex, eos, gm1, Cv, Pinf, qq, sg_mods_enabled, &
+                       sg_mods_values) &
+      bind(C, name='init_sg_StiffGas')
+      import
+      integer(c_int), value, intent(in)      :: matindex
+      type(c_ptr), value, intent(in)         :: eos
+      real(kind=c_double), value, intent(in) :: gm1, Cv, Pinf, qq
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
+    end function init_sg_StiffGas
+  end interface
+  
+  interface
+    integer(kind=c_int) function &
+      init_sg_SAP_Polynomial(matindex, eos, rho0, a0, a1, a2c, a2e, a3, b0, b1,&
+                             b2c, b2e, b3, sg_mods_enabled, sg_mods_values) &
+      bind(C, name='init_sg_SAP_Polynomial')
+      import
+      integer(c_int), value, intent(in)      :: matindex
+      type(c_ptr), value, intent(in)         :: eos
+      real(kind=c_double), value, intent(in) :: rho0, a0, a1, a2c, a2e, a3,&
+                                                b0, b1, b2c, b2e, b3
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
+    end function init_sg_SAP_Polynomial
   end interface
 
   interface
@@ -356,6 +387,65 @@ contains
                                  C, G0, Z, alpha, Cv0, c_loc(sg_mods_enabled), &
                                  c_loc(sg_mods_values))
   end function init_sg_DavisReactants_f
+
+  integer function init_sg_SAP_Polynomial_f(matindex, eos, rho0, a0, a1, a2c, &
+                                            a2e, a3, b0, b1, b2c, b2e, b3, &
+                                            sg_mods_enabled, sg_mods_values) &
+    result(err)
+    integer(c_int), value, intent(in) :: matindex
+    type(sg_eos_ary_t), intent(in)    :: eos
+    real(kind=8), value, intent(in)   :: rho0, a0, a1, a2c, a2e, a3,&
+             b0, b1, b2c, b2e, b3
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    err = init_sg_SAP_Polynomial(matindex-1, eos%ptr, rho0, a0, a1, a2c, a2e, &
+                                 a3, b0, b1, b2c, b2e, b3, &
+                                 c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+  end function init_sg_SAP_Polynomial_f
+  
+  integer function init_sg_StiffGas_f(matindex, eos, gm1, Cv, &
+                                      Pinf, qq, &
+                                      sg_mods_enabled, sg_mods_values) &
+    result(err)
+    integer(c_int), value, intent(in) :: matindex
+    type(sg_eos_ary_t), intent(in)    :: eos
+    real(kind=8), value, intent(in)   :: gm1, Cv, Pinf, qq
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    err = init_sg_StiffGas(matindex-1, eos%ptr, gm1, Cv, Pinf, qq, &
+                           c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+  end function init_sg_StiffGas_f
+  
+!  integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
+!                                               sg_mods_enabled, &
+!                                               sg_mods_values) &
+!    result(err)
+!    integer(c_int), value, intent(in)         :: matindex
+!    type(sg_eos_ary_t), intent(in)            :: eos
+!    character(len=*, kind=c_char), intent(in) :: filename
+!    integer(c_int), intent(inout)             :: id
+!    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+!    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+!    err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
+!                                    trim(filename)//C_NULL_CHAR, id, &
+!                                    c_loc(sg_mods_enabled), &
+!                                    c_loc(sg_mods_values))
+!  end function init_sg_SpinerDependsRhoT_f
+
+!  integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, &
+!                                                 sg_mods_enabled, &
+!                                                 sg_mods_values) &
+!    result(err)
+!    integer(c_int), value, intent(in)         :: matindex, id
+!    type(sg_eos_ary_t), intent(in)            :: eos
+!    character(len=*, kind=c_char), intent(in) :: filename
+!    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+!    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+!    err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
+!                                      trim(filename)//C_NULL_CHAR, id, &
+!                                      c_loc(sg_mods_enabled), &
+!                                      c_loc(sg_mods_values))
+!  end function init_sg_SpinerDependsRhoSie_f
 
   integer function init_sg_eospac_f(matindex, eos, id, eospac_opts_values, &
        sg_mods_enabled, sg_mods_values) &
