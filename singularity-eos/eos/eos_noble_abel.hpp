@@ -62,7 +62,7 @@ class NobleAbel : public EosBase<NobleAbel> {
     return std::max(robust::SMALL(), (sie - _qq) / _Cv);
   }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
-    PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_Cv > 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
     PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");
   }
