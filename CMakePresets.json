@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "with_eospac",
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_USE_EOSPAC": "ON"
+      }
+    },
+    {
+      "name": "with_spiner",
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_USE_SPINER": "ON"
+      }
+    },
+    {
+      "name": "with_kokkos_gpu",
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_USE_KOKKOS": "ON"
+      }
+    },
+    {
+      "name": "with_kokkos_nogpu",
+      "hidden": true,
+      "inherits": [
+        "with_kokkos_gpu"
+      ],
+      "cacheVariables": {
+        "SINGULARITY_USE_CUDA": "OFF"
+      }
+    },
+    {
+      "name": "with_testing",
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "with_extras",
+      "inherits": [
+        "with_spiner",
+        "with_eospac"
+      ],
+      "hidden": true,
+      "cacheVariables": {
+        "SINGULARITY_BUILD_SESAME2SPINER": "ON",
+        "SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER": "ON"
+      }
+    },
+    {
+      "name": "basic",
+      "inherits": [
+        "base",
+        "with_spiner",
+        "with_eospac"
+      ]
+    },
+    {
+      "name": "basic_with_testing",
+      "inherits": [
+        "basic",
+        "with_testing"
+      ]
+    },
+    {
+      "name": "kokkos_nogpu",
+      "inherits": [
+        "basic",
+        "with_kokkos_nogpu"
+      ]
+    },
+    {
+      "name": "kokkos_nogpu_with_testing",
+      "inherits": [
+        "kokkos_nogpu",
+        "with_testing"
+      ]
+    },
+    {
+      "name": "kokkos_gpu",
+      "inherits": [
+        "basic",
+        "with_kokkos_gpu"
+      ]
+    },
+    {
+      "name": "kokkos_gpu_with_testing",
+      "inherits": [
+        "kokkos_gpu",
+        "with_testing"
+      ]
+    }
+  ]
+}

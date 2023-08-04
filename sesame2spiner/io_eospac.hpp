@@ -25,7 +25,7 @@
 
 #include <eos_Interface.h> // eospac API
 
-#ifndef SPINER_USE_HDF
+#ifndef SINGULARITY_USE_SPINER_WITH_HDF5
 #error "HDF5 must be enabled"
 #endif
 

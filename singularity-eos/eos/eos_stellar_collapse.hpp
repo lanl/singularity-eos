@@ -14,7 +14,8 @@
 
 #ifndef _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
-#ifdef SPINER_USE_HDF
+#include <type_traits>
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
 // C++ includes
 #include <iostream>
@@ -57,6 +58,8 @@ using namespace eos_base;
 // is linear extrapolation in log-log space. We should reconsider this
 // and introduce extrapolation as needed.
 class StellarCollapse : public EosBase<StellarCollapse> {
+  using DataBox = Spiner::DataBox<Real>;
+
  public:
   using DataBox = Spiner::DataBox<Real>;
 
@@ -211,8 +214,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline int readSCInt_(const hid_t &file_id, const std::string &name);
   inline void readBounds_(const hid_t &file_id, const std::string &name, int size,
                           Real &lo, Real &hi);
-  inline void readSCDset_(const hid_t &file_id, const std::string &name,
-                          DataBox &db);
+  inline void readSCDset_(const hid_t &file_id, const std::string &name, DataBox &db);
 
   inline void medianFilter_(DataBox &db);
   inline void medianFilter_(const DataBox &in, DataBox &out);
@@ -413,21 +415,21 @@ inline void StellarCollapse::Save(const std::string &filename) {
 
 inline StellarCollapse StellarCollapse::GetOnDevice() {
   StellarCollapse other;
-  other.lP_ = Spiner::getOnDeviceDataBox(lP_);
-  other.lE_ = Spiner::getOnDeviceDataBox(lE_);
-  other.dPdRho_ = Spiner::getOnDeviceDataBox(dPdRho_);
-  other.dPdE_ = Spiner::getOnDeviceDataBox(dPdE_);
-  other.dEdT_ = Spiner::getOnDeviceDataBox(dEdT_);
-  other.entropy_ = Spiner::getOnDeviceDataBox(entropy_);
-  other.Xa_ = Spiner::getOnDeviceDataBox(Xa_);
-  other.Xh_ = Spiner::getOnDeviceDataBox(Xh_);
-  other.Xn_ = Spiner::getOnDeviceDataBox(Xn_);
-  other.Xp_ = Spiner::getOnDeviceDataBox(Xp_);
-  other.Abar_ = Spiner::getOnDeviceDataBox(Abar_);
-  other.Zbar_ = Spiner::getOnDeviceDataBox(Zbar_);
-  other.lBMod_ = Spiner::getOnDeviceDataBox(lBMod_);
-  other.eCold_ = Spiner::getOnDeviceDataBox(eCold_);
-  other.eHot_ = Spiner::getOnDeviceDataBox(eHot_);
+  other.lP_ = Spiner::getOnDeviceDataBox<Real>(lP_);
+  other.lE_ = Spiner::getOnDeviceDataBox<Real>(lE_);
+  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real>(dPdRho_);
+  other.dPdE_ = Spiner::getOnDeviceDataBox<Real>(dPdE_);
+  other.dEdT_ = Spiner::getOnDeviceDataBox<Real>(dEdT_);
+  other.entropy_ = Spiner::getOnDeviceDataBox<Real>(entropy_);
+  other.Xa_ = Spiner::getOnDeviceDataBox<Real>(Xa_);
+  other.Xh_ = Spiner::getOnDeviceDataBox<Real>(Xh_);
+  other.Xn_ = Spiner::getOnDeviceDataBox<Real>(Xn_);
+  other.Xp_ = Spiner::getOnDeviceDataBox<Real>(Xp_);
+  other.Abar_ = Spiner::getOnDeviceDataBox<Real>(Abar_);
+  other.Zbar_ = Spiner::getOnDeviceDataBox<Real>(Zbar_);
+  other.lBMod_ = Spiner::getOnDeviceDataBox<Real>(lBMod_);
+  other.eCold_ = Spiner::getOnDeviceDataBox<Real>(eCold_);
+  other.eHot_ = Spiner::getOnDeviceDataBox<Real>(eHot_);
   other.memoryStatus_ = DataStatus::OnDevice;
   other.numRho_ = numRho_;
   other.numT_ = numT_;
@@ -841,8 +843,7 @@ inline void StellarCollapse::medianFilter_(DataBox &db) {
   free(tmp);
 }
 
-inline void StellarCollapse::medianFilter_(const DataBox &in,
-                                           DataBox &out) {
+inline void StellarCollapse::medianFilter_(const DataBox &in, DataBox &out) {
   Real buffer[MF_S];
   // filter, overwriting as needed
   for (int iY = MF_W; iY < numYe_ - MF_W; ++iY) {
@@ -860,8 +861,7 @@ inline void StellarCollapse::medianFilter_(const DataBox &in,
 }
 
 inline void StellarCollapse::fillMedianBuffer_(Real buffer[], int width, int iY, int iT,
-                                               int irho,
-                                               const DataBox &tab) const {
+                                               int irho, const DataBox &tab) const {
   int i = 0;
   for (int iWy = -width; iWy <= width; iWy++) {
     for (int iWt = -width; iWt <= width; iWt++) {
@@ -1012,5 +1012,5 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
 }
 } // namespace singularity
 
-#endif // SPINER_USE_HDF
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #endif // _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_

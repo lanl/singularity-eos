@@ -34,12 +34,14 @@
 
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
+#include <type_traits>
 
 using namespace singularity;
 
 using duration = std::chrono::microseconds;
 using dvec = std::vector<double>;
 using ivec = std::vector<int>;
+
 using DataBox = Spiner::DataBox<Real>;
 using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 
