@@ -40,7 +40,7 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
                         PRIVATE Catch2::Catch2 singularity-eos::singularity-eos)
 endif()
 
-if(SINGULARITY_BUILD_CLOSURE)
+if(SINGULARITY_BUILD_CLOSURE AND SINGULARITY_USE_SPINER)
   add_executable(test_pte test_pte.cpp)
   target_link_libraries(test_pte PRIVATE Catch2::Catch2
                                          singularity-eos::singularity-eos)
@@ -85,8 +85,10 @@ if(SINGULARITY_BUILD_PYTHON AND SINGULARITY_TEST_PYTHON)
                                                  "${PYTHON_TEST_ENVIRONMENT}")
 endif()
 
-add_executable(profile_eos profile_eos.cpp)
-target_link_libraries(profile_eos singularity-eos::singularity-eos)
+if(SINGULARITY_USE_SPINER)
+  add_executable(profile_eos profile_eos.cpp)
+  target_link_libraries(profile_eos singularity-eos::singularity-eos)
+endif()
 
 if(SINGULARITY_USE_EOSPAC
    AND SINGULARITY_TEST_SESAME
