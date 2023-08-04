@@ -4,6 +4,7 @@
 - [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
+- [[PR288]](https://github.com/lanl/singularity-eos/pull/288) Don't build tests that depend on spiner when spiner is disabled
 - [[PR287]](https://github.com/lanl/singularity-eos/pull/287) Fix testing logic with new HDF5 options
 - [[PR282]](https://github.com/lanl/singularity-eos/pull/282) Fix missing deep copy in sap polynomial tests
 - [[PR281]](https://github.com/lanl/singularity-eos/pull/281) Pin spiner in spackage to a specific, tested version
