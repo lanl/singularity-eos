@@ -219,7 +219,7 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id, double *const eos
   EOS eos_ = SGAPPLYMOD(
       EOSPAC(id, invert_at_setup = invert_at_setup, insert_data = insert_data,
              monotonicity = monotonicity, apply_smoothing = apply_smoothing,
-	     apply_splitting = apply_splitting, linear_interp = linear_interp));
+             apply_splitting = apply_splitting, linear_interp = linear_interp));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
@@ -228,8 +228,6 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
   return init_sg_eospac(matindex, eos, id, eospac_vals, def_en, def_v);
 }
 #endif // SINGULARITY_USE_EOSPAC
-
-
 
 int init_sg_SAP_Polynomial(const int matindex, EOS *eos, const double rho0,
                            const double a0, const double a1, const double a2c,
@@ -267,7 +265,6 @@ int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const doubl
                      const double Pinf, const double qq) {
   return init_sg_StiffGas(matindex, eos, gm1, Cv, Pinf, qq, def_en, def_v);
 }
-
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using Lrgt = Kokkos::LayoutRight;
@@ -847,7 +844,6 @@ int get_sg_eos( // sizing information
   return ret;
 }
 
-
 #undef SGAPPLYMOD
 
 int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
@@ -869,7 +865,6 @@ int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos,
   eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
   return 0;
 }
-
 
 int finalize_sg_eos(const int nmat, EOS *&eos, const int own_kokkos) {
   {

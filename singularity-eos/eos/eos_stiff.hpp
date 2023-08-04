@@ -81,8 +81,7 @@ class StiffGas : public EosBase<StiffGas> {
   PORTABLE_INLINE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
 #ifndef NDEBUG
-      printf(
-          "WARNING: MinInternalEnergtyFromDensity is not defined for stiff EOS.");
+    printf("WARNING: MinInternalEnergtyFromDensity is not defined for stiff EOS.");
 #endif
     return 0.0;
   };

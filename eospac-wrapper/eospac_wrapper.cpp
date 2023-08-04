@@ -19,8 +19,8 @@
 #include <regex>
 #include <string>
 #include <vector>
-#include "eospac_wrapper.hpp"
 #include <eos_Interface.h>
+#include "eospac_wrapper.hpp"
 
 namespace EospacWrapper {
 
@@ -86,8 +86,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
 
     comments.resize(static_cast<int>(commentLen));
     metadata.comments.resize(comments.size());
-    
-    if (commentLen>0)    eosSafeTableCmnts(&eospacComments, comments.data(), eospacWarn);
+
+    if (commentLen > 0) eosSafeTableCmnts(&eospacComments, comments.data(), eospacWarn);
     for (size_t i = 0; i < comments.size(); i++) {
       metadata.comments[i] = comments[i];
     }
@@ -107,9 +107,9 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
 
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[], Verbosity eospacWarn,
-                        bool invert_at_setup, double insert_data, eospacMonotonicity monotonicity,
-                        bool apply_smoothing, eospacSplit apply_splitting,
-                        bool linear_interp) {
+                        bool invert_at_setup, double insert_data,
+                        eospacMonotonicity monotonicity, bool apply_smoothing,
+                        eospacSplit apply_splitting, bool linear_interp) {
   std::vector<std::string> empty;
   return eosSafeLoad(ntables, matid, tableType, tableHandle, empty, eospacWarn,
                      invert_at_setup, insert_data, monotonicity, apply_smoothing,
@@ -119,9 +119,9 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[],
                         const std::vector<std::string> &table_names, Verbosity eospacWarn,
-                        bool invert_at_setup, double insert_data, eospacMonotonicity monotonicity,
-                        bool apply_smoothing, eospacSplit apply_splitting,
-                        bool linear_interp) {
+                        bool invert_at_setup, double insert_data,
+                        eospacMonotonicity monotonicity, bool apply_smoothing,
+                        eospacSplit apply_splitting, bool linear_interp) {
   EOS_INTEGER NTABLES[] = {ntables};
   std::vector<EOS_INTEGER> MATID(ntables, matid);
 
@@ -152,7 +152,8 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
 
   // choice of which table types setOption is called on mimics SAP. Some table types are
   // incmopatible whiel others lead to numerical issues.
-  if (monotonicity == eospacMonotonicity::monotonicityX || monotonicity ==eospacMonotonicity::monotonicityXY ) {
+  if (monotonicity == eospacMonotonicity::monotonicityX ||
+      monotonicity == eospacMonotonicity::monotonicityXY) {
     for (int i = 0; i < ntables; i++) {
       if (tableType[i] != EOS_Uc_D and tableType[i] != EOS_Ut_DT and
           tableType[i] != EOS_Ut_DPt) {
@@ -162,7 +163,8 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
     }
   }
 
-  if (monotonicity ==eospacMonotonicity::monotonicityXY || monotonicity == eospacMonotonicity::monotonicityY) {
+  if (monotonicity == eospacMonotonicity::monotonicityXY ||
+      monotonicity == eospacMonotonicity::monotonicityY) {
     for (int i = 0; i < ntables; i++) {
       eos_SetOption(&(tableHandle[i]), &EOS_MONOTONIC_IN_Y, &(EOS_NullVal), &errorCode);
       eosCheckError(errorCode, "eospac options: eos_monotonic_in_y", eospacWarn);
