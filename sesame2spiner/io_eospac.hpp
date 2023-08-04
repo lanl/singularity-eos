@@ -37,8 +37,10 @@
 #include <eospac-wrapper/eospac_wrapper.hpp>
 
 using EospacWrapper::Verbosity;
-using DataBox = Spiner::DataBox<Real>;
+constexpr int NGRIDS = 3;
 using RegularGrid1D = Spiner::RegularGrid1D<Real>;
+using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
+using DataBox = Spiner::DataBox<Real, Grid_t>;
 
 // For logarithmic interpolation, quantities may be negative.
 // If they are, use offset to ensure negative values make sense.
@@ -47,7 +49,7 @@ class Bounds {
   Bounds() {}
 
   Bounds(Real min, Real max, int N, Real offset)
-      : grid(RegularGrid1D(min, max, N)), offset(offset) {}
+    : grid(Grid_t(std::vector<RegularGrid1D>{RegularGrid1D(min, max, N)}), offset(offset) {}
 
   Bounds(Real min, Real max, int N, bool convertToLog = false, Real shrinkRange = 0,
          Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
@@ -90,7 +92,7 @@ class Bounds {
       }
     }
 
-    grid = RegularGrid1D(min, max, N);
+    grid = Grid_t(min, max, N);
   }
 
   inline Real log2lin(Real xl) const { return singularity::FastMath::pow10(xl) - offset; }
@@ -105,7 +107,7 @@ class Bounds {
   }
 
  public:
-  RegularGrid1D grid;
+  Grid_t grid;
   Real offset;
 };
 
