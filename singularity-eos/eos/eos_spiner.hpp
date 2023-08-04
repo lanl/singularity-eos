@@ -65,8 +65,6 @@ using namespace eos_base;
   we use log-linear extrapolation.
 */
 class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
-  using DataBox = Spiner::DataBox<Real>;
-
  public:
   using DataBox = Spiner::DataBox<Real>;
   
@@ -302,8 +300,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
 class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
-  using DataBox = Spiner::DataBox<Real>;
-
  public:
   using DataBox = Spiner::DataBox<Real>;
   struct SP5Tables {

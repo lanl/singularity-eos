@@ -58,8 +58,6 @@ using namespace eos_base;
 // is linear extrapolation in log-log space. We should reconsider this
 // and introduce extrapolation as needed.
 class StellarCollapse : public EosBase<StellarCollapse> {
-  using DataBox = Spiner::DataBox<Real>;
-
  public:
   using DataBox = Spiner::DataBox<Real>;
 
