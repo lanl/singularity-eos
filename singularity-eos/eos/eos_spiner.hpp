@@ -66,7 +66,9 @@ using namespace eos_base;
 */
 class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
  public:
-  using DataBox = Spiner::DataBox<Real>;
+  static constexpr int NGRIDS = 3;
+  using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
+  using DataBox = Spiner::DataBox<Real, Grid_t>;
   
   // A weakly typed index map for lambdas
   struct Lambda {
@@ -301,7 +303,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
  */
 class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
  public:
-  using DataBox = Spiner::DataBox<Real>;
+  using Grid_t = SpinerEOSDependsRhoT::Grid_t;
+  using DataBox = SpinerEOSDependsRhoT::DataBox;
   struct SP5Tables {
     DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
   };
@@ -483,9 +486,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
 // replace lambdas with callable
 namespace callable_interp {
-using DataBox = Spiner::DataBox<Real>;
-
-using DataBox = Spiner::DataBox<Real>;
+using DataBox = SpinerEOSDependsRhoT::DataBox;
 class l_interp {
  private:
   const DataBox &field;
@@ -736,8 +737,7 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
 
   // fill in minimum pressure as a function of temperature
   rho_at_pmin_.resize(numT_);
-  // rho_at_pmin_.setRange(0, P_.range(0));
-  rho_at_pmin_.setRange(0, lTMin_, lTMax_, numT_);
+  rho_at_pmin_.setRange(0, P_.range(0));
   for (int i = 0; i < numT_; i++) {
     Real pmin = std::numeric_limits<Real>::max();
     int jmax = -1;
