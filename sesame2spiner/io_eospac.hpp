@@ -37,8 +37,8 @@
 #include <eospac-wrapper/eospac_wrapper.hpp>
 
 using EospacWrapper::Verbosity;
-using Spiner::DataBox;
-using Spiner::RegularGrid1D;
+using DataBox = Spiner::DataBox<Real>;
+using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 
 // For logarithmic interpolation, quantities may be negative.
 // If they are, use offset to ensure negative values make sense.

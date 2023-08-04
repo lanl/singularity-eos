@@ -65,6 +65,8 @@ using namespace eos_base;
 */
 class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
  public:
+  using DataBox = Spiner::DataBox<Real>;
+  
   // A weakly typed index map for lambdas
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };
@@ -252,12 +254,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] {"SpinerEOSDependsRhoT"};
   static constexpr const int numDataBoxes_ = 12;
-  Spiner::DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
-  Spiner::DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
-  Spiner::DataBox lTColdCrit_;
-  Spiner::DataBox PCold_, sieCold_, bModCold_;
-  Spiner::DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
-  Spiner::DataBox rho_at_pmin_;
+  DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
+  DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
+  DataBox lTColdCrit_;
+  DataBox PCold_, sieCold_, bModCold_;
+  DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
+  DataBox rho_at_pmin_;
   int numRho_, numT_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lRhoMinSearch_;
@@ -298,8 +300,9 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
  */
 class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
  public:
+  using DataBox = Spiner::DataBox<Real>;
   struct SP5Tables {
-    Spiner::DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
+    DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
   };
   // Generic functions provided by the base class. These contain
   // e.g. the vector overloads that use the scalar versions declared
@@ -437,23 +440,23 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     return FastMath::pow10(lx) - offset;
   }
   PORTABLE_INLINE_FUNCTION
-  Real interpRhoT_(const Real rho, const Real T, const Spiner::DataBox &db,
+  Real interpRhoT_(const Real rho, const Real T, const DataBox &db,
                    Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
-  Real interpRhoSie_(const Real rho, const Real sie, const Spiner::DataBox &db,
+  Real interpRhoSie_(const Real rho, const Real sie, const DataBox &db,
                      Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
   Real lRhoFromPlT_(const Real P, const Real lT, Real *lambda) const;
 
-  Spiner::DataBox sie_; // depends on (rho,T)
-  Spiner::DataBox T_;   // depends on (rho, sie)
+  DataBox sie_; // depends on (rho,T)
+  DataBox T_;   // depends on (rho, sie)
   SP5Tables dependsRhoT_;
   SP5Tables dependsRhoSie_;
   int numRho_;
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
-  Spiner::DataBox PlRhoMax_, dPdRhoMax_;
+  DataBox PlRhoMax_, dPdRhoMax_;
 
   Real lRhoOffset_, lTOffset_, lEOffset_; // offsets must be non-negative
 
@@ -479,15 +482,16 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
 // replace lambdas with callable
 namespace callable_interp {
+using DataBox = Spiner::DataBox<Real>;
 
 class l_interp {
  private:
-  const Spiner::DataBox &field;
+  const DataBox &field;
   const Real fixed;
 
  public:
   PORTABLE_INLINE_FUNCTION
-  l_interp(const Spiner::DataBox &field_, const Real fixed_)
+  l_interp(const DataBox &field_, const Real fixed_)
       : field{field_}, fixed{fixed_} {}
 
   PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
@@ -497,12 +501,12 @@ class l_interp {
 
 class r_interp {
  private:
-  const Spiner::DataBox &field;
+  const DataBox &field;
   const Real fixed;
 
  public:
   PORTABLE_INLINE_FUNCTION
-  r_interp(const Spiner::DataBox &field_, const Real fixed_)
+  r_interp(const DataBox &field_, const Real fixed_)
       : field{field_}, fixed{fixed_} {}
 
   PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
@@ -512,12 +516,12 @@ class r_interp {
 
 class prod_interp_1d {
  private:
-  const Spiner::DataBox &field1, field2;
+  const DataBox &field1, field2;
   const Real r;
 
  public:
   PORTABLE_INLINE_FUNCTION
-  prod_interp_1d(const Spiner::DataBox &field1_, const Spiner::DataBox &field2_,
+  prod_interp_1d(const DataBox &field1_, const DataBox &field2_,
                  const Real r_)
       : field1{field1_}, field2{field2_}, r{r_} {}
   PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
@@ -527,11 +531,11 @@ class prod_interp_1d {
 
 class interp {
  private:
-  const Spiner::DataBox &field;
+  const DataBox &field;
 
  public:
   PORTABLE_INLINE_FUNCTION
-  interp(const Spiner::DataBox &field_) : field(field_) {}
+  interp(const DataBox &field_) : field(field_) {}
   PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
     return field.interpToReal(x);
   }
@@ -1839,7 +1843,7 @@ void SpinerEOSDependsRhoSie::ValuesAtReferenceState(Real &rho, Real &temp, Real 
 
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::interpRhoT_(const Real rho, const Real T,
-                                         const Spiner::DataBox &db, Real *lambda) const {
+                                         const DataBox &db, Real *lambda) const {
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lT = toLog_(T, lTOffset_);
   if (lambda != nullptr) {
@@ -1850,7 +1854,7 @@ Real SpinerEOSDependsRhoSie::interpRhoT_(const Real rho, const Real T,
 
 PORTABLE_INLINE_FUNCTION
 Real SpinerEOSDependsRhoSie::interpRhoSie_(const Real rho, const Real sie,
-                                           const Spiner::DataBox &db,
+                                           const DataBox &db,
                                            Real *lambda) const {
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lE = toLog_(sie, lEOffset_);

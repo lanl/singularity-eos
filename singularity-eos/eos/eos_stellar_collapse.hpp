@@ -58,6 +58,8 @@ using namespace eos_base;
 // and introduce extrapolation as needed.
 class StellarCollapse : public EosBase<StellarCollapse> {
  public:
+  using DataBox = Spiner::DataBox<Real>;
+
   // A weakly typed index map for lambdas
   struct Lambda {
     enum Index { Ye = 0, lT = 1 };
@@ -190,18 +192,32 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   static std::string EosPyType() { return EosType(); }
 
  private:
+  class LogT {
+  public:
+    PORTABLE_INLINE_FUNCTION
+    LogT(const DataBox &field, const Real Ye, const Real lRho)
+      : field_(field), Ye_(Ye), lRho_(lRho) {}
+    PORTABLE_INLINE_FUNCTION Real operator()(const Real lT) const {
+      return field_.interpToReal(Ye_, lT, lRho_);
+    }
+    
+  private:
+    const DataBox &field_;
+    const Real Ye_, lRho_;
+  };
+
   inline void LoadFromSP5File_(const std::string &filename);
   inline void LoadFromStellarCollapseFile_(const std::string &filename);
   inline int readSCInt_(const hid_t &file_id, const std::string &name);
   inline void readBounds_(const hid_t &file_id, const std::string &name, int size,
                           Real &lo, Real &hi);
   inline void readSCDset_(const hid_t &file_id, const std::string &name,
-                          Spiner::DataBox &db);
+                          DataBox &db);
 
-  inline void medianFilter_(Spiner::DataBox &db);
-  inline void medianFilter_(const Spiner::DataBox &in, Spiner::DataBox &out);
+  inline void medianFilter_(DataBox &db);
+  inline void medianFilter_(const DataBox &in, DataBox &out);
   inline void fillMedianBuffer_(Real buffer[], int width, int iY, int iT, int irho,
-                                const Spiner::DataBox &tab) const;
+                                const DataBox &tab) const;
   inline Real findMedian_(Real buffer[], int size) const;
   inline void computeBulkModulus_();
   inline void computeColdAndHotCurves_();
@@ -283,19 +299,19 @@ class StellarCollapse : public EosBase<StellarCollapse> {
       thermalqs::density | thermalqs::temperature;
 
   // Dependent variables
-  Spiner::DataBox lP_, lE_, dPdRho_, dPdE_, dEdT_, lBMod_;
-  Spiner::DataBox entropy_; // kb/baryon
-  Spiner::DataBox Xa_;      // mass fraction of alpha particles
-  Spiner::DataBox Xh_;      // mass fraction of heavy ions
-  Spiner::DataBox Xn_;      // mass fraction of neutrons
-  Spiner::DataBox Xp_;      // mass fraction of protons
-  Spiner::DataBox Abar_;    // Average atomic mass
-  Spiner::DataBox Zbar_;    // Average atomic number
-  // Spiner::DataBox gamma_; // polytropic index. dlog(P)/dlog(rho).
+  DataBox lP_, lE_, dPdRho_, dPdE_, dEdT_, lBMod_;
+  DataBox entropy_; // kb/baryon
+  DataBox Xa_;      // mass fraction of alpha particles
+  DataBox Xh_;      // mass fraction of heavy ions
+  DataBox Xn_;      // mass fraction of neutrons
+  DataBox Xp_;      // mass fraction of protons
+  DataBox Abar_;    // Average atomic mass
+  DataBox Zbar_;    // Average atomic number
+  // DataBox gamma_; // polytropic index. dlog(P)/dlog(rho).
   // dTdRho_, dTdE_, dEdRho_, dEdT_;
 
   // Bounds of dependent variables. Needed for root finding.
-  Spiner::DataBox eCold_, eHot_;
+  DataBox eCold_, eHot_;
 
   // Independent variable bounds
   int numRho_, numT_, numYe_;
@@ -337,24 +353,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 // ======================================================================
 // Implementation details below
 // ======================================================================
-
-namespace callable_interp {
-
-class LogT {
- public:
-  PORTABLE_INLINE_FUNCTION
-  LogT(const Spiner::DataBox &field, const Real Ye, const Real lRho)
-      : field_(field), Ye_(Ye), lRho_(lRho) {}
-  PORTABLE_INLINE_FUNCTION Real operator()(const Real lT) const {
-    return field_.interpToReal(Ye_, lT, lRho_);
-  }
-
- private:
-  const Spiner::DataBox &field_;
-  const Real Ye_, lRho_;
-};
-
-} // namespace callable_interp
 
 // For some reason, the linker doesn't like this being a member field
 // of StellarCollapse.  So we'll make it a global variable.
@@ -817,7 +815,7 @@ inline void StellarCollapse::readBounds_(const hid_t &file_id, const std::string
  * https://forum.hdfgroup.org/t/is-this-a-bug-in-hdf5-1-8-6/2211
  */
 inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
-                                         Spiner::DataBox &db) {
+                                         DataBox &db) {
   herr_t exists = H5LTfind_dataset(file_id, name.c_str());
   if (!exists) {
     std::string msg = "Tried to read dataset " + name + " but it doesn't exist\n";
@@ -836,15 +834,15 @@ inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string
   db.setRange(0, lRhoMin_, lRhoMax_, numRho_);
 }
 
-inline void StellarCollapse::medianFilter_(Spiner::DataBox &db) {
-  Spiner::DataBox tmp;
+inline void StellarCollapse::medianFilter_(DataBox &db) {
+  DataBox tmp;
   tmp.copy(db);
   medianFilter_(tmp, db);
   free(tmp);
 }
 
-inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
-                                           Spiner::DataBox &out) {
+inline void StellarCollapse::medianFilter_(const DataBox &in,
+                                           DataBox &out) {
   Real buffer[MF_S];
   // filter, overwriting as needed
   for (int iY = MF_W; iY < numYe_ - MF_W; ++iY) {
@@ -863,7 +861,7 @@ inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
 
 inline void StellarCollapse::fillMedianBuffer_(Real buffer[], int width, int iY, int iT,
                                                int irho,
-                                               const Spiner::DataBox &tab) const {
+                                               const DataBox &tab) const {
   int i = 0;
   for (int iWy = -width; iWy <= width; iWy++) {
     for (int iWt = -width; iWt <= width; iWt++) {
@@ -989,7 +987,7 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
     }
     // Get log(sie)
     Real lE = e2le_(sie);
-    const callable_interp::LogT lEFunc(lE_, Ye, lRho);
+    const LogT lEFunc(lE_, Ye, lRho);
     status = regula_falsi(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
                           lT, pcounts);
     if (status != RootFinding1D::Status::SUCCESS) {
