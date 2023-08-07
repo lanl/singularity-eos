@@ -35,37 +35,49 @@ endif()
 # ------------------------------------------------------------------------------#
 # library dependencies
 # ------------------------------------------------------------------------------#
-find_package(ports-of-call REQUIRED)
-find_package(mpark_variant REQUIRED)
+if(NOT TARGET ports-of-call::ports-of-call)
+  find_package(ports-of-call REQUIRED)
+endif()
 
-if(@SINGULARITY_USE_SPINER@)
+if(NOT TARGET mpark_variant)
+  find_package(mpark_variant REQUIRED)
+endif()
+
+if(@SINGULARITY_USE_SPINER@ AND NOT TARGET spiner::spiner)
   find_package(spiner REQUIRED)
-  if(@SINGULARITY_USE_SPINER_WITH_HDF5@)
+endif()
+
+if(@SINGULARITY_USE_SPINER_WITH_HDF5@)
+  if(NOT TARGET HDF5::HDF5 OR NOT HDF5_LIBRARIES)
     find_package(
       HDF5
       COMPONENTS C HL
       REQUIRED)
-    if(@SINGULARITY_USE_SPINER_WITH_PARALLEL_HDF5@)
-      # do i need enable_language here?
-      find_package(
-        MPI
-        COMPONENTS C CXX
-        REQUIRED)
-    endif()
-    set(SPINER_USE_HDF ON)
   endif()
+  set(SPINER_USE_HDF ON)
 endif()
 
-if(@SINGULARITY_USE_KOKKOS@)
+if(@SINGULARITY_USE_SPINER_WITH_PARALLEL_HDF5@ AND NOT TARGET MPI::MPI_CXX)
+  # do i need enable_language here?
+  find_package(
+    MPI
+    COMPONENTS C CXX
+    REQUIRED)
+endif()
+
+if(@SINGULARITY_USE_KOKKOS@ AND NOT TARGET Kokkos::kokkos)
   find_package(Kokkos REQUIRED)
-  if(@SINGULARITY_USE_KOKKOSKERNELS@)
-    find_package(KokkosKernels REQUIRED)
-  endif()
-else()
+endif()
+
+if(@SINGULARITY_USE_KOKKOSKERNELS@ AND NOT TARGET Kokkos::kokkoskernels)
+  find_package(KokkosKernels REQUIRED)
+endif()
+
+if(@SINGULARITY_USE_EIGEN@ AND NOT TARGET Eigen3::Eigen)
   find_package(Eigen3 REQUIRED)
 endif()
 
-if(@SINGULARITY_USE_EOSPAC@)
+if(@SINGULARITY_USE_EOSPAC@ AND NOT TARGET EOSPAC::eospac)
   find_package(EOSPAC REQUIRED)
 endif()
 
