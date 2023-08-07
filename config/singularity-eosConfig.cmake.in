@@ -69,7 +69,10 @@ if(@SINGULARITY_USE_EIGEN@)
 endif()
 
 if(@SINGULARITY_USE_EOSPAC@)
-  find_dependency(EOSPAC)
+  # needed for EOSPAC
+  if(NOT TARGET EOSPAC::eospac)
+    find_dependency(EOSPAC)
+  endif()
 endif()
 
 # ------------------------------------------------------------------------------#
