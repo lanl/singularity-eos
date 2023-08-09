@@ -74,13 +74,9 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::BulkModulusFromDensityInternalEnergy;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityTemperature;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;                    \
-  using EosBase<EOSDERIVED>::MinimumDensity;                                             \
-  using EosBase<EOSDERIVED>::MinimumTemperature;                                         \
-  using EosBase<EOSDERIVED>::PTofRE;                                                     \
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
-  using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
-  using EosBase<EOSDERIVED>::EntropyIsNotEnabled;
+  using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;
 
 class Factor {
   Real value_ = 1.0;
