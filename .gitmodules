@@ -3,7 +3,7 @@
 	url = https://gitlab.com/libeigen/eigen.git
 [submodule "utils/spiner"]
 	path = utils/spiner
-	url = ../spiner.git
+  url = https://github.com/lanl/spiner
 [submodule "utils/variant"]
 	path = utils/variant
 	url = https://github.com/mpark/variant.git
@@ -12,4 +12,7 @@
 	url = https://github.com/kokkos/kokkos.git
 [submodule "utils/ports-of-call"]
 	path = utils/ports-of-call
-	url = ../ports-of-call.git
+	url = https://github.com/lanl/ports-of-call.git
+[submodule "utils/kokkos-kernels"]
+	path = utils/kokkos-kernels
+	url = https://github.com/kokkos/kokkos-kernels.git

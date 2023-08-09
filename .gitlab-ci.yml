@@ -10,7 +10,7 @@ variables:
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
   SINGULARITY_EOS_OPENMPI_VERSION: "4.1.3"
   SINGULARITY_EOS_CUDA_VERSION: "11.6.0"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+hdf5+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
   COLOR_CYAN: '\033[1;36m'
   COLOR_PLAIN: '\033[0m'
   # set to different spack upstream for testing
@@ -52,7 +52,7 @@ before_script:
 
 .gpu: &gpu
   SINGULARITY_USE_CUDA: "true"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos+hdf5 cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"
@@ -104,8 +104,8 @@ before_script:
       then
         echo -e "\e[0Ksection_start:`date +%s`:spack_build[collapsed=true]\r\e[0K${COLOR_CYAN}Building via Spack${COLOR_PLAIN}"
         mkdir -p spack_build_env
-        spack env create -d spack_build_env
-        spack env activate -d spack_build_env
+        spack env create spack_build_env
+        spack env activate spack_build_env
         spack repo add spack-repo
         spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
         spack dev-build -j $(nproc) ${SINGULARITY_EOS_SPACK_SPEC}
@@ -114,8 +114,8 @@ before_script:
       fi
     - echo -e "\e[0Ksection_start:`date +%s`:spack_env[collapsed=true]\r\e[0K${COLOR_CYAN}Creating Spack environment${COLOR_PLAIN}"
     - mkdir -p spack_env
-    - spack env create -d spack_env
-    - spack env activate -d spack_env
+    - spack env create spack_env
+    - spack env activate spack_env
     - spack repo add spack-repo
     - spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
     - spack spec -I ${SINGULARITY_EOS_SPACK_SPEC}
@@ -134,7 +134,8 @@ before_script:
     - |
       cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install ${SINGULARITY_CMAKE_CXX_COMPILER_FLAG} \
             -DSINGULARITY_USE_EOSPAC=ON \
-            -DSINGULARITY_USE_HDF5=ON \
+            -DSINGULARITY_USE_SPINER=ON \
+            -DSINGULARITY_USE_SPINER_WITH_HDF5=ON \
             -DSINGULARITY_BUILD_SESAME2SPINER=ON \
             -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
             -DSINGULARITY_BUILD_PYTHON=${SINGULARITY_BUILD_PYTHON:-OFF} \

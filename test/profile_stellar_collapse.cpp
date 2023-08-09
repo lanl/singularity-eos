@@ -50,7 +50,7 @@ constexpr int NTRIALS = 10;
 struct Bounds {
   Bounds() {}
   Bounds(Real min, Real max, int N, Real offset)
-      : grid(RegularGrid1D(min, max, N)), offset(offset) {}
+      : grid(RegularGrid1D<Real>(min, max, N)), offset(offset) {}
   Bounds(Real min, Real max, int N, bool convertToLog = false) : offset(0) {
     if (convertToLog) {
       constexpr Real epsilon = std::numeric_limits<float>::epsilon();
@@ -65,11 +65,11 @@ struct Bounds {
       min = std::log10(std::abs(min)); // fast, floating-point log
       max = std::log10(std::abs(max));
     }
-    grid = RegularGrid1D(min, max, N);
+    grid = RegularGrid1D<Real>(min, max, N);
   }
   PORTABLE_INLINE_FUNCTION Real log2lin(Real xl) const { return pow(10., xl) - offset; }
   PORTABLE_INLINE_FUNCTION Real i2lin(int i) const { return log2lin(grid.x(i)); }
-  RegularGrid1D grid;
+  RegularGrid1D<Real> grid;
   Real offset;
 };
 
@@ -131,17 +131,17 @@ int main(int argc, char *argv[]) {
     Kokkos::View<Real *> diffs_t_dv("T", nfine * nfine * nfine);
     auto diffs_press_hv = Kokkos::create_mirror_view(diffs_press_dv);
     auto diffs_t_hv = Kokkos::create_mirror_view(diffs_t_dv);
-    DataBox diffs_press_d(diffs_press_dv.data(), nfine, nfine, nfine);
-    DataBox diffs_press_h(diffs_press_hv.data(), nfine, nfine, nfine);
-    DataBox diffs_t_d(diffs_t_dv.data(), nfine, nfine, nfine);
-    DataBox diffs_t_h(diffs_t_hv.data(), nfine, nfine, nfine);
+    DataBox<Real> diffs_press_d(diffs_press_dv.data(), nfine, nfine, nfine);
+    DataBox<Real> diffs_press_h(diffs_press_hv.data(), nfine, nfine, nfine);
+    DataBox<Real> diffs_t_d(diffs_t_dv.data(), nfine, nfine, nfine);
+    DataBox<Real> diffs_t_h(diffs_t_hv.data(), nfine, nfine, nfine);
 #else  // host only. Add other strategies above as needed
-    DataBox diffs_press_d(nfine, nfine, nfine);
-    DataBox diffs_t_d(nfine, nfine, nfine);
-    DataBox diffs_press_h = diffs_press_d; // shallow copy
-    DataBox diffs_t_h = diffs_t_d;
+    DataBox<Real> diffs_press_d(nfine, nfine, nfine);
+    DataBox<Real> diffs_t_d(nfine, nfine, nfine);
+    DataBox<Real> diffs_press_h = diffs_press_d; // shallow copy
+    DataBox<Real> diffs_t_h = diffs_t_d;
 #endif // PORTABILITY_STRATEGY
-    DataBox lambdas_d(AllocationTarget::Device, nfine, nfine, nfine, 2);
+    DataBox<Real> lambdas_d(AllocationTarget::Device, nfine, nfine, nfine, 2);
 
     std::cout << "\t...Setting loop bounds.\n"
               << "\t\tBounds set to force extrapolation and no exact grid points."
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "\t...Running once on host to histogram accesses..." << std::endl;
     std::vector<Real> lambdas_v(nfine * nfine * nfine * 2);
-    DataBox lambdas_h(lambdas_v.data(), nfine, nfine, nfine, 2);
+    DataBox<Real> lambdas_h(lambdas_v.data(), nfine, nfine, nfine, 2);
     for (int trial = 0; trial < NTRIALS; ++trial) {
       for (int iYe = 0; iYe < nfine; ++iYe) {
         for (int iE = 0; iE < nfine; ++iE) {

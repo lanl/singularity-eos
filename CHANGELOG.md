@@ -4,6 +4,11 @@
 - [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
+- [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
+- [[PR288]](https://github.com/lanl/singularity-eos/pull/288) Don't build tests that depend on spiner when spiner is disabled
+- [[PR287]](https://github.com/lanl/singularity-eos/pull/287) Fix testing logic with new HDF5 options
+- [[PR282]](https://github.com/lanl/singularity-eos/pull/282) Fix missing deep copy in sap polynomial tests
+- [[PR281]](https://github.com/lanl/singularity-eos/pull/281) Pin spiner in spackage to a specific, tested version
 - [[PR267]](https://github.com/lanl/singularity-eos/pull/267) Add missing eosSafeDestroy call in EOSPAC::Finalize
 - [[PR263]](https://github.com/lanl/singularity-eos/pull/263) Fix stellar collapse mass fraction interpolation
 - [[PR258]](https://github.com/lanl/singularity-eos/pull/258) Fix EOSPAC vector performance and add warnings when slower version gets selected.
@@ -29,6 +34,7 @@
 - [[PR177]](https://github.com/lanl/singularity-eos/pull/177) added EOSPAC vector functions
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR246]](https://github.com/lanl/singularity-eos/pull/246) Update CMake with upstream changes
 - [[PR223]](https://github.com/lanl/singularity-eos/pull/223) Update ports-of-call and add portable error handling
 - [[PR234]](https://github.com/lanl/singularity-eos/pull/234) update ports-of-call to correct for undefined behavior in error handling
 - [[PR219]](https://github.com/lanl/singularity-eos/pull/219) Removed static analysis from re-git pipeline
