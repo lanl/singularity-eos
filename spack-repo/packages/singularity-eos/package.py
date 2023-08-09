@@ -58,6 +58,8 @@ class SingularityEos(CMakePackage, CudaPackage):
     # configuration 
     variant("hdf5", default=False, description="Use hdf5")
 
+    variant("spiner", default=False, description="Use Spiner")
+
     # building/testing/docs
     depends_on("cmake@3.14:")
     depends_on("catch2@2.13.7", when="+tests")
@@ -78,13 +80,13 @@ class SingularityEos(CMakePackage, CudaPackage):
     # request HEAD of main branch
     depends_on("ports-of-call@main", when="@main")
     
-    depends_on("spiner +kokkos", when="+kokkos")
+    depends_on("spiner +kokkos", when="+kokkos+spiner")
     # tell spiner to use HDF5 
-    depends_on("spiner +hdf5", when="+hdf5")
+    depends_on("spiner +hdf5", when="+hdf5+spiner")
 
-    depends_on("spiner@:1.6.0", when="@:1.7.0")
-    depends_on("spiner@1.6.1:", when="@1.7.1:") #TODO version
-    depends_on("spiner@main", when="@main")
+    depends_on("spiner@:1.6.0", when="@:1.7.0 + spiner")
+    depends_on("spiner@1.6.1:", when="@1.7.1: + spiner") #TODO version
+    depends_on("spiner@main", when="@main +spiner")
 
     depends_on("mpark-variant")
     depends_on(
@@ -96,9 +98,10 @@ class SingularityEos(CMakePackage, CudaPackage):
         when="+cuda",
     )
 
+
     for _myver,_kver in zip(("@:1.6.2","@1.7.0:"),("@3.2:","@3.3:")):
-        depends_on("kokkos" + _kver, when=_myver)
-        depends_on("kokkos-kernels" + _kver, when=_myver)
+        depends_on("kokkos" + _kver, when=_myver + '+ kokkos')
+        depends_on("kokkos-kernels" + _kver, when=_myver + ' +kokkos-kernels')
 
     # set up kokkos offloading dependencies
     for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
@@ -127,6 +130,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     conflicts("+cuda", when="~kokkos")
     conflicts("+openmp", when="~kokkos")
     conflicts("+kokkos-kernels", when="~kokkos")
+    conflicts("+hdf5", when="~spiner")
 
     # NOTE: these are set so that dependencies in downstream projects share
     # common MPI dependence
@@ -146,7 +150,7 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_USE_FORTRAN", "fortran"),
             self.define_from_variant("SINGULARITY_BUILD_CLOSURE", "fortran"),
             self.define_from_variant("SINGULARITY_BUILD_PYTHON", "python"),
-            self.define_from_variant("SINGULARITY_USE_SPINER", "hdf5"),
+            self.define_from_variant("SINGULARITY_USE_SPINER", "spiner"),
             self.define_from_variant("SINGULARITY_USE_SPINER_WITH_HDF5", "hdf5"),
             self.define("SINGULARITY_BUILD_TESTS", self.run_tests),
             self.define(
