@@ -22,6 +22,7 @@ set(TST_SRCS
 
 if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_HELMHOLTZ)
  list(APPEND TST_SRCS test_eos_helmholtz.cpp)
+ configure_file(${CMAKE_SOURCE_DIR}/test/helmholtz/helm_table.dat ${CMAKE_CURRENT_BINARY_DIR}/helmholtz/helm_table.dat COPYONLY)
 endif()
 
 add_executable(eos_unit_tests ${TST_SRCS})
@@ -80,24 +81,6 @@ if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_STELLAR_COLLAPSE)
   add_executable(profile_stellar_collapse
                  profile_stellar_collapse.cpp)
   target_link_libraries(profile_stellar_collapse singularity-eos::singularity-eos)
-endif()
-
-# The HDF5 dependency isn't really supposed to be here
-# Also should this be downloaded for all helm builds not just testing?
-if (SINGULARITY_USE_HDF5 AND SINGULARITY_TEST_HELMHOLTZ)
-   set(HELMHOLTZ_DATA_URL https://cococubed.com/codes/eos/helmholtz.tbz)
-   message(STATUS "Attempting to download Helmholtz data file for tests. "
-     "File is located at ${HELMHOLTZ_DATA_URL}. "
-     "File will be saved to ${CMAKE_CURRENT_BINARY_DIR}/helmholtz. "
-     "If you do not want to download this file, you can set -DSINGULARITY_TEST_HELMHOLTZ=OFF."
-   )
-   include(FetchContent)
-   FetchContent_Declare(helmdata
-     URL ${HELMHOLTZ_DATA_URL}
-     URL_HASH SHA256=fc55ca3b188598ed19f9dbf63bacf1033676a22d2065f420b67375a493b91eeb
-     SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}
-   )
-   FetchContent_MakeAvailable(helmdata)
 endif()
 
 if (SINGULARITY_BUILD_PYTHON AND SINGULARITY_TEST_PYTHON)
