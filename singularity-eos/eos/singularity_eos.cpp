@@ -212,6 +212,25 @@ int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const doub
   return init_sg_NobleAbel(matindex, eos, gm1, Cv, bb, qq, def_en, def_v);
 }
 
+int init_sg_CarnahanStarling(const int matindex, EOS *eos, const double gm1,
+                             const double Cv, const double bb, const double qq,
+                             int const *const enabled, double *const vals) {
+  assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(CarnahanStarling(gm1, Cv, bb, qq));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
+  EOS eos_ = SGAPPLYMOD(CarnahanStarling(gm1, Cv, bb, qq));
+  eos[matindex] = eos_.GetOnDevice();
+  return 0;
+}
+
+int init_sg_CarnahanStarling(const int matindex, EOS *eos, const double gm1,
+                             const double Cv, const double bb, const double qq) {
+  return init_sg_CarnahanStarling(matindex, eos, gm1, Cv, bb, qq, def_en, def_v);
+}
+
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,

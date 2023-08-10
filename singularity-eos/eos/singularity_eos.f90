@@ -40,6 +40,7 @@ module singularity_eos
     init_sg_NobleAbel_f,&
     init_sg_SAP_Polynomial_f,&
     init_sg_StiffGas_f,&
+    init_sg_CarnahanStarling_f,&
     init_sg_SpinerDependsRhoT_f,&
     init_sg_SpinerDependsRhoSie_f,&
     init_sg_eospac_f,&
@@ -135,6 +136,19 @@ module singularity_eos
       real(kind=c_double), value, intent(in) :: gm1, Cv, bb, qq
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_NobleAbel
+  end interface
+  
+  interface
+    integer(kind=c_int) function &
+      init_sg_CarnahanStarling(matindex, eos, gm1, Cv, bb, qq, sg_mods_enabled, &
+                       sg_mods_values) &
+      bind(C, name='init_sg_CarnahanStarling')
+      import
+      integer(c_int), value, intent(in)      :: matindex
+      type(c_ptr), value, intent(in)         :: eos
+      real(kind=c_double), value, intent(in) :: gm1, Cv, bb, qq
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
+    end function init_sg_CarnahanStarling
   end interface
 
   interface
@@ -427,6 +441,19 @@ contains
     err = init_sg_NobleAbel(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
                            c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_NobleAbel_f
+  
+  integer function init_sg_CarnahanStarling_f(matindex, eos, gm1, Cv, &
+                                      bb, qq, &
+                                      sg_mods_enabled, sg_mods_values) &
+    result(err)
+    integer(c_int), value, intent(in) :: matindex
+    type(sg_eos_ary_t), intent(in)    :: eos
+    real(kind=8), value, intent(in)   :: gm1, Cv, bb, qq
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    err = init_sg_CarnahanStarling(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
+                           c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+  end function init_sg_CarnahanStarling_f
   
   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
                                                sg_mods_enabled, &

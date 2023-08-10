@@ -21,6 +21,7 @@ add_executable(
   test_eos_vinet.cpp
   test_eos_noble_abel.cpp
   test_eos_stiff.cpp
+  test_eos_carnahan_starling.cpp
 )
 
 if(SINGULARITY_TEST_SESAME)
