@@ -16,8 +16,8 @@
 #include <memory>
 #include <stdlib.h>
 
-#include <pte_test_utils.hpp>
 #include <ports-of-call/portability.hpp>
+#include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/singularity_eos.hpp>

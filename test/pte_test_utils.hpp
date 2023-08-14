@@ -54,13 +54,12 @@ class Indexer2D {
 
 template <typename T>
 inline void set_eos(T *eos) {
-  singularity::EOS gr = 
-      singularity::Gruneisen(394000.0, 1.489, 0.0, 0.0, 2.02, 0.47, 8.93, 297.0, 1.0e6, 0.383e7);
-  singularity::EOS dr =
-      singularity::DavisReactants(1.890, 4.115e10, 1.0e6, 297.0, 1.8e5, 4.6, 0.34, 0.56, 0.0,
-                                  0.4265, 0.001074e10);
-  singularity::EOS dp =
-      singularity::DavisProducts(0.798311, 0.58, 1.35, 2.66182, 0.75419, 3.2e10, 0.001072e10, 0.0);
+  singularity::EOS gr = singularity::Gruneisen(394000.0, 1.489, 0.0, 0.0, 2.02, 0.47,
+                                               8.93, 297.0, 1.0e6, 0.383e7);
+  singularity::EOS dr = singularity::DavisReactants(
+      1.890, 4.115e10, 1.0e6, 297.0, 1.8e5, 4.6, 0.34, 0.56, 0.0, 0.4265, 0.001074e10);
+  singularity::EOS dp = singularity::DavisProducts(0.798311, 0.58, 1.35, 2.66182, 0.75419,
+                                                   3.2e10, 0.001072e10, 0.0);
   eos[0] = gr.GetOnDevice();
   eos[1] = dr.GetOnDevice();
   eos[2] = dp.GetOnDevice();

@@ -19,9 +19,9 @@
 #include <time.h>
 #include <vector>
 
-#include <pte_test_utils.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
+#include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <spiner/databox.hpp>
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
 #endif
   {
-       // EOS
+    // EOS
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<EOS *> eos_v("eos", NMAT);
     auto eos_hv = Kokkos::create_mirror_view(eos_v);
