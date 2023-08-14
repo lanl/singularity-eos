@@ -39,8 +39,11 @@
 #include <singularity-eos/eos/eos_helmholtz.hpp>
 #include <singularity-eos/eos/eos_ideal.hpp>
 #include <singularity-eos/eos/eos_jwl.hpp>
+#include <singularity-eos/eos/eos_noble_abel.hpp>
+#include <singularity-eos/eos/eos_sap_polynomial.hpp>
 #include <singularity-eos/eos/eos_spiner.hpp>
 #include <singularity-eos/eos/eos_stellar_collapse.hpp>
+#include <singularity-eos/eos/eos_stiff.hpp>
 #include <singularity-eos/eos/eos_vinet.hpp>
 
 // Modifiers
@@ -64,11 +67,12 @@ using singularity::detail::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, Helmholtz, Vinet, JWL, DavisReactants, DavisProducts
-#ifdef SPINER_USE_HDF
+    tl<IdealGas, Gruneisen, Helmholtz, Vinet, JWL, DavisReactants, DavisProducts,
+        StiffGas, SAP_Polynomial, NobleAbel
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
        ,
        SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
-#endif // SPINER_USE_HDF
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_EOSPAC
        ,
        EOSPAC
@@ -77,10 +81,10 @@ static constexpr const auto full_eos_list =
 // eos's that get relativistic and unit system modifiers
 static constexpr const auto partial_eos_list =
     tl<IdealGas
-#ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
        ,
        SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
-#endif // SPINER_USE_HDF
+#endif // SINGULAIRTY_USE_SPINER_WITH_HDF5
        >{};
 // modifiers that get applied to all eos's
 static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};

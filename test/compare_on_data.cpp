@@ -50,7 +50,6 @@ using namespace EospacWrapper;
 using duration = std::chrono::duration<long double>;
 using dvec = std::vector<double>;
 using ivec = std::vector<int>;
-using Spiner::DataBox;
 using Spiner::getOnDeviceDataBox;
 using Spiner::RegularGrid1D;
 

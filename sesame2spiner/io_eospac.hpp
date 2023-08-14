@@ -25,7 +25,7 @@
 
 #include <eos_Interface.h> // eospac API
 
-#ifndef SPINER_USE_HDF
+#ifndef SINGULARITY_USE_SPINER_WITH_HDF5
 #error "HDF5 must be enabled"
 #endif
 
@@ -37,8 +37,8 @@
 #include <eospac-wrapper/eospac_wrapper.hpp>
 
 using EospacWrapper::Verbosity;
-using Spiner::DataBox;
-using Spiner::RegularGrid1D;
+using DataBox = Spiner::DataBox<Real>;
+using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 
 // For logarithmic interpolation, quantities may be negative.
 // If they are, use offset to ensure negative values make sense.

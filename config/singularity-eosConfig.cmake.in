@@ -1,29 +1,83 @@
-#------------------------------------------------------------------------------#
-# © 2021-2023. Triad National Security, LLC. All rights reserved.  This
-# program was produced under U.S. Government contract 89233218CNA000001
-# for Los Alamos National Laboratory (LANL), which is operated by Triad
-# National Security, LLC for the U.S.  Department of Energy/National
-# Nuclear Security Administration. All rights in the program are
-# reserved by Triad National Security, LLC, and the U.S. Department of
-# Energy/National Nuclear Security Administration. The Government is
-# granted for itself and others acting on its behalf a nonexclusive,
-# paid-up, irrevocable worldwide license in this material to reproduce,
-# prepare derivative works, distribute copies to the public, perform
+# ------------------------------------------------------------------------------#
+# © 2021-2023. Triad National Security, LLC. All rights reserved.  This program
+# was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
+# National Laboratory (LANL), which is operated by Triad National Security, LLC
+# for the U.S.  Department of Energy/National Nuclear Security Administration.
+# All rights in the program are reserved by Triad National Security, LLC, and
+# the U.S. Department of Energy/National Nuclear Security Administration. The
+# Government is granted for itself and others acting on its behalf a
+# nonexclusive, paid-up, irrevocable worldwide license in this material to
+# reproduce, prepare derivative works, distribute copies to the public, perform
 # publicly and display publicly, and to permit others to do so.
-#------------------------------------------------------------------------------#
+# ------------------------------------------------------------------------------#
 
-@SINGULARITY_CONFIG_CODE@
+# ------------------------------------------------------------------------------#
+# singularity-eos options
+# ------------------------------------------------------------------------------#
 
-#------------------------------------------------------------------------------#
-# library dependencies
-#------------------------------------------------------------------------------#
+@SINGULARITY_EOS_CONFIG_CODE@
 
-list(APPEND CMAKE_MODULE_PATH @CMAKE_INSTALL_FULL_LIBDIR@/cmake/singularity-eos)
-
-@SINGULARITY_CONFIG_DEPENDENCIES@
-
-if(NOT TARGET singularity-eos AND NOT singularity-eos_BINARY_DIR)
-  include(@CMAKE_INSTALL_FULL_LIBDIR@/cmake/singularity-eos/singularity-eosTargets.cmake)
+# ------------------------------------------------------------------------------#
+# add singularity-eos cmake files
+# ------------------------------------------------------------------------------#
+get_filename_component(singularity-eos_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}"
+                       PATH)
+if(NOT SINGULARITY_EOS_CMAKE)
+  get_filename_component(singularity-eos_CMAKE_BASE_DIR
+                         "${singularity-eos_CMAKE_DIR}" DIRECTORY)
+  message(
+    STATUS "Found singularity-eos CMake Modules (appending CMAKE_MODULE_PATH): "
+           ${singularity-eos_CMAKE_BASE_DIR})
+  list(APPEND CMAKE_MODULE_PATH ${singularity-eos_CMAKE_BASE_DIR})
+  set(SINGULARITY_EOS_CMAKE TRUE)
 endif()
 
+# ------------------------------------------------------------------------------#
+# library dependencies
+# ------------------------------------------------------------------------------#
 
+include(CMakeFindDependencyMacro)
+
+find_dependency(ports-of-call)
+
+find_dependency(mpark_variant)
+
+if(@SINGULARITY_USE_SPINER@)
+  find_dependency(spiner)
+endif()
+
+if(@SINGULARITY_USE_SPINER_WITH_HDF5@)
+  find_dependency(HDF5 COMPONENTS C HL)
+  set(SPINER_USE_HDF ON)
+endif()
+
+if(@SINGULARITY_USE_SPINER_WITH_PARALLEL_HDF5@)
+  # do i need enable_language here?
+  find_dependency(MPI COMPONENTS C CXX)
+endif()
+
+if(@SINGULARITY_USE_KOKKOS@)
+  find_dependency(Kokkos)
+endif()
+
+if(@SINGULARITY_USE_KOKKOSKERNELS@)
+  find_dependency(KokkosKernels)
+endif()
+
+if(@SINGULARITY_USE_EIGEN@)
+  find_dependency(Eigen3)
+endif()
+
+if(@SINGULARITY_USE_EOSPAC@)
+  # needed for EOSPAC
+  if(NOT TARGET EOSPAC::eospac)
+    find_dependency(EOSPAC)
+  endif()
+endif()
+
+# ------------------------------------------------------------------------------#
+# singularity-eos imported targets
+# ------------------------------------------------------------------------------#
+if(NOT TARGET singularity-eos AND NOT singularity-eos_BINARY_DIR)
+  include(${singularity-eos_CMAKE_DIR}/singularity-eosTargets.cmake)
+endif()

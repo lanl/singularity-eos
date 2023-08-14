@@ -14,7 +14,8 @@
 
 #ifndef _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
-#ifdef SPINER_USE_HDF
+#include <type_traits>
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
 // C++ includes
 #include <iostream>
@@ -57,6 +58,8 @@ using namespace eos_base;
 // is linear extrapolation in log-log space. We should reconsider this
 // and introduce extrapolation as needed.
 class StellarCollapse : public EosBase<StellarCollapse> {
+  using DataBox = Spiner::DataBox<Real>;
+
  public:
   // A weakly typed index map for lambdas
   struct Lambda {
@@ -195,13 +198,12 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline int readSCInt_(const hid_t &file_id, const std::string &name);
   inline void readBounds_(const hid_t &file_id, const std::string &name, int size,
                           Real &lo, Real &hi);
-  inline void readSCDset_(const hid_t &file_id, const std::string &name,
-                          Spiner::DataBox &db);
+  inline void readSCDset_(const hid_t &file_id, const std::string &name, DataBox &db);
 
-  inline void medianFilter_(Spiner::DataBox &db);
-  inline void medianFilter_(const Spiner::DataBox &in, Spiner::DataBox &out);
+  inline void medianFilter_(DataBox &db);
+  inline void medianFilter_(const DataBox &in, DataBox &out);
   inline void fillMedianBuffer_(Real buffer[], int width, int iY, int iT, int irho,
-                                const Spiner::DataBox &tab) const;
+                                const DataBox &tab) const;
   inline Real findMedian_(Real buffer[], int size) const;
   inline void computeBulkModulus_();
   inline void computeColdAndHotCurves_();
@@ -283,19 +285,19 @@ class StellarCollapse : public EosBase<StellarCollapse> {
       thermalqs::density | thermalqs::temperature;
 
   // Dependent variables
-  Spiner::DataBox lP_, lE_, dPdRho_, dPdE_, dEdT_, lBMod_;
-  Spiner::DataBox entropy_; // kb/baryon
-  Spiner::DataBox Xa_;      // mass fraction of alpha particles
-  Spiner::DataBox Xh_;      // mass fraction of heavy ions
-  Spiner::DataBox Xn_;      // mass fraction of neutrons
-  Spiner::DataBox Xp_;      // mass fraction of protons
-  Spiner::DataBox Abar_;    // Average atomic mass
-  Spiner::DataBox Zbar_;    // Average atomic number
+  DataBox lP_, lE_, dPdRho_, dPdE_, dEdT_, lBMod_;
+  DataBox entropy_; // kb/baryon
+  DataBox Xa_;      // mass fraction of alpha particles
+  DataBox Xh_;      // mass fraction of heavy ions
+  DataBox Xn_;      // mass fraction of neutrons
+  DataBox Xp_;      // mass fraction of protons
+  DataBox Abar_;    // Average atomic mass
+  DataBox Zbar_;    // Average atomic number
   // Spiner::DataBox gamma_; // polytropic index. dlog(P)/dlog(rho).
   // dTdRho_, dTdE_, dEdRho_, dEdT_;
 
   // Bounds of dependent variables. Needed for root finding.
-  Spiner::DataBox eCold_, eHot_;
+  DataBox eCold_, eHot_;
 
   // Independent variable bounds
   int numRho_, numT_, numYe_;
@@ -343,14 +345,14 @@ namespace callable_interp {
 class LogT {
  public:
   PORTABLE_INLINE_FUNCTION
-  LogT(const Spiner::DataBox &field, const Real Ye, const Real lRho)
+  LogT(const DataBox &field, const Real Ye, const Real lRho)
       : field_(field), Ye_(Ye), lRho_(lRho) {}
   PORTABLE_INLINE_FUNCTION Real operator()(const Real lT) const {
     return field_.interpToReal(Ye_, lT, lRho_);
   }
 
  private:
-  const Spiner::DataBox &field_;
+  const DataBox &field_;
   const Real Ye_, lRho_;
 };
 
@@ -415,21 +417,21 @@ inline void StellarCollapse::Save(const std::string &filename) {
 
 inline StellarCollapse StellarCollapse::GetOnDevice() {
   StellarCollapse other;
-  other.lP_ = Spiner::getOnDeviceDataBox(lP_);
-  other.lE_ = Spiner::getOnDeviceDataBox(lE_);
-  other.dPdRho_ = Spiner::getOnDeviceDataBox(dPdRho_);
-  other.dPdE_ = Spiner::getOnDeviceDataBox(dPdE_);
-  other.dEdT_ = Spiner::getOnDeviceDataBox(dEdT_);
-  other.entropy_ = Spiner::getOnDeviceDataBox(entropy_);
-  other.Xa_ = Spiner::getOnDeviceDataBox(Xa_);
-  other.Xh_ = Spiner::getOnDeviceDataBox(Xh_);
-  other.Xn_ = Spiner::getOnDeviceDataBox(Xn_);
-  other.Xp_ = Spiner::getOnDeviceDataBox(Xp_);
-  other.Abar_ = Spiner::getOnDeviceDataBox(Abar_);
-  other.Zbar_ = Spiner::getOnDeviceDataBox(Zbar_);
-  other.lBMod_ = Spiner::getOnDeviceDataBox(lBMod_);
-  other.eCold_ = Spiner::getOnDeviceDataBox(eCold_);
-  other.eHot_ = Spiner::getOnDeviceDataBox(eHot_);
+  other.lP_ = Spiner::getOnDeviceDataBox<Real>(lP_);
+  other.lE_ = Spiner::getOnDeviceDataBox<Real>(lE_);
+  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real>(dPdRho_);
+  other.dPdE_ = Spiner::getOnDeviceDataBox<Real>(dPdE_);
+  other.dEdT_ = Spiner::getOnDeviceDataBox<Real>(dEdT_);
+  other.entropy_ = Spiner::getOnDeviceDataBox<Real>(entropy_);
+  other.Xa_ = Spiner::getOnDeviceDataBox<Real>(Xa_);
+  other.Xh_ = Spiner::getOnDeviceDataBox<Real>(Xh_);
+  other.Xn_ = Spiner::getOnDeviceDataBox<Real>(Xn_);
+  other.Xp_ = Spiner::getOnDeviceDataBox<Real>(Xp_);
+  other.Abar_ = Spiner::getOnDeviceDataBox<Real>(Abar_);
+  other.Zbar_ = Spiner::getOnDeviceDataBox<Real>(Zbar_);
+  other.lBMod_ = Spiner::getOnDeviceDataBox<Real>(lBMod_);
+  other.eCold_ = Spiner::getOnDeviceDataBox<Real>(eCold_);
+  other.eHot_ = Spiner::getOnDeviceDataBox<Real>(eHot_);
   other.memoryStatus_ = DataStatus::OnDevice;
   other.numRho_ = numRho_;
   other.numT_ = numT_;
@@ -817,7 +819,7 @@ inline void StellarCollapse::readBounds_(const hid_t &file_id, const std::string
  * https://forum.hdfgroup.org/t/is-this-a-bug-in-hdf5-1-8-6/2211
  */
 inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
-                                         Spiner::DataBox &db) {
+                                         DataBox &db) {
   herr_t exists = H5LTfind_dataset(file_id, name.c_str());
   if (!exists) {
     std::string msg = "Tried to read dataset " + name + " but it doesn't exist\n";
@@ -836,15 +838,14 @@ inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string
   db.setRange(0, lRhoMin_, lRhoMax_, numRho_);
 }
 
-inline void StellarCollapse::medianFilter_(Spiner::DataBox &db) {
-  Spiner::DataBox tmp;
+inline void StellarCollapse::medianFilter_(DataBox &db) {
+  DataBox tmp;
   tmp.copy(db);
   medianFilter_(tmp, db);
   free(tmp);
 }
 
-inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
-                                           Spiner::DataBox &out) {
+inline void StellarCollapse::medianFilter_(const DataBox &in, DataBox &out) {
   Real buffer[MF_S];
   // filter, overwriting as needed
   for (int iY = MF_W; iY < numYe_ - MF_W; ++iY) {
@@ -862,8 +863,7 @@ inline void StellarCollapse::medianFilter_(const Spiner::DataBox &in,
 }
 
 inline void StellarCollapse::fillMedianBuffer_(Real buffer[], int width, int iY, int iT,
-                                               int irho,
-                                               const Spiner::DataBox &tab) const {
+                                               int irho, const DataBox &tab) const {
   int i = 0;
   for (int iWy = -width; iWy <= width; iWy++) {
     for (int iWt = -width; iWt <= width; iWt++) {
@@ -1014,5 +1014,5 @@ Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
 }
 } // namespace singularity
 
-#endif // SPINER_USE_HDF
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #endif // _SINGULARITY_EOS_EOS_EOS_STELLAR_COLLAPSE_HPP_
