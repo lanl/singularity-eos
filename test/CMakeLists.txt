@@ -25,7 +25,7 @@ add_executable(
   )
 
 if(SINGULARITY_TEST_HELMHOLTZ)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test/helmholtz/helm_table.dat ${CMAKE_CURRENT_BINARY_DIR}/helmholtz/helm_table.dat COPYONLY)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/helmholtz/helm_table.dat ${CMAKE_CURRENT_BINARY_DIR}/helmholtz/helm_table.dat COPYONLY)
   target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_HELMHOLTZ)
 endif()
 
