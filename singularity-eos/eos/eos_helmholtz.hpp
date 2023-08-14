@@ -24,7 +24,7 @@
 
 // TODO(JMM): Currently spiner and HDf5 are entangled. But really this
 // model should depend only on spiner and NOT HDF5.
-#ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
 #include <cstdio>
 
@@ -153,7 +153,7 @@ using namespace eos_base;
 // TODO(JMM): Maybe want to move these utility functions into something like an
 // ASCII-utils file. Worth considering at some later date.
 namespace HelmUtils {
-using DataBox = Spiner::DataBox;
+using DataBox = Spiner::DataBox<>;
 
 // Components of the arrays returned by internal routines:
 // Variable, derivs w.r.t density, temperature, abar, zbar
@@ -1433,5 +1433,5 @@ void Helmholtz::GetFromDensityLogTemperature_(
 }; // namespace singularity
 
 #undef ROOT_FINDER
-#endif // SPINER_USE_HDF
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #endif // _SINGULARITY_EOS_EOS_HELMHOLTZ_HPP_
