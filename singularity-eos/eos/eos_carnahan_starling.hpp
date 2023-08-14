@@ -66,25 +66,27 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   PORTABLE_INLINE_FUNCTION Real ZedFromDensity(const Real rho,
                                                Real *lambda = nullptr) const {
     const Real eta = _bb * rho;
-    const Real zed = robust::ratio(1.0 + eta + eta * eta - eta * eta * eta,
+    const Real eta2 = eta * eta;
+    const Real zed = robust::ratio(1.0 + eta + eta2 - eta2 * eta,
                                    (1.0 - eta) * (1.0 - eta) * (1.0 - eta));
     return zed;
   }
   PORTABLE_INLINE_FUNCTION Real PartialRhoZedFromDensity(const Real rho,
                                                          Real *lambda = nullptr) const {
     const Real eta = _bb * rho;
-    return robust::ratio(eta * eta * eta * eta - 4.0 * eta * eta * eta + 4.0 * eta * eta +
-                             4.0 * eta + 1.0,
+    const Real eta2 = eta * eta;
+    return robust::ratio(eta2 * eta2 - 4.0 * eta2 * eta + 4.0 * eta2 + 4.0 * eta + 1.0,
                          (1.0 - eta) * (1.0 - eta) * (1.0 - eta) * (1.0 - eta));
   }
   PORTABLE_INLINE_FUNCTION Real DensityFromPressureTemperature(
-      const Real press, const Real temperature, Real *lambda = nullptr) const {
+      const Real press, const Real temperature, const Real guess = robust::SMALL(),
+      Real *lambda = nullptr) const {
     Real real_root;
     // iteration related variables
     int newton_counter = 0;
     const int newton_max = 50;
     const Real rel_tol = 1.e-12;
-    real_root = 0.0; // initial guess
+    real_root = guess;
     for (int i = 0; i < newton_max; i++) {
       Real real_root_old = real_root;
       Real newton_f =
