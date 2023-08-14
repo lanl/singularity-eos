@@ -39,6 +39,8 @@ set(EOS_HEADERS
     eos/modifiers/eos_unitsystem.hpp
     eos/eos_base.hpp
     eos/eos_eospac.hpp
+    eos/eos_noble_abel.hpp
+    eos/eos_stiff.hpp
 )
 
 set(EOS_SRCS

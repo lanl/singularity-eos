@@ -19,7 +19,9 @@ add_executable(
   test_eos_gruneisen.cpp
   test_eos_sap_polynomial.cpp
   test_eos_vinet.cpp
-  test_eos_stiff.cpp)
+  test_eos_noble_abel.cpp
+  test_eos_stiff.cpp
+)
 
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
