@@ -5,6 +5,7 @@
 
 ### Fixed (Repair bugs, etc)
 - [[PR292]](https://github.com/lanl/singularity-eos/pull/292) Added Carnahan-Starling EoS
+- [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options 
 - [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
 - [[PR288]](https://github.com/lanl/singularity-eos/pull/288) Don't build tests that depend on spiner when spiner is disabled
 - [[PR287]](https://github.com/lanl/singularity-eos/pull/287) Fix testing logic with new HDF5 options

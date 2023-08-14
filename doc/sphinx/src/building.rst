@@ -1,5 +1,5 @@
-Overview
-========
+Building `singularity-eos`
+==========================
 
 The ``singularity-eos`` build system is designed with two goals in mind
 
@@ -53,15 +53,15 @@ Dependencies
 ====================================== =============================== ===========================================
   Package Name                          Distribution                    Comment 
 ====================================== =============================== ===========================================
- `spiner`_                              submodule [*]_ / external [*]_   Required
  `ports-of-call`_                       submodule / external             Required
  `mpark_variant`_                       submodule / external             Required
+ `spiner`_                              submodule [*]_ / external [*]_   Optional; enhanced backend for EOS tables
  `hdf5`_                                external only                    Optional; used for table I/O
  `eospac`_                              external only                    Optional; used for sesame tables.
  `kokkos`_                              submodule / external             Optional; enables GPU offloading.
  `Eigen`_                               submodule / external             Optional; used for linear algebra on the CPU when doing mixed-cell closures.
  `kokkos-kernels`_                      submodule / external             Optional; used for linear algebra on the GPU when doing mixed-cell closures.
- `pybind11`_                            external / fetchable [*]_        Optional; 
+ `pybind11`_                            external / fetchable [*]_        Optional 
 ====================================== =============================== ===========================================
 
 .. [*] availible as a git submodule for in-tree builds
@@ -105,6 +105,7 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_USE_FORTRAN``             ON       Enable Fortran API for equation of state.
  ``SINGULARITY_USE_KOKKOS``              OFF      Uses Kokkos as the portability backend. Currently only Kokkos is supported for GPUs.
  ``SINGULARITY_USE_EOSPAC``              OFF      Link against EOSPAC. Needed for sesame2spiner and some tests.
+ ``SINGULARITY_BUILD_CLOSURE``           OFF      Build the mixed cell closure models
  ``SINGULARITY_BUILD_TESTS``             OFF      Build test infrastructure.
  ``SINGULARITY_BUILD_PYTHON``            OFF      Build Python bindings.
  ``SINGULARITY_INVERT_AT_SETUP``         OFF      For tests, pre-invert eospac tables.
@@ -146,8 +147,7 @@ preconditions:
 ============================================== ================================================================================= ===========================================
  ``SINGULARITY_USE_SPINER_WITH_HDF5``           ``SINGULARITY_USE_SPINER=ON``                                                     Requests that ``spiner`` be configured for ``HDF5`` support.
  ``SINGULARITY_USE_CUDA``                       ``SINGULARITY_USE_KOKKOS=ON``                                                     Target nvidia GPUs for ``Kokkos`` offloading.
- ``SINGULARITY_USE_KOKKOSKERNELS``              ``SINGULARITY_USE_KOKKOS=ON``                                                     Use Kokkos Kernels for linear algebra. Needed for mixed cell closure models on GPU.
- ``SINGULARITY_BUILD_CLOSURE``                  ``SINGULARITY_USE_KOKKOS=ON`` ``SINGULARITY_USE_KOKKOSKERNELS=ON``                Mixed cell closure.
+ ``SINGULARITY_USE_KOKKOSKERNELS``              ``SINGULARITY_USE_KOKKOS=ON`` ``SINGULARITY_BUILD_CLOSURE=ON``                       Use Kokkos Kernels for linear algebra. Needed for mixed cell closure models on GPU.
  ``SINGULARITY_BUILD_SESAME2SPINER``            ``SINGULARITY_USE_SPINER=ON`` ``SINGULARITY_USE_SPINER_WITH_HDF5=ON``             Builds the conversion tool sesame2spiner which makes files readable by SpinerEOS.
  ``SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER``   ``SINGULARITY_USE_SPINER=ON`` ``SINGULARITY_USE_SPINER_WITH_HDF5=ON``             Builds the conversion tool stellarcollapse2spiner which optionally makes stellar collapse files faster to read.
  ``SINGULARITY_TEST_SESAME``                    ``SINGULARITY_BUILD_TESTS=ON`` ``SINGULARITY_BUILD_SESAME2SPINER=ON``             Test the Sesame table readers.
