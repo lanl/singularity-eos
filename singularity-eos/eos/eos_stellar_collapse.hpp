@@ -158,6 +158,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     return 0;
   }
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
+  // NOTE: The logs here are table logs. SO when fast logs are
+  // enabled, these are fast logs.
   PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
@@ -194,7 +196,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 
  private:
   inline void LoadFromSP5File_(const std::string &filename);
-  inline void LoadFromStellarCollapseFile_(const std::string &filename);
+  inline void LoadFromStellarCollapseFile_(const std::string &filename, bool filter_bmod);
   inline int readSCInt_(const hid_t &file_id, const std::string &name);
   inline void readBounds_(const hid_t &file_id, const std::string &name, int size,
                           Real &lo, Real &hi);
@@ -367,12 +369,7 @@ inline StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp
   if (use_sp5) {
     LoadFromSP5File_(filename);
   } else {
-    LoadFromStellarCollapseFile_(filename);
-    if (filter_bmod) {
-      medianFilter_(dPdRho_); // needed if pulling the data
-      medianFilter_(dPdE_);   // directly from Stellar Collapse tables
-      medianFilter_(dEdT_);
-    }
+    LoadFromStellarCollapseFile_(filename, filter_bmod);
     computeBulkModulus_();
     computeColdAndHotCurves_();
   }
@@ -718,7 +715,7 @@ inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
 }
 
 // Read data directly from a stellar collapse eos file
-inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) {
+inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename, bool filter_bmod) {
   // Open the file.
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   herr_t status = H5_SUCCESS;
@@ -774,6 +771,12 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   }
 
   H5Fclose(file_id);
+
+  if (filter_bmod) {
+    medianFilter_(dPdRho_); // needed if pulling the data
+    medianFilter_(dPdE_);   // directly from Stellar Collapse tables
+    medianFilter_(dEdT_);
+  }
 }
 
 inline int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &name) {
