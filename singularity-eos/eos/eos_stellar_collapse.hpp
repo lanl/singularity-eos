@@ -59,6 +59,7 @@ using namespace eos_base;
 // and introduce extrapolation as needed.
 class StellarCollapse : public EosBase<StellarCollapse> {
   using DataBox = Spiner::DataBox<Real>;
+  using Grid_t = Spiner::RegularGrid1D<Real>;
 
  public:
   // A weakly typed index map for lambdas
@@ -200,7 +201,9 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline int readSCInt_(const hid_t &file_id, const std::string &name);
   inline void readBounds_(const hid_t &file_id, const std::string &name, int size,
                           Real &lo, Real &hi);
-  inline void readSCDset_(const hid_t &file_id, const std::string &name, DataBox &db);
+  inline void readSCDset_(const hid_t &file_id, const std::string &name,
+                          const Grid_t &Ye_grid, const Grid_t &lT_grid, const Grid_t &lRho_grid,
+                          DataBox &db);
 
   inline void medianFilter_(DataBox &db);
   inline void medianFilter_(const DataBox &in, DataBox &out);
@@ -716,7 +719,8 @@ inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
 
 // Read data directly from a stellar collapse eos file
 inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename, bool filter_bmod) {
-  // Open the file.
+  // Start HDF5 stuff
+  // ---------------------------------------------------------------------
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   herr_t status = H5_SUCCESS;
 
@@ -726,38 +730,59 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
 
   status = H5LTread_dataset_double(file_id, "energy_shift", &lEOffset_);
   if (status < 0) {
-    EOS_ERROR("An HDF5 error ocurred while reading energy_shift\n");
+    PORTABLE_ALWAYS_THROW_OR_ABORT("An HDF5 error ocurred while reading energy_shift\n");
   }
 
-  // Bounds
-  readBounds_(file_id, "logrho", numRho_, lRhoMin_, lRhoMax_);
-  readBounds_(file_id, "logtemp", numT_, lTMin_, lTMax_);
-  const Real logMev2K = std::log10(MeV2K_);
-  lTMin_ += logMev2K;
-  lTMax_ += logMev2K;
+  Real lRhoMin, lRhoMax, lTMin, lTMax;
+  readBounds_(file_id, "logrho", numRho_, lRhoMin, lRhoMax);
+  readBounds_(file_id, "logtemp", numT_, lTMin, lTMax);
   readBounds_(file_id, "ye", numYe_, YeMin_, YeMax_);
+
+  // Convert temperature to MeV
+  const Real logMev2K = std::log10(MeV2K_);
+  lTMin += logMev2K;
+  lTMax += logMev2K;
+
+  // In preparation for these not being the same
+  lRhoMin_ = lRhoMin;
+  lRhoMax_ = lRhoMax;
+  lTMin_ = lTMin;
+  lTMax_ = lTMax;
+
+  // Generate grids for reading stellar collapse format tables
+  Grid_t Ye_grid(YeMin_, YeMax_, numYe_);
+  Grid_t lT_grid(lTMin, lTMax, numT_);
+  Grid_t lRho_grid(lRhoMin, lRhoMax, numRho_);
 
   // Tables
   // fastest -> slowest:
   // Ye -> lT -> lRho
   // TODO(JMM): Might be worth re-ordering these.
   // For cache efficiency, lT should be fastest, not lRho.
-  readSCDset_(file_id, "logpress", lP_);
-  readSCDset_(file_id, "logenergy", lE_);
-  readSCDset_(file_id, "dpdrhoe", dPdRho_);
-  readSCDset_(file_id, "dpderho", dPdE_);
-  readSCDset_(file_id, "dedt", dEdT_);
+
+  // Dependent vars in log space, so interpolation is log-log
+  readSCDset_(file_id, "logpress", Ye_grid, lT_grid, lRho_grid, lP_);
+  readSCDset_(file_id, "logenergy", Ye_grid, lT_grid, lRho_grid, lE_);
+
+  // Dependent vars not in log space, so interpolation is log-linear
+  readSCDset_(file_id, "dpdrhoe", Ye_grid, lT_grid, lRho_grid, dPdRho_);
+  readSCDset_(file_id, "dpderho", Ye_grid, lT_grid, lRho_grid, dPdE_);
+  readSCDset_(file_id, "dedt", Ye_grid, lT_grid, lRho_grid, dEdT_);
 
   // TODO(JMM): entropy, mass fractions, and average atomic mass and
   // numbers aren't exposed in eos_variant. So you need to pull the
   // type out.
-  readSCDset_(file_id, "entropy", entropy_);
-  readSCDset_(file_id, "Xa", Xa_);
-  readSCDset_(file_id, "Xh", Xh_);
-  readSCDset_(file_id, "Xn", Xn_);
-  readSCDset_(file_id, "Xp", Xp_);
-  readSCDset_(file_id, "Abar", Abar_);
-  readSCDset_(file_id, "Zbar", Zbar_);
+  readSCDset_(file_id, "entropy", Ye_grid, lT_grid, lRho_grid, entropy_);
+  readSCDset_(file_id, "Xa", Ye_grid, lT_grid, lRho_grid, Xa_);
+  readSCDset_(file_id, "Xh", Ye_grid, lT_grid, lRho_grid, Xh_);
+  readSCDset_(file_id, "Xn", Ye_grid, lT_grid, lRho_grid, Xn_);
+  readSCDset_(file_id, "Xp", Ye_grid, lT_grid, lRho_grid, Xp_);
+  readSCDset_(file_id, "Abar", Ye_grid, lT_grid, lRho_grid, Abar_);
+  readSCDset_(file_id, "Zbar", Ye_grid, lT_grid, lRho_grid, Zbar_);
+
+  H5Fclose(file_id);
+  // -----------------------------------------------------------------------
+  // End HDF5 stuff
 
   // TODO(BRR): in the future, if reading in chemical potentials, convert from MeV to K
 
@@ -769,8 +794,6 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
       }
     }
   }
-
-  H5Fclose(file_id);
 
   if (filter_bmod) {
     medianFilter_(dPdRho_); // needed if pulling the data
@@ -822,23 +845,24 @@ inline void StellarCollapse::readBounds_(const hid_t &file_id, const std::string
  * https://forum.hdfgroup.org/t/is-this-a-bug-in-hdf5-1-8-6/2211
  */
 inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
+                                         const Grid_t &Ye_grid, const Grid_t &lT_grid, const Grid_t &lRho_grid,
                                          DataBox &db) {
   herr_t exists = H5LTfind_dataset(file_id, name.c_str());
   if (!exists) {
     std::string msg = "Tried to read dataset " + name + " but it doesn't exist\n";
     EOS_ERROR(msg.c_str());
   }
-  db.resize(numYe_, numT_, numRho_);
+  db.resize(Ye_grid.nPoints(), lT_grid.nPoints(), lRho_grid.nPoints());
   herr_t status = H5LTread_dataset(file_id, name.c_str(), H5T_REAL, db.data());
   if (status != H5_SUCCESS) {
     std::string msg = "Tried to read dataset " + name + " but it failed exist\n";
-    EOS_ERROR(msg.c_str());
+    PORTABLE_ALWAYS_THROW_OR_ABORT(msg.c_str());
   }
 
   // bounds
-  db.setRange(2, YeMin_, YeMax_, numYe_);
-  db.setRange(1, lTMin_, lTMax_, numT_);
-  db.setRange(0, lRhoMin_, lRhoMax_, numRho_);
+  db.setRange(2, Ye_grid);
+  db.setRange(1, lT_grid);
+  db.setRange(0, lRho_grid);
 }
 
 inline void StellarCollapse::medianFilter_(DataBox &db) {
