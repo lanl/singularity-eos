@@ -153,6 +153,8 @@ preconditions:
  ``SINGULARITY_TEST_SESAME``                    ``SINGULARITY_BUILD_TESTS=ON`` ``SINGULARITY_BUILD_SESAME2SPINER=ON``             Test the Sesame table readers.
  ``SINGULARITY_TEST_STELLAR_COLLAPSE``          ``SINGULARITY_BUILD_TESTS=ON`` ``SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON``     Test the Stellar Collapse table readers.
  ``SINGULARITY_TEST_PYTHON``                    ``SINGULARITY_BUILD_TESTS=ON`` ``SINGULARITY_BUILD_PYTHON=ON``                    Test the Python bindings.
+ ``SINGULARITY_USE_HELMHOLTZ``                  ``SINGULARITY_USE_SPINER=ON`` ``SINGULARITY_USE_SPINER_WITH_HDF5=ON``             Use Helmholtz equation of state.
+ ``SINGULARITY_TEST_HELMHOLTZ``                 ``SINGULARITY_USE_HELMHOLTZ``                                                     Build Helmholtz equation of state tests.
 ============================================== ================================================================================= ===========================================
 
 CMake presets
