@@ -39,7 +39,7 @@ jobs:
           run: git diff --exit-code --compact-summary
           id: no_change
         - name: create branch
-          if: ${{ steps.no_change.conclusion == 'failure' }}
+          if: ${{ failure() && steps.no_change.conclusion == 'failure' }}
           run: |
             git config user.name 'github-actions[bot]'
             git config user.email 'github-actions[bot]@users.noreply.github.com'
@@ -49,7 +49,7 @@ jobs:
             git commit -m "spack updates"
             git push -f --set-upstream origin github-bot/update_spackages
         - name: create pull request
-          if: ${{ steps.no_change.conclusion == 'failure' }}
+          if: ${{ failure() && steps.no_change.conclusion == 'failure' }}
           run: gh pr create -B main -H github-bot/update_spackages --title 'Update spackages' --body 'Created by Github action'
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

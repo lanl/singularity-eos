@@ -15,6 +15,10 @@
 
 .. _WillsThermo: https://www.osti.gov/biblio/1561015
 
+.. _NobleAbel: https://doi.org/10.1063/5.0079187
+
+.. _StiffGas: https://doi.org/10.1016/j.ijthermalsci.2003.09.002
+
 
 EOS Models
 ===========
@@ -416,6 +420,121 @@ can be provided in the constructor via ``EntropyT0`` and ``EntropyRho0``:
 .. code-block:: cpp
 
     IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0)
+
+Note that these parameters are provided solely for the entropy calculation. When
+these values are not set, they will be the same as those returned by the
+:code:`ValuesAtReferenceState()` function. However, if the entropy reference
+conditions are given, the return values of the :code:`ValuesAtReferenceState()`
+function will not be the same.
+
+Stiffened Gas
+`````````````
+
+The following implementation was guided by the reference `StiffGas`_. The stiffened gas model in ``singularity-eos`` takes
+the form
+
+.. math::
+
+    P = \Gamma \rho (e-q) - \gamma P_{\infty}
+
+.. math::
+
+    e = \frac{ P + \gamma P_{\infty} }{ P + P_{\infty} } C_V T + q,
+
+where quantities are largely the same as ideal gas with the exception of :math:`P_{\infty}` and :math:`q`, which can be thought of as an offset pressure and internal energy, respectively.
+
+The entropy for a stiffened gas can be expressed as
+
+.. math::
+
+    S = C_V \ln\left(\frac{T}{T_0}\right) + (\gamma-1) C_V \ln\left(\frac{\rho_0}
+     {\rho}\right) + q',
+
+where :math:`S(\rho_0,T_0)=q'`. By default, :math:`T_0 = 298` K and the
+reference density is given by
+
+.. math::
+
+    \rho_0 = \frac{P_0 + P_{\infty}}{(\gamma-1) C_V T_0},
+
+where the reference pressure, :math:`P_0`, is 1 bar by default.
+
+The settable parameters for this EOS are the Gruneisen parameter, :math:`\gamma-1`, specific
+heat capacity, :math:`C_V`, offset pressure, :math:`P_{\infty}`, and the offset internal energy, :math:`q`. Optionally, the reference state for the entropy calculation can
+be provided by setting values for the reference temperature, pressure, and offset entropy (:math:`q'`).
+
+The ``StiffGas`` EOS constructor has four arguments, ``gm1``, which is
+the Gruneisen parameter :math:`\Gamma`, ``Cv``, which is the
+specific heat :math:`C_V`, ``P_{\infty}`` which is the offset pressure, and ``q`` which is the offset internal energy:
+
+.. code-block:: cpp
+
+    StiffGas(Real gm1, Real Cv, Real Pinf, Real q)
+
+Optionally, the reference temperature and density for the entropy calculation,
+can be provided in the constructor via ``qp``, ``T0``, and ``P0``:
+
+.. code-block:: cpp
+
+    StiffGas(Real gm1, Real Cv, Real Pinf, Real q, Real qp, Real T0, Real P0)
+
+Note that these parameters are provided solely for the entropy calculation. When
+these values are not set, they will be the same as those returned by the
+:code:`ValuesAtReferenceState()` function. However, if the entropy reference
+conditions are given, the return values of the :code:`ValuesAtReferenceState()`
+function will not be the same.
+
+Noble-Abel
+``````````
+
+The implementation here was influenced by the reference `NobleAbel`_. The Noble-Abel (aka Clausius I or Hirn) model in ``singularity-eos`` takes
+the form
+
+.. math::
+
+    P = \frac{ \rho (e-q) (\gamma-1) }{ 1 - b \rho }
+
+.. math::
+
+    e = C_V T + q,
+
+where quantities are similar to the ideal gas law with the exception of covolume (:math:`b`) and offset internal energy (:math:`q`).
+It should be noted that covolume is physically significant as it represents the maximum compressibility of the gas, and as a result it should be non-negative.
+
+The entropy for the Noble-Abel EoS is given by
+
+.. math::
+
+    S = C_V \ln\left(\frac{T}{T_0}\right) + C_V (\gamma-1) \ln\left(\frac{v - b}
+     {v_0 - b}\right) + q',
+     
+
+where :math:`S(\rho_0,T_0)=q'`. By default, :math:`T_0 = 298` K and the
+reference density is given by
+
+.. math::
+
+    \rho_0 = \frac{P_0}{C_V T_0(\gamma-1) + bP_0},
+
+where :math:`P_0` is by default 1 bar.
+
+The settable parameters for this EOS are :math:`\gamma-1`, specific
+heat capacity (:math:`C_V`), covolume (:math:`b`) and offset internal energy (:math:`q`). Optionally, the reference state for the entropy calculation can
+be provided by setting the reference temperature, pressure, and entropy offset.
+
+The ``NobleAbel`` EOS constructor has four arguments: ``gm1``, which is :math:`\gamma-1`; ``Cv``, the
+specific heat :math:`C_V`; :math:`b`, the covolume; and :math:`q`, the internal energy offset.
+
+.. code-block:: cpp
+
+    NobleAbel(Real gm1, Real Cv, Real b, Real q)
+
+Optionally, the reference state for the entropy calculation,
+can be provided in the constructor via ``qp``, ``T0`` and ``P0``:
+
+.. code-block:: cpp
+
+    NobleAbel(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0)
 
 Note that these parameters are provided solely for the entropy calculation. When
 these values are not set, they will be the same as those returned by the
@@ -1030,6 +1149,37 @@ location of the ``sesame`` database need not be provided by the
 command line. For how to specify `sesame`_ file locations, see the
 `eospac`_ manual.
 
+SAP Polynomial EOS
+``````````````````
+
+This model is specific to the Safety Applications Project (SAP). It is
+an imcomplete EOS, and is a simple analytical form used to fit
+experimental data:
+
+.. math::
+
+   P = a_0 + a_1\mu + a_2^* \mu^2 + a_3 \mu^3 + \varepsilon(b_0 + b_1\mu + b_2^*\mu^2 + b_3\mu^3)
+
+with
+
+.. math::
+
+  \mu = \frac{\rho}{\rho_0} - 1
+
+The constants :math:`a_2^*` and :math:`b_2^*` can assume different
+values in expansion and compression.
+
+.. math::
+
+  a_2^* = \begin{cases}
+             a_2^c & \mu \geq 0 \text{ (compression)}\\
+             a_2^e & \mu <    0 \text{ (expansion)}\\
+          \end{cases}
+
+and similar expressions for :math:`b_2^*`.
+
+
+
 Stellar Collapse EOS
 ````````````````````
 
@@ -1161,3 +1311,5 @@ See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
 .. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
 
 .. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
+
+
