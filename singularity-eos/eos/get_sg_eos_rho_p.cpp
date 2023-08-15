@@ -19,20 +19,15 @@
 #include <singularity-eos/eos/get_sg_eos_lambdas.hpp>
 
 namespace singularity {
-void get_sg_eos_rho_p(const char *name, int ncell, int nmat, indirection_v &offsets_v,
-                      indirection_v &eos_offsets_v, Kokkos::View<EOS *, Llft> &eos_v,
-                      dev_v &press_v, dev_v &pmax_v, dev_v &vol_v, dev_v &spvol_v,
-                      dev_v &sie_v, dev_v &temp_v, dev_v &bmod_v, dev_v &dpde_v,
-                      dev_v &cv_v, dev_frac_v &frac_mass_v, dev_frac_v &frac_vol_v,
-                      dev_frac_v &frac_ie_v, dev_frac_v &frac_bmod_v,
-                      dev_frac_v &frac_dpde_v, dev_frac_v &frac_cv_v,
+void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
+                      Kokkos::View<EOS *, Llft> &eos_v, dev_v &press_v,
+		      dev_v &pmax_v, dev_v &sie_v, dev_frac_v &frac_mass_v,
                       ScratchV<int> &pte_idxs, ScratchV<int> &pte_mats,
                       ScratchV<double> &press_pte, ScratchV<double> &vfrac_pte,
                       ScratchV<double> &rho_pte, ScratchV<double> &sie_pte,
                       ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
                       Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
-                      bool small_loop, bool do_frac_bmod, bool do_frac_dpde,
-                      bool do_frac_cv, init_functor& i_func, final_functor& f_func) {
+                      bool small_loop, init_functor& i_func, final_functor& f_func) {
   portableFor(
       name, 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
         // cell offset
