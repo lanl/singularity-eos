@@ -16,7 +16,7 @@
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/get_sg_eos.hpp>
-#include <singularity-eos/eos/get_sg_eos_lambdas.hpp>
+#include <singularity-eos/eos/get_sg_eos_functors.hpp>
 
 // any bmod vars, dpde, cv, frac vol, frac ie
 

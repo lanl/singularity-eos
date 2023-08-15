@@ -62,7 +62,7 @@ if (SINGULARITY_BUILD_CLOSURE)
     endif()
     list(APPEND EOS_HEADERS
          eos/get_sg_eos.hpp
-         eos/get_sg_eos_lambdas.hpp)
+         eos/get_sg_eos_functors.hpp)
   endif()
 endif()
 

@@ -17,7 +17,7 @@
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/get_sg_eos.hpp>
-#include <singularity-eos/eos/get_sg_eos_lambdas.hpp>
+#include <singularity-eos/eos/get_sg_eos_functors.hpp>
 #include <singularity-eos/eos/singularity_eos.hpp>
 
 using namespace singularity;
