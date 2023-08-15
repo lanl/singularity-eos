@@ -124,13 +124,22 @@ SCENARIO("Helmholtz equation of state - Root finding (egiven)", "[HelmholtzEOS]"
        we check for internal consistency of the root finding algorithm instead of
        comparing the results to the reference implementation. */
 
-    /* Here we also include Coulomb corrections. */
-    Helmholtz eos(filename, true, true, true, true, true);
+    Helmholtz eos(filename, true, true, false, true, true);
     THEN("We loaded the file!") { REQUIRE(true); }
 
     /* Density and temperature range evenly sampling the parameter space */
     Real rho_in[4] = {1e-3, 1e1, 1e5, 1e9};
     Real temp_in[4] = {1e4, 1e6, 1e8, 1e10};
+
+    /* Reference values computed with the reference implementation */
+    Real ein_ref[16] = {
+        9.4224752079613794e+11, 1.0111770497124719e+14, 7.5658628444001809e+20,
+        2.0453379618698803e+29, 2.2331233357586930e+13, 1.0034546568448442e+14,
+        8.5141422479277632e+16, 2.0453379683965599e+25, 9.9766457026104000e+15,
+        1.0007780352178464e+16, 1.5481955850958990e+16, 2.0454039730394418e+21,
+        1.2565634708891441e+18, 1.2565943427230589e+18, 1.2597246289336612e+18,
+        2.0378412737252767e+18,
+    };
 
     /* Compare test values. Difference should be less than 1e-6 */
     Real lambda[2] = {4.0, 2.0};
@@ -144,6 +153,9 @@ SCENARIO("Helmholtz equation of state - Root finding (egiven)", "[HelmholtzEOS]"
            additional layer of consistency, but not strictly necessary. */
         Real ein =
             eos.InternalEnergyFromDensityTemperature(rho_in[i], temp_in[j], lambda);
+        /* Independent check of the table interpolation in case the table interpolation
+           check does not fail already. */
+        REQUIRE_THAT(ein, WithinRel(ein_ref[k], 1e-10));
         Real temp_new = eos.TemperatureFromDensityInternalEnergy(rho_in[i], ein, lambda);
         Real ein_new =
             eos.InternalEnergyFromDensityTemperature(rho_in[i], temp_new, lambda);
