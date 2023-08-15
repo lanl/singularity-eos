@@ -83,7 +83,7 @@ cmake_dependent_option(
   "SINGULARITY_BUILD_TESTS;SINGUALRITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
 cmake_dependent_option(SINGULARITY_TEST_PYTHON "Test the Python bindings" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_PYTHON" OFF)
-option (SINGULARITY_EOS_TEST_HELMHOLTZ "Test the helmholtz table reader" OFF)
+option (SINGULARITY_TEST_HELMHOLTZ "Test the helmholtz table reader" OFF)
 
 # modify flags options
 option(SINGULARITY_BETTER_DEBUG_FLAGS "Better debug flags for singularity" ON)
