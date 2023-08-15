@@ -108,7 +108,8 @@ struct filter<ADAPTER, Pred, Variadic, T, Ts...> {
 template <template <typename> class FIRST, template <typename> class... Us,
           typename... Ts>
 constexpr auto filter_nested_variadic(adapt_list<FIRST, Us...> m, type_list<Ts...> l) {
-  using t1 = type_list<typename filter<FIRST, is_not_duplicate_nested, type_list, Ts...>::type>;
+  using t1 =
+      type_list<typename filter<FIRST, is_not_duplicate_nested, type_list, Ts...>::type>;
   constexpr typename flatten<t1>::type l1{};
   return filter_nested_variadic(adapt_list<Us...>{}, l1);
 }

@@ -532,8 +532,8 @@ SCENARIO("Test NobleAbel Entropy Calls", "[NobleAbel][NobleAbel5]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
-      //constexpr std::array<Real, num> pressure_true{3.4450499999999993e+07};
-      //constexpr std::array<Real, num> temperature_true{1.5320999999999999e+03};
+      // constexpr std::array<Real, num> pressure_true{3.4450499999999993e+07};
+      // constexpr std::array<Real, num> temperature_true{1.5320999999999999e+03};
       constexpr std::array<Real, num> entropy_true{-2.0177705273504910e+08};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS

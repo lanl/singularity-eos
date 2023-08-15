@@ -30,7 +30,7 @@ void get_sg_eos_p_t(const char *name, int ncell, int nmat, indirection_v &offset
                     ScratchV<double> &rho_pte, ScratchV<double> &sie_pte,
                     ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
                     Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
-                    bool small_loop, final_functor& f_func) {
+                    bool small_loop, final_functor &f_func) {
   portableFor(
       name, 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
         // cell offset

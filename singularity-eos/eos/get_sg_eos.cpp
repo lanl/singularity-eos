@@ -145,18 +145,15 @@ int get_sg_eos( // sizing information
   // declare init and final functors
   auto input_int_enum = static_cast<input_condition>(input_int);
   init_functor i_func;
-  final_functor f_func(temp_v, press_v, sie_v, bmod_v, cv_v,
-		       dpde_v, pte_mats, press_pte, vfrac_pte,
-		       temp_pte, sie_pte, frac_mass_v, frac_ie_v,
-		       frac_vol_v, vol_v, eos_v, pte_idxs, rho_pte,
-		       frac_bmod_v, frac_cv_v, frac_dpde_v, nmat,
-		       do_frac_bmod, do_frac_cv, do_frac_dpde);
+  final_functor f_func(temp_v, press_v, sie_v, bmod_v, cv_v, dpde_v, pte_mats, press_pte,
+                       vfrac_pte, temp_pte, sie_pte, frac_mass_v, frac_ie_v, frac_vol_v,
+                       vol_v, eos_v, pte_idxs, rho_pte, frac_bmod_v, frac_cv_v,
+                       frac_dpde_v, nmat, do_frac_bmod, do_frac_cv, do_frac_dpde);
   // only initialize init functor when needed
   if (input_int_enum != input_condition::P_T_INPUT) {
-    i_func = init_functor(frac_mass_v, pte_idxs, eos_offsets_v,
-			  frac_vol_v, pte_mats, vfrac_pte, sie_pte,
-			  temp_pte, press_pte, rho_pte, spvol_v,
-			  temp_v, press_v, sie_v, nmat);
+    i_func = init_functor(frac_mass_v, pte_idxs, eos_offsets_v, frac_vol_v, pte_mats,
+                          vfrac_pte, sie_pte, temp_pte, press_pte, rho_pte, spvol_v,
+                          temp_v, press_v, sie_v, nmat);
   }
 
   // create helper lambdas to reduce code duplication
@@ -175,10 +172,10 @@ int get_sg_eos( // sizing information
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
                                       pte_solver_scratch_size);
     const std::string rt_name = "PTE::solve (rho,T) input" + perf_nums;
-    singularity::get_sg_eos_rho_t(
-        rt_name.c_str(), ncell, offsets_v, eos_v, press_v, pmax_v, sie_v,
-	frac_mass_v, pte_idxs, pte_mats, press_pte, vfrac_pte, rho_pte, sie_pte,
-	temp_pte, solver_scratch, tokens, small_loop, i_func, f_func);
+    singularity::get_sg_eos_rho_t(rt_name.c_str(), ncell, offsets_v, eos_v, press_v,
+                                  pmax_v, sie_v, frac_mass_v, pte_idxs, pte_mats,
+                                  press_pte, vfrac_pte, rho_pte, sie_pte, temp_pte,
+                                  solver_scratch, tokens, small_loop, i_func, f_func);
     break;
   }
   case input_condition::RHO_P_INPUT: {
@@ -191,10 +188,10 @@ int get_sg_eos( // sizing information
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
                                       pte_solver_scratch_size);
     const std::string rp_name = "PTE::solve (rho,P) input" + perf_nums;
-    singularity::get_sg_eos_rho_p(
-        rp_name.c_str(), ncell, offsets_v, eos_v, press_v, pmax_v, sie_v,
-	frac_mass_v, pte_idxs, pte_mats, press_pte, vfrac_pte, rho_pte, sie_pte,
-	temp_pte, solver_scratch, tokens, small_loop, i_func, f_func);
+    singularity::get_sg_eos_rho_p(rp_name.c_str(), ncell, offsets_v, eos_v, press_v,
+                                  pmax_v, sie_v, frac_mass_v, pte_idxs, pte_mats,
+                                  press_pte, vfrac_pte, rho_pte, sie_pte, temp_pte,
+                                  solver_scratch, tokens, small_loop, i_func, f_func);
     break;
   }
   case input_condition::P_T_INPUT: {
@@ -203,10 +200,11 @@ int get_sg_eos( // sizing information
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
                                       pte_solver_scratch_size);
     const std::string pt_name = "PTE::solve (P,T) input" + perf_nums;
-    singularity::get_sg_eos_p_t(
-        pt_name.c_str(), ncell, nmat, offsets_v, eos_offsets_v, eos_v, press_v, pmax_v,
-        vol_v, spvol_v, sie_v, temp_v, frac_mass_v, pte_idxs, pte_mats, press_pte,
-        vfrac_pte, rho_pte, sie_pte, temp_pte, solver_scratch, tokens, small_loop, f_func);
+    singularity::get_sg_eos_p_t(pt_name.c_str(), ncell, nmat, offsets_v, eos_offsets_v,
+                                eos_v, press_v, pmax_v, vol_v, spvol_v, sie_v, temp_v,
+                                frac_mass_v, pte_idxs, pte_mats, press_pte, vfrac_pte,
+                                rho_pte, sie_pte, temp_pte, solver_scratch, tokens,
+                                small_loop, f_func);
     break;
   }
   case input_condition::NORM_RHO_E_INPUT:
@@ -218,10 +216,10 @@ int get_sg_eos( // sizing information
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
                                       pte_solver_scratch_size);
     const std::string re_name = "PTE::solve (rho,e) input" + perf_nums;
-    singularity::get_sg_eos_rho_e(
-        re_name.c_str(), ncell, offsets_v, eos_v, press_v, pmax_v, sie_v, pte_idxs,
-	press_pte, vfrac_pte, rho_pte, sie_pte, temp_pte, solver_scratch, tokens,
-	small_loop, i_func, f_func);
+    singularity::get_sg_eos_rho_e(re_name.c_str(), ncell, offsets_v, eos_v, press_v,
+                                  pmax_v, sie_v, pte_idxs, press_pte, vfrac_pte, rho_pte,
+                                  sie_pte, temp_pte, solver_scratch, tokens, small_loop,
+                                  i_func, f_func);
     break;
   }
   }

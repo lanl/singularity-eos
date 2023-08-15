@@ -20,13 +20,13 @@
 
 namespace singularity {
 void get_sg_eos_rho_e(const char *name, int ncell, indirection_v &offsets_v,
-                      Kokkos::View<EOS *, Llft> &eos_v, dev_v &press_v,
-		      dev_v &pmax_v, dev_v &sie_v, ScratchV<int> &pte_idxs,
-                      ScratchV<double> &press_pte, ScratchV<double> &vfrac_pte,
-                      ScratchV<double> &rho_pte, ScratchV<double> &sie_pte,
-                      ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
+                      Kokkos::View<EOS *, Llft> &eos_v, dev_v &press_v, dev_v &pmax_v,
+                      dev_v &sie_v, ScratchV<int> &pte_idxs, ScratchV<double> &press_pte,
+                      ScratchV<double> &vfrac_pte, ScratchV<double> &rho_pte,
+                      ScratchV<double> &sie_pte, ScratchV<double> &temp_pte,
+                      ScratchV<double> &solver_scratch,
                       Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
-                      bool small_loop, init_functor& i_func, final_functor& f_func) {
+                      bool small_loop, init_functor &i_func, final_functor &f_func) {
   portableFor(
       name, 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
         // cell offset
@@ -55,10 +55,12 @@ void get_sg_eos_rho_e(const char *name, int ncell, indirection_v &offsets_v,
           const bool res_{PTESolver(method)};
         } else {
           // pure cell (nmat = 1)
-	  temp_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
-	      .TemperatureFromDensityInternalEnergy(rho_pte(tid, 0), sie_pte(tid, 0), cache[0]);
-	  press_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
-	      .PressureFromDensityTemperature(rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
+          temp_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
+                                 .TemperatureFromDensityInternalEnergy(
+                                     rho_pte(tid, 0), sie_pte(tid, 0), cache[0]);
+          press_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
+                                  .PressureFromDensityTemperature(
+                                      rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
         }
         // assign outputs
         f_func(i, tid, npte, mass_sum, 1.0, 0.0, 1.0, cache);

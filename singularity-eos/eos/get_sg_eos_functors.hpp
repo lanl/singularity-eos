@@ -23,7 +23,7 @@
 namespace singularity {
 
 struct init_functor {
-private:
+ private:
   dev_frac_v frac_mass_v;
   ScratchV<int> pte_idxs;
   indirection_v eos_offsets_v;
@@ -39,44 +39,24 @@ private:
   dev_v press_v;
   dev_v sie_v;
   int nmat;
-public:
+
+ public:
   init_functor() = default;
-  init_functor(dev_frac_v& frac_mass_v_,
-               ScratchV<int>& pte_idxs_,
-               indirection_v& eos_offsets_v_,
-               dev_frac_v& frac_vol_v_,
-               ScratchV<int>& pte_mats_,
-               ScratchV<double>& vfrac_pte_,
-               ScratchV<double>& sie_pte_,
-               ScratchV<double>& temp_pte_,
-               ScratchV<double>& press_pte_,
-               ScratchV<double>& rho_pte_,
-               dev_v& spvol_v_,
-               dev_v& temp_v_,
-               dev_v& press_v_,
-               dev_v& sie_v_,
-	       int& nmat) :
-               frac_mass_v{frac_mass_v_},
-               pte_idxs{pte_idxs_},
-               eos_offsets_v{eos_offsets_v_},
-               frac_vol_v{frac_vol_v_},
-               pte_mats{pte_mats_},
-               vfrac_pte{vfrac_pte_},
-               sie_pte{sie_pte_},
-               temp_pte{temp_pte_},
-               press_pte{press_pte_},
-               rho_pte{rho_pte_},
-               spvol_v{spvol_v_},
-               temp_v{temp_v_},
-               press_v{press_v_},
-               sie_v{sie_v_},
-	       nmat{nmat}
-               { }
-    
+  init_functor(dev_frac_v &frac_mass_v_, ScratchV<int> &pte_idxs_,
+               indirection_v &eos_offsets_v_, dev_frac_v &frac_vol_v_,
+               ScratchV<int> &pte_mats_, ScratchV<double> &vfrac_pte_,
+               ScratchV<double> &sie_pte_, ScratchV<double> &temp_pte_,
+               ScratchV<double> &press_pte_, ScratchV<double> &rho_pte_, dev_v &spvol_v_,
+               dev_v &temp_v_, dev_v &press_v_, dev_v &sie_v_, int &nmat)
+      : frac_mass_v{frac_mass_v_}, pte_idxs{pte_idxs_}, eos_offsets_v{eos_offsets_v_},
+        frac_vol_v{frac_vol_v_}, pte_mats{pte_mats_}, vfrac_pte{vfrac_pte_},
+        sie_pte{sie_pte_}, temp_pte{temp_pte_}, press_pte{press_pte_}, rho_pte{rho_pte_},
+        spvol_v{spvol_v_}, temp_v{temp_v_}, press_v{press_v_}, sie_v{sie_v_}, nmat{nmat} {
+  }
 
   PORTABLE_INLINE_FUNCTION
-  void operator() (const int i, const int tid, double &mass_sum, int &npte,
-		   const Real t_mult, const Real s_mult, const Real p_mult) const {
+  void operator()(const int i, const int tid, double &mass_sum, int &npte,
+                  const Real t_mult, const Real s_mult, const Real p_mult) const {
     /* normalize mass fractions */
     /* first find the mass sum */
     /* also set idxs as the decrement of the eos offsets */
@@ -115,7 +95,7 @@ public:
 };
 
 struct final_functor {
-private:
+ private:
   dev_v temp_v;
   dev_v press_v;
   dev_v sie_v;
@@ -141,64 +121,32 @@ private:
   bool do_frac_bmod;
   bool do_frac_cv;
   bool do_frac_dpde;
-public:
-  final_functor(dev_v& temp_v_,
-                dev_v& press_v_,
-                dev_v& sie_v_,
-                dev_v& bmod_v_,
-                dev_v& cv_v_,
-                dev_v& dpde_v_,
-                ScratchV<int>& pte_mats_,
-                ScratchV<double>& press_pte_,
-                ScratchV<double>& vfrac_pte_,
-                ScratchV<double>& temp_pte_,
-                ScratchV<double>& sie_pte_,
-                dev_frac_v& frac_mass_v_,
-                dev_frac_v& frac_ie_v_,
-                dev_frac_v& frac_vol_v_,
-                dev_v& vol_v_,
-                Kokkos::View<EOS *, Llft>& eos_v_,
-                ScratchV<int>& pte_idxs_,
-                ScratchV<double>& rho_pte_,
-                dev_frac_v& frac_bmod_v_,
-                dev_frac_v& frac_cv_v_,
-                dev_frac_v& frac_dpde_v_,
-                int& nmat_,
-		bool do_frac_bmod_,
-                bool do_frac_cv_,
-                bool do_frac_dpde_) :
-                temp_v{temp_v_},
-                press_v{press_v_},
-                sie_v{sie_v_},
-                bmod_v{bmod_v_},
-                cv_v{cv_v_},
-                dpde_v{dpde_v_},
-                pte_mats{pte_mats_},
-                press_pte{press_pte_},
-                vfrac_pte{vfrac_pte_},
-                temp_pte{temp_pte_},
-                sie_pte{sie_pte_},
-                frac_mass_v{frac_mass_v_},
-                frac_ie_v{frac_ie_v_},
-                frac_vol_v{frac_vol_v_},
-                vol_v{vol_v_},
-                eos_v{eos_v_},
-                pte_idxs{pte_idxs_},
-                rho_pte{rho_pte_},
-                frac_bmod_v{frac_bmod_v_},
-                frac_cv_v{frac_cv_v_},
-                frac_dpde_v{frac_dpde_v_},
-                nmat{nmat_},
-                do_frac_bmod{do_frac_bmod_},
-	        do_frac_cv{do_frac_cv_},
-	        do_frac_dpde{do_frac_dpde_}
-                { }
-  
-public:
+
+ public:
+  final_functor(dev_v &temp_v_, dev_v &press_v_, dev_v &sie_v_, dev_v &bmod_v_,
+                dev_v &cv_v_, dev_v &dpde_v_, ScratchV<int> &pte_mats_,
+                ScratchV<double> &press_pte_, ScratchV<double> &vfrac_pte_,
+                ScratchV<double> &temp_pte_, ScratchV<double> &sie_pte_,
+                dev_frac_v &frac_mass_v_, dev_frac_v &frac_ie_v_, dev_frac_v &frac_vol_v_,
+                dev_v &vol_v_, Kokkos::View<EOS *, Llft> &eos_v_,
+                ScratchV<int> &pte_idxs_, ScratchV<double> &rho_pte_,
+                dev_frac_v &frac_bmod_v_, dev_frac_v &frac_cv_v_,
+                dev_frac_v &frac_dpde_v_, int &nmat_, bool do_frac_bmod_,
+                bool do_frac_cv_, bool do_frac_dpde_)
+      : temp_v{temp_v_}, press_v{press_v_}, sie_v{sie_v_}, bmod_v{bmod_v_}, cv_v{cv_v_},
+        dpde_v{dpde_v_}, pte_mats{pte_mats_}, press_pte{press_pte_},
+        vfrac_pte{vfrac_pte_}, temp_pte{temp_pte_}, sie_pte{sie_pte_},
+        frac_mass_v{frac_mass_v_}, frac_ie_v{frac_ie_v_}, frac_vol_v{frac_vol_v_},
+        vol_v{vol_v_}, eos_v{eos_v_}, pte_idxs{pte_idxs_}, rho_pte{rho_pte_},
+        frac_bmod_v{frac_bmod_v_}, frac_cv_v{frac_cv_v_},
+        frac_dpde_v{frac_dpde_v_}, nmat{nmat_}, do_frac_bmod{do_frac_bmod_},
+        do_frac_cv{do_frac_cv_}, do_frac_dpde{do_frac_dpde_} {}
+
+ public:
   PORTABLE_INLINE_FUNCTION
-  void operator() (const int i, const int tid, const int npte, const Real mass_sum,
-                   const Real t_mult, const Real s_mult, const Real p_mult,
-                   singularity::mix_impl::CacheAccessor &cache) const {
+  void operator()(const int i, const int tid, const int npte, const Real mass_sum,
+                  const Real t_mult, const Real s_mult, const Real p_mult,
+                  singularity::mix_impl::CacheAccessor &cache) const {
     /* initialize averaged quantities to 0 */
     const bool do_t = t_mult == 1.0;
     const bool do_s = s_mult == 1.0;
@@ -271,7 +219,7 @@ public:
     return;
   }
 };
-  
+
 } // namespace singularity
 
 #endif // PORTABILITY_STRATEGY_KOKKOS

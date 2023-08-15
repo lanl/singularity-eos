@@ -20,14 +20,14 @@
 
 namespace singularity {
 void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
-                      Kokkos::View<EOS *, Llft> &eos_v, dev_v &press_v,
-	              dev_v &pmax_v, dev_v &sie_v, dev_frac_v &frac_mass_v,
-                      ScratchV<int> &pte_idxs, ScratchV<int> &pte_mats,
-                      ScratchV<double> &press_pte, ScratchV<double> &vfrac_pte,
-                      ScratchV<double> &rho_pte, ScratchV<double> &sie_pte,
-                      ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
+                      Kokkos::View<EOS *, Llft> &eos_v, dev_v &press_v, dev_v &pmax_v,
+                      dev_v &sie_v, dev_frac_v &frac_mass_v, ScratchV<int> &pte_idxs,
+                      ScratchV<int> &pte_mats, ScratchV<double> &press_pte,
+                      ScratchV<double> &vfrac_pte, ScratchV<double> &rho_pte,
+                      ScratchV<double> &sie_pte, ScratchV<double> &temp_pte,
+                      ScratchV<double> &solver_scratch,
                       Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
-                      bool small_loop, init_functor& i_func, final_functor& f_func) {
+                      bool small_loop, init_functor &i_func, final_functor &f_func) {
   portableFor(
       name, 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
         // cell offset
