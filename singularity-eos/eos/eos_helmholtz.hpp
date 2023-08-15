@@ -25,6 +25,7 @@
 // TODO(JMM): Currently spiner and HDf5 are entangled. But really this
 // model should depend only on spiner and NOT HDF5.
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_HELMHOLTZ
 
 #include <cstdio>
 
@@ -1433,5 +1434,6 @@ void Helmholtz::GetFromDensityLogTemperature_(
 }; // namespace singularity
 
 #undef ROOT_FINDER
+#endif // SINGULARITY_USE_HELMHOLTZ
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #endif // _SINGULARITY_EOS_EOS_HELMHOLTZ_HPP_

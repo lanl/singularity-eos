@@ -70,8 +70,12 @@ static constexpr const auto full_eos_list =
     tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts, StiffGas,
        SAP_Polynomial, NobleAbel
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_HELMHOLTZ
        ,
-       Helmholtz, SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+       Helmholtz
+#endif // SINGULARITY_USE_HELMHOLTZ
+       ,
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_EOSPAC
        ,
