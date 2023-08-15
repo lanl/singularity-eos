@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#ifdef SINGULARITY_TEST_HELMHOLTZ
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -152,3 +154,5 @@ SCENARIO("Helmholtz equation of state - Root finding (egiven)", "[HelmholtzEOS]"
     }
   }
 }
+
+#endif // SINGULARITY_TEST_HELMHOLTZ
