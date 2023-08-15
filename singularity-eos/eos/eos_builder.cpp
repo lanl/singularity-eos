@@ -107,7 +107,7 @@ EOS EOSBuilder::buildEOS(EOSBuilder::EOSType type, EOSBuilder::params_t base_par
     return applyShiftAndScaleAndBilinearRamp(std::move(g), scaled, shifted, ramped, scale,
                                              shift, r0, a, b, c);
   }
-#ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
   if (type == EOSType::SpinerEOSDependsRhoT || type == EOSType::SpinerEOSDependsRhoSie) {
     string filename = mpark::get<string>(base_params["filename"]);
     bool reproducibility_mode = mpark::get<bool>(base_params["reproducibility_mode"]);

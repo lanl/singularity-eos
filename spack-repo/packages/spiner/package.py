@@ -17,6 +17,7 @@ class Spiner(CMakePackage, CudaPackage):
     maintainers = ["rbberger"]
 
     version("main", branch="main")
+    version("1.6.1", sha256="52774322571d3b9b0dc3c6b255257de9af0e8e6170834360f2252c1ac272cbe7")
     version("1.6.0", sha256="afa5526d87c78c1165ead06c09c5c2b9e4a913687443e5adff7b709ea4dd7edf")
     version(
         "1.5.1",
@@ -50,10 +51,11 @@ class Spiner(CMakePackage, CudaPackage):
     variant("python", default=False, description="Python, Numpy & Matplotlib Support")
 
     depends_on("cmake@3.12:", when="@:1.5.1")
-    depends_on("cmake@3.23:", when="@1.6.0:")
+    depends_on("cmake@3.19:", when="@1.6.0:")
     depends_on("catch2@2.13.4:2.13.9")
     depends_on("ports-of-call@1.2.0:", when="@:1.5.1")
     depends_on("ports-of-call@1.5.1:", when="@1.6.0:")
+    depends_on("ports-of-call@main", when="@main")
 
     # Currently the raw cuda backend of ports-of-call is not supported.
     depends_on("ports-of-call portability_strategy=Kokkos", when="@:1.5.1 +kokkos")

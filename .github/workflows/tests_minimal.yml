@@ -28,13 +28,10 @@ jobs:
             cd bin
             mkdir -p ${HOME}/install
             cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
+                  -DSINGULARITY_USE_SPINER=ON \
+                  -DSINGULARITY_USE_SPINER_WITH_HDF5=OFF \
                   -DSINGULARITY_BUILD_TESTS=ON \
-                  -DSINGULARITY_BUILD_PYTHON=OFF \
-                  -DSINGULARITY_USE_HDF5=OFF \
-                  -DSINGULARITY_BUILD_CLOSURE=OFF \
-                  -DSINGULARITY_TEST_SESAME=OFF \
-                  -DSINGULARITY_TEST_PYTHON=OFF \
-                  -DSINGULARITY_TEST_STELLAR_COLLAPSE=OFF \
+                  -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   ..
             make
             make install
