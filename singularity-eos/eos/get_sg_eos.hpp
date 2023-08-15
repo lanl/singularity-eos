@@ -20,6 +20,12 @@
 
 using namespace singularity;
 
+// forward declare init/final functors
+namespace singularity {
+struct init_functor;
+struct final_functor;
+} // namespace singularity
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using Lrgt = Kokkos::LayoutRight;
 using Llft = Kokkos::LayoutLeft;
@@ -78,7 +84,7 @@ void get_sg_eos_rho_t(const char *name, int ncell, int nmat, indirection_v &offs
                       ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
                       Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
                       bool small_loop, bool do_frac_bmod, bool do_frac_dpde,
-                      bool do_frac_cv);
+                      bool do_frac_cv, init_functor& i_func, final_functor& f_func);
 // rho P input
 void get_sg_eos_rho_p(const char *name, int ncell, int nmat, indirection_v &offsets_v,
                       indirection_v &eos_offsets_v, Kokkos::View<EOS *, Llft> &eos_v,
@@ -93,7 +99,7 @@ void get_sg_eos_rho_p(const char *name, int ncell, int nmat, indirection_v &offs
                       ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
                       Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
                       bool small_loop, bool do_frac_bmod, bool do_frac_dpde,
-                      bool do_frac_cv);
+                      bool do_frac_cv, init_functor& i_func, final_functor& f_func);
 // PT input
 void get_sg_eos_p_t(const char *name, int ncell, int nmat, indirection_v &offsets_v,
                     indirection_v &eos_offsets_v, Kokkos::View<EOS *, Llft> &eos_v,
@@ -108,7 +114,7 @@ void get_sg_eos_p_t(const char *name, int ncell, int nmat, indirection_v &offset
                     ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
                     Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
                     bool small_loop, bool do_frac_bmod, bool do_frac_dpde,
-                    bool do_frac_cv);
+                    bool do_frac_cv, final_functor& f_func);
 // rho e input
 void get_sg_eos_rho_e(const char *name, int ncell, int nmat, indirection_v &offsets_v,
                       indirection_v &eos_offsets_v, Kokkos::View<EOS *, Llft> &eos_v,
@@ -123,7 +129,7 @@ void get_sg_eos_rho_e(const char *name, int ncell, int nmat, indirection_v &offs
                       ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
                       Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
                       bool small_loop, bool do_frac_bmod, bool do_frac_dpde,
-                      bool do_frac_cv);
+                      bool do_frac_cv, init_functor& i_func, final_functor& f_func);
 } // namespace singularity
 #endif // PORTABILITY_STRATEGY_KOKKOS
 

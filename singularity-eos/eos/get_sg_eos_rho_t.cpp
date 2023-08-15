@@ -32,9 +32,7 @@ void get_sg_eos_rho_t(const char *name, int ncell, int nmat, indirection_v &offs
                       ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
                       Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
                       bool small_loop, bool do_frac_bmod, bool do_frac_dpde,
-                      bool do_frac_cv) {
-  const auto init_lambda = SG_GET_SG_EOS_INIT_LAMBDA_DECL;
-  const auto final_lambda = SG_GET_SG_EOS_FINAL_LAMBDA_DECL;
+                      bool do_frac_cv, init_functor& i_func, final_functor& f_func) {
   portableFor(
       name, 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
         // cell offset
@@ -46,7 +44,7 @@ void get_sg_eos_rho_t(const char *name, int ncell, int nmat, indirection_v &offs
         double mass_sum{0.0};
         int npte{0};
         // initialize values for solver / lookup
-        init_lambda(i, tid, mass_sum, npte, 1.0, 0.0, 0.0);
+        i_func(i, tid, mass_sum, npte, 1.0, 0.0, 0.0);
         // calculate pte condition (lookup for 1 mat cell)
         Real sie_tot_true{0.0};
         const int neq = npte;
@@ -82,7 +80,7 @@ void get_sg_eos_rho_t(const char *name, int ncell, int nmat, indirection_v &offs
         // total sie is known
         sie_v(i) = sie_tot_true;
         // assign quantities
-        final_lambda(i, tid, npte, mass_sum, 0.0, 0.0, 1.0, cache);
+        f_func(i, tid, npte, mass_sum, 0.0, 0.0, 1.0, cache);
         // assign max pressure
         pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
         // release the token used for scratch arrays

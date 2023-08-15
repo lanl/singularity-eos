@@ -142,15 +142,28 @@ int get_sg_eos( // sizing information
   // declare solver scratch, allocate in the case statement
   int pte_solver_scratch_size{};
   ScratchV<double> solver_scratch;
+  // declare init and final functors
+  auto input_int_enum = static_cast<input_condition>(input_int);
+  init_functor i_func;
+  final_functor f_func(temp_v, press_v, sie_v, bmod_v, cv_v,
+		       dpde_v, pte_mats, press_pte, vfrac_pte,
+		       temp_pte, sie_pte, frac_mass_v, frac_ie_v,
+		       frac_vol_v, vol_v, eos_v, pte_idxs, rho_pte,
+		       frac_bmod_v, frac_cv_v, frac_dpde_v, nmat,
+		       do_frac_bmod, do_frac_cv, do_frac_dpde);
+  // only initialize init functor when needed
+  if (input_int_enum != input_condition::P_T_INPUT) {
+    i_func = init_functor(frac_mass_v, pte_idxs, eos_offsets_v,
+			  frac_vol_v, pte_mats, vfrac_pte, sie_pte,
+			  temp_pte, press_pte, rho_pte, spvol_v,
+			  temp_v, press_v, sie_v, nmat);
+  }
 
   // create helper lambdas to reduce code duplication
-  // const auto init_lambda = SG_GET_SG_EOS_INIT_LAMBDA_DECL;
-  // const auto final_lambda = SG_GET_SG_EOS_FINAL_LAMBDA_DECL;
   Kokkos::View<int, MemoryTraits<at_int>> res("PTE::num fails");
   Kokkos::View<int, MemoryTraits<at_int>> n_solves("PTE::num solves");
   const std::string perf_nums =
       "[" + std::to_string(nmat) + "," + std::to_string(ncell) + "]";
-  auto input_int_enum = static_cast<input_condition>(input_int);
   switch (input_int_enum) {
   case input_condition::RHO_T_INPUT: {
     // T-rho input
@@ -167,7 +180,7 @@ int get_sg_eos( // sizing information
         vol_v, spvol_v, sie_v, temp_v, bmod_v, dpde_v, cv_v, frac_mass_v, frac_vol_v,
         frac_ie_v, frac_bmod_v, frac_dpde_v, frac_cv_v, pte_idxs, pte_mats, press_pte,
         vfrac_pte, rho_pte, sie_pte, temp_pte, solver_scratch, tokens, small_loop,
-        do_frac_bmod, do_frac_dpde, do_frac_cv);
+        do_frac_bmod, do_frac_dpde, do_frac_cv, i_func, f_func);
     break;
   }
   case input_condition::RHO_P_INPUT: {
@@ -185,7 +198,7 @@ int get_sg_eos( // sizing information
         vol_v, spvol_v, sie_v, temp_v, bmod_v, dpde_v, cv_v, frac_mass_v, frac_vol_v,
         frac_ie_v, frac_bmod_v, frac_dpde_v, frac_cv_v, pte_idxs, pte_mats, press_pte,
         vfrac_pte, rho_pte, sie_pte, temp_pte, solver_scratch, tokens, small_loop,
-        do_frac_bmod, do_frac_dpde, do_frac_cv);
+        do_frac_bmod, do_frac_dpde, do_frac_cv, i_func, f_func);
     break;
   }
   case input_condition::P_T_INPUT: {
@@ -199,7 +212,7 @@ int get_sg_eos( // sizing information
         vol_v, spvol_v, sie_v, temp_v, bmod_v, dpde_v, cv_v, frac_mass_v, frac_vol_v,
         frac_ie_v, frac_bmod_v, frac_dpde_v, frac_cv_v, pte_idxs, pte_mats, press_pte,
         vfrac_pte, rho_pte, sie_pte, temp_pte, solver_scratch, tokens, small_loop,
-        do_frac_bmod, do_frac_dpde, do_frac_cv);
+        do_frac_bmod, do_frac_dpde, do_frac_cv, f_func);
     break;
   }
   case input_condition::NORM_RHO_E_INPUT:
@@ -216,7 +229,7 @@ int get_sg_eos( // sizing information
         vol_v, spvol_v, sie_v, temp_v, bmod_v, dpde_v, cv_v, frac_mass_v, frac_vol_v,
         frac_ie_v, frac_bmod_v, frac_dpde_v, frac_cv_v, pte_idxs, pte_mats, press_pte,
         vfrac_pte, rho_pte, sie_pte, temp_pte, solver_scratch, tokens, small_loop,
-        do_frac_bmod, do_frac_dpde, do_frac_cv);
+        do_frac_bmod, do_frac_dpde, do_frac_cv, i_func, f_func);
     break;
   }
   }

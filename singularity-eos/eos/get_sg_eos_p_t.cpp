@@ -32,8 +32,7 @@ void get_sg_eos_p_t(const char *name, int ncell, int nmat, indirection_v &offset
                     ScratchV<double> &temp_pte, ScratchV<double> &solver_scratch,
                     Kokkos::Experimental::UniqueToken<DES, KGlobal> &tokens,
                     bool small_loop, bool do_frac_bmod, bool do_frac_dpde,
-                    bool do_frac_cv) {
-  const auto final_lambda = SG_GET_SG_EOS_FINAL_LAMBDA_DECL;
+                    bool do_frac_cv, final_functor& f_func) {
   portableFor(
       name, 0, ncell, PORTABLE_LAMBDA(const int &iloop) {
         // cell offset
@@ -84,7 +83,7 @@ void get_sg_eos_p_t(const char *name, int ncell, int nmat, indirection_v &offset
           vfrac_pte(tid, m) /= vfrac_tot;
         }
         // assign remaining outputs
-        final_lambda(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, cache);
+        f_func(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, cache);
         // assign max pressure
         pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
         // release the token used for scratch arrays
