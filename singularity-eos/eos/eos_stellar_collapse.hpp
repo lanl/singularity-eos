@@ -898,8 +898,8 @@ inline void StellarCollapse::computeBulkModulus_() {
         Real lRho = lBMod_.range(0).x(irho);
         Real rho = rho_(lRho);
         Real lP = lP_(iY, iT, irho);
-        Real lPoR = lP - lRho;
-        Real PoR = fromLog_(lPoR, 0.0);
+        Real P = lP2P_(lP);
+        Real PoR = robust::ratio(P, rho);
         // assume table is hardened
         Real bMod = rho * dPdRho_(iY, iT, irho) + PoR * dPdE_(iY, iT, irho);
         if (bMod < robust::EPS()) bMod = robust::EPS();
