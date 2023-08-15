@@ -23,6 +23,7 @@
 ### Added (new features/APIs/variables/...)
 - [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
 - [[PR274]](https://github.com/lanl/singularity-eos/pull/274) added a stiffened gas EoS
+- [[PR264]](https://github.com/lanl/singularity-eos/pull/274) added a Helmholtz EoS
 - [[PR254]](https://github.com/lanl/singularity-eos/pull/254) added ability to peel off modifiers as needed
 - [[PR250]](https://github.com/lanl/singularity-eos/pull/250) added mass fraction output to stellar collapse eos
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
