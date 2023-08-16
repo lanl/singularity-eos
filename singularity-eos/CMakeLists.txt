@@ -50,7 +50,7 @@ set(EOS_SRCS
 if (SINGULARITY_BUILD_CLOSURE)
   list(APPEND EOS_HEADERS
        closure/mixed_cell_models.hpp)
-  if (SINGULARITY_USE_FORTRAN OR SINGULARITY_BUILD_TESTS)
+  if (SINGULARITY_USE_FORTRAN)
     list(APPEND EOS_SRCS 
          eos/get_sg_eos.cpp)
     if (SINGULARITY_USE_KOKKOS)
