@@ -10,6 +10,7 @@ variables:
   SINGULARITY_EOS_GCC_VERSION: "9.3.0"
   SINGULARITY_EOS_OPENMPI_VERSION: "4.1.3"
   SINGULARITY_EOS_CUDA_VERSION: "11.6.0"
+  SINGULARITY_EOS_BUILD_TYPE: "RelWithDebInfo"
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+hdf5+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
   COLOR_CYAN: '\033[1;36m'
   COLOR_PLAIN: '\033[0m'
@@ -45,10 +46,13 @@ before_script:
 ##########################
 
 .buildtype_debug: &buildtype_debug
-  BUILD_TYPE: "Debug"
+  SINGULARITY_EOS_BUILD_TYPE: "Debug"
 
 .buildtype_release: &buildtype_release
-  BUILD_TYPE: "Release"
+  SINGULARITY_EOS_BUILD_TYPE: "Release"
+  
+.buildtype_relDebugInfo: &buildtype_relDebugInfo
+  SINGULARITY_EOS_BUILD_TYPE: "RelWithDebInfo"
 
 .gpu: &gpu
   SINGULARITY_USE_CUDA: "true"
@@ -133,6 +137,7 @@ before_script:
     - cd build
     - |
       cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install ${SINGULARITY_CMAKE_CXX_COMPILER_FLAG} \
+            -DCMAKE_BUILD_TYPE=${SINGULARITY_EOS_BUILD_TYPE} \
             -DSINGULARITY_USE_EOSPAC=ON \
             -DSINGULARITY_USE_SPINER=ON \
             -DSINGULARITY_USE_SPINER_WITH_HDF5=ON \
@@ -190,6 +195,7 @@ test_gnu_power9_gpu:
   extends: .test
   variables:    
     <<: *power9
+    <<: *buildtype_release
     <<: *gpu
 
 test_x86_volta_gpu:
@@ -197,6 +203,7 @@ test_x86_volta_gpu:
   extends: .test
   variables:    
     <<: *x86volta
+    <<: *buildtype_release
     <<: *gpu
 
 install_gnu_skylake_fort:

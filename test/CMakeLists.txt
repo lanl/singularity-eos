@@ -48,11 +48,21 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
                         PRIVATE Catch2::Catch2 singularity-eos::singularity-eos)
 endif()
 
-if(SINGULARITY_BUILD_CLOSURE AND SINGULARITY_USE_SPINER)
-  add_executable(test_pte test_pte.cpp)
-  target_link_libraries(test_pte PRIVATE Catch2::Catch2
+if(SINGULARITY_BUILD_CLOSURE)
+  if(SINGULARITY_USE_SPINER)
+    add_executable(test_pte test_pte.cpp)
+    target_link_libraries(test_pte PRIVATE Catch2::Catch2
                                          singularity-eos::singularity-eos)
-  add_test(pte test_pte)
+    target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(pte test_pte)
+  endif()
+  if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN)
+    add_executable(test_get_sg_eos test_get_sg_eos.cpp)
+    target_link_libraries(test_get_sg_eos PRIVATE Catch2::Catch2
+                                         singularity-eos::singularity-eos)
+    target_include_directories(test_get_sg_eos PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(get_sg_eos test_get_sg_eos)
+  endif()
 endif()
 
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)

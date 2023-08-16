@@ -59,7 +59,7 @@ namespace singularity {
 template <typename... Ts>
 using tl = singularity::detail::type_list<Ts...>;
 
-template <template <typename> typename... Ts>
+template <template <typename> class... Ts>
 using al = singularity::detail::adapt_list<Ts...>;
 
 // transform variadic list: applies modifiers to eos's
@@ -118,8 +118,8 @@ static constexpr const auto combined_list_1 = singularity::detail::concat(
 static constexpr const auto ramped_all =
     transform_variadic_list(combined_list_1, al<BilinearRampEOS>{});
 // final combined list
-static constexpr const auto combined_list = singularity::detail::concat(
-    full_eos_list, shifted, scaled, scaled_of_shifted, unit_or_rel, ramped_all);
+static constexpr const auto combined_list =
+    singularity::detail::concat(combined_list_1, ramped_all);
 // a function that returns a Variant from a typelist
 template <typename... Ts>
 struct tl_to_Variant_struct {
