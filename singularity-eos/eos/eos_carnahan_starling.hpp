@@ -103,7 +103,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     if (status != Status::SUCCESS) {
       // Root finder failed even though the solution was bracketed... this is an error
       EOS_ERROR("*** (Warning) DensityFromPressureTemperature :: Convergence not met in "
-                "Carnahan-Starling EoS (regula_falsi) ***\n");
+                "Carnahan-Starling EoS (root finder util) ***\n");
       real_root = -1.0;
     }
 #else
