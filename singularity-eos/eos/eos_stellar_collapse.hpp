@@ -204,6 +204,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline void readSCDset_(const hid_t &file_id, const std::string &name,
                           const Grid_t &Ye_grid, const Grid_t &lT_grid, const Grid_t &lRho_grid,
                           DataBox &db);
+  inline void reinterpolateTable_(DataBox &tab, DataBox &scratch, bool dependent_var_log);
 
   inline void medianFilter_(DataBox &db);
   inline void medianFilter_(const DataBox &in, DataBox &out);
@@ -310,6 +311,9 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   Real lTMin_, lTMax_;
   Real YeMin_, YeMax_;
   Real sieMin_, sieMax_;
+  // Grid objects. These are redundant with the min/max vars. But
+  // they're convenient.
+  Grid_t YeGrid_, lTGrid_, lRGrid_;
 
   static constexpr Real MeV2GK_ = 11.604525006;
   static constexpr Real GK2MeV_ = 1. / MeV2GK_;
@@ -373,8 +377,6 @@ inline StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp
     LoadFromSP5File_(filename);
   } else {
     LoadFromStellarCollapseFile_(filename, filter_bmod);
-    computeBulkModulus_();
-    computeColdAndHotCurves_();
   }
   setNormalValues_();
 }
@@ -701,18 +703,18 @@ inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
   }
 
   // bounds, etc.
-  auto YeGrid = lP_.range(2);
-  auto lTGrid = lP_.range(1);
-  auto lRGrid = lP_.range(0);
-  numRho_ = lRGrid.nPoints();
-  numT_ = lTGrid.nPoints();
-  numYe_ = YeGrid.nPoints();
-  lRhoMin_ = lRGrid.min();
-  lRhoMax_ = lRGrid.max();
-  lTMin_ = lTGrid.min();
-  lTMax_ = lTGrid.max();
-  YeMin_ = YeGrid.min();
-  YeMax_ = YeGrid.max();
+  YeGrid_ = lP_.range(2);
+  lTGrid_ = lP_.range(1);
+  lRGrid_ = lP_.range(0);
+  numRho_ = lRGrid_.nPoints();
+  numT_ = lTGrid_.nPoints();
+  numYe_ = YeGrid_.nPoints();
+  lRhoMin_ = lRGrid_.min();
+  lRhoMax_ = lRGrid_.max();
+  lTMin_ = lTGrid_.min();
+  lTMax_ = lTGrid_.max();
+  YeMin_ = YeGrid_.min();
+  YeMax_ = YeGrid_.max();
   sieMin_ = eCold_.min();
   sieMax_ = eHot_.max();
 }
@@ -795,11 +797,40 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
     }
   }
 
+  // Filter thermo derivs before reinterpolating
   if (filter_bmod) {
-    medianFilter_(dPdRho_); // needed if pulling the data
-    medianFilter_(dPdE_);   // directly from Stellar Collapse tables
+    medianFilter_(dPdRho_);
+    medianFilter_(dPdE_);
     medianFilter_(dEdT_);
   }
+
+  // Generate convenience grids
+  YeGrid_ = Grid_t(YeMin_, YeMax_, numYe_);
+  lTGrid_ = Grid_t(lTMin_, lTMax_, numT_);
+  lRGrid_ = Grid_t(lRhoMin_, lRhoMax_, numRho_);
+
+  // Re-interpolate tables in case we want fast-log gridding
+  DataBox scratch(numYe_, numT_, numRho_);
+  // logged quantities
+  reinterpolateTable_(lP_, scratch, true);
+  reinterpolateTable_(lE_, scratch, true);
+  // linear quantities
+  reinterpolateTable_(dPdRho_, scratch, false);
+  reinterpolateTable_(dPdE_, scratch, false);
+  reinterpolateTable_(dEdT_, scratch, false);
+  // non-standard quantities
+  reinterpolateTable_(entropy_, scratch, false);
+  reinterpolateTable_(Xa_, scratch, false);
+  reinterpolateTable_(Xh_, scratch, false);
+  reinterpolateTable_(Xn_, scratch, false);
+  reinterpolateTable_(Xp_, scratch, false);
+  reinterpolateTable_(Abar_, scratch, false);
+  reinterpolateTable_(Zbar_, scratch, false);
+
+  // Finally, compute bulk modulus, hot and cold curves from
+  // re-interpolated data.
+  computeBulkModulus_();
+  computeColdAndHotCurves_();
 }
 
 inline int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &name) {
@@ -863,6 +894,43 @@ inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string
   db.setRange(2, Ye_grid);
   db.setRange(1, lT_grid);
   db.setRange(0, lRho_grid);
+}
+
+// Reinterpolate tab form its original grid spacing to the one using
+// the native log gridding for stellar collapse (usually fast logs).
+// Scratch is used as a temporary storage buffer and is assumed to be
+// of size numYe x numT x numRho
+inline void StellarCollapse::reinterpolateTable_(DataBox &tab, DataBox &scratch,
+                                                 bool dependent_var_log) {
+  // Start by assuming tab is gridded for Ye, log10(T), log10(rho)
+  for (int iY = 0; iY < numYe_; ++iY) {
+    Real Ye = YeGrid_.x(iY);
+    for (int iT = 0; iT < numT_; ++iT) {
+      Real lT = lTGrid_.x(iT);
+      Real T = T_(lT);
+      Real log10T = std::log10(T);
+      for (int iRho = 0; iRho < numRho_; ++iRho) {
+        Real lR = lRGrid_.x(iRho);
+        Real rho = rho_(lR);
+        Real log10R = std::log10(rho);
+        Real val = tab.interpToReal(Ye, log10T, log10R);
+        if (dependent_var_log) {
+          // even if there is an offset, it's applied to the linear
+          // term before taking the logarithm, so don't need to
+          // include it here. 
+          val = toLog_(std::pow(10., val), 0);
+        }
+        scratch(iY, iT, iRho) = val;
+      }
+    }
+  }
+  // loop through a second time and copy
+  for (int i = 0; i < numYe_*numT_*numRho_; ++i) {
+    tab(i) = scratch(i);
+  }
+  tab.setRange(2, YeGrid_);
+  tab.setRange(1, lTGrid_);
+  tab.setRange(0, lRGrid_);
 }
 
 inline void StellarCollapse::medianFilter_(DataBox &db) {
