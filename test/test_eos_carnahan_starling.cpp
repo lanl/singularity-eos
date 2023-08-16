@@ -587,3 +587,93 @@ SCENARIO("Test C-S Entropy Calls", "[CarnahanStarling][CarnahanStarling5]") {
     }
   }
 }
+
+SCENARIO("CarnahanStarling6", "[CarnahanStarling][CarnahanStarling6]") {
+  GIVEN("Parameters for a CarnahanStarling EOS") {
+    constexpr Real gm1 = 0.4;
+    constexpr Real Cv = 7180000.0;
+    constexpr Real bb = 1.e-3;
+    constexpr Real qq = 0.0;
+    // Create the EOS
+    EOS host_eos = CarnahanStarling(gm1, Cv, bb, qq);
+    EOS eos = host_eos.GetOnDevice();
+    GIVEN("Pressure and temperature") {
+      constexpr int num = 4;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create Kokkos views on device for the input arrays
+      Kokkos::View<Real[num]> v_pressure("Pressure");
+      Kokkos::View<Real[num]> v_temperature("Temperature");
+#else
+      // Otherwise just create arrays to contain values and create pointers to
+      // be passed to the functions in place of the Kokkos views
+      std::array<Real, num> pressure;
+      std::array<Real, num> temperature;
+      auto v_pressure = pressure.data();
+      auto v_temperature = temperature.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      // Populate the input arrays
+      portableFor(
+          "Initialize pressure and temperature", 0, 1, PORTABLE_LAMBDA(int i) {
+            v_pressure[0] = 1.0132499999999999e+06;
+            v_pressure[1] = 3.4450500000000000e+07;
+            v_pressure[2] = 6.7887750000000000e+07;
+            v_pressure[3] = 1.0132500000000000e+08;
+            v_temperature[0] = 2.9814999999999998e+02;
+            v_temperature[1] = 1.5320999999999999e+03;
+            v_temperature[2] = 2.7660500000000002e+03;
+            v_temperature[3] = 4.0000000000000000e+03;
+          });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create host-side mirrors of the inputs and copy the inputs. These are
+      // just used for the comparisons
+      auto pressure = Kokkos::create_mirror_view(v_pressure);
+      auto temperature = Kokkos::create_mirror_view(v_temperature);
+      Kokkos::deep_copy(density, v_pressure);
+      Kokkos::deep_copy(energy, v_temperature);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      // Gold standard values for a subset of lookups
+      constexpr std::array<Real, num> density_true{
+          1.1833012071291069e-03, 7.8290736890381501e-03, 8.5453943327882340e-03,
+          8.8197619601121831e-03};
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create device views for outputs and mirror those views on the host
+      Kokkos::View<Real[num]> v_density("Density");
+      Kokkos::View<Real[num]> v_energy("Energy");
+      auto h_density = Kokkos::create_mirror_view(v_density);
+      auto h_energy = Kokkos::create_mirror_view(v_energy);
+#else
+      // Create arrays for the outputs and then pointers to those arrays that
+      // will be passed to the functions in place of the Kokkos views
+      std::array<Real, num> h_density;
+      std::array<Real, num> h_energy;
+      // Just alias the existing pointers
+      auto v_density = h_density.data();
+      auto v_energy = h_energy.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      WHEN("A rho(P, T) lookup is performed") {
+        for (int i = 0; i < num; i++) {
+          Real cv, bmod;
+          static constexpr const unsigned long _output =
+              singularity::thermalqs::density |
+              singularity::thermalqs::specific_internal_energy;
+          eos.FillEos(v_density[i], v_temperature[i], v_energy[i], v_pressure[i], cv,
+                      bmod, _output);
+        }
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_density, v_density);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+        THEN("The returned rho(P, T) should be equal to the true value") {
+          array_compare(num, pressure, temperature, h_density, density_true, "Pressure",
+                        "Temperature");
+        }
+      }
+    }
+  }
+}

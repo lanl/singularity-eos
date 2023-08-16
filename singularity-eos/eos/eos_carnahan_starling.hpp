@@ -27,6 +27,7 @@
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
@@ -63,6 +64,11 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return std::max(robust::SMALL(), (sie - _qq) / _Cv);
   }
+  PORTABLE_INLINE_FUNCTION void checkParams() const {
+    PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");
+  }
   PORTABLE_INLINE_FUNCTION Real ZedFromDensity(const Real rho,
                                                Real *lambda = nullptr) const {
     const Real eta = _bb * rho;
@@ -82,10 +88,29 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
       const Real press, const Real temperature, const Real guess = robust::SMALL(),
       Real *lambda = nullptr) const {
     Real real_root;
-    // iteration related variables
+#ifdef _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_
+    // use singularity utilities if available
+    auto poly = [=](Real dens) {
+      return _Cv * temperature * _gm1 * dens * ZedFromDensity(dens);
+    };
+    using RootFinding1D::findRoot;
+    using RootFinding1D::Status;
+    static constexpr Real xtol = 1.0e-12;
+    static constexpr Real ytol = 1.0e-12;
+    static constexpr Real lo_bound = robust::SMALL();
+    const Real hi_bound = robust::ratio(1.0, _bb);
+    auto status = findRoot(poly, press, guess, lo_bound, hi_bound, xtol, ytol, real_root);
+    if (status != Status::SUCCESS) {
+      // Root finder failed even though the solution was bracketed... this is an error
+      EOS_ERROR("*** (Warning) DensityFromPressureTemperature :: Convergence not met in "
+                "Carnahan-Starling EoS (regula_falsi) ***\n");
+      real_root = -1.0;
+    }
+#else
+    // newton-raphson iteration if utilities not available
     int newton_counter = 0;
-    const int newton_max = 50;
-    const Real rel_tol = 1.e-12;
+    static constexpr int newton_max = 50;
+    static constexpr Real rel_tol = 1.e-12;
     real_root = guess;
     for (int i = 0; i < newton_max; i++) {
       Real real_root_old = real_root;
@@ -102,15 +127,12 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
       }
     }
     if (newton_counter == newton_max) {
-      printf("*** (Warning) DensityFromPressureTemperature :: Convergence not met in "
-             "Carnahan-Starling EoS ***");
+      EOS_ERROR("*** (Warning) DensityFromPressureTemperature :: Convergence not met in "
+                "Carnahan-Starling EoS (newton-raphson) ***\n");
+      real_root = -1.0;
     }
+#endif
     return std::max(robust::SMALL(), real_root);
-  }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
-    PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
