@@ -88,8 +88,6 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
       const Real press, const Real temperature, const Real guess = robust::SMALL(),
       Real *lambda = nullptr) const {
     Real real_root;
-#ifdef _SINGULARITY_EOS_UTILS_ROOT_FINDING_HPP_
-    // use singularity utilities if available
     auto poly = [=](Real dens) {
       return _Cv * temperature * _gm1 * dens * ZedFromDensity(dens);
     };
@@ -106,32 +104,6 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
                 "Carnahan-Starling EoS (root finder util) ***\n");
       real_root = -1.0;
     }
-#else
-    // newton-raphson iteration if utilities not available
-    int newton_counter = 0;
-    static constexpr int newton_max = 50;
-    static constexpr Real rel_tol = 1.e-12;
-    real_root = guess;
-    for (int i = 0; i < newton_max; i++) {
-      Real real_root_old = real_root;
-      Real newton_f =
-          _Cv * temperature * _gm1 * real_root_old * ZedFromDensity(real_root_old) -
-          press;
-      Real newton_f_prime =
-          _Cv * temperature * _gm1 * PartialRhoZedFromDensity(real_root_old);
-      real_root = real_root_old - robust::ratio(newton_f, newton_f_prime);
-      Real rel_err = std::abs(robust::ratio(real_root - real_root_old, real_root));
-      newton_counter++;
-      if (rel_err < rel_tol) {
-        return std::max(robust::SMALL(), real_root);
-      }
-    }
-    if (newton_counter == newton_max) {
-      EOS_ERROR("*** (Warning) DensityFromPressureTemperature :: Convergence not met in "
-                "Carnahan-Starling EoS (newton-raphson) ***\n");
-      real_root = -1.0;
-    }
-#endif
     return std::max(robust::SMALL(), real_root);
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(

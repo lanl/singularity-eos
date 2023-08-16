@@ -587,7 +587,7 @@ reference density is given by
 
     P_0 = \rho_0 Z(\rho_0) C_V T_0(\gamma-1),
 
-where :math:`P_0` is by default 1 bar. Denisty is obtained via Newton iteration.
+where :math:`P_0` is by default 1 bar. Denisty is obtained through root finding methods.
 
 The settable parameters for this EOS are :math:`\gamma-1`, specific
 heat capacity (:math:`C_V`), covolume (:math:`b`) and offset internal energy (:math:`q`). Optionally, the reference state for the entropy calculation can
