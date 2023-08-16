@@ -534,8 +534,6 @@ SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas][StiffGas5]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
-      constexpr std::array<Real, num> pressure_true{2.0265000000000000e+06};
-      constexpr std::array<Real, num> temperature_true{4.0000000000000000e+02};
       constexpr std::array<Real, num> entropy_true{-2.0044437857420778e+08};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
