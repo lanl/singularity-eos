@@ -121,23 +121,23 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
     const Real vol = robust::ratio(1.0, rho);
+    const Real one_by_vb = robust::ratio(1.0, vol - _bb);
+    const Real one_by_v0b = robust::ratio(1.0, _vol0 - _bb);
     return _Cv * std::log(robust::ratio(temperature, _T0) + robust::SMALL()) +
            _gm1 * _Cv * std::log(robust::ratio(vol, _vol0) + robust::SMALL()) -
-           _gm1 * _Cv * _bb *
-               (4.0 * (robust::ratio(1.0, vol - _bb) - robust::ratio(1.0, _vol0 - _bb)) +
-                _bb * (robust::ratio(1.0, (vol - _bb) * (vol - _bb)) -
-                       robust::ratio(1.0, (_vol0 - _bb) * (_vol0 - _bb)))) +
+           _gm1 * _Cv * _bb * (one_by_vb - one_by_v0b) *
+               (4.0 + _bb * (one_by_vb + one_by_v0b)) +
            _qp;
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     const Real vol = robust::ratio(1.0, rho);
+    const Real one_by_vb = robust::ratio(1.0, vol - _bb);
+    const Real one_by_v0b = robust::ratio(1.0, _vol0 - _bb);
     return _Cv * std::log(robust::ratio(sie - _qq, _sie0 - _qq) + robust::SMALL()) +
            _gm1 * _Cv * std::log(robust::ratio(vol, _vol0) + robust::SMALL()) -
-           _gm1 * _Cv * _bb *
-               (4.0 * (robust::ratio(1.0, vol - _bb) - robust::ratio(1.0, _vol0 - _bb)) +
-                _bb * (robust::ratio(1.0, (vol - _bb) * (vol - _bb)) -
-                       robust::ratio(1.0, (_vol0 - _bb) * (_vol0 - _bb)))) +
+           _gm1 * _Cv * _bb * (one_by_vb - one_by_v0b) *
+               (4.0 + _bb * (one_by_vb + one_by_v0b)) +
            _qp;
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
