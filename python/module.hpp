@@ -344,44 +344,6 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
 
     .def("MinimumDensity", &T::MinimumDensity)
     .def("MinimumTemperature", &T::MinimumTemperature)
-
-    .def("PTofRE", [](const T & self, Real rho, Real sie, py::array_t<Real> lambda) {
-      EOSState s;
-      s.density = rho;
-      s.specific_internal_energy = sie;
-      self.PTofRE(s.density, s.specific_internal_energy, lambda.mutable_data(), s.pressure, s.temperature, s.dpdr, s.dpde, s.dtdr, s.dtde);
-      return s;
-    }, py::arg("rho"), py::arg("sie"), py::arg("lmbda"))
-    .def("PTofRE", [](const T & self, Real rho, Real sie) {
-      EOSState s;
-      s.density = rho;
-      s.specific_internal_energy = sie;
-      self.PTofRE(s.density, s.specific_internal_energy, nullptr, s.pressure, s.temperature, s.dpdr, s.dpde, s.dtdr, s.dtde);
-      return s;
-    }, py::arg("rho"), py::arg("sie"))
-    .def("PTofRE", [](const T & self, py::array_t<Real> rhos, py::array_t<Real> sies, py::array_t<Real> pressures, py::array_t<Real> temperatures, py::array_t<Real> dpdrs, py::array_t<Real> dpdes, py::array_t<Real> dtdrs, py::array_t<Real> dtdes,
-                      const int num, py::array_t<Real> lambdas) {
-      py::buffer_info lambdas_info = lambdas.request();
-      if (lambdas_info.ndim != 2)
-        throw std::runtime_error("lambdas dimension must be 2!");
-
-      if(lambdas_info.shape[1] > 0) {
-        self.PTofRE(rhos.mutable_data(), sies.mutable_data(),
-                    pressures.mutable_data(), temperatures.mutable_data(), dpdrs.mutable_data(),
-                    dpdes.mutable_data(), dtdrs.mutable_data(), dtdes.mutable_data(), num,
-                    LambdaHelper(lambdas));
-      } else {
-        self.PTofRE(rhos.mutable_data(), sies.mutable_data(),
-                    pressures.mutable_data(), temperatures.mutable_data(), dpdrs.mutable_data(),
-                    dpdes.mutable_data(), dtdrs.mutable_data(), dtdes.mutable_data(), num,
-                    NoLambdaHelper());
-      }
-    }, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("temperatures"), py::arg("dpdrs"), py::arg("dpdes"), py::arg("dtdrs"), py::arg("dtdes"), py::arg("num"), py::arg("lmbdas"))
-    .def("PTofRE", [](const T & self, py::array_t<Real> rhos, py::array_t<Real> sies, py::array_t<Real> pressures, py::array_t<Real> temperatures, py::array_t<Real> dpdrs, py::array_t<Real> dpdes, py::array_t<Real> dtdrs, py::array_t<Real> dtdes,
-                      const int num) {
-      self.PTofRE(rhos.mutable_data(), sies.mutable_data(), pressures.mutable_data(), temperatures.mutable_data(), dpdrs.mutable_data(), dpdes.mutable_data(), dtdrs.mutable_data(), dtdes.mutable_data(), num, NoLambdaHelper());
-    }, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("temperatures"), py::arg("dpdrs"), py::arg("dpdes"), py::arg("dtdrs"), py::arg("dtdes"), py::arg("num"))
-
     .def_property_readonly("nlambda", &T::nlambda)
     .def_property_readonly_static("PreferredInput", [](py::object) { return T::PreferredInput(); })
     .def("PrintParams", &T::PrintParams)
