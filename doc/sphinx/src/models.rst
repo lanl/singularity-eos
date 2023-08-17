@@ -1342,7 +1342,7 @@ their high-order derivatives match the underlying data.
    number of colums in the table. This may change in the future.
    The original table found on `Frank Timmes's website`_ is not supported.
    A compatible version of the table can be found in the
-   ``test/helmholtz`` directory of the source code.
+   ``data/helmholtz`` directory of the source code.
 
 .. note::
 

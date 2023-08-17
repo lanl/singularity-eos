@@ -35,7 +35,7 @@
 
 using Catch::Matchers::WithinRel;
 using singularity::Helmholtz;
-const std::string filename = "../test/helmholtz/helm_table.dat";
+const std::string filename = "../data/helmholtz/helm_table.dat";
 SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[HelmholtzEOS]") {
   GIVEN("A Helmholtz EOS") {
     /* We only test the EOS without Coulomb corrections since those are
