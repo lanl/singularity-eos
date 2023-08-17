@@ -114,7 +114,7 @@ PORTABLE_INLINE_FUNCTION bool check_bracket(const Real ya, const Real yb) {
 template <typename T>
 PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess, Real &b,
                                           Real &ya, const Real yg, Real &yb,
-                                          const bool &verbose = true) {
+                                          const bool &verbose = false) {
   constexpr int max_search_depth = 6;
   Real dx = b - a;
   for (int level = 0; level < max_search_depth; level++) {
@@ -153,7 +153,7 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
                                              const Real xtol, const Real ytol,
                                              Real &xroot,
                                              const RootCounts *counts = nullptr,
-                                             const bool &verbose = true) {
+                                             const bool &verbose = false) {
   constexpr int max_iter = SECANT_NITER_MAX;
   auto func = [&](const Real x) { return f(x) - ytarget; };
   Real ya = func(a);

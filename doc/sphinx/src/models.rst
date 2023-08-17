@@ -1359,8 +1359,8 @@ relevant table:
 
    Helmholtz(const std::string &filename)
 
-Note that e.g. the Gruneisenparameter is defined differently
-compared to other EOSs. Here the Gruneisenparameter is the
+Note that e.g. the Gruneisen parameter is defined differently
+compared to other EOSs. Here the Gruneisen parameter is the
 :math:`\Gamma_3` of Cox & Giuli 1968 - Princiiples of Stellar Structure
 (c&g in the following). Specifically:
 

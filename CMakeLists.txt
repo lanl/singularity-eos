@@ -84,7 +84,6 @@ cmake_dependent_option(
   "SINGULARITY_BUILD_TESTS;SINGUALRITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
 cmake_dependent_option(SINGULARITY_TEST_PYTHON "Test the Python bindings" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_PYTHON" OFF)
-option (SINGULARITY_TEST_HELMHOLTZ "Test the helmholtz table reader" OFF)
 cmake_dependent_option(SINGULARITY_TEST_HELMHOLTZ "Test the Helmholtz equation of state" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_USE_HELMHOLTZ" OFF)
 
