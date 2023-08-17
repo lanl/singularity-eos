@@ -26,6 +26,7 @@
 // Base stuff
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -72,17 +73,14 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   PORTABLE_INLINE_FUNCTION Real ZedFromDensity(const Real rho,
                                                Real *lambda = nullptr) const {
     const Real eta = _bb * rho;
-    const Real eta2 = eta * eta;
-    const Real zed = robust::ratio(1.0 + eta + eta2 - eta2 * eta,
-                                   (1.0 - eta) * (1.0 - eta) * (1.0 - eta));
+    const Real zed =
+        1.0 + robust::ratio(eta * (4.0 - 2.0 * eta), math_utils::pow<3>(1.0 - eta));
     return zed;
   }
   PORTABLE_INLINE_FUNCTION Real PartialRhoZedFromDensity(const Real rho,
                                                          Real *lambda = nullptr) const {
     const Real eta = _bb * rho;
-    const Real eta2 = eta * eta;
-    return robust::ratio(eta2 * eta2 - 4.0 * eta2 * eta + 4.0 * eta2 + 4.0 * eta + 1.0,
-                         (1.0 - eta) * (1.0 - eta) * (1.0 - eta) * (1.0 - eta));
+    return 1.0 + robust::ratio(eta * (8.0 - 2.0 * eta), math_utils::pow<4>(1.0 - eta));
   }
   PORTABLE_INLINE_FUNCTION Real DensityFromPressureTemperature(
       const Real press, const Real temperature, const Real guess = robust::SMALL(),
