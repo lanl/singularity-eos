@@ -26,19 +26,16 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::EOS;
-using singularity::StiffGas;
+using singularity::NobleAbel;
 
-SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
-  GIVEN("Parameters for a StiffGas EOS") {
-    // Stiff gas parameters for liquid water [O. Le Metayer et al. 2003]
-    constexpr Real gm1 = 1.35e+00;   // gamma - 1
-    constexpr Real Cv = 1816.00e+04; // Cv
-    constexpr Real Pinf =
-        1.00e+10; // P_{\infty}, don't confuse with reference pressure P0
-    constexpr Real qq = -1167.00e+07; // q, offset from internal energy
-    // constexpr Real qp = 0.00e+00; // q', offset from entropy
-    //  Create the EOS
-    EOS host_eos = StiffGas(gm1, Cv, Pinf, qq);
+SCENARIO("NobleAbel1", "[NobleAbel][NobleAbel1]") {
+  GIVEN("Parameters for a NobleAbel EOS") {
+    constexpr Real gm1 = 0.2110231425091352;
+    constexpr Real Cv = 16420000.0;
+    constexpr Real bb = 1.435;
+    constexpr Real qq = 0.0;
+    // Create the EOS
+    EOS host_eos = NobleAbel(gm1, Cv, bb, qq);
     EOS eos = host_eos.GetOnDevice();
     GIVEN("Densities and energies") {
       constexpr int num = 4;
@@ -58,14 +55,14 @@ SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
       // Populate the input arrays
       portableFor(
           "Initialize density and energy", 0, 1, PORTABLE_LAMBDA(int i) {
-            v_density[0] = 1.3682314734849790e+00;
-            v_density[1] = 2.6715104028907288e-01;
-            v_density[2] = 1.4846658731195411e-01;
-            v_density[3] = 1.0300747471039322e-01;
-            v_energy[0] = 1.0531088454815292e+09;
-            v_energy[1] = 5.3584944459257431e+10;
-            v_energy[2] = 1.0591669035038826e+11;
-            v_energy[3] = 1.5805033352060248e+11;
+            v_density[0] = 9.7941724217367608e-04;
+            v_density[1] = 6.4295356839573397e-03;
+            v_density[2] = 7.0119063617845390e-03;
+            v_density[3] = 7.2347087589269467e-03;
+            v_energy[0] = 4.8956230000000000e+09;
+            v_energy[1] = 2.5157082000000000e+10;
+            v_energy[2] = 4.5418541000000000e+10;
+            v_energy[3] = 6.5680000000000000e+10;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create host-side mirrors of the inputs and copy the inputs. These are
@@ -81,12 +78,14 @@ SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
           1.0132500000019073e+06, 3.4450500000000000e+07, 6.7887750000001907e+07,
           1.0132500000000000e+08};
       constexpr std::array<Real, num> bulkmodulus_true{
-          2.3502381137500000e+10, 2.3580958675000000e+10, 2.3659536212500004e+10,
-          2.3738113750000004e+10};
+          1.2287962276923475e+06, 4.2108865319896758e+07, 8.3049285363644123e+07,
+          1.2399420381644218e+08};
       constexpr std::array<Real, num> temperature_true{
           2.9814999999999998e+02, 1.5320999999999999e+03, 2.7660500000000002e+03,
           4.0000000000000000e+03};
-      constexpr std::array<Real, num> gruneisen_true{1.35, 1.35, 1.35, 1.35};
+      constexpr std::array<Real, num> gruneisen_true{
+          2.1132014531143434e-01, 2.1298825386425976e-01, 2.1316805775971534e-01,
+          2.1323692714677225e-01};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -164,19 +163,17 @@ SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
   }
 }
 
-SCENARIO("StiffGas2", "[StiffGas][StiffGas2]") {
-  GIVEN("Parameters for a StiffGas EOS") {
-    // Stiff gas parameters for water vapor [O. Le Metayer et al. 2003]
-    // slight modification to test the optional parameters
-    constexpr Real gm1 = 0.43e+00;   // gamma - 1
-    constexpr Real Cv = 1040.00e+04; // Cv
-    constexpr Real Pinf = 0.0; // P_{\infty}, don't confuse with reference pressure P0
-    constexpr Real qq = 2030.00e+07; // q, offset from internal energy
+SCENARIO("NobleAbel2", "[NobleAbel][NobleAbel2]") {
+  GIVEN("Parameters for a NobleAbel EOS") {
+    constexpr Real gm1 = 0.2110231425091352;
+    constexpr Real Cv = 1642.00e+04;
+    constexpr Real bb = 1.435;
+    constexpr Real qq = 42.00e+09;
     constexpr Real qp = -23.0e+7;
     constexpr Real T0 = 200.0;
     constexpr Real P0 = 1000000.0;
     // Create the EOS
-    EOS host_eos = StiffGas(gm1, Cv, Pinf, qq, qp, T0, P0);
+    EOS host_eos = NobleAbel(gm1, Cv, bb, qq, qp, T0, P0);
     EOS eos = host_eos.GetOnDevice();
     GIVEN("Densities and energies") {
       constexpr int num = 4;
@@ -196,14 +193,14 @@ SCENARIO("StiffGas2", "[StiffGas][StiffGas2]") {
       // Populate the input arrays
       portableFor(
           "Initialize density and energy", 0, 1, PORTABLE_LAMBDA(int i) {
-            v_density[0] = 7.5994122371199617e-04;
-            v_density[1] = 5.0281314397825705e-03;
-            v_density[2] = 5.4881957599942233e-03;
-            v_density[3] = 5.6644118962432917e-03;
-            v_energy[0] = 2.3400760000000000e+10;
-            v_energy[1] = 3.6233840000000000e+10;
-            v_energy[2] = 4.9066920000000000e+10;
-            v_energy[3] = 6.1900000000000000e+10;
+            v_density[0] = 9.7941724217367608e-04;
+            v_density[1] = 6.4295356839573397e-03;
+            v_density[2] = 7.0119063617845390e-03;
+            v_density[3] = 7.2347087589269467e-03;
+            v_energy[0] = 4.6895623000000000e+10;
+            v_energy[1] = 6.7157082000000000e+10;
+            v_energy[2] = 8.7418541000000000e+10;
+            v_energy[3] = 1.0768000000000000e+11;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create host-side mirrors of the inputs and copy the inputs. These are
@@ -219,12 +216,14 @@ SCENARIO("StiffGas2", "[StiffGas][StiffGas2]") {
           1.0132500000019073e+06, 3.4450500000000000e+07, 6.7887750000001907e+07,
           1.0132500000000000e+08};
       constexpr std::array<Real, num> bulkmodulus_true{
-          1.4489474999999998e+06, 4.9264215000000000e+07, 9.7079482500000000e+07,
-          1.4489475000000000e+08};
+          1.2287962276923475e+06, 4.2108865319896758e+07, 8.3049285363644123e+07,
+          1.2399420381644218e+08};
       constexpr std::array<Real, num> temperature_true{
           2.9814999999999998e+02, 1.5320999999999999e+03, 2.7660500000000002e+03,
           4.0000000000000000e+03};
-      constexpr std::array<Real, num> gruneisen_true{0.43, 0.43, 0.43, 0.43};
+      constexpr std::array<Real, num> gruneisen_true{
+          2.1132014531143434e-01, 2.1298825386425976e-01, 2.1316805775971534e-01,
+          2.1323692714677225e-01};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -302,20 +301,19 @@ SCENARIO("StiffGas2", "[StiffGas][StiffGas2]") {
   }
 }
 
-SCENARIO("StiffGas Isentropic Bulk Modulus Analytic vs. FD", "[StiffGas][StiffGas3]") {
-  GIVEN("Parameters for a Stiffened Gas EOS") {
-    // Stiff gas parameters for liquid water [O. Le Metayer et al. 2003]
-    constexpr Real gm1 = 1.35e+00;
-    constexpr Real Cv = 1816.00e+04;
-    constexpr Real Pinf = 1.00e+10;
-    constexpr Real qq = -1167.00e+07;
+SCENARIO("NobleAbel Isentropic Bulk Modulus Analytic vs. FD", "[NobleAbel][NobleAbel3]") {
+  GIVEN("Parameters for a N-A Gas EOS") {
+    constexpr Real gm1 = 2.1102314250913520e-01;
+    constexpr Real Cv = 1.6420000000000000e+07;
+    constexpr Real bb = 1.4350000000000001e+00;
+    constexpr Real qq = 0.0;
     //  Create the EOS
-    EOS host_eos = StiffGas(gm1, Cv, Pinf, qq);
+    EOS host_eos = NobleAbel(gm1, Cv, bb, qq);
     EOS eos = host_eos.GetOnDevice();
     GIVEN("Density and energy") {
-      constexpr Real density = 1.3682314734849788e+00;
-      constexpr Real energy = 1.0531088454815311e+09;
-      constexpr Real true_sound_speed = 1.3106180484794188e+05;
+      constexpr Real density = 9.7941724217367608e-04;
+      constexpr Real energy = 4.8956230000000000e+09;
+      constexpr Real true_sound_speed = 3.5420612112532610e+04;
       WHEN("A B_S(rho, e) lookup is performed") {
         const Real bulk_modulus =
             eos.BulkModulusFromDensityInternalEnergy(density, energy);
@@ -353,14 +351,14 @@ SCENARIO("StiffGas Isentropic Bulk Modulus Analytic vs. FD", "[StiffGas][StiffGa
   }
 }
 
-SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas][StiffGas4]") {
-  GIVEN("Parameters for a StiffGas EOS") {
-    constexpr Real gm1 = 0.33e+00;          // gamma - 1
-    constexpr Real Cv = 13985539.645862306; // Cv
-    constexpr Real Pinf = 0;
+SCENARIO("Recover Ideal Gas from NobleAbel", "[NobleAbel][NobleAbel4]") {
+  GIVEN("Parameters for a NobleAbel EOS") {
+    constexpr Real gm1 = 2.1102314250913520e-01;
+    constexpr Real Cv = 1.6420000000000000e+07;
+    constexpr Real bb = 0;
     constexpr Real qq = 0;
     //  Create the EOS
-    EOS host_eos = StiffGas(gm1, Cv, Pinf, qq);
+    EOS host_eos = NobleAbel(gm1, Cv, bb, qq);
     EOS eos = host_eos.GetOnDevice();
     EOS ideal_eos = singularity::IdealGas(gm1, Cv);
     GIVEN("Densities and energies") {
@@ -381,8 +379,8 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas][StiffGas4]") {
       // Populate the input arrays
       portableFor(
           "Initialize density and energy", 0, 1, PORTABLE_LAMBDA(int i) {
-            v_density[0] = 1.0977247296864070e-03;
-            v_energy[0] = 5.5942158583449221e+09;
+            v_density[0] = 9.8079571498991256e-04;
+            v_energy[0] = 4.8956230000000000e+09;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create host-side mirrors of the inputs and copy the inputs. These are
@@ -491,17 +489,17 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas][StiffGas4]") {
   }
 }
 
-SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas][StiffGas5]") {
-  GIVEN("Parameters for a StiffGas EOS") {
-    constexpr Real gm1 = 1.35;
-    constexpr Real Cv = 1816.e4;
-    constexpr Real Pinf = 1.0e9;
-    constexpr Real qq = 2030.00e+07;
+SCENARIO("Test NobleAbel Entropy Calls", "[NobleAbel][NobleAbel5]") {
+  GIVEN("Parameters for a NobleAbel EOS") {
+    constexpr Real gm1 = 2.1102314250913520e-01;
+    constexpr Real Cv = 1.6420000000000000e+07;
+    constexpr Real bb = 1.4350000000000001e+00;
+    constexpr Real qq = 0.0;
     constexpr Real qp = -23.0e+7;
     constexpr Real T0 = 200.0;
     constexpr Real P0 = 1000000.0;
     //  Create the EOS
-    EOS host_eos = StiffGas(gm1, Cv, Pinf, qq, qp, T0, P0);
+    EOS host_eos = NobleAbel(gm1, Cv, bb, qq, qp, T0, P0);
     EOS eos = host_eos.GetOnDevice();
     GIVEN("Densities and energies") {
       constexpr int num = 1;
@@ -521,8 +519,8 @@ SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas][StiffGas5]") {
       // Populate the input arrays
       portableFor(
           "Initialize density and energy", 0, 1, PORTABLE_LAMBDA(int i) {
-            v_density[0] = 1.0218087167564040e-01;
-            v_energy[0] = 3.7350567520918861e+10;
+            v_density[0] = 6.4295356839573397e-03;
+            v_energy[0] = 2.5157082000000000e+10;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create host-side mirrors of the inputs and copy the inputs. These are
@@ -534,7 +532,9 @@ SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas][StiffGas5]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
-      constexpr std::array<Real, num> entropy_true{-2.0044437857420778e+08};
+      // constexpr std::array<Real, num> pressure_true{3.4450499999999993e+07};
+      // constexpr std::array<Real, num> temperature_true{1.5320999999999999e+03};
+      constexpr std::array<Real, num> entropy_true{-2.0177705273504910e+08};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host

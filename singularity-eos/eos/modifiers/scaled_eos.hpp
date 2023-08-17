@@ -349,12 +349,13 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
     return t_.MinimumTemperature();
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  bool IsModified() const { return true; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  T UnmodifyOnce() { return t_; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  auto GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
+  inline constexpr bool IsModified() const { return true; }
+
+  inline constexpr T UnmodifyOnce() { return t_; }
+
+  inline constexpr decltype(auto) GetUnmodifiedObject() {
+    return t_.GetUnmodifiedObject();
+  }
 
  private:
   T t_;

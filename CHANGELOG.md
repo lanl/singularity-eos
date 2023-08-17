@@ -4,6 +4,7 @@
 - [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
+- [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options 
 - [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
 - [[PR288]](https://github.com/lanl/singularity-eos/pull/288) Don't build tests that depend on spiner when spiner is disabled
 - [[PR287]](https://github.com/lanl/singularity-eos/pull/287) Fix testing logic with new HDF5 options
@@ -20,6 +21,7 @@
 - [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
 
 ### Added (new features/APIs/variables/...)
+- [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
 - [[PR274]](https://github.com/lanl/singularity-eos/pull/274) added a stiffened gas EoS
 - [[PR254]](https://github.com/lanl/singularity-eos/pull/254) added ability to peel off modifiers as needed
 - [[PR250]](https://github.com/lanl/singularity-eos/pull/250) added mass fraction output to stellar collapse eos
@@ -41,6 +43,7 @@
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR190]](https://github.com/lanl/singularity-eos/pull/190) update CI on re-git
+- [[PR245]](https://github.com/lanl/singularity-eos/pull/245) Separating get_sg_eos to other files. Build/compilation improvements, warning fixes/suppression.
 
 ### Removed (removing behavior/API/varaibles/...)
 

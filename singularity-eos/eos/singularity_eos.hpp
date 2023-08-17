@@ -15,7 +15,6 @@
 #ifndef _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 #define _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 
-#include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 using singularity::EOS;
@@ -60,7 +59,12 @@ int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const doubl
                      const double Pinf, const double qq, int const *const enabled,
                      double *const vals);
 
+int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
+                      const double bb, const double qq, int const *const enabled,
+                      double *const vals);
+
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int id, int const *const enabled, double *const vals);
 
@@ -135,7 +139,11 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
                      const double Pinf, const double qq);
 
+int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
+                      const double bb, const double qq);
+
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int id);
 
