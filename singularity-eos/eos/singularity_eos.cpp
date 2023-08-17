@@ -282,6 +282,24 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
 #endif // SINGULARITY_USE_EOSPAC
 
 
+
+
+int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos, const double *sies, double *pressures,
+					     const int len) {
+  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
+  return 0;
+}
+int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos, double *sies, const int len) {
+					    eos[matindex].MinInternalEnergyFromDensity(rhos, sies, len);
+					    return 0;
+					  }
+int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos, const double *sies, double *bmods, const int len) {
+  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
+  return 0;
+}
+
+
+
 int finalize_sg_eos(const int nmat, EOS *&eos, const int own_kokkos) {
   {
     for (int i = 0; i < nmat; ++i)

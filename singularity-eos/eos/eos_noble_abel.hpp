@@ -80,6 +80,14 @@ class NobleAbel : public EosBase<NobleAbel> {
     return std::max(robust::SMALL(),
                     robust::ratio(_gm1 * rho * (sie - _qq), 1.0 - _bb * rho));
   }
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+#ifndef NDEBUG
+    printf("WARNING: MinInternalEnergtyFromDensity is not defined for Noble Abel EOS.");
+#endif
+    return 0.0;
+  }
+
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
     const Real vol = robust::ratio(1.0, rho);
@@ -95,6 +103,7 @@ class NobleAbel : public EosBase<NobleAbel> {
            _gm1 * _Cv *
                std::log(robust::ratio(vol - _bb, _vol0 - _bb) + robust::SMALL()) +
            _qp;
+
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
