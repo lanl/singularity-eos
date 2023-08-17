@@ -549,10 +549,3 @@ returns the density at which pressure is minimized for a given
 temperature. This is again useful for root finds.
 
 Finally the method
-
-.. cpp:function:: void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr, Real &dpde, Real &dtdr, Real &dtde) const;
-
-returns pressure and temperature, as well as the thermodynamic
-derivatives of pressure and temperature with respect to density and
-specific internal energy, as a function of density and specific
-internal energy.
