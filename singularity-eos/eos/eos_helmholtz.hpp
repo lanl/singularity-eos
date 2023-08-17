@@ -730,7 +730,7 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
       lTguess = lTAnalytic_(rho, e, ni, ne);
       if (!((electrons_.lTMin() <= lTguess) && (lTguess <= electrons_.lTMax()))) {
         // Fallback initial guess
-        lTguess = 7;
+        lTguess = 8;
       }
     }
     Real Tguess = math_utils::pow10(lTguess);
