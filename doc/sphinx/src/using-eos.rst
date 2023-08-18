@@ -547,5 +547,3 @@ root finder to meaningful bound the root search. Similarly,
 
 returns the density at which pressure is minimized for a given
 temperature. This is again useful for root finds.
-
-Finally the method
