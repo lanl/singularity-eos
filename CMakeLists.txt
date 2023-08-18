@@ -110,14 +110,6 @@ option(SINGULARITY_PATCH_MPARK_VARIANT
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
 
-include(singularity-eos/mpark_variant)
-include(singularity-eos/Eigen3)
-include(singularity-eos/eospac)
-include(singularity-eos/hdf5)
-include(singularity-eos/kokkos)
-include(singularity-eos/spiner)
-include(singularity-eos/ports-of-call)
-
 add_library(singularity-eos)
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
 
@@ -162,6 +154,16 @@ endif()
 if(SINGULARITY_FORCE_SUBMODULE_MODE)
   message(STATUS "Building as though project was a submodule.")
   set(SINGULARITY_SUBMODULE_MODE ON)
+endif()
+
+if (NOT SINGULARITY_SUBMODULE_MODE)
+  include(singularity-eos/mpark_variant)
+  include(singularity-eos/Eigen3)
+  include(singularity-eos/eospac)
+  include(singularity-eos/hdf5)
+  include(singularity-eos/kokkos)
+  include(singularity-eos/spiner)
+  include(singularity-eos/ports-of-call)
 endif()
 
 # Use to determine if Eigen is used or not
@@ -261,12 +263,16 @@ endif()
 if(SINGULARITY_SUBMODULE_MODE)
   # add all submodules
   message(STATUS "singularity-eos configuring in submodule mode.")
+  include(cmake/singularity-eos/mpark_variant.cmake)
+  include(cmake/singularity-eos/ports-of-call.cmake)
   singularity_import_mpark_variant()
   singularity_import_ports_of_call()
   if(SINGULARITY_USE_SPINER)
+    include(cmake/singularity-eos/spiner.cmake)
     singularity_import_spiner()
   endif()
   if(SINGULARITY_USE_KOKKOS)
+    include(cmake/singularity-eos/kokkos.cmake)
     singularity_import_kokkos()
     if(SINGULARITY_USE_KOKKOSKERNELS)
       singularity_import_kokkoskernels()
@@ -274,6 +280,7 @@ if(SINGULARITY_SUBMODULE_MODE)
   endif()
 
   if(SINGULARITY_USE_EIGEN)
+    include(cmake/singularity-eos/Eigen3.cmake)
     singularity_import_eigen()
   endif()
 else()
