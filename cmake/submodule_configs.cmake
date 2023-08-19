@@ -23,7 +23,6 @@ macro(singularity_cmake_config pkg)
     if(SINGULARITY_USE_CUDA)
       set(Kokkos_ENABLE_CUDA ON CACHE BOOL "" FORCE)
       set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "" FORCE)
-      set(Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE ON CACHE BOOL "" FORCE)
     endif()
   elseif(${pkg} STREQUAL "KokkosKernels")
     # Disable TPLs
