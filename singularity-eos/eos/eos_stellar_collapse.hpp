@@ -748,11 +748,11 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   lTMin += logMev2K;
   lTMax += logMev2K;
 
-  // In preparation for these not being the same
-  lRhoMin_ = lRhoMin;
-  lRhoMax_ = lRhoMax;
-  lTMin_ = lTMin;
-  lTMax_ = lTMax;
+  // Convert bounds to internal gridding
+  lRhoMin_ = lRho_(std::pow(10., lRhoMin));
+  lRhoMax_ = lRho_(std::pow(10., lRhoMax));
+  lTMin_ = lT_(std::pow(10., lTMin));
+  lTMax_ = lT_(std::pow(10., lTMax));
 
   // Generate grids for reading stellar collapse format tables
   Grid_t Ye_grid(YeMin_, YeMax_, numYe_);
