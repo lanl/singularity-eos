@@ -225,13 +225,15 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                                             const Real offset) const noexcept {
     // StellarCollapse can't use fast logs, unless we re-grid onto the
     // "fast log grid"
-    return std::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
+    // return std::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
   }
   PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx,
                                               const Real offset) const noexcept {
     // StellarCollapse can't use fast logs, unless we re-grid onto the
     // "fast log grid"
-    return std::pow(10., lx) - offset;
+    // return std::pow(10., lx) - offset;
+    return FastMath::pow10(lx) - offset;
   }
   PORTABLE_FORCEINLINE_FUNCTION Real lRho_(const Real rho) const noexcept {
     Real out = toLog_(rho, lRhoOffset_);
