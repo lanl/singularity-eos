@@ -202,8 +202,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline void readBounds_(const hid_t &file_id, const std::string &name, int size,
                           Real &lo, Real &hi);
   inline void readSCDset_(const hid_t &file_id, const std::string &name,
-                          const Grid_t &Ye_grid, const Grid_t &lT_grid, const Grid_t &lRho_grid,
-                          DataBox &db);
+                          const Grid_t &Ye_grid, const Grid_t &lT_grid,
+                          const Grid_t &lRho_grid, DataBox &db);
   inline void reinterpolateTable_(DataBox &tab, DataBox &scratch, bool dependent_var_log);
 
   inline void medianFilter_(DataBox &db);
@@ -722,7 +722,8 @@ inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
 }
 
 // Read data directly from a stellar collapse eos file
-inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename, bool filter_bmod) {
+inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename,
+                                                          bool filter_bmod) {
   // Start HDF5 stuff
   // ---------------------------------------------------------------------
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -878,8 +879,8 @@ inline void StellarCollapse::readBounds_(const hid_t &file_id, const std::string
  * https://forum.hdfgroup.org/t/is-this-a-bug-in-hdf5-1-8-6/2211
  */
 inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
-                                         const Grid_t &Ye_grid, const Grid_t &lT_grid, const Grid_t &lRho_grid,
-                                         DataBox &db) {
+                                         const Grid_t &Ye_grid, const Grid_t &lT_grid,
+                                         const Grid_t &lRho_grid, DataBox &db) {
   herr_t exists = H5LTfind_dataset(file_id, name.c_str());
   if (!exists) {
     std::string msg = "Tried to read dataset " + name + " but it doesn't exist\n";
@@ -919,7 +920,7 @@ inline void StellarCollapse::reinterpolateTable_(DataBox &tab, DataBox &scratch,
         if (dependent_var_log) {
           // even if there is an offset, it's applied to the linear
           // term before taking the logarithm, so don't need to
-          // include it here. 
+          // include it here.
           val = toLog_(std::pow(10., val), 0);
         }
         scratch(iY, iT, iRho) = val;
@@ -927,7 +928,7 @@ inline void StellarCollapse::reinterpolateTable_(DataBox &tab, DataBox &scratch,
     }
   }
   // loop through a second time and copy
-  for (int i = 0; i < numYe_*numT_*numRho_; ++i) {
+  for (int i = 0; i < numYe_ * numT_ * numRho_; ++i) {
     tab(i) = scratch(i);
   }
   tab.setRange(2, YeGrid_);
