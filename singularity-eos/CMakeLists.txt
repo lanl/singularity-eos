@@ -13,7 +13,6 @@
 #------------------------------------------------------------------------------#
 
 set(EOS_HEADERS
-    closure/mixed_cell_models.hpp
     base/fast-math/logs.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
@@ -49,12 +48,28 @@ set(EOS_SRCS
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
-  list(APPEND EOS_SRCS eos/singularity_eos.cpp)
-  list(APPEND EOS_HEADERS eos/singularity_eos.hpp closure/mixed_cell_models.hpp)
+  list(APPEND EOS_HEADERS
+       closure/mixed_cell_models.hpp)
+  if (SINGULARITY_USE_FORTRAN)
+    list(APPEND EOS_SRCS 
+         eos/get_sg_eos.cpp)
+    if (SINGULARITY_USE_KOKKOS)
+      list(APPEND EOS_SRCS 
+           eos/get_sg_eos_p_t.cpp
+           eos/get_sg_eos_rho_t.cpp
+           eos/get_sg_eos_rho_p.cpp
+           eos/get_sg_eos_rho_e.cpp)
+    endif()
+    list(APPEND EOS_HEADERS
+         eos/get_sg_eos.hpp
+         eos/get_sg_eos_functors.hpp)
+  endif()
 endif()
 
 if (SINGULARITY_USE_FORTRAN)
   list(APPEND EOS_SRCS eos/singularity_eos.f90)
+  list(APPEND EOS_SRCS eos/singularity_eos.cpp)
+  list(APPEND EOS_HEADERS eos/singularity_eos.hpp)
   # would rather handle this more robustly, being sloppy for now
   list(APPEND EOS_MODS singularity_eos.mod singularity_eos_types.mod)
 endif()

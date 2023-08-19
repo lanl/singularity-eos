@@ -15,7 +15,6 @@
 #ifndef _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 #define _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 
-#include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 using singularity::EOS;
