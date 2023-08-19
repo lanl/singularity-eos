@@ -73,6 +73,10 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
           v_temp_in[3] = 1e10;
         });
 
+
+    /* Compare test values. Difference should be less than 1e-10 */
+    int nwrong = 1; // != 0
+    portableReduce("Test on device", 0, 1, PORTABLE_LAMBDA(int dummy, int &nwrong) {
     /* Reference values calculated with reference implementation, using
         abar = 4.0, zbar = 2.0 */
     constexpr Real ein_ref[16] = {
@@ -116,7 +120,6 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
         4.1219845464736737e-01,
     };
 
-    /* Compare test values. Difference should be less than 1e-10 */
     Real lambda[2] = {4.0, 2.0};
     int k = 0;
     for (int i = 0; i < 4; ++i) {
@@ -131,16 +134,18 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
             eos.BulkModulusFromDensityTemperature(v_rho_in[i], v_temp_in[j], lambda);
         Real gruen =
             eos.GruneisenParamFromDensityTemperature(v_rho_in[i], v_temp_in[j], lambda);
-        REQUIRE_THAT(ein, WithinRel(ein_ref[k], 1e-10));
-        REQUIRE_THAT(press, WithinRel(press_ref[k], 1e-10));
+	if (!isClose(ein,ein_ref[k], 1e-10)) nwrong += 1;
+	if (!isClose(press, press_ref[k], 1e-10)) nwrong += 1;
         /* These values are not very accurate, but the difference is
            still less than 1e-6 in most cases. */
-        REQUIRE_THAT(cv, WithinRel(cv_ref[k], 1e-6));
-        REQUIRE_THAT(bulkmod, WithinRel(bulkmod_ref[k], 1e-8));
-        REQUIRE_THAT(gruen, WithinRel(gruen_ref[k], 1e-6));
+	if (!isClose(cv, cv_ref[k], 1e-6)) nwrong += 1;
+	if (!isClose(bulkmod, bulkmod_ref[k], 1e-8)) nwrong += 1;
+	if (!isClose(gruen, gruen_ref[k], 1e-6)) nwrong += 1;
         k++;
       }
     }
+	    }, nwrong);
+    REQUIRE( nwrong == 0 );
   }
 }
 
@@ -155,9 +160,12 @@ SCENARIO("Helmholtz equation of state - Root finding (egiven)", "[HelmholtzEOS]"
     Helmholtz eos = host_eos.GetOnDevice();
     THEN("We loaded the file!") { REQUIRE(true); }
 
+    /* Compare test values. Difference should be less than 1e-6 */
+    int nwrong = 1; // != 0
+    portableReduce("Test on device", 0, 1, PORTABLE_LAMBDA(int dummy, int &nwrong) {
     /* Density and temperature range evenly sampling the parameter space */
-    Real rho_in[4] = {1e-3, 1e1, 1e5, 1e9};
-    Real temp_in[4] = {1e4, 1e6, 1e8, 1e10};
+    constexpr Real rho_in[4] = {1e-3, 1e1, 1e5, 1e9};
+    constexpr Real temp_in[4] = {1e4, 1e6, 1e8, 1e10};
 
     /* Reference values computed with the reference implementation */
     constexpr Real ein_ref[16] = {
@@ -169,7 +177,6 @@ SCENARIO("Helmholtz equation of state - Root finding (egiven)", "[HelmholtzEOS]"
         2.0378412737252767e+18,
     };
 
-    /* Compare test values. Difference should be less than 1e-6 */
     Real lambda[2] = {4.0, 2.0};
     int k = 0;
     for (int i = 0; i < 4; ++i) {
@@ -183,15 +190,25 @@ SCENARIO("Helmholtz equation of state - Root finding (egiven)", "[HelmholtzEOS]"
             eos.InternalEnergyFromDensityTemperature(rho_in[i], temp_in[j], lambda);
         /* Independent check of the table interpolation in case the table interpolation
            check does not fail already. */
-        REQUIRE_THAT(ein, WithinRel(ein_ref[k], 1e-10));
+        if (!isClose(ein, ein_ref[k], 1e-10)) {
+		nwrong += 1;
+	}
         Real temp_new = eos.TemperatureFromDensityInternalEnergy(rho_in[i], ein, lambda);
-        REQUIRE_THAT(temp_new, WithinRel(temp_in[j], 1e-10));
+	// Lower precision on this one. GPU arithmetic slightly
+	// different than CPU
+        if (!isClose(temp_new, temp_in[j], 1e-8)) {
+		nwrong += 1;
+	}
         Real ein_new =
             eos.InternalEnergyFromDensityTemperature(rho_in[i], temp_new, lambda);
-        REQUIRE_THAT(ein_new, WithinRel(ein, 1e-10));
+        if (!isClose(ein_new, ein, 1e-10)) {
+		nwrong += 1;
+	}
         k++;
       }
     }
+	    }, nwrong);
+    REQUIRE( nwrong == 0 );
   }
 }
 

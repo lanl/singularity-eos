@@ -673,8 +673,8 @@ void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &
   bool need_temp = (output & thermalqs::temperature);
   bool need_sie = (output & thermalqs::specific_internal_energy);
   bool need_rho = (output & thermalqs::density);
-  PORTABLE_REQUIRE(!need_rho, "Density output not supported by this EOS");
-  PORTABLE_REQUIRE(!(need_temp && need_sie),
+  PORTABLE_ALWAYS_REQUIRE(!need_rho, "Density output not supported by this EOS");
+  PORTABLE_ALWAYS_REQUIRE(!(need_temp && need_sie),
                    "Either specific internal energy or temperature must be provided.");
   Real abar = lambda[Lambda::Abar];
   Real zbar = lambda[Lambda::Zbar];
@@ -1399,7 +1399,7 @@ void Helmholtz::GetFromDensityLogTemperature_(
                                       sion);
     } else { // modify ideal gas to include ions + electrons
       const Real abar_ion = robust::ratio(abar, zbar + 1);
-      const Real zbar_ion = zbar;
+      // const Real zbar_ion = zbar;
       const Real ytot_ion = robust::ratio(1.0, abar_ion);
       const Real ywot_ion = robust::ratio(
           std::log(abar_ion * abar_ion * std::sqrt(abar_ion)), rho * ions_.NA);
