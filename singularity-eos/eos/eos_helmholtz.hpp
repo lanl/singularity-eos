@@ -674,8 +674,9 @@ void Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &
   bool need_sie = (output & thermalqs::specific_internal_energy);
   bool need_rho = (output & thermalqs::density);
   PORTABLE_ALWAYS_REQUIRE(!need_rho, "Density output not supported by this EOS");
-  PORTABLE_ALWAYS_REQUIRE(!(need_temp && need_sie),
-                   "Either specific internal energy or temperature must be provided.");
+  PORTABLE_ALWAYS_REQUIRE(
+      !(need_temp && need_sie),
+      "Either specific internal energy or temperature must be provided.");
   Real abar = lambda[Lambda::Abar];
   Real zbar = lambda[Lambda::Zbar];
   Real ytot, ye, ywot, De, lDe, lT;
