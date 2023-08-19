@@ -26,7 +26,14 @@ use clang-format for this, pinned to version 12. You can automatically
 trigger ``clang-format`` in two ways: first you can run the script
 ``utils/scripts/format.sh``; second you can type ``make
 format_singularity`` after configuring the code with ``clang-format``
-discoverable by ``cmake``.
+discoverable by ``cmake``. The former script takes two CLI arguments
+that may be useful, ``CFM``, which can be set to the path for your
+clang-format binary, and ``VERBOSE``, which if set to ``1`` adds
+useful output. For example:
+
+.. code-block:: bash
+
+    CFM=clang-format-12 VERBOSE=1 ./util/scripts/format.sh
 
 Several sets of tests are triggered on a pull request: a static format
 check, a docs buld, and unit tests of analytic models and the stellar
