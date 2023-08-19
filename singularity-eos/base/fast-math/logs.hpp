@@ -67,10 +67,52 @@
  * we can go into and out of "grid space" reliably and quickly, we're
  * happy, and this function is an EXACT map into and out of that
  * space.
+ *
+ * See ArXiv:2206.08957
  */
 
 namespace singularity {
 namespace FastMath {
+
+/*
+// Integer Aliased versions. Likely not as portable
+template<typename T>
+KOKKOS_FORCEINLINE_FUNCTION
+auto sgn(const T &x) {
+  return (T(0) < x) - (x < T(0));
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+auto as_int(double f) {
+  return *reinterpret_cast<long long int*>(&f);
+}
+KOKKOS_FORCEINLINE_FUNCTION
+auto as_double(long long int i) {
+  return *reinterpret_cast<double*>(&i);
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+double fastlg(const double x) {
+  // Magic numbers constexpr because C++ doesn't constexpr reinterpret casts
+  // these are floating point numbers as reinterpreted as integers.
+  // as_int(1.0)
+  constexpr long long int one_as_int = 4607182418800017408;
+  // 1./static_cast<double>(as_int(2.0) - as_int(1.0))
+  constexpr double scale_down = 2.22044604925031e-16;
+  return static_cast<double>(as_int(x) - one_as_int) * scale_down;
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+double fastpow2(const double x) {
+  // Magic numbers constexpr because C++ doesn't constexpr reinterpret casts
+  // these are floating point numbers as reinterpreted as integers.
+  // as_int(1.0)
+  constexpr long long int one_as_int = 4607182418800017408;
+  // as_int(2.0) - as_int(1.0)
+  constexpr double scale_up = 4503599627370496;
+  return as_double(static_cast<long long int>(x*scale_up) + one_as_int);
+}
+*/
 
 PORTABLE_FORCEINLINE_FUNCTION
 double fastlg(const double x) {
