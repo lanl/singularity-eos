@@ -45,39 +45,19 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
     Helmholtz eos = host_eos.GetOnDevice();
     THEN("We loaded the file!") { REQUIRE(true); }
 
-    /* Density and temperature range evenly sampling the parameter space */
-    constexpr int num = 4;
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-    // Create Kokkos views on device for the input arrays
-    Kokkos::View<Real[num]> v_rho_in("rho_in");
-    Kokkos::View<Real[num]> v_temp_in("temp_in");
-#else
-    // Otherwise just create arrays to contain values and create pointers to
-    // be passed to the functions in place of the Kokkos views
-    std::array<Real, num> rho_in;
-    std::array<Real, num> temp_in;
-    auto v_rho_in = rho_in.data();
-    auto v_temp_in = temp_in.data();
-#endif // PORTABILITY_STRATEGY_KOKKOS
-
-    // Populate the input arrays
-    portableFor(
-        "Initialize input arrays", 0, 1, PORTABLE_LAMBDA(int i) {
-          v_rho_in[0] = 1e-3;
-          v_rho_in[1] = 1e1;
-          v_rho_in[2] = 1e5;
-          v_rho_in[3] = 1e9;
-          v_temp_in[0] = 1e4;
-          v_temp_in[1] = 1e6;
-          v_temp_in[2] = 1e8;
-          v_temp_in[3] = 1e10;
-        });
-
     /* Compare test values. Difference should be less than 1e-10 */
+#ifdef PORTABILITY_STRATEGY_KOKKOS
     int nwrong = 1; // != 0
+#else
+    int nwrong = 0;
+#endif // PORTABILITY_STRATEGY_KOKKOS
     portableReduce(
         "Test on device", 0, 1,
         PORTABLE_LAMBDA(int dummy, int &nwrong) {
+          /* Density and temperature range evenly sampling the parameter space */
+          constexpr Real rho_in[4] = {1e-3, 1e1, 1e5, 1e9};
+          constexpr Real temp_in[4] = {1e4, 1e6, 1e8, 1e10};
+
           /* Reference values calculated with reference implementation, using
               abar = 4.0, zbar = 2.0 */
           constexpr Real ein_ref[16] = {
@@ -125,20 +105,22 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
           int k = 0;
           for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
-              Real ein = eos.InternalEnergyFromDensityTemperature(v_rho_in[i],
-                                                                  v_temp_in[j], lambda);
+              Real ein =
+                  eos.InternalEnergyFromDensityTemperature(rho_in[i], temp_in[j], lambda);
               Real press =
-                  eos.PressureFromDensityTemperature(v_rho_in[i], v_temp_in[j], lambda);
-              Real cv = eos.SpecificHeatFromDensityTemperature(v_rho_in[i], v_temp_in[j],
-                                                               lambda);
-              Real bulkmod = eos.BulkModulusFromDensityTemperature(v_rho_in[i],
-                                                                   v_temp_in[j], lambda);
-              Real gruen = eos.GruneisenParamFromDensityTemperature(v_rho_in[i],
-                                                                    v_temp_in[j], lambda);
+                  eos.PressureFromDensityTemperature(rho_in[i], temp_in[j], lambda);
+              // Do not move these checks! I don't know why but if you check all at
+              // once at the end, rho_in[0] is not accessed correctly.
               if (!isClose(ein, ein_ref[k], 1e-10)) nwrong += 1;
               if (!isClose(press, press_ref[k], 1e-10)) nwrong += 1;
-              /* These values are not very accurate, but the difference is
-                 still less than 1e-6 in most cases. */
+
+              Real cv =
+                  eos.SpecificHeatFromDensityTemperature(rho_in[i], temp_in[j], lambda);
+              Real bulkmod =
+                  eos.BulkModulusFromDensityTemperature(rho_in[i], temp_in[j], lambda);
+              Real gruen =
+                  eos.GruneisenParamFromDensityTemperature(rho_in[i], temp_in[j], lambda);
+
               if (!isClose(cv, cv_ref[k], 1e-6)) nwrong += 1;
               if (!isClose(bulkmod, bulkmod_ref[k], 1e-8)) nwrong += 1;
               if (!isClose(gruen, gruen_ref[k], 1e-6)) nwrong += 1;
@@ -163,7 +145,11 @@ SCENARIO("Helmholtz equation of state - Root finding (egiven)", "[HelmholtzEOS]"
     THEN("We loaded the file!") { REQUIRE(true); }
 
     /* Compare test values. Difference should be less than 1e-6 */
+#ifdef PORTABILITY_STRATEGY_KOKKOS
     int nwrong = 1; // != 0
+#else
+    int nwrong = 0;
+#endif
     portableReduce(
         "Test on device", 0, 1,
         PORTABLE_LAMBDA(int dummy, int &nwrong) {
