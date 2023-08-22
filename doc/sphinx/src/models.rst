@@ -1383,6 +1383,22 @@ Some important formulas to be used when using this EOS:
 
 .. _Frank Timmes's website: https://cococubed.com/code_pages/eos.shtml
 
+The constructor for the ``Helmholtz`` EOS class looks like
+
+.. code-block:: cpp
+
+  Helmholtz(const std::string &filename, const bool rad = true,
+            const bool gas = true, const bool coul = true,
+            const bool ion = true, const bool ele = true,
+            const bool verbose = false)
+
+where ``filename`` is the file containing the tabulated model. The
+optional arguments ``rad``, ``gas``, ``coul``, ``ion``, and ``ele``
+specify whether to include the radiation, ideal gas, coulomb correction,
+ionization, and electron contributions, respectively. The default is to
+include all terms. The optional argument ``verbose`` specifies whether to print
+out additional information, e.g. when the root find fails to converge.
+
 EOSPAC EOS
 ````````````
 
