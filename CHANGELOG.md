@@ -21,6 +21,7 @@
 - [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
 
 ### Added (new features/APIs/variables/...)
+- [[PR265]](https://github.com/lanl/singularity-eos/pull/265) Add missing UnitSystem modifier combinations to variant and EOSPAC
 - [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
 - [[PR274]](https://github.com/lanl/singularity-eos/pull/274) added a stiffened gas EoS
 - [[PR254]](https://github.com/lanl/singularity-eos/pull/254) added ability to peel off modifiers as needed
