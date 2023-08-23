@@ -246,10 +246,10 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     static auto const name = singularity::mfuncname::member_func_name(
         typeid(BilinearRampEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
-
+    auto const copy = *this;
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real p_ramp = get_ramp_pressure(rhos[i]);
+          const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
           pressures[i] = std::max(pressures[i], p_ramp);
         });
   }
@@ -265,10 +265,10 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     static auto const name = singularity::mfuncname::member_func_name(
         typeid(BilinearRampEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
-
+    auto const copy = *this;
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real p_ramp = get_ramp_pressure(rhos[i]);
+          const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
           pressures[i] = std::max(pressures[i], p_ramp);
         });
   }
@@ -305,12 +305,12 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     static auto const name = singularity::mfuncname::member_func_name(
         typeid(BilinearRampEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
-
+    auto const copy = *this;
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real p_ramp = get_ramp_pressure(rhos[i]);
+          const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
           if (pressures[i] < p_ramp) {
-            bmods[i] = rhos[i] * get_ramp_dpdrho(rhos[i]);
+            bmods[i] = rhos[i] * copy.get_ramp_dpdrho(rhos[i]);
           }
         });
   }
@@ -329,12 +329,12 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     static auto const name = singularity::mfuncname::member_func_name(
         typeid(BilinearRampEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
-
+    auto const copy = *this;
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          const Real p_ramp = get_ramp_pressure(rhos[i]);
+          const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
           if (pressures[i] < p_ramp) {
-            bmods[i] = rhos[i] * get_ramp_dpdrho(rhos[i]);
+            bmods[i] = rhos[i] * copy.get_ramp_dpdrho(rhos[i]);
           }
         });
   }
@@ -428,12 +428,13 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   // Vector functions that overload the scalar versions declared here.
   SG_ADD_BASE_CLASS_USINGS(BilinearRampEOS<T>)
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  bool IsModified() const { return true; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  T UnmodifyOnce() { return t_; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  auto GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
+  inline constexpr bool IsModified() const { return true; }
+
+  inline constexpr T UnmodifyOnce() { return t_; }
+
+  inline constexpr decltype(auto) GetUnmodifiedObject() {
+    return t_.GetUnmodifiedObject();
+  }
 
  private:
   T t_;

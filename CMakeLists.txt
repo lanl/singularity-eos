@@ -11,9 +11,6 @@
 # publicly and display publicly, and to permit others to do so.
 # ------------------------------------------------------------------------------#
 
-# We want to stay near to latest, as more compilers and third-party libraries
-# are supported. However, uptake of new CMake releases can be slow. 20230403:
-# version 3.19 is available on all testing platforms
 cmake_minimum_required(VERSION 3.19)
 
 # Disable "in-source" builds
@@ -51,9 +48,10 @@ option(SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
 
+#TODO This should be dependent option (or fortran option)
 option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON)
 
-cmake_dependent_option(SINGULARITY_USE_CUDA "Use CUDA backend of Kokkos" ON
+cmake_dependent_option(SINGULARITY_USE_CUDA "Use CUDA backend of Kokkos" OFF
                        "SINGULARITY_USE_KOKKOS" OFF)
 cmake_dependent_option(
   SINGULARITY_USE_KOKKOSKERNELS "Use KokkosKernels for LA routines" ON

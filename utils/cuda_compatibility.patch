@@ -1,7 +1,16 @@
 diff --git a/include/mpark/variant.hpp b/include/mpark/variant.hpp
-index 2fb2ac549..aeef9dcdd 100644
+index 2fb2ac549..76f58530a 100644
 --- a/include/mpark/variant.hpp
 +++ b/include/mpark/variant.hpp
+@@ -245,7 +245,7 @@ namespace mpark {
+   };
+ 
+   [[noreturn]] inline void throw_bad_variant_access() {
+-#ifdef MPARK_EXCEPTIONS
++#if defined(MPARK_EXCEPTIONS) && !defined(__CUDACC__)
+     throw bad_variant_access{};
+ #else
+     std::terminate();
 @@ -1021,9 +1021,15 @@ namespace mpark {
      friend struct access::recursive_union;                                 \
    }
@@ -19,7 +28,13 @@ index 2fb2ac549..aeef9dcdd 100644
                                    ~recursive_union() {});
      MPARK_VARIANT_RECURSIVE_UNION(Trait::Unavailable,
                                    ~recursive_union() = delete;);
-@@ -1133,9 +1139,9 @@ namespace mpark {
+@@ -1128,14 +1134,14 @@ namespace mpark {
+     MPARK_VARIANT_DESTRUCTOR(
+         Trait::TriviallyAvailable,
+         ~destructor() = default;,
+-        inline void destroy() noexcept {
++        inline constexpr void destroy() noexcept {
+           this->index_ = static_cast<index_t<Ts...>>(-1);
          });
  
      MPARK_VARIANT_DESTRUCTOR(
@@ -57,20 +72,15 @@ index 2fb2ac549..aeef9dcdd 100644
              lib::all<std::is_nothrow_move_constructible<Ts>::value...>::value)
              : move_constructor(valueless_t{}) {
            this->generic_construct(*this, lib::move(that));
-@@ -1256,11 +1262,11 @@ namespace mpark {
-   }
+@@ -1261,7 +1267,7 @@ namespace mpark {
  
      MPARK_VARIANT_COPY_CONSTRUCTOR(
--        Trait::TriviallyAvailable,
-+        Trait::TriviallyAvailable,
-         copy_constructor(const copy_constructor &that) = default;);
- 
-     MPARK_VARIANT_COPY_CONSTRUCTOR(
--        Trait::Available,
-+        Trait::Available,V_GPU_FUNCTION
-         copy_constructor(const copy_constructor &that)
+         Trait::Available,
+-        copy_constructor(const copy_constructor &that)
++        constexpr copy_constructor(const copy_constructor &that)
              : copy_constructor(valueless_t{}) {
            this->generic_construct(*this, that);
+         });
 @@ -1281,7 +1287,7 @@ namespace mpark {
        using super::operator=;
  
@@ -98,20 +108,15 @@ index 2fb2ac549..aeef9dcdd 100644
          if (this->valueless_by_exception() && that.valueless_by_exception()) {
            // do nothing.
          } else if (that.valueless_by_exception()) {
-@@ -1376,11 +1382,11 @@ namespace mpark {
-   }
+@@ -1381,7 +1387,7 @@ namespace mpark {
  
      MPARK_VARIANT_MOVE_ASSIGNMENT(
--        Trait::TriviallyAvailable,
-+        Trait::TriviallyAvailable,
-         move_assignment &operator=(move_assignment &&that) = default;);
- 
-     MPARK_VARIANT_MOVE_ASSIGNMENT(
--        Trait::Available,
-+        Trait::Available,V_GPU_FUNCTION
-         move_assignment &
+         Trait::Available,
+-        move_assignment &
++        constexpr move_assignment &
          operator=(move_assignment &&that) noexcept(
              lib::all<(std::is_nothrow_move_constructible<Ts>::value &&
+                       std::is_nothrow_move_assignable<Ts>::value)...>::value) {
 @@ -1394,6 +1400,7 @@ namespace mpark {
          move_assignment &operator=(move_assignment &&) = delete;);
  
@@ -129,14 +134,95 @@ index 2fb2ac549..aeef9dcdd 100644
            this->generic_assign(that);
            return *this;
          });
+@@ -1447,7 +1454,7 @@ namespace mpark {
+       impl &operator=(impl &&) = default;
+ 
+       template <std::size_t I, typename Arg>
+-      inline void assign(Arg &&arg) {
++      inline constexpr void assign(Arg &&arg) {
+         this->assign_alt(access::base::get_alt<I>(*this),
+                          lib::forward<Arg>(arg));
+       }
+@@ -1499,7 +1506,7 @@ namespace mpark {
+ #ifndef MPARK_GENERIC_LAMBDAS
+       struct swapper {
+         template <typename ThisAlt, typename ThatAlt>
+-        inline void operator()(ThisAlt &this_alt, ThatAlt &that_alt) const {
++        inline constexpr void operator()(ThisAlt &this_alt, ThatAlt &that_alt) const {
+           using std::swap;
+           swap(this_alt.value, that_alt.value);
+         }
 @@ -1694,8 +1701,8 @@ namespace mpark {
  
      ~variant() = default;
  
 -    variant &operator=(const variant &) = default;
 -    variant &operator=(variant &&) = default;
-+    /*V_GPU_FUNCTION*/constexpr variant &operator=(const variant &) = default;
-+    /*V_GPU_FUNCTION*/constexpr variant &operator=(variant &&) = default;
++    constexpr variant &operator=(const variant &) = default;
++    constexpr variant &operator=(variant &&) = default;
  
      template <typename Arg,
                lib::enable_if_t<!std::is_same<lib::decay_t<Arg>, variant>::value,
+@@ -1705,7 +1712,7 @@ namespace mpark {
+               lib::enable_if_t<(std::is_assignable<T &, Arg>::value &&
+                                 std::is_constructible<T, Arg>::value),
+                                int> = 0>
+-    inline variant &operator=(Arg &&arg) noexcept(
++    inline constexpr variant &operator=(Arg &&arg) noexcept(
+         (std::is_nothrow_assignable<T &, Arg>::value &&
+          std::is_nothrow_constructible<T, Arg>::value)) {
+       impl_.template assign<I>(lib::forward<Arg>(arg));
+@@ -1717,7 +1724,7 @@ namespace mpark {
+         typename... Args,
+         typename T = lib::type_pack_element_t<I, Ts...>,
+         lib::enable_if_t<std::is_constructible<T, Args...>::value, int> = 0>
+-    inline T &emplace(Args &&... args) {
++    inline constexpr T &emplace(Args &&... args) {
+       return impl_.template emplace<I>(lib::forward<Args>(args)...);
+     }
+ 
+@@ -1730,7 +1737,7 @@ namespace mpark {
+                                                std::initializer_list<Up> &,
+                                                Args...>::value,
+                          int> = 0>
+-    inline T &emplace(std::initializer_list<Up> il, Args &&... args) {
++    inline constexpr T &emplace(std::initializer_list<Up> il, Args &&... args) {
+       return impl_.template emplace<I>(il, lib::forward<Args>(args)...);
+     }
+ 
+@@ -1739,7 +1746,7 @@ namespace mpark {
+         typename... Args,
+         std::size_t I = detail::find_index_sfinae<T, Ts...>::value,
+         lib::enable_if_t<std::is_constructible<T, Args...>::value, int> = 0>
+-    inline T &emplace(Args &&... args) {
++    inline constexpr T &emplace(Args &&... args) {
+       return impl_.template emplace<I>(lib::forward<Args>(args)...);
+     }
+ 
+@@ -1752,7 +1759,7 @@ namespace mpark {
+                                                std::initializer_list<Up> &,
+                                                Args...>::value,
+                          int> = 0>
+-    inline T &emplace(std::initializer_list<Up> il, Args &&... args) {
++    inline constexpr T &emplace(std::initializer_list<Up> il, Args &&... args) {
+       return impl_.template emplace<I>(il, lib::forward<Args>(args)...);
+     }
+ 
+@@ -1772,7 +1779,7 @@ namespace mpark {
+                             lib::dependent_type<lib::is_swappable<Ts>,
+                                                 Dummy>::value)...>::value,
+                   int> = 0>
+-    inline void swap(variant &that) noexcept(
++    inline constexpr void swap(variant &that) noexcept(
+         lib::all<(std::is_nothrow_move_constructible<Ts>::value &&
+                   lib::is_nothrow_swappable<Ts>::value)...>::value) {
+       impl_.swap(that.impl_);
+@@ -2093,7 +2100,7 @@ namespace mpark {
+ #endif
+ 
+   template <typename... Ts>
+-  inline auto swap(variant<Ts...> &lhs,
++  inline constexpr auto swap(variant<Ts...> &lhs,
+                    variant<Ts...> &rhs) noexcept(noexcept(lhs.swap(rhs)))
+       -> decltype(lhs.swap(rhs)) {
+     lhs.swap(rhs);

@@ -158,16 +158,19 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
+    const auto shift_val = shift_;
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) { shifted[i] = sies[i] - shift_; });
+        cname, 0, num,
+        PORTABLE_LAMBDA(const int i) { shifted[i] = sies[i] - shift_val; });
   }
 
   inline void unshift_sies(Real *sies, const int num) const {
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
+    const auto shift_val = shift_;
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_; });
+        cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
   }
 
   template <typename LambdaIndexer>
@@ -345,12 +348,13 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     return t_.MinimumTemperature();
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  bool IsModified() const { return true; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  T UnmodifyOnce() { return t_; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  auto GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
+  inline constexpr bool IsModified() const { return true; }
+
+  inline constexpr T UnmodifyOnce() { return t_; }
+
+  inline constexpr decltype(auto) GetUnmodifiedObject() {
+    return t_.GetUnmodifiedObject();
+  }
 
  private:
   T t_;

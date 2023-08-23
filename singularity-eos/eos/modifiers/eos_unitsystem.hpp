@@ -166,6 +166,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
         t_.PressureFromDensityTemperature(rho * rho_unit_, temp * temp_unit_, lambda);
     return inv_press_unit_ * P;
   }
+  PORTABLE_FUNCTION
   Real EntropyFromDensityTemperature(const Real rho, const Real temp,
                                      Real *lambda = nullptr) const {
     const Real S =
@@ -416,12 +417,13 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     printf("Units = %e %e %e %e\n", rho_unit_, sie_unit_, temp_unit_, press_unit_);
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  bool IsModified() const { return true; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  T UnmodifyOnce() { return t_; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  auto GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
+  inline constexpr bool IsModified() const { return true; }
+
+  inline constexpr T UnmodifyOnce() { return t_; }
+
+  inline constexpr decltype(auto) GetUnmodifiedObject() {
+    return t_.GetUnmodifiedObject();
+  }
 
  private:
   T t_;

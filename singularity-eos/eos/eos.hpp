@@ -38,6 +38,7 @@
 #include <singularity-eos/eos/eos_gruneisen.hpp>
 #include <singularity-eos/eos/eos_ideal.hpp>
 #include <singularity-eos/eos/eos_jwl.hpp>
+#include <singularity-eos/eos/eos_noble_abel.hpp>
 #include <singularity-eos/eos/eos_sap_polynomial.hpp>
 #include <singularity-eos/eos/eos_spiner.hpp>
 #include <singularity-eos/eos/eos_stellar_collapse.hpp>
@@ -66,7 +67,7 @@ using singularity::detail::transform_variadic_list;
 // all eos's
 static constexpr const auto full_eos_list =
     tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts, StiffGas,
-       SAP_Polynomial
+       SAP_Polynomial, NobleAbel
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
        ,
        SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
@@ -135,7 +136,7 @@ static constexpr const auto ramped_all =
     transform_variadic_list(combined_list_1, al<BilinearRampEOS>{});
 // final combined list
 static constexpr const auto combined_list =
-    singularity::detail::concat(full_eos_list, shifted, scaled, unit_or_rel, ramped_all);
+    singularity::detail::concat(combined_list_1, ramped_all);
 // a function that returns a Variant from a typelist
 template <typename... Ts>
 struct tl_to_Variant_struct {
