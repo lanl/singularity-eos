@@ -4,7 +4,7 @@
 - [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
-- [[PRNNN]](https://github.com/lanl/singularity-eos/pull/NNN) changed `CMAKE_SOURCE_DIR` to `PROJECT_SOURCE_DIR` to fix downstream submodule build
+- [[PR296]](https://github.com/lanl/singularity-eos/pull/296) changed `CMAKE_SOURCE_DIR` to `PROJECT_SOURCE_DIR` to fix downstream submodule build
 - [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options 
 - [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
 - [[PR288]](https://github.com/lanl/singularity-eos/pull/288) Don't build tests that depend on spiner when spiner is disabled
