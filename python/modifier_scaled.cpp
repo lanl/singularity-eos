@@ -32,7 +32,4 @@ void create_scaled(py::module_ &m, tl<Ts...>) {
   auto l = {(scaled_eos_class<Ts>(m), 0)...};
 }
 
-void create_scaled_eos_classes(py::module_ &m) {
-  create_scaled(m, singularity::scaled);
-  create_scaled(m, singularity::scaled_of_shifted);
-}
+void create_scaled_eos_classes(py::module_ &m) { create_scaled(m, singularity::scaled); }

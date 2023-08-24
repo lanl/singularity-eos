@@ -27,7 +27,7 @@ project(
   VERSION 1.7.0
   LANGUAGES NONE)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.6.2")
 set(SINGULARITY_GOLDFILE_HASH
@@ -48,7 +48,7 @@ option(SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
 
-#TODO This should be dependent option (or fortran option)
+# TODO This should be dependent option (or fortran option)
 option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON)
 
 cmake_dependent_option(SINGULARITY_USE_CUDA "Use CUDA backend of Kokkos" OFF
