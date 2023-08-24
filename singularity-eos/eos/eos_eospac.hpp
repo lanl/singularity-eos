@@ -655,8 +655,8 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
     EOS_REAL *E = scratch + 0 * num;
-    EOS_REAL *DEDT = &cvs[0];
     EOS_REAL *DEDR = scratch + 1 * num;
+    EOS_REAL *DEDT = &cvs[0];
 
     EOS_INTEGER table = EofRT_table_;
 
@@ -681,20 +681,17 @@ class EOSPAC : public EosBase<EOSPAC> {
       }
     }
 
-    options[nopts] = EOS_F_CONVERT;
-    values[nopts] = cvFromSesame(1.0);
-
-    if (transform.f.is_set()) {
-      values[nopts] *= transform.f.get();
-    }
-    ++nopts;
-
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
 
+    const Real y = transform.y.is_set() ? (1.0 / transform.y.get()) : 1.0;
+    const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
+
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] = std::max(cvs[i], 0.0); // Here we do something to the data!
+          cvs[i] =
+              f * y *
+              cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
         });
   }
 
