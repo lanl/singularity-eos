@@ -36,6 +36,7 @@
 #include <singularity-eos/eos/eos_davis.hpp>
 #include <singularity-eos/eos/eos_eospac.hpp>
 #include <singularity-eos/eos/eos_gruneisen.hpp>
+#include <singularity-eos/eos/eos_helmholtz.hpp>
 #include <singularity-eos/eos/eos_ideal.hpp>
 #include <singularity-eos/eos/eos_jwl.hpp>
 #include <singularity-eos/eos/eos_noble_abel.hpp>
@@ -69,6 +70,10 @@ static constexpr const auto full_eos_list =
     tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts, StiffGas,
        SAP_Polynomial, NobleAbel
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_HELMHOLTZ
+       ,
+       Helmholtz
+#endif // SINGULARITY_USE_HELMHOLTZ
        ,
        SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5

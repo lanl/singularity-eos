@@ -25,6 +25,7 @@
 - [[PR265]](https://github.com/lanl/singularity-eos/pull/265) Add missing UnitSystem modifier combinations to variant and EOSPAC
 - [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
 - [[PR274]](https://github.com/lanl/singularity-eos/pull/274) added a stiffened gas EoS
+- [[PR264]](https://github.com/lanl/singularity-eos/pull/274) added a Helmholtz EoS
 - [[PR254]](https://github.com/lanl/singularity-eos/pull/254) added ability to peel off modifiers as needed
 - [[PR250]](https://github.com/lanl/singularity-eos/pull/250) added mass fraction output to stellar collapse eos
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
@@ -48,6 +49,7 @@
 - [[PR245]](https://github.com/lanl/singularity-eos/pull/245) Separating get_sg_eos to other files. Build/compilation improvements, warning fixes/suppression.
 
 ### Removed (removing behavior/API/varaibles/...)
+- [[PR293]](https://github.com/lanl/singularity-eos/pull/293) Removing PTofRE function. This will no longer be callable downstream.
 
 ## Release 1.7.0
 Date: 12/14/2022
