@@ -208,6 +208,30 @@ int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const doub
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
+#ifdef SINGULARITY_USE_HELMHOLTZ
+int init_sg_Helmholtz(const int matindex, EOS *eos, const char *filename, const bool rad,
+                      const bool gas, const bool coul, const bool ion, const bool ele,
+                      const bool verbose, int const *const enabled, double *const vals) {
+  assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(
+      Helmholtz(std::string(filename), rad, gas, coul, ion, ele, verbose));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
+  EOS eos_ =
+      SGAPPLYMOD(Helmholtz(std::string(filename), rad, gas, coul, ion, ele, verbose));
+  eos[matindex] = eos_.GetOnDevice();
+  return 0;
+}
+int init_sg_Helmholtz(const int matindex, EOS *eos, const char *filename, const bool rad,
+                      const bool gas, const bool coul, const bool ion, const bool ele,
+                      const bool verbose) {
+  return init_sg_Helmholtz(matindex, eos, filename, rad, gas, coul, ion, ele, verbose,
+                           def_en, def_v);
+}
+#endif
+
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int matid, int const *const enabled,
                               double *const vals) {

@@ -91,3 +91,14 @@ export(
   EXPORT singularity-eosTargets
   FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eosTargets.cmake
   NAMESPACE singularity-eos::)
+
+# ----------------------------------------------------------------------------#
+# Data files
+# ----------------------------------------------------------------------------#
+
+# install data files needed for various eos models
+if(SINGULARITY_USE_HELMHOLTZ)
+  # install data files
+  install(DIRECTORY ${PROJECT_SOURCE_DIR}/data/helmholtz
+          DESTINATION ${CMAKE_INSTALL_DATADIR}/singularity-eos/data)
+endif()

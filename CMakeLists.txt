@@ -69,6 +69,9 @@ cmake_dependent_option(
 cmake_dependent_option(
   SINGUALRITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" ON
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+cmake_dependent_option(
+  SINGULARITY_USE_HELMHOLTZ "Include Helmholtz equation of state" OFF
+  "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
 
 # testing options
 option(SINGULARITY_BUILD_TESTS "Compile tests" OFF)
@@ -81,6 +84,8 @@ cmake_dependent_option(
   "SINGULARITY_BUILD_TESTS;SINGUALRITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
 cmake_dependent_option(SINGULARITY_TEST_PYTHON "Test the Python bindings" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_PYTHON" OFF)
+cmake_dependent_option(SINGULARITY_TEST_HELMHOLTZ "Test the Helmholtz equation of state" ON
+                       "SINGULARITY_BUILD_TESTS;SINGULARITY_USE_HELMHOLTZ" OFF)
 
 # modify flags options
 option(SINGULARITY_BETTER_DEBUG_FLAGS "Better debug flags for singularity" ON)
@@ -232,6 +237,9 @@ if(SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_BUILD_CLOSURE)
   target_compile_definitions(singularity-eos PRIVATE SINGULARITY_BUILD_CLOSURE)
+endif()
+if(SINGULARITY_USE_HELMHOLTZ)
+  target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_HELMHOLTZ)
 endif()
 
 # ------------------------------------------------------------------------------#
