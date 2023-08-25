@@ -65,6 +65,12 @@ int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const doub
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
+#ifdef SINGULARITY_USE_HELMHOLTZ
+int init_sg_Helmholtz(const int matindex, EOS *eos, const char *filename, const bool rad,
+                      const bool gas, const bool coul, const bool ion, const bool ele,
+                      const bool verbose, int const *const enabled, double *const vals);
+#endif
+
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int id, int const *const enabled, double *const vals);
 
@@ -132,6 +138,12 @@ int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const doub
                       const double bb, const double qq);
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+
+#ifdef SINGULARITY_USE_HELMHOLTZ
+int init_sg_Helmholtz(const int matindex, EOS *eos, const char *filename, const bool rad,
+                      const bool gas, const bool coul, const bool ion, const bool ele,
+                      const bool verbose);
+#endif
 
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int id);

@@ -21,7 +21,13 @@ add_executable(
   test_eos_vinet.cpp
   test_eos_noble_abel.cpp
   test_eos_stiff.cpp
-)
+  test_eos_helmholtz.cpp
+  )
+
+if(SINGULARITY_TEST_HELMHOLTZ)
+    configure_file(${PROJECT_SOURCE_DIR}/data/helmholtz/helm_table.dat ${CMAKE_BINARY_DIR}/data/helmholtz/helm_table.dat COPYONLY)
+  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_HELMHOLTZ SINGULARITY_USE_HELMHOLTZ)
+endif()
 
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
