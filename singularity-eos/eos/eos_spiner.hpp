@@ -88,7 +88,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::PTofRE;
   using EosBase<SpinerEOSDependsRhoT>::FillEos;
   using EosBase<SpinerEOSDependsRhoT>::EntropyIsNotEnabled;
 
@@ -318,7 +317,6 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityTemperature;
   using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::PTofRE;
   using EosBase<SpinerEOSDependsRhoSie>::FillEos;
   using EosBase<SpinerEOSDependsRhoSie>::EntropyIsNotEnabled;
 

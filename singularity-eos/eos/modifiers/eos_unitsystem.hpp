@@ -63,7 +63,6 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   using EosBase<UnitSystem<T>>::BulkModulusFromDensityInternalEnergy;
   using EosBase<UnitSystem<T>>::GruneisenParamFromDensityTemperature;
   using EosBase<UnitSystem<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::PTofRE;
   using EosBase<UnitSystem<T>>::FillEos;
 
   using BaseType = T;
