@@ -110,6 +110,13 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def_property_readonly("YeMax", &StellarCollapse::YeMax)
     .def_property_readonly("sieMin", &StellarCollapse::sieMin)
     .def_property_readonly("sieMax", &StellarCollapse::sieMax);
+  
+#ifdef SINGULARITY_USE_HELMHOLTZ
+  eos_class<Helmholtz>(m, "Helmholtz")
+    .def(py::init())
+    .def(py::init<std::string&>())
+    .def(py::init<std::string&,bool,bool,bool,bool,bool>());
+#endif
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
@@ -119,11 +126,11 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
 #endif
 
+  create_unit_system_eos_classes(m);
+  create_relativistic_eos_classes(m);
   create_shifted_eos_classes(m);
   create_scaled_eos_classes(m);
   create_bilinear_ramp_eos_classes(m);
-  create_relativistic_eos_classes(m);
-  create_unit_system_eos_classes(m);
   
   m.def("pAlpha2BilinearRampParams", [](const IdealGas &eos, const Real alpha0, const Real Pe, const Real Pc){
     Real r0, a, b, c;

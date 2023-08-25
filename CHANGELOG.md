@@ -4,6 +4,7 @@
 - [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
+- [[PR296]](https://github.com/lanl/singularity-eos/pull/296) changed `CMAKE_SOURCE_DIR` to `PROJECT_SOURCE_DIR` to fix downstream submodule build
 - [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options 
 - [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
 - [[PR288]](https://github.com/lanl/singularity-eos/pull/288) Don't build tests that depend on spiner when spiner is disabled
@@ -21,8 +22,10 @@
 - [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
 
 ### Added (new features/APIs/variables/...)
+- [[PR265]](https://github.com/lanl/singularity-eos/pull/265) Add missing UnitSystem modifier combinations to variant and EOSPAC
 - [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
 - [[PR274]](https://github.com/lanl/singularity-eos/pull/274) added a stiffened gas EoS
+- [[PR264]](https://github.com/lanl/singularity-eos/pull/274) added a Helmholtz EoS
 - [[PR254]](https://github.com/lanl/singularity-eos/pull/254) added ability to peel off modifiers as needed
 - [[PR250]](https://github.com/lanl/singularity-eos/pull/250) added mass fraction output to stellar collapse eos
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos

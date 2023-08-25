@@ -1291,6 +1291,117 @@ return a ``Real`` number.
 
 .. _median filter: https://en.wikipedia.org/wiki/Median_filter
 
+
+
+Helmholtz EOS
+``````````````
+
+This is a performance portable implementation of the Helmholtz
+equation of state provided by `Timmes and Swesty`_.  The Helmholtz EOS
+is a three part thermodynamically consistent EOS for a hot, ionized
+gas. It consists of a thermal radiation term:
+
+.. math::
+
+   P = \sigma \cdot T^4
+
+an ions term, treated as an ideal gas:
+
+.. math::
+
+   P = (\gamma - 1) \cdot \rho \cdot e
+
+and a degenerate electron term. Additionally, coulomb force
+corrections can be applied on top of the full model.  This
+multi-component model depends on the relative abundances of electrons
+and ions, as well as the atomic mass and charge of the ions. As such,
+the Helmholtz EOS requires two additional indepenent variables, the
+average atomic mass, Abar, and the average atomic number, Zbar. These
+are passed in through the lambda pointer. As with the other tabulated
+EOS's, the log of the temperature is also stored in the lambda pointer
+as a cache for root finding. Helmholtz provides an enum for indexing
+into the lambda:
+
+* ``Helmholtz::Lambda::Abar`` indexes into the ``Abar`` component of
+  the lambda array.
+* ``Helmholtz::Lambda::Zbar`` indexes into the ``Zbar`` component of
+  the lambda array.
+* ``Helmholtz::Lambda::lT`` indexes into the log temperature cache
+  inside the lambda array.
+
+The degenerate electron term is computed via thermodynamic derivatives
+of the Helmholtz free energy (hence the name Helmholtz EOS). The free
+energy is pre-computed via integrals over the Fermi sphere and
+tabulated in a file provided from `Frank Timmes's website`_.
+
+The table is a simple small ascii file. To ensure thermodyanic
+consistency, the table is interpolated using either biquintic or
+bicubic Hermite polynomials, which are sufficiently high order that
+their high-order derivatives match the underlying data.
+
+.. warning::
+
+   Only a modified version of the table is supported due to the fixed
+   number of colums in the table. This may change in the future.
+   The original table found on `Frank Timmes's website`_ is not supported.
+   A compatible version of the table can be found in the
+   ``data/helmholtz`` directory of the source code, or the data
+   directory specified in the installation configuration.
+
+.. note::
+
+   The implication of interpolating from the free energy is that each
+   EOS evaluation provides ALL relevant EOS data and thermodynamic
+   derivatives. Thus the per-quantity EOS calls are relatively
+   inefficient, and it is instead better to use the FillEos call to
+   get the entire model at once.
+
+The Helmholtz EOS is instantiated by passing in the path to the
+relevant table:
+
+.. code-block::
+
+   Helmholtz(const std::string &filename)
+
+Note that e.g. the Gruneisen parameter is defined differently
+compared to other EOSs. Here the Gruneisen parameter is the
+:math:`\Gamma_3` of Cox & Giuli 1968 - Princiiples of Stellar Structure
+(c&g in the following). Specifically:
+
+.. math::
+
+    \Gamma_3 - 1 = \left. \frac{\mathrm{d} \ln T}{ \mathrm{d} \ln \rho}\right|_\mathrm{ad}
+
+Some important formulas to be used when using this EOS:
+ - the temperature and density exponents (c&g 9.81 9.82)  
+ - the specific heat at constant volume (c&g 9.92)  
+ - the third adiabatic exponent (c&g 9.93)  
+ - the first adiabatic exponent (c&g 9.97)  
+ - the second adiabatic exponent (c&g 9.105)  
+ - the specific heat at constant pressure (c&g 9.98)  
+ - and relativistic formula for the sound speed (c&g 14.29)  
+
+
+.. _Timmes and Swesty: https://doi.org/10.1086/313304
+
+.. _Frank Timmes's website: https://cococubed.com/code_pages/eos.shtml
+
+The constructor for the ``Helmholtz`` EOS class looks like
+
+.. code-block:: cpp
+
+  Helmholtz(const std::string &filename, const bool rad = true,
+            const bool gas = true, const bool coul = true,
+            const bool ion = true, const bool ele = true,
+            const bool verbose = false)
+
+where ``filename`` is the file containing the tabulated model. The
+optional arguments ``rad``, ``gas``, ``coul``, ``ion``, and ``ele``
+specify whether to include the radiation, ideal gas, coulomb correction,
+ionization, and electron contributions, respectively. The default is to
+include all terms. The optional argument ``verbose`` specifies whether to print
+out additional information, e.g. when the root find fails to converge.
+
 EOSPAC EOS
 ````````````
 
