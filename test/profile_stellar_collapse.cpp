@@ -113,17 +113,13 @@ int main(int argc, char *argv[]) {
     auto sc_d = sc.GetOnDevice();
 
     std::cout << "\t...Table bounds are:\n"
-              << "\t\tlog(rho) in [" << sc.lRhoMin() << ", " << sc.lRhoMax() << "]\n"
+              << "\t\tlog(rho) in [" << std::log10(sc.rhoMin()) << ", "
+              << std::log10(sc.rhoMax()) << "]\n"
               << "\t\tlog(T)   in [" << std::log10(sc.TMin()) << ", "
               << std::log10(sc.TMax()) << "]\n"
               << "\t\tYe       in [" << sc.YeMin() << ", " << sc.YeMax() << "]\n"
               << "\t\tsie      in [" << sc.sieMin() << ", " << sc.sieMax() << "]"
               << std::endl;
-
-    std::cout << "\t...Ofsets are:\n"
-              << "\t\tlRho = " << sc.lRhoOffset() << "\n"
-              << "\t\tlT   = " << sc.lTOffset() << "\n"
-              << "\t\tlE   = " << sc.lEOffset() << std::endl;
 
     std::cout << "\t...Allocating databoxes for diff" << std::endl;
 #ifdef PORTABILITY_STRATEGY_KOKKOS

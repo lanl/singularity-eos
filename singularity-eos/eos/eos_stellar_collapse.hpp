@@ -58,10 +58,10 @@ using namespace eos_base;
 // is linear extrapolation in log-log space. We should reconsider this
 // and introduce extrapolation as needed.
 class StellarCollapse : public EosBase<StellarCollapse> {
+ public:
   using DataBox = Spiner::DataBox<Real>;
   using Grid_t = Spiner::RegularGrid1D<Real>;
 
- public:
   // A weakly typed index map for lambdas
   struct Lambda {
     enum Index { Ye = 0, lT = 1 };
@@ -159,17 +159,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     return 0;
   }
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
-  // NOTE: The logs here are table logs. SO when fast logs are
-  // enabled, these are fast logs.
-  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMin() const { return lRhoMin_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMax() const { return lRhoMax_; }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
-  PORTABLE_FORCEINLINE_FUNCTION Real lTMin() const { return lTMin_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lTMax() const { return lTMax_; }
   PORTABLE_FORCEINLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
   PORTABLE_FORCEINLINE_FUNCTION Real TMax() const { return T_(lTMax_); }
   PORTABLE_FORCEINLINE_FUNCTION Real YeMin() const { return YeMin_; }
@@ -179,9 +170,9 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("StellarCollapse parameters:\n"
            "depends on log10(rho), log10(T), Ye\n"
-           "lrho bounds = %g, %g\n"
-           "lT bounds = %g, %g\n"
-           "Ye bounds = %g, %g\n",
+           "lrho bounds = %.14e, %.14e\n"
+           "lT bounds = %.14e, %.14e\n"
+           "Ye bounds = %.14e, %.14e\n",
            lRhoMin_, lRhoMax_, lTMin_, lTMax_, YeMin_, YeMax_);
     return;
   }
@@ -195,6 +186,15 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   static std::string EosType() { return std::string("StellarCollapse"); }
   static std::string EosPyType() { return EosType(); }
 
+  // A utility function for working with 3D DataBoxes that converts
+  // from log10 to fastlog 10. Mostly for unit testing.
+
+  // TODO(JMM) Should this be in a utilities function somewhere? In
+  // the math folder or something? 3D is pretty specific to Stellar
+  // Collapse, so I think we can leave it here for now?
+  inline static void dataBoxToFastLogs(DataBox &db,
+                                       DataBox &scratch,
+                                       bool dependent_var_log);
  private:
   inline void LoadFromSP5File_(const std::string &filename);
   inline void LoadFromStellarCollapseFile_(const std::string &filename, bool filter_bmod);
@@ -204,7 +204,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline void readSCDset_(const hid_t &file_id, const std::string &name,
                           const Grid_t &Ye_grid, const Grid_t &lT_grid,
                           const Grid_t &lRho_grid, DataBox &db);
-  inline void reinterpolateTable_(DataBox &tab, DataBox &scratch, bool dependent_var_log);
 
   inline void medianFilter_(DataBox &db);
   inline void medianFilter_(const DataBox &in, DataBox &out);
@@ -225,8 +224,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                                             const Real offset) const noexcept {
     // StellarCollapse can't use fast logs, unless we re-grid onto the
     // "fast log grid"
-    // return std::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
-    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + robust::SMALL());
   }
   PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx,
                                               const Real offset) const noexcept {
@@ -313,9 +311,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   Real lTMin_, lTMax_;
   Real YeMin_, YeMax_;
   Real sieMin_, sieMax_;
-  // Grid objects. These are redundant with the min/max vars. But
-  // they're convenient.
-  Grid_t YeGrid_, lTGrid_, lRGrid_;
 
   static constexpr Real MeV2GK_ = 11.604525006;
   static constexpr Real GK2MeV_ = 1. / MeV2GK_;
@@ -705,18 +700,18 @@ inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
   }
 
   // bounds, etc.
-  YeGrid_ = lP_.range(2);
-  lTGrid_ = lP_.range(1);
-  lRGrid_ = lP_.range(0);
-  numRho_ = lRGrid_.nPoints();
-  numT_ = lTGrid_.nPoints();
-  numYe_ = YeGrid_.nPoints();
-  lRhoMin_ = lRGrid_.min();
-  lRhoMax_ = lRGrid_.max();
-  lTMin_ = lTGrid_.min();
-  lTMax_ = lTGrid_.max();
-  YeMin_ = YeGrid_.min();
-  YeMax_ = YeGrid_.max();
+  auto YeGrid = lP_.range(2);
+  auto lTGrid = lP_.range(1);
+  auto lRGrid = lP_.range(0);
+  numRho_ = lRGrid.nPoints();
+  numT_ = lTGrid.nPoints();
+  numYe_ = YeGrid.nPoints();
+  lRhoMin_ = lRGrid.min();
+  lRhoMax_ = lRGrid.max();
+  lTMin_ = lTGrid.min();
+  lTMax_ = lTGrid.max();
+  YeMin_ = YeGrid.min();
+  YeMax_ = YeGrid.max();
   sieMin_ = eCold_.min();
   sieMax_ = eHot_.max();
 }
@@ -747,12 +742,6 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   const Real logMev2K = std::log10(MeV2K_);
   lTMin += logMev2K;
   lTMax += logMev2K;
-
-  // Convert bounds to internal gridding
-  lRhoMin_ = lRho_(std::pow(10., lRhoMin));
-  lRhoMax_ = lRho_(std::pow(10., lRhoMax));
-  lTMin_ = lT_(std::pow(10., lTMin));
-  lTMax_ = lT_(std::pow(10., lTMax));
 
   // Generate grids for reading stellar collapse format tables
   Grid_t Ye_grid(YeMin_, YeMax_, numYe_);
@@ -807,28 +796,34 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
     medianFilter_(dEdT_);
   }
 
-  // Generate convenience grids
-  YeGrid_ = Grid_t(YeMin_, YeMax_, numYe_);
-  lTGrid_ = Grid_t(lTMin_, lTMax_, numT_);
-  lRGrid_ = Grid_t(lRhoMin_, lRhoMax_, numRho_);
-
   // Re-interpolate tables in case we want fast-log gridding
   DataBox scratch(numYe_, numT_, numRho_);
   // logged quantities
-  reinterpolateTable_(lP_, scratch, true);
-  reinterpolateTable_(lE_, scratch, true);
+  dataBoxToFastLogs(lP_, scratch, true);
+  dataBoxToFastLogs(lE_, scratch, true);
   // linear quantities
-  reinterpolateTable_(dPdRho_, scratch, false);
-  reinterpolateTable_(dPdE_, scratch, false);
-  reinterpolateTable_(dEdT_, scratch, false);
+  dataBoxToFastLogs(dPdRho_, scratch, false);
+  dataBoxToFastLogs(dPdE_, scratch, false);
+  dataBoxToFastLogs(dEdT_, scratch, false);
   // non-standard quantities
-  reinterpolateTable_(entropy_, scratch, false);
-  reinterpolateTable_(Xa_, scratch, false);
-  reinterpolateTable_(Xh_, scratch, false);
-  reinterpolateTable_(Xn_, scratch, false);
-  reinterpolateTable_(Xp_, scratch, false);
-  reinterpolateTable_(Abar_, scratch, false);
-  reinterpolateTable_(Zbar_, scratch, false);
+  dataBoxToFastLogs(entropy_, scratch, false);
+  dataBoxToFastLogs(Xa_, scratch, false);
+  dataBoxToFastLogs(Xh_, scratch, false);
+  dataBoxToFastLogs(Xn_, scratch, false);
+  dataBoxToFastLogs(Xp_, scratch, false);
+  dataBoxToFastLogs(Abar_, scratch, false);
+  dataBoxToFastLogs(Zbar_, scratch, false);
+
+  // Generate bounds
+  Ye_grid = lP_.range(2);
+  lT_grid = lP_.range(1);
+  lRho_grid = lP_.range(0);
+  YeMin_ = Ye_grid.min();
+  YeMax_ = Ye_grid.max();
+  lTMin_ = lT_grid.min();
+  lTMax_ = lT_grid.max();
+  lRhoMin_ = lRho_grid.min();
+  lRhoMax_ = lRho_grid.max();
 
   // Finally, compute bulk modulus, hot and cold curves from
   // re-interpolated data.
@@ -899,41 +894,57 @@ inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string
   db.setRange(0, lRho_grid);
 }
 
-// Reinterpolate tab form its original grid spacing to the one using
+// Reinterpolate tab from its original grid spacing to the one using
 // the native log gridding for stellar collapse (usually fast logs).
 // Scratch is used as a temporary storage buffer and is assumed to be
-// of size numYe x numT x numRho
-inline void StellarCollapse::reinterpolateTable_(DataBox &tab, DataBox &scratch,
-                                                 bool dependent_var_log) {
-  // Start by assuming tab is gridded for Ye, log10(T), log10(rho)
-  for (int iY = 0; iY < numYe_; ++iY) {
-    Real Ye = YeGrid_.x(iY);
-    for (int iT = 0; iT < numT_; ++iT) {
-      Real lT = lTGrid_.x(iT);
-      Real T = T_(lT);
-      Real log10T = std::log10(T);
-      for (int iRho = 0; iRho < numRho_; ++iRho) {
-        Real lR = lRGrid_.x(iRho);
-        Real rho = rho_(lR);
-        Real log10R = std::log10(rho);
-        Real val = tab.interpToReal(Ye, log10T, log10R);
+// the same shape as db
+// Assume index 3 is linear, indexes 2 and 1 are logarithmic
+inline void StellarCollapse::dataBoxToFastLogs(DataBox &db,
+                                               DataBox &scratch,
+                                               bool dependent_var_log) {
+  auto log10toNQT = [](const Real x) {
+    return FastMath::log10(std::pow(10, x));
+  };
+  auto NQTtolog10 = [](const Real x) {
+    return std::log10(FastMath::pow10(x));
+  };
+  auto gridToNQT = [&](const Grid_t &g) {
+    const Real l10min = g.min();
+    const Real l10max = g.max();
+    const Real lmin = log10toNQT(l10min);
+    const Real lmax = log10toNQT(l10max);
+    return Grid_t(lmin, lmax, g.nPoints());
+  };
+
+  auto &r2 = db.range(2);
+  auto &r1 = db.range(1);
+  auto &r0 = db.range(0);
+
+  Grid_t newr1 = gridToNQT(r1);
+  Grid_t newr0 = gridToNQT(r0);
+
+  for (int i2 = 0; i2 < r2.nPoints(); ++i2) {
+    Real x2 = r2.x(i2);
+    for (int i1 = 0; i1 < newr1.nPoints(); ++i1) {
+      Real lx1 = newr1.x(i1);
+      Real l10x1 = NQTtolog10(lx1);
+      for (int i0 = 0; i0 < newr0.nPoints(); ++i0) {
+        Real lx0 = newr0.x(i0);
+        Real l10x0 = NQTtolog10(lx0);
+        Real val = db.interpToReal(x2, l10x1, l10x0);
         if (dependent_var_log) {
-          // even if there is an offset, it's applied to the linear
-          // term before taking the logarithm, so don't need to
-          // include it here.
-          val = toLog_(std::pow(10., val), 0);
+          val = log10toNQT(val);
         }
-        scratch(iY, iT, iRho) = val;
+        scratch(i2, i1, i0) = val;
       }
     }
   }
-  // loop through a second time and copy
-  for (int i = 0; i < numYe_ * numT_ * numRho_; ++i) {
-    tab(i) = scratch(i);
+  for (int i = 0; i < db.size(); ++i) {
+    db(i) = scratch(i);
   }
-  tab.setRange(2, YeGrid_);
-  tab.setRange(1, lTGrid_);
-  tab.setRange(0, lRGrid_);
+  // range(2) is already ok
+  db.setRange(1, newr1);
+  db.setRange(0, newr0);
 }
 
 inline void StellarCollapse::medianFilter_(DataBox &db) {
