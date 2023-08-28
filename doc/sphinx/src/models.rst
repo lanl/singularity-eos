@@ -1283,7 +1283,13 @@ return a ``Real`` number.
 
 .. warning::
     As with the SpinerEOS models, the stellar collapse models use fast
-    logs.
+    logs. You can switch the logs to true logs with the
+    ``SINGULARITY_USE_TRUE_LOG_GRIDDING`` cmake option.
+
+.. note::
+    A more performant implementation of fast logs is available, but it
+    might not be portable. Enable it with the
+    ``SINGULARITY_USE_HIGH_RISK_MATH`` cmake option.
 
 .. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
 

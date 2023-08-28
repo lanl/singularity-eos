@@ -17,7 +17,7 @@ At it's most basic, you can download and compile ``singularity-eos`` with:
 
 This will downloady singularity-eos with no optional dependencies and
 compile the capabilities available in that form. For more details, see
-our build page.
+:ref:`our build page <building>`.
 
 If the library is in your include and lib paths (or you built it
 in-tree), you can include the eos part of the library with
