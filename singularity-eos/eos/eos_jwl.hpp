@@ -43,11 +43,9 @@ class JWL : public EosBase<JWL> {
                                const Real w, const Real rho0, const Real Cv)
       : _A(A), _B(B), _R1(R1), _R2(R2), _w(w), _rho0(rho0), _Cv(Cv),
         _c1(robust::ratio(A, rho0 * R1)), _c2(robust::ratio(B, rho0 * R2)) {
-    assert(A != 0.0);
-    assert(B != 0.0);
-    assert(R1 != 0.0);
-    assert(R2 != 0.0);
-    assert(w != 0.0);
+    assert(R1 > 0.0);
+    assert(R2 > 0.0);
+    assert(w > 0.0);
     assert(rho0 > 0.0);
     assert(Cv > 0.0);
   }
