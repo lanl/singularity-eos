@@ -65,7 +65,7 @@ PORTABLE_FORCEINLINE_FUNCTION auto ratio(const A &a, const B &b) {
 template <typename T>
 PORTABLE_FORCEINLINE_FUNCTION T safe_arg_exp(const T &x) {
   return x < min_exp_arg<T>()   ? 0.0
-         : x > max_exp_arg<T>() ? std::numeric_limits<T>::max()
+         : x > max_exp_arg<T>() ? std::numeric_limits<T>::infinity()
                                 : std::exp(x);
 }
 
