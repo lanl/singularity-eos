@@ -50,6 +50,7 @@
 - [[PR245]](https://github.com/lanl/singularity-eos/pull/245) Separating get_sg_eos to other files. Build/compilation improvements, warning fixes/suppression.
 
 ### Removed (removing behavior/API/varaibles/...)
+- [[PR293]](https://github.com/lanl/singularity-eos/pull/293) Removing PTofRE function. This will no longer be callable downstream.
 
 ## Release 1.7.0
 Date: 12/14/2022

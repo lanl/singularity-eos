@@ -436,30 +436,6 @@ void DavisProducts::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Rea
   Real gm1 = GruneisenParamFromDensityTemperature(rho, temp) * rho;
   dvdt = gm1 * cv / bmod;
 }
-#if 0
-PORTABLE_INLINE_FUNCTION void DavisProducts::PTofRE(const Real rho, const Real sie, Real * lambda, Real& press, Real& temp, Real & dpdr, Real & dpde, Real & dtdr, Real & dtde) const
-{
-  using namespace math_utils;
-    press = PressureFromDensityInternalEnergy(rho,sie,lambda);
-    temp = TemperatureFromDensityInternalEnergy(rho,sie,lambda);
-
-    const Real vvc = 1/(rho*_vc);
-    const Real Fx = -4*_a*std::pow(vvc,2*_n-1)/pow<2>(1+std::pow(vvc,2*_n));
-    const Real tmp = std::pow(0.5*(std::pow(vvc,_n)+std::pow(vvc,-_n)),_a/_n)/std::pow(vvc,_k+_a);
-    const Real tmp_x = 0.5*_a*(std::pow(vvc,_n-1)-std::pow(vvc,-_n-1))*std::pow(0.5*(std::pow(vvc,_n)+std::pow(vvc,-_n)),_a/_n-1)/std::pow(vvc,_k+_a)-(_k+_a)*tmp/vvc;
-    const Real psv = _pc/(_k-1+_a)*(tmp*Fx+(_k-1+F(rho))*tmp_x)/_vc;
-    //const Real esv = _pc*_vc/(_k-1+_a)*(tmp+vvc*tmp_x)/_vc;
-    const Real esv = _pc/(_k-1+_a)*(tmp+vvc*tmp_x);
-    const Real gamma = Gamma(rho);
-    const Real gammav = (1-_b)*Fx*_vc;
-    dpde = gamma*rho;
-    dpdr = (psv+(sie-Es(rho))*rho*(gammav-gamma*rho)-gamma*rho*esv)/pow<2>(rho);
-    dtde = 1.0/_Cv;
-    const Real tsv = Ts(rho)*rho*(_a*(1.0-_b)*(std::pow(vvc,2.0*_n)-1.0)/(std::pow(vvc,2.0*_n)+1.0)-(_k-1.0+_a*(1.0-_b)));
-    dtdr = -(tsv-esv/_Cv)/pow<2>(rho);
-}
-#endif
-
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_EOS_DAVIS_HPP_

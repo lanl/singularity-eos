@@ -83,7 +83,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   using EosBase<StellarCollapse>::BulkModulusFromDensityInternalEnergy;
   using EosBase<StellarCollapse>::GruneisenParamFromDensityTemperature;
   using EosBase<StellarCollapse>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::PTofRE;
   using EosBase<StellarCollapse>::FillEos;
 
   inline StellarCollapse(const std::string &filename, bool use_sp5 = false,

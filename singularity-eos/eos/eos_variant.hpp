@@ -223,17 +223,6 @@ class Variant {
   }
 
   PORTABLE_INLINE_FUNCTION
-  void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr,
-              Real &dpde, Real &dtdr, Real &dtde) const {
-    return mpark::visit(
-        [&rho, &sie, &lambda, &press, &temp, &dpdr, &dpde, &dtdr,
-         &dtde](const auto &eos) {
-          return eos.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr, dtde);
-        },
-        eos_);
-  }
-
-  PORTABLE_INLINE_FUNCTION
   void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                             Real *lambda, Real &rho, Real &sie) const {
     return mpark::visit(
@@ -925,36 +914,6 @@ class Variant {
               std::forward<RealIndexer>(energies), std::forward<RealIndexer>(presses),
               std::forward<RealIndexer>(cvs), std::forward<RealIndexer>(bmods), num,
               output, std::forward<LambdaIndexer>(lambdas));
-        },
-        eos_);
-  }
-
-  template <typename RealIndexer>
-  inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,
-                     RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
-                     RealIndexer &&dtdrs, RealIndexer &&dtdes, const int num) const {
-    NullIndexer lambdas{}; // Returns null pointer for every index
-    return PTofRE(std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(sies),
-                  std::forward<RealIndexer>(presses), std::forward<RealIndexer>(temps),
-                  std::forward<RealIndexer>(dpdrs), std::forward<RealIndexer>(dpdes),
-                  std::forward<RealIndexer>(dtdrs), std::forward<RealIndexer>(dtdes), num,
-                  lambdas);
-  }
-
-  template <typename RealIndexer, typename LambdaIndexer>
-  inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,
-                     RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
-                     RealIndexer &&dtdrs, RealIndexer &&dtdes, const int num,
-                     LambdaIndexer &&lambdas) const {
-    return mpark::visit(
-        [&rhos, &sies, &presses, &temps, &dpdrs, &dpdes, &dtdrs, &dtdes, &num,
-         &lambdas](const auto &eos) {
-          return eos.PTofRE(
-              std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(sies),
-              std::forward<RealIndexer>(presses), std::forward<RealIndexer>(temps),
-              std::forward<RealIndexer>(dpdrs), std::forward<RealIndexer>(dpdes),
-              std::forward<RealIndexer>(dtdrs), std::forward<RealIndexer>(dtdes), num,
-              std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
   }
