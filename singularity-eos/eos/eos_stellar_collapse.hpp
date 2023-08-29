@@ -192,9 +192,9 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // TODO(JMM) Should this be in a utilities function somewhere? In
   // the math folder or something? 3D is pretty specific to Stellar
   // Collapse, so I think we can leave it here for now?
-  inline static void dataBoxToFastLogs(DataBox &db,
-                                       DataBox &scratch,
+  inline static void dataBoxToFastLogs(DataBox &db, DataBox &scratch,
                                        bool dependent_var_log);
+
  private:
   inline void LoadFromSP5File_(const std::string &filename);
   inline void LoadFromStellarCollapseFile_(const std::string &filename, bool filter_bmod);
@@ -899,15 +899,10 @@ inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string
 // Scratch is used as a temporary storage buffer and is assumed to be
 // the same shape as db
 // Assume index 3 is linear, indexes 2 and 1 are logarithmic
-inline void StellarCollapse::dataBoxToFastLogs(DataBox &db,
-                                               DataBox &scratch,
+inline void StellarCollapse::dataBoxToFastLogs(DataBox &db, DataBox &scratch,
                                                bool dependent_var_log) {
-  auto log10toNQT = [](const Real x) {
-    return FastMath::log10(std::pow(10, x));
-  };
-  auto NQTtolog10 = [](const Real x) {
-    return std::log10(FastMath::pow10(x));
-  };
+  auto log10toNQT = [](const Real x) { return FastMath::log10(std::pow(10, x)); };
+  auto NQTtolog10 = [](const Real x) { return std::log10(FastMath::pow10(x)); };
   auto gridToNQT = [&](const Grid_t &g) {
     const Real l10min = g.min();
     const Real l10max = g.max();

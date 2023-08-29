@@ -1132,7 +1132,7 @@ SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
         Real lx1 = g1.x(i1);
         for (int i0 = 0; i0 < N0; ++i0) {
           Real lx0 = g0.x(i0);
-          db(i2, i1, i0) = std::log10(x2) + 2*lx1 + 2*lx0;
+          db(i2, i1, i0) = std::log10(x2) + 2 * lx1 + 2 * lx0;
         }
       }
     }
@@ -1143,7 +1143,8 @@ SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
       const Real x1 = std::pow(10., lx1);
       const Real lx0 = 3;
       const Real x0 = std::pow(10., lx0);
-      REQUIRE( isClose(db.interpToReal(x2, lx1, lx0), std::log10(x2 * x1 * x1 * x0 * x0), 1e-5) );
+      REQUIRE(isClose(db.interpToReal(x2, lx1, lx0), std::log10(x2 * x1 * x1 * x0 * x0),
+                      1e-5));
     }
 
     THEN("We can re-interpolate to fast log space") {
@@ -1151,13 +1152,17 @@ SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
       StellarCollapse::dataBoxToFastLogs(db, scratch, true);
 
       AND_THEN("The fast-log gridded table contains correct ranges") {
-        REQUIRE( db.range(2) == g2 );
-        REQUIRE( db.range(1).nPoints() == N1 );
-        REQUIRE( isClose(db.range(1).min(), singularity::FastMath::log10(std::pow(10, g1.min())), 1e-12) );
-        REQUIRE( isClose(db.range(1).max(), singularity::FastMath::log10(std::pow(10, g1.max())), 1e-12) );
-        REQUIRE( db.range(0).nPoints() == N0 );
-        REQUIRE( isClose(db.range(0).min(), singularity::FastMath::log10(std::pow(10, g0.min())), 1e-12) );
-        REQUIRE( isClose(db.range(0).max(), singularity::FastMath::log10(std::pow(10, g0.max())), 1e-12) );
+        REQUIRE(db.range(2) == g2);
+        REQUIRE(db.range(1).nPoints() == N1);
+        REQUIRE(isClose(db.range(1).min(),
+                        singularity::FastMath::log10(std::pow(10, g1.min())), 1e-12));
+        REQUIRE(isClose(db.range(1).max(),
+                        singularity::FastMath::log10(std::pow(10, g1.max())), 1e-12));
+        REQUIRE(db.range(0).nPoints() == N0);
+        REQUIRE(isClose(db.range(0).min(),
+                        singularity::FastMath::log10(std::pow(10, g0.min())), 1e-12));
+        REQUIRE(isClose(db.range(0).max(),
+                        singularity::FastMath::log10(std::pow(10, g0.max())), 1e-12));
       }
 
       AND_THEN("The re-interpolated fast log is a sane number") {}
@@ -1171,8 +1176,9 @@ SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
         const Real lval_interp = db.interpToReal(x2, lx1, lx0);
         const Real val_interp = singularity::FastMath::pow10(lval_interp);
         const Real val_true = x2 * x1 * x1 * x0 * x0;
-        const Real rel_diff = 0.5 * std::abs(val_interp - val_true) / (val_true + val_interp);
-        REQUIRE( rel_diff <= 1e-3);
+        const Real rel_diff =
+            0.5 * std::abs(val_interp - val_true) / (val_true + val_interp);
+        REQUIRE(rel_diff <= 1e-3);
       }
       scratch.finalize();
     }
@@ -1301,8 +1307,8 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
             REQUIRE(yemax == sc2.YeMax());
             REQUIRE(sc.TMin() == sc2.TMin());
             REQUIRE(sc.TMax() == sc2.TMax());
-            REQUIRE( isClose(lrhomin, std::log10(sc2.rhoMin()), 1e-12));
-            REQUIRE( isClose(lrhomax, std::log10(sc2.rhoMax()), 1e-12));
+            REQUIRE(isClose(lrhomin, std::log10(sc2.rhoMin()), 1e-12));
+            REQUIRE(isClose(lrhomax, std::log10(sc2.rhoMax()), 1e-12));
 
             auto sc1_d = sc.GetOnDevice();
             auto sc2_d = sc2.GetOnDevice();

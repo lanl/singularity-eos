@@ -139,17 +139,11 @@ int main(int argc, char *argv[]) {
 #endif // PORTABILITY_STRATEGY
     DataBox<Real> lambdas_d(AllocationTarget::Device, nfine, nfine, nfine, 2);
 
-    std::cout << "\t...Setting loop bounds.\n"
-              << "\t\tBounds set to force extrapolation and no exact grid points."
-              << std::endl;
-    Bounds lTBounds(sc.TMin() - 0.1 * std::abs(sc.TMin()), sc.TMax() + 0.1 * sc.TMax(),
-                    nfine, true);
-    Bounds lRhoBounds(sc.rhoMin() - 0.1 * std::abs(sc.rhoMin()),
-                      sc.rhoMax() + 0.1 * sc.rhoMax(), nfine, true);
-    Bounds YeBounds(sc.YeMin() - 0.1 * std::abs(sc.YeMin()),
-                    sc.YeMax() + 0.1 * sc.YeMax(), nfine, false);
-    Bounds lEBounds(sc.sieMin() - 0.1 * std::abs(sc.sieMin()),
-                    sc.sieMax() + 0.1 * sc.sieMax(), nfine, true);
+    std::cout << "\t...Setting loop bounds.\n" << std::endl;
+    Bounds lTBounds(sc.TMin(), sc.TMax(), nfine, true);
+    Bounds lRhoBounds(sc.rhoMin(), sc.rhoMax(), nfine, true);
+    Bounds YeBounds(sc.YeMin(), sc.YeMax(), nfine, false);
+    Bounds lEBounds(sc.sieMin(), sc.sieMax(), nfine, true);
     diffs_press_d.setRange(0, lRhoBounds.grid);
     diffs_press_d.setRange(1, lTBounds.grid);
     diffs_press_d.setRange(2, YeBounds.grid);
@@ -164,6 +158,24 @@ int main(int argc, char *argv[]) {
     diffs_t_h.setRange(1, lEBounds.grid);
     diffs_t_h.setRange(2, YeBounds.grid);
 
+    std::cout << "\t...Adding independent variable grids" << std::endl;
+    DataBox<Real> tempGrid(Spiner::AllocationTarget::Device, nfine);
+    portableFor(
+        "fill temp grid", 0, nfine,
+        PORTABLE_LAMBDA(const int i) { tempGrid(i) = lTBounds.i2lin(i); });
+    DataBox<Real> rhoGrid(Spiner::AllocationTarget::Device, nfine);
+    portableFor(
+        "fill rho grid", 0, nfine,
+        PORTABLE_LAMBDA(const int i) { rhoGrid(i) = lRhoBounds.i2lin(i); });
+    DataBox<Real> YeGrid(Spiner::AllocationTarget::Device, nfine);
+    portableFor(
+        "fill Ye grid", 0, nfine,
+        PORTABLE_LAMBDA(const int i) { YeGrid(i) = YeBounds.grid.x(i); });
+    DataBox<Real> sieGrid(Spiner::AllocationTarget::Device, nfine);
+    portableFor(
+        "fill sie grid", 0, nfine,
+        PORTABLE_LAMBDA(const int i) { sieGrid(i) = lEBounds.i2lin(i); });
+
     std::cout << "\t...Profiling interpolation P(rho, T, Ye)..." << std::endl;
     duration durationInterp = duration::zero();
     for (int trial = 0; trial < NTRIALS; ++trial) { // includes launch latency
@@ -174,9 +186,9 @@ int main(int argc, char *argv[]) {
       portableFor(
           "pressure from rho, T, Ye", 0, nfine, 0, nfine, 0, nfine,
           PORTABLE_LAMBDA(const int iYe, const int iT, const int irho) {
-            const Real rho = lRhoBounds.i2lin(irho);
-            const Real T = lTBounds.i2lin(iT);
-            const Real Ye = YeBounds.i2lin(iYe);
+            const Real rho = rhoGrid(irho);
+            const Real T = tempGrid(iT);
+            const Real Ye = YeGrid(iYe);
             lambdas_d(iYe, iT, irho, 0) = Ye;
             diffs_press_d(iYe, iT, irho) = sc_d.PressureFromDensityTemperature(
                 rho, T, &(lambdas_d(iYe, iT, irho, 0)));
@@ -192,9 +204,13 @@ int main(int argc, char *argv[]) {
     portableFor(
         "ideal gas pressure from rho, T, Ye", 0, nfine, 0, nfine, 0, nfine,
         PORTABLE_LAMBDA(const int iYe, const int iT, const int irho) {
-          const Real rho = lRhoBounds.i2lin(irho);
-          const Real T = lTBounds.i2lin(iT);
-          diffs_press_d(iYe, iT, irho) -= ig_d.PressureFromDensityTemperature(rho, T);
+          const Real rho = rhoGrid(irho);
+          const Real T = tempGrid(iT);
+          const Real valtrue = ig_d.PressureFromDensityTemperature(rho, T);
+          diffs_press_d(iYe, iT, irho) -= valtrue;
+          if (std::abs(diffs_press_d(iYe, iT, irho)) > 1e-10) {
+            diffs_press_d(iYe, iT, irho) /= (std::abs(valtrue) + 1e-10);
+          }
         });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(diffs_press_hv, diffs_press_dv);
@@ -210,9 +226,9 @@ int main(int argc, char *argv[]) {
       portableFor(
           "Temperature from rho, sie, Ye", 0, nfine, 0, nfine, 0, nfine,
           PORTABLE_LAMBDA(const int iYe, const int iE, const int irho) {
-            const Real rho = lRhoBounds.i2lin(irho);
-            const Real sie = lEBounds.i2lin(iE);
-            const Real Ye = YeBounds.i2lin(iYe);
+            const Real rho = rhoGrid(irho);
+            const Real sie = sieGrid(iE);
+            const Real Ye = YeGrid(iYe);
             lambdas_d(iYe, iE, irho, 0) = Ye;
             diffs_t_d(iYe, iE, irho) = sc_d.TemperatureFromDensityInternalEnergy(
                 rho, sie, &(lambdas_d(iYe, iE, irho, 0)));
@@ -228,9 +244,13 @@ int main(int argc, char *argv[]) {
     portableFor(
         "ideal gas T(rho, sie, Ye)", 0, nfine, 0, nfine, 0, nfine,
         PORTABLE_LAMBDA(const int iYe, const int iE, const int irho) {
-          const Real rho = lRhoBounds.i2lin(irho);
-          const Real sie = lEBounds.i2lin(iE);
-          diffs_t_d(iYe, iE, irho) -= ig_d.TemperatureFromDensityInternalEnergy(rho, sie);
+          const Real rho = rhoGrid(irho);
+          const Real sie = sieGrid(iE);
+          const Real valtrue = ig_d.TemperatureFromDensityInternalEnergy(rho, sie);
+          diffs_t_d(iYe, iE, irho) -= valtrue;
+          if (std::abs(diffs_t_d(iYe, iE, irho)) > 1e-10) {
+            diffs_t_d(iYe, iE, irho) /= (std::abs(valtrue) + 1e-10);
+          }
         });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(diffs_t_hv, diffs_t_dv);
@@ -245,7 +265,7 @@ int main(int argc, char *argv[]) {
           for (int irho = 0; irho < nfine; ++irho) {
             const Real rho = lRhoBounds.i2lin(irho);
             const Real sie = lEBounds.i2lin(iE);
-            const Real Ye = YeBounds.i2lin(iYe);
+            const Real Ye = YeBounds.grid.x(iYe);
             Real *lambda = &lambdas_h(iYe, iE, irho, 0);
             lambdas_h(iYe, iE, irho, 0) = Ye;
             sc.TemperatureFromDensityInternalEnergy(rho, sie, lambda);

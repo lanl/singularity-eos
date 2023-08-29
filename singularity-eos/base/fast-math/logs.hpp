@@ -81,13 +81,9 @@ namespace FastMath {
 // Integer Aliased versions. Likely not as portable
 // TODO(JMM): Add single-precision versions
 PORTABLE_FORCEINLINE_FUNCTION
-auto as_long_int(double f) {
-  return *reinterpret_cast<long long int*>(&f);
-}
+auto as_long_int(double f) { return *reinterpret_cast<long long int *>(&f); }
 PORTABLE_FORCEINLINE_FUNCTION
-auto as_double(long long int i) {
-  return *reinterpret_cast<double*>(&i);
-}
+auto as_double(long long int i) { return *reinterpret_cast<double *>(&i); }
 
 PORTABLE_FORCEINLINE_FUNCTION
 double fastlg_aliased(const double x) {
@@ -107,7 +103,7 @@ double fastpow2_aliased(const double x) {
   constexpr long long int one_as_long_int = 4607182418800017408;
   // as_long_int(2.0) - as_long_int(1.0)
   constexpr double scale_up = 4503599627370496;
-  return as_double(static_cast<long long int>(x*scale_up) + one_as_long_int);
+  return as_double(static_cast<long long int>(x * scale_up) + one_as_long_int);
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
