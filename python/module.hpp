@@ -99,6 +99,8 @@ void func####NoLambdaWithScratch(const T & self, py::array_t<Real> a, py::array_
 EOS_VEC_FUNC_TMPL(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
 EOS_VEC_FUNC_TMPL(InternalEnergyFromDensityTemperature, rhos, temperatures, sies)
 EOS_VEC_FUNC_TMPL(PressureFromDensityTemperature, rhos, temperatures, pressures)
+EOS_VEC_FUNC_TMPL(EntropyFromDensityTemperature, rhos, temperatures, pressures)
+EOS_VEC_FUNC_TMPL(EntropyFromDensityInternalEnergy, rhos, sies, pressures)
 EOS_VEC_FUNC_TMPL(PressureFromDensityInternalEnergy, rhos, sies, pressures)
 EOS_VEC_FUNC_TMPL(SpecificHeatFromDensityTemperature, rhos, temperatures, cvs)
 EOS_VEC_FUNC_TMPL(SpecificHeatFromDensityInternalEnergy, rhos, sies, cvs)
@@ -111,6 +113,7 @@ struct EOSState {
   Real density;
   Real specific_internal_energy;
   Real pressure;
+  Real entropy;
   Real temperature;
   Real specific_heat;
   Real bulk_modulus;
@@ -124,6 +127,7 @@ struct EOSState {
     density(std::numeric_limits<Real>::quiet_NaN()),
     specific_internal_energy(std::numeric_limits<Real>::quiet_NaN()),
     pressure(std::numeric_limits<Real>::quiet_NaN()),
+    entropy(std::numeric_limits<Real>::quiet_NaN()),
     temperature(std::numeric_limits<Real>::quiet_NaN()),
     specific_heat(std::numeric_limits<Real>::quiet_NaN()),
     bulk_modulus(std::numeric_limits<Real>::quiet_NaN()),
@@ -139,6 +143,7 @@ struct EOSState {
     if(!std::isnan(density)) ss << "density: " << density << std::endl;
     if(!std::isnan(specific_internal_energy)) ss << "specific_internal_energy: " << specific_internal_energy << std::endl;
     if(!std::isnan(pressure)) ss << "pressure: " << pressure << std::endl;
+    if(!std::isnan(entropy)) ss << "entropy: " << entropy << std::endl;
     if(!std::isnan(temperature)) ss << "temperature: " << temperature << std::endl;
     if(!std::isnan(specific_heat)) ss << "specific_heat: " << specific_heat << std::endl;
     if(!std::isnan(bulk_modulus)) ss << "bulk_modulus: " << bulk_modulus << std::endl;
@@ -160,6 +165,8 @@ struct VectorFunctions {
     .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("num"), py::arg("lmbdas"))
     .def("PressureFromDensityTemperature", &PressureFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("num"), py::arg("lmbdas"))
     .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("num"), py::arg("lmbdas"))
+    .def("EntropyFromDensityTemperature", &EntropyFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("num"), py::arg("lmbdas"))
+    .def("EntropyFromDensityInternalEnergy", &EntropyFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("num"), py::arg("lmbdas"))
     .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("num"), py::arg("lmbdas"))
     .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("num"), py::arg("lmbdas"))
     .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("num"), py::arg("lmbdas"))
@@ -171,6 +178,8 @@ struct VectorFunctions {
     .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("num"))
     .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("num"))
     .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("num"))
+    .def("EntropyFromDensityTemperature", &EntropyFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("num"))
+    .def("EntropyFromDensityInternalEnergy", &EntropyFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("num"))
     .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("num"))
     .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("num"))
     .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("num"))
@@ -218,6 +227,8 @@ struct VectorFunctions<T,true> {
     .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
     .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
     .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
+    .def("EntropyFromDensityTemperature", &EntropyFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
+    .def("EntropyFromDensityInternalEnergy", &EntropyFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
     .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
     .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
     .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
@@ -229,6 +240,8 @@ struct VectorFunctions<T,true> {
     .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("scratch"), py::arg("num"))
     .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("scratch"), py::arg("num"))
     .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("scratch"), py::arg("num"))
+    .def("EntropyFromDensityTemperature", &EntropyFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("scratch"), py::arg("num"))
+    .def("EntropyFromDensityInternalEnergy", &EntropyFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("scratch"), py::arg("num"))
     .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("scratch"), py::arg("num"))
     .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("scratch"), py::arg("num"))
     .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("scratch"), py::arg("num"))
@@ -277,6 +290,8 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
     .def("InternalEnergyFromDensityTemperature", &two_params<T, &T::InternalEnergyFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lmbda"))
     .def("PressureFromDensityTemperature", &two_params<T, &T::PressureFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lmbda"))
     .def("PressureFromDensityInternalEnergy", &two_params<T, &T::PressureFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lmbda"))
+    .def("EntropyFromDensityTemperature", &two_params<T, &T::EntropyFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lmbda"))
+    .def("EntropyFromDensityInternalEnergy", &two_params<T, &T::EntropyFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lmbda"))
     .def("SpecificHeatFromDensityTemperature", &two_params<T, &T::SpecificHeatFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lmbda"))
     .def("SpecificHeatFromDensityInternalEnergy", &two_params<T, &T::SpecificHeatFromDensityInternalEnergy>, py::arg("rho"), py::arg("sie"), py::arg("lmbda"))
     .def("BulkModulusFromDensityTemperature", &two_params<T, &T::BulkModulusFromDensityTemperature>, py::arg("rho"), py::arg("temperature"), py::arg("lmbda"))
