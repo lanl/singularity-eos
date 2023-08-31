@@ -275,6 +275,7 @@ class VectorEOS_IdealGas_Given_Rho_Sie(unittest.TestCase):
         # Gold standard values
         self.pressure_true = np.array((2.0, 8.0, 30.0))
         self.temperature_true = np.array((1., 2., 3.))
+        self.entropy_true = np.array((-13.516481508310815, -11.43703996663098, -11.242295889838465))
         self.bulkmodulus_true = np.array((2.8, 11.2, 42.))
         self.heatcapacity_true = np.array((Cv, Cv, Cv))
         self.gruneisen_true = np.array((gm1, gm1, gm1))
@@ -282,6 +283,7 @@ class VectorEOS_IdealGas_Given_Rho_Sie(unittest.TestCase):
         # Create arrays for the outputs
         self.temperature = np.zeros(self.num)
         self.pressure = np.zeros(self.num)
+        self.entropy = np.zeros(self.num)
         self.heatcapacity = np.zeros(self.num)
         self.bulkmodulus = np.zeros(self.num)
         self.gruneisen = np.zeros(self.num)
@@ -295,6 +297,11 @@ class VectorEOS_IdealGas_Given_Rho_Sie(unittest.TestCase):
         """[Vector EOS][IdealGas][Energies and densities] A P(rho, e) lookup is performed"""
         self.eos.PressureFromDensityInternalEnergy(self.density, self.energy, self.pressure, self.num)
         assert_allclose(self.pressure, self.pressure_true, rtol=1e-12)
+
+    def test_entropy(self):
+        """[Vector EOS][IdealGas][Energies and densities] A S(rho, e) lookup is performed"""
+        self.eos.EntropyFromDensityInternalEnergy(self.density, self.energy, self.entropy, self.num)
+        assert_allclose(self.entropy, self.entropy_true, rtol=1e-8)
 
     def test_cv(self):
         """[Vector EOS][IdealGas][Energies and densities] A C_v(rho, e) lookup is performed"""
@@ -333,6 +340,7 @@ class VectorEOS_IdealGas_Given_Rho_Temp(unittest.TestCase):
         # Gold standard values
         self.energy_true = np.array((250., 500., 750.))
         self.pressure_true = np.array((100., 400., 1500.))
+        self.entropy_true = np.array((6.0436335188299175, 8.123075060509752, 8.317819137302264))
         self.bulkmodulus_true = np.array((140., 560., 2100.))
         self.heatcapacity_true = np.array((Cv, Cv, Cv))
         self.gruneisen_true = np.array((gm1, gm1, gm1))
@@ -340,6 +348,7 @@ class VectorEOS_IdealGas_Given_Rho_Temp(unittest.TestCase):
         # Create arrays for the outputs
         self.energy = np.zeros(self.num)
         self.pressure = np.zeros(self.num)
+        self.entropy = np.zeros(self.num)
         self.heatcapacity = np.zeros(self.num)
         self.bulkmodulus = np.zeros(self.num)
         self.gruneisen = np.zeros(self.num)
@@ -353,6 +362,11 @@ class VectorEOS_IdealGas_Given_Rho_Temp(unittest.TestCase):
         """[Vector EOS][IdealGas][Densities and temperatures] A P(rho, T) lookup is performed"""
         self.eos.PressureFromDensityTemperature(self.density, self.temperature, self.pressure, self.num)
         assert_allclose(self.pressure, self.pressure_true, rtol=1e-12)
+
+    def test_entropy(self):
+        """[Vector EOS][IdealGas][Densities and temperatures] A S(rho, T) lookup is performed"""
+        self.eos.EntropyFromDensityTemperature(self.density, self.temperature, self.entropy, self.num)
+        assert_allclose(self.entropy, self.entropy_true, rtol=1e-12)
 
     def test_cv(self):
         """[Vector EOS][IdealGas][Densities and temperatures] A C_v(rho, T) lookup is performed"""
