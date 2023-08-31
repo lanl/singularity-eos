@@ -1190,12 +1190,12 @@ equilibrium (NSE). It reads tabulated data in the `Stellar Collapse`_
 format, as first presented by `OConnor and Ott`_.
 
 Like ``SpinerEOSDependsRhoT``, ``StellarCollapse`` tabulateds all
-quantities in terms of density and temperature on a logarithmically
-spaced grid. And similarly, it requires an in-line root-find to
-compute quantities in terms of density and specific internal
-energy. Unlike most of the other models in ``singularity-eos``,
-``StellarCollapse`` also depends on a third quantity, the electron
-fraction,
+quantities in terms of density and temperature on an (approximately)
+logarithmically spaced grid. And similarly, it requires an in-line
+root-find to compute quantities in terms of density and specific
+internal energy. Unlike most of the other models in
+``singularity-eos``, ``StellarCollapse`` also depends on a third
+quantity, the electron fraction,
 
 .. math::
 
@@ -1231,7 +1231,7 @@ The ``StellarCollapse`` model requires a ``lambda`` parameter of size
 2, as described in :ref:`the EOS API section`<using-eos>`. The zeroth
 element of the ``lambda`` array contains the electron fraction. The
 first element is reserved for caching. It currently contains the
-natural log of the temperature, but this should not be assumed.
+log of the temperature, but this should not be assumed.
 
 To avoid race conditions, at least one array should be allocated per
 thread. Depending on the call pattern, one per point may be best. In
@@ -1277,10 +1277,19 @@ average atomic mass ``Abar`` and atomic number ``Zbar`` for heavy
 ions, assuming nuclear statistical equilibrium.
 
 In addition, the user may query the bounds of the table via the
-functions ``lRhoMin()``, ``lRhoMax()``, ``lTMin()``, ``lTMax()``,
-``TMin()``, ``TMax()``, ``YeMin()``, ``YeMax()``, ``sieMin()``, and
-``sieMax()``, which all return a ``Real`` number. The ``l`` prefix
-indicates log base 10.
+functions ``rhoMin()``, ``rhoMax()``, ``TMin()``, ``TMax()``,
+``YeMin()``, ``YeMax()``, ``sieMin()``, and ``sieMax()``, which all
+return a ``Real`` number.
+
+.. warning::
+    As with the SpinerEOS models, the stellar collapse models use fast
+    logs. You can switch the logs to true logs with the
+    ``SINGULARITY_USE_TRUE_LOG_GRIDDING`` cmake option.
+
+.. note::
+    A more performant implementation of fast logs is available, but it
+    might not be portable. Enable it with the
+    ``SINGULARITY_USE_HIGH_RISK_MATH`` cmake option.
 
 .. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
 

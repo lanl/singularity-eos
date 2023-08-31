@@ -1111,6 +1111,81 @@ SCENARIO("EOS Builder and SpinerEOS",
 #endif // SINGULARITY_TEST_SESAME
 
 #ifdef SINGULARITY_TEST_STELLAR_COLLAPSE
+SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
+  WHEN("We generate a 3D DataBox of a 2D power law times a line") {
+    using singularity::StellarCollapse;
+    constexpr int N2 = 100;
+    constexpr int N1 = 101;
+    constexpr int N0 = 102;
+    StellarCollapse::Grid_t g2(0, 1, N2);
+    StellarCollapse::Grid_t g1(1, 3, N1);
+    StellarCollapse::Grid_t g0(2, 4, N0);
+    StellarCollapse::DataBox db(N2, N1, N0);
+
+    db.setRange(2, g2);
+    db.setRange(1, g1);
+    db.setRange(0, g0);
+
+    for (int i2 = 0; i2 < N2; ++i2) {
+      Real x2 = g2.x(i2);
+      for (int i1 = 0; i1 < N1; ++i1) {
+        Real lx1 = g1.x(i1);
+        for (int i0 = 0; i0 < N0; ++i0) {
+          Real lx0 = g0.x(i0);
+          db(i2, i1, i0) = std::log10(x2) + 2 * lx1 + 2 * lx0;
+        }
+      }
+    }
+
+    THEN("The databox should interpolate values correctly") {
+      const Real x2 = 0.5;
+      const Real lx1 = 2;
+      const Real x1 = std::pow(10., lx1);
+      const Real lx0 = 3;
+      const Real x0 = std::pow(10., lx0);
+      REQUIRE(isClose(db.interpToReal(x2, lx1, lx0), std::log10(x2 * x1 * x1 * x0 * x0),
+                      1e-5));
+    }
+
+    THEN("We can re-interpolate to fast log space") {
+      StellarCollapse::DataBox scratch(N2, N1, N0);
+      StellarCollapse::dataBoxToFastLogs(db, scratch, true);
+
+      AND_THEN("The fast-log gridded table contains correct ranges") {
+        REQUIRE(db.range(2) == g2);
+        REQUIRE(db.range(1).nPoints() == N1);
+        REQUIRE(isClose(db.range(1).min(),
+                        singularity::FastMath::log10(std::pow(10, g1.min())), 1e-12));
+        REQUIRE(isClose(db.range(1).max(),
+                        singularity::FastMath::log10(std::pow(10, g1.max())), 1e-12));
+        REQUIRE(db.range(0).nPoints() == N0);
+        REQUIRE(isClose(db.range(0).min(),
+                        singularity::FastMath::log10(std::pow(10, g0.min())), 1e-12));
+        REQUIRE(isClose(db.range(0).max(),
+                        singularity::FastMath::log10(std::pow(10, g0.max())), 1e-12));
+      }
+
+      AND_THEN("The re-interpolated fast log is a sane number") {}
+
+      AND_THEN("The fast-log table approximately interpolates the power law") {
+        const Real x2 = 0.5;
+        const Real x1 = 100;
+        const Real x0 = 1000;
+        const Real lx1 = singularity::FastMath::log10(x1);
+        const Real lx0 = singularity::FastMath::log10(x0);
+        const Real lval_interp = db.interpToReal(x2, lx1, lx0);
+        const Real val_interp = singularity::FastMath::pow10(lval_interp);
+        const Real val_true = x2 * x1 * x1 * x0 * x0;
+        const Real rel_diff =
+            0.5 * std::abs(val_interp - val_true) / (val_true + val_interp);
+        REQUIRE(rel_diff <= 1e-3);
+      }
+      scratch.finalize();
+    }
+    db.finalize();
+  }
+}
+
 SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
   using singularity::IdealGas;
   using singularity::StellarCollapse;
@@ -1158,8 +1233,8 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
           Real tmax = sc.TMax();
           Real ltmin = std::log10(tmin);
           Real ltmax = std::log10(tmax);
-          Real lrhomin = sc.lRhoMin();
-          Real lrhomax = sc.lRhoMax();
+          Real lrhomin = std::log10(sc.rhoMin());
+          Real lrhomax = std::log10(sc.rhoMax());
           auto sc_d = sc.GetOnDevice();
 
           int nwrong_h = 0;
@@ -1226,14 +1301,14 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
             Real tmax = sc.TMax();
             Real ltmin = std::log10(tmin);
             Real ltmax = std::log10(tmax);
-            Real lrhomin = sc.lRhoMin();
-            Real lrhomax = sc.lRhoMax();
+            Real lrhomin = std::log10(sc.rhoMin());
+            Real lrhomax = std::log10(sc.rhoMax());
             REQUIRE(yemin == sc2.YeMin());
             REQUIRE(yemax == sc2.YeMax());
-            REQUIRE(sc.lTMin() == sc2.lTMin());
-            REQUIRE(sc.lTMax() == sc2.lTMax());
-            REQUIRE(lrhomin == sc2.lRhoMin());
-            REQUIRE(lrhomax == sc2.lRhoMax());
+            REQUIRE(sc.TMin() == sc2.TMin());
+            REQUIRE(sc.TMax() == sc2.TMax());
+            REQUIRE(isClose(lrhomin, std::log10(sc2.rhoMin()), 1e-12));
+            REQUIRE(isClose(lrhomax, std::log10(sc2.rhoMax()), 1e-12));
 
             auto sc1_d = sc.GetOnDevice();
             auto sc2_d = sc2.GetOnDevice();
