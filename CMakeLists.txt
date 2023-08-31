@@ -96,6 +96,11 @@ option(SINGULARITY_USE_SINGLE_LOGS
        "Use single precision logs. Can harm accuracy." OFF)
 option(SINGULARITY_USE_TRUE_LOG_GRIDDING
        "Use grids that conform to log spacing." OFF)
+# TODO(JMM): Should this automatically be activated when true log
+# gridding is off?
+cmake_dependent_option(SINGULARITY_USE_HIGH_RISK_MATH
+        "Use integer aliased logs, may not be portable" OFF
+        "NOT SINGULARITY_USE_TRUE_LOG_GRIDDING" OFF)
 
 # misc options
 option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
@@ -230,6 +235,9 @@ endif()
 # defines
 if(SINGULARITY_USE_SINGLE_LOGS)
   target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_SINGLE_LOGS)
+endif()
+if (SINGULARITY_USE_HIGH_RISK_MATH)
+  target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_HIGH_RISK_MATH)
 endif()
 
 if(SINGULARITY_TEST_SESAME)
