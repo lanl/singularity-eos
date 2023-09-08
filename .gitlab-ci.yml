@@ -85,7 +85,7 @@ before_script:
 .job: &job_def
   id_tokens:
     SITE_ID_TOKEN:
-      aud: https://re-git.lanl.gov
+      aud: https://asc-git.lanl.gov
   tags:
     - darwin-slurm-shared
   variables:
