@@ -130,7 +130,7 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
           yb = yg;
         } else {
           a = guess;
-          ya = guess;
+          ya = yg;
           b = x;
           yb = yx;
         }
