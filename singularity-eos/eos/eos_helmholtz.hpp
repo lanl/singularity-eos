@@ -411,6 +411,10 @@ class Helmholtz : public EosBase<Helmholtz> {
   Helmholtz(const std::string &filename, const bool rad, const bool gas, const bool coul,
             const bool ion, const bool ele, const bool verbose)
       : electrons_(filename), options_(rad, gas, coul, ion, ele, verbose) {}
+  Helmholtz(const std::string &filename, const bool rad, const bool gas, const bool coul,
+            const bool ion, const bool ele, const bool verbose, const bool newton_raphson)
+      : electrons_(filename),
+        options_(rad, gas, coul, ion, ele, verbose, newton_raphson) {}
 
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
   static constexpr unsigned long PreferredInput() {
