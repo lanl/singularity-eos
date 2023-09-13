@@ -1409,7 +1409,8 @@ include all terms. The optional argument ``verbose`` specifies whether to print
 out additional information, e.g. when the root find fails to converge. The
 optional argument ``newton_raphson`` specifies whether to use the Newton-Raphson
 method or the regula falsi method for root finding. The default is to use the
-Newton-Raphson method.
+Newton-Raphson method (note that the regula falsi method is used as a fallback
+in case the Newton-Raphson method does not converge).
 
 EOSPAC EOS
 ````````````

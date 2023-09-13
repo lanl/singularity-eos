@@ -758,10 +758,24 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
           math_utils::pow10(electrons_.lTMax()), HELM_EOS_EPS, T, nullptr,
           options_.VERBOSE);
       if (status != RootFinding1D::Status::SUCCESS) {
-        lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
-        T = math_utils::pow10(lT);
+        if (options_.VERBOSE) {
+          printf("Newton-Raphson failed to converge, falling back to regula falsi\n");
+        }
+        status = RootFinding1D::regula_falsi(
+            [&](Real T) {
+              Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+              copy.GetFromDensityLogTemperature_(rho, T, abar, zbar, ye, ytot, ywot, De,
+                                                 lDe, p, e, s, etaele, nep, true);
+              return e[VAL];
+            },
+            e, Tguess, math_utils::pow10(electrons_.lTMin()),
+            math_utils::pow10(electrons_.lTMax()), ROOT_THRESH, ROOT_THRESH, T, nullptr,
+            options_.VERBOSE);
+        if (status != RootFinding1D::Status::SUCCESS) {
+          lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
+          T = math_utils::pow10(lT);
+        }
       }
-
     } else {
       auto status = RootFinding1D::regula_falsi(
           [&](Real T) {
