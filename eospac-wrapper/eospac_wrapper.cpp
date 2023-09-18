@@ -14,13 +14,13 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
+#include "eospac_wrapper.hpp"
 #include <array>
+#include <eos_Interface.h>
 #include <iostream>
 #include <regex>
 #include <string>
 #include <vector>
-#include <eos_Interface.h>
-#include "eospac_wrapper.hpp"
 
 namespace EospacWrapper {
 
@@ -87,7 +87,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
     comments.resize(static_cast<int>(commentLen));
     metadata.comments.resize(comments.size());
 
-    if (comments.size() > 0) eosSafeTableCmnts(&eospacComments, comments.data(), eospacWarn);
+    if (comments.size() > 0)
+      eosSafeTableCmnts(&eospacComments, comments.data(), eospacWarn);
     for (size_t i = 0; i < comments.size(); i++) {
       metadata.comments[i] = comments[i];
     }

@@ -103,7 +103,6 @@ class NobleAbel : public EosBase<NobleAbel> {
            _gm1 * _Cv *
                std::log(robust::ratio(vol - _bb, _vol0 - _bb) + robust::SMALL()) +
            _qp;
-
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
