@@ -56,7 +56,6 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   using EosBase<ScaledEOS<T>>::BulkModulusFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<ScaledEOS<T>>::PTofRE;
   using EosBase<ScaledEOS<T>>::FillEos;
 
   using BaseType = T;

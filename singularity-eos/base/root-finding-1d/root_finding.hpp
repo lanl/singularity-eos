@@ -113,7 +113,8 @@ PORTABLE_INLINE_FUNCTION bool check_bracket(const Real ya, const Real yb) {
 
 template <typename T>
 PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess, Real &b,
-                                          Real &ya, const Real yg, Real &yb) {
+                                          Real &ya, const Real yg, Real &yb,
+                                          const bool &verbose = false) {
   constexpr int max_search_depth = 6;
   Real dx = b - a;
   for (int level = 0; level < max_search_depth; level++) {
@@ -129,7 +130,7 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
           yb = yg;
         } else {
           a = guess;
-          ya = guess;
+          ya = yg;
           b = x;
           yb = yx;
         }
@@ -138,8 +139,10 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
     }
   }
   // if we get here then we failed to bracket a root
-  printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
-         guess, b, ya, yg, yb);
+  if (verbose) {
+    printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
+           guess, b, ya, yg, yb);
+  }
   return false;
 }
 
@@ -149,7 +152,8 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
                                              const Real guess, Real a, Real b,
                                              const Real xtol, const Real ytol,
                                              Real &xroot,
-                                             const RootCounts *counts = nullptr) {
+                                             const RootCounts *counts = nullptr,
+                                             const bool &verbose = false) {
   constexpr int max_iter = SECANT_NITER_MAX;
   auto func = [&](const Real x) { return f(x) - ytarget; };
   Real ya = func(a);
@@ -166,8 +170,10 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
       ya = yg;
     } else {
       // ya, yg, and yb have the same sign
-      if (!set_bracket(func, a, guess, b, ya, yg, yb)) {
-        printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
+      if (!set_bracket(func, a, guess, b, ya, yg, yb, verbose)) {
+        if (verbose) {
+          printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
+        }
         return Status::FAIL;
       }
     }
@@ -212,8 +218,10 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
   }
   auto status = Status::SUCCESS;
   if (iteration_count == max_iter) {
-    printf(
-        "root finding reached the maximum number of iterations.  likely not converged\n");
+    if (verbose) {
+      printf("root finding reached the maximum number of iterations.  likely not "
+             "converged\n");
+    }
     status = Status::FAIL;
   }
   if (counts != nullptr) {

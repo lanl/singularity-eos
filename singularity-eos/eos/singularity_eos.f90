@@ -40,8 +40,9 @@ module singularity_eos
     init_sg_NobleAbel_f,&
     init_sg_SAP_Polynomial_f,&
     init_sg_StiffGas_f,&
-!    init_sg_SpinerDependsRhoT_f,&
-!    init_sg_SpinerDependsRhoSie_f,&
+    init_sg_Helmholtz_f,&
+    init_sg_SpinerDependsRhoT_f,&
+    init_sg_SpinerDependsRhoSie_f,&
     init_sg_eospac_f,&
     get_sg_PressureFromDensityInternalEnergy_f,&
     get_sg_MinInternalEnergyFromDensity_f,&
@@ -169,8 +170,49 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_eospac(matindex, eos, id, eospac_opts_values, &
-      sg_mods_enabled, sg_mods_values) &
+      init_sg_Helmholtz(matindex, eos, filename, rad, gas, coul, ion, ele, &
+                       verbose, sg_mods_enabled, sg_mods_values) &
+      bind(C, name='init_sg_Helmholtz')
+      import
+      integer(c_int), value, intent(in)      :: matindex
+      type(c_ptr), value, intent(in)         :: eos
+      character(kind=c_char), intent(in)     :: filename(*)
+      logical(c_bool), value, intent(in)     :: rad, gas, coul, ion, ele, &
+                                                verbose
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
+    end function init_sg_Helmholtz
+  end interface
+
+  interface
+    integer(kind=c_int) function &
+      init_sg_SpinerDependsRhoT(matindex, eos, filename, id, sg_mods_enabled, &
+                                sg_mods_values) &
+      bind(C, name='init_sg_SpinerDependsRhoT')
+      import
+      integer(c_int), value, intent(in)      :: matindex, id
+      type(c_ptr), value, intent(in)         :: eos
+      character(kind=c_char), intent(in)     :: filename(*)
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
+    end function init_sg_SpinerDependsRhoT
+  end interface
+
+  interface
+    integer(kind=c_int) function &
+      init_sg_SpinerDependsRhoSie(matindex, eos, filename, id, &
+                                  sg_mods_enabled, sg_mods_values) &
+      bind(C, name='init_sg_SpinerDependsRhoSie')
+      import
+      integer(c_int), value, intent(in)      :: matindex, id
+      type(c_ptr), value, intent(in)         :: eos
+      character(kind=c_char), intent(in)     :: filename(*)
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
+    end function init_sg_SpinerDependsRhoSie
+  end interface
+
+  interface
+    integer(kind=c_int) function &
+      init_sg_eospac(matindex, eos, id, eospac_opts_values, sg_mods_enabled, &
+                     sg_mods_values) &
       bind(C, name='init_sg_eospac')
       import
       integer(c_int), value, intent(in) :: matindex, id
@@ -442,6 +484,21 @@ contains
     err = init_sg_NobleAbel(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
                            c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_NobleAbel_f
+
+  integer function init_sg_Helmholtz_f(matindex, eos, filename, rad, gas, coul, ion, ele, &
+                       verbose, sg_mods_enabled, sg_mods_values) &
+    result(err)
+    integer(c_int), value, intent(in)           :: matindex
+    type(sg_eos_ary_t), intent(in)              :: eos
+    character(len=*, kind=c_char), intent(in)   :: filename
+    logical(c_bool), value, intent(in)          :: rad, gas, coul, ion, ele, &
+                                                   verbose
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    err = init_sg_Helmholtz(matindex-1, eos%ptr, trim(filename)//C_NULL_CHAR, &
+                            rad, gas, coul, ion, ele, verbose, &
+                            c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+  end function init_sg_Helmholtz_f
   
 !  integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
 !                                               sg_mods_enabled, &

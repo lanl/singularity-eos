@@ -77,7 +77,6 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;                    \
   using EosBase<EOSDERIVED>::MinimumDensity;                                             \
   using EosBase<EOSDERIVED>::MinimumTemperature;                                         \
-  using EosBase<EOSDERIVED>::PTofRE;                                                     \
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
@@ -583,43 +582,6 @@ class EosBase {
   Real MinimumDensity() const { return 0; }
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumTemperature() const { return 0; }
-
-  template <typename RealIndexer, typename LambdaIndexer>
-  inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,
-                     RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
-                     RealIndexer &&dtdrs, RealIndexer &&dtdes, const int num,
-                     LambdaIndexer &&lambdas) const {
-    static auto const name = SG_MEMBER_FUNC_NAME();
-    static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          copy.PTofRE(rhos[i], sies[i], lambdas[i], presses[i], temps[i], dpdrs[i],
-                      dpdes[i], dtdrs[i], dtdes[i]);
-        });
-  }
-  // Scalar version of PTofRE
-  PORTABLE_INLINE_FUNCTION
-  void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr,
-              Real &dpde, Real &dtdr, Real &dtde) const {
-    // Get the dervived class
-    auto eos = static_cast<CRTP const &>(*this);
-
-    press = eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
-    temp = eos.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-    const Real drho = rho * 1.0e-6;
-    const Real de = sie * 1.0e-6;
-    const Real Pr = eos.PressureFromDensityInternalEnergy(rho + drho, sie, lambda);
-    const Real Pe = eos.PressureFromDensityInternalEnergy(rho, sie + de, lambda);
-    const Real Tr = eos.TemperatureFromDensityInternalEnergy(rho + drho, sie, lambda);
-    const Real Te = eos.TemperatureFromDensityInternalEnergy(rho, sie + de, lambda);
-    dpdr = (Pr - press) / drho;
-    dpde = (Pe - press) / de;
-    dtdr = (Tr - temp) / drho;
-    dtde = (Te - temp) /
-           de; // Would it be better to skip the calculation of Te and return 1/cv?
-    return;
-  }
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }

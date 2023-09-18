@@ -350,7 +350,6 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                              lambdas);
   }
 
-  using EosBase<EOSPAC>::PTofRE;
   using EosBase<EOSPAC>::FillEos;
   using EosBase<EOSPAC>::EntropyIsNotEnabled;
 
@@ -694,8 +693,8 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
     EOS_REAL *E = scratch + 0 * num;
-    EOS_REAL *DEDT = &cvs[0];
     EOS_REAL *DEDR = scratch + 1 * num;
+    EOS_REAL *DEDT = &cvs[0];
 
     EOS_INTEGER table = EofRT_table_;
 
@@ -720,20 +719,17 @@ class EOSPAC : public EosBase<EOSPAC> {
       }
     }
 
-    options[nopts] = EOS_F_CONVERT;
-    values[nopts] = cvFromSesame(1.0);
-
-    if (transform.f.is_set()) {
-      values[nopts] *= transform.f.get();
-    }
-    ++nopts;
-
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
 
+    const Real y = transform.y.is_set() ? (1.0 / transform.y.get()) : 1.0;
+    const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
+
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] = std::max(cvs[i], 0.0); // Here we do something to the data!
+          cvs[i] =
+              f * y *
+              cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
         });
   }
 
@@ -1105,77 +1101,6 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
 
-  template <typename LambdaIndexer>
-  inline void PTofRE(Real *rhos, Real *sies, Real *presses, Real *temps, Real *dpdrs,
-                     Real *dpdes, Real *dtdrs, Real *dtdes, Real *scratch, const int num,
-                     LambdaIndexer lambdas) const {
-    static auto const name =
-        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
-    static auto const cname = name.c_str();
-
-    PressureFromDensityInternalEnergy(rhos, sies, presses, scratch, num, lambdas);
-    TemperatureFromDensityInternalEnergy(rhos, sies, temps, scratch, num, lambdas);
-
-    Real *drho = scratch;
-    Real *de = scratch + num;
-    Real *Pr = scratch + 2 * num;
-    Real *Pe = scratch + 3 * num;
-    Real *Tr = scratch + 4 * num;
-    Real *Te = scratch + 5 * num;
-    Real *rho_p_drho = scratch + 6 * num;
-    Real *sie_p_de = scratch + 7 * num;
-
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          drho[i] = rhos[i] * 1.0e-6;
-          de[i] = sies[i] * 1.0e-6;
-          rho_p_drho[i] = rhos[i] + drho[i];
-          sie_p_de[i] = sies[i] + de[i];
-        });
-
-    Real *R = &rhos[0];
-    Real *E = &sies[0];
-
-    Real *internal_scratch = scratch + 8 * num;
-
-    PressureFromDensityInternalEnergy(rho_p_drho, E, Pr, internal_scratch, num, lambdas);
-    PressureFromDensityInternalEnergy(R, sie_p_de, Pe, internal_scratch, num, lambdas);
-    TemperatureFromDensityInternalEnergy(rho_p_drho, E, Tr, internal_scratch, num,
-                                         lambdas);
-    TemperatureFromDensityInternalEnergy(R, sie_p_de, Te, internal_scratch, num, lambdas);
-
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          dpdrs[i] = (Pr[i] - presses[i]) / drho[i];
-          dpdes[i] = (Pe[i] - presses[i]) / de[i];
-          dtdrs[i] = (Tr[i] - temps[i]) / drho[i];
-          dtdes[i] =
-              (Te[i] - temps[i]) /
-              de[i]; // Would it be better to skip the calculation of Te and return 1/cv?
-        });
-  }
-
-  SG_PIF_NOWARN
-  PORTABLE_INLINE_FUNCTION void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press,
-                                       Real &temp, Real &dpdr, Real &dpde, Real &dtdr,
-                                       Real &dtde) const {
-
-    press = PressureFromDensityInternalEnergy(rho, sie, lambda);
-    temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-    const Real drho = rho * 1.0e-6;
-    const Real de = sie * 1.0e-6;
-    const Real Pr = PressureFromDensityInternalEnergy(rho + drho, sie, lambda);
-    const Real Pe = PressureFromDensityInternalEnergy(rho, sie + de, lambda);
-    const Real Tr = TemperatureFromDensityInternalEnergy(rho + drho, sie, lambda);
-    const Real Te = TemperatureFromDensityInternalEnergy(rho, sie + de, lambda);
-    dpdr = (Pr - press) / drho;
-    dpde = (Pe - press) / de;
-    dtdr = (Tr - temp) / drho;
-    dtde = (Te - temp) /
-           de; // Would it be better to skip the calculation of Te and return 1/cv?
-    return;
-  }
-
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     auto nbuffers = scratch_nbuffers();
     if (nbuffers.find(method) != nbuffers.end()) {
@@ -1244,8 +1169,7 @@ class EOSPAC : public EosBase<EOSPAC> {
         {"BulkModulusFromDensityInternalEnergy", 6},
         {"GruneisenParamFromDensityTemperature", 4},
         {"GruneisenParamFromDensityInternalEnergy", 5},
-        {"MinInternalEnergyFromDensity", 1},
-        {"PTofRE", 11}};
+        {"MinInternalEnergyFromDensity", 1},};
     return nbuffers;
   }
 };

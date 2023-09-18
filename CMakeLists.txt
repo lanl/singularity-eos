@@ -27,7 +27,7 @@ project(
   VERSION 1.7.0
   LANGUAGES NONE)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.6.2")
 set(SINGULARITY_GOLDFILE_HASH
@@ -48,7 +48,7 @@ option(SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
 
-#TODO This should be dependent option (or fortran option)
+# TODO This should be dependent option (or fortran option)
 option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON)
 
 cmake_dependent_option(SINGULARITY_USE_CUDA "Use CUDA backend of Kokkos" OFF
@@ -69,6 +69,9 @@ cmake_dependent_option(
 cmake_dependent_option(
   SINGUALRITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" ON
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+cmake_dependent_option(
+  SINGULARITY_USE_HELMHOLTZ "Include Helmholtz equation of state" OFF
+  "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
 
 # testing options
 option(SINGULARITY_BUILD_TESTS "Compile tests" OFF)
@@ -81,6 +84,8 @@ cmake_dependent_option(
   "SINGULARITY_BUILD_TESTS;SINGUALRITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
 cmake_dependent_option(SINGULARITY_TEST_PYTHON "Test the Python bindings" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_PYTHON" OFF)
+cmake_dependent_option(SINGULARITY_TEST_HELMHOLTZ "Test the Helmholtz equation of state" ON
+                       "SINGULARITY_BUILD_TESTS;SINGULARITY_USE_HELMHOLTZ" OFF)
 
 # modify flags options
 option(SINGULARITY_BETTER_DEBUG_FLAGS "Better debug flags for singularity" ON)
@@ -91,6 +96,11 @@ option(SINGULARITY_USE_SINGLE_LOGS
        "Use single precision logs. Can harm accuracy." OFF)
 option(SINGULARITY_USE_TRUE_LOG_GRIDDING
        "Use grids that conform to log spacing." OFF)
+# TODO(JMM): Should this automatically be activated when true log
+# gridding is off?
+cmake_dependent_option(SINGULARITY_USE_HIGH_RISK_MATH
+        "Use integer aliased logs, may not be portable" OFF
+        "NOT SINGULARITY_USE_TRUE_LOG_GRIDDING" OFF)
 
 # misc options
 option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
@@ -226,12 +236,18 @@ endif()
 if(SINGULARITY_USE_SINGLE_LOGS)
   target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_SINGLE_LOGS)
 endif()
+if (SINGULARITY_USE_HIGH_RISK_MATH)
+  target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_HIGH_RISK_MATH)
+endif()
 
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(singularity-eos PRIVATE SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_BUILD_CLOSURE)
   target_compile_definitions(singularity-eos PRIVATE SINGULARITY_BUILD_CLOSURE)
+endif()
+if(SINGULARITY_USE_HELMHOLTZ)
+  target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_HELMHOLTZ)
 endif()
 
 # ------------------------------------------------------------------------------#

@@ -56,7 +56,6 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   using EosBase<RelativisticEOS<T>>::BulkModulusFromDensityInternalEnergy;
   using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityTemperature;
   using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<RelativisticEOS<T>>::PTofRE;
   using EosBase<RelativisticEOS<T>>::FillEos;
 
   using BaseType = T;

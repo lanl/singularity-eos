@@ -56,7 +56,6 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   using EosBase<ShiftedEOS<T>>::BulkModulusFromDensityInternalEnergy;
   using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityTemperature;
   using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<ShiftedEOS<T>>::PTofRE;
   using EosBase<ShiftedEOS<T>>::FillEos;
 
   using BaseType = T;

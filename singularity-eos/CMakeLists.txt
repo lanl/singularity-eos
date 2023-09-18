@@ -32,6 +32,7 @@ set(EOS_HEADERS
     eos/eos_vinet.hpp
     eos/eos_builder.hpp
     eos/eos_jwl.hpp
+    eos/eos_helmholtz.hpp
     eos/modifiers/relativistic_eos.hpp
     eos/modifiers/scaled_eos.hpp
     eos/modifiers/ramps_eos.hpp
