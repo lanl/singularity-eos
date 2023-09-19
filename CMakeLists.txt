@@ -383,8 +383,10 @@ endforeach()
 
 target_sources(singularity-eos PRIVATE ${_srcs} ${_headers})
 
-# make sure .mods are placed in build path, and installed along with includes
 if(SINGULARITY_USE_FORTRAN)
+  # Turn on preprocessor for fortran files
+  set_target_properties(singularity-eos PROPERTIES Fortran_PREPROCESS ON)
+  # make sure .mods are placed in build path, and installed along with includes
   set_target_properties(singularity-eos PROPERTIES Fortran_MODULE_DIRECTORY
                                                    ${CMAKE_CURRENT_BINARY_DIR})
   target_include_directories(
