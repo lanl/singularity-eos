@@ -238,6 +238,9 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
 }
 
 // solves for f(x,params) - ytarget = 0
+// WARNING: this root finding expects a different callable f than the other
+// root finding methods. f should return a tuple of (f(x), f'(x)) where f'(x)
+// is the derivative of f with respect to x.
 template <typename T>
 PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
                                                const Real guess, const Real a,
