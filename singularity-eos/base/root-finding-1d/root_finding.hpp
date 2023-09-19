@@ -269,21 +269,20 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
     _x = _x - (yg - ytarget) / dfunc;
 
     // check if we are out of bounds
-    if (_x <= a && _xold <= a) {
+    // CAUTION: we do not set the root to the boundary value in this case
+    // because one might want to handle this on a case by case basis
+    // (e.g. if the boundary is a physical boundary, then one might want to
+    // set the root to the boundary value).
+    // For this reason, we also do not return a status of FAIL in this case.
+    // Instead, we return a status of SUCCESS and let the caller decide what
+    // to do.
+    if ((_x <= a && _xold <= a) || (_x >= b && _xold >= b)) {
       if (verbose) {
         printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n", ytarget, guess,
                a, b);
       }
       break;
     }
-    if (_x >= b && _xold >= b) {
-      if (verbose) {
-        printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n", ytarget, guess,
-               a, b);
-      }
-      break;
-    }
-
     _x = std::max(std::min(_x, b), a);
   }
   if (iter >= max_iter) {
