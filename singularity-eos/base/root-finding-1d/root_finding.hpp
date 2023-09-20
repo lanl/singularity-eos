@@ -246,7 +246,8 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
                                                const Real guess, const Real a,
                                                const Real b, const Real ytol, Real &xroot,
                                                const RootCounts *counts = nullptr,
-                                               const bool &verbose = false) {
+                                               const bool &verbose = false,
+                                               const bool &fail_on_bound_root = true) {
 
   constexpr int max_iter = NEWTON_RAPHSON_NITER_MAX;
   Real _x = guess;
@@ -273,13 +274,15 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
     // because one might want to handle this on a case by case basis
     // (e.g. if the boundary is a physical boundary, then one might want to
     // set the root to the boundary value).
-    // For this reason, we also do not return a status of FAIL in this case.
-    // Instead, we return a status of SUCCESS and let the caller decide what
-    // to do.
+    // Per default, we fail if the root is out of bounds controlled by
+    // fail_on_bound_root.
     if ((_x <= a && _xold <= a) || (_x >= b && _xold >= b)) {
       if (verbose) {
         printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n", ytarget, guess,
                a, b);
+      }
+      if (fail_on_bound_root) {
+        status = Status::FAIL;
       }
       break;
     }

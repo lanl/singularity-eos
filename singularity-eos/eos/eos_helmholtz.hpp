@@ -756,7 +756,7 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
           },
           e, Tguess, math_utils::pow10(electrons_.lTMin()),
           math_utils::pow10(electrons_.lTMax()), HELM_EOS_EPS, T, nullptr,
-          options_.VERBOSE);
+          options_.VERBOSE, false);
       if (status != RootFinding1D::Status::SUCCESS) {
         if (options_.VERBOSE) {
           printf("Newton-Raphson failed to converge, falling back to regula falsi\n");
