@@ -318,11 +318,7 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
 PORTABLE_INLINE_FUNCTION Real
 Gruneisen::MinInternalEnergyFromDensity(const Real rho_in, Real *lambda) const {
   const Real rho = std::min(rho_in, _rho_max);
-
-#ifndef NDEBUG
-  printf("WARNING: MinInternalEnergtyFromDensity is not defined for Gruneisen EOS.");
-#endif
-
+  MinInternalEnergyIsNotEnabled("Gruneisen");
   return 0.0;
 }
 PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityInternalEnergy(

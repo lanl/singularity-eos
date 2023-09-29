@@ -77,10 +77,7 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
 
   PORTABLE_INLINE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
-#ifndef NDEBUG
-    printf(
-        "WARNING: MinInternalEnergtyFromDensity is not defined for SAP polynomial EOS.");
-#endif
+    MinInternalEnergyIsNotEnabled("SAP Polynomial");
     return 0.0;
   };
 

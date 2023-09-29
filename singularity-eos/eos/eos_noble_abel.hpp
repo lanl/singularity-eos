@@ -82,9 +82,7 @@ class NobleAbel : public EosBase<NobleAbel> {
   }
   PORTABLE_INLINE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
-#ifndef NDEBUG
-    printf("WARNING: MinInternalEnergtyFromDensity is not defined for Noble Abel EOS.");
-#endif
+    MinInternalEnergyIsNotEnabled("Noble Abel");
     return 0.0;
   }
 
