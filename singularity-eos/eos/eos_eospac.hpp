@@ -177,6 +177,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                 ConstRealIndexer &&sies,
                                                 RealIndexer &&pressures, const int num,
                                                 LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
                                                        lambdas);
   }
@@ -1380,7 +1381,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
   EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
   EOS_REAL values[]{sieToSesame(1.0), pressureFromSesame(1.0)};
   EOS_INTEGER nopts = 2;
-  EOS_REAL R[1] = {rho}, E[1] = {sieToSesame(sie)}, P[1], dPdr[1], dPde[1], Ec[1];
+  EOS_REAL R[1] = {rho}, E[1] = {sie}, P[1], dPdr[1], dPde[1], Ec[1];
   EOS_INTEGER nxypairs = 1;
   EOS_INTEGER table = PofRE_table_;
   eosSafeInterpolate(&table, nxypairs, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
