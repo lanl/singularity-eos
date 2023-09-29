@@ -35,7 +35,7 @@ namespace singularity {
 namespace eos_base {
 
 namespace impl {
-constexpr std::size_t MAX_NUM_CHARS = 81;
+constexpr std::size_t MAX_NUM_CHARS = 121;
 // Cuda doesn't have strcat, so we implement it ourselves
 PORTABLE_FORCEINLINE_FUNCTION
 char *StrCat(char *destination, const char *source) {
@@ -81,6 +81,7 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
   using EosBase<EOSDERIVED>::EntropyIsNotEnabled;                                        \
+  using EosBase<EOSDERIVED>::MinInternalEnergyIsNotEnabled;                              \
   using EosBase<EOSDERIVED>::IsModified;                                                 \
   using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
   using EosBase<EOSDERIVED>::GetUnmodifiedObject;
@@ -586,7 +587,7 @@ class EosBase {
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
 
-  // Default entropy behavior is to return an error
+  // Default entropy behavior is to cause an error
   PORTABLE_FORCEINLINE_FUNCTION
   void EntropyIsNotEnabled(const char *eosname) const {
     // Construct the error message using char* so it works on device
@@ -595,6 +596,20 @@ class EosBase {
     // + 1 char for null terminator
     // maximum allowed EOS length = 44 chars
     char msg[impl::MAX_NUM_CHARS] = "Entropy is not enabled for the '";
+    impl::StrCat(msg, eosname);
+    impl::StrCat(msg, "' EOS");
+    PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
+  }
+
+  // Default MinInternalEnergyFromDensity behavior is to cause an error
+  PORTABLE_FORCEINLINE_FUNCTION
+  void MinInternalEnergyIsNotEnabled(const char *eosname) const {
+    // Construct the error message using char* so it works on device
+    // WARNING: This needs to be updated if EOS names get longer
+    // base msg length 32 + 5 chars = 37 chars
+    // + 1 char for null terminator
+    // maximum allowed EOS length = 44 chars
+    char msg[impl::MAX_NUM_CHARS] = "MinInternalEnergyFromDensity() is not enabled for the '";
     impl::StrCat(msg, eosname);
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
