@@ -1399,14 +1399,18 @@ The constructor for the ``Helmholtz`` EOS class looks like
   Helmholtz(const std::string &filename, const bool rad = true,
             const bool gas = true, const bool coul = true,
             const bool ion = true, const bool ele = true,
-            const bool verbose = false)
+            const bool verbose = false, const bool newton_raphson = true)
 
 where ``filename`` is the file containing the tabulated model. The
 optional arguments ``rad``, ``gas``, ``coul``, ``ion``, and ``ele``
 specify whether to include the radiation, ideal gas, coulomb correction,
 ionization, and electron contributions, respectively. The default is to
 include all terms. The optional argument ``verbose`` specifies whether to print
-out additional information, e.g. when the root find fails to converge.
+out additional information, e.g. when the root find fails to converge. The
+optional argument ``newton_raphson`` specifies whether to use the Newton-Raphson
+method or the regula falsi method for root finding. The default is to use the
+Newton-Raphson method (note that the regula falsi method is used as a fallback
+in case the Newton-Raphson method does not converge).
 
 EOSPAC EOS
 ````````````

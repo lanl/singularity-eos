@@ -22,6 +22,7 @@
 - [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
 
 ### Added (new features/APIs/variables/...)
+- [[PR304]](https://github.com/lanl/singularity-eos/pull/304) added a Newton-Raphson root find for use with the Helmholtz EoS
 - [[PR265]](https://github.com/lanl/singularity-eos/pull/265) Add missing UnitSystem modifier combinations to variant and EOSPAC
 - [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
 - [[PR274]](https://github.com/lanl/singularity-eos/pull/274) added a stiffened gas EoS
