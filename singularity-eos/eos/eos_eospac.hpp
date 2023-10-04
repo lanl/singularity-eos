@@ -41,13 +41,17 @@ using namespace eos_base;
 
 // Only really works in serial
 // Not really supported on device
-#ifndef PORTABILITY_STRATEGY_NONE
+
+// SG_PIF_NOWARN
+// this pragma disables host-device warnings when cuda enabled
 #if defined(__CUDACC__)
 #define SG_PIF_NOWARN #pragma nv_exec_check_disable
 #endif // __CUDACC__
-#else
+
+// force this macro to be defined regardless of complexity of logic above
+#ifndef SG_PIF_NOWARN
 #define SG_PIF_NOWARN
-#endif // PORTABILITY_STRATEGY_NONE
+#endif // !defind SG_PIF_NOWARN
 
 class EOSPAC : public EosBase<EOSPAC> {
  public:
