@@ -128,6 +128,14 @@ class EosBase {
   struct is_raw_pointer
       : std::is_same<std::remove_reference_t<std::remove_cv_t<T>>, R *> {};
 
+  // Generic evaluator
+  template <typename Functor_t>
+  PORTABLE_INLINE_FUNCTION
+  void Evaluate(const Functor_t &f) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    f(copy);
+  }
+
   // Vector member functions
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void
