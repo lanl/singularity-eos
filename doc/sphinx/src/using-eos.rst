@@ -278,6 +278,9 @@ is summed using the ``Kokkos::parallel_reduce`` functionality in the
       Real *P = P_; // gets around warnings regarding capture of "this" pointer
       Real *rho = rho_;
       Real *sie = sie_;
+      // reduction target
+      Real tot_diff;
+      // reduction op
       Kokkos::parallel_reduce(
           "MyCheckPofRE", N_,
           KOKKOS_LAMBDA(const int i, Real &diff) {
