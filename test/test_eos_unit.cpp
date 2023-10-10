@@ -518,9 +518,9 @@ class CheckPofRE {
     portableReduce(
         "MyCheckPofRE", 0, N_,
         PORTABLE_LAMBDA(const int i, int &nw) {
-          nw += !(isClose(P_[i],
-                          eos.PressureFromDensityInternalEnergy(rho_[i], sie_[i], nullptr),
-                          1e-15));
+          nw += !(isClose(
+              P_[i], eos.PressureFromDensityInternalEnergy(rho_[i], sie_[i], nullptr),
+              1e-15));
         },
         nwrong);
   }
