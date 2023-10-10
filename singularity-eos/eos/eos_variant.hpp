@@ -62,7 +62,7 @@ class Variant {
             typename std::enable_if<
                 !std::is_same<Variant, typename std::decay<EOSChoice>::type>::value,
                 bool>::type = true>
-  EOSChoice get() {
+  PORTABLE_INLINE_FUNCTION EOSChoice get() {
     return mpark::get<EOSChoice>(eos_);
   }
 
