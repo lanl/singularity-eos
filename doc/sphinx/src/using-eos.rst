@@ -275,16 +275,13 @@ is summed using the ``Kokkos::parallel_reduce`` functionality in the
     // PORTABLE_INLINE_FUNCTION
     // decorator here.
     void operator()(const T &eos) const {
-      Real *P = P_; // gets around warnings regarding capture of "this" pointer
-      Real *rho = rho_;
-      Real *sie = sie_;
       // reduction target
       Real tot_diff;
       // reduction op
       Kokkos::parallel_reduce(
           "MyCheckPofRE", N_,
           KOKKOS_LAMBDA(const int i, Real &diff) {
-            diff += std::abs(P[i] - eos.PressureFromDensityInternalEnergy(rho[i], sie[i]));
+            diff += std::abs(P_[i] - eos.PressureFromDensityInternalEnergy(rho_[i], sie_[i]));
           },
           tot_diff);
       std::cout << "Total difference = " << tot_diff << std::endl;

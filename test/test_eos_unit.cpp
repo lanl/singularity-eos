@@ -514,22 +514,19 @@ class CheckPofRE {
  public:
   CheckPofRE(Real *P, Real *rho, Real *sie, int N) : P_(P), rho_(rho), sie_(sie), N_(N) {}
   template <typename T>
-  void operator()(const T &eos) const {
-    Real *P = P_; // gets around capture of this pointer
-    Real *rho = rho_;
-    Real *sie = sie_;
-    // must be initialized to zero because portableReduce is a simple for loop on host
-    int nwrong = 0;
+  void operator()(const T &eos) {
     portableReduce(
         "MyCheckPofRE", 0, N_,
         PORTABLE_LAMBDA(const int i, int &nw) {
-          nw += !(isClose(P[i],
-                          eos.PressureFromDensityInternalEnergy(rho[i], sie[i], nullptr),
+          nw += !(isClose(P_[i],
+                          eos.PressureFromDensityInternalEnergy(rho_[i], sie_[i], nullptr),
                           1e-15));
         },
         nwrong);
-    REQUIRE(nwrong == 0);
   }
+
+  // must be initialized to zero because portableReduce is a simple for loop on host
+  int nwrong = 0;
 
  private:
   int N_;
@@ -564,8 +561,9 @@ SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
             P[i] = eos_device.PressureFromDensityInternalEnergy(rho[i], sie[i]);
           });
       THEN("The vector Evaluate API can be used to compare") {
-        CheckPofRE myOp(P, rho, sie, N);
-        eos_device.Evaluate(myOp);
+        CheckPofRE my_op(P, rho, sie, N);
+        eos_device.Evaluate(my_op);
+        REQUIRE(my_op.nwrong == 0);
       }
     }
 
