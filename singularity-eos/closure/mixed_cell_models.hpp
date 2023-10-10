@@ -273,9 +273,9 @@ class PTESolverBase {
   }
 
   template <typename EOS_t>
-  PORTABLE_FORCEINLINE_FUNCTION
-  static Real GetPressureFromPreferred(const EOS_t &eos, const Real rho, const Real T,
-                                       Real sie, Real *lambda, const bool do_e_lookup) {
+  PORTABLE_FORCEINLINE_FUNCTION static Real
+  GetPressureFromPreferred(const EOS_t &eos, const Real rho, const Real T, Real sie,
+                           Real *lambda, const bool do_e_lookup) {
     Real P{};
     if (eos.PreferredInput() ==
         (thermalqs::density | thermalqs::specific_internal_energy)) {
