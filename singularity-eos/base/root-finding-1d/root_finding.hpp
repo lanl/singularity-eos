@@ -28,6 +28,7 @@
 #include <math.h>
 #include <ports-of-call/portability.hpp>
 #include <stdio.h>
+#include <tuple>
 
 #define SINGULARITY_ROOT_DEBUG (0)
 #define SINGULARITY_ROOT_VERBOSE (0)
@@ -38,6 +39,7 @@ namespace RootFinding1D {
 constexpr const int SECANT_NITER_MAX{1000};
 constexpr const int BISECT_NITER_MAX{1000};
 constexpr const int BISECT_REG_MAX{1000};
+constexpr const int NEWTON_RAPHSON_NITER_MAX{100};
 enum class Status { SUCCESS = 0, FAIL = 1 };
 
 /*
@@ -232,6 +234,76 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
     }
   }
   xroot = 0.5 * (a + b);
+  return status;
+}
+
+// solves for f(x,params) - ytarget = 0
+// WARNING: this root finding expects a different callable f than the other
+// root finding methods. f should return a tuple of (f(x), f'(x)) where f'(x)
+// is the derivative of f with respect to x.
+template <typename T>
+PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
+                                               const Real guess, const Real a,
+                                               const Real b, const Real ytol, Real &xroot,
+                                               const RootCounts *counts = nullptr,
+                                               const bool &verbose = false,
+                                               const bool &fail_on_bound_root = true) {
+
+  constexpr int max_iter = NEWTON_RAPHSON_NITER_MAX;
+  Real _x = guess;
+  Real _xold = 0.0;
+  auto status = Status::SUCCESS;
+
+  Real yg;
+  Real dfunc;
+
+  int iter;
+
+  for (iter = 0; iter < max_iter; iter++) {
+    std::tie(yg, dfunc) = f(_x); // C++11 tuple unpacking
+
+    // check if we are converged already
+    if (std::abs(yg - ytarget) < (ytol * ytarget)) break;
+
+    // not converged; compute the next step
+    _xold = _x;
+    _x = _x - (yg - ytarget) / dfunc;
+
+    // check if we are out of bounds
+    // CAUTION: we do not set the root to the boundary value in this case
+    // because one might want to handle this on a case by case basis
+    // (e.g. if the boundary is a physical boundary, then one might want to
+    // set the root to the boundary value).
+    // Per default, we fail if the root is out of bounds controlled by
+    // fail_on_bound_root.
+    if ((_x <= a && _xold <= a) || (_x >= b && _xold >= b)) {
+      if (verbose) {
+        printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n", ytarget, guess,
+               a, b);
+      }
+      if (fail_on_bound_root) {
+        status = Status::FAIL;
+      }
+      break;
+    }
+    _x = std::max(std::min(_x, b), a);
+  }
+  if (iter >= max_iter) {
+    if (verbose) {
+      printf("root finding reached the maximum number of iterations.  likely not "
+             "converged\n");
+    }
+    status = Status::FAIL;
+  }
+
+  if (counts != nullptr) {
+    if (iter < counts->nBins()) {
+      counts->increment(iter);
+    } else {
+      counts->increment(counts->more());
+    }
+  }
+  xroot = _x;
   return status;
 }
 
