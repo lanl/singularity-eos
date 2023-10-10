@@ -1270,7 +1270,7 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie,
                                               Real *lambda) const {
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, T[1] = {temperatureToSesame(temp)};
-  EOS_REAL E[1] = {sie}, P[1] = {pressureToSesame(press)};
+  EOS_REAL E[1] = {sieToSesame(sie)}, P[1] = {pressureToSesame(press)};
   EOS_REAL dx[1], dy[1];
   EOS_INTEGER nxypairs = 1;
   Real /*CV,*/ BMOD_T, BMOD, SIE, PRESS, DPDE, DPDT, DPDR, DEDT, DEDR;
@@ -1379,7 +1379,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   using namespace EospacWrapper;
   EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
-  EOS_REAL values[]{sieToSesame(1.0), pressureFromSesame(1.0)};
+  EOS_REAL values[]{sieFromSesame(1.0), pressureFromSesame(1.0)};
   EOS_INTEGER nopts = 2;
   EOS_REAL R[1] = {rho}, E[1] = {sie}, P[1], dPdr[1], dPde[1], Ec[1];
   EOS_INTEGER nxypairs = 1;
