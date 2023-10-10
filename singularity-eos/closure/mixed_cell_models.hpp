@@ -272,8 +272,9 @@ class PTESolverBase {
     return Tguess;
   }
 
+  template <typename EOS_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  static Real GetPressureFromPreferred(const EOS &eos, const Real rho, const Real T,
+  static Real GetPressureFromPreferred(const EOS_t &eos, const Real rho, const Real T,
                                        Real sie, Real *lambda, const bool do_e_lookup) {
     Real P{};
     if (eos.PreferredInput() ==
