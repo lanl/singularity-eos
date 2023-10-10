@@ -73,7 +73,7 @@ class Variant {
 
   // Place member functions here
   template <typename Functor_t>
-  PORTABLE_INLINE_FUNCTION void Evaluate(const Functor_t &f) const {
+  PORTABLE_INLINE_FUNCTION void Evaluate(Functor_t &f) const {
     return mpark::visit([&f](const auto &eos) { return eos.Evaluate(f); }, eos_);
   }
 

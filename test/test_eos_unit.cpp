@@ -509,6 +509,73 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
   }
 }
 
+// A non-standard pattern where we do a reduction
+class CheckPofRE {
+ public:
+  CheckPofRE(Real *P, Real *rho, Real *sie, int N) : P_(P), rho_(rho), sie_(sie), N_(N) {}
+  template <typename T>
+  void operator()(const T &eos) const {
+    Real *P = P_; // gets around capture of this pointer
+    Real *rho = rho_;
+    Real *sie = sie_;
+    // must be initialized to zero because portableReduce is a simple for loop on host
+    int nwrong = 0;
+    portableReduce(
+        "MyCheckPofRE", 0, N_,
+        PORTABLE_LAMBDA(const int i, int &nw) {
+          nw += !(isClose(P[i],
+                          eos.PressureFromDensityInternalEnergy(rho[i], sie[i], nullptr),
+                          1e-15));
+        },
+        nwrong);
+    REQUIRE(nwrong == 0);
+  }
+
+ private:
+  int N_;
+  Real *P_;
+  Real *rho_;
+  Real *sie_;
+};
+SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
+  GIVEN("An ideal gas, and some device memory") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    constexpr int N = 100;
+    constexpr Real rhomin = 1;
+    constexpr Real rhomax = 11;
+    constexpr Real drho = (rhomax - rhomin) / (N - 1);
+    constexpr Real siemin = 1;
+    constexpr Real siemax = 11;
+    constexpr Real dsie = (siemax - siemin) / (N - 1);
+
+    EOS eos_host = IdealGas(gm1, Cv);
+    auto eos_device = eos_host.GetOnDevice();
+
+    Real *P = (Real *)PORTABLE_MALLOC(N * sizeof(Real));
+    Real *rho = (Real *)PORTABLE_MALLOC(N * sizeof(Real));
+    Real *sie = (Real *)PORTABLE_MALLOC(N * sizeof(Real));
+
+    WHEN("We set P, rho, sie via the scalar API") {
+      portableFor(
+          "Set rho and sie", 0, N, PORTABLE_LAMBDA(const int i) {
+            rho[i] = rhomin + drho * i; // just some diagonal in the 2d rho/sie space
+            sie[i] = siemin + dsie * i;
+            P[i] = eos_device.PressureFromDensityInternalEnergy(rho[i], sie[i]);
+          });
+      THEN("The vector Evaluate API can be used to compare") {
+        CheckPofRE myOp(P, rho, sie, N);
+        eos_device.Evaluate(myOp);
+      }
+    }
+
+    eos_device.Finalize();
+    PORTABLE_FREE(P);
+    PORTABLE_FREE(rho);
+    PORTABLE_FREE(sie);
+  }
+}
+
 SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
 
   GIVEN("Parameters for an ideal gas") {
