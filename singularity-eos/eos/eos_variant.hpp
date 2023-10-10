@@ -72,6 +72,11 @@ class Variant {
   }
 
   // Place member functions here
+  template <typename Functor_t>
+  PORTABLE_INLINE_FUNCTION void Evaluate(Functor_t &f) const {
+    return mpark::visit([&f](const auto &eos) { return eos.Evaluate(f); }, eos_);
+  }
+
   PORTABLE_INLINE_FUNCTION
   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {
