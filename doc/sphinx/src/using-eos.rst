@@ -248,6 +248,13 @@ desired use-case.
   support templates, and the ``operator()`` call must be
   templated.
 
+.. warning::
+
+  It can be dangerous to use functors with side-effects. Especially
+  with GPUs it can produce very unintuitive behaviour. We recommend
+  you only make the ``operator()`` non-const if you really know what
+  you're doing.
+
 To see the utlity of the ``Evaluate`` function, it's probably just
 easiest to provide an example. The following code evaluates the EOS on
 device and compares against a tabulated pressure. The total difference
