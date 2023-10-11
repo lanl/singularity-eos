@@ -244,7 +244,8 @@ function with an `auto` argument as the input, e.g.,
 
 .. code-block::
 
-   eos.Evaluate([=](auto eos) { /* my code snippet */ });
+   // equivalent to [=], but with device markings
+   eos.Evaluate(PORTABLE_LAMBDA(auto eos) { /* my code snippet */ });
 
 .. warning::
 
