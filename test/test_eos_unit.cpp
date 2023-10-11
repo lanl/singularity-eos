@@ -518,9 +518,9 @@ class CheckPofRE {
   template <typename T>
   PORTABLE_FUNCTION
   void operator()(const T &eos) {
-    int *P = P_;
-    int *rho = rho_;
-    int *sie = sie_;
+    Real *P = P_;
+    Real *rho = rho_;
+    Real *sie = sie_;
     portableReduce(
         "MyCheckPofRE", 0, N_,
         PORTABLE_LAMBDA(const int i, int &nw) {
