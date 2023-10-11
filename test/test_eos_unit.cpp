@@ -516,17 +516,16 @@ class CheckPofRE {
 #pragma nv_exec_check_disable
 #pragma hd_warning_disable
   template <typename T>
-  PORTABLE_FUNCTION
-  void operator()(const T &eos) {
+  PORTABLE_FUNCTION void operator()(const T &eos) {
     Real *P = P_;
     Real *rho = rho_;
     Real *sie = sie_;
     portableReduce(
         "MyCheckPofRE", 0, N_,
         PORTABLE_LAMBDA(const int i, int &nw) {
-          nw += !(isClose(
-              P[i], eos.PressureFromDensityInternalEnergy(rho[i], sie[i], nullptr),
-              1e-15));
+          nw += !(isClose(P[i],
+                          eos.PressureFromDensityInternalEnergy(rho[i], sie[i], nullptr),
+                          1e-15));
         },
         nwrong);
   }
