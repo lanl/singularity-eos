@@ -35,6 +35,10 @@ conditions. The type of parallelism used depends on how
 ``singularity-eos`` is compiled. If the ``Kokkos`` backend is used,
 any parallel dispatch supported by ``Kokkos`` is supported.
 
+A more generic version of the vector calls exists in the ``Evaluate``
+method, which allows the user to specify arbitrary parallel dispatch
+models by writing their own loops. See the relevant section below.
+
 .. _variant section:
 
 Variants
