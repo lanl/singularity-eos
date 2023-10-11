@@ -129,6 +129,19 @@ class EosBase {
       : std::is_same<std::remove_reference_t<std::remove_cv_t<T>>, R *> {};
 
   // Generic evaluator
+  // JMM: These macros disable checks that the functor called by evaluate
+  // is __host__ __device__
+  // This is desirable, because you may want to call device-side batched
+  // evaluations (or inner loop dispatch with hierarchical parallelism)
+  // or you may want to call Evaluate from the host to, e.g., launch
+  // a reduction operation or somesuch.
+  // Note that this is a little dangerous as the compiler won't tell you
+  // if you messed up and ACTUALLY called a host-side function from
+  // device. The code will just segfault.
+#if defined(__CUDACC__)
+#pragma nv_exec_check_disable
+#pragma hd_warning_disable
+#endif // __CUDACC__
   template <typename Functor_t>
   PORTABLE_INLINE_FUNCTION void Evaluate(Functor_t &f) const {
     CRTP copy = *(static_cast<CRTP const *>(this));

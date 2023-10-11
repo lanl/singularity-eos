@@ -513,10 +513,8 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
 class CheckPofRE {
  public:
   CheckPofRE(Real *P, Real *rho, Real *sie, int N) : P_(P), rho_(rho), sie_(sie), N_(N) {}
-#pragma nv_exec_check_disable
-#pragma hd_warning_disable
   template <typename T>
-  PORTABLE_FUNCTION void operator()(const T &eos) {
+  void operator()(const T &eos) {
     Real *P = P_;
     Real *rho = rho_;
     Real *sie = sie_;
