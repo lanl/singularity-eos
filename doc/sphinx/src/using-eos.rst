@@ -237,23 +237,22 @@ The ``Evaluate`` call has the signature
   void Evaluate(Functor_t f);
 
 where a ``Functor_t`` is a class that *must* provide a ``void
-operator() const`` method templated on EOS type. ``Evaluate`` is decorated
-so that it may be evaluated on either host or device, depending on
-desired use-case.
+operator() const`` method templated on EOS type. ``Evaluate`` is
+decorated so that it may be evaluated on either host or device,
+depending on desired use-case. Alternatively, you may use an anonymous
+function with an `auto` argument as the input, e.g.,
 
-.. note::
+.. code-block::
 
-  Note that for C++ versions less than C++20, the functor must be
-  defined as a class. Anonymous functions won't do, as they do not
-  support templates, and the ``operator()`` call must be
-  templated.
+   eos.Evaluate([=](auto eos) { /* my code snippet */ });
 
 .. warning::
 
   It can be dangerous to use functors with side-effects. Especially
   with GPUs it can produce very unintuitive behaviour. We recommend
   you only make the ``operator()`` non-const if you really know what
-  you're doing.
+  you're doing. And in the anonymous function case, we recommend you
+  capture by value, not reference.
 
 To see the utlity of the ``Evaluate`` function, it's probably just
 easiest to provide an example. The following code evaluates the EOS on
@@ -275,13 +274,19 @@ is summed using the ``Kokkos::parallel_reduce`` functionality in the
     // PORTABLE_INLINE_FUNCTION
     // decorator here.
     void operator()(const T &eos) const {
+      // Capturing member functions of a class in a lambda typically causes problems
+      // when launching a GPU kernel.
+      // Better to pull out new variables to capture before launching a kernel.
+      Real *P = P_;
+      Real *rho = rho_;
+      Real *sie = sie_;
       // reduction target
       Real tot_diff;
       // reduction op
       Kokkos::parallel_reduce(
           "MyCheckPofRE", N_,
           KOKKOS_LAMBDA(const int i, Real &diff) {
-            diff += std::abs(P_[i] - eos.PressureFromDensityInternalEnergy(rho_[i], sie_[i]));
+            diff += std::abs(P[i] - eos.PressureFromDensityInternalEnergy(rho[i], sie[i]));
           },
           tot_diff);
       std::cout << "Total difference = " << tot_diff << std::endl;
@@ -303,6 +308,22 @@ is summed using the ``Kokkos::parallel_reduce`` functionality in the
 
   // The above two lines could have been called "in-one" with:
   // eos.Evaluate(CheckPofRE(P, rho, sie, N));
+
+Alternatively, you could eliminate the functor and use an anonymous
+function with:
+
+.. code-block:: cpp
+
+  eos.Evaluate([=](auto eos) {
+    Real tot_diff;
+    Kokkos::parallel_reduce(
+        "MyCheckPofRE", N_,
+        KOKKOS_LAMBDA(const int i, Real &diff) {
+          diff += std::abs(P[i] - eos.PressureFromDensityInternalEnergy(rho[i], sie[i]));
+        },
+        tot_diff);
+    std::cout << "Total difference = " << tot_diff << std::endl;
+  });
 
 This is not functionality that would be available with the standard
 vector calls provided by ``singularity-eos``, at least not without
