@@ -17,10 +17,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
-#include <singularity-eos/base/fast-math/logs.hpp>
-#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos.hpp>
-#include <singularity-eos/eos/eos_builder.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
@@ -31,9 +28,6 @@
 
 using singularity::EOS;
 using singularity::IdealGas;
-
-namespace EOSBuilder = singularity::EOSBuilder;
-namespace thermalqs = singularity::thermalqs;
 
 SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
 
