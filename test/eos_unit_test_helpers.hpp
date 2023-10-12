@@ -56,8 +56,6 @@ inline std::string demangle(const char *name) { return name; }
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
-using singularity::EOS;
-
 PORTABLE_INLINE_FUNCTION bool isClose(Real a, Real b, Real eps = 5e-2) {
   return fabs(b - a) / (fabs(a + b) + 1e-20) <= eps;
 }
@@ -85,7 +83,7 @@ inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN
 }
 
 template<typename E1, typename E2>
-inline void compare_two_eoss(const EOS &&test_e, const EOS &&ref_e) {
+inline void compare_two_eoss(const E1 &&test_e, const E2 &&ref_e) {
   // compare all individual member functions with 1 as inputs,
   // this function is meant to catch mis-implementations of
   // modifiers that can be initialized in such a way as to

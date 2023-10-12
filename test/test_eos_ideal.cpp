@@ -33,8 +33,8 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
 using singularity::IdealGas;
+using EOS = singularity::Variant<IdealGas>;
 
 SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
   GIVEN("Parameters for an ideal gas with entropy reference states") {

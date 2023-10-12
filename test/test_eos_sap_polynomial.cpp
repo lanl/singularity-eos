@@ -26,8 +26,8 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
 using singularity::SAP_Polynomial;
+using EOS = singularity::Variant<SAP_Polynomial>;
 
 SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
   GIVEN("Parameters for a SAP_Polynomial EOS") {

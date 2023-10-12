@@ -26,8 +26,9 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
 using singularity::NobleAbel;
+using singularity::IdealGas;
+using EOS = singularity::Variant<IdealGas, NobleAbel>;
 
 SCENARIO("NobleAbel1", "[NobleAbel][NobleAbel1]") {
   GIVEN("Parameters for a NobleAbel EOS") {
@@ -361,7 +362,7 @@ SCENARIO("Recover Ideal Gas from NobleAbel", "[NobleAbel][NobleAbel4]") {
     //  Create the EOS
     EOS host_eos = NobleAbel(gm1, Cv, bb, qq);
     EOS eos = host_eos.GetOnDevice();
-    EOS ideal_eos = singularity::IdealGas(gm1, Cv);
+    EOS ideal_eos = IdealGas(gm1, Cv);
     GIVEN("Densities and energies") {
       constexpr int num = 1;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
