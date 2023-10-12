@@ -40,10 +40,16 @@ module singularity_eos
     init_sg_NobleAbel_f,&
     init_sg_SAP_Polynomial_f,&
     init_sg_StiffGas_f,&
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_HELMHOLTZ
     init_sg_Helmholtz_f,&
+#endif ! SINGULARITY_USE_HELMHOLTZ
     init_sg_SpinerDependsRhoT_f,&
     init_sg_SpinerDependsRhoSie_f,&
+#endif ! SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_EOSPAC
     init_sg_eospac_f,&
+#endif ! SINGULARITY_USE_EOSPAC
     get_sg_eos_f,&
     finalize_sg_eos_f
 
@@ -164,7 +170,8 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_SAP_Polynomial
   end interface
-
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_HELMHOLTZ
   interface
     integer(kind=c_int) function &
       init_sg_Helmholtz(matindex, eos, filename, rad, gas, coul, ion, ele, &
@@ -179,7 +186,7 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_Helmholtz
   end interface
-
+#endif ! SINGULARITY_USE_HELMHOLTZ
   interface
     integer(kind=c_int) function &
       init_sg_SpinerDependsRhoT(matindex, eos, filename, id, sg_mods_enabled, &
@@ -205,7 +212,8 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_SpinerDependsRhoSie
   end interface
-
+#endif ! SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_EOSPAC
   interface
     integer(kind=c_int) function &
       init_sg_eospac(matindex, eos, id, sg_mods_enabled, sg_mods_values) &
@@ -216,7 +224,7 @@ module singularity_eos
       type(c_ptr), value, intent(in)    :: sg_mods_enabled, sg_mods_values
     end function init_sg_eospac
   end interface
-
+#endif ! SINGULARITY_USE_EOSPAC
   interface
     integer(kind=c_int) function &
       get_sg_eos(nmat, ncell, cell_dim,&
@@ -443,7 +451,8 @@ contains
     err = init_sg_NobleAbel(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
                            c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_NobleAbel_f
-
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_HELMHOLTZ
   integer function init_sg_Helmholtz_f(matindex, eos, filename, rad, gas, coul, ion, ele, &
                        verbose, sg_mods_enabled, sg_mods_values) &
     result(err)
@@ -458,7 +467,7 @@ contains
                             rad, gas, coul, ion, ele, verbose, &
                             c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_Helmholtz_f
-  
+#endif ! SINGULARITY_USE_HELMHOLTZ
   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
                                                sg_mods_enabled, &
                                                sg_mods_values) &
@@ -489,7 +498,8 @@ contains
                                       c_loc(sg_mods_enabled), &
                                       c_loc(sg_mods_values))
   end function init_sg_SpinerDependsRhoSie_f
-
+#endif ! SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_EOSPAC
   integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
                                     sg_mods_values) &
     result(err)
@@ -500,7 +510,7 @@ contains
     err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled), &
                          c_loc(sg_mods_values))
   end function init_sg_eospac_f
-
+#endif ! SINGULARITY_USE_EOSPAC
   integer function finalize_sg_eos_f(nmat, eos) &
     result(err)
     integer(c_int), value, intent(in) :: nmat
