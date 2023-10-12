@@ -12,40 +12,58 @@
 # ------------------------------------------------------------------------------
 
 add_executable(
-  eos_unit_tests
+  eos_analytic_unit_tests
   catch2_define.cpp
   eos_unit_test_helpers.hpp
   test_eos_ideal.cpp
   test_eos_gruneisen.cpp
   test_eos_sap_polynomial.cpp
-  test_eos_vinet.cpp
   test_eos_noble_abel.cpp
   test_eos_stiff.cpp
-  test_eos_helmholtz.cpp
+  )
+
+add_executable(
+  eos_infrastructure_tests
+  catch2_define.cpp
+  eos_unit_test_helpers.hpp
   test_eos_modifiers.cpp
   test_eos_vector.cpp
+  test_math_utils.cpp
+  )
+
+add_executable(
+  eos_tabulated_unit_tests
+  catch2_define.cpp
+  eos_unit_test_helpers.hpp
+  test_eos_vinet.cpp
+  test_eos_helmholtz.cpp
   test_eos_tabulated.cpp
   test_eos_stellar_collapse.cpp
-  test_math_utils.cpp
   )
 
 if(SINGULARITY_TEST_HELMHOLTZ)
     configure_file(${PROJECT_SOURCE_DIR}/data/helmholtz/helm_table.dat ${CMAKE_BINARY_DIR}/data/helmholtz/helm_table.dat COPYONLY)
-  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_HELMHOLTZ SINGULARITY_USE_HELMHOLTZ)
+  target_compile_definitions(eos_tabulated_unit_tests PRIVATE SINGULARITY_TEST_HELMHOLTZ SINGULARITY_USE_HELMHOLTZ)
 endif()
 
 if(SINGULARITY_TEST_SESAME)
-  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+  target_compile_definitions(eos_tabulated_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)
-  target_compile_definitions(eos_unit_tests
+  target_compile_definitions(eos_tabulated_unit_tests
                              PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
 
-target_link_libraries(eos_unit_tests PRIVATE Catch2::Catch2
-                                             singularity-eos::singularity-eos)
+target_link_libraries(eos_analytic_unit_tests PRIVATE Catch2::Catch2
+  singularity-eos::singularity-eos)
+target_link_libraries(eos_infrastructure_tests PRIVATE Catch2::Catch2
+  singularity-eos::singularity-eos)
+target_link_libraries(eos_tabulated_unit_tests PRIVATE Catch2::Catch2
+  singularity-eos::singularity-eos)
 include(Catch)
-catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
+catch_discover_tests(eos_analytic_unit_tests PROPERTIES TIMEOUT 60)
+catch_discover_tests(eos_infrastructure_tests PROPERTIES TIMEOUT 60)
+catch_discover_tests(eos_tabulated_unit_tests PROPERTIES TIMEOUT 60)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac compare_to_eospac.cpp)

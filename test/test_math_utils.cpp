@@ -21,7 +21,8 @@
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 
