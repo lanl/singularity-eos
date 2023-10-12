@@ -22,7 +22,8 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 

@@ -17,7 +17,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream> // debug
-#include <limits>
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
@@ -29,7 +28,8 @@
 #include <singularity-eos/eos/singularity_eos.hpp>
 #endif
 
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 
