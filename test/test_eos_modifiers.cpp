@@ -27,11 +27,11 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
+using singularity::BilinearRampEOS;
 using singularity::EOS;
 using singularity::IdealGas;
 using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
-using singularity::BilinearRampEOS;
 
 namespace EOSBuilder = singularity::EOSBuilder;
 namespace thermalqs = singularity::thermalqs;
@@ -274,4 +274,3 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
     }
   }
 }
-
