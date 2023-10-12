@@ -250,7 +250,7 @@ dependencies, be sure to block off the test using ``#IFDEF`` blocks.
   ``eos_infrastructure_tests`` and ``eos_tabulated_unit_tests``. Pick
   the executable that most closely matches what your model is.
 
-**This is important.** Since our library is header only, the unit
+**Important:** Since our library is header only, the unit
 tests are often the only place where a specific EOS may be
 instantiated when ``singularity-eos`` is compiled.  Therefore to
 exercise all code paths, it is best to create an ``EOS`` type
