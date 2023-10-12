@@ -26,8 +26,8 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
 using singularity::IdealGas;
+using EOS = singularity::Variant<IdealGas>;
 
 SCENARIO("Vector EOS", "[VectorEOS][IdealGas]") {
 

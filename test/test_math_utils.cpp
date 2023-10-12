@@ -29,6 +29,7 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 SCENARIO("EOS Variant Type", "[Variant][EOS]") {
+  using singularity::EOS;
   // print out the eos type
   std::cout << demangle(typeid(EOS).name()) << std::endl;
 }
