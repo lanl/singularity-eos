@@ -15,13 +15,18 @@ add_executable(
   eos_unit_tests
   catch2_define.cpp
   eos_unit_test_helpers.hpp
-  test_eos_unit.cpp
+  test_eos_ideal.cpp
   test_eos_gruneisen.cpp
   test_eos_sap_polynomial.cpp
   test_eos_vinet.cpp
   test_eos_noble_abel.cpp
   test_eos_stiff.cpp
   test_eos_helmholtz.cpp
+  test_eos_modifiers.cpp
+  test_eos_vector.cpp
+  test_eos_tabulated.cpp
+  test_eos_stellar_collapse.cpp
+  test_math_utils.cpp
   )
 
 if(SINGULARITY_TEST_HELMHOLTZ)
