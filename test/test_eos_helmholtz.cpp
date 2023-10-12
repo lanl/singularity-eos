@@ -22,7 +22,8 @@
 #include <limits>
 #include <string>
 
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 
