@@ -71,7 +71,7 @@ inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN
   }
 }
 
-template<typename E1, typename E2>
+template <typename E1, typename E2>
 inline void compare_two_eoss(const E1 &&test_e, const E2 &&ref_e) {
   // compare all individual member functions with 1 as inputs,
   // this function is meant to catch mis-implementations of

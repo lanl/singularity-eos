@@ -40,6 +40,7 @@
 - [[PR177]](https://github.com/lanl/singularity-eos/pull/177) added EOSPAC vector functions
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR310]](https://github.com/lanl/singularity-eos/pull/310) Speed up and clean up tests
 - [[PR295]](https://github.com/lanl/singularity-eos/pull/295) Add fast logs to singularity-eos
 - [[PR246]](https://github.com/lanl/singularity-eos/pull/246) Update CMake with upstream changes
 - [[PR223]](https://github.com/lanl/singularity-eos/pull/223) Update ports-of-call and add portable error handling

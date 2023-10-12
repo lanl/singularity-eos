@@ -25,8 +25,8 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::StiffGas;
 using singularity::IdealGas;
+using singularity::StiffGas;
 using EOS = singularity::Variant<IdealGas, StiffGas>;
 
 SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {

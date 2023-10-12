@@ -26,8 +26,8 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::NobleAbel;
 using singularity::IdealGas;
+using singularity::NobleAbel;
 using EOS = singularity::Variant<IdealGas, NobleAbel>;
 
 SCENARIO("NobleAbel1", "[NobleAbel][NobleAbel1]") {
