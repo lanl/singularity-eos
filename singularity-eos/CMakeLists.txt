@@ -69,8 +69,6 @@ endif()
 
 if (SINGULARITY_USE_FORTRAN)
   list(APPEND EOS_SRCS eos/singularity_eos.f90)
-  set_source_files_properties(eos/singularity_eos.f90
-                              PROPERTIES Fortran_PREPROCESS ON)
   list(APPEND EOS_SRCS eos/singularity_eos.cpp)
   list(APPEND EOS_HEADERS eos/singularity_eos.hpp)
   # would rather handle this more robustly, being sloppy for now
