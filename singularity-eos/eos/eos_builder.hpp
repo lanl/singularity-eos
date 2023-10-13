@@ -15,17 +15,12 @@
 #ifndef _SINGULARITY_EOS_EOS_EOS_BUILDER_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_BUILDER_HPP_
 
-#include <map>
-#include <mpark/variant.hpp>
-#include <ports-of-call/portability.hpp>
-#include <singularity-eos/eos/eos.hpp>
-#include <string>
-#include <unordered_set>
+#include <utility>
 
-// Actually all we need
+#include <ports-of-call/portability.hpp>
+
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
-#include <utility>
 
 namespace singularity {
 namespace EOSBuilder {
