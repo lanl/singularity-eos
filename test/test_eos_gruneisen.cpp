@@ -17,7 +17,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 
@@ -25,8 +26,8 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
 using singularity::Gruneisen;
+using EOS = singularity::Variant<Gruneisen>;
 
 PORTABLE_INLINE_FUNCTION Real QuadFormulaMinus(Real a, Real b, Real c) {
   return (-b - std::sqrt(b * b - 4 * a * c)) / (2 * a);

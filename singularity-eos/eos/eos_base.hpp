@@ -130,7 +130,7 @@ class EosBase {
 
   // Generic evaluator
   template <typename Functor_t>
-  PORTABLE_INLINE_FUNCTION void Evaluate(Functor_t &f) const {
+  constexpr void Evaluate(Functor_t &f) const {
     CRTP copy = *(static_cast<CRTP const *>(this));
     f(copy);
   }
