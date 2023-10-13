@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------#
+//------------------------------------------------------------------------------
 // © 2021-2023. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
@@ -10,9 +10,18 @@
 // paid-up, irrevocable worldwide license in this material to reproduce,
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
-//------------------------------------------------------------------------------#
+//------------------------------------------------------------------------------
 
-#include <iostream> // debug
-#include <singularity-eos/eos/eos_builder.hpp>
+#include <singularity-eos/eos/eos.hpp>
 
-namespace singularity {} // namespace singularity
+using namespace singularity;
+
+#define DECLARE_MODS(x)                                                                  \
+  template class ShiftedEOS<x>;                                                          \
+  template class ScaledEOS<x>;                                                           \
+  template class UnitSystem<x>
+
+// Just explicitly declare some templated classes to speed up compile
+// times. Just pick the most commonly used ones.
+DECLARE_MODS(IdealGas);
+DECLARE_MODS(Gruneisen);

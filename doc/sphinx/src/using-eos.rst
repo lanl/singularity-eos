@@ -473,35 +473,43 @@ EOS Builder
 The inclusion of modifiers can make building a desired equation of
 state somewhat cumbersome. To handle this, we have implemented the
 ``EOSBuilder`` machinery. ``EOSBuilder`` is a set of functions that
-provides a declarative interface for building an equation of state
-object.
+provides a way to iteratively build up an equation of state object.
 
 The EOS Builder functions and types are defined in the
 ``singularity::EOSBuilder`` namespace. The key function is
 
-.. cpp:function:: EOS EOSBuilder::buildEOS(EOSBuilder::EOSType t, EOSBuilder::params_t base_params, EOSBuilder::modifiers_t modifiers)
+.. code-block:: cpp
 
-* ``EOSBuilder::EOSType`` is an enum class with names that match the various EOS classes defined in :ref:`the models section <models>`; for example, ``EOSBuilder::EOSType::IdealGas``.
-* ``EOSBuilder::params_t`` is a dictionary object with some type erasure, which maps strings to the types ``std::string``, ``int``, or ``Real``. It is used to map parameter names to their values for class constructors.
-* ``EOSBuilder::modifiers_t`` is a dictionary from the ``EOSModifier`` enum class, which works identically to the ``EOSType`` enum but for modifiers, to ``params_t`` objects, specifying the constructor values for each modifier.
+  template <template <class...> typename Mod, typename... Ts, typename... Args>
+  singularity::Variant<Ts...> Modify(const Variant<Ts...> &eos, Args &&...args);
 
-Putting it all together, initializing an ``IdealGas`` with
-``EOSBuilder`` looks something like this:
+where ``Mod`` is an EOS modifier, ``Variant`` is either your
+user-defined custom EOS variant type, or the pre-defined ``EOS`` type,
+the ``eos`` object is an EOS you'd like to modify (stored as a
+variant), and ``args`` are the additional arguments to the constructor
+of ``Mod`` beyond the object to modify. For esample, initializing an
+``IdealGas`` equation of state that is optionally shifted and scaled
+might look something like this:
 
 .. code-block:: cpp
 
   using namespace singularity;
-  EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-  EOSBuilder::modifiers_t modifiers;
-  EOSBuilder::params_t base_params, shifted_params, scaled_params;
-  base_params["Cv"].emplace<Real>(Cv);
-  base_params["gm1"].emplace<Real>(gm1);
-  shifted_params["shift"].emplace<Real>(shift);
-  scaled_params["scale"].emplace<Real>(scale);
-  modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
-  modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
-  EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+  EOS eos = IdealGas(gm1, cv);
+  if (do_shift) {
+    eos = EOSBuilder::Modify<ShiftedEOS>(eos, shift);
+  }
+  if (do_scale) {
+    eos = EOSBuilder::Modify<ScaledEOS>(eos, scale);
+  }
 
+The advantage of this approach is the EOS can be built up
+iteratively.
+
+.. warning::
+
+  Note that order of modifiers matters, and if you want follow this
+  approach, you must ensure that all combinations of types that you may
+  want to iteratively build up are present in the variant.
 
 .. _eos methods reference section:
 
