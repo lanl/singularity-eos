@@ -35,6 +35,7 @@ using singularity::ShiftedEOS;
 
 namespace EOSBuilder = singularity::EOSBuilder;
 namespace thermalqs = singularity::thermalqs;
+using EOSBuilder::Modify;
 
 SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
 
@@ -63,32 +64,36 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
       }
     }
     WHEN("We use the EOSBuilder") {
-      EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-      EOSBuilder::modifiers_t modifiers;
-      EOSBuilder::params_t base_params, shifted_params, scaled_params;
-      base_params["Cv"].emplace<Real>(Cv);
-      base_params["gm1"].emplace<Real>(gm1);
-      shifted_params["shift"].emplace<Real>(shift);
-      scaled_params["scale"].emplace<Real>(scale);
-      modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
-      modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
-      EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+      // EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
+      // EOSBuilder::modifiers_t modifiers;
+      // EOSBuilder::params_t base_params, shifted_params, scaled_params;
+      // base_params["Cv"].emplace<Real>(Cv);
+      // base_params["gm1"].emplace<Real>(gm1);
+      // shifted_params["shift"].emplace<Real>(shift);
+      // scaled_params["scale"].emplace<Real>(scale);
+      // modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
+      // modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
+      // EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+      EOS eos = IdealGas(gm1, Cv);
+      eos = Modify<ShiftedEOS>(eos, shift);
+      eos = Modify<ScaledEOS>(eos, scale);
       THEN("The shift and scale parameters pass through correctly") {
         REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
       WHEN("We add a ramp") {
-        EOSBuilder::params_t ramp_params;
+        //EOSBuilder::params_t ramp_params;
         Real r0 = 1;
         Real a = 1;
         Real b = 0;
         Real c = 0;
-        ramp_params["r0"].emplace<Real>(r0);
-        ramp_params["a"].emplace<Real>(a);
-        ramp_params["b"].emplace<Real>(b);
-        ramp_params["c"].emplace<Real>(c);
-        modifiers[EOSBuilder::EOSModifier::BilinearRamp] = ramp_params;
+        //ramp_params["r0"].emplace<Real>(r0);
+        //ramp_params["a"].emplace<Real>(a);
+        //ramp_params["b"].emplace<Real>(b);
+        //ramp_params["c"].emplace<Real>(c);
+        //modifiers[EOSBuilder::EOSModifier::BilinearRamp] = ramp_params;
         THEN("The EOS is constructed correctly") {
-          auto eos_ramped = EOSBuilder::buildEOS(type, base_params, modifiers);
+          auto eos_ramped = Modify<BilinearRampEOS>(eos, r0, a, b, c);
+	  //EOSBuilder::buildEOS(type, base_params, modifiers);
         }
       }
     }

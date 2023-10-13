@@ -18,7 +18,31 @@
 #include <type_traits>
 
 namespace singularity {
-namespace detail {
+namespace types {
+
+// Some generic variatic utilities
+// ======================================================================
+
+// Backport of C++17 bool_constant.
+// With C++17, can be replaced with
+// using std::bool_constant
+template <bool B>
+using bool_constant = std::integral_constant<bool, B>;
+
+// Implementation of std::conjunction/std::disjunction without C++17
+// With C++17, can be replaced with
+// using std::disjunction
+template<bool...> struct bool_pack{};
+template<bool... Bs>
+using conjunction = std::is_same<bool_pack<true,Bs...>, bool_pack<Bs..., true>>;
+template<bool... Bs>
+struct disjunction : bool_constant<!conjunction<!Bs...>::value>{};
+
+// Checks if T is contained in the pack Ts
+template<typename T, typename... Ts>
+constexpr bool contains_v(){ 
+  return disjunction<std::is_same<T, Ts>::value...>::value;
+}
 
 // variadic list
 template <typename... Ts>
@@ -156,7 +180,7 @@ constexpr auto pack_size(type_list<Ts...>) {
   return sizeof...(Ts);
 }
 
-} // namespace detail
+} // namespace types
 } // namespace singularity
 
 #endif // SINGULARITY_EOS_BASE_VARIADIC_UTILS_HPP_
