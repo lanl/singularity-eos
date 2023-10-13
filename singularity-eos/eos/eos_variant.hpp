@@ -930,7 +930,10 @@ class Variant {
 
   inline constexpr Variant UnmodifyOnce() {
     return mpark::visit(
-        [](auto &eos) { return eos_variant<EOSs...>(eos.UnmodifyOnce()); }, eos_);
+        [](auto &eos) -> eos_variant<EOSs...> {
+          return eos_variant<EOSs...>(eos.UnmodifyOnce());
+        },
+        eos_);
   }
 
   inline constexpr Variant GetUnmodifiedObject() {
@@ -943,9 +946,7 @@ class Variant {
 
   PORTABLE_INLINE_FUNCTION
   unsigned long PreferredInput() const noexcept {
-    return mpark::visit(
-        [](const auto &eos) -> eos_variant<EOSs...> { return eos.PreferredInput(); },
-        eos_);
+    return mpark::visit([](const auto &eos) { return eos.PreferredInput(); }, eos_);
   }
 
   PORTABLE_INLINE_FUNCTION
