@@ -216,7 +216,7 @@ void load_eos_spiner(const std::string &filename, const std::vector<int> &matids
   for (int matid : matids) {
     if (matid > 0) { // non-analytic
       eos_h.push_back(SpinerEOSDependsRhoT(filename, matid))
-      eos_d.push_back(eos_h.back().GetOnDevice());
+          eos_d.push_back(eos_h.back().GetOnDevice());
     }
   }
 }

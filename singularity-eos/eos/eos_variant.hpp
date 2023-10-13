@@ -62,7 +62,7 @@ class Variant {
             typename std::enable_if<
                 !std::is_same<Variant, typename std::decay<EOSChoice>::type>::value,
                 bool>::type = true>
-  PORTABLE_INLINE_FUNCTION EOSChoice get() {
+  PORTABLE_INLINE_FUNCTION EOSChoice get() const {
     return mpark::get<EOSChoice>(eos_);
   }
 
@@ -935,12 +935,17 @@ class Variant {
 
   inline constexpr Variant GetUnmodifiedObject() {
     return mpark::visit(
-        [](auto &eos) { return eos_variant<EOSs...>(eos.GetUnmodifiedObject()); }, eos_);
+        [](auto &eos) -> eos_variant<EOSs...> {
+          return eos_variant<EOSs...>(eos.GetUnmodifiedObject());
+        },
+        eos_);
   }
 
   PORTABLE_INLINE_FUNCTION
   unsigned long PreferredInput() const noexcept {
-    return mpark::visit([](const auto &eos) { return eos.PreferredInput(); }, eos_);
+    return mpark::visit(
+        [](const auto &eos) -> eos_variant<EOSs...> { return eos.PreferredInput(); },
+        eos_);
   }
 
   PORTABLE_INLINE_FUNCTION
