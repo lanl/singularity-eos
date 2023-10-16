@@ -47,7 +47,7 @@ Variant<Ts...> ModifyHelper(std::false_type, const Variant<Ts...> &var,
 
 // Base case
 template <template <class...> typename Mod, typename... Ts, typename... Args>
-Variant<Ts...> ModifyDispatcher(const Variant<Ts...> &var, const type_list<> &tl,
+constexpr auto ModifyDispatcher(const Variant<Ts...> &var, const type_list<> &tl,
                                 Args &&...args) {
   return var;
 }
@@ -59,7 +59,7 @@ Variant<Ts...> ModifyDispatcher(const Variant<Ts...> &var, const type_list<> &tl
 // ModifyHelper<Mod>(no,...)  method.
 template <template <class...> typename Mod, typename U, typename... Rest, typename... Ts,
           typename... Args>
-Variant<Ts...> ModifyDispatcher(const Variant<Ts...> &var,
+constexpr auto ModifyDispatcher(const Variant<Ts...> &var,
                                 const type_list<U, Rest...> &tl, Args &&...args) {
   constexpr bool type_in_variant =
       (contains_v<U, Ts...>() && contains_v<Mod<U>, Ts...>());
