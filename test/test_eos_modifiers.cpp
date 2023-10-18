@@ -80,8 +80,8 @@ static constexpr const auto scaled_of_unit_or_rel =
 static constexpr const auto scaled_of_shifted =
     transform_variadic_list(shifted, al<ScaledEOS>{});
 // combined list of all scaled EOS
-static constexpr const auto scaled =
-    singularity::variadic_utils::concat(scaled_1, scaled_of_unit_or_rel, scaled_of_shifted);
+static constexpr const auto scaled = singularity::variadic_utils::concat(
+    scaled_1, scaled_of_unit_or_rel, scaled_of_shifted);
 // create combined list
 static constexpr const auto combined_list_1 =
     singularity::variadic_utils::concat(full_eos_list, shifted, scaled, unit_or_rel);
