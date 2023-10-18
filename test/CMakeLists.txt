@@ -29,6 +29,7 @@ add_executable(
   test_eos_modifiers.cpp
   test_eos_vector.cpp
   test_math_utils.cpp
+  test_variadic_utils.cpp
   )
 
 add_executable(

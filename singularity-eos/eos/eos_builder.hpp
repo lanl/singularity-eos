@@ -29,6 +29,18 @@ namespace EOSBuilder {
 // namespace.
 using namespace variadic_utils;
 
+template <template <class...> typename Mod, typename U, typename... Ts>
+using IsModifiable =
+    conjunction<contains<U, Ts...>::value, contains<Mod<U>, Ts...>::value>;
+template <template <class...> typename Mod, typename U, typename... Ts>
+constexpr bool is_modifiable(const Variant<Ts...> &var) {
+  return IsModifiable<Mod, U, Ts...>::value;
+}
+template <template <class...> typename Mod, typename U, typename... Ts>
+constexpr bool is_modifiable(const U &u, const Variant<Ts...> &var) {
+  return IsModifiable<Mod, U, Ts...>::value;
+}
+
 // Recursive functions needed for the Modify function JMM: Note this
 // machinery would be a LOT easier in C++17, with constexpr if.  To
 // mimic constexpr if, I use tag dispatch here. I need two separate
@@ -57,12 +69,12 @@ constexpr auto ModifyDispatcher(const Variant<Ts...> &var, const type_list<> &tl
 // are in the type list for the variant. If yes, it dispatches to the
 // ModifyHelper<Mod>(yes,...) method, otherwise, the
 // ModifyHelper<Mod>(no,...)  method.
+
 template <template <class...> typename Mod, typename U, typename... Rest, typename... Ts,
           typename... Args>
 constexpr auto ModifyDispatcher(const Variant<Ts...> &var,
                                 const type_list<U, Rest...> &tl, Args &&...args) {
-  constexpr bool type_in_variant =
-      (contains_v<U, Ts...>() && contains_v<Mod<U>, Ts...>());
+  constexpr bool type_in_variant = IsModifiable<Mod, U, Ts...>::value;
   return ModifyHelper<Mod>(bool_constant<type_in_variant>(), var, tl,
                            std::forward<Args>(args)...);
 }
@@ -95,7 +107,9 @@ template <template <class...> typename Mod, typename U, typename... Rest, typena
           typename... Args>
 Variant<Ts...> ModifyHelper(const Variant<Ts...> &var, const type_list<U, Rest...> &tl,
                             Args &&...args) {
-  return detail::ModifyDispatcher<Mod>(var, tl, std::forward<Args>(args)...);
+  constexpr bool is_modifiable = IsModifiable<Mod, U, Ts...>::value;
+  return ModifyHelper<Mod>(bool_constant<is_modifiable>(), var, tl,
+                           std::forward<Args>(args)...);
 }
 } // namespace detail
 
@@ -121,7 +135,7 @@ Variant<Ts...> ModifyHelper(const Variant<Ts...> &var, const type_list<U, Rest..
 template <template <class...> typename Mod, typename... Ts, typename... Args>
 Variant<Ts...> Modify(const Variant<Ts...> &var, Args &&...args) {
   type_list<Ts...> tl;
-  return detail::ModifyDispatcher<Mod>(var, tl, std::forward<Args>(args)...);
+  return detail::ModifyHelper<Mod>(var, tl, std::forward<Args>(args)...);
 }
 
 } // namespace EOSBuilder

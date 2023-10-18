@@ -41,8 +41,11 @@ struct disjunction : bool_constant<!conjunction<!Bs...>::value> {};
 
 // Checks if T is contained in the pack Ts
 template <typename T, typename... Ts>
+using contains = disjunction<std::is_same<T, Ts>::value...>;
+
+template <typename T, typename... Ts>
 constexpr bool contains_v() {
-  return disjunction<std::is_same<T, Ts>::value...>::value;
+  return contains<T, Ts...>::value;
 }
 
 // variadic list
