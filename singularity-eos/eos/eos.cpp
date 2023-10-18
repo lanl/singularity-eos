@@ -24,7 +24,7 @@
 // wrong:
 // 1. CMake will be unable to infer a proper linker
 //    so one must be specified by hand.
-// 2. no dynamic library file (e.g., "*.a" will be generated,
+// 2. no dynamic library file (e.g., "*.a") will be generated,
 //    but dependencies that link against it, such as another library,
 //    or in our case, tests, will look for it. This will lead to
 //    a failure of the downstream library at link time.
