@@ -27,7 +27,7 @@ namespace EOSBuilder {
 
 // Just import the variadic utils namespace int the EOSBuilder
 // namespace.
-using namespace types;
+using namespace variadic_utils;
 
 // Recursive functions needed for the Modify function JMM: Note this
 // machinery would be a LOT easier in C++17, with constexpr if.  To

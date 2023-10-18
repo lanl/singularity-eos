@@ -18,7 +18,7 @@
 #include <type_traits>
 
 namespace singularity {
-namespace types {
+namespace variadic_utils {
 
 // Some generic variatic utilities
 // ======================================================================
@@ -181,7 +181,7 @@ constexpr auto pack_size(type_list<Ts...>) {
   return sizeof...(Ts);
 }
 
-} // namespace types
+} // namespace variadic_utils
 } // namespace singularity
 
 #endif // SINGULARITY_EOS_BASE_VARIADIC_UTILS_HPP_
