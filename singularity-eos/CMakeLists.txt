@@ -44,7 +44,7 @@ set(EOS_HEADERS
     eos/eos_stiff.hpp
 )
 
-set(EOS_SRCS eos/eos.cpp)
+set(EOS_SRCS "")
 
 if (SINGULARITY_BUILD_CLOSURE)
   list(APPEND EOS_HEADERS

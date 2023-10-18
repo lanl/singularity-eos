@@ -390,6 +390,8 @@ if(SINGULARITY_USE_FORTRAN)
   target_include_directories(
     singularity-eos INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                               $<INSTALL_INTERFACE:include/singularity-eos/eos>)
+else() # Needed because cmake improperly infers linker for header-only
+  set_target_properties(singularity-eos PROPERTIES LINKER_LANGUAGE CXX)
 endif() # SINGULARITY_USE_FORTRAN
 
 target_include_directories(
