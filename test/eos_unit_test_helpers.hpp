@@ -22,6 +22,10 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include <limits>
+#include <sstream>
+#include <iomanip>
+
 // typename demangler
 #ifdef __GNUG__
 #include <cstdlib>
@@ -64,9 +68,16 @@ PORTABLE_INLINE_FUNCTION Real myAtan(Real x, Real shift, Real scale, Real offset
 template <typename X, typename Y, typename Z, typename ZT, typename XN, typename YN>
 inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN yname,
                           Real tol = 1e-12) {
+  assert(num > 0);
+  using underlying_t = typename std::remove_cv<typename std::remove_reference<decltype(x[0])>::type>::type;
   for (int i = 0; i < num; i++) {
-    INFO("i: " << i << ", " << xname << ": " << x[i] << ", " << yname << ": " << y[i]
-               << ", Value: " << z[i] << ", True Value: " << ztrue[i]);
+    auto s = std::ostringstream{};
+    s << std::setprecision(std::numeric_limits<underlying_t>::max_digits10) 
+      << std::scientific
+      << "i: " << i << ", " << xname << ": " << x[i] << ", " 
+      << yname << ": " << y[i] << ", Value: " << z[i] 
+      << ", True Value: " << ztrue[i];
+    INFO(s.str());
     CHECK(isClose(z[i], ztrue[i], 1e-12));
   }
 }
