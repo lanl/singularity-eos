@@ -84,8 +84,9 @@ cmake_dependent_option(
   "SINGULARITY_BUILD_TESTS;SINGUALRITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
 cmake_dependent_option(SINGULARITY_TEST_PYTHON "Test the Python bindings" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_PYTHON" OFF)
-cmake_dependent_option(SINGULARITY_TEST_HELMHOLTZ "Test the Helmholtz equation of state" ON
-                       "SINGULARITY_BUILD_TESTS;SINGULARITY_USE_HELMHOLTZ" OFF)
+cmake_dependent_option(
+  SINGULARITY_TEST_HELMHOLTZ "Test the Helmholtz equation of state" ON
+  "SINGULARITY_BUILD_TESTS;SINGULARITY_USE_HELMHOLTZ" OFF)
 
 # modify flags options
 option(SINGULARITY_BETTER_DEBUG_FLAGS "Better debug flags for singularity" ON)
@@ -96,11 +97,12 @@ option(SINGULARITY_USE_SINGLE_LOGS
        "Use single precision logs. Can harm accuracy." OFF)
 option(SINGULARITY_USE_TRUE_LOG_GRIDDING
        "Use grids that conform to log spacing." OFF)
-# TODO(JMM): Should this automatically be activated when true log
-# gridding is off?
-cmake_dependent_option(SINGULARITY_USE_HIGH_RISK_MATH
-        "Use integer aliased logs, may not be portable" OFF
-        "NOT SINGULARITY_USE_TRUE_LOG_GRIDDING" OFF)
+# TODO(JMM): Should this automatically be activated when true log gridding is
+# off?
+cmake_dependent_option(
+  SINGULARITY_USE_HIGH_RISK_MATH
+  "Use integer aliased logs, may not be portable" OFF
+  "NOT SINGULARITY_USE_TRUE_LOG_GRIDDING" OFF)
 
 # misc options
 option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
@@ -236,8 +238,9 @@ endif()
 if(SINGULARITY_USE_SINGLE_LOGS)
   target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_SINGLE_LOGS)
 endif()
-if (SINGULARITY_USE_HIGH_RISK_MATH)
-  target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_HIGH_RISK_MATH)
+if(SINGULARITY_USE_HIGH_RISK_MATH)
+  target_compile_definitions(singularity-eos
+                             PUBLIC SINGULARITY_USE_HIGH_RISK_MATH)
 endif()
 
 if(SINGULARITY_TEST_SESAME)
@@ -447,7 +450,7 @@ target_compile_options(
          -use_fast_math
          > # release
          > # cuda
-  PUBLIC -fmax-errors=3)
+)
 
 target_link_options(singularity-eos PRIVATE ${xlfix})
 
