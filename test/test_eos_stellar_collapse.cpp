@@ -44,7 +44,7 @@ SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
     constexpr int N2 = 100;
     constexpr int N1 = 101;
     constexpr int N0 = 102;
-    StellarCollapse::Grid_t g2(0, 1, N2);
+    StellarCollapse::Grid_t g2(1.0/N2, 1, N2);
     StellarCollapse::Grid_t g1(1, 3, N1);
     StellarCollapse::Grid_t g0(2, 4, N0);
     StellarCollapse::DataBox db(N2, N1, N0);
