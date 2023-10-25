@@ -33,6 +33,10 @@ template <template <class...> typename Mod, typename U, typename... Ts>
 using IsModifiable =
     conjunction<contains<U, Ts...>::value, contains<Mod<U>, Ts...>::value>;
 template <template <class...> typename Mod, typename U, typename... Ts>
+constexpr bool is_modifiable(const type_list<Ts...> &var) {
+  return IsModifiable<Mod, U, Ts...>::value;
+}
+template <template <class...> typename Mod, typename U, typename... Ts>
 constexpr bool is_modifiable(const Variant<Ts...> &var) {
   return IsModifiable<Mod, U, Ts...>::value;
 }
