@@ -595,7 +595,7 @@ class EosBase {
     // base msg length 32 + 5 chars = 37 chars
     // + 1 char for null terminator
     // maximum allowed EOS length = 44 chars
-    char msg[impl::MAX_NUM_CHARS] = "Entropy is not enabled for the '";
+    char msg[impl::MAX_NUM_CHARS] = "Singularity-EOS: Entropy is not enabled for the '";
     impl::StrCat(msg, eosname);
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
@@ -609,7 +609,8 @@ class EosBase {
     // base msg length 32 + 5 chars = 37 chars
     // + 1 char for null terminator
     // maximum allowed EOS length = 44 chars
-    char msg[impl::MAX_NUM_CHARS] = "MinInternalEnergyFromDensity() is not enabled for the '";
+    char msg[impl::MAX_NUM_CHARS] = 
+        "Singularity-EOS: MinInternalEnergyFromDensity() is not enabled for the '";
     impl::StrCat(msg, eosname);
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
