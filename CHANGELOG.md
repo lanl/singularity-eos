@@ -4,6 +4,7 @@
 - [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
+- [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Fixed EOSPAC unit conversion errors for scalar lookups
 - [[PR296]](https://github.com/lanl/singularity-eos/pull/296) changed `CMAKE_SOURCE_DIR` to `PROJECT_SOURCE_DIR` to fix downstream submodule build
 - [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options 
 - [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
@@ -22,6 +23,9 @@
 - [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
 
 ### Added (new features/APIs/variables/...)
+- [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added EOSPAC option functionality in class constructor
+- [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new function for returning the minimum energy as a function of density for an EOS (only EOSPAC at the moment)
+- [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new Fortran API for simple pressure and bulk moduli lookups
 - [[PR304]](https://github.com/lanl/singularity-eos/pull/304) added a Newton-Raphson root find for use with the Helmholtz EoS
 - [[PR265]](https://github.com/lanl/singularity-eos/pull/265) Add missing UnitSystem modifier combinations to variant and EOSPAC
 - [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
