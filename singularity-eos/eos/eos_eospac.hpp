@@ -1174,7 +1174,8 @@ class EOSPAC : public EosBase<EOSPAC> {
         {"BulkModulusFromDensityInternalEnergy", 6},
         {"GruneisenParamFromDensityTemperature", 4},
         {"GruneisenParamFromDensityInternalEnergy", 5},
-        {"MinInternalEnergyFromDensity", 1},};
+        {"MinInternalEnergyFromDensity", 1},
+    };
     return nbuffers;
   }
 };
