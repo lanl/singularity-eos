@@ -62,7 +62,7 @@ class Variant {
             typename std::enable_if<
                 !std::is_same<Variant, typename std::decay<EOSChoice>::type>::value,
                 bool>::type = true>
-  EOSChoice get() {
+  PORTABLE_INLINE_FUNCTION EOSChoice get() {
     return mpark::get<EOSChoice>(eos_);
   }
 
@@ -72,6 +72,11 @@ class Variant {
   }
 
   // Place member functions here
+  template <typename Functor_t>
+  constexpr void Evaluate(Functor_t &f) const {
+    return mpark::visit([&f](const auto &eos) { return eos.Evaluate(f); }, eos_);
+  }
+
   PORTABLE_INLINE_FUNCTION
   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {

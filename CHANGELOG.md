@@ -5,6 +5,7 @@
 
 ### Fixed (Repair bugs, etc)
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Fixed EOSPAC unit conversion errors for scalar lookups
+- [[PR316]](https://github.com/lanl/singularity-eos/pull/316) removed `fmax-errors=3` from `singularity-eos` compile flags
 - [[PR296]](https://github.com/lanl/singularity-eos/pull/296) changed `CMAKE_SOURCE_DIR` to `PROJECT_SOURCE_DIR` to fix downstream submodule build
 - [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options 
 - [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
@@ -26,6 +27,7 @@
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added EOSPAC option functionality in class constructor
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new function for returning the minimum energy as a function of density for an EOS (only EOSPAC at the moment)
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new Fortran API for simple pressure and bulk moduli lookups
+- [[PR306]](https://github.com/lanl/singularity-eos/pull/306) Added generic Evaluate method
 - [[PR304]](https://github.com/lanl/singularity-eos/pull/304) added a Newton-Raphson root find for use with the Helmholtz EoS
 - [[PR265]](https://github.com/lanl/singularity-eos/pull/265) Add missing UnitSystem modifier combinations to variant and EOSPAC
 - [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
@@ -43,6 +45,7 @@
 - [[PR177]](https://github.com/lanl/singularity-eos/pull/177) added EOSPAC vector functions
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR310]](https://github.com/lanl/singularity-eos/pull/310) Speed up and clean up tests
 - [[PR295]](https://github.com/lanl/singularity-eos/pull/295) Add fast logs to singularity-eos
 - [[PR246]](https://github.com/lanl/singularity-eos/pull/246) Update CMake with upstream changes
 - [[PR223]](https://github.com/lanl/singularity-eos/pull/223) Update ports-of-call and add portable error handling

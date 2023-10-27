@@ -16,8 +16,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <limits>
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 
@@ -25,8 +25,9 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
+using singularity::IdealGas;
 using singularity::StiffGas;
+using EOS = singularity::Variant<IdealGas, StiffGas>;
 
 SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
   GIVEN("Parameters for a StiffGas EOS") {
@@ -362,7 +363,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas][StiffGas4]") {
     //  Create the EOS
     EOS host_eos = StiffGas(gm1, Cv, Pinf, qq);
     EOS eos = host_eos.GetOnDevice();
-    EOS ideal_eos = singularity::IdealGas(gm1, Cv);
+    EOS ideal_eos = IdealGas(gm1, Cv);
     GIVEN("Densities and energies") {
       constexpr int num = 1;
 #ifdef PORTABILITY_STRATEGY_KOKKOS

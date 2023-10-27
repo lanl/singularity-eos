@@ -17,7 +17,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 
@@ -25,8 +26,8 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
 using singularity::SAP_Polynomial;
+using EOS = singularity::Variant<SAP_Polynomial>;
 
 SCENARIO("SAP_Polynomial EOS", "Check if eos returns expected values") {
   GIVEN("Parameters for a SAP_Polynomial EOS") {
