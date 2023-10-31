@@ -21,6 +21,7 @@
 - [[PR228]](https://github.com/lanl/singularity-eos/pull/228) added untracked header files in cmake
 - [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
 - [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
+- [[PR308]](https://github.com/lanl/singularity-eos/pull/308) spack builds +fortran now compile via correct blocking out of interfaces via preprocessor ifdef
 
 ### Added (new features/APIs/variables/...)
 - [[PR306]](https://github.com/lanl/singularity-eos/pull/306) Added generic Evaluate method
@@ -48,10 +49,12 @@
 - [[PR234]](https://github.com/lanl/singularity-eos/pull/234) update ports-of-call to correct for undefined behavior in error handling
 - [[PR219]](https://github.com/lanl/singularity-eos/pull/219) Removed static analysis from re-git pipeline
 - [[PR233]](https://github.com/lanl/singularity-eos/pull/233) Exposed entropy for the EOS type (now required for future EOS)
+- [[PR308]](https://github.com/lanl/singularity-eos/pull/308) Fortran initialization interface functions no longer require modifier arrays, they are optional parameters.
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR190]](https://github.com/lanl/singularity-eos/pull/190) update CI on re-git
 - [[PR245]](https://github.com/lanl/singularity-eos/pull/245) Separating get_sg_eos to other files. Build/compilation improvements, warning fixes/suppression.
+- [[PR308]](https://github.com/lanl/singularity-eos/pull/308) Added a fortran test.
 
 ### Removed (removing behavior/API/varaibles/...)
 - [[PR293]](https://github.com/lanl/singularity-eos/pull/293) Removing PTofRE function. This will no longer be callable downstream.
