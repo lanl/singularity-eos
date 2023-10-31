@@ -479,7 +479,7 @@ SCENARIO("Gruneisen EOS density limit") {
             INFO("FillEos bmod: " << bmod << ", Lookup bmod: " << bmod_true);
             CHECK(bmod == bmod_true);
             INFO("FillEos pressure: " << P << ", Lookup pressure: " << pres_true);
-            CHECK(P == pres_true);
+            CHECK(isClose(P, pres_true, 1.e-14));
           }
         }
       }

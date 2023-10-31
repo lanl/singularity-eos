@@ -393,6 +393,7 @@ if(SINGULARITY_USE_FORTRAN)
   target_include_directories(
     singularity-eos INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
                               $<INSTALL_INTERFACE:include/singularity-eos/eos>)
+  set_target_properties(singularity-eos PROPERTIES Fortran_PREPROCESS ON)
 endif() # SINGULARITY_USE_FORTRAN
 
 target_include_directories(

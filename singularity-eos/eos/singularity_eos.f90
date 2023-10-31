@@ -40,10 +40,19 @@ module singularity_eos
     init_sg_NobleAbel_f,&
     init_sg_SAP_Polynomial_f,&
     init_sg_StiffGas_f,&
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_HELMHOLTZ
     init_sg_Helmholtz_f,&
+#endif
+! SINGULARITY_USE_HELMHOLTZ
     init_sg_SpinerDependsRhoT_f,&
     init_sg_SpinerDependsRhoSie_f,&
+#endif
+! SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_EOSPAC
     init_sg_eospac_f,&
+#endif
+! SINGULARITY_USE_EOSPAC
     get_sg_eos_f,&
     finalize_sg_eos_f
 
@@ -164,7 +173,8 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_SAP_Polynomial
   end interface
-
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_HELMHOLTZ
   interface
     integer(kind=c_int) function &
       init_sg_Helmholtz(matindex, eos, filename, rad, gas, coul, ion, ele, &
@@ -179,7 +189,8 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_Helmholtz
   end interface
-
+#endif
+! SINGULARITY_USE_HELMHOLTZ
   interface
     integer(kind=c_int) function &
       init_sg_SpinerDependsRhoT(matindex, eos, filename, id, sg_mods_enabled, &
@@ -205,7 +216,9 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_SpinerDependsRhoSie
   end interface
-
+#endif
+! SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_EOSPAC
   interface
     integer(kind=c_int) function &
       init_sg_eospac(matindex, eos, id, sg_mods_enabled, sg_mods_values) &
@@ -216,7 +229,8 @@ module singularity_eos
       type(c_ptr), value, intent(in)    :: sg_mods_enabled, sg_mods_values
     end function init_sg_eospac
   end interface
-
+#endif
+! SINGULARITY_USE_EOSPAC
   interface
     integer(kind=c_int) function &
       get_sg_eos(nmat, ncell, cell_dim,&
@@ -341,10 +355,19 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: gm1, Cv
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_IdealGas(matindex-1, eos%ptr, gm1, Cv, &
-                           c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+                           c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_IdealGas_f
 
   integer function init_sg_Gruneisen_f(matindex, eos, C0, s1, s2, s3, G0, b,&
@@ -355,11 +378,20 @@ contains
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: C0, s1, s2, s3, G0, b, rho0
     real(kind=8), value, intent(in)   :: T0, P0, Cv
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_Gruneisen(matindex-1, eos%ptr, C0, s1, s2, s3, G0, b, rho0,&
-                            T0, P0, Cv, c_loc(sg_mods_enabled), &
-                            c_loc(sg_mods_values))
+                            T0, P0, Cv, c_loc(sg_mods_enabled_use), &
+                            c_loc(sg_mods_values_use))
   end function init_sg_Gruneisen_f
 
   integer function init_sg_JWL_f(matindex, eos, A, B, R1, R2, w, rho0, Cv, &
@@ -368,10 +400,19 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: A, B, R1, R2, w, rho0, Cv
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_JWL(matindex-1, eos%ptr, A, B, R1, R2, w, rho0, Cv, &
-                      c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+                      c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_JWL_f
   
   integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc, &
@@ -381,11 +422,20 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: a, b, k, n, vc, pc, Cv, E0
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_DavisProducts(matindex-1, eos%ptr, a, b, k, n, vc, pc, Cv, &
-                                E0, c_loc(sg_mods_enabled), &
-                                c_loc(sg_mods_values))
+                                E0, c_loc(sg_mods_enabled_use), &
+                                c_loc(sg_mods_values_use))
   end function init_sg_DavisProducts_f
 
   integer function init_sg_DavisReactants_f(matindex, eos, rho0, e0, P0, T0, &
@@ -396,11 +446,20 @@ contains
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: rho0, e0, P0, T0, A, B, C, G0, Z
     real(kind=8), value, intent(in)   :: alpha, Cv0
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_DavisReactants(matindex-1, eos%ptr, rho0, e0, P0, T0, A, B, &
-                                 C, G0, Z, alpha, Cv0, c_loc(sg_mods_enabled), &
-                                 c_loc(sg_mods_values))
+                                 C, G0, Z, alpha, Cv0, c_loc(sg_mods_enabled_use), &
+                                 c_loc(sg_mods_values_use))
   end function init_sg_DavisReactants_f
 
   integer function init_sg_SAP_Polynomial_f(matindex, eos, rho0, a0, a1, a2c, &
@@ -411,11 +470,20 @@ contains
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: rho0, a0, a1, a2c, a2e, a3,&
              b0, b1, b2c, b2e, b3
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_SAP_Polynomial(matindex-1, eos%ptr, rho0, a0, a1, a2c, a2e, &
                                  a3, b0, b1, b2c, b2e, b3, &
-                                 c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+                                 c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_SAP_Polynomial_f
   
   integer function init_sg_StiffGas_f(matindex, eos, gm1, Cv, &
@@ -425,10 +493,19 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: gm1, Cv, Pinf, qq
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_StiffGas(matindex-1, eos%ptr, gm1, Cv, Pinf, qq, &
-                           c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+                           c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_StiffGas_f
 
   integer function init_sg_NobleAbel_f(matindex, eos, gm1, Cv, &
@@ -438,12 +515,22 @@ contains
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
     real(kind=8), value, intent(in)   :: gm1, Cv, bb, qq
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
-    err = init_sg_NobleAbel(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
-                           c_loc(sg_mods_enabled), c_loc(sg_mods_values))
-  end function init_sg_NobleAbel_f
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
+    err = init_sg_NobleAbel(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
+                           c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
+  end function init_sg_NobleAbel_f
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_HELMHOLTZ
   integer function init_sg_Helmholtz_f(matindex, eos, filename, rad, gas, coul, ion, ele, &
                        verbose, sg_mods_enabled, sg_mods_values) &
     result(err)
@@ -452,13 +539,22 @@ contains
     character(len=*, kind=c_char), intent(in)   :: filename
     logical(c_bool), value, intent(in)          :: rad, gas, coul, ion, ele, &
                                                    verbose
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_Helmholtz(matindex-1, eos%ptr, trim(filename)//C_NULL_CHAR, &
                             rad, gas, coul, ion, ele, verbose, &
-                            c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+                            c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_Helmholtz_f
-  
+#endif ! SINGULARITY_USE_HELMHOLTZ
   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
                                                sg_mods_enabled, &
                                                sg_mods_values) &
@@ -467,12 +563,21 @@ contains
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
     integer(c_int), intent(inout)             :: id
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
                                     trim(filename)//C_NULL_CHAR, id, &
-                                    c_loc(sg_mods_enabled), &
-                                    c_loc(sg_mods_values))
+                                    c_loc(sg_mods_enabled_use), &
+                                    c_loc(sg_mods_values_use))
   end function init_sg_SpinerDependsRhoT_f
 
   integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, &
@@ -482,25 +587,44 @@ contains
     integer(c_int), value, intent(in)         :: matindex, id
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
+
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
     err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
                                       trim(filename)//C_NULL_CHAR, id, &
-                                      c_loc(sg_mods_enabled), &
-                                      c_loc(sg_mods_values))
+                                      c_loc(sg_mods_enabled_use), &
+                                      c_loc(sg_mods_values_use))
   end function init_sg_SpinerDependsRhoSie_f
-
+#endif ! SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_EOSPAC
   integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
                                     sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex, id
     type(sg_eos_ary_t), intent(in)    :: eos
-    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
-    err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled), &
-                         c_loc(sg_mods_values))
-  end function init_sg_eospac_f
+    integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    ! local vars
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
+    sg_mods_enabled_use = 0
+    sg_mods_values_use = 0.d0
+    if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
+    if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+
+    err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled_use), &
+                         c_loc(sg_mods_values_use))
+  end function init_sg_eospac_f
+#endif ! SINGULARITY_USE_EOSPAC
   integer function finalize_sg_eos_f(nmat, eos) &
     result(err)
     integer(c_int), value, intent(in) :: nmat
