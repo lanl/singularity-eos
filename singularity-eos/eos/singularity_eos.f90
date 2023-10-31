@@ -43,13 +43,16 @@ module singularity_eos
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
     init_sg_Helmholtz_f,&
-#endif ! SINGULARITY_USE_HELMHOLTZ
+#endif
+! SINGULARITY_USE_HELMHOLTZ
     init_sg_SpinerDependsRhoT_f,&
     init_sg_SpinerDependsRhoSie_f,&
-#endif ! SINGULARITY_USE_SPINER_WITH_HDF5
+#endif
+! SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_EOSPAC
     init_sg_eospac_f,&
-#endif ! SINGULARITY_USE_EOSPAC
+#endif
+! SINGULARITY_USE_EOSPAC
     get_sg_eos_f,&
     finalize_sg_eos_f
 
@@ -186,7 +189,8 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_Helmholtz
   end interface
-#endif ! SINGULARITY_USE_HELMHOLTZ
+#endif
+! SINGULARITY_USE_HELMHOLTZ
   interface
     integer(kind=c_int) function &
       init_sg_SpinerDependsRhoT(matindex, eos, filename, id, sg_mods_enabled, &
@@ -212,7 +216,8 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_SpinerDependsRhoSie
   end interface
-#endif ! SINGULARITY_USE_SPINER_WITH_HDF5
+#endif
+! SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_EOSPAC
   interface
     integer(kind=c_int) function &
@@ -224,7 +229,8 @@ module singularity_eos
       type(c_ptr), value, intent(in)    :: sg_mods_enabled, sg_mods_values
     end function init_sg_eospac
   end interface
-#endif ! SINGULARITY_USE_EOSPAC
+#endif
+! SINGULARITY_USE_EOSPAC
   interface
     integer(kind=c_int) function &
       get_sg_eos(nmat, ncell, cell_dim,&
@@ -352,8 +358,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -375,8 +381,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -397,8 +403,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -419,8 +425,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -443,8 +449,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -467,8 +473,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -490,8 +496,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -512,8 +518,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -536,8 +542,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -560,8 +566,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -584,8 +590,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
@@ -607,8 +613,8 @@ contains
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
-    integer(kind=c_int), dimension(4) :: sg_mods_enabled_use
-    real(kind=8), dimension(6)        :: sg_mods_values_use
+    integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
+    real(kind=8), target, dimension(6)        :: sg_mods_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
