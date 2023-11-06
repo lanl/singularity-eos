@@ -376,10 +376,6 @@ foreach(_header ${EOS_HEADERS})
   list(APPEND _headers singularity-eos/${_header})
 endforeach()
 
-foreach(_mod ${EOS_MODS})
-  list(APPEND _install_mods ${CMAKE_CURRENT_BINARY_DIR}/${_mod})
-endforeach()
-
 foreach(_src ${EOS_SRCS})
   list(APPEND _srcs singularity-eos/${_src})
 endforeach()
@@ -389,9 +385,9 @@ target_sources(singularity-eos PRIVATE ${_srcs} ${_headers})
 # make sure .mods are placed in build path, and installed along with includes
 if(SINGULARITY_USE_FORTRAN)
   set_target_properties(singularity-eos PROPERTIES Fortran_MODULE_DIRECTORY
-                                                   ${CMAKE_CURRENT_BINARY_DIR})
+                                                   ${CMAKE_CURRENT_BINARY_DIR}/fortran)
   target_include_directories(
-    singularity-eos INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    singularity-eos INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/fortran>
                               $<INSTALL_INTERFACE:include/singularity-eos/eos>)
   set_target_properties(singularity-eos PROPERTIES Fortran_PREPROCESS ON)
 endif() # SINGULARITY_USE_FORTRAN
