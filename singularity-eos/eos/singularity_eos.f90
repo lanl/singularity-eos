@@ -515,36 +515,36 @@ contains
 #endif
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
- integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
-                                              sg_mods_enabled, &
-                                              sg_mods_values) &
-   result(err)
-   integer(c_int), value, intent(in)         :: matindex
-   type(sg_eos_ary_t), intent(in)            :: eos
-   character(len=*, kind=c_char), intent(in) :: filename
-   integer(c_int), intent(inout)             :: id
-   integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-   real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
-   err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
-                                   trim(filename)//C_NULL_CHAR, id, &
-                                   c_loc(sg_mods_enabled), &
-                                   c_loc(sg_mods_values))
- end function init_sg_SpinerDependsRhoT_f
+  integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
+                                               sg_mods_enabled, &
+                                               sg_mods_values) &
+    result(err)
+    integer(c_int), value, intent(in)         :: matindex
+    type(sg_eos_ary_t), intent(in)            :: eos
+    character(len=*, kind=c_char), intent(in) :: filename
+    integer(c_int), intent(inout)             :: id
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
+                                    trim(filename)//C_NULL_CHAR, id, &
+                                    c_loc(sg_mods_enabled), &
+                                    c_loc(sg_mods_values))
+  end function init_sg_SpinerDependsRhoT_f
 
- integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, &
-                                                sg_mods_enabled, &
-                                                sg_mods_values) &
-   result(err)
-   integer(c_int), value, intent(in)         :: matindex, id
-   type(sg_eos_ary_t), intent(in)            :: eos
-   character(len=*, kind=c_char), intent(in) :: filename
-   integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
-   real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
-   err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
-                                     trim(filename)//C_NULL_CHAR, id, &
-                                     c_loc(sg_mods_enabled), &
-                                     c_loc(sg_mods_values))
- end function init_sg_SpinerDependsRhoSie_f
+  integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, &
+                                                 sg_mods_enabled, &
+                                                 sg_mods_values) &
+    result(err)
+    integer(c_int), value, intent(in)         :: matindex, id
+    type(sg_eos_ary_t), intent(in)            :: eos
+    character(len=*, kind=c_char), intent(in) :: filename
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
+                                      trim(filename)//C_NULL_CHAR, id, &
+                                      c_loc(sg_mods_enabled), &
+                                      c_loc(sg_mods_values))
+  end function init_sg_SpinerDependsRhoSie_f
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
@@ -561,7 +561,7 @@ contains
   end function init_sg_eospac_f
 #endif
 
-integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
+  integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
     eos, rhos, sies, pressures, len) &
     result(err)
     integer(c_int), intent(in) :: matindex, len
@@ -573,7 +573,7 @@ integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
   end function get_sg_PressureFromDensityInternalEnergy_f
 
 
-integer function get_sg_MinInternalEnergyFromDensity_f(matindex, &
+  integer function get_sg_MinInternalEnergyFromDensity_f(matindex, &
     eos, rhos, sies, len) &
     result(err)
     integer(c_int), intent(in) :: matindex, len
