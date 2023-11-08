@@ -77,9 +77,10 @@ foreach(file ${_install_headers})
 endforeach() # file
 
 # install the fortran modules NB: cmake doesn't provide a clean way to handle
-# mods
-install(FILES ${_install_mods}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/eos)
+if(SINGULARITY_USE_FORTRAN)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fortran/
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/eos)
+endif()
 
 # ----------------------------------------------------------------------------#
 # local export
