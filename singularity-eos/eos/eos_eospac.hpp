@@ -613,8 +613,8 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
     EOS_REAL *P = &pressures[0];
-    EOS_REAL *dPdr = scratch + 1 * num;
-    EOS_REAL *dPde = scratch + 2 * num;
+    EOS_REAL *dPdr = scratch + 0 * num;
+    EOS_REAL *dPde = scratch + 1 * num;
 
     EOS_INTEGER table = PofRE_table_;
     EOS_INTEGER options[3];
@@ -1167,7 +1167,7 @@ class EOSPAC : public EosBase<EOSPAC> {
         {"PressureFromDensityTemperature", 2},
         {"FillEos", 4},
         {"InternalEnergyFromDensityTemperature", 2},
-        {"PressureFromDensityInternalEnergy", 3},
+        {"PressureFromDensityInternalEnergy", 2},
         {"SpecificHeatFromDensityTemperature", 2},
         {"SpecificHeatFromDensityInternalEnergy", 4},
         {"BulkModulusFromDensityTemperature", 6},
