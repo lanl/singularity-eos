@@ -217,6 +217,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     t_.MinInternalEnergyFromDensity(rhos, sies, &scratch[num], num,
                                     std::forward<LambdaIndexer>(lambdas),
                                     std::forward<Transform>(transform));
+    unshift_sies(sies, num);
   }
 
   template <typename LambdaIndexer>
