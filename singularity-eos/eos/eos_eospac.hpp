@@ -56,9 +56,9 @@ using namespace EospacWrapper;
 
 namespace impl_eospac {
 
-inline void SetUpDensityTemperatureScalingOptions(
-    EOS_INTEGER options[], EOS_REAL values[], EOS_INTEGER &nopts,
-    Transform &transform) {
+inline void SetUpDensityTemperatureScalingOptions(EOS_INTEGER options[],
+                                                  EOS_REAL values[], EOS_INTEGER &nopts,
+                                                  Transform &transform) {
   if (!transform.x.is_set() && !transform.y.is_set()) {
     // Default singularity units are sesame density-temperature units so use
     // pass-through
@@ -81,8 +81,8 @@ inline void SetUpDensityTemperatureScalingOptions(
   }
 }
 
-inline void SetUpDensityEnergyScalingOptions(
-    EOS_INTEGER options[], EOS_REAL values[], EOS_INTEGER &nopts, Transform &transform) {
+inline void SetUpDensityEnergyScalingOptions(EOS_INTEGER options[], EOS_REAL values[],
+                                             EOS_INTEGER &nopts, Transform &transform) {
   // Density scaling
   if (transform.x.is_set()) {
     options[nopts] = EOS_X_CONVERT;
@@ -105,8 +105,8 @@ inline void SetUpDensityEnergyScalingOptions(
   ++nopts;
 }
 
-inline void SetUpOutputScalingOption(
-    EOS_INTEGER options[], EOS_REAL values[], EOS_INTEGER &nopts, Transform &transform) {
+inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
+                                     EOS_INTEGER &nopts, Transform &transform) {
   if (transform.f.is_set()) {
     options[nopts] = EOS_F_CONVERT;
     values[nopts] = transform.f.get();
@@ -115,9 +115,9 @@ inline void SetUpOutputScalingOption(
 }
 
 // Overload for when the output needs a singularity conversion as well
-inline void SetUpOutputScalingOption(
-    EOS_INTEGER options[], EOS_REAL values[], EOS_INTEGER &nopts, Transform &transform,
-    EOS_REAL const singularity_unit_conv) {
+inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
+                                     EOS_INTEGER &nopts, Transform &transform,
+                                     EOS_REAL const singularity_unit_conv) {
   options[nopts] = EOS_F_CONVERT;
   values[nopts] = pressureFromSesame(1.0);
   if (transform.f.is_set()) {
@@ -126,7 +126,7 @@ inline void SetUpOutputScalingOption(
   ++nopts;
 }
 
-}
+} // namespace impl_eospac
 
 class EOSPAC : public EosBase<EOSPAC> {
 
@@ -645,7 +645,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_INTEGER options[3];
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
-    
+
     // Set up density/energy unit scaling
     impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
 
@@ -747,8 +747,7 @@ class EOSPAC : public EosBase<EOSPAC> {
       EOS_INTEGER nopts = 0;
 
       // Set up density/energy unit scaling
-      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts,
-                                                         transform);
+      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
 
       eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                          options, values, nopts);
@@ -1007,7 +1006,7 @@ class EOSPAC : public EosBase<EOSPAC> {
 
       // Set up density/energy unit scaling
       impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
-      
+
       eosSafeInterpolate(&table, num, R, E, T, dx, dy, "TofRE", Verbosity::Quiet, options,
                          values, nopts);
     }

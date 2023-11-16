@@ -296,10 +296,9 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   }
 
   template <typename LambdaIndexer>
-  inline void
-  MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
-                               const int num, LambdaIndexer &&lambdas,
-                               Transform &&transform = Transform()) const {
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
     transform.x.apply(rho_unit_);
     transform.f.apply(sie_unit_);
     t_.MinInternalEnergyFromDensity(rhos, sies, scratch, num,
