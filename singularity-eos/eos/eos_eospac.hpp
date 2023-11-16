@@ -152,7 +152,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
-
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
   SG_PIF_NOWARN
@@ -1334,6 +1334,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
 
   return Real(P[0]);
 }
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::MinInternalEnergyFromDensity(const Real rho,
                                                                    Real *lambda) const {
   using namespace EospacWrapper;
