@@ -760,13 +760,13 @@ class EOSPAC : public EosBase<EOSPAC> {
       EOS_INTEGER nopts = 0;
 
       if (transform.x.is_set()) {
-         options[nopts] = EOS_X_CONVERT;
-         values[nopts] = 1.0 / transform.x.get();
-       } else {
-         options[nopts] = EOS_XY_PASSTHRU;
-         values[nopts] = 1.0;
-       }
-       ++nopts;
+        options[nopts] = EOS_X_CONVERT;
+        values[nopts] = 1.0 / transform.x.get();
+      } else {
+        options[nopts] = EOS_XY_PASSTHRU;
+        values[nopts] = 1.0;
+      }
+      ++nopts;
 
       eosSafeInterpolate(&table, num, R, T, NE, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                          options, values, nopts);
