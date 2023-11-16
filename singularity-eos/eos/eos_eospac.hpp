@@ -759,8 +759,14 @@ class EOSPAC : public EosBase<EOSPAC> {
       EOS_REAL values[2];
       EOS_INTEGER nopts = 0;
 
-      // Set up density/energy unit scaling
-      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
+      if (transform.x.is_set()) {
+         options[nopts] = EOS_X_CONVERT;
+         values[nopts] = 1.0 / transform.x.get();
+       } else {
+         options[nopts] = EOS_XY_PASSTHRU;
+         values[nopts] = 1.0;
+       }
+       ++nopts;
 
       eosSafeInterpolate(&table, num, R, T, NE, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                          options, values, nopts);
