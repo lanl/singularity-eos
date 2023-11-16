@@ -80,8 +80,8 @@ class StiffGas : public EosBase<StiffGas> {
 
   PORTABLE_INLINE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
-    // TODO: Calculate zero temperature minimum equation
-    return 0.0;
+    MinInternalEnergyIsNotEnabled("StiffGas");
+  return 0.0;
   };
 
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
