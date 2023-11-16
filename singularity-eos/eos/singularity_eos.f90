@@ -599,7 +599,8 @@ contains
                             rad, gas, coul, ion, ele, verbose, &
                             c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_Helmholtz_f
-#endif ! SINGULARITY_USE_HELMHOLTZ
+#endif
+! SINGULARITY_USE_HELMHOLTZ
 
   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
                                                sg_mods_enabled, &
@@ -649,7 +650,8 @@ contains
                                       c_loc(sg_mods_enabled_use), &
                                       c_loc(sg_mods_values_use))
   end function init_sg_SpinerDependsRhoSie_f
-#endif ! SINGULARITY_USE_SPINER_WITH_HDF5
+#endif
+! SINGULARITY_USE_SPINER_WITH_HDF5
 
 #ifdef SINGULARITY_USE_EOSPAC
   integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
@@ -671,7 +673,8 @@ contains
     err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled_use), &
                          c_loc(sg_mods_values_use))
   end function init_sg_eospac_f
-#endif ! SINGULARITY_USE_EOSPAC
+#endif
+! SINGULARITY_USE_EOSPAC
 
   integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
     eos, rhos, sies, pressures, len) &
