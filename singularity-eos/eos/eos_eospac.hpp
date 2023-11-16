@@ -54,6 +54,80 @@ using namespace EospacWrapper;
 #define SG_PIF_NOWARN
 #endif // !defind SG_PIF_NOWARN
 
+namespace impl_eospac {
+
+inline void SetUpDensityTemperatureScalingOptions(
+    EOS_INTEGER options[], EOS_REAL values[], EOS_INTEGER &nopts,
+    Transform &transform) {
+  if (!transform.x.is_set() && !transform.y.is_set()) {
+    // Default singularity units are sesame density-temperature units so use
+    // pass-through
+    options[nopts] = EOS_XY_PASSTHRU;
+    values[nopts] = 1.0;
+    ++nopts;
+  } else {
+    // Density scaling
+    if (transform.x.is_set()) {
+      options[nopts] = EOS_X_CONVERT;
+      values[nopts] = 1.0 / transform.x.get();
+      ++nopts;
+    }
+    // Temperature scaling
+    if (transform.y.is_set()) {
+      options[nopts] = EOS_Y_CONVERT;
+      values[nopts] = 1.0 / transform.y.get();
+      ++nopts;
+    }
+  }
+}
+
+inline void SetUpDensityEnergyScalingOptions(
+    EOS_INTEGER options[], EOS_REAL values[], EOS_INTEGER &nopts, Transform &transform) {
+  // Density scaling
+  if (transform.x.is_set()) {
+    options[nopts] = EOS_X_CONVERT;
+    values[nopts] = 1.0 / transform.x.get();
+    ++nopts;
+  }
+  // Sesame energy units differ from singularity so always convert
+  EOS_REAL sie_scale = sieFromSesame(1.0);
+  if (transform.y.is_set()) {
+    sie_scale /= transform.y.get();
+  }
+  // Optimize using pass-through if energy and density are already in sesame units
+  if (!transform.x.is_set() && sie_scale == 1.0) {
+    options[nopts] = EOS_XY_PASSTHRU;
+    values[nopts] = 1.0;
+  } else {
+    options[nopts] = EOS_Y_CONVERT;
+    values[nopts] = sie_scale;
+  }
+  ++nopts;
+}
+
+inline void SetUpOutputScalingOption(
+    EOS_INTEGER options[], EOS_REAL values[], EOS_INTEGER &nopts, Transform &transform) {
+  if (transform.f.is_set()) {
+    options[nopts] = EOS_F_CONVERT;
+    values[nopts] = transform.f.get();
+    ++nopts;
+  }
+}
+
+// Overload for when the output needs a singularity conversion as well
+inline void SetUpOutputScalingOption(
+    EOS_INTEGER options[], EOS_REAL values[], EOS_INTEGER &nopts, Transform &transform,
+    EOS_REAL const singularity_unit_conv) {
+  options[nopts] = EOS_F_CONVERT;
+  values[nopts] = pressureFromSesame(1.0);
+  if (transform.f.is_set()) {
+    values[nopts] *= transform.f.get();
+  }
+  ++nopts;
+}
+
+}
+
 class EOSPAC : public EosBase<EOSPAC> {
 
  public:
@@ -377,24 +451,11 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
 
-    if (transform.x.is_set()) {
-      options[nopts] = EOS_X_CONVERT;
-      values[nopts] = 1.0 / transform.x.get();
-      ++nopts;
-    }
+    // Set up density/energy unit scaling
+    impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
 
-    options[nopts] = EOS_Y_CONVERT;
-    values[nopts] = sieFromSesame(1.0);
-    if (transform.y.is_set()) {
-      values[nopts] /= transform.y.get();
-    }
-    ++nopts;
-
-    if (transform.f.is_set()) {
-      options[nopts] = EOS_F_CONVERT;
-      values[nopts] = transform.f.get();
-      ++nopts;
-    }
+    // Temperature scaling
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform);
 
     eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                        options, values, nopts);
@@ -416,31 +477,14 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_INTEGER options[3];
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
 
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
 
-    options[nopts] = EOS_F_CONVERT;
-    values[nopts] = pressureFromSesame(1.0);
+    // Pressure units differ from singularity so always convert
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
+                                          pressureFromSesame(1.0));
 
-    if (transform.f.is_set()) {
-      values[nopts] *= transform.f.get();
-    }
-    ++nopts;
     eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
                        options, values, nopts);
   }
@@ -575,31 +619,12 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
 
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
 
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
-
-    options[nopts] = EOS_F_CONVERT;
-    values[nopts] = sieFromSesame(1.0);
-
-    if (transform.f.is_set()) {
-      values[nopts] *= transform.f.get();
-    }
-    ++nopts;
+    // Energy units differ from singularity so always convert
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
+                                          sieFromSesame(1.0));
 
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
@@ -620,31 +645,13 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_INTEGER options[3];
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
+    
+    // Set up density/energy unit scaling
+    impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
 
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
-
-    options[nopts] = EOS_F_CONVERT;
-    values[nopts] = pressureFromSesame(1.0);
-
-    if (transform.f.is_set()) {
-      values[nopts] *= transform.f.get();
-    }
-    ++nopts;
+    // Pressure units differ from singularity so always convert
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
+                                          pressureFromSesame(1.0));
 
     eosSafeInterpolate(&table, num, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
                        options, values, nopts);
@@ -663,25 +670,13 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_INTEGER options[3];
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
-    if (!transform.x.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-    }
 
-    options[nopts] = EOS_F_CONVERT;
-    values[nopts] = pressureFromSesame(1.0);
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
 
-    if (transform.f.is_set()) {
-      values[nopts] *= transform.f.get();
-    }
-    ++nopts;
+    // Energy units differ from singularity so always convert
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
+                                          sieFromSesame(1.0));
 
     eosSafeInterpolate(&table, num, R, R, E, dedr, dedr, "EcofD", Verbosity::Quiet,
                        options, values, nopts);
@@ -691,10 +686,10 @@ class EOSPAC : public EosBase<EOSPAC> {
   inline void SpecificHeatFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch, const int num,
       LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+    using namespace EospacWrapper;
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
-    using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
     EOS_REAL *E = scratch + 0 * num;
@@ -707,22 +702,8 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
 
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
 
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
@@ -756,24 +737,18 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *DEDT = dTdr;
     EOS_REAL *DEDR = dTde;
 
+    // TODO: Use direct lookup to reduce scratch usage and allow consistent temperature
+    //       scaling
+
     EOS_INTEGER table = TofRE_table_;
     {
       EOS_INTEGER options[2];
       EOS_REAL values[2];
       EOS_INTEGER nopts = 0;
 
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-
-      options[nopts] = EOS_Y_CONVERT;
-      values[nopts] = sieFromSesame(1.0);
-      if (transform.y.is_set()) {
-        values[nopts] /= transform.y.get();
-      }
-      ++nopts;
+      // Set up density/energy unit scaling
+      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts,
+                                                         transform);
 
       eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                          options, values, nopts);
@@ -785,14 +760,8 @@ class EOSPAC : public EosBase<EOSPAC> {
       EOS_REAL values[2];
       EOS_INTEGER nopts = 0;
 
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-      } else {
-        options[nopts] = EOS_XY_PASSTHRU;
-        values[nopts] = 1.0;
-      }
-      ++nopts;
+      // Set up density/energy unit scaling
+      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
 
       eosSafeInterpolate(&table, num, R, T, NE, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                          options, values, nopts);
@@ -830,22 +799,11 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[2];
     EOS_INTEGER nopts = 0;
 
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
+
+    // TODO: Just use the native bulk modulus lookup instead to reduce scratch usage and
+    //       avoid consistency issues with energy and pressure units
 
     EOS_INTEGER table = EofRT_table_;
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
@@ -908,22 +866,15 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *DPDT = dTdr;
     EOS_REAL *DPDR = dTde;
 
+    // TODO: Use direct lookup to reduce scratch usage
+
     EOS_INTEGER table = TofRE_table_;
     {
       EOS_INTEGER options[2];
       EOS_REAL values[2];
       EOS_INTEGER nopts = 0;
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-      options[nopts] = EOS_Y_CONVERT;
-      values[nopts] = sieFromSesame(1.0);
-      if (transform.y.is_set()) {
-        values[nopts] /= transform.y.get();
-      }
-      ++nopts;
+      // Set up density/energy unit scaling
+      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
       eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                          options, values, nopts);
     }
@@ -1003,22 +954,12 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[2];
     EOS_INTEGER nopts = 0;
 
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
+
+    // TODO: Use direct lookup to reduce scratch memory usage and avoid energy unit
+    //       inconsistencies
+
     EOS_INTEGER table = EofRT_table_;
     eosSafeInterpolate(&table, num, R, T, E, dx, DEDT, "EofRT", Verbosity::Quiet, options,
                        values, nopts);
@@ -1055,24 +996,18 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *Etmp = P;
     EOS_REAL *dy = DEDT;
 
+    // TODO: Use direct lookup to reduce scratch memory usage and avoid temperature unit
+    //       inconsistencies
+
     EOS_INTEGER table = TofRE_table_;
     {
       EOS_INTEGER options[3];
       EOS_REAL values[3];
       EOS_INTEGER nopts = 0;
 
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-
-      options[nopts] = EOS_Y_CONVERT;
-      values[nopts] = sieFromSesame(1.0);
-      if (transform.y.is_set()) {
-        values[nopts] /= transform.y.get();
-      }
-      ++nopts;
+      // Set up density/energy unit scaling
+      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
+      
       eosSafeInterpolate(&table, num, R, E, T, dx, dy, "TofRE", Verbosity::Quiet, options,
                          values, nopts);
     }
