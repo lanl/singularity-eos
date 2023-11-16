@@ -654,24 +654,29 @@ contains
 ! SINGULARITY_USE_SPINER_WITH_HDF5
 
 #ifdef SINGULARITY_USE_EOSPAC
-  integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
-                                    sg_mods_values) &
+  integer function init_sg_eospac_f(matindex, eos, id, eospac_opts_values, &
+                                    sg_mods_enabled, sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex, id
     type(sg_eos_ary_t), intent(in)    :: eos
+    real(kind=8),        dimension(:), target, optional, intent(inout) :: eospac_opts_values
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    real(kind=8),        dimension(:), target, optional, intent(inout) :: sg_mods_values
+
     ! local vars
     integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
     real(kind=8), target, dimension(6)        :: sg_mods_values_use
+    real(kind=8), target, dimension(6)        :: eospac_opts_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
+    eospac_opts_values = 0.d0
+    if(present(eospac_opts_values)) eospac_opts_values_use = eospac_opts_values
     if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
     if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
 
-    err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled_use), &
-                         c_loc(sg_mods_values_use))
+    err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(eospac_opts_values_use), &
+                         c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_eospac_f
 #endif
 ! SINGULARITY_USE_EOSPAC
