@@ -75,6 +75,9 @@ void pAlpha2BilinearRampParams(const T &eos, const Real alpha0, const Real Pe,
 template <typename T>
 class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
  public:
+  // Vector functions that overload the scalar versions declared here.
+  SG_ADD_BASE_CLASS_USINGS(BilinearRampEOS<T>)
+
   // move semantics ensures dynamic memory comes along for the ride
   BilinearRampEOS(T &&t, const Real r0, const Real a, const Real b, const Real c)
       : t_(std::forward<T>(t)), r0_(r0), a_(a), b_(b), c_(c),
@@ -437,9 +440,6 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
                               Real *lambda = nullptr) const {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
-
-  // Vector functions that overload the scalar versions declared here.
-  SG_ADD_BASE_CLASS_USINGS(BilinearRampEOS<T>)
 
   inline constexpr bool IsModified() const { return true; }
 
