@@ -29,7 +29,7 @@ nmat = 5
 res = init_sg_eos_f(nmat, eos)
 mat = 1
 
-res = init_sg_IdealGas_f(mat, eos, 1.4, 1.0d7)
+res = init_sg_IdealGas_f(mat, eos, 1.4d0, 1.0d7)
 
 mat = mat + 1
 res = init_sg_Gruneisen_f(mat, eos, 394000.d0, 1.489d0, 0.d0, 0.d0, 2.02d0, 0.47d0,&
