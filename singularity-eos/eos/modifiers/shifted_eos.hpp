@@ -92,7 +92,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   }
   PORTABLE_FUNCTION
   Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
-    return t_.MinInternalEnergyFromDensity(rho, lambda);
+    return t_.MinInternalEnergyFromDensity(rho, lambda) + shift_;
   }
   PORTABLE_FUNCTION
   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
