@@ -308,10 +308,7 @@ PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityInternalEnergy(
 }
 PORTABLE_INLINE_FUNCTION Real Vinet::MinInternalEnergyFromDensity(const Real rho,
                                                                   Real *lambda) const {
-#ifndef NDEBUG
-  printf("WARNING: MinInternalEnergtyFromDensity is not defined for Vinet EOS.");
-#endif
-
+  MinInternalEnergyIsNotEnabled("Vinet");
   return 0.0;
 }
 PORTABLE_INLINE_FUNCTION Real Vinet::EntropyFromDensityInternalEnergy(
