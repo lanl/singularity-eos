@@ -12,9 +12,9 @@ class SingularityEos(CMakePackage, CudaPackage):
     """Singularity-EOS: A collection of closure models and tools useful for
     multiphysics codes."""
 
-    homepage = "https://re-git.lanl.gov/xcap/oss/singularity-eos"
-    url = "https://re-git.lanl.gov/xcap/oss/singularity-eos.git"
-    git = "ssh://git@re-git.lanl.gov:10022/xcap/oss/singularity-eos.git"
+    homepage = "https://lanl.github.io/singularity-eos/main/index.html"
+    git = "https://github.com/lanl/singularity-eos.git"
+    url = "https://github.com/lanl/singularity-eos/archive/refs/tags/release-1.6.1.tar.gz"
 
     maintainers = ["rbberger"]
 
