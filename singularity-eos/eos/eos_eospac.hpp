@@ -664,7 +664,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = &sies[0];
-    EOS_REAL *dedr = scratch + 1 * num;
+    EOS_REAL *dedr = scratch + 0 * num;
 
     EOS_INTEGER table = EcofD_table_;
     EOS_INTEGER options[3];
