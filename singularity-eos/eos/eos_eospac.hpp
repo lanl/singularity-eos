@@ -1327,7 +1327,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
   EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
   EOS_REAL values[]{sieFromSesame(1.0), pressureFromSesame(1.0)};
   EOS_INTEGER nopts = 2;
-  EOS_REAL R[1] = {rho}, E[1] = {sie}, P[1], dPdr[1], dPde[1], Ec[1];
+  EOS_REAL R[1] = {rho}, E[1] = {sie}, P[1], dPdr[1], dPde[1];
   EOS_INTEGER nxypairs = 1;
   EOS_INTEGER table = PofRE_table_;
   eosSafeInterpolate(&table, nxypairs, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
