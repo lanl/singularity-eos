@@ -58,7 +58,7 @@ namespace impl_eospac {
 
 inline void SetUpDensityTemperatureScalingOptions(EOS_INTEGER options[],
                                                   EOS_REAL values[], EOS_INTEGER &nopts,
-                                                  Transform &transform) {
+                                                  const Transform &transform) {
   if (!transform.x.is_set() && !transform.y.is_set()) {
     // Default singularity units are sesame density-temperature units so use
     // pass-through
@@ -82,7 +82,8 @@ inline void SetUpDensityTemperatureScalingOptions(EOS_INTEGER options[],
 }
 
 inline void SetUpDensityEnergyScalingOptions(EOS_INTEGER options[], EOS_REAL values[],
-                                             EOS_INTEGER &nopts, Transform &transform) {
+                                             EOS_INTEGER &nopts,
+                                             const Transform &transform) {
   // Density scaling
   if (transform.x.is_set()) {
     options[nopts] = EOS_X_CONVERT;
@@ -106,7 +107,7 @@ inline void SetUpDensityEnergyScalingOptions(EOS_INTEGER options[], EOS_REAL val
 }
 
 inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
-                                     EOS_INTEGER &nopts, Transform &transform) {
+                                     EOS_INTEGER &nopts, const Transform &transform) {
   if (transform.f.is_set()) {
     options[nopts] = EOS_F_CONVERT;
     values[nopts] = transform.f.get();
@@ -116,7 +117,7 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
 
 // Overload for when the output needs a singularity conversion as well
 inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
-                                     EOS_INTEGER &nopts, Transform &transform,
+                                     EOS_INTEGER &nopts, const Transform &transform,
                                      EOS_REAL const singularity_unit_conv) {
   options[nopts] = EOS_F_CONVERT;
   values[nopts] = pressureFromSesame(1.0);
