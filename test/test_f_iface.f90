@@ -19,20 +19,30 @@ use singularity_eos
 ! no implicit vars
 implicit none
 ! variable declaration
-integer                                   :: nmat, res
+integer                                   :: nmat, res, mat
 type(sg_eos_ary_t)                        :: eos
 
 ! set test parameters
-nmat = 3
+nmat = 5
 
 ! allocate and initialize eos's
 res = init_sg_eos_f(nmat, eos)
+mat = 1
 
-res = init_sg_Gruneisen_f(1, eos, 394000.d0, 1.489d0, 0.d0, 0.d0, 2.02d0, 0.47d0,&
+res = init_sg_IdealGas_f(mat, eos, 1.4d0, 1.0d7)
+
+mat = mat + 1
+res = init_sg_Gruneisen_f(mat, eos, 394000.d0, 1.489d0, 0.d0, 0.d0, 2.02d0, 0.47d0,&
                        8.93d0, 297.0d0, 1.0d6, 0.383d7)
-res = init_sg_DavisReactants_f(2, eos, 1.890d0, 4.115d10, 1.0d6, 297.0d0, 1.8d0,&
+
+mat = mat + 1
+res = init_sg_JWL_f(mat, eos, 1.36177d13, 7.199d11, 6.2d0, 2.2d0, 0.5d0, 1.895d0, 1.0d7)
+
+mat = mat + 1
+res = init_sg_DavisReactants_f(mat, eos, 1.890d0, 4.115d10, 1.0d6, 297.0d0, 1.8d0,&
                             4.6d0, 0.34d0, 0.56d0,0.d0, 0.4265d0, 0.001074d10)
-res = init_sg_DavisProducts_f(3, eos, 0.798311d0, 0.58d0, 1.35d0, 2.66182d0,&
+mat = mat + 1
+res = init_sg_DavisProducts_f(mat, eos, 0.798311d0, 0.58d0, 1.35d0, 2.66182d0,&
                            0.75419d0, 3.2d10, 0.001072d10, 0.d0)
 
 ! cleanup

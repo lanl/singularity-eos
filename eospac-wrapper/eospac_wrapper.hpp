@@ -19,11 +19,18 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include <eos_Interface.h> // eospac API
 
 namespace EospacWrapper {
-
+enum class eospacSplit { none = 0, splitNumProp = 1, splitIdealGas = 2, splitCowan = 3 };
+enum class eospacMonotonicity {
+  none = 0,
+  monotonicityX = 1,
+  monotonicityXY = 2,
+  monotonicityY = 3
+};
 inline double densityToSesame(const double CodeTemp) { return CodeTemp; }
 inline double densityFromSesame(const double sesTemp) { return sesTemp; }
 inline double temperatureToSesame(const double CodeTemp) { return CodeTemp; }
@@ -87,11 +94,19 @@ void eosGetMetadata(int matid, SesameMetadata &metadata,
 
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[], Verbosity eospacWarn,
-                        bool invert_at_setup = false);
+                        bool invert_at_setup = false, EOS_REAL insert_data = 0.0,
+                        eospacMonotonicity monotonicity = eospacMonotonicity::none,
+                        bool apply_smoothing = false,
+                        eospacSplit apply_splitting = eospacSplit::none,
+                        bool linear_interp = false);
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[],
                         const std::vector<std::string> &table_names, Verbosity eospacWarn,
-                        bool invert_at_setup = false);
+                        bool invert_at_setup = false, EOS_REAL insert_data = 0.0,
+                        eospacMonotonicity monotonicity = eospacMonotonicity::none,
+                        bool apply_smoothing = false,
+                        eospacSplit apply_splitting = eospacSplit::none,
+                        bool linear_interp = false);
 
 // output is boolean mask. 1 for no errors. 0 for errors.
 bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals[],

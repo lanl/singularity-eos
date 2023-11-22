@@ -117,6 +117,14 @@ class Variant {
         eos_);
   }
   PORTABLE_INLINE_FUNCTION
+  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    return mpark::visit(
+        [&rho, &lambda](const auto &eos) {
+          return eos.MinInternalEnergyFromDensity(rho, lambda);
+        },
+        eos_);
+  }
+  PORTABLE_INLINE_FUNCTION
   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                      Real *lambda = nullptr) const {
     return mpark::visit(
@@ -469,7 +477,49 @@ class Variant {
         },
         eos_);
   }
+  ///
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+                                        std::forward<RealIndexer>(sies), num, lambdas);
+  }
 
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &num, &lambdas](const auto &eos) {
+          return eos.MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+                                                  std::forward<RealIndexer>(sies), num,
+                                                  std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real *scratch, const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+                                        std::forward<RealIndexer>(sies), scratch, num,
+                                        lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real *scratch, const int num,
+                                           LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.MinInternalEnergyFromDensity(
+              std::forward<ConstRealIndexer>(rhos), std::forward<RealIndexer>(sies),
+              scratch, num, std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+  ///
   template <typename RealIndexer, typename ConstRealIndexer>
   inline void
   EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,

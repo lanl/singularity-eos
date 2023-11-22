@@ -53,6 +53,9 @@ module singularity_eos
     init_sg_eospac_f,&
 #endif
 ! SINGULARITY_USE_EOSPAC
+    get_sg_PressureFromDensityInternalEnergy_f,&
+    get_sg_MinInternalEnergyFromDensity_f,&
+    get_sg_BulkModulusFromDensityInternalEnergy_f,&
     get_sg_eos_f,&
     finalize_sg_eos_f
 
@@ -173,6 +176,7 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_SAP_Polynomial
   end interface
+
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
   interface
@@ -191,6 +195,7 @@ module singularity_eos
   end interface
 #endif
 ! SINGULARITY_USE_HELMHOLTZ
+
   interface
     integer(kind=c_int) function &
       init_sg_SpinerDependsRhoT(matindex, eos, filename, id, sg_mods_enabled, &
@@ -218,19 +223,58 @@ module singularity_eos
   end interface
 #endif
 ! SINGULARITY_USE_SPINER_WITH_HDF5
+
 #ifdef SINGULARITY_USE_EOSPAC
   interface
     integer(kind=c_int) function &
-      init_sg_eospac(matindex, eos, id, sg_mods_enabled, sg_mods_values) &
+      init_sg_eospac(matindex, eos, id, eospac_opts_values, sg_mods_enabled, &
+                     sg_mods_values) &
       bind(C, name='init_sg_eospac')
       import
       integer(c_int), value, intent(in) :: matindex, id
       type(c_ptr), value, intent(in)    :: eos
       type(c_ptr), value, intent(in)    :: sg_mods_enabled, sg_mods_values
+      type(c_ptr), value, intent(in)    :: eospac_opts_values
     end function init_sg_eospac
   end interface
 #endif
 ! SINGULARITY_USE_EOSPAC
+
+  interface
+   integer(kind=c_int) function &
+       get_sg_PressureFromDensityInternalEnergy(matindex, eos, rhos, sies,&
+                                               pressures, len) &
+       bind(C, name='get_sg_PressureFromDensityInternalEnergy')
+       import
+       integer(c_int), value, intent(in) :: matindex, len
+       type(c_ptr), value, intent(in) :: eos, rhos, sies
+       type(c_ptr), value, intent(in) :: pressures
+    end function
+  end interface
+
+  interface
+   integer(kind=c_int) function &
+       get_sg_MinInternalEnergyFromDensity(matindex, eos, rhos, sies,&
+                                           len) &
+       bind(C, name='get_sg_MinInternalEnergyFromDensity')
+       import
+       integer(c_int), value, intent(in) :: matindex, len
+       type(c_ptr), value, intent(in) :: eos, rhos, sies
+    end function
+  end interface
+
+  interface
+     integer(kind=c_int) function &
+       get_sg_BulkModulusFromDensityInternalEnergy(matindex, eos, rhos, sies,&
+                                               bmods, len) &
+       bind(C, name='get_sg_BulkModulusFromDensityInternalEnergy')
+       import
+       integer(c_int),value, intent(in) :: matindex, len
+       type(c_ptr), value, intent(in) :: eos, rhos, sies
+       type(c_ptr), value, intent(in) :: bmods
+    end function
+  end interface
+  
   interface
     integer(kind=c_int) function &
       get_sg_eos(nmat, ncell, cell_dim,&
@@ -529,6 +573,7 @@ contains
     err = init_sg_NobleAbel(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
                            c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_NobleAbel_f
+
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
   integer function init_sg_Helmholtz_f(matindex, eos, filename, rad, gas, coul, ion, ele, &
@@ -554,7 +599,9 @@ contains
                             rad, gas, coul, ion, ele, verbose, &
                             c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_Helmholtz_f
-#endif ! SINGULARITY_USE_HELMHOLTZ
+#endif
+! SINGULARITY_USE_HELMHOLTZ
+
   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
                                                sg_mods_enabled, &
                                                sg_mods_values) &
@@ -603,28 +650,70 @@ contains
                                       c_loc(sg_mods_enabled_use), &
                                       c_loc(sg_mods_values_use))
   end function init_sg_SpinerDependsRhoSie_f
-#endif ! SINGULARITY_USE_SPINER_WITH_HDF5
+#endif
+! SINGULARITY_USE_SPINER_WITH_HDF5
+
 #ifdef SINGULARITY_USE_EOSPAC
-  integer function init_sg_eospac_f(matindex, eos, id, sg_mods_enabled, &
-                                    sg_mods_values) &
+  integer function init_sg_eospac_f(matindex, eos, id, eospac_opts_values, &
+                                    sg_mods_enabled, sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex, id
     type(sg_eos_ary_t), intent(in)    :: eos
+    real(kind=8),        dimension(:), target, optional, intent(inout) :: eospac_opts_values
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
-    real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
+    real(kind=8),        dimension(:), target, optional, intent(inout) :: sg_mods_values
+
     ! local vars
     integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
     real(kind=8), target, dimension(6)        :: sg_mods_values_use
+    real(kind=8), target, dimension(6)        :: eospac_opts_values_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
+    eospac_opts_values = 0.d0
+    if(present(eospac_opts_values)) eospac_opts_values_use = eospac_opts_values
     if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
     if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
 
-    err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(sg_mods_enabled_use), &
-                         c_loc(sg_mods_values_use))
+    err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(eospac_opts_values_use), &
+                         c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_eospac_f
-#endif ! SINGULARITY_USE_EOSPAC
+#endif
+! SINGULARITY_USE_EOSPAC
+
+  integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
+    eos, rhos, sies, pressures, len) &
+    result(err)
+    integer(c_int), intent(in) :: matindex, len
+    real(kind=8), dimension(:,:,:), intent(in), target:: rhos, sies
+    real(kind=8), dimension(:,:,:), intent(inout), target:: pressures
+    type(sg_eos_ary_t), intent(in)    :: eos
+    err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
+           eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
+  end function get_sg_PressureFromDensityInternalEnergy_f
+
+  integer function get_sg_MinInternalEnergyFromDensity_f(matindex, &
+    eos, rhos, sies, len) &
+    result(err)
+    integer(c_int), intent(in) :: matindex, len
+    real(kind=8), dimension(:,:,:), intent(in), target:: rhos
+    real(kind=8), dimension(:,:,:), intent(inout), target:: sies
+    type(sg_eos_ary_t), intent(in)    :: eos
+    err = get_sg_MinInternalEnergyFromDensity(matindex-1, &
+           eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), len)
+  end function get_sg_MinInternalEnergyFromDensity_f
+
+  integer function get_sg_BulkModulusFromDensityInternalEnergy_f(matindex, &
+    eos, rhos, sies, bmods, len) &
+    result(err)
+    integer(c_int), intent(in) :: matindex, len
+    real(kind=8), dimension(:,:,:), intent(in), target:: rhos, sies
+    real(kind=8), dimension(:,:,:), intent(inout), target:: bmods
+    type(sg_eos_ary_t), intent(in)    :: eos
+    err = get_sg_BulkModulusFromDensityInternalEnergy(matindex-1, &
+       eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len)
+  end function get_sg_BulkModulusFromDensityInternalEnergy_f
+  
   integer function finalize_sg_eos_f(nmat, eos) &
     result(err)
     integer(c_int), value, intent(in) :: nmat

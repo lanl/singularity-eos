@@ -271,24 +271,56 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
-int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const enabled,
-                   double *const vals) {
+int init_sg_eospac(const int matindex, EOS *eos, const int id, double *const eospac_vals,
+                   int const *const enabled, double *const vals) {
+
+  using namespace EospacWrapper;
   assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(EOSPAC(id));
+  bool invert_at_setup = eospac_vals[0];
+  double insert_data = eospac_vals[1];
+  eospacMonotonicity monotonicity = static_cast<eospacMonotonicity>(eospac_vals[2]);
+  bool apply_smoothing = eospac_vals[3];
+  eospacSplit apply_splitting = static_cast<eospacSplit>(eospac_vals[4]);
+  bool linear_interp = eospac_vals[5];
+
+  EOS eosi = SGAPPLYMODSIMPLE(
+      EOSPAC(id, invert_at_setup = invert_at_setup, insert_data = insert_data,
+             monotonicity = monotonicity, apply_smoothing = apply_smoothing,
+             apply_splitting = apply_splitting, linear_interp = linear_interp));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
   }
-  EOS eos_ = SGAPPLYMOD(EOSPAC(id));
+  EOS eos_ = SGAPPLYMOD(
+      EOSPAC(id, invert_at_setup = invert_at_setup, insert_data = insert_data,
+             monotonicity = monotonicity, apply_smoothing = apply_smoothing,
+             apply_splitting = apply_splitting, linear_interp = linear_interp));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
-int init_sg_eospac(const int matindex, EOS *eos, const int id) {
-  return init_sg_eospac(matindex, eos, id, def_en, def_v);
+int init_sg_eospac(const int matindex, EOS *eos, const int id,
+                   double *const eospac_vals) {
+  return init_sg_eospac(matindex, eos, id, eospac_vals, def_en, def_v);
 }
 #endif // SINGULARITY_USE_EOSPAC
 
-#undef SGAPPLYMOD
+int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
+                                             const double *sies, double *pressures,
+                                             const int len) {
+  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
+  return 0;
+}
+int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos,
+                                        double *sies, const int len) {
+  eos[matindex].MinInternalEnergyFromDensity(rhos, sies, len);
+  return 0;
+}
+int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos,
+                                                const double *rhos, const double *sies,
+                                                double *bmods, const int len) {
+  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
+  return 0;
+}
 
 int finalize_sg_eos(const int nmat, EOS *&eos, const int own_kokkos) {
   {
