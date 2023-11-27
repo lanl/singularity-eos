@@ -132,6 +132,25 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
 
   eos_CreateTables(NTABLES, tableType, MATID.data(), tableHandle, &errorCode);
 
+  if (errorCode != EOS_OK) {
+    if (eospacWarn != Verbosity::Quiet) {
+      for (int i = 0; i < ntables; i++) {
+        eos_GetErrorCode(&tableHandle[i], &tableHandleErrorCode);
+        eos_GetErrorMessage(&tableHandleErrorCode, errorMessage);
+        std::cerr << "eos_CreateTables ERROR " << tableHandleErrorCode;
+        if (table_names.size() > 0) {
+          std::cerr << " for table names\n\t{";
+          for (auto &name : table_names) {
+            std::cerr << name << ", ";
+          }
+          std::cerr << "}";
+        }
+        std::cerr << ":\n\t" << errorMessage << std::endl;
+      }
+    }
+    return errorCode;
+  }
+
   if (invert_at_setup) {
     EOS_REAL values[] = {1.};
     for (int i = 0; i < ntables; i++) {
