@@ -17,6 +17,7 @@
 
 #include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 using Real = double;
@@ -75,6 +76,13 @@ class Variant {
   template <typename Functor_t>
   constexpr void Evaluate(Functor_t &f) const {
     return mpark::visit([&f](const auto &eos) { return eos.Evaluate(f); }, eos_);
+  }
+
+  // EOS modifier object-oriented API
+  template<template<class> typename Mod>
+  bool CanApplyModifier() const {
+    return mpark::visit(
+        [](const auto &eos) { return eos.CanApplyModifier<Mod, EOSs...>(); }, eos_);
   }
 
   PORTABLE_INLINE_FUNCTION

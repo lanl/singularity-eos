@@ -20,6 +20,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
 namespace mfuncname {
@@ -133,6 +134,19 @@ class EosBase {
   constexpr void Evaluate(Functor_t &f) const {
     CRTP copy = *(static_cast<CRTP const *>(this));
     f(copy);
+  }
+
+  // EOS builder helpers
+  // Checks if an EOS can be modified
+  template<template<class> typename Mod, typename... Ts>
+  bool CanApplyModifier() const {
+    return variadic_utils::contains_v<Mod<CRTP>, Ts...>();
+  }
+  // Modifies an EOS object by pulling out underlying type and modifying it
+  template<template<class> typename Mod, typename... Args>
+  auto Modify(Args &&...args) const {
+    const CRTP &unmodified = *(static_cast<CRTP const *>(this));
+    return Mod<CRTP>(unmodified, std::forward<Args>(args)...);
   }
 
   // Vector member functions
