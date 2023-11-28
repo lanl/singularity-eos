@@ -47,6 +47,7 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   using EosBase<ScaledEOS<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::PressureFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<ScaledEOS<T>>::MinInternalEnergyFromDensity;
   using EosBase<ScaledEOS<T>>::EntropyFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityTemperature;
@@ -90,6 +91,10 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const {
     return t_.PressureFromDensityInternalEnergy(scale_ * rho, inv_scale_ * sie, lambda);
+  }
+  PORTABLE_FUNCTION
+  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    return t_.MinInternalEnergyFromDensity(scale_ * rho, lambda);
   }
   PORTABLE_FUNCTION
   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -202,6 +207,16 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
     t_.PressureFromDensityInternalEnergy(rhos, sies, pressures, scratch, num,
                                          std::forward<LambdaIndexer>(lambdas),
                                          std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
+    transform.x.apply(scale_);
+    t_.MinInternalEnergyFromDensity(rhos, sies, scratch, num,
+                                    std::forward<LambdaIndexer>(lambdas),
+                                    std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>

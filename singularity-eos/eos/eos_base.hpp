@@ -36,7 +36,7 @@ namespace singularity {
 namespace eos_base {
 
 namespace impl {
-constexpr std::size_t MAX_NUM_CHARS = 81;
+constexpr std::size_t MAX_NUM_CHARS = 121;
 // Cuda doesn't have strcat, so we implement it ourselves
 PORTABLE_FORCEINLINE_FUNCTION
 char *StrCat(char *destination, const char *source) {
@@ -69,6 +69,7 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::InternalEnergyFromDensityTemperature;                       \
   using EosBase<EOSDERIVED>::PressureFromDensityTemperature;                             \
   using EosBase<EOSDERIVED>::PressureFromDensityInternalEnergy;                          \
+  using EosBase<EOSDERIVED>::MinInternalEnergyFromDensity;                               \
   using EosBase<EOSDERIVED>::SpecificHeatFromDensityTemperature;                         \
   using EosBase<EOSDERIVED>::SpecificHeatFromDensityInternalEnergy;                      \
   using EosBase<EOSDERIVED>::BulkModulusFromDensityTemperature;                          \
@@ -81,6 +82,7 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
   using EosBase<EOSDERIVED>::EntropyIsNotEnabled;                                        \
+  using EosBase<EOSDERIVED>::MinInternalEnergyIsNotEnabled;                              \
   using EosBase<EOSDERIVED>::IsModified;                                                 \
   using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
   using EosBase<EOSDERIVED>::GetUnmodifiedObject;
@@ -305,6 +307,35 @@ class EosBase {
     PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
                                       std::forward<LambdaIndexer>(lambdas));
   }
+  ///
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas) const {
+    MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+                                 std::forward<RealIndexer>(sies), num,
+                                 std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas,
+                                           Transform && = Transform()) const {
+    MinInternalEnergyFromDensity(rhos, num, std::forward<LambdaIndexer>(lambdas));
+  }
+  ///
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
@@ -597,7 +628,7 @@ class EosBase {
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
 
-  // Default entropy behavior is to return an error
+  // Default entropy behavior is to cause an error
   PORTABLE_FORCEINLINE_FUNCTION
   void EntropyIsNotEnabled(const char *eosname) const {
     // Construct the error message using char* so it works on device
@@ -605,7 +636,22 @@ class EosBase {
     // base msg length 32 + 5 chars = 37 chars
     // + 1 char for null terminator
     // maximum allowed EOS length = 44 chars
-    char msg[impl::MAX_NUM_CHARS] = "Entropy is not enabled for the '";
+    char msg[impl::MAX_NUM_CHARS] = "Singularity-EOS: Entropy is not enabled for the '";
+    impl::StrCat(msg, eosname);
+    impl::StrCat(msg, "' EOS");
+    PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
+  }
+
+  // Default MinInternalEnergyFromDensity behavior is to cause an error
+  PORTABLE_FORCEINLINE_FUNCTION
+  void MinInternalEnergyIsNotEnabled(const char *eosname) const {
+    // Construct the error message using char* so it works on device
+    // WARNING: This needs to be updated if EOS names get longer
+    // base msg length 32 + 5 chars = 37 chars
+    // + 1 char for null terminator
+    // maximum allowed EOS length = 44 chars
+    char msg[impl::MAX_NUM_CHARS] =
+        "Singularity-EOS: MinInternalEnergyFromDensity() is not enabled for the '";
     impl::StrCat(msg, eosname);
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);

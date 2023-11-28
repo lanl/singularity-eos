@@ -1423,11 +1423,23 @@ This is a striaghtforward wrapper of the `EOSPAC`_ library for the
 
 .. code-block::
 
-  EOSPAC(int matid, bool invert_at_setup = false)
+  EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0, eospacMonotonicity monotonicity = eospacMonotonicity::none, bool apply_smoothing = false, eospacSplit apply_splitting = eospacSplit::none, bool linear_interp = false)
 
-where ``matid`` is the unique material number in the database and
+where ``matid`` is the unique material number in the database,
 ``invert_at_setup`` specifies whether or not pre-compute tables of
-temperature as a function of density and energy.
+temperature as a function of density and energy, ``insert_data`` 
+inserts specified number of grid points between original grid points 
+in the `Sesame`_ table, ``monotonicity` enforces monotonicity in x, 
+y or both (:math:`monotonicityX/Y/XY`), ``apply_smoothing`` enables 
+data table smoothing that imposes a linear floor on temperature dependence, 
+forces linear temperature dependence for low temperature, and forces 
+linear density dependence for low and high density, ``apply_splitting`` 
+has the following options for ion data tables not found in the `Sesame`_ 
+database :. :math:`splitNumProp` uses the cold curve plus number-proportional 
+model, :math:`splitIdealGas` uses the cold curve plus ideal gas model 
+and :math:`splitCowan` uses the cold curve plus Cowan-nuclear model 
+for ions and the final option ``linear_interp`` uses linear instead of 
+bilinear interpolation. 
 
 Note for performance reasons this EOS uses a slightly different vector API.
 See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.

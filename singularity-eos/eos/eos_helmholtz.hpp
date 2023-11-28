@@ -493,6 +493,11 @@ class Helmholtz : public EosBase<Helmholtz> {
             thermalqs::pressure | thermalqs::temperature, lambda);
     return p;
   }
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    MinInternalEnergyIsNotEnabled("Helmholtz");
+    return 0.0;
+  }
 
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {

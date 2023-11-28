@@ -132,6 +132,13 @@ if(SINGULARITY_USE_SPINER)
   target_link_libraries(profile_eos singularity-eos::singularity-eos)
 endif()
 
+if(SINGULARITY_USE_FORTRAN)
+  add_executable(ftn_interface test_f_iface.f90)
+  target_link_libraries(ftn_interface singularity-eos::singularity-eos)
+  set_target_properties(ftn_interface PROPERTIES LINKER_LANGUAGE Fortran)
+  add_test(test_fortran_interface ftn_interface)
+endif()
+
 if(SINGULARITY_USE_EOSPAC
    AND SINGULARITY_TEST_SESAME
    AND NOT SINGULARITY_USE_CUDA)
