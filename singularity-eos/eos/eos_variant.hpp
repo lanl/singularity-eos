@@ -17,6 +17,7 @@
 
 #include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -79,10 +80,22 @@ class Variant {
   }
 
   // EOS modifier object-oriented API
-  template<template<class> typename Mod>
-  bool CanApplyModifier() const {
+  template <template <class> typename Mod>
+  constexpr bool ModifiedInVariant() const {
     return mpark::visit(
-        [](const auto &eos) { return eos.CanApplyModifier<Mod, EOSs...>(); }, eos_);
+        [](const auto &eos) { return eos.template ModifiedInList<Mod, EOSs...>(); },
+        eos_);
+  }
+  template <template <class> typename Mod, typename... Args>
+  constexpr auto Modify(Args &&...args) const {
+    PORTABLE_ALWAYS_REQUIRE(ModifiedInVariant<Mod>(), "Modifier must be in variant");
+    return mpark::visit(
+        [&](const auto &eos) {
+          auto modified = eos.template ConditionallyModify<Mod>(
+              variadic_utils::type_list<EOSs...>(), std::forward<Args>(args)...);
+          return eos_variant<EOSs...>(modified);
+        },
+        eos_);
   }
 
   PORTABLE_INLINE_FUNCTION

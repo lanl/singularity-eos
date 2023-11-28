@@ -43,6 +43,15 @@ SCENARIO("Contains works as intended", "[VariadicUtils]") {
   REQUIRE(!variadic_utils::contains_v<Gruneisen, IdealGas, ShiftedEOS<IdealGas>>());
 }
 
+SCENARIO("EOS Variant can check its own modifiability",
+         "[VariadicUtils][EOSBuilder][EOSBase][EOSVariant]") {
+  constexpr Real Cv = 2.0;
+  constexpr Real gm1 = 0.5;
+  Var_t v = IdealGas(gm1, Cv);
+  REQUIRE(v.ModifiedInVariant<ShiftedEOS>());
+  REQUIRE(!v.ModifiedInVariant<ScaledEOS>());
+}
+
 SCENARIO("IsModifiable works as intended", "[VariadicUtils][EOSBuilder]") {
   using namespace EOSBuilder;
   const Var_t v{};

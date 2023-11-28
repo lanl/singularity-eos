@@ -105,8 +105,8 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
     constexpr Real sie = 0.5;
     WHEN("We use the EOSBuilder") {
       EOS eos = IdealGas(gm1, Cv);
-      eos = Modify<ShiftedEOS>(eos, shift);
-      eos = Modify<ScaledEOS>(eos, scale);
+      eos = eos.Modify<ShiftedEOS>(shift);
+      eos = eos.Modify<ScaledEOS>(scale);
       THEN("The shift and scale parameters pass through correctly") {
         REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }

@@ -195,6 +195,19 @@ Modifiers can be composed. For example:
   using namespace singularity;
   auto my_eos = ShiftedEOS<ScaledEOS<IdealGas>>(ScaledEOS(IdealGas(gm1, Cv), scale), shift);
 
+You can build modifiers up iteratively by, for example:
+
+.. code-block:: cpp
+
+  using namespace singularity;
+  EOS eos = IdealGas(gm1, cv);
+  if (do_shift) {
+    eos = eos.template Modify<ShiftedEOS>(shift);
+  }
+  if (do_scale) {
+    eos = eos.template Modify<ScaledEOS>(scale);
+  }
+
 Undoing Modifiers
 ------------------
 

@@ -388,6 +388,34 @@ modifiers. However, note that modifiers do not commute, and only one
 order is supported. The ordering, inside-out, is ``UnitSystem`` or
 ``RelativisticEOS``, then ``ScaledEOS``, then ``ShiftedEOS``.
 
+A modified equation of state can be built up iteratively. To check if
+the equation of state currently stored in the variant can modified,
+you may call
+
+.. cpp:function:: bool ModifiedInVariant<Mod>() const;
+
+where ``Mod`` is the type of the modifier you want to apply, for
+example ``ShiftedEOS``. If this function returns true, then you can
+apply a modifier with the function
+
+.. cpp:function:: Variant Modify<Mod>(Args &&..args) const;
+
+where again ``Mod`` is the modifier you wish to apply, and ``args``
+are the arguments to the constructor for that modifier, e.g., the
+shift. For example, one might build up a shifted or scaled eos with a
+code block like this:
+
+.. code-block:: cpp
+
+  using namespace singularity;
+  EOS eos = IdealGas(gm1, cv);
+  if (do_shift) {
+    eos = eos.template Modify<ShiftedEOS>(shift);
+  }
+  if (do_scale) {
+    eos = eos.template Modify<ScaledEOS>(scale);
+  }
+
 Relevant to the broad ``singularity-eos`` API, EOS models provide
 introspection. To check if an EOS is modified, call
 
@@ -470,24 +498,21 @@ temperature or density and specific internal energy.
 EOS Builder
 ------------
 
-The inclusion of modifiers can make building a desired equation of
-state somewhat cumbersome. To handle this, we have implemented the
-``EOSBuilder`` machinery. ``EOSBuilder`` is a set of functions that
-provides a way to iteratively build up an equation of state object.
-
-The EOS Builder functions and types are defined in the
-``singularity::EOSBuilder`` namespace. The key function is
+The iterative construction of modifiers described above and in the
+:ref:`modifiers<modifiers>` section is object oriented. For
+convenience, we also provide a procedural, dispatch-based approach in
+the ``EOSBuilder`` namespace and header. The key function is
 
 .. code-block:: cpp
 
-  template <template <class...> typename Mod, typename... Ts, typename... Args>
+  template <template <class> typename Mod, typename... Ts, typename... Args>
   singularity::Variant<Ts...> Modify(const Variant<Ts...> &eos, Args &&...args);
 
 where ``Mod`` is an EOS modifier, ``Variant`` is either your
 user-defined custom EOS variant type, or the pre-defined ``EOS`` type,
 the ``eos`` object is an EOS you'd like to modify (stored as a
 variant), and ``args`` are the additional arguments to the constructor
-of ``Mod`` beyond the object to modify. For esample, initializing an
+of ``Mod`` beyond the object to modify. For example, initializing an
 ``IdealGas`` equation of state that is optionally shifted and scaled
 might look something like this:
 
@@ -501,15 +526,6 @@ might look something like this:
   if (do_scale) {
     eos = EOSBuilder::Modify<ScaledEOS>(eos, scale);
   }
-
-The advantage of this approach is the EOS can be built up
-iteratively.
-
-.. warning::
-
-  Note that order of modifiers matters, and if you want follow this
-  approach, you must ensure that all combinations of types that you may
-  want to iteratively build up are present in the variant.
 
 .. _eos methods reference section:
 
