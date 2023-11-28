@@ -77,24 +77,26 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
   EOS_INTEGER errorCode =
       eosSafeLoad(1, matid, commentsType, commentsHandle, {"EOS_Comments"}, eospacWarn);
   EOS_INTEGER eospacComments = commentsHandle[0];
+  bool commentTableCreated = (errorCode == EOS_OK);
 
-  if (errorCode == EOS_OK) {
-    std::vector<EOS_CHAR> comments;
-    EOS_REAL commentLen;
+  EOS_REAL commentLen = -1;
+  if (commentTableCreated) {
     EOS_INTEGER commentItem = EOS_Cmnt_Len;
     eosSafeTableInfo(commentsHandle, 1, &commentItem, &commentLen, eospacWarn);
+  }
 
+  if (commentLen > 0) {
+    std::vector<EOS_CHAR> comments;
     comments.resize(static_cast<int>(commentLen));
     metadata.comments.resize(comments.size());
 
-    if (comments.size() > 0)
+    if (comments.size() > 0) {
       eosSafeTableCmnts(&eospacComments, comments.data(), eospacWarn);
+    }
     for (size_t i = 0; i < comments.size(); i++) {
       metadata.comments[i] = comments[i];
     }
     metadata.name = getName(metadata.comments);
-
-    eosSafeDestroy(1, commentsHandle, eospacWarn);
   } else {
     std::string matid_str = std::to_string(matid);
     if (eospacWarn != Verbosity::Quiet) {
@@ -103,6 +105,12 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
     }
     metadata.name = "No name for matid " + matid_str;
     metadata.comments = "Comment unavailable for matid " + matid_str;
+  }
+
+  // Note: table could be created even if the commentLen is nonsense, so we
+  // need to separate this block from the above logic
+  if (commentTableCreated) {
+    eosSafeDestroy(1, commentsHandle, eospacWarn);
   }
 }
 
@@ -131,6 +139,25 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
   EOS_CHAR errorMessage[EOS_MaxErrMsgLen];
 
   eos_CreateTables(NTABLES, tableType, MATID.data(), tableHandle, &errorCode);
+
+  if (errorCode != EOS_OK) {
+    if (eospacWarn != Verbosity::Quiet) {
+      for (int i = 0; i < ntables; i++) {
+        eos_GetErrorCode(&tableHandle[i], &tableHandleErrorCode);
+        eos_GetErrorMessage(&tableHandleErrorCode, errorMessage);
+        std::cerr << "eos_CreateTables ERROR " << tableHandleErrorCode;
+        if (table_names.size() > 0) {
+          std::cerr << " for table names\n\t{";
+          for (auto &name : table_names) {
+            std::cerr << name << ", ";
+          }
+          std::cerr << "}";
+        }
+        std::cerr << ":\n\t" << errorMessage << std::endl;
+      }
+    }
+    return errorCode;
+  }
 
   if (invert_at_setup) {
     EOS_REAL values[] = {1.};
