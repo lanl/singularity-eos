@@ -388,6 +388,34 @@ modifiers. However, note that modifiers do not commute, and only one
 order is supported. The ordering, inside-out, is ``UnitSystem`` or
 ``RelativisticEOS``, then ``ScaledEOS``, then ``ShiftedEOS``.
 
+A modified equation of state can be built up iteratively. To check if
+the equation of state currently stored in the variant can modified,
+you may call
+
+.. cpp:function:: bool ModifiedInVariant<Mod>() const;
+
+where ``Mod`` is the type of the modifier you want to apply, for
+example ``ShiftedEOS``. If this function returns true, then you can
+apply a modifier with the function
+
+.. cpp:function:: Variant Modify<Mod>(Args &&..args) const;
+
+where again ``Mod`` is the modifier you wish to apply, and ``args``
+are the arguments to the constructor for that modifier, e.g., the
+shift. For example, one might build up a shifted or scaled eos with a
+code block like this:
+
+.. code-block:: cpp
+
+  using namespace singularity;
+  EOS eos = IdealGas(gm1, cv);
+  if (do_shift) {
+    eos = eos.template Modify<ShiftedEOS>(shift);
+  }
+  if (do_scale) {
+    eos = eos.template Modify<ScaledEOS>(scale);
+  }
+
 Relevant to the broad ``singularity-eos`` API, EOS models provide
 introspection. To check if an EOS is modified, call
 
@@ -470,38 +498,34 @@ temperature or density and specific internal energy.
 EOS Builder
 ------------
 
-The inclusion of modifiers can make building a desired equation of
-state somewhat cumbersome. To handle this, we have implemented the
-``EOSBuilder`` machinery. ``EOSBuilder`` is a set of functions that
-provides a declarative interface for building an equation of state
-object.
+The iterative construction of modifiers described above and in the
+:ref:`modifiers<modifiers>` section is object oriented. For
+convenience, we also provide a procedural, dispatch-based approach in
+the ``EOSBuilder`` namespace and header. The key function is
 
-The EOS Builder functions and types are defined in the
-``singularity::EOSBuilder`` namespace. The key function is
+.. code-block:: cpp
 
-.. cpp:function:: EOS EOSBuilder::buildEOS(EOSBuilder::EOSType t, EOSBuilder::params_t base_params, EOSBuilder::modifiers_t modifiers)
+  template <template <class> typename Mod, typename... Ts, typename... Args>
+  singularity::Variant<Ts...> Modify(const Variant<Ts...> &eos, Args &&...args);
 
-* ``EOSBuilder::EOSType`` is an enum class with names that match the various EOS classes defined in :ref:`the models section <models>`; for example, ``EOSBuilder::EOSType::IdealGas``.
-* ``EOSBuilder::params_t`` is a dictionary object with some type erasure, which maps strings to the types ``std::string``, ``int``, or ``Real``. It is used to map parameter names to their values for class constructors.
-* ``EOSBuilder::modifiers_t`` is a dictionary from the ``EOSModifier`` enum class, which works identically to the ``EOSType`` enum but for modifiers, to ``params_t`` objects, specifying the constructor values for each modifier.
-
-Putting it all together, initializing an ``IdealGas`` with
-``EOSBuilder`` looks something like this:
+where ``Mod`` is an EOS modifier, ``Variant`` is either your
+user-defined custom EOS variant type, or the pre-defined ``EOS`` type,
+the ``eos`` object is an EOS you'd like to modify (stored as a
+variant), and ``args`` are the additional arguments to the constructor
+of ``Mod`` beyond the object to modify. For example, initializing an
+``IdealGas`` equation of state that is optionally shifted and scaled
+might look something like this:
 
 .. code-block:: cpp
 
   using namespace singularity;
-  EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-  EOSBuilder::modifiers_t modifiers;
-  EOSBuilder::params_t base_params, shifted_params, scaled_params;
-  base_params["Cv"].emplace<Real>(Cv);
-  base_params["gm1"].emplace<Real>(gm1);
-  shifted_params["shift"].emplace<Real>(shift);
-  scaled_params["scale"].emplace<Real>(scale);
-  modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
-  modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
-  EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
-
+  EOS eos = IdealGas(gm1, cv);
+  if (do_shift) {
+    eos = EOSBuilder::Modify<ShiftedEOS>(eos, shift);
+  }
+  if (do_scale) {
+    eos = EOSBuilder::Modify<ScaledEOS>(eos, scale);
+  }
 
 .. _eos methods reference section:
 

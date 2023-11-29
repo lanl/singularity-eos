@@ -22,7 +22,6 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/eos/eos.hpp>
-#include <singularity-eos/eos/eos_builder.hpp>
 
 #ifdef SINGULARITY_BUILD_CLOSURE
 #include <singularity-eos/eos/singularity_eos.hpp>
@@ -35,8 +34,6 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
-
 #ifdef SPINER_USE_HDF
 using singularity::SpinerEOSDependsRhoSie;
 using singularity::SpinerEOSDependsRhoT;
@@ -46,7 +43,6 @@ using singularity::SpinerEOSDependsRhoT;
 using singularity::EOSPAC;
 #endif
 
-namespace EOSBuilder = singularity::EOSBuilder;
 namespace thermalqs = singularity::thermalqs;
 
 const std::string eosName = "../materials.sp5";
@@ -66,6 +62,8 @@ constexpr Real ev2k = 1.160451812e4;
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_EOSPAC
+using EOS = singularity::Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
+
 SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") {
 
   GIVEN("SpinerEOS and EOSPAC EOS for steel can be initialized with matid") {
@@ -259,54 +257,6 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]") {
     // this can be removed with with reference counting or other tricks
     steelEOS_host.Finalize(); // cleans up host memory
     steelEOS.Finalize();      // cleans up device memory
-  }
-}
-
-SCENARIO("EOS Builder and SpinerEOS",
-         "[SpinerEOS],[EOSBuilder],[GetOnDevice],[Finalize]") {
-  GIVEN("Parameters for shift and scale") {
-    constexpr Real shift = 0.0;
-    constexpr Real scale = 1.0;
-    WHEN("We construct a SpinerEOS with EOSBuilder") {
-      EOSBuilder::EOSType type = EOSBuilder::EOSType::SpinerEOSDependsRhoT;
-      EOSBuilder::modifiers_t modifiers;
-      EOSBuilder::params_t base_params, shifted_params, scaled_params;
-      base_params["filename"].emplace<std::string>(eosName);
-      base_params["matid"].emplace<int>(steelID);
-      shifted_params["shift"].emplace<Real>(shift);
-      scaled_params["scale"].emplace<Real>(scale);
-      modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
-      modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
-      EOS eosHost = EOSBuilder::buildEOS(type, base_params, modifiers);
-      THEN("The EOS is consistent.") {
-        REQUIRE(
-            isClose(4.96416e13, eosHost.InternalEnergyFromDensityTemperature(1e0, 1e6)));
-      }
-      WHEN("We get an EOS on device") {
-        EOS eosDevice = eosHost.GetOnDevice();
-        THEN("EOS calls match raw access") {
-          int nw_bm{0};
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-          Kokkos::fence();
-          using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
-          Kokkos::View<int, atomic_view> n_wrong_bm("wrong_bm");
-#else
-          PortableMDArray<int> n_wrong_bm(&nw_bm, 1);
-#endif
-          portableFor(
-              "calc ie's steel 3", 0, 100, PORTABLE_LAMBDA(const int &i) {
-                const Real bm{eosDevice.BulkModulusFromDensityTemperature(1e0, 1e6)};
-                if (!isClose(bm, 2.55268e13)) n_wrong_bm() += 1;
-              });
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-          Kokkos::deep_copy(nw_bm, n_wrong_bm);
-#endif
-          REQUIRE(nw_bm == 0);
-        }
-        eosDevice.Finalize();
-      }
-      eosHost.Finalize();
-    }
   }
 }
 #endif // SINGULARITY_USE_EOSPAC

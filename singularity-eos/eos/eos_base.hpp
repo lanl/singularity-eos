@@ -20,6 +20,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
 namespace mfuncname {
@@ -135,6 +136,39 @@ class EosBase {
   constexpr void Evaluate(Functor_t &f) const {
     CRTP copy = *(static_cast<CRTP const *>(this));
     f(copy);
+  }
+
+  // EOS builder helpers
+  // Checks if an EOS can be modified
+  template <template <class> typename Mod, typename... Ts>
+  constexpr bool ModifiedInList() const {
+    return variadic_utils::contains_v<Mod<CRTP>, Ts...>();
+  }
+  // Modifies an EOS object by pulling out underlying type and modifying it
+  // This one returns Mod<CRT>
+  template <template <class> typename Mod, typename... Args>
+  constexpr Mod<CRTP> Modify(Args &&...args) const {
+    CRTP unmodified = *(static_cast<CRTP const *>(this));
+    return Mod<CRTP>(std::move(unmodified), std::forward<Args>(args)...);
+  }
+  // These are overloads needed for the variant, as std::visit must be
+  // able to return a variant of the same type every time. This lets
+  // us do so, even though sometimes we don't modify the object.
+  template <template <class> typename Mod, typename... Args>
+  constexpr Mod<CRTP> ConditionallyModify(std::true_type, Args &&...args) const {
+    return Modify<Mod>(std::forward<Args>(args)...);
+  }
+  template <template <class> typename Mod, typename... Args>
+  constexpr CRTP ConditionallyModify(std::false_type, Args &&...args) const {
+    CRTP unmodified = *(static_cast<CRTP const *>(this));
+    return unmodified;
+  }
+  template <template <class> typename Mod, typename... Ts, typename... Args>
+  constexpr auto ConditionallyModify(const variadic_utils::type_list<Ts...> &tl,
+                                     Args &&...args) const {
+    constexpr bool do_mod = variadic_utils::contains_v<Mod<CRTP>, Ts...>();
+    return ConditionallyModify<Mod>(variadic_utils::bool_constant<do_mod>(),
+                                    std::forward<Args>(args)...);
   }
 
   // Vector member functions

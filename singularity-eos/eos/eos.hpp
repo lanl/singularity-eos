@@ -57,13 +57,13 @@ namespace singularity {
 
 // recreate variadic list
 template <typename... Ts>
-using tl = singularity::detail::type_list<Ts...>;
+using tl = singularity::variadic_utils::type_list<Ts...>;
 
 template <template <typename> class... Ts>
-using al = singularity::detail::adapt_list<Ts...>;
+using al = singularity::variadic_utils::adapt_list<Ts...>;
 
 // transform variadic list: applies modifiers to eos's
-using singularity::detail::transform_variadic_list;
+using singularity::variadic_utils::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
@@ -117,13 +117,13 @@ static constexpr const auto scaled_1 =
     transform_variadic_list(full_eos_list, al<ScaledEOS>{});
 // relativistic and unit system modifiers
 static constexpr const auto unit_or_rel =
-    singularity::detail::concat(unit_system, relativistic);
+    singularity::variadic_utils::concat(unit_system, relativistic);
 // variadic list of eos with shifted, relativistic or unit system modifiers
 static constexpr const auto shifted_of_unit_or_rel =
     transform_variadic_list(unit_or_rel, al<ShiftedEOS>{});
 // combined list of all shifted EOS
 static constexpr const auto shifted =
-    singularity::detail::concat(shifted_1, shifted_of_unit_or_rel);
+    singularity::variadic_utils::concat(shifted_1, shifted_of_unit_or_rel);
 // variadic list of eos with scaled, relativistic or unit system modifiers
 static constexpr const auto scaled_of_unit_or_rel =
     transform_variadic_list(unit_or_rel, al<ScaledEOS>{});
@@ -131,17 +131,17 @@ static constexpr const auto scaled_of_unit_or_rel =
 static constexpr const auto scaled_of_shifted =
     transform_variadic_list(shifted, al<ScaledEOS>{});
 // combined list of all scaled EOS
-static constexpr const auto scaled =
-    singularity::detail::concat(scaled_1, scaled_of_unit_or_rel, scaled_of_shifted);
+static constexpr const auto scaled = singularity::variadic_utils::concat(
+    scaled_1, scaled_of_unit_or_rel, scaled_of_shifted);
 // create combined list
 static constexpr const auto combined_list_1 =
-    singularity::detail::concat(full_eos_list, shifted, scaled, unit_or_rel);
+    singularity::variadic_utils::concat(full_eos_list, shifted, scaled, unit_or_rel);
 // make a ramped eos of everything
 static constexpr const auto ramped_all =
     transform_variadic_list(combined_list_1, al<BilinearRampEOS>{});
 // final combined list
 static constexpr const auto combined_list =
-    singularity::detail::concat(combined_list_1, ramped_all);
+    singularity::variadic_utils::concat(combined_list_1, ramped_all);
 // a function that returns a Variant from a typelist
 template <typename... Ts>
 struct tl_to_Variant_struct {

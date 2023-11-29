@@ -23,7 +23,6 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/eos/eos.hpp>
-#include <singularity-eos/eos/eos_builder.hpp>
 
 #ifdef SINGULARITY_BUILD_CLOSURE
 #include <singularity-eos/eos/singularity_eos.hpp>
@@ -113,7 +112,7 @@ SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
   }
 }
 
-SCENARIO("Stellar Collapse EOS", "[StellarCollapse][EOSBuilder]") {
+SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
   using singularity::IdealGas;
   using singularity::StellarCollapse;
   const std::string savename = "stellar_collapse_ideal_2.sp5";

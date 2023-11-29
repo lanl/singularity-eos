@@ -17,6 +17,8 @@
 
 #include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 using Real = double;
@@ -62,7 +64,7 @@ class Variant {
             typename std::enable_if<
                 !std::is_same<Variant, typename std::decay<EOSChoice>::type>::value,
                 bool>::type = true>
-  PORTABLE_INLINE_FUNCTION EOSChoice get() {
+  PORTABLE_INLINE_FUNCTION EOSChoice get() const {
     return mpark::get<EOSChoice>(eos_);
   }
 
@@ -75,6 +77,25 @@ class Variant {
   template <typename Functor_t>
   constexpr void Evaluate(Functor_t &f) const {
     return mpark::visit([&f](const auto &eos) { return eos.Evaluate(f); }, eos_);
+  }
+
+  // EOS modifier object-oriented API
+  template <template <class> typename Mod>
+  constexpr bool ModifiedInVariant() const {
+    return mpark::visit(
+        [](const auto &eos) { return eos.template ModifiedInList<Mod, EOSs...>(); },
+        eos_);
+  }
+  template <template <class> typename Mod, typename... Args>
+  constexpr auto Modify(Args &&...args) const {
+    PORTABLE_ALWAYS_REQUIRE(ModifiedInVariant<Mod>(), "Modifier must be in variant");
+    return mpark::visit(
+        [&](const auto &eos) {
+          auto modified = eos.template ConditionallyModify<Mod>(
+              variadic_utils::type_list<EOSs...>(), std::forward<Args>(args)...);
+          return eos_variant<EOSs...>(modified);
+        },
+        eos_);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -980,12 +1001,18 @@ class Variant {
 
   inline constexpr Variant UnmodifyOnce() {
     return mpark::visit(
-        [](auto &eos) { return eos_variant<EOSs...>(eos.UnmodifyOnce()); }, eos_);
+        [](auto &eos) -> eos_variant<EOSs...> {
+          return eos_variant<EOSs...>(eos.UnmodifyOnce());
+        },
+        eos_);
   }
 
   inline constexpr Variant GetUnmodifiedObject() {
     return mpark::visit(
-        [](auto &eos) { return eos_variant<EOSs...>(eos.GetUnmodifiedObject()); }, eos_);
+        [](auto &eos) -> eos_variant<EOSs...> {
+          return eos_variant<EOSs...>(eos.GetUnmodifiedObject());
+        },
+        eos_);
   }
 
   PORTABLE_INLINE_FUNCTION

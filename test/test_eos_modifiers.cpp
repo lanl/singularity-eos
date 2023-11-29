@@ -27,14 +27,72 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::BilinearRampEOS;
-using singularity::EOS;
-using singularity::IdealGas;
-using singularity::ScaledEOS;
-using singularity::ShiftedEOS;
+namespace eos_units_init = singularity::eos_units_init;
 
 namespace EOSBuilder = singularity::EOSBuilder;
 namespace thermalqs = singularity::thermalqs;
+namespace variadic_utils = singularity::variadic_utils;
+
+using EOSBuilder::Modify;
+using singularity::BilinearRampEOS;
+using singularity::IdealGas;
+using singularity::RelativisticEOS;
+using singularity::ScaledEOS;
+using singularity::ShiftedEOS;
+using singularity::UnitSystem;
+
+// recreate variadic list
+template <typename... Ts>
+using tl = variadic_utils::type_list<Ts...>;
+
+template <template <typename> class... Ts>
+using al = variadic_utils::adapt_list<Ts...>;
+
+// transform variadic list: applies modifiers to eos's
+using variadic_utils::transform_variadic_list;
+
+static constexpr const auto full_eos_list = tl<IdealGas>{};
+static constexpr const auto relativistic_eos_list = tl<IdealGas>{};
+static constexpr const auto unit_system_eos_list = tl<IdealGas>{};
+static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
+static constexpr const auto unit_system =
+    transform_variadic_list(unit_system_eos_list, al<UnitSystem>{});
+// variadic list of eos's with shifted or scaled modifiers
+static constexpr const auto shifted_1 =
+    transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
+static constexpr const auto scaled_1 =
+    transform_variadic_list(full_eos_list, al<ScaledEOS>{});
+// variadic list of Relativistic<T>'s
+static constexpr const auto relativistic =
+    transform_variadic_list(relativistic_eos_list, al<RelativisticEOS>{});
+// relativistic and unit system modifiers
+static constexpr const auto unit_or_rel =
+    variadic_utils::concat(unit_system, relativistic);
+// variadic list of eos with shifted, relativistic or unit system modifiers
+static constexpr const auto shifted_of_unit_or_rel =
+    transform_variadic_list(unit_or_rel, al<ShiftedEOS>{});
+// combined list of all shifted EOS
+static constexpr const auto shifted =
+    variadic_utils::concat(shifted_1, shifted_of_unit_or_rel);
+// variadic list of eos with scaled, relativistic or unit system modifiers
+static constexpr const auto scaled_of_unit_or_rel =
+    transform_variadic_list(unit_or_rel, al<ScaledEOS>{});
+// variadic list of Scaled<Shifted<T>>'s
+static constexpr const auto scaled_of_shifted =
+    transform_variadic_list(shifted, al<ScaledEOS>{});
+// combined list of all scaled EOS
+static constexpr const auto scaled =
+    variadic_utils::concat(scaled_1, scaled_of_unit_or_rel, scaled_of_shifted);
+// create combined list
+static constexpr const auto combined_list_1 =
+    variadic_utils::concat(full_eos_list, shifted, scaled, unit_or_rel);
+// make a ramped eos of everything
+static constexpr const auto ramped_all =
+    transform_variadic_list(combined_list_1, al<BilinearRampEOS>{});
+// final combined list
+static constexpr const auto combined_list =
+    variadic_utils::concat(combined_list_1, ramped_all);
+using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
 
 SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
 
@@ -45,12 +103,11 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
     constexpr Real shift = 0.1;
     constexpr Real rho = 2.0;
     constexpr Real sie = 0.5;
-    WHEN("We construct a shifted, scaled IdealGas by hand") {
-      IdealGas a = IdealGas(gm1, Cv);
-      ShiftedEOS<IdealGas> b = ShiftedEOS<IdealGas>(std::move(a), shift);
-      EOS eos = ScaledEOS<ShiftedEOS<IdealGas>>(std::move(b), scale);
+    WHEN("We use the EOSBuilder") {
+      EOS eos = IdealGas(gm1, Cv);
+      eos = eos.Modify<ShiftedEOS>(shift);
+      eos = eos.Modify<ScaledEOS>(scale);
       THEN("The shift and scale parameters pass through correctly") {
-
         REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
       }
       THEN("We can UnmodifyOnce to get the shifted EOS object") {
@@ -61,34 +118,14 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
           REQUIRE(unmod.IsType<IdealGas>());
         }
       }
-    }
-    WHEN("We use the EOSBuilder") {
-      EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-      EOSBuilder::modifiers_t modifiers;
-      EOSBuilder::params_t base_params, shifted_params, scaled_params;
-      base_params["Cv"].emplace<Real>(Cv);
-      base_params["gm1"].emplace<Real>(gm1);
-      shifted_params["shift"].emplace<Real>(shift);
-      scaled_params["scale"].emplace<Real>(scale);
-      modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
-      modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
-      EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
-      THEN("The shift and scale parameters pass through correctly") {
-        REQUIRE(eos.PressureFromDensityInternalEnergy(rho, sie) == 0.3);
-      }
       WHEN("We add a ramp") {
-        EOSBuilder::params_t ramp_params;
+        // EOSBuilder::params_t ramp_params;
         Real r0 = 1;
         Real a = 1;
         Real b = 0;
         Real c = 0;
-        ramp_params["r0"].emplace<Real>(r0);
-        ramp_params["a"].emplace<Real>(a);
-        ramp_params["b"].emplace<Real>(b);
-        ramp_params["c"].emplace<Real>(c);
-        modifiers[EOSBuilder::EOSModifier::BilinearRamp] = ramp_params;
         THEN("The EOS is constructed correctly") {
-          auto eos_ramped = EOSBuilder::buildEOS(type, base_params, modifiers);
+          auto eos_ramped = Modify<BilinearRampEOS>(eos, r0, a, b, c);
         }
       }
     }
@@ -203,14 +240,9 @@ SCENARIO("Relativistic EOS", "[EOSBuilder][RelativisticEOS][IdealGas]") {
     constexpr Real Cv = 2.0;
     constexpr Real gm1 = 0.5;
     WHEN("We construct a relativistic IdealGas with EOSBuilder") {
-      EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-      EOSBuilder::modifiers_t modifiers;
-      EOSBuilder::params_t base_params, relativity_params;
-      base_params["Cv"].emplace<Real>(Cv);
-      base_params["gm1"].emplace<Real>(gm1);
-      relativity_params["cl"].emplace<Real>(1.0);
-      modifiers[EOSBuilder::EOSModifier::Relativistic] = relativity_params;
-      EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+      constexpr Real cl = 1;
+      EOS eos = IdealGas(gm1, Cv);
+      eos = Modify<RelativisticEOS>(eos, cl);
       THEN("The EOS has finite sound speeds") {
         constexpr Real rho = 1e3;
         constexpr Real sie = 1e3;
@@ -226,21 +258,13 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
   GIVEN("Parameters for an ideal gas") {
     constexpr Real Cv = 2.0;
     constexpr Real gm1 = 0.5;
-    EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-    EOSBuilder::modifiers_t modifiers;
-    EOSBuilder::params_t base_params, units_params;
-    base_params["Cv"].emplace<Real>(Cv);
-    base_params["gm1"].emplace<Real>(gm1);
     GIVEN("Units with a thermal unit system") {
       constexpr Real rho_unit = 1e1;
       constexpr Real sie_unit = 1e-1;
       constexpr Real temp_unit = 123;
       WHEN("We construct an IdealGas with EOSBuilder") {
-        units_params["rho_unit"].emplace<Real>(rho_unit);
-        units_params["sie_unit"].emplace<Real>(sie_unit);
-        units_params["temp_unit"].emplace<Real>(temp_unit);
-        modifiers[EOSBuilder::EOSModifier::UnitSystem] = units_params;
-        EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+        EOS eos = IdealGas(gm1, Cv);
+        eos = Modify<UnitSystem>(eos, rho_unit, sie_unit, temp_unit);
         THEN("Units cancel out for an ideal gas") {
           Real rho = 1e3;
           Real sie = 1e3;
@@ -256,13 +280,9 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
       constexpr Real mass_unit = 1e6;
       constexpr Real temp_unit = 789;
       WHEN("We construct an IdealGas with EOSBuilder") {
-        units_params["use_length_time"].emplace<bool>(true);
-        units_params["time_unit"].emplace<Real>(time_unit);
-        units_params["length_unit"].emplace<Real>(length_unit);
-        units_params["mass_unit"].emplace<Real>(mass_unit);
-        units_params["temp_unit"].emplace<Real>(temp_unit);
-        modifiers[EOSBuilder::EOSModifier::UnitSystem] = units_params;
-        EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
+        EOS eos = IdealGas(gm1, Cv);
+        eos = Modify<UnitSystem>(eos, eos_units_init::length_time_units_init_tag,
+                                 time_unit, mass_unit, length_unit, temp_unit);
         THEN("Units cancel out for an ideal gas") {
           Real rho = 1e3;
           Real sie = 1e3;
