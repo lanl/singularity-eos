@@ -1,7 +1,19 @@
 # Changelog
 
 ## Current develop
-- [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
+
+### Fixed (Repair bugs, etc)
+
+### Added (new features/APIs/variables/...)
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.8.0
+Date: 11/28/2023
 
 ### Fixed (Repair bugs, etc)
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Fixed EOSPAC unit conversion errors for scalar lookups
@@ -25,6 +37,7 @@
 - [[PR308]](https://github.com/lanl/singularity-eos/pull/308) spack builds +fortran now compile via correct blocking out of interfaces via preprocessor ifdef
 
 ### Added (new features/APIs/variables/...)
+- [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added EOSPAC option functionality in class constructor
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new function for returning the minimum energy as a function of density for an EOS (only EOSPAC at the moment)
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new Fortran API for simple pressure and bulk moduli lookups
