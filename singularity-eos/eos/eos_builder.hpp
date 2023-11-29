@@ -45,21 +45,6 @@ constexpr bool is_modifiable(const U &u, const Variant<Ts...> &var) {
   return IsModifiable<Mod, U, Ts...>::value;
 }
 
-// Modifies the eos contained in the var object with the modifier Mod,
-// assuming such modification is possible, i.e., Mod<T> is in the
-// variant, for the underlying type T. If this modification is not
-// possible, returns the unmodified EOS. Args are the additional
-// arguments to the modifier's constructor.
-// Intended usage:
-//
-// eos = Modify<Modifier>(eos, args);
-//
-// For example:
-//
-// EOS eos = IdealGas(gm1, Cv);
-// if (shifted) {
-//   eos = Modify<ShifteEOS>(eos, shift);
-// }
 template <template <class> typename Mod, typename... Ts, typename... Args>
 Variant<Ts...> Modify(const Variant<Ts...> &var, Args &&...args) {
   return var.template Modify<Mod>(std::forward<Args>(args)...);
