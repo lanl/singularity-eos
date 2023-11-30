@@ -5,6 +5,7 @@
 ### Fixed (Repair bugs, etc)
 
 ### Added (new features/APIs/variables/...)
+- [[PR300]](https://github.com/lanl/singularity-eos/pull/300) Expose entropy functionality to Python API
 
 ### Changed (changing behavior/API/variables/...)
 
@@ -37,13 +38,11 @@ Date: 11/28/2023
 - [[PR308]](https://github.com/lanl/singularity-eos/pull/308) spack builds +fortran now compile via correct blocking out of interfaces via preprocessor ifdef
 
 ### Added (new features/APIs/variables/...)
-- [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
-- [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added EOSPAC option functionality in class constructor
+
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new function for returning the minimum energy as a function of density for an EOS (only EOSPAC at the moment)
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new Fortran API for simple pressure and bulk moduli lookups
 - [[PR306]](https://github.com/lanl/singularity-eos/pull/306) Added generic Evaluate method
 - [[PR304]](https://github.com/lanl/singularity-eos/pull/304) added a Newton-Raphson root find for use with the Helmholtz EoS
-- [[PR265]](https://github.com/lanl/singularity-eos/pull/265) Add missing UnitSystem modifier combinations to variant and EOSPAC
 - [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
 - [[PR274]](https://github.com/lanl/singularity-eos/pull/274) added a stiffened gas EoS
 - [[PR264]](https://github.com/lanl/singularity-eos/pull/274) added a Helmholtz EoS

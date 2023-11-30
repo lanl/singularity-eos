@@ -20,6 +20,7 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def_readwrite("density", &EOSState::density)
     .def_readwrite("specific_internal_energy", &EOSState::specific_internal_energy)
     .def_readwrite("pressure", &EOSState::pressure)
+    .def_readwrite("entropy", &EOSState::entropy)
     .def_readwrite("temperature", &EOSState::temperature)
     .def_readwrite("specific_heat", &EOSState::specific_heat)
     .def_readwrite("bulk_modulus", &EOSState::bulk_modulus)
