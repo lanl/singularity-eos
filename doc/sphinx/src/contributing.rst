@@ -233,10 +233,9 @@ test in the ``CMakeLists.txt`` file,
 
 .. code-block:: cmake
 
-    add_executable(eos_unit_tests
+    add_executable(eos_analytic_unit_tests
         catch2_define.cpp
         eos_unit_test_helpers.hpp
-        test_eos_unit.cpp
         test_eos_gruneisen.cpp
         test_eos_vinet.cpp
         test_my_new_eos.cpp
@@ -245,15 +244,23 @@ test in the ``CMakeLists.txt`` file,
 in order for the test to be compiled. If your EOS requires any special
 dependencies, be sure to block off the test using ``#IFDEF`` blocks.
 
-**Important:** this is a subtlety that highlights the importance of unit tests!
-Since our library is header only, the unit tests are often the only place where
-a specific EOS may be instantiated when ``singularity-eos`` is compiled. Unit
-tests _must_ make use of the ``EOS`` type, i.e.
+.. note::
+
+  Note that there are three executables, ``eos_analytic_unit_tests``,
+  ``eos_infrastructure_tests`` and ``eos_tabulated_unit_tests``. Pick
+  the executable that most closely matches what your model is.
+
+**Important:** Since our library is header only, the unit
+tests are often the only place where a specific EOS may be
+instantiated when ``singularity-eos`` is compiled.  Therefore to
+exercise all code paths, it is best to create an ``EOS`` type
+instantiated as
 
 .. code-block:: c++
 
     #include <singularity-eos/eos/eos.hpp>
-    EOS my_eos = my_new_eos(parameter1, parameter2, ...)
+    using EOS = singularity::Variant<MyNewEOS>;``.
+    EOS my_eos = MyNewEOS(parameter1, parameter2, ...)
 
 in order to properly test the functionality of a new EOS. Simply using the
 new class as the type such as

@@ -14,14 +14,13 @@
 // publicly and display publicly, and to permit others to do so.
 //======================================================================
 
+#include "eospac_wrapper.hpp"
 #include <array>
+#include <eos_Interface.h>
 #include <iostream>
 #include <regex>
 #include <string>
 #include <vector>
-
-#include "eospac_wrapper.hpp"
-#include <eos_Interface.h>
 
 namespace EospacWrapper {
 
@@ -78,22 +77,26 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
   EOS_INTEGER errorCode =
       eosSafeLoad(1, matid, commentsType, commentsHandle, {"EOS_Comments"}, eospacWarn);
   EOS_INTEGER eospacComments = commentsHandle[0];
+  bool commentTableCreated = (errorCode == EOS_OK);
 
-  if (errorCode == EOS_OK) {
-    std::vector<EOS_CHAR> comments;
-    EOS_REAL commentLen;
+  EOS_REAL commentLen = -1;
+  if (commentTableCreated) {
     EOS_INTEGER commentItem = EOS_Cmnt_Len;
     eosSafeTableInfo(commentsHandle, 1, &commentItem, &commentLen, eospacWarn);
+  }
 
+  if (commentLen > 0) {
+    std::vector<EOS_CHAR> comments;
     comments.resize(static_cast<int>(commentLen));
     metadata.comments.resize(comments.size());
-    eosSafeTableCmnts(&eospacComments, comments.data(), eospacWarn);
+
+    if (comments.size() > 0) {
+      eosSafeTableCmnts(&eospacComments, comments.data(), eospacWarn);
+    }
     for (size_t i = 0; i < comments.size(); i++) {
       metadata.comments[i] = comments[i];
     }
     metadata.name = getName(metadata.comments);
-
-    eosSafeDestroy(1, commentsHandle, eospacWarn);
   } else {
     std::string matid_str = std::to_string(matid);
     if (eospacWarn != Verbosity::Quiet) {
@@ -103,20 +106,31 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
     metadata.name = "No name for matid " + matid_str;
     metadata.comments = "Comment unavailable for matid " + matid_str;
   }
+
+  // Note: table could be created even if the commentLen is nonsense, so we
+  // need to separate this block from the above logic
+  if (commentTableCreated) {
+    eosSafeDestroy(1, commentsHandle, eospacWarn);
+  }
 }
 
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[], Verbosity eospacWarn,
-                        bool invert_at_setup) {
+                        bool invert_at_setup, double insert_data,
+                        eospacMonotonicity monotonicity, bool apply_smoothing,
+                        eospacSplit apply_splitting, bool linear_interp) {
   std::vector<std::string> empty;
   return eosSafeLoad(ntables, matid, tableType, tableHandle, empty, eospacWarn,
-                     invert_at_setup);
+                     invert_at_setup, insert_data, monotonicity, apply_smoothing,
+                     apply_splitting, linear_interp);
 }
 
 EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
                         EOS_INTEGER tableHandle[],
                         const std::vector<std::string> &table_names, Verbosity eospacWarn,
-                        bool invert_at_setup) {
+                        bool invert_at_setup, double insert_data,
+                        eospacMonotonicity monotonicity, bool apply_smoothing,
+                        eospacSplit apply_splitting, bool linear_interp) {
   EOS_INTEGER NTABLES[] = {ntables};
   std::vector<EOS_INTEGER> MATID(ntables, matid);
 
@@ -126,20 +140,103 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
 
   eos_CreateTables(NTABLES, tableType, MATID.data(), tableHandle, &errorCode);
 
-  if (invert_at_setup) {
-    EOS_INTEGER options[] = {EOS_INVERT_AT_SETUP, EOS_INSERT_DATA};
-    EOS_REAL values[] = {1., 4.};
-    for (int i = 0; i < ntables; i++) {
-      if (tableType[i] == EOS_T_DUt) {
-        eos_SetOption(&(tableHandle[i]), &(options[0]), &(values[0]), &errorCode);
-        eos_SetOption(&(tableHandle[i]), &(options[1]), &(values[1]), &errorCode);
+  if (errorCode != EOS_OK) {
+    if (eospacWarn != Verbosity::Quiet) {
+      for (int i = 0; i < ntables; i++) {
+        eos_GetErrorCode(&tableHandle[i], &tableHandleErrorCode);
+        eos_GetErrorMessage(&tableHandleErrorCode, errorMessage);
+        std::cerr << "eos_CreateTables ERROR " << tableHandleErrorCode;
+        if (table_names.size() > 0) {
+          std::cerr << " for table names\n\t{";
+          for (auto &name : table_names) {
+            std::cerr << name << ", ";
+          }
+          std::cerr << "}";
+        }
+        std::cerr << ":\n\t" << errorMessage << std::endl;
       }
+    }
+    return errorCode;
+  }
+
+  if (invert_at_setup) {
+    EOS_REAL values[] = {1.};
+    for (int i = 0; i < ntables; i++) {
+      if (tableType[i] != EOS_Uc_D and tableType[i] != EOS_Pc_D and
+          tableType[i] != EOS_Pt_DT and tableType[i] != EOS_Ut_DT) {
+        eos_SetOption(&(tableHandle[i]), &EOS_INVERT_AT_SETUP, &(values[0]), &errorCode);
+        eosCheckError(errorCode, "eospac options: eos_invert_at_setup", eospacWarn);
+      }
+    }
+  }
+
+  if (insert_data > 0) {
+    EOS_REAL values[] = {insert_data};
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_INSERT_DATA, &(values[0]), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_insert_data", eospacWarn);
+    }
+  }
+
+  // choice of which table types setOption is called on mimics SAP. Some table types are
+  // incmopatible whiel others lead to numerical issues.
+  if (monotonicity == eospacMonotonicity::monotonicityX ||
+      monotonicity == eospacMonotonicity::monotonicityXY) {
+    for (int i = 0; i < ntables; i++) {
+      if (tableType[i] != EOS_Uc_D and tableType[i] != EOS_Ut_DT and
+          tableType[i] != EOS_Ut_DPt) {
+        eos_SetOption(&(tableHandle[i]), &EOS_MONOTONIC_IN_X, &(EOS_NullVal), &errorCode);
+        eosCheckError(errorCode, "eospac options: eos_monotonic_in_x", eospacWarn);
+      }
+    }
+  }
+
+  if (monotonicity == eospacMonotonicity::monotonicityXY ||
+      monotonicity == eospacMonotonicity::monotonicityY) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_MONOTONIC_IN_Y, &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_monotonic_in_y", eospacWarn);
+    }
+  }
+
+  if (apply_smoothing) {
+    for (int i = 0; i < ntables; i++) {
+      if (tableType[i] == EOS_Pt_DUt || tableType[i] == EOS_T_DUt ||
+          tableType[i] == EOS_Ut_DPt) {
+        eos_SetOption(&(tableHandle[i]), &EOS_SMOOTH, &(EOS_NullVal), &errorCode);
+        eosCheckError(errorCode, "eospac options: eos_smooth", eospacWarn);
+      }
+    }
+  }
+
+  if (apply_splitting == eospacSplit::splitNumProp) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_NUM_PROP, &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_split_num_prop", eospacWarn);
+    }
+  } else if (apply_splitting == eospacSplit::splitIdealGas) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_IDEAL_GAS, &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_split_ideal_gas", eospacWarn);
+    }
+  } else if (apply_splitting == eospacSplit::splitCowan) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_SPLIT_COWAN, &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: eos_split_cowan", eospacWarn);
+    }
+  }
+
+  if (linear_interp) {
+    for (int i = 0; i < ntables; i++) {
+      eos_SetOption(&(tableHandle[i]), &EOS_LINEAR, &(EOS_NullVal), &errorCode);
+      eosCheckError(errorCode, "eospac options: linear_interp", eospacWarn);
     }
   }
 
 #ifdef SINGULARITY_EOSPAC_SKIP_EXTRAP
   for (int i = 0; i < ntables; i++) {
-    eos_SetOption(&(tableHandle[i]), &EOS_SKIP_EXTRAP_CHECK, NULL, &errorCode);
+    eos_SetOption(&(tableHandle[i]), &EOS_SKIP_EXTRAP_CHECK, &(EOS_NullVal), &errorCode);
+    eosCheckError(errorCode, "eos_skip_extrap_check", eospacWarn);
   }
 #endif // SINGULARITY_EOSPAC_SKIP_EXTRAP
 
@@ -181,6 +278,7 @@ bool eosSafeInterpolate(EOS_INTEGER *table, EOS_INTEGER nxypairs, EOS_REAL xVals
   }
 
   eos_Interpolate(table, &nxypairs, xVals, yVals, var, dx, dy, &errorCode);
+
 #ifndef SINGULARITY_EOSPAC_SKIP_EXTRAP
   if (errorCode != EOS_OK && eospacWarn == Verbosity::Debug) {
     eos_GetErrorMessage(&errorCode, errorMessage);

@@ -33,6 +33,7 @@ set(EOS_HEADERS
     eos/eos_builder.hpp
     eos/eos_jwl.hpp
     eos/eos_helmholtz.hpp
+    eos/eos_sap_polynomial.hpp
     eos/modifiers/relativistic_eos.hpp
     eos/modifiers/scaled_eos.hpp
     eos/modifiers/ramps_eos.hpp
@@ -44,9 +45,7 @@ set(EOS_HEADERS
     eos/eos_stiff.hpp
 )
 
-set(EOS_SRCS
-    eos/eos_builder.cpp
-)
+set(EOS_SRCS eos/eos.cpp)
 
 if (SINGULARITY_BUILD_CLOSURE)
   list(APPEND EOS_HEADERS
@@ -71,11 +70,8 @@ if (SINGULARITY_USE_FORTRAN)
   list(APPEND EOS_SRCS eos/singularity_eos.f90)
   list(APPEND EOS_SRCS eos/singularity_eos.cpp)
   list(APPEND EOS_HEADERS eos/singularity_eos.hpp)
-  # would rather handle this more robustly, being sloppy for now
-  list(APPEND EOS_MODS singularity_eos.mod singularity_eos_types.mod)
 endif()
 
 # export to parent scope
 set(EOS_HEADERS ${EOS_HEADERS} PARENT_SCOPE)
 set(EOS_SRCS ${EOS_SRCS} PARENT_SCOPE)
-set(EOS_MODS ${EOS_MODS} PARENT_SCOPE)

@@ -32,6 +32,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <utility>
 
 // ports of call
@@ -48,8 +49,6 @@
 
 // spiner
 #include <spiner/databox.hpp>
-
-#define ROOT_FINDER (RootFinding1D::regula_falsi)
 
 /*
  * The singularity-eos implementation of the Helmhotlz equation of state
@@ -388,12 +387,18 @@ class Helmholtz : public EosBase<Helmholtz> {
             const bool electron, const bool verbose)
         : ENABLE_RAD(rad), ENABLE_GAS(gas), ENABLE_COULOMB_CORRECTIONS(coul),
           GAS_IONIZED(ion), GAS_DEGENERATE(electron), VERBOSE(verbose) {}
+    Options(const bool rad, const bool gas, const bool coul, const bool ion,
+            const bool electron, const bool verbose, const bool newton_raphson)
+        : ENABLE_RAD(rad), ENABLE_GAS(gas), ENABLE_COULOMB_CORRECTIONS(coul),
+          GAS_IONIZED(ion), GAS_DEGENERATE(electron), VERBOSE(verbose),
+          USE_NEWTON_RAPHSON(newton_raphson) {}
     bool ENABLE_RAD = true;
     bool ENABLE_GAS = true;
     bool ENABLE_COULOMB_CORRECTIONS = true;
     bool GAS_IONIZED = true;
     bool GAS_DEGENERATE = true;
     bool VERBOSE = false;
+    bool USE_NEWTON_RAPHSON = true;
   };
 
   Helmholtz() = default;
@@ -406,6 +411,10 @@ class Helmholtz : public EosBase<Helmholtz> {
   Helmholtz(const std::string &filename, const bool rad, const bool gas, const bool coul,
             const bool ion, const bool ele, const bool verbose)
       : electrons_(filename), options_(rad, gas, coul, ion, ele, verbose) {}
+  Helmholtz(const std::string &filename, const bool rad, const bool gas, const bool coul,
+            const bool ion, const bool ele, const bool verbose, const bool newton_raphson)
+      : electrons_(filename),
+        options_(rad, gas, coul, ion, ele, verbose, newton_raphson) {}
 
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
   static constexpr unsigned long PreferredInput() {
@@ -483,6 +492,11 @@ class Helmholtz : public EosBase<Helmholtz> {
     FillEos(rl, temperature, el, p, cv, bmod,
             thermalqs::pressure | thermalqs::temperature, lambda);
     return p;
+  }
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    MinInternalEnergyIsNotEnabled("Helmholtz");
+    return 0.0;
   }
 
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
@@ -659,6 +673,7 @@ class Helmholtz : public EosBase<Helmholtz> {
                      const Real lDe, Real *lambda) const;
 
   static constexpr Real ROOT_THRESH = 1e-14;
+  static constexpr Real HELM_EOS_EPS = 1e-10;
   Options options_;
   HelmRad rad_;
   HelmIon ions_;
@@ -736,19 +751,51 @@ Real Helmholtz::lTFromRhoSie_(const Real rho, const Real e, const Real abar,
     }
     Real Tguess = math_utils::pow10(lTguess);
     auto &copy = *this; // stupid C++17 workaround
-    auto status = ROOT_FINDER(
-        [&](Real T) {
-          Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
-          copy.GetFromDensityLogTemperature_(rho, T, abar, zbar, ye, ytot, ywot, De, lDe,
-                                             p, e, s, etaele, nep, true);
-          return e[VAL];
-        },
-        e, Tguess, math_utils::pow10(electrons_.lTMin()),
-        math_utils::pow10(electrons_.lTMax()), ROOT_THRESH, ROOT_THRESH, T, nullptr,
-        options_.VERBOSE);
-    if (status != RootFinding1D::Status::SUCCESS) {
-      lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
-      T = math_utils::pow10(lT);
+    if (options_.USE_NEWTON_RAPHSON) {
+      auto status = RootFinding1D::newton_raphson(
+          [&](Real T) {
+            Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+            copy.GetFromDensityLogTemperature_(rho, T, abar, zbar, ye, ytot, ywot, De,
+                                               lDe, p, e, s, etaele, nep, true);
+            return std::make_tuple(e[VAL], e[DDT]);
+          },
+          e, Tguess, math_utils::pow10(electrons_.lTMin()),
+          math_utils::pow10(electrons_.lTMax()), HELM_EOS_EPS, T, nullptr,
+          options_.VERBOSE, false);
+      if (status != RootFinding1D::Status::SUCCESS) {
+        if (options_.VERBOSE) {
+          printf("Newton-Raphson failed to converge, falling back to regula falsi\n");
+        }
+        status = RootFinding1D::regula_falsi(
+            [&](Real T) {
+              Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+              copy.GetFromDensityLogTemperature_(rho, T, abar, zbar, ye, ytot, ywot, De,
+                                                 lDe, p, e, s, etaele, nep, true);
+              return e[VAL];
+            },
+            e, Tguess, math_utils::pow10(electrons_.lTMin()),
+            math_utils::pow10(electrons_.lTMax()), ROOT_THRESH, ROOT_THRESH, T, nullptr,
+            options_.VERBOSE);
+        if (status != RootFinding1D::Status::SUCCESS) {
+          lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
+          T = math_utils::pow10(lT);
+        }
+      }
+    } else {
+      auto status = RootFinding1D::regula_falsi(
+          [&](Real T) {
+            Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
+            copy.GetFromDensityLogTemperature_(rho, T, abar, zbar, ye, ytot, ywot, De,
+                                               lDe, p, e, s, etaele, nep, true);
+            return e[VAL];
+          },
+          e, Tguess, math_utils::pow10(electrons_.lTMin()),
+          math_utils::pow10(electrons_.lTMax()), ROOT_THRESH, ROOT_THRESH, T, nullptr,
+          options_.VERBOSE);
+      if (status != RootFinding1D::Status::SUCCESS) {
+        lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);
+        T = math_utils::pow10(lT);
+      }
     }
   } else {
     lT = lTAnalytic_(rho, e, ni, options_.GAS_IONIZED * ne);

@@ -212,15 +212,10 @@ void load_eos_spiner(const std::string &filename, const std::vector<int> &matids
                      std::vector<EOS> &eos_h, std::vector<EOS> &eos_d) {
   eos_h.clear();
   eos_d.clear();
-  EOSBuilder::EOSType type = EOSBuilder::EOSType::SpinerEOSDependsRhoT;
-  EOSBuilder::params_t params;
-  params["filename"] = filename;
-  params["reproducibility_mode"] = false;
 
   for (int matid : matids) {
     if (matid > 0) { // non-analytic
-      params["matid"] = matid;
-      eos_h.push_back(EOSBuilder::buildEOS(type, params));
+      eos_h.push_back(SpinerEOSDependsRhoT(filename, matid));
       eos_d.push_back(eos_h.back().GetOnDevice());
     }
   }

@@ -75,6 +75,9 @@ void pAlpha2BilinearRampParams(const T &eos, const Real alpha0, const Real Pe,
 template <typename T>
 class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
  public:
+  // Vector functions that overload the scalar versions declared here.
+  SG_ADD_BASE_CLASS_USINGS(BilinearRampEOS<T>)
+
   // move semantics ensures dynamic memory comes along for the ride
   BilinearRampEOS(T &&t, const Real r0, const Real a, const Real b, const Real c)
       : t_(std::forward<T>(t)), r0_(r0), a_(a), b_(b), c_(c),
@@ -117,7 +120,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
 
   PORTABLE_INLINE_FUNCTION
   Real get_ramp_dpdrho(Real rho) const {
-    const Real dpdr{rho < r0_ ? 0.0 : rho < rmid_ ? ratio(a_, r0_) : ratio(b_, r0_)};
+    const Real dpdr{rho < rmid_ ? ratio(a_, r0_) : ratio(b_, r0_)};
     return dpdr;
   }
 
@@ -140,6 +143,10 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     const Real p_eos{t_.PressureFromDensityInternalEnergy(rho, sie, lambda)};
     // return max(p_ramp, p_eos)
     return p_eos < p_ramp ? p_ramp : p_eos;
+  }
+  PORTABLE_FUNCTION
+  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    return t_.MinInternalEnergyFromDensity(rho, lambda);
   }
   PORTABLE_FUNCTION
   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -271,6 +278,15 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
           const Real p_ramp = copy.get_ramp_pressure(rhos[i]);
           pressures[i] = std::max(pressures[i], p_ramp);
         });
+  }
+
+  template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
+    t_.MinInternalEnergyFromDensity(rhos, sies, scratch, num,
+                                    std::forward<LambdaIndexer>(lambdas),
+                                    std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -424,9 +440,6 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
                               Real *lambda = nullptr) const {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
-
-  // Vector functions that overload the scalar versions declared here.
-  SG_ADD_BASE_CLASS_USINGS(BilinearRampEOS<T>)
 
   inline constexpr bool IsModified() const { return true; }
 
