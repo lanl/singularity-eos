@@ -24,7 +24,7 @@
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
-#include "catch2/catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #endif
 
 #include <ports-of-call/portability.hpp>
@@ -34,7 +34,6 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using Catch::Matchers::WithinRel;
 using singularity::Helmholtz;
 const std::string filename = "../data/helmholtz/helm_table.dat";
 SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[HelmholtzEOS]") {

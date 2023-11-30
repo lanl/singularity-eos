@@ -352,9 +352,8 @@ if(SINGULARITY_BUILD_TESTS)
     FetchContent_Declare(
       Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      # MAUNEYC: On my side, this version works. The ones pinned onto upstream
-      # codes do not like to play with clang and/or newer compilers.
-      GIT_TAG v2.13.7)
+      # or later is fine too
+      GIT_TAG v3.0.1)
     FetchContent_MakeAvailable(Catch2)
     list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
   endif()

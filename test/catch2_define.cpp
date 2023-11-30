@@ -12,13 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#include <catch2/catch_session.hpp>
 #include <ports-of-call/portability.hpp>
-
-#ifndef CATCH_CONFIG_RUNNER
-#define CATCH_CONFIG_RUNNER
-#define CATCH_CONFIG_FAST_COMPILE
-#include "catch2/catch.hpp"
-#endif
 
 int main(int argc, char *argv[]) {
 
