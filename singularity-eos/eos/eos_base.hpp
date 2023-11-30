@@ -20,6 +20,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
 namespace mfuncname {
@@ -35,7 +36,7 @@ namespace singularity {
 namespace eos_base {
 
 namespace impl {
-constexpr std::size_t MAX_NUM_CHARS = 81;
+constexpr std::size_t MAX_NUM_CHARS = 121;
 // Cuda doesn't have strcat, so we implement it ourselves
 PORTABLE_FORCEINLINE_FUNCTION
 char *StrCat(char *destination, const char *source) {
@@ -68,6 +69,7 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::InternalEnergyFromDensityTemperature;                       \
   using EosBase<EOSDERIVED>::PressureFromDensityTemperature;                             \
   using EosBase<EOSDERIVED>::PressureFromDensityInternalEnergy;                          \
+  using EosBase<EOSDERIVED>::MinInternalEnergyFromDensity;                               \
   using EosBase<EOSDERIVED>::SpecificHeatFromDensityTemperature;                         \
   using EosBase<EOSDERIVED>::SpecificHeatFromDensityInternalEnergy;                      \
   using EosBase<EOSDERIVED>::BulkModulusFromDensityTemperature;                          \
@@ -80,6 +82,7 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
   using EosBase<EOSDERIVED>::EntropyIsNotEnabled;                                        \
+  using EosBase<EOSDERIVED>::MinInternalEnergyIsNotEnabled;                              \
   using EosBase<EOSDERIVED>::IsModified;                                                 \
   using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
   using EosBase<EOSDERIVED>::GetUnmodifiedObject;
@@ -127,6 +130,46 @@ class EosBase {
   template <typename T, typename R>
   struct is_raw_pointer
       : std::is_same<std::remove_reference_t<std::remove_cv_t<T>>, R *> {};
+
+  // Generic evaluator
+  template <typename Functor_t>
+  constexpr void Evaluate(Functor_t &f) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    f(copy);
+  }
+
+  // EOS builder helpers
+  // Checks if an EOS can be modified
+  template <template <class> typename Mod, typename... Ts>
+  constexpr bool ModifiedInList() const {
+    return variadic_utils::contains_v<Mod<CRTP>, Ts...>();
+  }
+  // Modifies an EOS object by pulling out underlying type and modifying it
+  // This one returns Mod<CRT>
+  template <template <class> typename Mod, typename... Args>
+  constexpr Mod<CRTP> Modify(Args &&...args) const {
+    CRTP unmodified = *(static_cast<CRTP const *>(this));
+    return Mod<CRTP>(std::move(unmodified), std::forward<Args>(args)...);
+  }
+  // These are overloads needed for the variant, as std::visit must be
+  // able to return a variant of the same type every time. This lets
+  // us do so, even though sometimes we don't modify the object.
+  template <template <class> typename Mod, typename... Args>
+  constexpr Mod<CRTP> ConditionallyModify(std::true_type, Args &&...args) const {
+    return Modify<Mod>(std::forward<Args>(args)...);
+  }
+  template <template <class> typename Mod, typename... Args>
+  constexpr CRTP ConditionallyModify(std::false_type, Args &&...args) const {
+    CRTP unmodified = *(static_cast<CRTP const *>(this));
+    return unmodified;
+  }
+  template <template <class> typename Mod, typename... Ts, typename... Args>
+  constexpr auto ConditionallyModify(const variadic_utils::type_list<Ts...> &tl,
+                                     Args &&...args) const {
+    constexpr bool do_mod = variadic_utils::contains_v<Mod<CRTP>, Ts...>();
+    return ConditionallyModify<Mod>(variadic_utils::bool_constant<do_mod>(),
+                                    std::forward<Args>(args)...);
+  }
 
   // Vector member functions
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
@@ -264,6 +307,35 @@ class EosBase {
     PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
                                       std::forward<LambdaIndexer>(lambdas));
   }
+  ///
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas) const {
+    MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+                                 std::forward<RealIndexer>(sies), num,
+                                 std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas,
+                                           Transform && = Transform()) const {
+    MinInternalEnergyFromDensity(rhos, num, std::forward<LambdaIndexer>(lambdas));
+  }
+  ///
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
                                             ConstRealIndexer &&temperatures,
@@ -556,7 +628,7 @@ class EosBase {
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
 
-  // Default entropy behavior is to return an error
+  // Default entropy behavior is to cause an error
   PORTABLE_FORCEINLINE_FUNCTION
   void EntropyIsNotEnabled(const char *eosname) const {
     // Construct the error message using char* so it works on device
@@ -564,7 +636,22 @@ class EosBase {
     // base msg length 32 + 5 chars = 37 chars
     // + 1 char for null terminator
     // maximum allowed EOS length = 44 chars
-    char msg[impl::MAX_NUM_CHARS] = "Entropy is not enabled for the '";
+    char msg[impl::MAX_NUM_CHARS] = "Singularity-EOS: Entropy is not enabled for the '";
+    impl::StrCat(msg, eosname);
+    impl::StrCat(msg, "' EOS");
+    PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
+  }
+
+  // Default MinInternalEnergyFromDensity behavior is to cause an error
+  PORTABLE_FORCEINLINE_FUNCTION
+  void MinInternalEnergyIsNotEnabled(const char *eosname) const {
+    // Construct the error message using char* so it works on device
+    // WARNING: This needs to be updated if EOS names get longer
+    // base msg length 32 + 5 chars = 37 chars
+    // + 1 char for null terminator
+    // maximum allowed EOS length = 44 chars
+    char msg[impl::MAX_NUM_CHARS] =
+        "Singularity-EOS: MinInternalEnergyFromDensity() is not enabled for the '";
     impl::StrCat(msg, eosname);
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);

@@ -15,12 +15,17 @@
 #ifndef _SINGULARITY_EOS_TEST_TEST_HELPERS_
 #define _SINGULARITY_EOS_TEST_TEST_HELPERS_
 
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+
+#include <iomanip>
+#include <limits>
+#include <sstream>
 
 // typename demangler
 #ifdef __GNUG__
@@ -49,8 +54,7 @@ inline std::string demangle(const char *name) { return name; }
 #endif
 
 #include <ports-of-call/portability.hpp>
-
-using singularity::EOS;
+#include <singularity-eos/eos/eos.hpp>
 
 PORTABLE_INLINE_FUNCTION bool isClose(Real a, Real b, Real eps = 5e-2) {
   return fabs(b - a) / (fabs(a + b) + 1e-20) <= eps;
@@ -64,41 +68,78 @@ PORTABLE_INLINE_FUNCTION Real myAtan(Real x, Real shift, Real scale, Real offset
 template <typename X, typename Y, typename Z, typename ZT, typename XN, typename YN>
 inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN yname,
                           Real tol = 1e-12) {
+  assert(num > 0);
+  using underlying_t =
+      typename std::remove_cv<typename std::remove_reference<decltype(x[0])>::type>::type;
   for (int i = 0; i < num; i++) {
-    INFO("i: " << i << ", " << xname << ": " << x[i] << ", " << yname << ": " << y[i]
-               << ", Value: " << z[i] << ", True Value: " << ztrue[i]);
+    auto s = std::ostringstream{};
+    s << std::setprecision(std::numeric_limits<underlying_t>::max_digits10)
+      << std::scientific << "i: " << i << ", " << xname << ": " << x[i] << ", " << yname
+      << ": " << y[i] << ", Value: " << z[i] << ", True Value: " << ztrue[i];
+    INFO(s.str());
     CHECK(isClose(z[i], ztrue[i], 1e-12));
   }
 }
 
-inline void compare_two_eoss(const EOS &test_e, const EOS &ref_e) {
+template <typename E1, typename E2>
+inline void compare_two_eoss(const E1 &&test_e, const E2 &&ref_e) {
   // compare all individual member functions with 1 as inputs,
   // this function is meant to catch mis-implementations of
   // modifiers that can be initialized in such a way as to
   // be equivalent of an unmodified eos. Best used with analytic
   // eoss.
-  REQUIRE(isClose(test_e.TemperatureFromDensityInternalEnergy(1, 1),
-                  ref_e.TemperatureFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.InternalEnergyFromDensityTemperature(1, 1),
-                  ref_e.InternalEnergyFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.PressureFromDensityInternalEnergy(1, 1),
-                  ref_e.PressureFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.SpecificHeatFromDensityInternalEnergy(1, 1),
-                  ref_e.SpecificHeatFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.BulkModulusFromDensityInternalEnergy(1, 1),
-                  ref_e.BulkModulusFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.GruneisenParamFromDensityInternalEnergy(1, 1),
-                  ref_e.GruneisenParamFromDensityInternalEnergy(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.PressureFromDensityTemperature(1, 1),
-                  ref_e.PressureFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.SpecificHeatFromDensityTemperature(1, 1),
-                  ref_e.SpecificHeatFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.BulkModulusFromDensityTemperature(1, 1),
-                  ref_e.BulkModulusFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.GruneisenParamFromDensityTemperature(1, 1),
-                  ref_e.GruneisenParamFromDensityTemperature(1, 1), 1.e-15));
-  REQUIRE(isClose(test_e.MinimumDensity(), ref_e.MinimumDensity(), 1.e-15));
-  REQUIRE(isClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15));
+  INFO("reference T: " << ref_e.TemperatureFromDensityInternalEnergy(1, 1) << " test T: "
+                       << test_e.TemperatureFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.TemperatureFromDensityInternalEnergy(1, 1),
+                ref_e.TemperatureFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference sie: " << ref_e.InternalEnergyFromDensityTemperature(1, 1)
+                         << " test sie: "
+                         << test_e.InternalEnergyFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.InternalEnergyFromDensityTemperature(1, 1),
+                ref_e.InternalEnergyFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference P: " << ref_e.PressureFromDensityInternalEnergy(1, 1)
+                       << " test P: " << test_e.PressureFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.PressureFromDensityInternalEnergy(1, 1),
+                ref_e.PressureFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference Cv: " << ref_e.SpecificHeatFromDensityInternalEnergy(1, 1)
+                        << " test Cv: "
+                        << test_e.SpecificHeatFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.SpecificHeatFromDensityInternalEnergy(1, 1),
+                ref_e.SpecificHeatFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference bmod: " << ref_e.BulkModulusFromDensityInternalEnergy(1, 1)
+                          << " test bmod: "
+                          << test_e.BulkModulusFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.BulkModulusFromDensityInternalEnergy(1, 1),
+                ref_e.BulkModulusFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference Grun. Param.: "
+       << ref_e.GruneisenParamFromDensityInternalEnergy(1, 1)
+       << " test Grun. Param.: " << test_e.GruneisenParamFromDensityInternalEnergy(1, 1));
+  CHECK(isClose(test_e.GruneisenParamFromDensityInternalEnergy(1, 1),
+                ref_e.GruneisenParamFromDensityInternalEnergy(1, 1), 1.e-15));
+  INFO("reference P: " << ref_e.PressureFromDensityTemperature(1, 1)
+                       << " test P: " << test_e.PressureFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.PressureFromDensityTemperature(1, 1),
+                ref_e.PressureFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference Cv: " << ref_e.SpecificHeatFromDensityTemperature(1, 1) << " test Cv: "
+                        << test_e.SpecificHeatFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.SpecificHeatFromDensityTemperature(1, 1),
+                ref_e.SpecificHeatFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference bmod: " << ref_e.BulkModulusFromDensityTemperature(1, 1)
+                          << " test bmod: "
+                          << test_e.BulkModulusFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.BulkModulusFromDensityTemperature(1, 1),
+                ref_e.BulkModulusFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference Grun. Param.: " << ref_e.GruneisenParamFromDensityTemperature(1, 1)
+                                  << " test Grun. Param.: "
+                                  << test_e.GruneisenParamFromDensityTemperature(1, 1));
+  CHECK(isClose(test_e.GruneisenParamFromDensityTemperature(1, 1),
+                ref_e.GruneisenParamFromDensityTemperature(1, 1), 1.e-15));
+  INFO("reference rho min.: " << ref_e.MinimumDensity()
+                              << " test rho min.: " << test_e.MinimumDensity());
+  CHECK(isClose(test_e.MinimumDensity(), ref_e.MinimumDensity(), 1.e-15));
+  INFO("reference T min.: " << ref_e.MinimumTemperature()
+                            << " test T min.: " << test_e.MinimumTemperature());
+  CHECK(isClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15));
   return;
 }
 

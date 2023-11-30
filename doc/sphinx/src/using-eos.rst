@@ -35,6 +35,10 @@ conditions. The type of parallelism used depends on how
 ``singularity-eos`` is compiled. If the ``Kokkos`` backend is used,
 any parallel dispatch supported by ``Kokkos`` is supported.
 
+A more generic version of the vector calls exists in the ``Evaluate``
+method, which allows the user to specify arbitrary parallel dispatch
+models by writing their own loops. See the relevant section below.
+
 .. _variant section:
 
 Variants
@@ -216,6 +220,121 @@ available member function.
    eos.TemperatureFromDensityInternalEnergy(density.data(), energy.data(), temperature.data(),
                                             scratch.data(), density.size());
 
+The Evaluate Method
+~~~~~~~~~~~~~~~~~~~
+
+A special call related to the vector calls is the ``Evaluate``
+method. The ``Evaluate`` method requests the EOS object to evaluate
+almost arbitrary code, but in a way where the type of the underlying
+EOS object is resolved *before* this arbitrary code is evaluated. This
+means the code required to resolve the type of the variant is only
+executed *once* per ``Evaluate`` call. This can enable composite EOS
+calls, non-standard vector calls, and vector calls with non-standard
+loop structure.
+
+The ``Evaluate`` call has the signature
+
+.. code-block:: cpp
+
+  template<typename Functor_t>
+  PORTABLE_INLINE_FUNCTION
+  void Evaluate(Functor_t f);
+
+where a ``Functor_t`` is a class that *must* provide a ``void
+operator() const`` method templated on EOS type. ``Evaluate`` is
+decorated so that it may be evaluated on either host or device,
+depending on desired use-case. Alternatively, you may use an anonymous
+function with an `auto` argument as the input, e.g.,
+
+.. code-block::
+
+   // equivalent to [=], but with device markings
+   eos.Evaluate(PORTABLE_LAMBDA(auto eos) { /* my code snippet */ });
+
+.. warning::
+
+  It can be dangerous to use functors with side-effects. Especially
+  with GPUs it can produce very unintuitive behaviour. We recommend
+  you only make the ``operator()`` non-const if you really know what
+  you're doing. And in the anonymous function case, we recommend you
+  capture by value, not reference.
+
+To see the utlity of the ``Evaluate`` function, it's probably just
+easiest to provide an example. The following code evaluates the EOS on
+device and compares against a tabulated pressure. The total difference
+is summed using the ``Kokkos::parallel_reduce`` functionality in the
+``Kokkos`` performance portability library.
+
+.. code-block:: cpp
+
+  // The functor we use is defined here.
+  // This class definition needs to be of appropriately global scope.
+  class CheckPofRE {
+   public:
+    CheckPofRE(Real *P, Real *rho, Real *sie, int N) : P_(P), rho_(rho), sie_(sie), N_(N) {}
+    template <typename T>
+    // this is a host-only call, but if you wanted to write
+    // a function that you wanted to evaluate on device
+    // you could add the
+    // PORTABLE_INLINE_FUNCTION
+    // decorator here.
+    void operator()(const T &eos) const {
+      // Capturing member functions of a class in a lambda typically causes problems
+      // when launching a GPU kernel.
+      // Better to pull out new variables to capture before launching a kernel.
+      Real *P = P_;
+      Real *rho = rho_;
+      Real *sie = sie_;
+      // reduction target
+      Real tot_diff;
+      // reduction op
+      Kokkos::parallel_reduce(
+          "MyCheckPofRE", N_,
+          KOKKOS_LAMBDA(const int i, Real &diff) {
+            diff += std::abs(P[i] - eos.PressureFromDensityInternalEnergy(rho[i], sie[i]));
+          },
+          tot_diff);
+      std::cout << "Total difference = " << tot_diff << std::endl;
+    }
+  
+   private:
+    int N_;
+    Real *P_;
+    Real *rho_;
+    Real *sie_;
+  };
+
+  // Here we construct our functor
+  // it is assumed the pointers to device memory P, rho, sie, are defined elsewhere.
+  CheckPofRE my_op(P, rho, sie, N);
+
+  // Here we call the evaluate function
+  eos.Evaluate(my_op);
+
+  // The above two lines could have been called "in-one" with:
+  // eos.Evaluate(CheckPofRE(P, rho, sie, N));
+
+Alternatively, you could eliminate the functor and use an anonymous
+function with:
+
+.. code-block:: cpp
+
+  eos.Evaluate([=](auto eos) {
+    Real tot_diff;
+    Kokkos::parallel_reduce(
+        "MyCheckPofRE", N_,
+        KOKKOS_LAMBDA(const int i, Real &diff) {
+          diff += std::abs(P[i] - eos.PressureFromDensityInternalEnergy(rho[i], sie[i]));
+        },
+        tot_diff);
+    std::cout << "Total difference = " << tot_diff << std::endl;
+  });
+
+This is not functionality that would be available with the standard
+vector calls provided by ``singularity-eos``, at least not without
+chaining multiple parallel dispatch calls. Here we can do it in a
+single call.
+
 Lambdas and Optional Parameters
 --------------------------------
 
@@ -268,6 +387,34 @@ modifiers. All models support the ``ShiftedEOS`` and ``ScaledEOS``
 modifiers. However, note that modifiers do not commute, and only one
 order is supported. The ordering, inside-out, is ``UnitSystem`` or
 ``RelativisticEOS``, then ``ScaledEOS``, then ``ShiftedEOS``.
+
+A modified equation of state can be built up iteratively. To check if
+the equation of state currently stored in the variant can modified,
+you may call
+
+.. cpp:function:: bool ModifiedInVariant<Mod>() const;
+
+where ``Mod`` is the type of the modifier you want to apply, for
+example ``ShiftedEOS``. If this function returns true, then you can
+apply a modifier with the function
+
+.. cpp:function:: Variant Modify<Mod>(Args &&..args) const;
+
+where again ``Mod`` is the modifier you wish to apply, and ``args``
+are the arguments to the constructor for that modifier, e.g., the
+shift. For example, one might build up a shifted or scaled eos with a
+code block like this:
+
+.. code-block:: cpp
+
+  using namespace singularity;
+  EOS eos = IdealGas(gm1, cv);
+  if (do_shift) {
+    eos = eos.template Modify<ShiftedEOS>(shift);
+  }
+  if (do_scale) {
+    eos = eos.template Modify<ScaledEOS>(scale);
+  }
 
 Relevant to the broad ``singularity-eos`` API, EOS models provide
 introspection. To check if an EOS is modified, call
@@ -351,38 +498,34 @@ temperature or density and specific internal energy.
 EOS Builder
 ------------
 
-The inclusion of modifiers can make building a desired equation of
-state somewhat cumbersome. To handle this, we have implemented the
-``EOSBuilder`` machinery. ``EOSBuilder`` is a set of functions that
-provides a declarative interface for building an equation of state
-object.
+The iterative construction of modifiers described above and in the
+:ref:`modifiers<modifiers>` section is object oriented. For
+convenience, we also provide a procedural, dispatch-based approach in
+the ``EOSBuilder`` namespace and header. The key function is
 
-The EOS Builder functions and types are defined in the
-``singularity::EOSBuilder`` namespace. The key function is
+.. code-block:: cpp
 
-.. cpp:function:: EOS EOSBuilder::buildEOS(EOSBuilder::EOSType t, EOSBuilder::params_t base_params, EOSBuilder::modifiers_t modifiers)
+  template <template <class> typename Mod, typename... Ts, typename... Args>
+  singularity::Variant<Ts...> Modify(const Variant<Ts...> &eos, Args &&...args);
 
-* ``EOSBuilder::EOSType`` is an enum class with names that match the various EOS classes defined in :ref:`the models section <models>`; for example, ``EOSBuilder::EOSType::IdealGas``.
-* ``EOSBuilder::params_t`` is a dictionary object with some type erasure, which maps strings to the types ``std::string``, ``int``, or ``Real``. It is used to map parameter names to their values for class constructors.
-* ``EOSBuilder::modifiers_t`` is a dictionary from the ``EOSModifier`` enum class, which works identically to the ``EOSType`` enum but for modifiers, to ``params_t`` objects, specifying the constructor values for each modifier.
-
-Putting it all together, initializing an ``IdealGas`` with
-``EOSBuilder`` looks something like this:
+where ``Mod`` is an EOS modifier, ``Variant`` is either your
+user-defined custom EOS variant type, or the pre-defined ``EOS`` type,
+the ``eos`` object is an EOS you'd like to modify (stored as a
+variant), and ``args`` are the additional arguments to the constructor
+of ``Mod`` beyond the object to modify. For example, initializing an
+``IdealGas`` equation of state that is optionally shifted and scaled
+might look something like this:
 
 .. code-block:: cpp
 
   using namespace singularity;
-  EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-  EOSBuilder::modifiers_t modifiers;
-  EOSBuilder::params_t base_params, shifted_params, scaled_params;
-  base_params["Cv"].emplace<Real>(Cv);
-  base_params["gm1"].emplace<Real>(gm1);
-  shifted_params["shift"].emplace<Real>(shift);
-  scaled_params["scale"].emplace<Real>(scale);
-  modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
-  modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
-  EOS eos = EOSBuilder::buildEOS(type, base_params, modifiers);
-
+  EOS eos = IdealGas(gm1, cv);
+  if (do_shift) {
+    eos = EOSBuilder::Modify<ShiftedEOS>(eos, shift);
+  }
+  if (do_scale) {
+    eos = EOSBuilder::Modify<ScaledEOS>(eos, scale);
+  }
 
 .. _eos methods reference section:
 

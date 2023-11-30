@@ -55,6 +55,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   using EosBase<UnitSystem<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<UnitSystem<T>>::PressureFromDensityTemperature;
   using EosBase<UnitSystem<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<UnitSystem<T>>::MinInternalEnergyFromDensity;
   using EosBase<UnitSystem<T>>::EntropyFromDensityTemperature;
   using EosBase<UnitSystem<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<UnitSystem<T>>::SpecificHeatFromDensityTemperature;
@@ -129,6 +130,11 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     const Real P =
         t_.PressureFromDensityInternalEnergy(rho * rho_unit_, sie * sie_unit_, lambda);
     return inv_press_unit_ * P;
+  }
+  PORTABLE_FUNCTION
+  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    const Real S = t_.MinInternalEnergyFromDensity(rho * rho_unit_, lambda);
+    return inv_sie_unit_ * S;
   }
   PORTABLE_FUNCTION
   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -288,6 +294,17 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     t_.PressureFromDensityInternalEnergy(rhos, sies, pressures, scratch, num,
                                          std::forward<LambdaIndexer>(lambdas),
                                          std::forward<Transform>(transform));
+  }
+
+  template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer &&lambdas,
+                                           Transform &&transform = Transform()) const {
+    transform.x.apply(rho_unit_);
+    transform.f.apply(sie_unit_);
+    t_.MinInternalEnergyFromDensity(rhos, sies, scratch, num,
+                                    std::forward<LambdaIndexer>(lambdas),
+                                    std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>

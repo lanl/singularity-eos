@@ -1190,12 +1190,12 @@ equilibrium (NSE). It reads tabulated data in the `Stellar Collapse`_
 format, as first presented by `OConnor and Ott`_.
 
 Like ``SpinerEOSDependsRhoT``, ``StellarCollapse`` tabulateds all
-quantities in terms of density and temperature on a logarithmically
-spaced grid. And similarly, it requires an in-line root-find to
-compute quantities in terms of density and specific internal
-energy. Unlike most of the other models in ``singularity-eos``,
-``StellarCollapse`` also depends on a third quantity, the electron
-fraction,
+quantities in terms of density and temperature on an (approximately)
+logarithmically spaced grid. And similarly, it requires an in-line
+root-find to compute quantities in terms of density and specific
+internal energy. Unlike most of the other models in
+``singularity-eos``, ``StellarCollapse`` also depends on a third
+quantity, the electron fraction,
 
 .. math::
 
@@ -1231,7 +1231,7 @@ The ``StellarCollapse`` model requires a ``lambda`` parameter of size
 2, as described in :ref:`the EOS API section`<using-eos>`. The zeroth
 element of the ``lambda`` array contains the electron fraction. The
 first element is reserved for caching. It currently contains the
-natural log of the temperature, but this should not be assumed.
+log of the temperature, but this should not be assumed.
 
 To avoid race conditions, at least one array should be allocated per
 thread. Depending on the call pattern, one per point may be best. In
@@ -1277,10 +1277,19 @@ average atomic mass ``Abar`` and atomic number ``Zbar`` for heavy
 ions, assuming nuclear statistical equilibrium.
 
 In addition, the user may query the bounds of the table via the
-functions ``lRhoMin()``, ``lRhoMax()``, ``lTMin()``, ``lTMax()``,
-``TMin()``, ``TMax()``, ``YeMin()``, ``YeMax()``, ``sieMin()``, and
-``sieMax()``, which all return a ``Real`` number. The ``l`` prefix
-indicates log base 10.
+functions ``rhoMin()``, ``rhoMax()``, ``TMin()``, ``TMax()``,
+``YeMin()``, ``YeMax()``, ``sieMin()``, and ``sieMax()``, which all
+return a ``Real`` number.
+
+.. warning::
+    As with the SpinerEOS models, the stellar collapse models use fast
+    logs. You can switch the logs to true logs with the
+    ``SINGULARITY_USE_TRUE_LOG_GRIDDING`` cmake option.
+
+.. note::
+    A more performant implementation of fast logs is available, but it
+    might not be portable. Enable it with the
+    ``SINGULARITY_USE_HIGH_RISK_MATH`` cmake option.
 
 .. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
 
@@ -1390,14 +1399,18 @@ The constructor for the ``Helmholtz`` EOS class looks like
   Helmholtz(const std::string &filename, const bool rad = true,
             const bool gas = true, const bool coul = true,
             const bool ion = true, const bool ele = true,
-            const bool verbose = false)
+            const bool verbose = false, const bool newton_raphson = true)
 
 where ``filename`` is the file containing the tabulated model. The
 optional arguments ``rad``, ``gas``, ``coul``, ``ion``, and ``ele``
 specify whether to include the radiation, ideal gas, coulomb correction,
 ionization, and electron contributions, respectively. The default is to
 include all terms. The optional argument ``verbose`` specifies whether to print
-out additional information, e.g. when the root find fails to converge.
+out additional information, e.g. when the root find fails to converge. The
+optional argument ``newton_raphson`` specifies whether to use the Newton-Raphson
+method or the regula falsi method for root finding. The default is to use the
+Newton-Raphson method (note that the regula falsi method is used as a fallback
+in case the Newton-Raphson method does not converge).
 
 EOSPAC EOS
 ````````````
@@ -1410,11 +1423,23 @@ This is a striaghtforward wrapper of the `EOSPAC`_ library for the
 
 .. code-block::
 
-  EOSPAC(int matid, bool invert_at_setup = false)
+  EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0, eospacMonotonicity monotonicity = eospacMonotonicity::none, bool apply_smoothing = false, eospacSplit apply_splitting = eospacSplit::none, bool linear_interp = false)
 
-where ``matid`` is the unique material number in the database and
+where ``matid`` is the unique material number in the database,
 ``invert_at_setup`` specifies whether or not pre-compute tables of
-temperature as a function of density and energy.
+temperature as a function of density and energy, ``insert_data`` 
+inserts specified number of grid points between original grid points 
+in the `Sesame`_ table, ``monotonicity` enforces monotonicity in x, 
+y or both (:math:`monotonicityX/Y/XY`), ``apply_smoothing`` enables 
+data table smoothing that imposes a linear floor on temperature dependence, 
+forces linear temperature dependence for low temperature, and forces 
+linear density dependence for low and high density, ``apply_splitting`` 
+has the following options for ion data tables not found in the `Sesame`_ 
+database :. :math:`splitNumProp` uses the cold curve plus number-proportional 
+model, :math:`splitIdealGas` uses the cold curve plus ideal gas model 
+and :math:`splitCowan` uses the cold curve plus Cowan-nuclear model 
+for ions and the final option ``linear_interp`` uses linear instead of 
+bilinear interpolation. 
 
 Note for performance reasons this EOS uses a slightly different vector API.
 See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.

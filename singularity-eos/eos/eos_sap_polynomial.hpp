@@ -74,6 +74,13 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
       return _a0 + _a1 * mu + _a2e * mu * mu + _a3 * mu * mu * mu +
              sie * (_b0 + _b1 * mu + _b2e * mu * mu + _b3 * mu * mu * mu);
   }
+
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    MinInternalEnergyIsNotEnabled("SAP Polynomial");
+    return 0.0;
+  };
+
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");

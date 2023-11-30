@@ -58,6 +58,8 @@ class JWL : public EosBase<JWL> {
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
@@ -128,6 +130,11 @@ PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(const Real 
                                                                      const Real sie,
                                                                      Real *lambda) const {
   return ReferencePressure(rho) + _w * rho * (sie - ReferenceEnergy(rho));
+}
+PORTABLE_INLINE_FUNCTION Real JWL::MinInternalEnergyFromDensity(const Real rho,
+                                                                Real *lambda) const {
+  MinInternalEnergyIsNotEnabled("JWL");
+  return 0.0;
 }
 PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(const Real rho,
                                                                     const Real sie,

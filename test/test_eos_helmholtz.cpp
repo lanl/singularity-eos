@@ -22,7 +22,8 @@
 #include <limits>
 #include <string>
 
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 
@@ -101,7 +102,7 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
               4.1219845464736737e-01,
           };
 
-          Real lambda[2] = {4.0, 2.0};
+          Real lambda[3] = {4.0, 2.0, -1.0};
           int k = 0;
           for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
@@ -109,11 +110,6 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
                   eos.InternalEnergyFromDensityTemperature(rho_in[i], temp_in[j], lambda);
               Real press =
                   eos.PressureFromDensityTemperature(rho_in[i], temp_in[j], lambda);
-              // Do not move these checks! I don't know why but if you check all at
-              // once at the end, rho_in[0] is not accessed correctly.
-              if (!isClose(ein, ein_ref[k], 1e-10)) nwrong += 1;
-              if (!isClose(press, press_ref[k], 1e-10)) nwrong += 1;
-
               Real cv =
                   eos.SpecificHeatFromDensityTemperature(rho_in[i], temp_in[j], lambda);
               Real bulkmod =
@@ -121,6 +117,8 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
               Real gruen =
                   eos.GruneisenParamFromDensityTemperature(rho_in[i], temp_in[j], lambda);
 
+              if (!isClose(ein, ein_ref[k], 1e-10)) nwrong += 1;
+              if (!isClose(press, press_ref[k], 1e-10)) nwrong += 1;
               if (!isClose(cv, cv_ref[k], 1e-6)) nwrong += 1;
               if (!isClose(bulkmod, bulkmod_ref[k], 1e-8)) nwrong += 1;
               if (!isClose(gruen, gruen_ref[k], 1e-6)) nwrong += 1;
@@ -167,7 +165,7 @@ SCENARIO("Helmholtz equation of state - Root finding (egiven)", "[HelmholtzEOS]"
               2.0378412737252767e+18,
           };
 
-          Real lambda[2] = {4.0, 2.0};
+          Real lambda[3] = {4.0, 2.0, -1.0};
           int k = 0;
           for (int i = 0; i < 4; ++i) {
             for (int j = 0; j < 4; ++j) {
