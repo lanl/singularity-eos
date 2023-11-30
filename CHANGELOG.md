@@ -5,6 +5,7 @@
 ### Fixed (Repair bugs, etc)
 
 ### Added (new features/APIs/variables/...)
+- [[PR292]](https://github.com/lanl/singularity-eos/pull/292) Added Carnahan-Starling EoS
 
 ### Changed (changing behavior/API/variables/...)
 

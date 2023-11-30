@@ -20,6 +20,7 @@ add_executable(
   test_eos_sap_polynomial.cpp
   test_eos_noble_abel.cpp
   test_eos_stiff.cpp
+  test_eos_carnahan_starling.cpp
   )
 
 add_executable(

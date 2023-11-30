@@ -43,6 +43,7 @@ set(EOS_HEADERS
     eos/eos_eospac.hpp
     eos/eos_noble_abel.hpp
     eos/eos_stiff.hpp
+    eos/eos_carnahan_starling.hpp
 )
 
 set(EOS_SRCS eos/eos.cpp)
