@@ -16,6 +16,7 @@
 #define _SINGULARITY_EOS_EOS_EOS_JWL_HPP_
 
 // stdlib
+#include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <string>
@@ -40,7 +41,14 @@ class JWL : public EosBase<JWL> {
   JWL() = default;
   PORTABLE_INLINE_FUNCTION JWL(const Real A, const Real B, const Real R1, const Real R2,
                                const Real w, const Real rho0, const Real Cv)
-      : _A(A), _B(B), _R1(R1), _R2(R2), _w(w), _rho0(rho0), _Cv(Cv) {}
+      : _A(A), _B(B), _R1(R1), _R2(R2), _w(w), _rho0(rho0), _Cv(Cv),
+        _c1(robust::ratio(A, rho0 * R1)), _c2(robust::ratio(B, rho0 * R2)) {
+    assert(R1 > 0.0);
+    assert(R2 > 0.0);
+    assert(w > 0.0);
+    assert(rho0 > 0.0);
+    assert(Cv > 0.0);
+  }
   JWL GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
@@ -98,7 +106,7 @@ class JWL : public EosBase<JWL> {
   static std::string EosPyType() { return EosType(); }
 
  private:
-  Real _A, _B, _R1, _R2, _w, _rho0, _Cv;
+  Real _A, _B, _R1, _R2, _w, _rho0, _Cv, _c1, _c2;
   PORTABLE_INLINE_FUNCTION Real ReferenceEnergy(const Real rho) const;
   PORTABLE_INLINE_FUNCTION Real ReferencePressure(const Real rho) const;
   // static constexpr const char _eos_type[] = "JWL";
@@ -106,14 +114,13 @@ class JWL : public EosBase<JWL> {
       thermalqs::density | thermalqs::specific_internal_energy;
 };
 
-PORTABLE_INLINE_FUNCTION Real JWL::ReferencePressure(const Real rho) const {
-  const Real x = _rho0 / rho;
-  return _A * std::exp(-_R1 * x) + _B * std::exp(-_R2 * x);
+PORTABLE_FORCEINLINE_FUNCTION Real JWL::ReferencePressure(const Real rho) const {
+  const Real x = robust::ratio(_rho0, rho);
+  return _A * robust::safe_arg_exp(-_R1 * x) + _B * robust::safe_arg_exp(-_R2 * x);
 }
-PORTABLE_INLINE_FUNCTION Real JWL::ReferenceEnergy(const Real rho) const {
-  const Real x = _rho0 / rho;
-  return _A / (_rho0 * _R1) * std::exp(-_R1 * x) +
-         _B / (_rho0 * _R2) * std::exp(-_R2 * x);
+PORTABLE_FORCEINLINE_FUNCTION Real JWL::ReferenceEnergy(const Real rho) const {
+  const Real x = robust::ratio(_rho0, rho);
+  return _c1 * robust::safe_arg_exp(-_R1 * x) + _c2 * robust::safe_arg_exp(-_R2 * x);
 }
 PORTABLE_INLINE_FUNCTION Real JWL::InternalEnergyFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
@@ -137,7 +144,7 @@ PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(const Real r
 }
 PORTABLE_INLINE_FUNCTION Real JWL::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  return (sie - ReferenceEnergy(rho)) / _Cv;
+  return robust::ratio((sie - ReferenceEnergy(rho)), _Cv);
 }
 PORTABLE_INLINE_FUNCTION Real JWL::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
@@ -145,11 +152,12 @@ PORTABLE_INLINE_FUNCTION Real JWL::SpecificHeatFromDensityInternalEnergy(
 }
 PORTABLE_INLINE_FUNCTION Real JWL::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  const Real x = _rho0 / rho;
+  const Real x = robust::ratio(_rho0, rho);
   // return
   // (_w+1)*(PressureFromDensityInternalEnergy(rho,sie)-ReferencePressure(rho))+x*(_A*_R1*std::exp(-_R1*x)+_B*_R2*std::exp(-_R2*x));
   return (_w + 1) * _w * rho * (sie - ReferenceEnergy(rho)) +
-         x * (_A * _R1 * std::exp(-_R1 * x) + _B * _R2 * std::exp(-_R2 * x));
+         x * (_A * _R1 * robust::safe_arg_exp(-_R1 * x) +
+              _B * _R2 * robust::safe_arg_exp(-_R2 * x));
 }
 PORTABLE_INLINE_FUNCTION
 Real JWL::GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -232,7 +240,7 @@ void JWL::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, 
   dpde = _w * _rho0;
   // TODO: chad please fix this one for me. This is wrong.
   Real gm1 = GruneisenParamFromDensityInternalEnergy(rho, sie, lambda) * rho;
-  dvdt = gm1 * cv / bmod;
+  dvdt = robust::ratio(gm1 * cv, bmod);
 }
 
 } // namespace singularity
