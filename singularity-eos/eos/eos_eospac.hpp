@@ -34,6 +34,7 @@
 namespace singularity {
 
 using namespace eos_base;
+using namespace EospacWrapper;
 
 // How do I make a destructor? How do I free the EOS memory if more than one
 // points to the same table? Does EOSPAC give me multiple (reference-counted)
@@ -41,41 +42,153 @@ using namespace eos_base;
 
 // Only really works in serial
 // Not really supported on device
+
+// SG_PIF_NOWARN
+// this pragma disables host-device warnings when cuda enabled
+#if defined(__CUDACC__)
+#define SG_PIF_NOWARN #pragma nv_exec_check_disable
+#endif // __CUDACC__
+
+// force this macro to be defined regardless of complexity of logic above
+#ifndef SG_PIF_NOWARN
+#define SG_PIF_NOWARN
+#endif // !defind SG_PIF_NOWARN
+
+namespace impl_eospac {
+
+inline void SetUpDensityTemperatureScalingOptions(EOS_INTEGER options[],
+                                                  EOS_REAL values[], EOS_INTEGER &nopts,
+                                                  const Transform &transform) {
+  if (!transform.x.is_set() && !transform.y.is_set()) {
+    // Default singularity units are sesame density-temperature units so use
+    // pass-through
+    options[nopts] = EOS_XY_PASSTHRU;
+    values[nopts] = 1.0;
+    ++nopts;
+  } else {
+    // Density scaling
+    if (transform.x.is_set()) {
+      options[nopts] = EOS_X_CONVERT;
+      values[nopts] = 1.0 / transform.x.get();
+      ++nopts;
+    }
+    // Temperature scaling
+    if (transform.y.is_set()) {
+      options[nopts] = EOS_Y_CONVERT;
+      values[nopts] = 1.0 / transform.y.get();
+      ++nopts;
+    }
+  }
+}
+
+inline void SetUpDensityEnergyScalingOptions(EOS_INTEGER options[], EOS_REAL values[],
+                                             EOS_INTEGER &nopts,
+                                             const Transform &transform) {
+  // Density scaling
+  if (transform.x.is_set()) {
+    options[nopts] = EOS_X_CONVERT;
+    values[nopts] = 1.0 / transform.x.get();
+    ++nopts;
+  }
+  // Sesame energy units differ from singularity so always convert
+  EOS_REAL sie_scale = sieFromSesame(1.0);
+  if (transform.y.is_set()) {
+    sie_scale /= transform.y.get();
+  }
+  // Optimize using pass-through if energy and density are already in sesame units
+  if (!transform.x.is_set() && sie_scale == 1.0) {
+    options[nopts] = EOS_XY_PASSTHRU;
+    values[nopts] = 1.0;
+  } else {
+    options[nopts] = EOS_Y_CONVERT;
+    values[nopts] = sie_scale;
+  }
+  ++nopts;
+}
+
+inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
+                                     EOS_INTEGER &nopts, const Transform &transform) {
+  if (transform.f.is_set()) {
+    options[nopts] = EOS_F_CONVERT;
+    values[nopts] = transform.f.get();
+    ++nopts;
+  }
+}
+
+// Overload for when the output needs a singularity conversion as well
+inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
+                                     EOS_INTEGER &nopts, const Transform &transform,
+                                     EOS_REAL const singularity_unit_conv) {
+  options[nopts] = EOS_F_CONVERT;
+  values[nopts] = pressureFromSesame(1.0);
+  if (transform.f.is_set()) {
+    values[nopts] *= transform.f.get();
+  }
+  ++nopts;
+}
+
+} // namespace impl_eospac
+
 class EOSPAC : public EosBase<EOSPAC> {
+
  public:
   inline EOSPAC() = default;
-  inline EOSPAC(int matid, bool invert_at_setup = false);
+
+  ////add options here... and elsewhere
+  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
+                eospacMonotonicity monotonicity = eospacMonotonicity::none,
+                bool apply_smoothing = false,
+                eospacSplit apply_splitting = eospacSplit::none,
+                bool linear_interp = false);
   inline EOSPAC GetOnDevice() { return *this; }
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
                                         Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho, Real &sie) const;
+  SG_PIF_NOWARN
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
+                                       Real &rho, Real &sie) const;
+  SG_PIF_NOWARN
   PORTABLE_INLINE_FUNCTION void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
                                                        Real &press, Real &cv, Real &bmod,
                                                        Real &dpde, Real &dvdt,
@@ -143,8 +256,14 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                 ConstRealIndexer &&sies,
                                                 RealIndexer &&pressures, const int num,
                                                 LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
                                                        lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
             typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
@@ -155,6 +274,14 @@ class EOSPAC : public EosBase<EOSPAC> {
     PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
     EosBase<EOSPAC>::PressureFromDensityInternalEnergy(rhos, sies, pressures, num,
                                                        lambdas);
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real * /*scratch*/, const int num,
+                                           LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("EOSPAC type mismatch will cause significant performance degradation");
+    EosBase<EOSPAC>::MinInternalEnergyFromDensity(rhos, sies, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void EntropyFromDensityTemperature(ConstRealIndexer &&rhos,
@@ -303,7 +430,6 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                              lambdas);
   }
 
-  using EosBase<EOSPAC>::PTofRE;
   using EosBase<EOSPAC>::FillEos;
   using EosBase<EOSPAC>::EntropyIsNotEnabled;
 
@@ -326,24 +452,11 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
 
-    if (transform.x.is_set()) {
-      options[nopts] = EOS_X_CONVERT;
-      values[nopts] = 1.0 / transform.x.get();
-      ++nopts;
-    }
+    // Set up density/energy unit scaling
+    impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
 
-    options[nopts] = EOS_Y_CONVERT;
-    values[nopts] = sieFromSesame(1.0);
-    if (transform.y.is_set()) {
-      values[nopts] /= transform.y.get();
-    }
-    ++nopts;
-
-    if (transform.f.is_set()) {
-      options[nopts] = EOS_F_CONVERT;
-      values[nopts] = transform.f.get();
-      ++nopts;
-    }
+    // Temperature scaling
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform);
 
     eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                        options, values, nopts);
@@ -366,31 +479,12 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
 
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
 
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
-
-    options[nopts] = EOS_F_CONVERT;
-    values[nopts] = pressureFromSesame(1.0);
-
-    if (transform.f.is_set()) {
-      values[nopts] *= transform.f.get();
-    }
-    ++nopts;
+    // Pressure units differ from singularity so always convert
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
+                                          pressureFromSesame(1.0));
 
     eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
                        options, values, nopts);
@@ -526,31 +620,12 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
 
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
 
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
-
-    options[nopts] = EOS_F_CONVERT;
-    values[nopts] = sieFromSesame(1.0);
-
-    if (transform.f.is_set()) {
-      values[nopts] *= transform.f.get();
-    }
-    ++nopts;
+    // Energy units differ from singularity so always convert
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
+                                          sieFromSesame(1.0));
 
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
@@ -564,77 +639,63 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *E = const_cast<EOS_REAL *>(&sies[0]);
     EOS_REAL *P = &pressures[0];
-    EOS_REAL *T = scratch + 0 * num;
-    EOS_REAL *dTdr = scratch + 1 * num;
-    EOS_REAL *dTde = scratch + 2 * num;
-    EOS_REAL *dPdr = dTdr;
-    EOS_REAL *dPdT = dTde;
+    EOS_REAL *dPdr = scratch + 0 * num;
+    EOS_REAL *dPde = scratch + 1 * num;
 
-    EOS_INTEGER table = TofRE_table_;
-    {
-      EOS_INTEGER options[2];
-      EOS_REAL values[2];
-      EOS_INTEGER nopts = 0;
+    EOS_INTEGER table = PofRE_table_;
+    EOS_INTEGER options[3];
+    EOS_REAL values[3];
+    EOS_INTEGER nopts = 0;
 
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
+    // Set up density/energy unit scaling
+    impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
 
-      options[nopts] = EOS_Y_CONVERT;
-      values[nopts] = sieFromSesame(1.0);
+    // Pressure units differ from singularity so always convert
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
+                                          pressureFromSesame(1.0));
 
-      if (transform.y.is_set()) {
-        values[nopts] /= transform.y.get();
-      }
-      ++nopts;
+    eosSafeInterpolate(&table, num, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
+                       options, values, nopts);
+  }
 
-      eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
-                         options, values, nopts);
-    }
+  template <typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(const Real *rhos, Real *sies, Real *scratch,
+                                           const int num, LambdaIndexer /*lambdas*/,
+                                           Transform &&transform = Transform()) const {
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *E = &sies[0];
+    EOS_REAL *dedr = scratch + 0 * num;
 
-    table = PofRT_table_;
-    {
-      EOS_INTEGER options[2];
-      EOS_REAL values[2];
-      EOS_INTEGER nopts = 0;
+    EOS_INTEGER table = EcofD_table_;
+    EOS_INTEGER options[3];
+    EOS_REAL values[3];
+    EOS_INTEGER nopts = 0;
 
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-      } else {
-        options[nopts] = EOS_XY_PASSTHRU;
-        values[nopts] = 1.0;
-      }
-      ++nopts;
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
 
-      options[nopts] = EOS_F_CONVERT;
-      values[nopts] = pressureFromSesame(1.0);
+    // Energy units differ from singularity so always convert
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
+                                          sieFromSesame(1.0));
 
-      if (transform.f.is_set()) {
-        values[nopts] *= transform.f.get();
-      }
-      ++nopts;
-
-      eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
-                         options, values, nopts);
-    }
+    eosSafeInterpolate(&table, num, R, R, E, dedr, dedr, "EcofD", Verbosity::Quiet,
+                       options, values, nopts);
   }
 
   template <typename LambdaIndexer>
   inline void SpecificHeatFromDensityTemperature(
       const Real *rhos, const Real *temperatures, Real *cvs, Real *scratch, const int num,
       LambdaIndexer /*lambdas*/, Transform &&transform = Transform()) const {
+    using namespace EospacWrapper;
     static auto const name =
         singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
     static auto const cname = name.c_str();
-    using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
     EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
     EOS_REAL *E = scratch + 0 * num;
-    EOS_REAL *DEDT = &cvs[0];
     EOS_REAL *DEDR = scratch + 1 * num;
+    EOS_REAL *DEDT = &cvs[0];
 
     EOS_INTEGER table = EofRT_table_;
 
@@ -642,37 +703,20 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[3];
     EOS_INTEGER nopts = 0;
 
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
-
-    options[nopts] = EOS_F_CONVERT;
-    values[nopts] = cvFromSesame(1.0);
-
-    if (transform.f.is_set()) {
-      values[nopts] *= transform.f.get();
-    }
-    ++nopts;
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
 
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
                        options, values, nopts);
 
+    const Real y = transform.y.is_set() ? (1.0 / transform.y.get()) : 1.0;
+    const Real f = transform.f.is_set() ? transform.f.get() : 1.0;
+
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          cvs[i] = std::max(cvs[i], 0.0); // Here we do something to the data!
+          cvs[i] =
+              f * y *
+              cvFromSesame(std::max(DEDT[i], 0.0)); // Here we do something to the data!
         });
   }
 
@@ -694,24 +738,17 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *DEDT = dTdr;
     EOS_REAL *DEDR = dTde;
 
+    // TODO: Use direct lookup to reduce scratch usage and allow consistent temperature
+    //       scaling
+
     EOS_INTEGER table = TofRE_table_;
     {
       EOS_INTEGER options[2];
       EOS_REAL values[2];
       EOS_INTEGER nopts = 0;
 
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-
-      options[nopts] = EOS_Y_CONVERT;
-      values[nopts] = sieFromSesame(1.0);
-      if (transform.y.is_set()) {
-        values[nopts] /= transform.y.get();
-      }
-      ++nopts;
+      // Set up density/energy unit scaling
+      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
 
       eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                          options, values, nopts);
@@ -768,22 +805,11 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[2];
     EOS_INTEGER nopts = 0;
 
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
+
+    // TODO: Just use the native bulk modulus lookup instead to reduce scratch usage and
+    //       avoid consistency issues with energy and pressure units
 
     EOS_INTEGER table = EofRT_table_;
     eosSafeInterpolate(&table, num, R, T, E, DEDR, DEDT, "EofRT", Verbosity::Quiet,
@@ -846,22 +872,15 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *DPDT = dTdr;
     EOS_REAL *DPDR = dTde;
 
+    // TODO: Use direct lookup to reduce scratch usage
+
     EOS_INTEGER table = TofRE_table_;
     {
       EOS_INTEGER options[2];
       EOS_REAL values[2];
       EOS_INTEGER nopts = 0;
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-      options[nopts] = EOS_Y_CONVERT;
-      values[nopts] = sieFromSesame(1.0);
-      if (transform.y.is_set()) {
-        values[nopts] /= transform.y.get();
-      }
-      ++nopts;
+      // Set up density/energy unit scaling
+      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
       eosSafeInterpolate(&table, num, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet,
                          options, values, nopts);
     }
@@ -941,22 +960,12 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL values[2];
     EOS_INTEGER nopts = 0;
 
-    if (!transform.x.is_set() && !transform.y.is_set()) {
-      options[nopts] = EOS_XY_PASSTHRU;
-      values[nopts] = 1.0;
-      ++nopts;
-    } else {
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
-      if (transform.y.is_set()) {
-        options[nopts] = EOS_Y_CONVERT;
-        values[nopts] = 1.0 / transform.y.get();
-        ++nopts;
-      }
-    }
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
+
+    // TODO: Use direct lookup to reduce scratch memory usage and avoid energy unit
+    //       inconsistencies
+
     EOS_INTEGER table = EofRT_table_;
     eosSafeInterpolate(&table, num, R, T, E, dx, DEDT, "EofRT", Verbosity::Quiet, options,
                        values, nopts);
@@ -993,24 +1002,18 @@ class EOSPAC : public EosBase<EOSPAC> {
     EOS_REAL *Etmp = P;
     EOS_REAL *dy = DEDT;
 
+    // TODO: Use direct lookup to reduce scratch memory usage and avoid temperature unit
+    //       inconsistencies
+
     EOS_INTEGER table = TofRE_table_;
     {
       EOS_INTEGER options[3];
       EOS_REAL values[3];
       EOS_INTEGER nopts = 0;
 
-      if (transform.x.is_set()) {
-        options[nopts] = EOS_X_CONVERT;
-        values[nopts] = 1.0 / transform.x.get();
-        ++nopts;
-      }
+      // Set up density/energy unit scaling
+      impl_eospac::SetUpDensityEnergyScalingOptions(options, values, nopts, transform);
 
-      options[nopts] = EOS_Y_CONVERT;
-      values[nopts] = sieFromSesame(1.0);
-      if (transform.y.is_set()) {
-        values[nopts] /= transform.y.get();
-      }
-      ++nopts;
       eosSafeInterpolate(&table, num, R, E, T, dx, dy, "TofRE", Verbosity::Quiet, options,
                          values, nopts);
     }
@@ -1044,76 +1047,6 @@ class EOSPAC : public EosBase<EOSPAC> {
         });
   }
 
-  template <typename LambdaIndexer>
-  inline void PTofRE(Real *rhos, Real *sies, Real *presses, Real *temps, Real *dpdrs,
-                     Real *dpdes, Real *dtdrs, Real *dtdes, Real *scratch, const int num,
-                     LambdaIndexer lambdas) const {
-    static auto const name =
-        singularity::mfuncname::member_func_name(typeid(EOSPAC).name(), __func__);
-    static auto const cname = name.c_str();
-
-    PressureFromDensityInternalEnergy(rhos, sies, presses, scratch, num, lambdas);
-    TemperatureFromDensityInternalEnergy(rhos, sies, temps, scratch, num, lambdas);
-
-    Real *drho = scratch;
-    Real *de = scratch + num;
-    Real *Pr = scratch + 2 * num;
-    Real *Pe = scratch + 3 * num;
-    Real *Tr = scratch + 4 * num;
-    Real *Te = scratch + 5 * num;
-    Real *rho_p_drho = scratch + 6 * num;
-    Real *sie_p_de = scratch + 7 * num;
-
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          drho[i] = rhos[i] * 1.0e-6;
-          de[i] = sies[i] * 1.0e-6;
-          rho_p_drho[i] = rhos[i] + drho[i];
-          sie_p_de[i] = sies[i] + de[i];
-        });
-
-    Real *R = &rhos[0];
-    Real *E = &sies[0];
-
-    Real *internal_scratch = scratch + 8 * num;
-
-    PressureFromDensityInternalEnergy(rho_p_drho, E, Pr, internal_scratch, num, lambdas);
-    PressureFromDensityInternalEnergy(R, sie_p_de, Pe, internal_scratch, num, lambdas);
-    TemperatureFromDensityInternalEnergy(rho_p_drho, E, Tr, internal_scratch, num,
-                                         lambdas);
-    TemperatureFromDensityInternalEnergy(R, sie_p_de, Te, internal_scratch, num, lambdas);
-
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          dpdrs[i] = (Pr[i] - presses[i]) / drho[i];
-          dpdes[i] = (Pe[i] - presses[i]) / de[i];
-          dtdrs[i] = (Tr[i] - temps[i]) / drho[i];
-          dtdes[i] =
-              (Te[i] - temps[i]) /
-              de[i]; // Would it be better to skip the calculation of Te and return 1/cv?
-        });
-  }
-
-  PORTABLE_INLINE_FUNCTION
-  void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr,
-              Real &dpde, Real &dtdr, Real &dtde) const {
-
-    press = PressureFromDensityInternalEnergy(rho, sie, lambda);
-    temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-    const Real drho = rho * 1.0e-6;
-    const Real de = sie * 1.0e-6;
-    const Real Pr = PressureFromDensityInternalEnergy(rho + drho, sie, lambda);
-    const Real Pe = PressureFromDensityInternalEnergy(rho, sie + de, lambda);
-    const Real Tr = TemperatureFromDensityInternalEnergy(rho + drho, sie, lambda);
-    const Real Te = TemperatureFromDensityInternalEnergy(rho, sie + de, lambda);
-    dpdr = (Pr - press) / drho;
-    dpde = (Pe - press) / de;
-    dtdr = (Tr - temp) / drho;
-    dtde = (Te - temp) /
-           de; // Would it be better to skip the calculation of Te and return 1/cv?
-    return;
-  }
-
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     auto nbuffers = scratch_nbuffers();
     if (nbuffers.find(method) != nbuffers.end()) {
@@ -1138,7 +1071,9 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
   static std::string EosType() { return std::string("EOSPAC"); }
   static std::string EosPyType() { return EosType(); }
-  inline void PrintParams() const { printf("EOSPAC parameters:\nmatid = %s\n", matid_); }
+  PORTABLE_INLINE_FUNCTION void PrintParams() const {
+    printf("EOSPAC parameters:\nmatid = %i\n", matid_);
+  }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
 
@@ -1146,13 +1081,14 @@ class EOSPAC : public EosBase<EOSPAC> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   int matid_;
-  static constexpr int NT = 5;
+  static constexpr int NT = 7;
   EOS_INTEGER PofRT_table_;
   EOS_INTEGER TofRE_table_;
   EOS_INTEGER EofRT_table_;
   EOS_INTEGER RofPT_table_;
   EOS_INTEGER TofRP_table_;
-  // EOS_INTEGER PofRE_table_;
+  EOS_INTEGER PofRE_table_;
+  EOS_INTEGER EcofD_table_;
   EOS_INTEGER tablehandle[NT];
   EOS_INTEGER EOS_Info_table_;
   static constexpr Real temp_ref_ = 293;
@@ -1172,14 +1108,15 @@ class EOSPAC : public EosBase<EOSPAC> {
         {"PressureFromDensityTemperature", 2},
         {"FillEos", 4},
         {"InternalEnergyFromDensityTemperature", 2},
-        {"PressureFromDensityInternalEnergy", 3},
+        {"PressureFromDensityInternalEnergy", 2},
         {"SpecificHeatFromDensityTemperature", 2},
         {"SpecificHeatFromDensityInternalEnergy", 4},
         {"BulkModulusFromDensityTemperature", 6},
         {"BulkModulusFromDensityInternalEnergy", 6},
         {"GruneisenParamFromDensityTemperature", 4},
         {"GruneisenParamFromDensityInternalEnergy", 5},
-        {"PTofRE", 11}};
+        {"MinInternalEnergyFromDensity", 1},
+    };
     return nbuffers;
   }
 };
@@ -1188,18 +1125,28 @@ class EOSPAC : public EosBase<EOSPAC> {
 // Implementation details below
 // ======================================================================
 
-inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup) : matid_(matid) {
+inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
+                      EospacWrapper::eospacMonotonicity monotonicity,
+                      bool apply_smoothing, EospacWrapper::eospacSplit apply_splitting,
+                      bool linear_interp)
+    : matid_(matid) {
   using namespace EospacWrapper;
-  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT, EOS_D_PtT, EOS_T_DPt};
-  eosSafeLoad(NT, matid, tableType, tablehandle,
-              std::vector<std::string>(
-                  {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT", "EOS_T_DPt"}),
-              Verbosity::Quiet, invert_at_setup);
+  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt,  EOS_Ut_DT, EOS_D_PtT,
+                               EOS_T_DPt, EOS_Pt_DUt, EOS_Uc_D};
+  eosSafeLoad(
+      NT, matid, tableType, tablehandle,
+      std::vector<std::string>({"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT",
+                                "EOS_T_DPt", "EOS_Pt_DUt", "EOS_Uc_D"}),
+      Verbosity::Quiet, invert_at_setup = invert_at_setup, insert_data = insert_data,
+      monotonicity = monotonicity, apply_smoothing = apply_smoothing,
+      apply_splitting = apply_splitting, linear_interp = linear_interp);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
   RofPT_table_ = tablehandle[3];
   TofRP_table_ = tablehandle[4];
+  PofRE_table_ = tablehandle[5];
+  EcofD_table_ = tablehandle[6];
 
   // Set reference states and table bounds
   SesameMetadata m;
@@ -1232,6 +1179,7 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup) : matid_(matid) {
       robust::ratio(dpde_ref_ * cv_ref_, rho_ref_ * rho_ref_ * pressureFromSesame(DPDR));
 }
 
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   using namespace EospacWrapper;
@@ -1242,6 +1190,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::TemperatureFromDensityInternalEnergy(
   return Real(temperatureFromSesame(T[0]));
 }
 
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(const Real rho,
                                                                      const Real temp,
                                                                      Real *lambda) const {
@@ -1253,22 +1202,24 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(const Real 
   return Real(pressureFromSesame(P[0]));
 }
 
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
     const Real rho, const Real temperature, Real *lambda) const {
   EntropyIsNotEnabled("EOSPAC");
   return 1.0;
 }
 
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie,
                                               Real &press, Real &cv, Real &bmod,
                                               const unsigned long output,
                                               Real *lambda) const {
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, T[1] = {temperatureToSesame(temp)};
-  EOS_REAL E[1] = {sie}, P[1] = {pressureToSesame(press)};
+  EOS_REAL E[1] = {sieToSesame(sie)}, P[1] = {pressureToSesame(press)};
   EOS_REAL dx[1], dy[1];
   EOS_INTEGER nxypairs = 1;
-  Real CV, BMOD_T, BMOD, SIE, PRESS, DPDE, DPDT, DPDR, DEDT, DEDR;
+  Real /*CV,*/ BMOD_T, BMOD, SIE, PRESS, DPDE, DPDT, DPDR, DEDT, DEDR;
   const unsigned long input = ~output;
   if (output == thermalqs::none) {
     UNDEFINED_ERROR;
@@ -1342,6 +1293,7 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::FillEos(Real &rho, Real &temp, Real &sie,
   }
 }
 
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::InternalEnergyFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   using namespace EospacWrapper;
@@ -1350,6 +1302,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::InternalEnergyFromDensityTemperature(
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return sie;
 }
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   using namespace EospacWrapper;
@@ -1358,6 +1311,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityTemperature(
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return bmod;
 }
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
   using namespace EospacWrapper;
@@ -1366,24 +1320,51 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityTemperature(
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return cv;
 }
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   using namespace EospacWrapper;
-  Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-  return PressureFromDensityTemperature(rho, temp, lambda);
+  EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
+  EOS_REAL values[]{sieFromSesame(1.0), pressureFromSesame(1.0)};
+  EOS_INTEGER nopts = 2;
+  EOS_REAL R[1] = {rho}, E[1] = {sie}, P[1], dPdr[1], dPde[1];
+  EOS_INTEGER nxypairs = 1;
+  EOS_INTEGER table = PofRE_table_;
+  eosSafeInterpolate(&table, nxypairs, R, E, P, dPdr, dPde, "PofRE", Verbosity::Quiet,
+                     options, values, nopts);
+
+  return Real(P[0]);
 }
+SG_PIF_NOWARN
+PORTABLE_INLINE_FUNCTION Real EOSPAC::MinInternalEnergyFromDensity(const Real rho,
+                                                                   Real *lambda) const {
+  using namespace EospacWrapper;
+  EOS_INTEGER options[]{EOS_F_CONVERT};
+  EOS_REAL values[]{sieFromSesame(1.0)};
+  EOS_INTEGER nopts = 1;
+  EOS_REAL R[1] = {rho}, S[1], dSdr[1];
+  EOS_INTEGER nxypairs = 1;
+  EOS_INTEGER table = EcofD_table_;
+  eosSafeInterpolate(&table, nxypairs, R, S, S, dSdr, dSdr, "EcofD", Verbosity::Quiet,
+                     options, values, nopts);
+
+  return Real(S[0]);
+}
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   using namespace EospacWrapper;
   const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return EntropyFromDensityTemperature(rho, temp, lambda);
 }
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   using namespace EospacWrapper;
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return SpecificHeatFromDensityTemperature(rho, temp, lambda);
 }
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   using namespace EospacWrapper;
@@ -1391,6 +1372,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityInternalEnergy(
   return BulkModulusFromDensityTemperature(rho, temp, lambda);
 }
 
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityTemperature(
     const Real rho, const Real temperature, Real *lambda) const {
   using namespace EospacWrapper;
@@ -1407,22 +1389,22 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityTemperature(
   DPDE = DPDT / DEDT;
   return robust::ratio(pressureFromSesame(sieToSesame(DPDE)), rho);
 }
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
   Real temperature = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return GruneisenParamFromDensityTemperature(rho, temperature, lambda);
 }
 
-PORTABLE_INLINE_FUNCTION
-void EOSPAC::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                                  Real *lambda, Real &rho,
-                                                  Real &sie) const {
+SG_PIF_NOWARN
+PORTABLE_INLINE_FUNCTION void
+EOSPAC::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                             Real *lambda, Real &rho, Real &sie) const {
   using namespace EospacWrapper;
   EOS_REAL P[1] = {pressureToSesame(press)};
   EOS_REAL T[1] = {temperatureToSesame(temp)};
   EOS_REAL dx[1], dy[1], R[1], E[1];
   EOS_INTEGER nxypairs = 1;
-  EOS_INTEGER errorCode;
   EOS_INTEGER table;
 
   table = RofPT_table_;
@@ -1434,6 +1416,7 @@ void EOSPAC::DensityEnergyFromPressureTemperature(const Real press, const Real t
   sie = sieFromSesame(E[0]);
 }
 
+SG_PIF_NOWARN
 PORTABLE_INLINE_FUNCTION void
 EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                                Real &bmod, Real &dpde, Real &dvdt, Real *lambda) const {

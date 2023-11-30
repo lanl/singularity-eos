@@ -47,6 +47,7 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   using EosBase<RelativisticEOS<T>>::InternalEnergyFromDensityTemperature;
   using EosBase<RelativisticEOS<T>>::PressureFromDensityTemperature;
   using EosBase<RelativisticEOS<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<RelativisticEOS<T>>::MinInternalEnergyFromDensity;
   using EosBase<RelativisticEOS<T>>::EntropyFromDensityTemperature;
   using EosBase<RelativisticEOS<T>>::EntropyFromDensityInternalEnergy;
   using EosBase<RelativisticEOS<T>>::SpecificHeatFromDensityTemperature;
@@ -55,7 +56,6 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   using EosBase<RelativisticEOS<T>>::BulkModulusFromDensityInternalEnergy;
   using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityTemperature;
   using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<RelativisticEOS<T>>::PTofRE;
   using EosBase<RelativisticEOS<T>>::FillEos;
 
   using BaseType = T;
@@ -92,6 +92,10 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const {
     return t_.PressureFromDensityInternalEnergy(rho, sie, lambda);
+  }
+  PORTABLE_FUNCTION
+  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    return t_.MinInternalEnergyFromDensity(rho, lambda);
   }
   PORTABLE_FUNCTION
   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
@@ -185,12 +189,13 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  bool IsModified() const { return true; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  T UnmodifyOnce() { return t_; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  auto GetUnmodifiedObject() { return t_.GetUnmodifiedObject(); }
+  inline constexpr bool IsModified() const { return true; }
+
+  inline constexpr T UnmodifyOnce() { return t_; }
+
+  inline constexpr decltype(auto) GetUnmodifiedObject() {
+    return t_.GetUnmodifiedObject();
+  }
 
  private:
   T t_;

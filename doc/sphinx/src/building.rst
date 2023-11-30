@@ -153,7 +153,21 @@ preconditions:
  ``SINGULARITY_TEST_SESAME``                    ``SINGULARITY_BUILD_TESTS=ON`` ``SINGULARITY_BUILD_SESAME2SPINER=ON``             Test the Sesame table readers.
  ``SINGULARITY_TEST_STELLAR_COLLAPSE``          ``SINGULARITY_BUILD_TESTS=ON`` ``SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON``     Test the Stellar Collapse table readers.
  ``SINGULARITY_TEST_PYTHON``                    ``SINGULARITY_BUILD_TESTS=ON`` ``SINGULARITY_BUILD_PYTHON=ON``                    Test the Python bindings.
+ ``SINGULARITY_USE_HELMHOLTZ``                  ``SINGULARITY_USE_SPINER=ON`` ``SINGULARITY_USE_SPINER_WITH_HDF5=ON``             Use Helmholtz equation of state.
+ ``SINGULARITY_TEST_HELMHOLTZ``                 ``SINGULARITY_USE_HELMHOLTZ``                                                     Build Helmholtz equation of state tests.
 ============================================== ================================================================================= ===========================================
+
+When installing ``singularity-eos``, data files are also installed. The
+follwing options control where the data files are installed:
+
+====================================== ======= ===========================================
+  Option                               Default  Comment
+====================================== ======= ===========================================
+``CMAKE_INSTALL_DATADIR``              <none>  Install directory for data files.
+``CMAKE_INSTALL_DATAROOTDIR``          share   Fallback data install directory.
+====================================== ======= ===========================================
+
+The paths specified by these options are relative to the install prefix.
 
 CMake presets
 -------------

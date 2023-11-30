@@ -17,7 +17,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-#ifndef CATCH_CONFIG_RUNNER
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
 #include "catch2/catch.hpp"
 #endif
 
@@ -25,8 +26,9 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
+using singularity::IdealGas;
 using singularity::NobleAbel;
+using EOS = singularity::Variant<IdealGas, NobleAbel>;
 
 SCENARIO("NobleAbel1", "[NobleAbel][NobleAbel1]") {
   GIVEN("Parameters for a NobleAbel EOS") {
@@ -360,7 +362,7 @@ SCENARIO("Recover Ideal Gas from NobleAbel", "[NobleAbel][NobleAbel4]") {
     //  Create the EOS
     EOS host_eos = NobleAbel(gm1, Cv, bb, qq);
     EOS eos = host_eos.GetOnDevice();
-    EOS ideal_eos = singularity::IdealGas(gm1, Cv);
+    EOS ideal_eos = IdealGas(gm1, Cv);
     GIVEN("Densities and energies") {
       constexpr int num = 1;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -532,8 +534,8 @@ SCENARIO("Test NobleAbel Entropy Calls", "[NobleAbel][NobleAbel5]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
-      constexpr std::array<Real, num> pressure_true{3.4450499999999993e+07};
-      constexpr std::array<Real, num> temperature_true{1.5320999999999999e+03};
+      // constexpr std::array<Real, num> pressure_true{3.4450499999999993e+07};
+      // constexpr std::array<Real, num> temperature_true{1.5320999999999999e+03};
       constexpr std::array<Real, num> entropy_true{-2.0177705273504910e+08};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS

@@ -26,7 +26,14 @@ use clang-format for this, pinned to version 12. You can automatically
 trigger ``clang-format`` in two ways: first you can run the script
 ``utils/scripts/format.sh``; second you can type ``make
 format_singularity`` after configuring the code with ``clang-format``
-discoverable by ``cmake``.
+discoverable by ``cmake``. The former script takes two CLI arguments
+that may be useful, ``CFM``, which can be set to the path for your
+clang-format binary, and ``VERBOSE``, which if set to ``1`` adds
+useful output. For example:
+
+.. code-block:: bash
+
+    CFM=clang-format-12 VERBOSE=1 ./util/scripts/format.sh
 
 Several sets of tests are triggered on a pull request: a static format
 check, a docs buld, and unit tests of analytic models and the stellar
@@ -226,10 +233,9 @@ test in the ``CMakeLists.txt`` file,
 
 .. code-block:: cmake
 
-    add_executable(eos_unit_tests
+    add_executable(eos_analytic_unit_tests
         catch2_define.cpp
         eos_unit_test_helpers.hpp
-        test_eos_unit.cpp
         test_eos_gruneisen.cpp
         test_eos_vinet.cpp
         test_my_new_eos.cpp
@@ -238,15 +244,23 @@ test in the ``CMakeLists.txt`` file,
 in order for the test to be compiled. If your EOS requires any special
 dependencies, be sure to block off the test using ``#IFDEF`` blocks.
 
-**Important:** this is a subtlety that highlights the importance of unit tests!
-Since our library is header only, the unit tests are often the only place where
-a specific EOS may be instantiated when ``singularity-eos`` is compiled. Unit
-tests _must_ make use of the ``EOS`` type, i.e.
+.. note::
+
+  Note that there are three executables, ``eos_analytic_unit_tests``,
+  ``eos_infrastructure_tests`` and ``eos_tabulated_unit_tests``. Pick
+  the executable that most closely matches what your model is.
+
+**Important:** Since our library is header only, the unit
+tests are often the only place where a specific EOS may be
+instantiated when ``singularity-eos`` is compiled.  Therefore to
+exercise all code paths, it is best to create an ``EOS`` type
+instantiated as
 
 .. code-block:: c++
 
     #include <singularity-eos/eos/eos.hpp>
-    EOS my_eos = my_new_eos(parameter1, parameter2, ...)
+    using EOS = singularity::Variant<MyNewEOS>;``.
+    EOS my_eos = MyNewEOS(parameter1, parameter2, ...)
 
 in order to properly test the functionality of a new EOS. Simply using the
 new class as the type such as
@@ -491,14 +505,13 @@ The CRTP slass structure and static polymorphism
 ````````````````````````````````````````````````
 
 Each of the EOS models in ``singularity-eos`` inherits from a base class in
-order to centralize default functionality and avoid code duplication. The two
-main examples of this are the vector overloads and the ``PTofRE`` scalar lookup
-function. In the vector overloads, a simple for loop is used to iterate over
+order to centralize default functionality and avoid code duplication. The
+main example of this are the vector overloads.
+In the vector overloads, a simple for loop is used to iterate over
 the set of states provided to the function and then call the scalar version on
-each state. The ``PTofRE`` function is designed to provide a common method for
-getting the needed information for a PTE solve from an EOS. Both of these
-features are general to all types of EOS, but are reliant on specific
-implementations of the EOS lookups. In both cases, these functions provide a
+each state. This feature is
+general to all types of EOS, but reliant on specific
+implementations of the EOS lookups. These functions provide a
 default behaviour that we might also want to override for a given equation of
 state.
 

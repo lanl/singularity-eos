@@ -26,7 +26,7 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::CarnahanStarling;
-using singularity::EOS;
+using EOS = singularity::Variant<Gruneisen>;
 
 SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
   GIVEN("Parameters for a CarnahanStarling EOS") {

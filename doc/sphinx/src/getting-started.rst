@@ -11,12 +11,13 @@ At it's most basic, you can download and compile ``singularity-eos`` with:
   cd singularity-eos
   mkdir bin
   cd bin
-  cmake ..
+  cmake -DSINGULARITY_FORCE_SUBMODULEMODE=ON -DSINGULARITY_USE_FORTRAN=OFF ..
   make -j 
   make install # optional: install into directory defined via CMAKE_INSTALL_PREFIX
 
 This will downloady singularity-eos with no optional dependencies and
-compile the capabilities available in that form.
+compile the capabilities available in that form. For more details, see
+:ref:`our build page <building>`.
 
 If the library is in your include and lib paths (or you built it
 in-tree), you can include the eos part of the library with

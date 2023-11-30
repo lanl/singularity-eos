@@ -58,9 +58,10 @@ using namespace eos_base;
 // is linear extrapolation in log-log space. We should reconsider this
 // and introduce extrapolation as needed.
 class StellarCollapse : public EosBase<StellarCollapse> {
-  using DataBox = Spiner::DataBox<Real>;
-
  public:
+  using DataBox = Spiner::DataBox<Real>;
+  using Grid_t = Spiner::RegularGrid1D<Real>;
+
   // A weakly typed index map for lambdas
   struct Lambda {
     enum Index { Ye = 0, lT = 1 };
@@ -74,6 +75,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
   using EosBase<StellarCollapse>::PressureFromDensityTemperature;
   using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
+  using EosBase<StellarCollapse>::MinInternalEnergyFromDensity;
   using EosBase<StellarCollapse>::EntropyFromDensityTemperature;
   using EosBase<StellarCollapse>::EntropyFromDensityInternalEnergy;
   using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
@@ -82,7 +84,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   using EosBase<StellarCollapse>::BulkModulusFromDensityInternalEnergy;
   using EosBase<StellarCollapse>::GruneisenParamFromDensityTemperature;
   using EosBase<StellarCollapse>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::PTofRE;
   using EosBase<StellarCollapse>::FillEos;
 
   inline StellarCollapse(const std::string &filename, bool use_sp5 = false,
@@ -108,6 +109,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_INLINE_FUNCTION
   Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
                                          Real *lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION
+  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION
   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                      Real *lambda = nullptr) const;
@@ -158,15 +161,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     return 0;
   }
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMin() const { return lRhoMin_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lRhoMax() const { return lRhoMax_; }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
-  PORTABLE_FORCEINLINE_FUNCTION Real lTMin() const { return lTMin_; }
-  PORTABLE_FORCEINLINE_FUNCTION Real lTMax() const { return lTMax_; }
   PORTABLE_FORCEINLINE_FUNCTION Real TMin() const { return T_(lTMin_); }
   PORTABLE_FORCEINLINE_FUNCTION Real TMax() const { return T_(lTMax_); }
   PORTABLE_FORCEINLINE_FUNCTION Real YeMin() const { return YeMin_; }
@@ -176,9 +172,9 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("StellarCollapse parameters:\n"
            "depends on log10(rho), log10(T), Ye\n"
-           "lrho bounds = %g, %g\n"
-           "lT bounds = %g, %g\n"
-           "Ye bounds = %g, %g\n",
+           "lrho bounds = %.14e, %.14e\n"
+           "lT bounds = %.14e, %.14e\n"
+           "Ye bounds = %.14e, %.14e\n",
            lRhoMin_, lRhoMax_, lTMin_, lTMax_, YeMin_, YeMax_);
     return;
   }
@@ -192,13 +188,24 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   static std::string EosType() { return std::string("StellarCollapse"); }
   static std::string EosPyType() { return EosType(); }
 
+  // A utility function for working with 3D DataBoxes that converts
+  // from log10 to fastlog 10. Mostly for unit testing.
+
+  // TODO(JMM) Should this be in a utilities function somewhere? In
+  // the math folder or something? 3D is pretty specific to Stellar
+  // Collapse, so I think we can leave it here for now?
+  inline static void dataBoxToFastLogs(DataBox &db, DataBox &scratch,
+                                       bool dependent_var_log);
+
  private:
   inline void LoadFromSP5File_(const std::string &filename);
-  inline void LoadFromStellarCollapseFile_(const std::string &filename);
+  inline void LoadFromStellarCollapseFile_(const std::string &filename, bool filter_bmod);
   inline int readSCInt_(const hid_t &file_id, const std::string &name);
   inline void readBounds_(const hid_t &file_id, const std::string &name, int size,
                           Real &lo, Real &hi);
-  inline void readSCDset_(const hid_t &file_id, const std::string &name, DataBox &db);
+  inline void readSCDset_(const hid_t &file_id, const std::string &name,
+                          const Grid_t &Ye_grid, const Grid_t &lT_grid,
+                          const Grid_t &lRho_grid, DataBox &db);
 
   inline void medianFilter_(DataBox &db);
   inline void medianFilter_(const DataBox &in, DataBox &out);
@@ -219,13 +226,14 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                                             const Real offset) const noexcept {
     // StellarCollapse can't use fast logs, unless we re-grid onto the
     // "fast log grid"
-    return std::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
+    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + robust::SMALL());
   }
   PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx,
                                               const Real offset) const noexcept {
     // StellarCollapse can't use fast logs, unless we re-grid onto the
     // "fast log grid"
-    return std::pow(10., lx) - offset;
+    // return std::pow(10., lx) - offset;
+    return FastMath::pow10(lx) - offset;
   }
   PORTABLE_FORCEINLINE_FUNCTION Real lRho_(const Real rho) const noexcept {
     Real out = toLog_(rho, lRhoOffset_);
@@ -367,14 +375,7 @@ inline StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp
   if (use_sp5) {
     LoadFromSP5File_(filename);
   } else {
-    LoadFromStellarCollapseFile_(filename);
-    if (filter_bmod) {
-      medianFilter_(dPdRho_); // needed if pulling the data
-      medianFilter_(dPdE_);   // directly from Stellar Collapse tables
-      medianFilter_(dEdT_);
-    }
-    computeBulkModulus_();
-    computeColdAndHotCurves_();
+    LoadFromStellarCollapseFile_(filename, filter_bmod);
   }
   setNormalValues_();
 }
@@ -508,6 +509,11 @@ Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho, const Re
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real lP = lP_.interpToReal(Ye, lT, lRho);
   return lP2P_(lP);
+}
+PORTABLE_INLINE_FUNCTION
+Real StellarCollapse::MinInternalEnergyFromDensity(const Real rho, Real *lambda) const {
+  MinInternalEnergyIsNotEnabled("Stellar Collapse");
+  return 0.0;
 }
 
 PORTABLE_INLINE_FUNCTION
@@ -718,8 +724,10 @@ inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
 }
 
 // Read data directly from a stellar collapse eos file
-inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename) {
-  // Open the file.
+inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &filename,
+                                                          bool filter_bmod) {
+  // Start HDF5 stuff
+  // ---------------------------------------------------------------------
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   herr_t status = H5_SUCCESS;
 
@@ -729,38 +737,53 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
 
   status = H5LTread_dataset_double(file_id, "energy_shift", &lEOffset_);
   if (status < 0) {
-    EOS_ERROR("An HDF5 error ocurred while reading energy_shift\n");
+    PORTABLE_ALWAYS_THROW_OR_ABORT("An HDF5 error ocurred while reading energy_shift\n");
   }
 
-  // Bounds
-  readBounds_(file_id, "logrho", numRho_, lRhoMin_, lRhoMax_);
-  readBounds_(file_id, "logtemp", numT_, lTMin_, lTMax_);
-  const Real logMev2K = std::log10(MeV2K_);
-  lTMin_ += logMev2K;
-  lTMax_ += logMev2K;
+  Real lRhoMin, lRhoMax, lTMin, lTMax;
+  readBounds_(file_id, "logrho", numRho_, lRhoMin, lRhoMax);
+  readBounds_(file_id, "logtemp", numT_, lTMin, lTMax);
   readBounds_(file_id, "ye", numYe_, YeMin_, YeMax_);
+
+  // Convert temperature to MeV
+  const Real logMev2K = std::log10(MeV2K_);
+  lTMin += logMev2K;
+  lTMax += logMev2K;
+
+  // Generate grids for reading stellar collapse format tables
+  Grid_t Ye_grid(YeMin_, YeMax_, numYe_);
+  Grid_t lT_grid(lTMin, lTMax, numT_);
+  Grid_t lRho_grid(lRhoMin, lRhoMax, numRho_);
 
   // Tables
   // fastest -> slowest:
   // Ye -> lT -> lRho
   // TODO(JMM): Might be worth re-ordering these.
   // For cache efficiency, lT should be fastest, not lRho.
-  readSCDset_(file_id, "logpress", lP_);
-  readSCDset_(file_id, "logenergy", lE_);
-  readSCDset_(file_id, "dpdrhoe", dPdRho_);
-  readSCDset_(file_id, "dpderho", dPdE_);
-  readSCDset_(file_id, "dedt", dEdT_);
+
+  // Dependent vars in log space, so interpolation is log-log
+  readSCDset_(file_id, "logpress", Ye_grid, lT_grid, lRho_grid, lP_);
+  readSCDset_(file_id, "logenergy", Ye_grid, lT_grid, lRho_grid, lE_);
+
+  // Dependent vars not in log space, so interpolation is log-linear
+  readSCDset_(file_id, "dpdrhoe", Ye_grid, lT_grid, lRho_grid, dPdRho_);
+  readSCDset_(file_id, "dpderho", Ye_grid, lT_grid, lRho_grid, dPdE_);
+  readSCDset_(file_id, "dedt", Ye_grid, lT_grid, lRho_grid, dEdT_);
 
   // TODO(JMM): entropy, mass fractions, and average atomic mass and
   // numbers aren't exposed in eos_variant. So you need to pull the
   // type out.
-  readSCDset_(file_id, "entropy", entropy_);
-  readSCDset_(file_id, "Xa", Xa_);
-  readSCDset_(file_id, "Xh", Xh_);
-  readSCDset_(file_id, "Xn", Xn_);
-  readSCDset_(file_id, "Xp", Xp_);
-  readSCDset_(file_id, "Abar", Abar_);
-  readSCDset_(file_id, "Zbar", Zbar_);
+  readSCDset_(file_id, "entropy", Ye_grid, lT_grid, lRho_grid, entropy_);
+  readSCDset_(file_id, "Xa", Ye_grid, lT_grid, lRho_grid, Xa_);
+  readSCDset_(file_id, "Xh", Ye_grid, lT_grid, lRho_grid, Xh_);
+  readSCDset_(file_id, "Xn", Ye_grid, lT_grid, lRho_grid, Xn_);
+  readSCDset_(file_id, "Xp", Ye_grid, lT_grid, lRho_grid, Xp_);
+  readSCDset_(file_id, "Abar", Ye_grid, lT_grid, lRho_grid, Abar_);
+  readSCDset_(file_id, "Zbar", Ye_grid, lT_grid, lRho_grid, Zbar_);
+
+  H5Fclose(file_id);
+  // -----------------------------------------------------------------------
+  // End HDF5 stuff
 
   // TODO(BRR): in the future, if reading in chemical potentials, convert from MeV to K
 
@@ -773,7 +796,46 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
     }
   }
 
-  H5Fclose(file_id);
+  // Filter thermo derivs before reinterpolating
+  if (filter_bmod) {
+    medianFilter_(dPdRho_);
+    medianFilter_(dPdE_);
+    medianFilter_(dEdT_);
+  }
+
+  // Re-interpolate tables in case we want fast-log gridding
+  DataBox scratch(numYe_, numT_, numRho_);
+  // logged quantities
+  dataBoxToFastLogs(lP_, scratch, true);
+  dataBoxToFastLogs(lE_, scratch, true);
+  // linear quantities
+  dataBoxToFastLogs(dPdRho_, scratch, false);
+  dataBoxToFastLogs(dPdE_, scratch, false);
+  dataBoxToFastLogs(dEdT_, scratch, false);
+  // non-standard quantities
+  dataBoxToFastLogs(entropy_, scratch, false);
+  dataBoxToFastLogs(Xa_, scratch, false);
+  dataBoxToFastLogs(Xh_, scratch, false);
+  dataBoxToFastLogs(Xn_, scratch, false);
+  dataBoxToFastLogs(Xp_, scratch, false);
+  dataBoxToFastLogs(Abar_, scratch, false);
+  dataBoxToFastLogs(Zbar_, scratch, false);
+
+  // Generate bounds
+  Ye_grid = lP_.range(2);
+  lT_grid = lP_.range(1);
+  lRho_grid = lP_.range(0);
+  YeMin_ = Ye_grid.min();
+  YeMax_ = Ye_grid.max();
+  lTMin_ = lT_grid.min();
+  lTMax_ = lT_grid.max();
+  lRhoMin_ = lRho_grid.min();
+  lRhoMax_ = lRho_grid.max();
+
+  // Finally, compute bulk modulus, hot and cold curves from
+  // re-interpolated data.
+  computeBulkModulus_();
+  computeColdAndHotCurves_();
 }
 
 inline int StellarCollapse::readSCInt_(const hid_t &file_id, const std::string &name) {
@@ -819,23 +881,72 @@ inline void StellarCollapse::readBounds_(const hid_t &file_id, const std::string
  * https://forum.hdfgroup.org/t/is-this-a-bug-in-hdf5-1-8-6/2211
  */
 inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string &name,
-                                         DataBox &db) {
+                                         const Grid_t &Ye_grid, const Grid_t &lT_grid,
+                                         const Grid_t &lRho_grid, DataBox &db) {
   herr_t exists = H5LTfind_dataset(file_id, name.c_str());
   if (!exists) {
     std::string msg = "Tried to read dataset " + name + " but it doesn't exist\n";
     EOS_ERROR(msg.c_str());
   }
-  db.resize(numYe_, numT_, numRho_);
+  db.resize(Ye_grid.nPoints(), lT_grid.nPoints(), lRho_grid.nPoints());
   herr_t status = H5LTread_dataset(file_id, name.c_str(), H5T_REAL, db.data());
   if (status != H5_SUCCESS) {
     std::string msg = "Tried to read dataset " + name + " but it failed exist\n";
-    EOS_ERROR(msg.c_str());
+    PORTABLE_ALWAYS_THROW_OR_ABORT(msg.c_str());
   }
 
   // bounds
-  db.setRange(2, YeMin_, YeMax_, numYe_);
-  db.setRange(1, lTMin_, lTMax_, numT_);
-  db.setRange(0, lRhoMin_, lRhoMax_, numRho_);
+  db.setRange(2, Ye_grid);
+  db.setRange(1, lT_grid);
+  db.setRange(0, lRho_grid);
+}
+
+// Reinterpolate tab from its original grid spacing to the one using
+// the native log gridding for stellar collapse (usually fast logs).
+// Scratch is used as a temporary storage buffer and is assumed to be
+// the same shape as db
+// Assume index 3 is linear, indexes 2 and 1 are logarithmic
+inline void StellarCollapse::dataBoxToFastLogs(DataBox &db, DataBox &scratch,
+                                               bool dependent_var_log) {
+  auto log10toNQT = [](const Real x) { return FastMath::log10(std::pow(10, x)); };
+  auto NQTtolog10 = [](const Real x) { return std::log10(FastMath::pow10(x)); };
+  auto gridToNQT = [&](const Grid_t &g) {
+    const Real l10min = g.min();
+    const Real l10max = g.max();
+    const Real lmin = log10toNQT(l10min);
+    const Real lmax = log10toNQT(l10max);
+    return Grid_t(lmin, lmax, g.nPoints());
+  };
+
+  auto &r2 = db.range(2);
+  auto &r1 = db.range(1);
+  auto &r0 = db.range(0);
+
+  Grid_t newr1 = gridToNQT(r1);
+  Grid_t newr0 = gridToNQT(r0);
+
+  for (int i2 = 0; i2 < r2.nPoints(); ++i2) {
+    Real x2 = r2.x(i2);
+    for (int i1 = 0; i1 < newr1.nPoints(); ++i1) {
+      Real lx1 = newr1.x(i1);
+      Real l10x1 = NQTtolog10(lx1);
+      for (int i0 = 0; i0 < newr0.nPoints(); ++i0) {
+        Real lx0 = newr0.x(i0);
+        Real l10x0 = NQTtolog10(lx0);
+        Real val = db.interpToReal(x2, l10x1, l10x0);
+        if (dependent_var_log) {
+          val = log10toNQT(val);
+        }
+        scratch(i2, i1, i0) = val;
+      }
+    }
+  }
+  for (int i = 0; i < db.size(); ++i) {
+    db(i) = scratch(i);
+  }
+  // range(2) is already ok
+  db.setRange(1, newr1);
+  db.setRange(0, newr0);
 }
 
 inline void StellarCollapse::medianFilter_(DataBox &db) {
@@ -898,8 +1009,8 @@ inline void StellarCollapse::computeBulkModulus_() {
         Real lRho = lBMod_.range(0).x(irho);
         Real rho = rho_(lRho);
         Real lP = lP_(iY, iT, irho);
-        Real lPoR = lP - lRho;
-        Real PoR = fromLog_(lPoR, 0.0);
+        Real P = lP2P_(lP);
+        Real PoR = robust::ratio(P, rho);
         // assume table is hardened
         Real bMod = rho * dPdRho_(iY, iT, irho) + PoR * dPdE_(iY, iT, irho);
         if (bMod < robust::EPS()) bMod = robust::EPS();

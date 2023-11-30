@@ -12,30 +12,60 @@
 # ------------------------------------------------------------------------------
 
 add_executable(
-  eos_unit_tests
+  eos_analytic_unit_tests
   catch2_define.cpp
   eos_unit_test_helpers.hpp
-  test_eos_unit.cpp
+  test_eos_ideal.cpp
   test_eos_gruneisen.cpp
   test_eos_sap_polynomial.cpp
-  test_eos_vinet.cpp
   test_eos_noble_abel.cpp
   test_eos_stiff.cpp
   test_eos_carnahan_starling.cpp
-)
+  )
+
+add_executable(
+  eos_infrastructure_tests
+  catch2_define.cpp
+  eos_unit_test_helpers.hpp
+  test_eos_modifiers.cpp
+  test_eos_vector.cpp
+  test_math_utils.cpp
+  test_variadic_utils.cpp
+  )
+
+add_executable(
+  eos_tabulated_unit_tests
+  catch2_define.cpp
+  eos_unit_test_helpers.hpp
+  test_eos_vinet.cpp
+  test_eos_helmholtz.cpp
+  test_eos_tabulated.cpp
+  test_eos_stellar_collapse.cpp
+  )
+
+if(SINGULARITY_TEST_HELMHOLTZ)
+    configure_file(${PROJECT_SOURCE_DIR}/data/helmholtz/helm_table.dat ${CMAKE_BINARY_DIR}/data/helmholtz/helm_table.dat COPYONLY)
+  target_compile_definitions(eos_tabulated_unit_tests PRIVATE SINGULARITY_TEST_HELMHOLTZ SINGULARITY_USE_HELMHOLTZ)
+endif()
 
 if(SINGULARITY_TEST_SESAME)
-  target_compile_definitions(eos_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+  target_compile_definitions(eos_tabulated_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)
-  target_compile_definitions(eos_unit_tests
+  target_compile_definitions(eos_tabulated_unit_tests
                              PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
 
-target_link_libraries(eos_unit_tests PRIVATE Catch2::Catch2
-                                             singularity-eos::singularity-eos)
+target_link_libraries(eos_analytic_unit_tests PRIVATE Catch2::Catch2
+  singularity-eos::singularity-eos)
+target_link_libraries(eos_infrastructure_tests PRIVATE Catch2::Catch2
+  singularity-eos::singularity-eos)
+target_link_libraries(eos_tabulated_unit_tests PRIVATE Catch2::Catch2
+  singularity-eos::singularity-eos)
 include(Catch)
-catch_discover_tests(eos_unit_tests PROPERTIES TIMEOUT 60)
+catch_discover_tests(eos_analytic_unit_tests PROPERTIES TIMEOUT 60)
+catch_discover_tests(eos_infrastructure_tests PROPERTIES TIMEOUT 60)
+catch_discover_tests(eos_tabulated_unit_tests PROPERTIES TIMEOUT 60)
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac compare_to_eospac.cpp)
@@ -43,11 +73,21 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
                         PRIVATE Catch2::Catch2 singularity-eos::singularity-eos)
 endif()
 
-if(SINGULARITY_BUILD_CLOSURE AND SINGULARITY_USE_SPINER)
-  add_executable(test_pte test_pte.cpp)
-  target_link_libraries(test_pte PRIVATE Catch2::Catch2
+if(SINGULARITY_BUILD_CLOSURE)
+  if(SINGULARITY_USE_SPINER)
+    add_executable(test_pte test_pte.cpp)
+    target_link_libraries(test_pte PRIVATE Catch2::Catch2
                                          singularity-eos::singularity-eos)
-  add_test(pte test_pte)
+    target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(pte test_pte)
+  endif()
+  if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN)
+    add_executable(test_get_sg_eos test_get_sg_eos.cpp)
+    target_link_libraries(test_get_sg_eos PRIVATE Catch2::Catch2
+                                         singularity-eos::singularity-eos)
+    target_include_directories(test_get_sg_eos PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(get_sg_eos test_get_sg_eos)
+  endif()
 endif()
 
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)
@@ -91,6 +131,13 @@ endif()
 if(SINGULARITY_USE_SPINER)
   add_executable(profile_eos profile_eos.cpp)
   target_link_libraries(profile_eos singularity-eos::singularity-eos)
+endif()
+
+if(SINGULARITY_USE_FORTRAN)
+  add_executable(ftn_interface test_f_iface.f90)
+  target_link_libraries(ftn_interface singularity-eos::singularity-eos)
+  set_target_properties(ftn_interface PROPERTIES LINKER_LANGUAGE Fortran)
+  add_test(test_fortran_interface ftn_interface)
 endif()
 
 if(SINGULARITY_USE_EOSPAC

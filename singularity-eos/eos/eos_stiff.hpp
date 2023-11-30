@@ -77,6 +77,13 @@ class StiffGas : public EosBase<StiffGas> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return std::max(-_Pinf, _gm1 * rho * (sie - _qq) - (_gm1 + 1.0) * _Pinf);
   }
+
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    MinInternalEnergyIsNotEnabled("StiffGas");
+    return 0.0;
+  };
+
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
     return _Cv * std::log(robust::ratio(temperature, _T0) + robust::SMALL()) +

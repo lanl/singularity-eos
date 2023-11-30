@@ -28,6 +28,7 @@
 #include <math.h>
 #include <ports-of-call/portability.hpp>
 #include <stdio.h>
+#include <tuple>
 
 #define SINGULARITY_ROOT_DEBUG (0)
 #define SINGULARITY_ROOT_VERBOSE (0)
@@ -38,6 +39,7 @@ namespace RootFinding1D {
 constexpr const int SECANT_NITER_MAX{1000};
 constexpr const int BISECT_NITER_MAX{1000};
 constexpr const int BISECT_REG_MAX{1000};
+constexpr const int NEWTON_RAPHSON_NITER_MAX{100};
 enum class Status { SUCCESS = 0, FAIL = 1 };
 
 /*
@@ -113,7 +115,8 @@ PORTABLE_INLINE_FUNCTION bool check_bracket(const Real ya, const Real yb) {
 
 template <typename T>
 PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess, Real &b,
-                                          Real &ya, const Real yg, Real &yb) {
+                                          Real &ya, const Real yg, Real &yb,
+                                          const bool &verbose = false) {
   constexpr int max_search_depth = 6;
   Real dx = b - a;
   for (int level = 0; level < max_search_depth; level++) {
@@ -129,7 +132,7 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
           yb = yg;
         } else {
           a = guess;
-          ya = guess;
+          ya = yg;
           b = x;
           yb = yx;
         }
@@ -138,8 +141,10 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
     }
   }
   // if we get here then we failed to bracket a root
-  printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
-         guess, b, ya, yg, yb);
+  if (verbose) {
+    printf("set_bracket failed to bound a root! %.14e %.14e %.14e %.14e %.14e %.14e\n", a,
+           guess, b, ya, yg, yb);
+  }
   return false;
 }
 
@@ -149,7 +154,8 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
                                              const Real guess, Real a, Real b,
                                              const Real xtol, const Real ytol,
                                              Real &xroot,
-                                             const RootCounts *counts = nullptr) {
+                                             const RootCounts *counts = nullptr,
+                                             const bool &verbose = false) {
   constexpr int max_iter = SECANT_NITER_MAX;
   auto func = [&](const Real x) { return f(x) - ytarget; };
   Real ya = func(a);
@@ -166,8 +172,10 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
       ya = yg;
     } else {
       // ya, yg, and yb have the same sign
-      if (!set_bracket(func, a, guess, b, ya, yg, yb)) {
-        printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
+      if (!set_bracket(func, a, guess, b, ya, yg, yb, verbose)) {
+        if (verbose) {
+          printf("regula_falsi failed! %.14e %.14e %.14e %.14e\n", ytarget, guess, a, b);
+        }
         return Status::FAIL;
       }
     }
@@ -212,8 +220,10 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
   }
   auto status = Status::SUCCESS;
   if (iteration_count == max_iter) {
-    printf(
-        "root finding reached the maximum number of iterations.  likely not converged\n");
+    if (verbose) {
+      printf("root finding reached the maximum number of iterations.  likely not "
+             "converged\n");
+    }
     status = Status::FAIL;
   }
   if (counts != nullptr) {
@@ -224,6 +234,76 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
     }
   }
   xroot = 0.5 * (a + b);
+  return status;
+}
+
+// solves for f(x,params) - ytarget = 0
+// WARNING: this root finding expects a different callable f than the other
+// root finding methods. f should return a tuple of (f(x), f'(x)) where f'(x)
+// is the derivative of f with respect to x.
+template <typename T>
+PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
+                                               const Real guess, const Real a,
+                                               const Real b, const Real ytol, Real &xroot,
+                                               const RootCounts *counts = nullptr,
+                                               const bool &verbose = false,
+                                               const bool &fail_on_bound_root = true) {
+
+  constexpr int max_iter = NEWTON_RAPHSON_NITER_MAX;
+  Real _x = guess;
+  Real _xold = 0.0;
+  auto status = Status::SUCCESS;
+
+  Real yg;
+  Real dfunc;
+
+  int iter;
+
+  for (iter = 0; iter < max_iter; iter++) {
+    std::tie(yg, dfunc) = f(_x); // C++11 tuple unpacking
+
+    // check if we are converged already
+    if (std::abs(yg - ytarget) < (ytol * ytarget)) break;
+
+    // not converged; compute the next step
+    _xold = _x;
+    _x = _x - (yg - ytarget) / dfunc;
+
+    // check if we are out of bounds
+    // CAUTION: we do not set the root to the boundary value in this case
+    // because one might want to handle this on a case by case basis
+    // (e.g. if the boundary is a physical boundary, then one might want to
+    // set the root to the boundary value).
+    // Per default, we fail if the root is out of bounds controlled by
+    // fail_on_bound_root.
+    if ((_x <= a && _xold <= a) || (_x >= b && _xold >= b)) {
+      if (verbose) {
+        printf("newton_raphson out of bounds! %.14e %.14e %.14e %.14e\n", ytarget, guess,
+               a, b);
+      }
+      if (fail_on_bound_root) {
+        status = Status::FAIL;
+      }
+      break;
+    }
+    _x = std::max(std::min(_x, b), a);
+  }
+  if (iter >= max_iter) {
+    if (verbose) {
+      printf("root finding reached the maximum number of iterations.  likely not "
+             "converged\n");
+    }
+    status = Status::FAIL;
+  }
+
+  if (counts != nullptr) {
+    if (iter < counts->nBins()) {
+      counts->increment(iter);
+    } else {
+      counts->increment(counts->more());
+    }
+  }
+  xroot = _x;
   return status;
 }
 

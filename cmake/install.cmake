@@ -77,9 +77,10 @@ foreach(file ${_install_headers})
 endforeach() # file
 
 # install the fortran modules NB: cmake doesn't provide a clean way to handle
-# mods
-install(FILES ${_install_mods}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/eos)
+if(SINGULARITY_USE_FORTRAN)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fortran/
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/eos)
+endif()
 
 # ----------------------------------------------------------------------------#
 # local export
@@ -91,3 +92,14 @@ export(
   EXPORT singularity-eosTargets
   FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eosTargets.cmake
   NAMESPACE singularity-eos::)
+
+# ----------------------------------------------------------------------------#
+# Data files
+# ----------------------------------------------------------------------------#
+
+# install data files needed for various eos models
+if(SINGULARITY_USE_HELMHOLTZ)
+  # install data files
+  install(DIRECTORY ${PROJECT_SOURCE_DIR}/data/helmholtz
+          DESTINATION ${CMAKE_INSTALL_DATADIR}/singularity-eos/data)
+endif()
