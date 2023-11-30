@@ -5,10 +5,12 @@
 ### Fixed (Repair bugs, etc)
 
 ### Added (new features/APIs/variables/...)
+- [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release
 
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR328]](https://github.com/lanl/singularity-eos/pull/328) Move to catch2 v3
 
 ### Removed (removing behavior/API/varaibles/...)
 
