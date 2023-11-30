@@ -65,7 +65,8 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # building/testing/docs
     depends_on("cmake@3.19:")
-    depends_on("catch2@2.13.7", when="+tests")
+    depends_on("catch2@3.0.1:", when="@main +tests")
+    depends_on("catch2@2.13.7", when="@:1.8.0 +tests")
     depends_on("python@3:", when="+python")
     depends_on("py-numpy", when="+python+tests")
     depends_on("py-pybind11@2.9.1:", when="+python")
