@@ -710,14 +710,17 @@ version number in the ``project`` field of the of the top-level
 ``CHANGELOG.md``, moving all the changes listed under ``Current Main``
 to that release. Then add empty categories for ``Current
 Main``. Typically the branch for this merge request should be called
-``v[release number]-rc`` for "release candidate."
+``v[release number]-rc`` for "release candidate." Make sure that the
+full test suite passes for this PR.
 
 After that pull request is merged, go to the ``releases`` tab on the
 right sidebar on github, and draft a new release. Set the tag to
 ``v[release number]``, fill the comment with the changes in the
 changelog since the last release, and make the release.
 
-Finally, the Spackages must be updated. To do so, you will need the checksum for the tarball for the newest release. Download the tarball from the release page, and then run
+Finally, the Spackages must be updated. To do so, you will need the
+checksum for the tarball for the newest release. Download the tarball
+from the release page, and then run
 
 .. code-block:: bash
 
