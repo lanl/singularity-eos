@@ -20,6 +20,7 @@ add_executable(
   test_eos_sap_polynomial.cpp
   test_eos_noble_abel.cpp
   test_eos_stiff.cpp
+  test_eos_vinet.cpp
   )
 
 add_executable(
@@ -36,7 +37,6 @@ add_executable(
   eos_tabulated_unit_tests
   catch2_define.cpp
   eos_unit_test_helpers.hpp
-  test_eos_vinet.cpp
   test_eos_helmholtz.cpp
   test_eos_tabulated.cpp
   test_eos_stellar_collapse.cpp
