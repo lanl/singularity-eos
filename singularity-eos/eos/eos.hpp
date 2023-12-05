@@ -45,7 +45,7 @@
 #include <singularity-eos/eos/eos_stellar_collapse.hpp>
 #include <singularity-eos/eos/eos_stiff.hpp>
 #include <singularity-eos/eos/eos_vinet.hpp>
-
+#include <singularity-eos/eos/eos_mgusup.hpp>
 // Modifiers
 #include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
 #include <singularity-eos/eos/modifiers/ramps_eos.hpp>
@@ -67,7 +67,7 @@ using singularity::variadic_utils::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts, StiffGas,
+    tl<IdealGas, Gruneisen, Vinet, MGUsup, JWL, DavisReactants, DavisProducts, StiffGas,
        SAP_Polynomial, NobleAbel
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
