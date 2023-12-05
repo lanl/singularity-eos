@@ -10,6 +10,7 @@
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR329]](https://github.com/lanl/singularity-eos/pull/329) Move vinet tests into analytic test suite
 - [[PR328]](https://github.com/lanl/singularity-eos/pull/328) Move to catch2 v3
 
 ### Removed (removing behavior/API/varaibles/...)
