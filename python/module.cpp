@@ -95,21 +95,23 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def(py::init())
     .def(py::init<const std::string&, bool, bool>(), py::arg("filename"), py::arg("use_sp5")=false, py::arg("filter_bmod")=true)
     .def("Save", &StellarCollapse::Save, py::arg("filename"))
-    .def_property_readonly("lRhoOffset", &StellarCollapse::lRhoOffset)
-    .def_property_readonly("lTOffset", &StellarCollapse::lTOffset)
-    .def_property_readonly("lEOffset", &StellarCollapse::lEOffset)
-    .def_property_readonly("lRhoMin", &StellarCollapse::lRhoMin)
-    .def_property_readonly("lRhoMax", &StellarCollapse::lRhoMax)
     .def_property_readonly("rhoMin", &StellarCollapse::rhoMin)
     .def_property_readonly("rhoMax", &StellarCollapse::rhoMax)
-    .def_property_readonly("lTMin", &StellarCollapse::lTMin)
-    .def_property_readonly("lTMax", &StellarCollapse::lTMax)
     .def_property_readonly("TMin", &StellarCollapse::TMin)
     .def_property_readonly("TMax", &StellarCollapse::TMax)
     .def_property_readonly("YeMin", &StellarCollapse::YeMin)
     .def_property_readonly("YeMax", &StellarCollapse::YeMax)
     .def_property_readonly("sieMin", &StellarCollapse::sieMin)
     .def_property_readonly("sieMax", &StellarCollapse::sieMax);
+  
+#ifdef SINGULARITY_USE_HELMHOLTZ
+  eos_class<Helmholtz>(m, "Helmholtz")
+    .def(py::init())
+    .def(py::init<std::string&>())
+    .def(py::init<std::string&,bool,bool,bool,bool,bool>())
+    .def(py::init<std::string&,bool,bool,bool,bool,bool,bool>())
+    .def(py::init<std::string&,bool,bool,bool,bool,bool,bool,bool>());
+#endif
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
@@ -119,11 +121,11 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
 #endif
 
+  create_unit_system_eos_classes(m);
+  create_relativistic_eos_classes(m);
   create_shifted_eos_classes(m);
   create_scaled_eos_classes(m);
   create_bilinear_ramp_eos_classes(m);
-  create_relativistic_eos_classes(m);
-  create_unit_system_eos_classes(m);
   
   m.def("pAlpha2BilinearRampParams", [](const IdealGas &eos, const Real alpha0, const Real Pe, const Real Pc){
     Real r0, a, b, c;

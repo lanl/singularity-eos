@@ -16,6 +16,7 @@
 #define _SINGULARITY_EOS_UTILS_FAST_MATH_LOGS_
 #include <cassert>
 #include <cmath>
+
 #include <ports-of-call/portability.hpp>
 
 /*
@@ -67,13 +68,49 @@
  * we can go into and out of "grid space" reliably and quickly, we're
  * happy, and this function is an EXACT map into and out of that
  * space.
+ *
+ * See ArXiv:2206.08957
  */
+
+// TODO(JMM): All the math here is all assuming inputs are
+// doubles. Should add single-precision overloads.
 
 namespace singularity {
 namespace FastMath {
 
+// Integer Aliased versions. Likely not as portable
+// TODO(JMM): Add single-precision versions
+PORTABLE_FORCEINLINE_FUNCTION
+auto as_long_int(double f) { return *reinterpret_cast<long long int *>(&f); }
+PORTABLE_FORCEINLINE_FUNCTION
+auto as_double(long long int i) { return *reinterpret_cast<double *>(&i); }
+
+PORTABLE_FORCEINLINE_FUNCTION
+double fastlg_aliased(const double x) {
+  // Magic numbers constexpr because C++ doesn't constexpr reinterpret casts
+  // these are floating point numbers as reinterpreted as integers.
+  // as_long_int(1.0)
+  constexpr long long int one_as_long_int = 4607182418800017408;
+  // 1./static_cast<double>(as_long_int(2.0) - as_long_int(1.0))
+  constexpr double scale_down = 2.22044604925031e-16;
+  return static_cast<double>(as_long_int(x) - one_as_long_int) * scale_down;
+}
+PORTABLE_FORCEINLINE_FUNCTION
+double fastpow2_aliased(const double x) {
+  // Magic numbers constexpr because C++ doesn't constexpr reinterpret casts
+  // these are floating point numbers as reinterpreted as integers.
+  // as_long_int(1.0)
+  constexpr long long int one_as_long_int = 4607182418800017408;
+  // as_long_int(2.0) - as_long_int(1.0)
+  constexpr double scale_up = 4503599627370496;
+  return as_double(static_cast<long long int>(x * scale_up) + one_as_long_int);
+}
+
 PORTABLE_FORCEINLINE_FUNCTION
 double fastlg(const double x) {
+#ifdef SINGULARITY_USE_HIGH_RISK_MATH
+  return fastlg_aliased(x);
+#else
   int n;
   assert(x > 0 && "log divergent for x <= 0");
 #ifndef SINGULARITY_USE_SINGLE_LOGS
@@ -84,11 +121,14 @@ double fastlg(const double x) {
   const float y = frexpf((float)x, &n);
 #endif // SINGULARITY_USE_SINGLE_LOGS
   return 2 * (y - 1) + n;
+#endif // SINGULARITY_USE_HIGH_RISK_MATH
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
 double fastpow2(const double x) {
-
+#ifdef SINGULARITY_USE_HIGH_RISK_MATH
+  return fastpow2_aliased(x);
+#else
   const int flr = std::floor(x);
   const double remainder = x - flr;
   const double mantissa = 0.5 * (remainder + 1);
@@ -100,6 +140,7 @@ double fastpow2(const double x) {
   // Faster but less accurate
   return ldexpf((float)mantissa, exponent);
 #endif // SINGULARITY_USE_SINGLE_LOGS
+#endif // SINGULARITY_USE_HIGH_RISK_MATH
 }
 
 PORTABLE_FORCEINLINE_FUNCTION

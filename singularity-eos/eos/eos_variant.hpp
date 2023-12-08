@@ -17,6 +17,8 @@
 
 #include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 using Real = double;
@@ -62,7 +64,7 @@ class Variant {
             typename std::enable_if<
                 !std::is_same<Variant, typename std::decay<EOSChoice>::type>::value,
                 bool>::type = true>
-  EOSChoice get() {
+  PORTABLE_INLINE_FUNCTION EOSChoice get() const {
     return mpark::get<EOSChoice>(eos_);
   }
 
@@ -72,6 +74,30 @@ class Variant {
   }
 
   // Place member functions here
+  template <typename Functor_t>
+  constexpr void Evaluate(Functor_t &f) const {
+    return mpark::visit([&f](const auto &eos) { return eos.Evaluate(f); }, eos_);
+  }
+
+  // EOS modifier object-oriented API
+  template <template <class> typename Mod>
+  constexpr bool ModifiedInVariant() const {
+    return mpark::visit(
+        [](const auto &eos) { return eos.template ModifiedInList<Mod, EOSs...>(); },
+        eos_);
+  }
+  template <template <class> typename Mod, typename... Args>
+  constexpr auto Modify(Args &&...args) const {
+    PORTABLE_ALWAYS_REQUIRE(ModifiedInVariant<Mod>(), "Modifier must be in variant");
+    return mpark::visit(
+        [&](const auto &eos) {
+          auto modified = eos.template ConditionallyModify<Mod>(
+              variadic_utils::type_list<EOSs...>(), std::forward<Args>(args)...);
+          return eos_variant<EOSs...>(modified);
+        },
+        eos_);
+  }
+
   PORTABLE_INLINE_FUNCTION
   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
                                             Real *lambda = nullptr) const {
@@ -108,6 +134,14 @@ class Variant {
     return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
+        },
+        eos_);
+  }
+  PORTABLE_INLINE_FUNCTION
+  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    return mpark::visit(
+        [&rho, &lambda](const auto &eos) {
+          return eos.MinInternalEnergyFromDensity(rho, lambda);
         },
         eos_);
   }
@@ -218,17 +252,6 @@ class Variant {
         [&rho, &temp, &sie, &press, &cv, &bmod, &dpde, &dvdt, &lambda](const auto &eos) {
           return eos.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt,
                                             lambda);
-        },
-        eos_);
-  }
-
-  PORTABLE_INLINE_FUNCTION
-  void PTofRE(Real &rho, Real &sie, Real *lambda, Real &press, Real &temp, Real &dpdr,
-              Real &dpde, Real &dtdr, Real &dtde) const {
-    return mpark::visit(
-        [&rho, &sie, &lambda, &press, &temp, &dpdr, &dpde, &dtdr,
-         &dtde](const auto &eos) {
-          return eos.PTofRE(rho, sie, lambda, press, temp, dpdr, dpde, dtdr, dtde);
         },
         eos_);
   }
@@ -475,7 +498,49 @@ class Variant {
         },
         eos_);
   }
+  ///
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+                                        std::forward<RealIndexer>(sies), num, lambdas);
+  }
 
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           const int num, LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &num, &lambdas](const auto &eos) {
+          return eos.MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+                                                  std::forward<RealIndexer>(sies), num,
+                                                  std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real *scratch, const int num) const {
+    NullIndexer lambdas{}; // Returns null pointer for every index
+    return MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
+                                        std::forward<RealIndexer>(sies), scratch, num,
+                                        lambdas);
+  }
+
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
+                                           Real *scratch, const int num,
+                                           LambdaIndexer &&lambdas) const {
+    return mpark::visit(
+        [&rhos, &sies, &scratch, &num, &lambdas](const auto &eos) {
+          return eos.MinInternalEnergyFromDensity(
+              std::forward<ConstRealIndexer>(rhos), std::forward<RealIndexer>(sies),
+              scratch, num, std::forward<LambdaIndexer>(lambdas));
+        },
+        eos_);
+  }
+  ///
   template <typename RealIndexer, typename ConstRealIndexer>
   inline void
   EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
@@ -929,50 +994,25 @@ class Variant {
         eos_);
   }
 
-  template <typename RealIndexer>
-  inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,
-                     RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
-                     RealIndexer &&dtdrs, RealIndexer &&dtdes, const int num) const {
-    NullIndexer lambdas{}; // Returns null pointer for every index
-    return PTofRE(std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(sies),
-                  std::forward<RealIndexer>(presses), std::forward<RealIndexer>(temps),
-                  std::forward<RealIndexer>(dpdrs), std::forward<RealIndexer>(dpdes),
-                  std::forward<RealIndexer>(dtdrs), std::forward<RealIndexer>(dtdes), num,
-                  lambdas);
+  // Tooling for modifiers
+  inline constexpr bool IsModified() const {
+    return mpark::visit([](const auto &eos) { return eos.IsModified(); }, eos_);
   }
 
-  template <typename RealIndexer, typename LambdaIndexer>
-  inline void PTofRE(RealIndexer &&rhos, RealIndexer &&sies, RealIndexer &&presses,
-                     RealIndexer &&temps, RealIndexer &&dpdrs, RealIndexer &&dpdes,
-                     RealIndexer &&dtdrs, RealIndexer &&dtdes, const int num,
-                     LambdaIndexer &&lambdas) const {
+  inline constexpr Variant UnmodifyOnce() {
     return mpark::visit(
-        [&rhos, &sies, &presses, &temps, &dpdrs, &dpdes, &dtdrs, &dtdes, &num,
-         &lambdas](const auto &eos) {
-          return eos.PTofRE(
-              std::forward<RealIndexer>(rhos), std::forward<RealIndexer>(sies),
-              std::forward<RealIndexer>(presses), std::forward<RealIndexer>(temps),
-              std::forward<RealIndexer>(dpdrs), std::forward<RealIndexer>(dpdes),
-              std::forward<RealIndexer>(dtdrs), std::forward<RealIndexer>(dtdes), num,
-              std::forward<LambdaIndexer>(lambdas));
+        [](auto &eos) -> eos_variant<EOSs...> {
+          return eos_variant<EOSs...>(eos.UnmodifyOnce());
         },
         eos_);
   }
 
-  // Tooling for modifiers
-  PORTABLE_FORCEINLINE_FUNCTION
-  bool IsModified() const {
-    return mpark::visit([](const auto &eos) { return eos.IsModified(); }, eos_);
-  }
-  PORTABLE_FORCEINLINE_FUNCTION
-  Variant UnmodifyOnce() {
+  inline constexpr Variant GetUnmodifiedObject() {
     return mpark::visit(
-        [](auto &eos) { return eos_variant<EOSs...>(eos.UnmodifyOnce()); }, eos_);
-  }
-  PORTABLE_FORCEINLINE_FUNCTION
-  Variant GetUnmodifiedObject() {
-    return mpark::visit(
-        [](auto &eos) { return eos_variant<EOSs...>(eos.GetUnmodifiedObject()); }, eos_);
+        [](auto &eos) -> eos_variant<EOSs...> {
+          return eos_variant<EOSs...>(eos.GetUnmodifiedObject());
+        },
+        eos_);
   }
 
   PORTABLE_INLINE_FUNCTION

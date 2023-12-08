@@ -33,7 +33,6 @@
 #include <spiner/interpolation.hpp>
 
 #include <singularity-eos/eos/eos.hpp>
-#include <singularity-eos/eos/eos_builder.hpp>
 #include <type_traits>
 
 using namespace singularity;
@@ -69,6 +68,7 @@ inline double get_duration(Function function) {
   TODO(JMM): Only profiles Pressure call
   and does not accept lambdas.
 */
+template <typename EOS>
 inline void get_timing(int ncycles, const ivec &ncells_1d, const double rho_min,
                        const double rho_max, const double T_min, const double T_max,
                        const std::string &name, EOS &eos_h) {
@@ -222,11 +222,9 @@ int main(int argc, char *argv[]) {
               << "Please note that timings are for 1 node and 1 GPU respectively.\n"
               << "Beginning profiling..." << std::endl;
 
-    EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-    EOSBuilder::params_t params;
-    params["Cv"].emplace<Real>(1e7 * 0.716); // specific heat in ergs/(g K)
-    params["gm1"].emplace<Real>(0.4);        // gamma - 1
-    EOS eos = EOSBuilder::buildEOS(type, params);
+    constexpr Real Cv = 1e7 * 0.716; // specific heat in ergs/(g K)
+    constexpr Real gm1 = 0.4;        // gamma - 1
+    auto eos = singularity::IdealGas(gm1, Cv);
     get_timing(ncycles, ncells_1d, RHO_MIN, RHO_MAX, T_MIN, T_MAX, "IdealGas", eos);
 
     std::cout << "Done." << std::endl;

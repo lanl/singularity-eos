@@ -16,17 +16,18 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <limits>
-#ifndef CATCH_CONFIG_RUNNER
-#include "catch2/catch.hpp"
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
+#include <catch2/catch_test_macros.hpp>
 #endif
 
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
+using singularity::IdealGas;
 using singularity::StiffGas;
+using EOS = singularity::Variant<IdealGas, StiffGas>;
 
 SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
   GIVEN("Parameters for a StiffGas EOS") {
@@ -78,14 +79,14 @@ SCENARIO("StiffGas1", "[StiffGas][StiffGas1]") {
 
       // Gold standard values for a subset of lookups
       constexpr std::array<Real, num> pressure_true{
-          1.0132500000019073e+06, 3.4450500000000000e+07, 6.7887750000001907e+07,
-          1.0132500000000000e+08};
+          1.01324999999964016e+06, 3.44504999999983162e+07, 6.78877500000010729e+07,
+          1.01324999999999583e+08};
       constexpr std::array<Real, num> bulkmodulus_true{
-          2.3502381137500000e+10, 2.3580958675000000e+10, 2.3659536212500004e+10,
-          2.3738113750000004e+10};
+          2.35023811375000000e+10, 2.35809586749999962e+10, 2.36595362125000038e+10,
+          2.37381137500000000e+10};
       constexpr std::array<Real, num> temperature_true{
-          2.9814999999999998e+02, 1.5320999999999999e+03, 2.7660500000000002e+03,
-          4.0000000000000000e+03};
+          2.98149999999999920e+02, 1.53209999999999968e+03, 2.76605000000000064e+03,
+          3.99999999999999955e+03};
       constexpr std::array<Real, num> gruneisen_true{1.35, 1.35, 1.35, 1.35};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -302,7 +303,7 @@ SCENARIO("StiffGas2", "[StiffGas][StiffGas2]") {
   }
 }
 
-SCENARIO("Isentropic Bulk Modulus Analytic vs. FD", "[StiffGas3]") {
+SCENARIO("StiffGas Isentropic Bulk Modulus Analytic vs. FD", "[StiffGas][StiffGas3]") {
   GIVEN("Parameters for a Stiffened Gas EOS") {
     // Stiff gas parameters for liquid water [O. Le Metayer et al. 2003]
     constexpr Real gm1 = 1.35e+00;
@@ -362,7 +363,7 @@ SCENARIO("Recover Ideal Gas from Stiff Gas", "[StiffGas][StiffGas4]") {
     //  Create the EOS
     EOS host_eos = StiffGas(gm1, Cv, Pinf, qq);
     EOS eos = host_eos.GetOnDevice();
-    EOS ideal_eos = singularity::IdealGas(gm1, Cv);
+    EOS ideal_eos = IdealGas(gm1, Cv);
     GIVEN("Densities and energies") {
       constexpr int num = 1;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -534,8 +535,6 @@ SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas][StiffGas5]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
-      constexpr std::array<Real, num> pressure_true{2.0265000000000000e+06};
-      constexpr std::array<Real, num> temperature_true{4.0000000000000000e+02};
       constexpr std::array<Real, num> entropy_true{-2.0044437857420778e+08};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS

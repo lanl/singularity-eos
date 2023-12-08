@@ -13,7 +13,6 @@
 #------------------------------------------------------------------------------#
 
 set(EOS_HEADERS
-    closure/mixed_cell_models.hpp
     base/fast-math/logs.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
@@ -33,6 +32,8 @@ set(EOS_HEADERS
     eos/eos_vinet.hpp
     eos/eos_builder.hpp
     eos/eos_jwl.hpp
+    eos/eos_helmholtz.hpp
+    eos/eos_sap_polynomial.hpp
     eos/modifiers/relativistic_eos.hpp
     eos/modifiers/scaled_eos.hpp
     eos/modifiers/ramps_eos.hpp
@@ -40,24 +41,37 @@ set(EOS_HEADERS
     eos/modifiers/eos_unitsystem.hpp
     eos/eos_base.hpp
     eos/eos_eospac.hpp
+    eos/eos_noble_abel.hpp
+    eos/eos_stiff.hpp
 )
 
-set(EOS_SRCS
-    eos/eos_builder.cpp
-)
+set(EOS_SRCS eos/eos.cpp)
 
 if (SINGULARITY_BUILD_CLOSURE)
-  list(APPEND EOS_SRCS eos/singularity_eos.cpp)
-  list(APPEND EOS_HEADERS eos/singularity_eos.hpp closure/mixed_cell_models.hpp)
+  list(APPEND EOS_HEADERS
+       closure/mixed_cell_models.hpp)
+  if (SINGULARITY_USE_FORTRAN)
+    list(APPEND EOS_SRCS 
+         eos/get_sg_eos.cpp)
+    if (SINGULARITY_USE_KOKKOS)
+      list(APPEND EOS_SRCS 
+           eos/get_sg_eos_p_t.cpp
+           eos/get_sg_eos_rho_t.cpp
+           eos/get_sg_eos_rho_p.cpp
+           eos/get_sg_eos_rho_e.cpp)
+    endif()
+    list(APPEND EOS_HEADERS
+         eos/get_sg_eos.hpp
+         eos/get_sg_eos_functors.hpp)
+  endif()
 endif()
 
 if (SINGULARITY_USE_FORTRAN)
   list(APPEND EOS_SRCS eos/singularity_eos.f90)
-  # would rather handle this more robustly, being sloppy for now
-  list(APPEND EOS_MODS singularity_eos.mod singularity_eos_types.mod)
+  list(APPEND EOS_SRCS eos/singularity_eos.cpp)
+  list(APPEND EOS_HEADERS eos/singularity_eos.hpp)
 endif()
 
 # export to parent scope
 set(EOS_HEADERS ${EOS_HEADERS} PARENT_SCOPE)
 set(EOS_SRCS ${EOS_SRCS} PARENT_SCOPE)
-set(EOS_MODS ${EOS_MODS} PARENT_SCOPE)

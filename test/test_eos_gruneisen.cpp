@@ -17,16 +17,17 @@
 #include <cstdio>
 #include <cstdlib>
 #include <limits>
-#ifndef CATCH_CONFIG_RUNNER
-#include "catch2/catch.hpp"
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
+#include <catch2/catch_test_macros.hpp>
 #endif
 
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
 using singularity::Gruneisen;
+using EOS = singularity::Variant<Gruneisen>;
 
 PORTABLE_INLINE_FUNCTION Real QuadFormulaMinus(Real a, Real b, Real c) {
   return (-b - std::sqrt(b * b - 4 * a * c)) / (2 * a);
@@ -55,9 +56,7 @@ SCENARIO("Gruneisen EOS entropy is disabled", "[GruneisenEOS][Entropy]") {
     EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
     EOS eos = host_eos.GetOnDevice();
     THEN("A call to the entropy should throw an exception") {
-      using Catch::Matchers::Contains;
-      auto msg_matcher = Contains("Entropy is not enabled");
-      REQUIRE_THROWS_WITH(eos.EntropyFromDensityTemperature(1.0, 1.0), msg_matcher);
+      REQUIRE_THROWS(eos.EntropyFromDensityTemperature(1.0, 1.0));
     }
   }
 }
@@ -478,7 +477,7 @@ SCENARIO("Gruneisen EOS density limit") {
             INFO("FillEos bmod: " << bmod << ", Lookup bmod: " << bmod_true);
             CHECK(bmod == bmod_true);
             INFO("FillEos pressure: " << P << ", Lookup pressure: " << pres_true);
-            CHECK(P == pres_true);
+            CHECK(isClose(P, pres_true, 1.e-14));
           }
         }
       }

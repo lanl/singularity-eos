@@ -16,9 +16,9 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <limits>
-#ifndef CATCH_CONFIG_RUNNER
-#include "catch2/catch.hpp"
+#ifndef CATCH_CONFIG_FAST_COMPILE
+#define CATCH_CONFIG_FAST_COMPILE
+#include <catch2/catch_test_macros.hpp>
 #endif
 
 #include <ports-of-call/portability.hpp>
@@ -28,8 +28,8 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::EOS;
 using singularity::Vinet;
+using EOS = singularity::Variant<Vinet>;
 
 SCENARIO("Vinet EOS rho sie", "[VectorEOS][VinetEOS]") {
   GIVEN("Parameters for a Vinet EOS") {

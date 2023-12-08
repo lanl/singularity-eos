@@ -18,7 +18,35 @@
 #include <type_traits>
 
 namespace singularity {
-namespace detail {
+namespace variadic_utils {
+
+// Some generic variatic utilities
+// ======================================================================
+
+// Backport of C++17 bool_constant.
+// With C++17, can be replaced with
+// using std::bool_constant
+template <bool B>
+using bool_constant = std::integral_constant<bool, B>;
+
+// Implementation of std::conjunction/std::disjunction without C++17
+// With C++17, can be replaced with
+// using std::disjunction
+template <bool...>
+struct bool_pack {};
+template <bool... Bs>
+using conjunction = std::is_same<bool_pack<true, Bs...>, bool_pack<Bs..., true>>;
+template <bool... Bs>
+struct disjunction : bool_constant<!conjunction<!Bs...>::value> {};
+
+// Checks if T is contained in the pack Ts
+template <typename T, typename... Ts>
+using contains = disjunction<std::is_same<T, Ts>::value...>;
+
+template <typename T, typename... Ts>
+constexpr bool contains_v() {
+  return contains<T, Ts...>::value;
+}
 
 // variadic list
 template <typename... Ts>
@@ -68,10 +96,6 @@ struct flatten<type_list<Ts...>> {
 };
 
 // filter nested variadic templates
-template <template <typename> class FIRST, template <typename> class... REST>
-constexpr auto remove_first(adapt_list<FIRST, REST...>) {
-  return adapt_list<REST...>{};
-}
 
 // nested specialization filter type
 template <template <typename> class Template, typename T>
@@ -109,18 +133,13 @@ struct filter<ADAPTER, Pred, Variadic, T, Ts...> {
       typename filter<ADAPTER, Pred, Variadic, Ts...>::type>::type;
 };
 
-template <template <typename> class U, typename... Ts>
-constexpr auto filter_nested(type_list<Ts...>) {
-  using f_list = typename filter<U, is_not_duplicate_nested, type_list, Ts...>::type;
-  return f_list{};
-}
-
 template <template <typename> class FIRST, template <typename> class... Us,
           typename... Ts>
 constexpr auto filter_nested_variadic(adapt_list<FIRST, Us...> m, type_list<Ts...> l) {
-  using t1 = type_list<decltype(filter_nested<FIRST>(l))>;
+  using t1 =
+      type_list<typename filter<FIRST, is_not_duplicate_nested, type_list, Ts...>::type>;
   constexpr typename flatten<t1>::type l1{};
-  return filter_nested_variadic(remove_first(m), l1);
+  return filter_nested_variadic(adapt_list<Us...>{}, l1);
 }
 
 template <typename... Ts>
@@ -130,14 +149,14 @@ constexpr auto filter_nested_variadic(adapt_list<>, type_list<Ts...> l) {
 
 // apply class template to typelist
 template <template <typename> class T, typename... Us>
-constexpr auto transform_list(type_list<Us...>) {
-  return type_list<T<Us>...>{};
-}
+struct transform_list_struct {
+  using type = type_list<T<Us>...>;
+};
 
 template <template <typename> class... Ts, typename... Us>
 constexpr auto transform_variadic_list(type_list<Us...> list,
                                        adapt_list<Ts...> mod_list) {
-  using t1 = type_list<decltype(transform_list<Ts>(list))...>;
+  using t1 = type_list<typename transform_list_struct<Ts, Us...>::type...>;
   constexpr typename flatten<t1>::type l1{};
   constexpr auto l2 = filter_nested_variadic(mod_list, l1);
   return l2;
@@ -165,7 +184,7 @@ constexpr auto pack_size(type_list<Ts...>) {
   return sizeof...(Ts);
 }
 
-} // namespace detail
+} // namespace variadic_utils
 } // namespace singularity
 
 #endif // SINGULARITY_EOS_BASE_VARIADIC_UTILS_HPP_

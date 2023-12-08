@@ -15,7 +15,6 @@
 #ifndef _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 #define _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 
-#include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 using singularity::EOS;
@@ -60,7 +59,18 @@ int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const doubl
                      const double Pinf, const double qq, int const *const enabled,
                      double *const vals);
 
+int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
+                      const double bb, const double qq, int const *const enabled,
+                      double *const vals);
+
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+
+#ifdef SINGULARITY_USE_HELMHOLTZ
+int init_sg_Helmholtz(const int matindex, EOS *eos, const char *filename, const bool rad,
+                      const bool gas, const bool coul, const bool ion, const bool ele,
+                      const bool verbose, int const *const enabled, double *const vals);
+#endif
+
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int id, int const *const enabled, double *const vals);
 
@@ -71,9 +81,20 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
 
 #ifdef SINGULARITY_USE_EOSPAC
 // capitalize? eospaceos Eospac Eospaceos EOSPAC EOSPACeos?
-int init_sg_eospac(const int matindex, EOS *eos, const int id, int const *const enabled,
-                   double *const vals);
+int init_sg_eospac(const int matindex, EOS *eos, const int id, double *const eospac_vals,
+                   int const *const enabled, double *const vals);
 #endif // SINGULARITY_USE_EOSPAC
+
+int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
+                                             const double *sies, double *pressures,
+                                             const int len);
+
+int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos,
+                                        double *sies, const int len);
+
+int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos,
+                                                const double *rhos, const double *sies,
+                                                double *bmods, const int len);
 
 int get_sg_eos( // sizing information
     int nmat, int ncell, int cell_dim,
@@ -124,7 +145,17 @@ int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
                      const double Pinf, const double qq);
 
+int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
+                      const double bb, const double qq);
+
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+
+#ifdef SINGULARITY_USE_HELMHOLTZ
+int init_sg_Helmholtz(const int matindex, EOS *eos, const char *filename, const bool rad,
+                      const bool gas, const bool coul, const bool ion, const bool ele,
+                      const bool verbose);
+#endif
+
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
                               const int id);
 
@@ -134,7 +165,7 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
 
 #ifdef SINGULARITY_USE_EOSPAC
 // capitalize? eospaceos Eospac Eospaceos EOSPAC EOSPACeos?
-int init_sg_eospac(const int matindex, EOS *eos, const int id);
+int init_sg_eospac(const int matindex, EOS *eos, const int id, const double *eospac_vals);
 #endif // SINGULARITY_USE_EOSPAC
 
 #endif // EOS_SINGULARITY_EOS_HPP_

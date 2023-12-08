@@ -1,9 +1,30 @@
 # Changelog
 
 ## Current develop
-- [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 
 ### Fixed (Repair bugs, etc)
+
+### Added (new features/APIs/variables/...)
+- [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+- [[PR329]](https://github.com/lanl/singularity-eos/pull/329) Move vinet tests into analytic test suite
+- [[PR328]](https://github.com/lanl/singularity-eos/pull/328) Move to catch2 v3
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.8.0
+Date: 11/28/2023
+
+### Fixed (Repair bugs, etc)
+- [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Fixed EOSPAC unit conversion errors for scalar lookups
+- [[PR316]](https://github.com/lanl/singularity-eos/pull/316) removed `fmax-errors=3` from `singularity-eos` compile flags
+- [[PR296]](https://github.com/lanl/singularity-eos/pull/296) changed `CMAKE_SOURCE_DIR` to `PROJECT_SOURCE_DIR` to fix downstream submodule build
+- [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options 
+- [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
+- [[PR288]](https://github.com/lanl/singularity-eos/pull/288) Don't build tests that depend on spiner when spiner is disabled
 - [[PR287]](https://github.com/lanl/singularity-eos/pull/287) Fix testing logic with new HDF5 options
 - [[PR282]](https://github.com/lanl/singularity-eos/pull/282) Fix missing deep copy in sap polynomial tests
 - [[PR281]](https://github.com/lanl/singularity-eos/pull/281) Pin spiner in spackage to a specific, tested version
@@ -16,9 +37,19 @@
 - [[PR228]](https://github.com/lanl/singularity-eos/pull/228) added untracked header files in cmake
 - [[PR215]](https://github.com/lanl/singularity-eos/pull/215) and [[PR216]](https://github.com/lanl/singularity-eos/pull/216) fix duplicate definition of EPS and fix CI
 - [[PR232]](https://github.com/lanl/singularity-eos/pull/228) Fixed uninitialized cmake path variables
+- [[PR308]](https://github.com/lanl/singularity-eos/pull/308) spack builds +fortran now compile via correct blocking out of interfaces via preprocessor ifdef
 
 ### Added (new features/APIs/variables/...)
+- [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
+- [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added EOSPAC option functionality in class constructor
+- [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new function for returning the minimum energy as a function of density for an EOS (only EOSPAC at the moment)
+- [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new Fortran API for simple pressure and bulk moduli lookups
+- [[PR306]](https://github.com/lanl/singularity-eos/pull/306) Added generic Evaluate method
+- [[PR304]](https://github.com/lanl/singularity-eos/pull/304) added a Newton-Raphson root find for use with the Helmholtz EoS
+- [[PR265]](https://github.com/lanl/singularity-eos/pull/265) Add missing UnitSystem modifier combinations to variant and EOSPAC
+- [[PR279]](https://github.com/lanl/singularity-eos/pull/279) added noble-abel EoS
 - [[PR274]](https://github.com/lanl/singularity-eos/pull/274) added a stiffened gas EoS
+- [[PR264]](https://github.com/lanl/singularity-eos/pull/274) added a Helmholtz EoS
 - [[PR254]](https://github.com/lanl/singularity-eos/pull/254) added ability to peel off modifiers as needed
 - [[PR250]](https://github.com/lanl/singularity-eos/pull/250) added mass fraction output to stellar collapse eos
 - [[PR226]](https://github.com/lanl/singularity-eos/pull/226) added entropy interpolation to stellar collapse eos
@@ -31,16 +62,23 @@
 - [[PR177]](https://github.com/lanl/singularity-eos/pull/177) added EOSPAC vector functions
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR311]](https://github.com/lanl/singularity-eos/pull/311) Refactor EOSBuilder for flexibility and extensibility
+- [[PR310]](https://github.com/lanl/singularity-eos/pull/310) Speed up and clean up tests
+- [[PR295]](https://github.com/lanl/singularity-eos/pull/295) Add fast logs to singularity-eos
 - [[PR246]](https://github.com/lanl/singularity-eos/pull/246) Update CMake with upstream changes
 - [[PR223]](https://github.com/lanl/singularity-eos/pull/223) Update ports-of-call and add portable error handling
 - [[PR234]](https://github.com/lanl/singularity-eos/pull/234) update ports-of-call to correct for undefined behavior in error handling
 - [[PR219]](https://github.com/lanl/singularity-eos/pull/219) Removed static analysis from re-git pipeline
 - [[PR233]](https://github.com/lanl/singularity-eos/pull/233) Exposed entropy for the EOS type (now required for future EOS)
+- [[PR308]](https://github.com/lanl/singularity-eos/pull/308) Fortran initialization interface functions no longer require modifier arrays, they are optional parameters.
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR190]](https://github.com/lanl/singularity-eos/pull/190) update CI on re-git
+- [[PR245]](https://github.com/lanl/singularity-eos/pull/245) Separating get_sg_eos to other files. Build/compilation improvements, warning fixes/suppression.
+- [[PR308]](https://github.com/lanl/singularity-eos/pull/308) Added a fortran test.
 
 ### Removed (removing behavior/API/varaibles/...)
+- [[PR293]](https://github.com/lanl/singularity-eos/pull/293) Removing PTofRE function. This will no longer be callable downstream.
 
 ## Release 1.7.0
 Date: 12/14/2022
