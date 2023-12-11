@@ -11,10 +11,20 @@
 # publicly and display publicly, and to permit others to do so.
 # ------------------------------------------------------------------------------
 
+set(SINGULARITY_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE STRING "")
+set(SINGULARITY_TEST_MAIN ${SINGULARITY_TEST_DIR}/catch2_define.cpp CACHE STRING "")
+add_library(singularity-eos-tests INTERFACE
+  eos_unit_test_helpers.hpp
+  )
+add_library(singularity-eos::tests ALIAS singularity-eos-tests)
+target_link_libraries(singularity-eos-tests INTERFACE
+  Catch2::Catch2 singularity-eos::singularity-eos)
+target_include_directories(singularity-eos-tests INTERFACE
+  ${SINGULARITY_TEST_DIR})
+
 add_executable(
   eos_analytic_unit_tests
-  catch2_define.cpp
-  eos_unit_test_helpers.hpp
+  ${SINGULARITY_TEST_MAIN}
   test_eos_ideal.cpp
   test_eos_gruneisen.cpp
   test_eos_sap_polynomial.cpp
@@ -25,8 +35,7 @@ add_executable(
 
 add_executable(
   eos_infrastructure_tests
-  catch2_define.cpp
-  eos_unit_test_helpers.hpp
+  ${SINGULARITY_TEST_MAIN}
   test_eos_modifiers.cpp
   test_eos_vector.cpp
   test_math_utils.cpp
@@ -35,8 +44,7 @@ add_executable(
 
 add_executable(
   eos_tabulated_unit_tests
-  catch2_define.cpp
-  eos_unit_test_helpers.hpp
+  ${SINGULARITY_TEST_MAIN}
   test_eos_helmholtz.cpp
   test_eos_tabulated.cpp
   test_eos_stellar_collapse.cpp
@@ -55,12 +63,9 @@ if(SINGULARITY_TEST_STELLAR_COLLAPSE)
                              PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
 
-target_link_libraries(eos_analytic_unit_tests PRIVATE Catch2::Catch2
-  singularity-eos::singularity-eos)
-target_link_libraries(eos_infrastructure_tests PRIVATE Catch2::Catch2
-  singularity-eos::singularity-eos)
-target_link_libraries(eos_tabulated_unit_tests PRIVATE Catch2::Catch2
-  singularity-eos::singularity-eos)
+target_link_libraries(eos_analytic_unit_tests PRIVATE singularity-eos-tests)
+target_link_libraries(eos_infrastructure_tests PRIVATE singularity-eos-tests)
+target_link_libraries(eos_tabulated_unit_tests PRIVATE singularity-eos-tests)
 include(Catch)
 catch_discover_tests(eos_analytic_unit_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_infrastructure_tests PROPERTIES TIMEOUT 60)
