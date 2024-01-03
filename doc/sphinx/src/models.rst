@@ -759,7 +759,7 @@ Mie-Gruneisen linear :math:`U_s`-:math:`u_p` EOS
 
 One of the most commonly-used EOS is the linear :math:`U_s`-:math:`u_p` version of the Mie-Gruneisen EOS. This EOS
 uses the Hugoniot as the reference curve and is extensively used in shock physics.
-This version implements the exact thermodynamic tempearture on the Hugoniot and also adds an entropy.
+This version implements the exact thermodynamic temperature on the Hugoniot and also adds an entropy.
 
 The pressure follows the traditional Mie-Gruneisen form,
 
@@ -848,7 +848,11 @@ it is
 .. math::
 
     T_H(\rho) = T_0 e^{\Gammma(\rho_0) \eta} + \frac{e^{\Gammma(\rho_0) \eta}}{2 C_V \rho_0}
-                \int_0^\eta e^{-\gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz \\
+                \int_0^\eta e^{-\gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz 
+
+
+testing
+.. math::
               = T_0 e^{\Gammma(\rho_0) \eta} + \frac{C_s^2}}{2 C_V s^2} 
                 \left[\frac{- s \eta}{(1 - s \eta)^2} + \left( \frac{\Gamma(\rho_0)}{s} - 3 \right) 
                                                         \left( e^{\Gammma(\rho_0) \eta} - \frac{1}{(1-s \eta)}\right)
