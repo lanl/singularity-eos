@@ -580,6 +580,9 @@ Given the inconsisetency in the temperature, we have made the choice **not** to
 expose the entropy for this EOS. **Requesting an entropy value will result in an
 error.**
 
+If a linear :math:`U_s`-:math:`u_p` relation is enough for your problem, we recommend using the MGUsup
+EOS described below. It is a complete EOS with consistent temperature.
+
 Given a reference density, :math:`\rho_0`, we first parameterize the EOS using
 :math:`\eta` as a measure of compression given by
 
@@ -780,26 +783,42 @@ heat capacity is assumed so that
 
 Note the difference from the Gruneisen EOS described above. We still use a constant :math:`C_V`, 
 and it is usually taken at the reference temperature, but
-we now extrapolate from the temperature on the Hugoniot, :math: `T_H(\rho)`, and not 
+we now extrapolate from the temperature on the Hugoniot, :math:`T_H(\rho)`, and not 
 from the reference temperature, :math:`T_0`.
 
-With this consistent temperature we can derive an entropy in a similar way as for the Vinet EOS,
+With this consistent temperature we can derive an entropy in a similar way as for the Vinet EOS. Using
+thermodynamic derivatives we can show that
+
+.. math::
+
+    \Gamma \rho = \frac{\alpha B_T}{C_V} ,
+
+and we arrive at
+
 .. math::
 
     S(\rho,T) = S_0 - \Gamma(\rho_0)C_V \eta + {C_V} \ln \frac{T}{T_{ref}} ,
 
 
 where :math:`\eta` is a measure of compression given by
+
 .. math::
 
     \eta = 1 - \frac{\rho_0}{\rho}.
 
-This is convenient because :math:`eta = 0` when :math:`\rho = \rho_0`,
+This is convenient because :math:`\eta = 0` when :math:`\rho = \rho_0`,
 :math:`\eta = 1` at the infinite density limit, and :math:`\eta = -\infty` at
 the zero density limit. 
 
 The pressure, energy, and temperature, on the Hugoniot are derived from the 
-shock jump conditions assuming a linear :math:`U_s`-:math:`u_p` relation,
+shock jump conditions,
+
+.. math::
+  \rho_0 U_s = \rho (U_s - u_p)
+  P_H = \rho_0 U_s u_p ,
+
+assuming a linear :math:`U_s`-:math:`u_p` relation,
+
 .. math::
 
     U_s = C_s + s u_p . 
@@ -825,6 +844,7 @@ The energy along the Hugoniot is given by
 
 The temperature on the Hugoniot is hard to derive but with the help of Mathematica
 it is
+
 .. math::
 
     T_H(\rho) = T_0 e^{\Gammma(\rho_0) \eta} + \frac{e^{\Gammma(\rho_0) \eta}}{2 C_V \rho_0}
@@ -848,7 +868,7 @@ The constructor for the ``MGUsup`` EOS has the signature
 where 
 ``rho0`` is :math:`\rho_0`, ``T0`` is :math:`T_0`,
 ``Cs`` is :math:`C_s`, ``s`` is :math:`s`, 
-``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_v`,
+``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_V`,
 ``E0`` is :math:`E_0`, and ``S0`` is :math:`S_0`. 
 
 
