@@ -797,7 +797,7 @@ and we arrive at
 
 .. math::
 
-    S(\rho,T) = S_0 - \Gamma(\rho_0)C_V \eta + {C_V} \ln \frac{T}{T_{ref}} ,
+    S(\rho,T) = S_0 - \Gamma(\rho_0)C_V \eta + {C_V} \ln \frac{T}{T_0} ,
 
 
 where :math:`\eta` is a measure of compression given by
@@ -814,7 +814,7 @@ The pressure, energy, and temperature, on the Hugoniot are derived from the
 shock jump conditions,
 
 .. math::
-  \rho_0 U_s = \rho (U_s - u_p)
+  \rho_0 U_s = \rho (U_s - u_p) \\
   P_H = \rho_0 U_s u_p ,
 
 assuming a linear :math:`U_s`-:math:`u_p` relation,
@@ -830,7 +830,7 @@ so only this :math:`s` parameter is needed. The units for :math:`C_s` is velocit
 :math:`s` is unitless. Note that the parameter :math:`s` is related to the
 fundamental derivative of shock physics as shown by `Wills <WillsThermo_>`_.
 
-The reference pressure along the Hugoniot is determined by
+Solving the jump equations above gives that the reference pressure along the Hugoniot is determined by
 
 .. math::
 
@@ -848,7 +848,7 @@ it is
 .. math::
 
     T_H(\rho) = T_0 e^{\Gammma(\rho_0) \eta} + \frac{e^{\Gammma(\rho_0) \eta}}{2 C_V \rho_0}
-                \int_0^\eta e^{-\gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz
+                \int_0^\eta e^{-\gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz \\
                 
               = T_0 e^{\Gammma(\rho_0) \eta} + \frac{C_s^2}}{2 C_V s^2} 
                 \left[\frac{- s \eta}{(1 - s \eta)^2} + \left( \frac{\Gamma(\rho_0)}{s} - 3 \right) 
