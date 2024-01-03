@@ -35,22 +35,19 @@ SCENARIO("MGUsup EOS rho sie", "[VectorEOS][MGUsupEOS]") {
   GIVEN("Parameters for a MGUsup EOS") {
     // Unit conversions
     constexpr Real Mbcc_per_g = 1e12;
-    // MGUsup parameters for copper
-    constexpr Real rho0 = 8.93;
+    // MGUsup parameters for tin beta phase
+    constexpr Real rho0 = 7.285;
     constexpr Real T0 = 298.0;
-    constexpr Real B0 = 1.3448466 * Mbcc_per_g;
-    constexpr Real BP0 = 4.956;
-    constexpr Real A0 = 5.19245e-05;
-    constexpr Real Cv0 = 0.383e-05 * Mbcc_per_g;
-    constexpr Real E0 = 0.0;
-    constexpr Real S0 = 5.05e-04 * Mbcc_per_g;
-    constexpr Real d2to40[39] = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
+    constexpr Real Cs = 2766.0e2;
+    constexpr Real s = 1.5344;
+    constexpr Real G0 = 2.4659;
+    constexpr Real Cv0 = 0.2149e-05 * Mbcc_per_g;
+    constexpr Real E0 = 0.658e-03 * Mbcc_per_g;
+    constexpr Real S0 = 0.4419e-05 * Mbcc_per_g;
     // Create the EOS
-    EOS host_eos = MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
+    EOS host_eos = MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0);
     EOS eos = host_eos.GetOnDevice();
-    MGUsup host_eos2 = MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
+    MGUsup host_eos2 = MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0);
     MGUsup eos2 = host_eos2.GetOnDevice();
 
     eos.PrintParams();
@@ -74,14 +71,14 @@ SCENARIO("MGUsup EOS rho sie", "[VectorEOS][MGUsupEOS]") {
       // Populate the input arrays
       portableFor(
           "Initialize density and energy", 0, 1, PORTABLE_LAMBDA(int i) {
-            v_density[0] = 8.0;
-            v_density[1] = 8.5;
+            v_density[0] = 7.0;
+            v_density[1] = 8.0;
             v_density[2] = 9.0;
-            v_density[3] = 8.93;
-            v_energy[0] = 2.e8;
-            v_energy[1] = 4.6e9;
-            v_energy[2] = 4.7e9;
-            v_energy[3] = 0.0;
+            v_density[3] = 7.285;
+            v_energy[0] = 4.6e8;
+            v_energy[1] = 1.146e9;
+            v_energy[2] = 3.28e9;
+            v_energy[3] = 0.658e9;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create host-side mirrors of the inputs and copy the inputs. These are
@@ -94,29 +91,40 @@ SCENARIO("MGUsup EOS rho sie", "[VectorEOS][MGUsupEOS]") {
 
       // Gold standard values for a subset of lookups
       constexpr std::array<Real, num> temperature_true{
-          6.638294350641033e+1, 1.42266691572769e+03, 1.52867838544081e+03, T0};
+          1.502141159804009e+02, 4.26645103516999e+02, 7.08167099601959e+02, T0};
+      constexpr std::array<Real, num> hugtemperature_true{
+          2.684894520258222e+02, 3.90542065829047e+02, 7.78960970777667e+02, T0};
       constexpr std::array<Real, num> pressure_true{
-          -1.283459624233147e+11, 1.98538351697004e+10, 9.66446220551959e+10, 0.};
+          -2.466829656715215e+10, 6.82999362849669e+10, 2.09379236091689e+11, 0.};
+      constexpr std::array<Real, num> hugpressure_true{
+          -2.010229955618467e+10, 6.690618533331688e+10, 2.121122201185450e+11, 0.};
+      constexpr std::array<Real, num> hugenergy_true{
+          7.141736971616102e+8, 1.068414572008593e+09, 3.432136029156598e+09, E0};
       constexpr std::array<Real, num> entropy_true{
-          5.0015771521255749e+08, 5.1138262492866594e+08, 5.1120147992457777e+08, S0};
+          3.1626206459885668e+06, 4.7165703738323096e+06, 5.2693499546078807e+06, S0};
       constexpr std::array<Real, num> cv_true{Cv0, Cv0, Cv0, Cv0};
       constexpr std::array<Real, num> bulkmodulus_true{
-          7.44411028807209e+11, 1.254880120063067e+12, 1.613822819346433e+12,
-          (B0 + B0 * B0 * A0 * A0 / Cv0 / rho0 * T0)};
-      constexpr std::array<Real, num> gruneisen_true{
-          B0 * A0 / Cv0 / 8.0, B0 * A0 / Cv0 / 8.5, B0 * A0 / Cv0 / 9.0,
-          B0 * A0 / Cv0 / rho0};
+          4.38665321162636e+11, 8.776332438691490e+11, 1.465222098683647e+12,
+          Cs * Cs * rho0};
+      constexpr std::array<Real, num> gruneisen_true{G0 * rho0 / 7.0, G0 * rho0 / 8.0,
+                                                     G0 * rho0 / 9.0, G0};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
       Kokkos::View<Real[num]> v_temperature("Temperature");
+      Kokkos::View<Real[num]> v_hugtemperature("HugTemperature");
       Kokkos::View<Real[num]> v_pressure("Pressure");
+      Kokkos::View<Real[num]> v_hugpressure("HugPressure");
+      Kokkos::View<Real[num]> v_hugenergy("HugEnergy");
       Kokkos::View<Real[num]> v_entropy("Entropy");
       Kokkos::View<Real[num]> v_cv("Cv");
       Kokkos::View<Real[num]> v_bulkmodulus("bmod");
       Kokkos::View<Real[num]> v_gruneisen("Gamma");
       auto h_temperature = Kokkos::create_mirror_view(v_temperature);
+      auto h_hugtemperature = Kokkos::create_mirror_view(v_hugtemperature);
       auto h_pressure = Kokkos::create_mirror_view(v_pressure);
+      auto h_hugpressure = Kokkos::create_mirror_view(v_hugpressure);
+      auto h_hugenergy = Kokkos::create_mirror_view(v_hugenergy);
       auto h_entropy = Kokkos::create_mirror_view(v_entropy);
       auto h_cv = Kokkos::create_mirror_view(v_cv);
       auto h_bulkmodulus = Kokkos::create_mirror_view(v_bulkmodulus);
@@ -125,19 +133,73 @@ SCENARIO("MGUsup EOS rho sie", "[VectorEOS][MGUsupEOS]") {
       // Create arrays for the outputs and then pointers to those arrays that
       // will be passed to the functions in place of the Kokkos views
       std::array<Real, num> h_temperature;
+      std::array<Real, num> h_hugtemperature;
       std::array<Real, num> h_pressure;
+      std::array<Real, num> h_hugpressure;
+      std::array<Real, num> h_hugenergy;
       std::array<Real, num> h_entropy;
       std::array<Real, num> h_cv;
       std::array<Real, num> h_bulkmodulus;
       std::array<Real, num> h_gruneisen;
       // Just alias the existing pointers
       auto v_temperature = h_temperature.data();
+      auto v_hugtemperature = h_hugtemperature.data();
       auto v_pressure = h_pressure.data();
+      auto v_hugpressure = h_hugpressure.data();
+      auto v_hugenergy = h_hugenergy.data();
       auto v_entropy = h_entropy.data();
       auto v_cv = h_cv.data();
       auto v_bulkmodulus = h_bulkmodulus.data();
       auto v_gruneisen = h_gruneisen.data();
 #endif // PORTABILITY_STRATEGY_KOKKOS
+
+      // temporary
+
+      WHEN("A PH(rho) lookup is performed") {
+        portableFor(
+            "Test Hugoniot pressure", 0, num, PORTABLE_LAMBDA(const int i) {
+              v_hugpressure[i] = eos2.HugPressureFromDensity(v_density[i]);
+            });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_hugpressure, v_hugpressure);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned PH(rho) should be equal to the true value") {
+          array_compare(num, density, energy, h_hugpressure, hugpressure_true, "Density",
+                        "Energy");
+        }
+      }
+
+      WHEN("A EH(rho) lookup is performed") {
+        portableFor(
+            "Test Hugoniot internal energy", 0, num, PORTABLE_LAMBDA(const int i) {
+              v_hugenergy[i] = eos2.HugInternalEnergyFromDensity(v_density[i]);
+            });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_hugenergy, v_hugenergy);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned EH(rho) should be equal to the true value") {
+          array_compare(num, density, energy, h_hugenergy, hugenergy_true, "Density",
+                        "Energy");
+        }
+      }
+
+      WHEN("A TH(rho) lookup is performed") {
+        portableFor(
+            "Test Hugoniot temperature", 0, num, PORTABLE_LAMBDA(const int i) {
+              v_hugtemperature[i] = eos2.HugTemperatureFromDensity(v_density[i]);
+            });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_hugtemperature, v_hugtemperature);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned TH(rho) should be equal to the true value") {
+          array_compare(num, density, energy, h_hugtemperature, hugtemperature_true,
+                        "Density", "Energy");
+        }
+      }
+      // end temporary
 
       WHEN("A T(rho, e) lookup is performed") {
         eos.TemperatureFromDensityInternalEnergy(v_density, v_energy, v_temperature, num);
@@ -222,21 +284,18 @@ SCENARIO("MGUsup EOS rho T", "[VectorEOS][MGUsupEOS]") {
     // Unit conversions
     constexpr Real Mbcc_per_g = 1e12;
     // MGUsup parameters for copper
-    constexpr Real rho0 = 8.93;
+    constexpr Real rho0 = 7.285;
     constexpr Real T0 = 298.0;
-    constexpr Real B0 = 1.3448466 * Mbcc_per_g;
-    constexpr Real BP0 = 4.956;
-    constexpr Real A0 = 5.19245e-05;
-    constexpr Real Cv0 = 0.383e-05 * Mbcc_per_g;
-    constexpr Real E0 = 0.0;
-    constexpr Real S0 = 5.05e-04 * Mbcc_per_g;
-    constexpr Real d2to40[39] = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
+    constexpr Real Cs = 2766.0e2;
+    constexpr Real s = 1.5344;
+    constexpr Real G0 = 2.4659;
+    constexpr Real Cv0 = 0.2149e-05 * Mbcc_per_g;
+    constexpr Real E0 = 0.658e-03 * Mbcc_per_g;
+    constexpr Real S0 = 0.4419e-05 * Mbcc_per_g;
     // Create the EOS
-    EOS host_eos = MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
+    EOS host_eos = MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0);
     EOS eos = host_eos.GetOnDevice();
-    MGUsup host_eos2 = MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
+    MGUsup host_eos2 = MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0);
     MGUsup eos2 = host_eos2.GetOnDevice();
 
     eos.PrintParams();
@@ -259,13 +318,13 @@ SCENARIO("MGUsup EOS rho T", "[VectorEOS][MGUsupEOS]") {
       // Populate the input arrays
       portableFor(
           "Initialize density and temperature", 0, 1, PORTABLE_LAMBDA(int i) {
-            v_density[0] = 8.0;
-            v_density[1] = 8.5;
+            v_density[0] = 7.0;
+            v_density[1] = 8.0;
             v_density[2] = 9.0;
-            v_density[3] = 8.93;
-            v_temperature[0] = 66.383;
-            v_temperature[1] = 1422.7;
-            v_temperature[2] = 1528.7;
+            v_density[3] = 7.285;
+            v_temperature[0] = 150.215;
+            v_temperature[1] = 426.645;
+            v_temperature[2] = 708.165;
             v_temperature[3] = 298.0;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -278,19 +337,20 @@ SCENARIO("MGUsup EOS rho T", "[VectorEOS][MGUsupEOS]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
-      constexpr std::array<Real, num> sie_true{
-          2.0000021637044835e+8, 4.6001267127629471e+09, 4.7000827837617149e+09, 0.0};
+      constexpr std::array<Real, num> sie_true{4.6000189975811839e+08,
+                                               1.1459997775419691e+09,
+                                               3.2799954879553909e+09, 6.58e+08};
       constexpr std::array<Real, num> pressure_true{
-          -1.283459584783398e+11, 1.98561454605571e+10, 9.66461314103968e+10, 0.};
+          -2.466826243974248e+10, 6.82999322887127e+10, 2.09379155036952e+11, 0.};
       constexpr std::array<Real, num> entropy_true{
-          5.0015771847198445e+08, 5.1138271399469268e+08, 5.1120153407800680e+08, S0};
+          3.1626332929526418e+06, 4.7165698524198849e+06, 5.2693435831578374e+06, S0};
       constexpr std::array<Real, num> cv_true{Cv0, Cv0, Cv0, Cv0};
       constexpr std::array<Real, num> tbulkmodulus_true{
-          7.3384631127398950e+11, 1.0417839336794381e+12, 1.3975684023296028e+12, B0};
+          4.2378339466579810e+11, 8.4064844786200464e+11, 1.4106538914691243e+12,
+          (Cs * Cs - G0 * G0 * T0 * Cv0) * rho0};
       constexpr std::array<Real, num> alpha_true{
-          9.5156828083623124e-05, 6.7029721830195901e-05, 4.9965702691402983e-05, A0};
-      //    B0 * A0 / tbulkmodulus_true[0], B0 * A0 / tbulkmodulus_true[1], B0 * A0 /
-      //    tbulkmodulus_true[2]
+          9.1095620143267597e-05, 4.5922657969193220e-05, 2.7366607342141916e-05,
+          G0 * Cv0 / (Cs * Cs - G0 * G0 * T0 * Cv0)};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -428,52 +488,39 @@ SCENARIO("MGUsup EOS SetUp", "[VectorEOS][MGUsupEOS]") {
     Real Cv0 = 0.383e-05 * Mbcc_per_g;
     constexpr Real E0 = 0.0;
     constexpr Real S0 = 5.05e-04 * Mbcc_per_g;
-    constexpr Real d2to40[39] = {0., 0.,      0.0000000000001,
-                                 0., 0.,      0.,
-                                 0., 0.,      0.,
-                                 0., 0.,      0.,
-                                 0., 0.,      0.,
-                                 0., 0.,      0.,
-                                 0., 0.,      0.,
-                                 0., 0.,      0.,
-                                 0., 0.,      0.,
-                                 0., 0.,      0.,
-                                 0., 0.,      0.,
-                                 0., 1.0e-26, 0.,
-                                 0., 0.,      0.};
     // Create the EOS
-    EOS host_eos = MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40);
+    EOS host_eos = MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0);
     EOS eos = host_eos.GetOnDevice();
     eos.Finalize();
 
     WHEN("Faulty/not set parameter rho0 is given") {
       rho0 = -1.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter T0 is given") {
       T0 = -1.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter B0 is given") {
       B0 = -1.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter BP0 is given") {
-      BP0 = 0.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      BP0 = -1.0;
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter Cv0 is given") {
       Cv0 = -1.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter A0 is given") {
       A0 = -10000000.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0, d2to40));
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
   }

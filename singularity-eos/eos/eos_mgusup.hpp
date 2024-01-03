@@ -37,11 +37,10 @@ class MGUsup : public EosBase<MGUsup> {
  public:
   MGUsup() = default;
   // Constructor
-  MGUsup(const Real rho0, const Real T0, const Real B0, const Real BP0, const Real A0,
-        const Real Cv0, const Real E0, const Real S0, const Real *expconsts)
-      : _rho0(rho0), _T0(T0), _B0(B0), _BP0(BP0), _A0(A0), _Cv0(Cv0), _E0(E0), _S0(S0) {
+  MGUsup(const Real rho0, const Real T0, const Real Cs, const Real s, const Real G0,
+         const Real Cv0, const Real E0, const Real S0)
+      : _rho0(rho0), _T0(T0), _Cs(Cs), _s(s), _G0(G0), _Cv0(Cv0), _E0(E0), _S0(S0) {
     CheckMGUsup();
-    InitializeMGUsup(expconsts);
   }
 
   MGUsup GetOnDevice() { return *this; }
@@ -55,7 +54,6 @@ class MGUsup : public EosBase<MGUsup> {
       const Real rho, const Real sie, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
-  // Entropy added AEM Dec. 2022
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
@@ -68,6 +66,10 @@ class MGUsup : public EosBase<MGUsup> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return _Cv0;
   }
+  // added for testing AEM Dec 2023
+  PORTABLE_INLINE_FUNCTION Real HugPressureFromDensity(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real HugInternalEnergyFromDensity(const Real rho) const;
+  PORTABLE_INLINE_FUNCTION Real HugTemperatureFromDensity(const Real rho) const;
   // Thermal Bulk Modulus added AEM Dec 2022
   PORTABLE_INLINE_FUNCTION Real TBulkModulusFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const;
@@ -80,11 +82,11 @@ class MGUsup : public EosBase<MGUsup> {
       const Real rho, const Real temp, Real *lambda = nullptr) const;
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temp, Real *lambda = nullptr) const {
-    return robust::ratio(_A0 * _B0, _Cv0 * rho);
+    return robust::ratio(_G0 * _rho0, rho);
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return robust::ratio(_A0 * _B0, _Cv0 * rho);
+    return robust::ratio(_G0 * _rho0, rho);
   }
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
@@ -105,12 +107,8 @@ class MGUsup : public EosBase<MGUsup> {
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char st[]{"MGUsup Params: "};
-    printf("%s rho0:%e T0:%e B0:%e BP0:%e\n  A0:%e Cv0:%e E0:%e S0:%e\n"
-           "non-zero elements in d2tod40 array:\n",
-           st, _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0);
-    for (int i = 0; i < 39; i++) {
-      if (_d2tod40[i] > 0.0) printf("d%i:%e\t", i + 2, _d2tod40[i]);
-    }
+    printf("%s rho0:%e T0:%e Cs:%e s:%e\n  G0:%e Cv0:%e E0:%e S0:%e\n", st, _rho0, _T0,
+           _Cs, _s, _G0, _Cv0, _E0, _S0);
     printf("\n\n");
   }
   // Density/Energy from P/T not unique, if used will give error
@@ -123,15 +121,9 @@ class MGUsup : public EosBase<MGUsup> {
 
  private:
   static constexpr const unsigned long _preferred_input =
-      thermalqs::density | thermalqs::temperature;
-  Real _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0;
-  static constexpr const int PressureCoeffsd2tod40Size = 39;
-  static constexpr const int MGUsupInternalParametersSize = PressureCoeffsd2tod40Size + 4;
-  Real _VIP[MGUsupInternalParametersSize], _d2tod40[PressureCoeffsd2tod40Size];
+      thermalqs::density | thermalqs::specific_internal_energy;
+  Real _rho0, _T0, _Cs, _s, _G0, _Cv0, _E0, _S0;
   void CheckMGUsup();
-  void InitializeMGUsup(const Real *expcoeffs);
-  PORTABLE_INLINE_FUNCTION void MGUsup_F_DT_func(const Real rho, const Real T,
-                                                Real *output) const;
 };
 
 inline void MGUsup::CheckMGUsup() {
@@ -142,202 +134,188 @@ inline void MGUsup::CheckMGUsup() {
   if (_T0 < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter T0 < 0");
   }
-  if (_B0 < 0.0) {
-    PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter B0 < 0");
+  if (_Cs < 0.0) {
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter Cs < 0");
   }
-  if (_BP0 < 1.0) {
-    PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter BP0 < 1");
+  if (_s < 0.0) {
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter s < 0");
   }
-  if (_A0 < 0.0) {
-    PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter A0 < 0");
+  if (_G0 < 0.0) {
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter G0 < 0");
   }
   if (_Cv0 < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter Cv0 < 0");
   }
 }
 
-inline void MGUsup::InitializeMGUsup(const Real *d2tod40input) {
-
-  // The PressureCoeffsd2tod40Size (=39) allowed d2 to d40 coefficients
-  // for the pressure reference curve vs rho
-  // are seldom all used so did not want to crowd the argument list with them.
-  // Instead I ask the host code to send me a pointer to this array so that I can
-  // copy it here. Not used coeffs should be set to 0.0 (of course).
-  for (int ind = 0; ind < PressureCoeffsd2tod40Size; ind++) {
-    _d2tod40[ind] = d2tod40input[ind];
-  }
-  // Put a couple of  much used model parameter combinations and
-  // the energy coefficients f0 to f40 in an internal parameters array
-  // of size 2+41=MGUsupInternalParametersSize.
-  _VIP[0] = robust::ratio(_B0, _rho0) +
-            robust::ratio(_A0 * _A0 * _B0 * _B0 * _T0,
-                          _rho0 * _rho0 * _Cv0); // sound speed squared
-  _VIP[1] = 3.0 / 2.0 * (_BP0 - 1.0);            // exponent eta0
-  // initializing with pressure coeffs to get energy coeffs into VIP
-  _VIP[2] = 1.0;                                                // prefactor d0
-  _VIP[3] = 0.0;                                                // prefactor d1
-  for (int ind = 4; ind < MGUsupInternalParametersSize; ind++) { //_d2tod40[0]=d2
-    _VIP[ind] = _d2tod40[ind - 4];                              // dn is in VIP[n+2]
-  }
-  for (int ind = MGUsupInternalParametersSize - 2; ind >= 2;
-       ind--) { // _VIP[42]=d40=f40 given,first calculated is _VIP[41]=f39
-    _VIP[ind] = _VIP[ind] - (ind) / _VIP[1] * _VIP[ind + 1]; // prefactors f40 to f0
-  }                                                          // _VIP[n+2]=fn, ind=n+2
+PORTABLE_INLINE_FUNCTION Real MGUsup::HugPressureFromDensity(Real rho) const {
+  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  return _Cs * _Cs * _rho0 * robust::ratio(eta, (1.0 - _s * eta) * (1.0 - _s * eta));
 }
-
-PORTABLE_INLINE_FUNCTION void MGUsup::MGUsup_F_DT_func(const Real rho, const Real T,
-                                                     Real *output) const {
-  constexpr int pref0vp = -2, pref0vip = 2, maxind = MGUsupInternalParametersSize - 3;
-  Real sumP = 0.0, sumB = 0.0, sumE = 0.0;
-
-  Real x = std::cbrt(robust::ratio(_rho0, rho)); /*rho-dependent*/
-  Real x2inv = robust::ratio(1.0, x * x);
-  Real onemx = 1.0 - x;
-  Real etatimes1mx = _VIP[1] * onemx;
-  Real expetatimes1mx = exp(etatimes1mx);
-
-#pragma unroll
-  for (int ind = maxind; ind >= 2; ind--) {              //_d2tod40[0]=d2
-    sumP = _d2tod40[pref0vp + ind] + onemx * sumP;       //_d2tod40[38]=d40
-    sumB = _d2tod40[pref0vp + ind] * ind + onemx * sumB; //_d2tod40[-2+40]=d40
-    sumE = _VIP[pref0vip + ind] + onemx * sumE;          //_VIP[42]=f40
-  }                                                      //_VIP[2]=f0
-#pragma unroll
-  for (int ind = 1; ind >= 0; ind--) {
-    sumE = _VIP[pref0vip + ind] + onemx * sumE;
+PORTABLE_INLINE_FUNCTION Real MGUsup::HugInternalEnergyFromDensity(Real rho) const {
+  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  return _E0 + robust::ratio(eta, 2.0 * _rho0) * HugPressureFromDensity(rho);
+}
+PORTABLE_INLINE_FUNCTION Real MGUsup::HugTemperatureFromDensity(Real rho) const {
+  int sumkmax = 20;
+  Real cutoff = 1.e-16;
+  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  Real f1 = 1.0 - _s * eta;
+  if (f1 <= 0.0) {
+    PORTABLE_ALWAYS_THROW_OR_ABORT("MGUsup model parameters s and rho0 together with rho "
+                                   "give a negative argument for a logarithm.");
   }
-  sumP = 1.0 + sumP * (onemx * onemx);
-  sumB = sumB * onemx;
-  sumE = _VIP[1] * onemx * sumE;
-
-  /* T0 isotherm */
-  Real energy = 9.0 * robust::ratio(_B0, _VIP[1] * _VIP[1] * _rho0) *
-                    (_VIP[pref0vip] - expetatimes1mx * (_VIP[pref0vip] - sumE)) -
-                (_A0 * _B0) * (robust::ratio(_T0, _rho0) - robust::ratio(_T0, rho));
-  Real pressure = 3.0 * _B0 * x2inv * onemx * expetatimes1mx * sumP;
-  Real temp = (1.0 + onemx * (_VIP[1] * x + 1.0)) * sumP + x * onemx * sumB;
-  temp = robust::ratio(_B0, _rho0) * x * expetatimes1mx * temp;
-
-  /* Go to required temperature */
-  energy = energy + _Cv0 * (T - _T0) + _E0;
-  pressure = pressure + (_A0 * _B0) * (T - _T0);
-  Real dpdrho = temp;
-  Real dpdt = _A0 * _B0;
-  Real dedt = _Cv0;
-  Real dedrho = robust::ratio(pressure - T * (_A0 * _B0), rho * rho);
-  Real entropy;
-  if (T < 0.0) {
-#ifndef NDEBUG
-    PORTABLE_WARN("Negative temperature input");
-#endif // NDEBUG
-    entropy = 0.0;
+  Real G0os = robust::ratio(_G0, _s);
+  // sk, lk, mk, sum, and enough values may change in the loop
+  Real sk = -_G0 * eta;
+  Real lk = _G0;
+  Real mk = 0.0;
+  Real sum = sk;
+  int enough = 0;
+  Real temp;
+  Real pf = _Cs * _Cs / (2.0 * _Cv0 * _s * _s);
+  if (eta * eta < 1.e-8) {
+    temp = _T0 * exp(_G0 * eta) +
+           pf * (2.0 * std::log(f1) - _s * eta / (f1 * f1) * (3.0 * _s * eta - 2.0));
   } else {
-    entropy = (_A0 * _B0) * (robust::ratio(1.0, rho) - robust::ratio(1, _rho0)) +
-              _Cv0 * std::log(robust::ratio(T, _T0)) + _S0;
+    for (int i = 0; ((i < sumkmax) && (enough == 0)); i++) {
+      mk = G0os / (i + 2) / (i + 2);
+      sk = (sk * f1 - lk * eta) * (i + 1) * mk;
+      lk = mk * (i + 1) * lk;
+      sum = sum + sk;
+      if (robust::ratio((sk * sk), (sum * sum)) < (cutoff * cutoff)) {
+        enough = 1;
+      }
+    }
+    if (enough == 0) {
+#ifndef NDEBUG
+      PORTABLE_WARN("Hugoniot Temperature not converged");
+#endif // NDEBUG
+    }
+    // printf("sum=%e\n",sum);
+    temp = _T0 - pf * ((G0os - 3.0) + exp(-G0os) * (G0os * G0os - 4.0 * G0os + 2.0) *
+                                          (std::log(f1) + sum));
+    temp = temp * exp(_G0 * eta);
+    temp = temp - pf / f1 * ((4.0 - G0os) - 1.0 / f1);
   }
-  Real soundspeed =
-      std::max(0.0, dpdrho + T * robust::ratio(dpdt * dpdt, rho * rho * _Cv0));
-  soundspeed = std::sqrt(soundspeed);
-
-  output[0] = energy;
-  output[1] = pressure;
-  output[2] = dpdrho;
-  output[3] = dpdt;
-  output[4] = dedt;
-  output[5] = dedrho;
-  output[6] = entropy;
-  output[7] = soundspeed;
-
-  return;
+  return temp;
 }
+
 PORTABLE_INLINE_FUNCTION Real MGUsup::InternalEnergyFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
-  Real output[8];
-  MGUsup_F_DT_func(rho, temp, output);
-  return output[0];
+  Real value =
+      HugInternalEnergyFromDensity(rho) + _Cv0 * (temp - HugTemperatureFromDensity(rho));
+  return value;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::PressureFromDensityTemperature(const Real rho,
-                                                                    const Real temp,
-                                                                    Real *lambda) const {
-  Real output[8];
-  MGUsup_F_DT_func(rho, temp, output);
-  return output[1];
+                                                                     const Real temp,
+                                                                     Real *lambda) const {
+  Real value = HugPressureFromDensity(rho) +
+               _G0 * _rho0 * _Cv0 * (temp - HugTemperatureFromDensity(rho));
+  return value;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::EntropyFromDensityTemperature(const Real rho,
-                                                                   const Real temp,
-                                                                   Real *lambda) const {
-  Real output[8];
-  MGUsup_F_DT_func(rho, temp, output);
-  return output[6];
+                                                                    const Real temp,
+                                                                    Real *lambda) const {
+  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  Real value = _S0 - _G0 * _Cv0 * eta + _Cv0 * std::log(temp / _T0);
+  return value;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::TExpansionCoeffFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
-  Real output[8];
-  MGUsup_F_DT_func(rho, temp, output);
-  return robust::ratio(output[3], output[2] * rho);
+  Real value =
+      robust::ratio(_Cv0 * _rho0 * _G0, TBulkModulusFromDensityTemperature(rho, temp));
+  return value;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::TBulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
-  Real output[8];
-  MGUsup_F_DT_func(rho, temp, output);
-  return output[2] * rho;
+  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  Real value = robust::ratio((1.0 + _s * eta - _G0 * _s * eta * eta), (1.0 - _s * eta));
+  if (eta == 0.0) {
+    value = _Cs * _Cs * _rho0;
+  } else {
+    value = value * robust::ratio(HugPressureFromDensity(rho), eta);
+  }
+  value = value - _G0 * _G0 * _Cv0 * _rho0 * HugTemperatureFromDensity(rho);
+  value = robust::ratio(_rho0, rho) * value;
+  return value;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::BulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
-  Real output[8];
-  MGUsup_F_DT_func(rho, temp, output);
-  return output[7] * output[7] * rho;
+  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  Real value =
+      robust::ratio((1.0 + _s * eta - _G0 * _s * eta * eta), eta * (1.0 - _s * eta));
+  if (eta == 0.0) {
+    value = _Cs * _Cs * _rho0;
+  } else {
+    value = value * robust::ratio(HugPressureFromDensity(rho), eta);
+  }
+  value = value - _G0 * _G0 * _Cv0 * _rho0 * (temp - HugTemperatureFromDensity(rho));
+  value = robust::ratio(_rho0, rho) * value;
+  return value;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  Real Tref;
-  Real output[8];
-  Tref = _T0;
-  MGUsup_F_DT_func(rho, Tref, output);
-  return robust::ratio(sie - output[0], _Cv0) + Tref;
+  Real value =
+      (sie - HugInternalEnergyFromDensity(rho)) / _Cv0 + HugTemperatureFromDensity(rho);
+  if (value < 0.0) {
+#ifndef NDEBUG
+    PORTABLE_WARN("Negative temperature");
+#endif // NDEBUG
+    value = 1.e-12;
+  }
+  return value;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  Real temp;
-  Real output[8];
-  temp = TemperatureFromDensityInternalEnergy(rho, sie);
-  MGUsup_F_DT_func(rho, temp, output);
-  return output[1];
+  Real value = HugPressureFromDensity(rho) +
+               _rho0 * _G0 * (sie - HugInternalEnergyFromDensity(rho));
+  return value;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::MinInternalEnergyFromDensity(const Real rho,
-                                                                  Real *lambda) const {
+                                                                   Real *lambda) const {
   MinInternalEnergyIsNotEnabled("MGUsup");
   return 0.0;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  Real temp;
-  Real output[8];
-  temp = TemperatureFromDensityInternalEnergy(rho, sie);
-  MGUsup_F_DT_func(rho, temp, output);
-  return output[6];
+  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  Real value = std::log(TemperatureFromDensityInternalEnergy(rho, sie) / _T0);
+  value = _S0 - _G0 * _Cv0 * eta + _Cv0 * value;
+  if (value < 0.0) {
+#ifndef NDEBUG
+    PORTABLE_WARN("Negative entropy");
+#endif // NDEBUG
+    value = 1.e-12;
+  }
+  return value;
 }
 PORTABLE_INLINE_FUNCTION Real MGUsup::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  Real temp;
-  Real output[8];
-  temp = TemperatureFromDensityInternalEnergy(rho, sie);
-  MGUsup_F_DT_func(rho, temp, output);
-  return output[7] * output[7] * rho;
+  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  Real value = robust::ratio((1.0 + _s * eta - _G0 * _s * eta * eta), (1.0 - _s * eta));
+  if (eta == 0.0) {
+    value = _Cs * _Cs * _rho0;
+  } else {
+    value = value * robust::ratio(HugPressureFromDensity(rho), eta);
+  }
+  value = value + _G0 * _G0 * _rho0 * (sie - HugInternalEnergyFromDensity(rho));
+  value = robust::ratio(_rho0, rho) * value;
+  return value;
 }
 // AEM: Give error since function is not well defined
 PORTABLE_INLINE_FUNCTION void
 MGUsup::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho, Real &sie) const {
+                                             Real *lambda, Real &rho, Real &sie) const {
   EOS_ERROR("MGUsup::DensityEnergyFromPressureTemperature: "
             "Not implemented.\n");
 }
 // AEM: We should add entropy and Gruneissen parameters here so that it is complete
 // If we add also alpha and BT, those should also be in here.
 PORTABLE_INLINE_FUNCTION void MGUsup::FillEos(Real &rho, Real &temp, Real &sie,
-                                             Real &press, Real &cv, Real &bmod,
-                                             const unsigned long output,
-                                             Real *lambda) const {
+                                              Real &press, Real &cv, Real &bmod,
+                                              const unsigned long output,
+                                              Real *lambda) const {
   const unsigned long input = ~output; // everything that is not output is input
   if (thermalqs::density & output) {
     EOS_ERROR("MGUsup FillEos: Density is required input.\n");
@@ -346,23 +324,24 @@ PORTABLE_INLINE_FUNCTION void MGUsup::FillEos(Real &rho, Real &temp, Real &sie,
     EOS_ERROR("MGUsup FillEos: Density and Internal Energy or Density and Temperature "
               "are required input parameters.\n");
   }
-  if (thermalqs::specific_internal_energy & input) {
-    temp = TemperatureFromDensityInternalEnergy(rho, sie);
+  if (thermalqs::temperature & input) {
+    sie = InternalEnergyFromDensityTemperature(rho, temp);
   }
-  Real Vout[8];
-  MGUsup_F_DT_func(rho, temp, Vout);
-  if (output & thermalqs::temperature) temp = temp;
-  if (output & thermalqs::specific_internal_energy) sie = Vout[0];
-  if (output & thermalqs::pressure) press = Vout[1];
-  if (output & thermalqs::specific_heat) cv = Vout[4];
-  if (output & thermalqs::bulk_modulus) bmod = Vout[7] * Vout[7] * rho;
+  if (output & thermalqs::temperature)
+    temp = TemperatureFromDensityInternalEnergy(rho, sie);
+  if (output & thermalqs::specific_internal_energy) sie = sie;
+  if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
+  if (output & thermalqs::specific_heat)
+    cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
+  if (output & thermalqs::bulk_modulus)
+    bmod = BulkModulusFromDensityInternalEnergy(rho, sie);
 }
 
 // TODO(JMM): pre-cache these rather than recomputing them each time
 PORTABLE_INLINE_FUNCTION
 void MGUsup::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                                   Real &cv, Real &bmod, Real &dpde, Real &dvdt,
-                                   Real *lambda) const {
+                                    Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+                                    Real *lambda) const {
   // AEM: Added all variables I think should be output eventually
   Real tbmod;
   // Real entropy, alpha, Gamma;
@@ -373,13 +352,13 @@ void MGUsup::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &pres
   press = PressureFromDensityTemperature(rho, temp, lambda);
   // entropy = _S0;
   cv = _Cv0;
-  tbmod = _B0;
+  tbmod = _Cs * _Cs * _rho0 - _G0 * _G0 * _Cv0 * _rho0 * _T0;
   // alpha = _A0;
-  bmod = BulkModulusFromDensityTemperature(rho, temp, lambda);
-  // Gamma = robust::ratio(_A0 * _B0, _Cv0 * _rho0);
+  bmod = _Cs * _Cs * _rho0;
+  // Gamma = _G0;
   // AEM: I suggest taking the two following away.
-  dpde = robust::ratio(_A0 * tbmod, _Cv0);
-  dvdt = robust::ratio(_A0, _rho0);
+  dpde = _G0 * _rho0;
+  dvdt = robust::ratio(-1.0, _T0 * _G0 * _rho0);
 }
 } // namespace singularity
 
