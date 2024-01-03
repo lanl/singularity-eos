@@ -480,47 +480,47 @@ SCENARIO("MGUsup EOS SetUp", "[VectorEOS][MGUsupEOS]") {
     // Unit conversions
     constexpr Real Mbcc_per_g = 1e12;
     // MGUsup parameters for copper
-    Real rho0 = 8.93;
+    Real rho0 = 7.285;
     Real T0 = 298.0;
-    Real B0 = 1.3448466 * Mbcc_per_g;
-    Real BP0 = 4.956;
-    Real A0 = 5.19245e-05;
-    Real Cv0 = 0.383e-05 * Mbcc_per_g;
-    constexpr Real E0 = 0.0;
-    constexpr Real S0 = 5.05e-04 * Mbcc_per_g;
+    Real Cs = 2766.0e2;
+    Real s = 1.5344;
+    Real G0 = 2.4659;
+    Real Cv0 = 0.2149e-05 * Mbcc_per_g;
+    constexpr Real E0 = 0.658e-03 * Mbcc_per_g;
+    constexpr Real S0 = 0.4419e-05 * Mbcc_per_g;
     // Create the EOS
-    EOS host_eos = MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0);
+    EOS host_eos = MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0);
     EOS eos = host_eos.GetOnDevice();
     eos.Finalize();
 
     WHEN("Faulty/not set parameter rho0 is given") {
       rho0 = -1.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter T0 is given") {
       T0 = -1.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
-    WHEN("Faulty/not set parameter B0 is given") {
-      B0 = -1.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
+    WHEN("Faulty/not set parameter Cs is given") {
+      Cs = -1.0;
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
-    WHEN("Faulty/not set parameter BP0 is given") {
-      BP0 = -1.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
+    WHEN("Faulty/not set parameter s is given") {
+      s = -1.0;
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0));
+      THEN("An error message should be written out") {}
+    }
+    WHEN("Faulty/not set parameter G0 is given") {
+      G0 = -1.0;
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
     WHEN("Faulty/not set parameter Cv0 is given") {
       Cv0 = -1.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
-      THEN("An error message should be written out") {}
-    }
-    WHEN("Faulty/not set parameter A0 is given") {
-      A0 = -10000000.0;
-      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, B0, BP0, A0, Cv0, E0, S0));
+      REQUIRE_MAYBE_THROWS(MGUsup(rho0, T0, Cs, s, G0, Cv0, E0, S0));
       THEN("An error message should be written out") {}
     }
   }

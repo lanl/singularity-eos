@@ -815,7 +815,7 @@ shock jump conditions,
 
 .. math::
   \rho_0 U_s = \rho (U_s - u_p) \\
-  P_H = \rho_0 U_s u_p ,
+  P_H = \rho_0 U_s u_p ,         
 
 assuming a linear :math:`U_s`-:math:`u_p` relation,
 
@@ -849,10 +849,9 @@ it is
 
     T_H(\rho) = T_0 e^{\Gammma(\rho_0) \eta} + \frac{e^{\Gammma(\rho_0) \eta}}{2 C_V \rho_0}
                 \int_0^\eta e^{-\gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz \\
-                
               = T_0 e^{\Gammma(\rho_0) \eta} + \frac{C_s^2}}{2 C_V s^2} 
                 \left[\frac{- s \eta}{(1 - s \eta)^2} + \left( \frac{\Gamma(\rho_0)}{s} - 3 \right) 
-                                                        \left( e^{\Gammma(\rho_0) \eta} - \frac{1}{(1-s \eta)}
+                                                        \left( e^{\Gammma(\rho_0) \eta} - \frac{1}{(1-s \eta)}\right)
                       + e^{-\frac{\Gamma(\rho_0)}{s} (1-s \eta)} 
                         \left( Ei(\frac{\Gamma(\rho_0)}{s}(1-s \eta))-Ei(\frac{\Gamma(\rho_0)}{s}) \right)
                         \left((\frac{\Gamma(\rho_0)}{s})^2 - 4 \frac{\Gamma(\rho_0)}{s} + 2 \right) \right]                        
