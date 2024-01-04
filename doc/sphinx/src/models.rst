@@ -754,10 +754,10 @@ is :math:`S_0`, and ``expconsts`` is a pointer to the constant array of length
 :math:`d_2` to :math:`d_{40}`. Expansion coefficients not used should be set to
 0.0.
 
-Mie-Gruneisen linear :math:`U_s`-:math:`u_p` EOS
-````````````````````````````````````````````````
+Mie-Gruneisen linear :math:`U_s`- :math:`u_p` EOS
+`````````````````````````````````````````````````
 
-One of the most commonly-used EOS is the linear :math:`U_s`-:math:`u_p` version of the Mie-Gruneisen EOS. This EOS
+One of the most commonly-used EOS is the linear :math:`U_s`- :math:`u_p` version of the Mie-Gruneisen EOS. This EOS
 uses the Hugoniot as the reference curve and is extensively used in shock physics.
 This version implements the exact thermodynamic temperature on the Hugoniot and also adds an entropy.
 
@@ -817,7 +817,7 @@ shock jump conditions,
   \rho_0 U_s = \rho (U_s - u_p) \\
   P_H = \rho_0 U_s u_p ,         
 
-assuming a linear :math:`U_s`-:math:`u_p` relation,
+assuming a linear :math:`U_s`- :math:`u_p` relation,
 
 .. math::
 
@@ -825,7 +825,7 @@ assuming a linear :math:`U_s`-:math:`u_p` relation,
 
 Here :math:`U_s` is the shock velocity and :math:`u_p` is the particle
 velocity. As is pointed out in the description of the Gruneisen EOS, 
-for many materials, the :math:`U_s`-:math:`u_p` relationship is roughly linear 
+for many materials, the :math:`U_s`- :math:`u_p` relationship is roughly linear 
 so only this :math:`s` parameter is needed. The units for :math:`C_s` is velocity while
 :math:`s` is unitless. Note that the parameter :math:`s` is related to the
 fundamental derivative of shock physics as shown by `Wills <WillsThermo_>`_.
@@ -836,26 +836,32 @@ Solving the jump equations above gives that the reference pressure along the Hug
 
     P_H(\rho) = C_s^2 \rho_0 \frac{\eta}{\left(1 - s \eta \right)^2} .
 
+Note the singularity at :math:`s \eta = 1` which limits this model's validity to compressions
+:math:`\eta << 1/s`. If your problem can be expected to have compressions of this order, you should use the PowerMG
+EOS that is explicitely constructed for large compressions. 
+The assumption of linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions.
+
 The energy along the Hugoniot is given by
 
 .. math::
 
     E_H(\rho) = \frac{P_H \eta }{2 \rho_0} + E_0 .
 
-The temperature on the Hugoniot is hard to derive but with the help of Mathematica
-it is
+The temperature on the Hugoniot is hard to derive explicitely but with the help of Mathematica
+we can solve
 
 .. math::
 
-    T_H(\rho) = T_0 e^{\Gammma(\rho_0) \eta} + \frac{e^{\Gammma(\rho_0) \eta}}{2 C_V \rho_0}
+    T_H(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{e^{\Gamma(\rho_0) \eta}}{2 C_V \rho_0}
                 \int_0^\eta e^{-\gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz 
 
 
-testing
+into the explicit formula
+
 .. math::
-              = T_0 e^{\Gammma(\rho_0) \eta} + \frac{C_s^2}}{2 C_V s^2} 
+      T_H(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}}{2 C_V s^2} 
                 \left[\frac{- s \eta}{(1 - s \eta)^2} + \left( \frac{\Gamma(\rho_0)}{s} - 3 \right) 
-                                                        \left( e^{\Gammma(\rho_0) \eta} - \frac{1}{(1-s \eta)}\right)
+                                                        \left( e^{\Gamma(\rho_0) \eta} - \frac{1}{(1-s \eta)}\right)
                       + e^{-\frac{\Gamma(\rho_0)}{s} (1-s \eta)} 
                         \left( Ei(\frac{\Gamma(\rho_0)}{s}(1-s \eta))-Ei(\frac{\Gamma(\rho_0)}{s}) \right)
                         \left((\frac{\Gamma(\rho_0)}{s})^2 - 4 \frac{\Gamma(\rho_0)}{s} + 2 \right) \right]                        
