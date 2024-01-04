@@ -853,13 +853,13 @@ we can solve
 .. math::
 
     T_H(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{e^{\Gamma(\rho_0) \eta}}{2 C_V \rho_0}
-                \int_0^\eta e^{-\gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz 
+                \int_0^\eta e^{-\Gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz 
 
 
 into the explicit formula
 
 .. math::
-      T_H(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}}{2 C_V s^2} 
+      T_H(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2} 
                 \left[\frac{- s \eta}{(1 - s \eta)^2} + \left( \frac{\Gamma(\rho_0)}{s} - 3 \right) 
                                                         \left( e^{\Gamma(\rho_0) \eta} - \frac{1}{(1-s \eta)}\right)
                       + e^{-\frac{\Gamma(\rho_0)}{s} (1-s \eta)} 
