@@ -874,8 +874,8 @@ severe cancellations in this formula and we use the expansion
 
 .. math::
 
-    {T_H}_{exp}(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2} 
-                          \left[ -2 \ln ( 1- s \eta) + \frac{s \eta}{(1 - s \eta)^2} ( 3 s \eta - 2) \ .
+    {T_H}_{exp}(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2}
+                          \left[ -2 \ln ( 1- s \eta) + \frac{s \eta}{(1 - s \eta)^2} ( 3 s \eta - 2) \right] \ .
 
 
 The constructor for the ``MGUsup`` EOS has the signature
