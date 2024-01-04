@@ -870,13 +870,17 @@ into the explicit formula
 
 where :math:`Ei` is the exponential integral function. We replace the :math:`Ei` difference with a sum with cutoff
 giving an error less than machine precision. For :math:`s \eta` close to :math:`0`, there are 
-severe cancellations in this formula and we use the expansion
+severe cancellations in this formula and we use the expansion 
 
 .. math::
 
     {T_H}_{exp}(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2}
                           \left[ -2 \ln ( 1- s \eta) + \frac{s \eta}{(1 - s \eta)^2} ( 3 s \eta - 2) \right] \ .
 
+
+The first omitted term in the expansion inside the square brackets is :math:`\Gamma(\rho_0) \eta^4 / 6`. This exapnsion is
+in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the 
+isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
 
 The constructor for the ``MGUsup`` EOS has the signature
 
