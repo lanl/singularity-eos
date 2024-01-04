@@ -3,6 +3,8 @@
 ## Current develop
 
 ### Fixed (Repair bugs, etc)
+### Added (new features/APIs/variables/...)
+- [[PR331]](https://github.com/lanl/singularity-eos/pull/331) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a linear Us-up relation.
 
 ### Added (new features/APIs/variables/...)
 - [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release

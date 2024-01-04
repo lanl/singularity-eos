@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -39,13 +39,13 @@
 #include <singularity-eos/eos/eos_helmholtz.hpp>
 #include <singularity-eos/eos/eos_ideal.hpp>
 #include <singularity-eos/eos/eos_jwl.hpp>
+#include <singularity-eos/eos/eos_mgusup.hpp>
 #include <singularity-eos/eos/eos_noble_abel.hpp>
 #include <singularity-eos/eos/eos_sap_polynomial.hpp>
 #include <singularity-eos/eos/eos_spiner.hpp>
 #include <singularity-eos/eos/eos_stellar_collapse.hpp>
 #include <singularity-eos/eos/eos_stiff.hpp>
 #include <singularity-eos/eos/eos_vinet.hpp>
-
 // Modifiers
 #include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
 #include <singularity-eos/eos/modifiers/ramps_eos.hpp>
@@ -67,7 +67,7 @@ using singularity::variadic_utils::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts, StiffGas,
+    tl<IdealGas, Gruneisen, Vinet, MGUsup, JWL, DavisReactants, DavisProducts, StiffGas,
        SAP_Polynomial, NobleAbel
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ

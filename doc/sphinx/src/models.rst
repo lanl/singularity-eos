@@ -580,6 +580,9 @@ Given the inconsisetency in the temperature, we have made the choice **not** to
 expose the entropy for this EOS. **Requesting an entropy value will result in an
 error.**
 
+If a linear :math:`U_s`-:math:`u_p` relation is enough for your problem, we recommend using the MGUsup
+EOS described below. It is a complete EOS with consistent temperature.
+
 Given a reference density, :math:`\rho_0`, we first parameterize the EOS using
 :math:`\eta` as a measure of compression given by
 
@@ -750,6 +753,148 @@ is :math:`S_0`, and ``expconsts`` is a pointer to the constant array of length
 39 containing the expansion coefficients
 :math:`d_2` to :math:`d_{40}`. Expansion coefficients not used should be set to
 0.0.
+
+Mie-Gruneisen linear :math:`U_s`- :math:`u_p` EOS
+`````````````````````````````````````````````````
+
+One of the most commonly-used EOS is the linear :math:`U_s`- :math:`u_p` version of the Mie-Gruneisen EOS. This EOS
+uses the Hugoniot as the reference curve and is extensively used in shock physics.
+This version implements the exact thermodynamic temperature on the Hugoniot and also adds an entropy.
+
+The pressure follows the traditional Mie-Gruneisen form,
+
+.. math::
+
+    P(\rho, e) = P_H(\rho) + \rho\Gamma(\rho) \left(e - e_H(\rho) \right),
+
+Here the subscript :math:`H` is a reminder that the reference curve is a
+Hugoniot. :math:`\Gamma` is the Gruneisen parameter and the first approximation 
+is that :math:`\rho\Gamma(\rho)=\rho_0\Gamma(\rho_0)`
+which is the same assumption as in the Gruneisen EOS when :math:`b=0`.
+
+The above is an incomplete equation of state because it only relates the
+pressure to the density and energy, the minimum required in a solution to the
+Euler equations. To complete the EOS and determine the temperature and entropy, a constant
+heat capacity is assumed so that
+
+.. math::
+
+    T(\rho, e) = \frac{\left(e-e_H(\rho)\right)}{C_V} + T_H(\rho)
+
+Note the difference from the Gruneisen EOS described above. We still use a constant :math:`C_V`, 
+and it is usually taken at the reference temperature, but
+we now extrapolate from the temperature on the Hugoniot, :math:`T_H(\rho)`, and not 
+from the reference temperature, :math:`T_0`.
+
+With this consistent temperature we can derive an entropy in a similar way as for the Vinet EOS. Using
+thermodynamic derivatives we can show that
+
+.. math::
+
+    \Gamma \rho = \frac{\alpha B_T}{C_V} ,
+
+and we arrive at 
+
+.. math::
+
+    S(\rho,T) = S_0 - \Gamma(\rho_0)C_V \eta + {C_V} \ln \frac{T}{T_0} ,
+
+
+where :math:`\eta` is a measure of compression given by
+
+.. math::
+
+    \eta = 1 - \frac{\rho_0}{\rho}.
+
+This is convenient because :math:`\eta = 0` when :math:`\rho = \rho_0`,
+:math:`\eta = 1` at the infinite density limit, and :math:`\eta = -\infty` at
+the zero density limit. 
+
+The pressure, energy, and temperature, on the Hugoniot are derived from the 
+shock jump conditions,
+
+.. math::
+
+  \rho_0 U_s &= \rho (U_s - u_p) \\
+  P_H &= \rho_0 U_s u_p \ , 
+
+assuming a linear :math:`U_s`- :math:`u_p` relation,
+
+.. math::
+
+    U_s = C_s + s u_p . 
+
+Here :math:`U_s` is the shock velocity and :math:`u_p` is the particle
+velocity. As is pointed out in the description of the Gruneisen EOS, 
+for many materials, the :math:`U_s`- :math:`u_p` relationship is roughly linear 
+so only this :math:`s` parameter is needed. The units for :math:`C_s` is velocity while
+:math:`s` is unitless. Note that the parameter :math:`s` is related to the
+fundamental derivative of shock physics as shown by `Wills <WillsThermo_>`_.
+
+Solving the jump equations above gives that the reference pressure along the Hugoniot is determined by
+
+.. math::
+
+    P_H(\rho) = C_s^2 \rho_0 \frac{\eta}{\left(1 - s \eta \right)^2} .
+
+Note the singularity at :math:`s \eta = 1` which limits this model's validity to compressions
+:math:`\eta << 1/s`. If your problem can be expected to have compressions of this order, you should use the PowerMG
+EOS that is explicitely constructed for large compressions. 
+The assumption of linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions.
+
+The energy along the Hugoniot is given by
+
+.. math::
+
+    E_H(\rho) = \frac{P_H \eta }{2 \rho_0} + E_0 .
+
+The temperature on the Hugoniot is hard to derive explicitely but with the help of Mathematica
+we can solve
+
+.. math::
+
+    T_H(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{e^{\Gamma(\rho_0) \eta}}{2 C_V \rho_0}
+                \int_0^\eta e^{-\Gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz 
+
+
+into the explicit formula
+
+.. math::
+
+      T_H(\rho) &= T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2} 
+                \left[\frac{- s \eta}{(1 - s \eta)^2} + \left( \frac{\Gamma(\rho_0)}{s} - 3 \right) 
+                                        \left( e^{\Gamma(\rho_0) \eta} - \frac{1}{(1-s \eta)}\right)\right. \\
+           & \ \left. + e^{-\frac{\Gamma(\rho_0)}{s} (1-s \eta)} 
+                        \left( Ei(\frac{\Gamma(\rho_0)}{s}(1-s \eta))-Ei(\frac{\Gamma(\rho_0)}{s}) \right)
+                        \left((\frac{\Gamma(\rho_0)}{s})^2 - 4 \frac{\Gamma(\rho_0)}{s} + 2 \right) \right]                        
+
+where :math:`Ei` is the exponential integral function. We replace the :math:`Ei` difference with a sum with cutoff
+giving an error less than machine precision. For :math:`s \eta` close to :math:`0`, there are 
+severe cancellations in this formula and we use the expansion 
+
+.. math::
+
+    {T_H}_{exp}(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2}
+                          \left[ -2 \ln ( 1- s \eta) + \frac{s \eta}{(1 - s \eta)^2} ( 3 s \eta - 2) \right] \ .
+
+
+The first omitted term in the expansion inside the square brackets is :math:`\Gamma(\rho_0) \eta^4 / 6`. This expansion is
+in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the 
+isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
+
+The constructor for the ``MGUsup`` EOS has the signature
+
+.. code-block:: cpp
+
+  MGUsup(const Real rho0, const Real T0, const Real Cs, const Real s, const Real G0,
+         const Real Cv0, const Real E0, const Real S0)
+
+where 
+``rho0`` is :math:`\rho_0`, ``T0`` is :math:`T_0`,
+``Cs`` is :math:`C_s`, ``s`` is :math:`s`, 
+``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_V`,
+``E0`` is :math:`E_0`, and ``S0`` is :math:`S_0`. 
+
 
 JWL EOS
 ``````````
