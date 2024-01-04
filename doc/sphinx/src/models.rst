@@ -878,7 +878,7 @@ severe cancellations in this formula and we use the expansion
                           \left[ -2 \ln ( 1- s \eta) + \frac{s \eta}{(1 - s \eta)^2} ( 3 s \eta - 2) \right] \ .
 
 
-The first omitted term in the expansion inside the square brackets is :math:`\Gamma(\rho_0) \eta^4 / 6`. This exapnsion is
+The first omitted term in the expansion inside the square brackets is :math:`\Gamma(\rho_0) \eta^4 / 6`. This expansion is
 in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the 
 isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
 
