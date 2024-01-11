@@ -375,7 +375,8 @@ add_subdirectory(singularity-eos)
 
 foreach(_plugin ${SINGULARITY_PLUGINS})
   message(STATUS "Adding plugin ${_plugin}...")
-  add_subdirectory(${_plugin} ${_plugin})
+  get_filename_component(BINDIR_LOC ${_plugin} NAME)
+  add_subdirectory(${_plugin} ${CMAKE_CURRENT_BINARY_DIR}/${BINDIR_LOC})
 endforeach()
 
 # TODO(JMM): Kind of nice to have?
