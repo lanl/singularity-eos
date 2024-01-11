@@ -43,6 +43,15 @@ add_executable(
   test_eos_stellar_collapse.cpp
   )
 
+if (PLUGIN_TESTS)
+  add_executable(
+    eos_plugin_tests
+    catch2_define.cpp
+    eos_unit_test_helpers.hpp
+    ${PLUGIN_TESTS}
+    )
+endif()
+
 if(SINGULARITY_TEST_HELMHOLTZ)
     configure_file(${PROJECT_SOURCE_DIR}/data/helmholtz/helm_table.dat ${CMAKE_BINARY_DIR}/data/helmholtz/helm_table.dat COPYONLY)
   target_compile_definitions(eos_tabulated_unit_tests PRIVATE SINGULARITY_TEST_HELMHOLTZ SINGULARITY_USE_HELMHOLTZ)
@@ -62,10 +71,17 @@ target_link_libraries(eos_infrastructure_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
 target_link_libraries(eos_tabulated_unit_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
+if (PLUGIN_TESTS)
+  target_link_libraries(eos_plugin_tests PRIVATE Catch2::Catch2
+    singularity-eos::singularity-eos)
+endif()
 include(Catch)
 catch_discover_tests(eos_analytic_unit_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_infrastructure_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_tabulated_unit_tests PROPERTIES TIMEOUT 60)
+if (PLUGIN_TESTS)
+  catch_discover_tests(eos_plugin_tests PROPERTIES TIMEOUT 60)
+endif()
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac compare_to_eospac.cpp)

@@ -118,6 +118,9 @@ option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
 option(SINGULARITY_PATCH_MPARK_VARIANT
        "Apply GPU patch to mpark-variant submodule" ON)
 
+# Plugins
+set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
+
 # ------------------------------------------------------------------------------#
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
@@ -359,27 +362,27 @@ if(SINGULARITY_BUILD_TESTS)
   endif()
 endif()
 
-# ##########################OLD
 # ------------------------------------------------------------------------------#
 # singularity-eos library
 # ------------------------------------------------------------------------------#
 
-# this subdirectory populates `EOS_HEADERS/EOS_SRCS` NOTE: these include path
+# Here we populate `EOS_HEADERS/EOS_SRCS` NOTE: these include path
 # prefixes of subdirectories on files (e.g. eos/eos.hpp) see
 # singularity-eos/CMakeLists.txt
+include(cmake/plugins.cmake)
 
 add_subdirectory(singularity-eos)
 
-foreach(_header ${EOS_HEADERS})
-  list(APPEND _install_headers ${_header})
-  list(APPEND _headers singularity-eos/${_header})
+foreach(_plugin ${SINGULARITY_PLUGINS})
+  message(STATUS "Adding plugin ${_plugin}...")
+  add_subdirectory(${_plugin} ${_plugin})
 endforeach()
 
-foreach(_src ${EOS_SRCS})
-  list(APPEND _srcs singularity-eos/${_src})
-endforeach()
+# TODO(JMM): Kind of nice to have?
+message(STATUS "EOS Headers:\n\t${EOS_HEADERS}")
+message(STATUS "EOS Sources:\n\t${EOS_SRCS}")
 
-target_sources(singularity-eos PRIVATE ${_srcs} ${_headers})
+target_sources(singularity-eos PRIVATE ${EOS_SRCS} ${EOS_HEADERS})
 
 if(SINGULARITY_USE_FORTRAN)
   # Turn on preprocessor for fortran files
