@@ -72,8 +72,8 @@ install(
 # install singularity-eos headers
 foreach(file ${_install_headers})
   get_filename_component(DIR ${file} DIRECTORY)
-  install(FILES singularity-eos/${file}
-          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/${DIR})
+  install(FILES ${file}
+          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${DIR})
 endforeach() # file
 
 # install the fortran modules NB: cmake doesn't provide a clean way to handle

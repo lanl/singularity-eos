@@ -31,8 +31,8 @@
 #include <catch2/catch_test_macros.hpp>
 #endif
 
+#include <dust/dust.hpp>
 #include <test/eos_unit_test_helpers.hpp>
-#include "dust.hpp"
 
 using singularity::Dust;
 using EOS = singularity::Variant<Dust>;

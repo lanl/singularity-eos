@@ -13,10 +13,10 @@
 #------------------------------------------------------------------------------#
 
 # Add the header file to the list of headers
-register_headers(dust.hpp)
+register_headers(dust/dust.hpp)
 
 # Register this test to be built in the test suite
-register_tests(test_dust.cpp)
+register_tests(tst/test_dust.cpp)
 
 # Export lists to parent scope
 export_plugin()

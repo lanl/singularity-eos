@@ -26,7 +26,7 @@
 
 namespace singularity {
 
-using namespace eos_base; 
+using namespace eos_base;
 
 class Dust : public EosBase<Dust> {
  public:
@@ -44,9 +44,9 @@ class Dust : public EosBase<Dust> {
       const Real rho, const Real temperature, Real *lambda = nullptr) {
     return _Cv * temperature;
   }
-    PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-      return 0;
+    return 0;
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
@@ -103,7 +103,7 @@ class Dust : public EosBase<Dust> {
       if (!(output & thermalqs::temperature)) {
         UNDEFINED_ERROR;
       }
-      energy = _Cv*temp;
+      energy = _Cv * temp;
     }
     if (output & thermalqs::temperature) {
       if (!(output & thermalqs::specific_internal_energy)) {
@@ -120,7 +120,7 @@ class Dust : public EosBase<Dust> {
     dvdt = 0;
   }
   SG_ADD_BASE_CLASS_USINGS(Dust)
-  
+
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
@@ -133,10 +133,10 @@ class Dust : public EosBase<Dust> {
   static std::string EosType() { return std::string("Dust"); }
   static std::string EosPyType() { return EosType(); }
 
-private:
+ private:
   Real _Cv = 1;
   static constexpr const unsigned long _preferred_input =
-    thermalqs::density | thermalqs::specific_internal_energy | thermalqs::temperature;
+      thermalqs::density | thermalqs::specific_internal_energy | thermalqs::temperature;
 };
 
 } // namespace singularity

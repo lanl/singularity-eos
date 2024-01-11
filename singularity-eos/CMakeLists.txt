@@ -71,4 +71,4 @@ if (SINGULARITY_USE_FORTRAN)
 endif()
 
 # export to parent scope
-export_plugin()
+export_source()

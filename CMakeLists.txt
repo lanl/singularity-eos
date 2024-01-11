@@ -121,6 +121,9 @@ option(SINGULARITY_PATCH_MPARK_VARIANT
 # Plugins
 set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
 
+# CMake specific options
+option(SINGULARITY_VERBOSE_CONFIG "Have cmake output additional information" OFF)
+
 # ------------------------------------------------------------------------------#
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
@@ -363,25 +366,31 @@ if(SINGULARITY_BUILD_TESTS)
 endif()
 
 # ------------------------------------------------------------------------------#
+# Plugin infrastructure
+# ------------------------------------------------------------------------------#
+include(cmake/plugins.cmake)
+set(PLUGIN_BUILD_ROOT "${CMAKE_CURRENT_BINARY_DIR}/plugins")
+
+# ------------------------------------------------------------------------------#
 # singularity-eos library
 # ------------------------------------------------------------------------------#
 
 # Here we populate `EOS_HEADERS/EOS_SRCS` NOTE: these include path
 # prefixes of subdirectories on files (e.g. eos/eos.hpp) see
 # singularity-eos/CMakeLists.txt
-include(cmake/plugins.cmake)
-
 add_subdirectory(singularity-eos)
 
 foreach(_plugin ${SINGULARITY_PLUGINS})
   message(STATUS "Adding plugin ${_plugin}...")
   get_filename_component(BINDIR_LOC ${_plugin} NAME)
-  add_subdirectory(${_plugin} ${CMAKE_CURRENT_BINARY_DIR}/${BINDIR_LOC})
+  add_subdirectory(${_plugin} ${PLUGIN_BUILD_ROOT}/${BINDIR_LOC})
 endforeach()
 
 # TODO(JMM): Kind of nice to have?
-message(STATUS "EOS Headers:\n\t${EOS_HEADERS}")
-message(STATUS "EOS Sources:\n\t${EOS_SRCS}")
+if (SINGULARITY_VERBOSE_CONFIG)
+  message(STATUS "EOS Headers:\n\t${EOS_HEADERS}")
+  message(STATUS "EOS Sources:\n\t${EOS_SRCS}")
+endif()
 
 target_sources(singularity-eos PRIVATE ${EOS_SRCS} ${EOS_HEADERS})
 
@@ -400,6 +409,9 @@ endif() # SINGULARITY_USE_FORTRAN
 target_include_directories(
   singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
                          $<INSTALL_INTERFACE:include>)
+foreach(path ${PLUGIN_INCLUDE_PATHS})
+  target_include_directories(singularity-eos PUBLIC $<BUILD_INTERFACE:${path}>)
+endforeach()
 
 # plug in collected includes/libs/definitions
 
