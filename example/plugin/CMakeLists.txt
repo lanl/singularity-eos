@@ -13,7 +13,7 @@
 #------------------------------------------------------------------------------#
 
 # Add the header file to the list of headers
-register_headers(dust/dust.hpp)
+register_headers(PLUGIN dust dust.hpp)
 
 # Register this test to be built in the test suite
 register_tests(tst/test_dust.cpp)

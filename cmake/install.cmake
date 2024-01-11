@@ -70,9 +70,13 @@ install(
 # ----------------------------------------------------------------------------#
 
 # install singularity-eos headers
-foreach(file ${_install_headers})
-  get_filename_component(DIR ${file} DIRECTORY)
-  install(FILES ${file}
+list(LENGTH _install_headers length)
+math(EXPR max_index "${length} - 1")
+foreach(index RANGE ${max_index})
+  list(GET EOS_HEADERS ${index} src)
+  list(GET _install_headers ${index} dst)
+  get_filename_component(DIR ${dst} DIRECTORY)
+  install(FILES ${src}
           DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${DIR})
 endforeach() # file
 
