@@ -24,6 +24,10 @@ This will create a new type, ``MyEOS_t`` which contains only the
 Plugins
 --------
 
+.. warning::
+
+  Plugins are currently an experimental feature. Use at your own risk.
+
 ``singularity-eos`` is also extensible via a plugins
 infrastructure. Via plugins, you may define additional equations of
 state and have them automatically built, tested, and installed by the
