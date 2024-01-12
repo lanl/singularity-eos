@@ -13,7 +13,7 @@
 //------------------------------------------------------------------------------
 
 #ifndef _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
-#define  _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
+#define _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
 
 #include <cassert>
 #include <cmath>
@@ -139,4 +139,4 @@ constexpr auto tl_to_Variant(tl<Ts...>) {
 using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
 } // namespace singularity
 
-#endif  // _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
+#endif // _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
