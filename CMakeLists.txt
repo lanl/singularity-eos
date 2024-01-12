@@ -120,6 +120,8 @@ option(SINGULARITY_PATCH_MPARK_VARIANT
 
 # Plugins
 set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
+set(SINGULARITY_VARIANT "singularity-eos/eos/default_variant.hpp" CACHE STRING
+  "The include path for the file containing the definition of singularity::EOS.")
 
 # CMake specific options
 option(SINGULARITY_VERBOSE_CONFIG "Have cmake output additional information" OFF)
@@ -409,6 +411,10 @@ endif() # SINGULARITY_USE_FORTRAN
 target_include_directories(
   singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
                          $<INSTALL_INTERFACE:include>)
+target_include_directories(
+  singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated>)
+
+
 foreach(path ${PLUGIN_INCLUDE_PATHS})
   target_include_directories(singularity-eos PUBLIC $<BUILD_INTERFACE:${path}>)
 endforeach()

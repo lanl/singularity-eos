@@ -12,7 +12,18 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
+# Special sauce so generated file has proper include path
+configure_file(eos/eos.hpp.in
+  ${CMAKE_BINARY_DIR}/generated/singularity-eos/eos/eos.hpp
+  @ONLY)
+
 register_headers(
+    # tell cmake:
+    # (1) that if this file is changed, we gotta rebuild
+    # (2) to copy this file into the install for posterity
+    eos/eos.hpp.in
+
+    # Normal files
     base/fast-math/logs.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
@@ -21,11 +32,12 @@ register_headers(
     base/constants.hpp
     base/eos_error.hpp
     base/sp5/singularity_eos_sp5.hpp
-    eos/eos.hpp
+    eos/default_variant.hpp
     eos/eos_variant.hpp
     eos/singularity_eos.hpp
     eos/eos_stellar_collapse.hpp
     eos/eos_ideal.hpp
+    eos/eos_models.hpp
     eos/eos_spiner.hpp
     eos/eos_davis.hpp
     eos/eos_gruneisen.hpp

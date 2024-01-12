@@ -31,6 +31,7 @@
 #include <catch2/catch_test_macros.hpp>
 #endif
 
+#include <eos/eos.hpp>
 #include <dust/dust.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 

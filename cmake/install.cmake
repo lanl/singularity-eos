@@ -80,6 +80,13 @@ foreach(index RANGE ${max_index})
           DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${DIR})
 endforeach() # file
 
+# Special sauce so generated file has proper include path
+install(FILES
+  ${CMAKE_BINARY_DIR}/generated/singularity-eos/eos/eos.hpp
+  DESTINATION
+  ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/eos
+  )
+
 # install the fortran modules NB: cmake doesn't provide a clean way to handle
 if(SINGULARITY_USE_FORTRAN)
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/fortran/
