@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Fixed (Repair bugs, etc)
+- [[PR335]](https://github.com/lanl/singularity-eos/pull/335) Fix missing hermite.hpp in CMake install required for Helmholtz EOS
 ### Added (new features/APIs/variables/...)
 - [[PR#336]](https://github.com/lanl/singularity-eos/pull/336) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a pressure power law expansion in eta = 1-V/V0. PowerMG.
 

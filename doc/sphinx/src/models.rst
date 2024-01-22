@@ -1384,7 +1384,7 @@ SAP Polynomial EOS
 ``````````````````
 
 This model is specific to the Safety Applications Project (SAP). It is
-an imcomplete EOS, and is a simple analytical form used to fit
+an incomplete EOS, and is a simple analytical form used to fit
 experimental data:
 
 .. math::
