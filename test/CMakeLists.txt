@@ -22,6 +22,7 @@ add_executable(
   test_eos_stiff.cpp
   test_eos_vinet.cpp
   test_eos_mgusup.cpp
+  test_eos_powermg.cpp
   )
 
 add_executable(
