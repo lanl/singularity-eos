@@ -21,6 +21,7 @@ set(EOS_HEADERS
     base/constants.hpp
     base/eos_error.hpp
     base/sp5/singularity_eos_sp5.hpp
+    base/hermite.hpp
     eos/eos.hpp
     eos/eos_variant.hpp
     eos/singularity_eos.hpp
