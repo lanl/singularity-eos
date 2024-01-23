@@ -123,9 +123,6 @@ set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
 set(SINGULARITY_VARIANT "singularity-eos/eos/default_variant.hpp" CACHE STRING
   "The include path for the file containing the definition of singularity::EOS.")
 
-# CMake specific options
-option(SINGULARITY_VERBOSE_CONFIG "Have cmake output additional information" OFF)
-
 # ------------------------------------------------------------------------------#
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
@@ -391,10 +388,8 @@ endforeach()
 # TODO(JMM): Kind of nice to have?
 get_property(eos_headers GLOBAL PROPERTY EOS_HEADERS)
 get_property(eos_srcs GLOBAL PROPERTY EOS_SRCS)
-if (SINGULARITY_VERBOSE_CONFIG)
-  message(STATUS "EOS Headers:\n\t${eos_headers}")
-  message(STATUS "EOS Sources:\n\t${eos_srcs}")
-endif()
+message(VERBOSE "EOS Headers:\n\t${eos_headers}")
+message(VERBOSE "EOS Sources:\n\t${eos_srcs}")
 
 target_sources(singularity-eos PRIVATE ${eos_srcs} ${eos_headers})
 
