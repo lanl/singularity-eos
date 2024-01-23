@@ -172,6 +172,7 @@ inline void PowerMG::_InitializePowerMG(const Real *K0toK40input) {
   // are seldom all used so did not want to crowd the argument list with them.
   // Instead I ask the host code to send me a pointer to this array so that I can
   // copy it here. Not used coeffs should be set to 0.0 (of course).
+  _M = 0;
   for (int ind = 0; ind < PressureCoeffsK0toK40Size; ind++) {
     _K0toK40[ind] = K0toK40input[ind];
     if (_K0toK40[ind] != 0.0) _M = ind;
@@ -179,7 +180,7 @@ inline void PowerMG::_InitializePowerMG(const Real *K0toK40input) {
 }
 
 PORTABLE_INLINE_FUNCTION Real PowerMG::_HugPressureFromDensity(Real rho) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = 0.0;
   for (int ind = _M; ind >= 1; ind--) {
     value = eta * value + _K0toK40[ind];
@@ -188,14 +189,14 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::_HugPressureFromDensity(Real rho) const {
   return value;
 }
 PORTABLE_INLINE_FUNCTION Real PowerMG::_HugTemperatureFromDensity(Real rho) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real gamma2 = _SN2Mp2(_G0 * eta);
   Real sum = _M * _K0toK40[_M] * gamma2;
   for (int ind = _M - 1; ind >= 1; ind--) {
     gamma2 = _G0 * eta / (ind + 2) * gamma2 + 1.0 / (ind + 2);
     sum = eta * sum + ind * _K0toK40[ind] * gamma2;
   }
-  Real temp = _K0toK40[0] / _Cv0 / 2.0 / _rho0 * eta * eta * eta * sum;
+  Real temp = eta * eta * eta * sum * _K0toK40[0] / _Cv0 / 2.0 / _rho0;
   temp = _T0 * exp(eta * _G0) + temp;
   return temp;
 }
@@ -221,7 +222,7 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::_SN2Mp2(const Real x) const {
 }
 
 PORTABLE_INLINE_FUNCTION Real PowerMG::AllHugPressureFromDensity(Real rho) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = 0.0;
   if (eta <= 0.0) {
     if (eta < _Pmin / _K0toK40[0]) {
@@ -235,11 +236,11 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::AllHugPressureFromDensity(Real rho) const
   return value;
 }
 PORTABLE_INLINE_FUNCTION Real PowerMG::AllHugInternalEnergyFromDensity(Real rho) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   return _E0 + robust::ratio(eta, 2.0 * _rho0) * AllHugPressureFromDensity(rho);
 }
 PORTABLE_INLINE_FUNCTION Real PowerMG::AllHugTemperatureFromDensity(Real rho) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = 0.0;
   if (eta <= 0.0) {
     value = _T0 * exp(eta * _G0);
@@ -264,7 +265,7 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::PressureFromDensityTemperature(
 PORTABLE_INLINE_FUNCTION Real PowerMG::EntropyFromDensityTemperature(const Real rho,
                                                                      const Real temp,
                                                                      Real *lambda) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+   const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = _S0 - _G0 * _Cv0 * eta + _Cv0 * std::log(temp / _T0);
   return value;
 }
@@ -281,7 +282,7 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::TBulkModulusFromDensityTemperature(
 }
 PORTABLE_INLINE_FUNCTION Real
 PowerMG::_compBulkModulusFromDensityTemperature(const Real rho, const Real temp) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = (1.0 - _G0 * eta / 2.0) * _K0toK40[0];
   Real sum = 0.0;
   for (int ind = _M; ind >= 1; ind--) {
@@ -295,7 +296,7 @@ PowerMG::_compBulkModulusFromDensityTemperature(const Real rho, const Real temp)
 }
 PORTABLE_INLINE_FUNCTION Real PowerMG::BulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Real *lambda) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value;
   if (eta <= 0.0) {
     if (eta < _Pmin / _K0toK40[0]) {
@@ -311,7 +312,7 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::BulkModulusFromDensityTemperature(
 }
 PORTABLE_INLINE_FUNCTION Real
 PowerMG::_compBulkModulusFromDensityInternalEnergy(const Real rho, const Real sie) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = (1.0 - _G0 * eta / 2.0) * _K0toK40[0];
   Real sum = 0.0;
   for (int ind = _M; ind >= 1; ind--) {
@@ -325,7 +326,7 @@ PowerMG::_compBulkModulusFromDensityInternalEnergy(const Real rho, const Real si
 }
 PORTABLE_INLINE_FUNCTION Real PowerMG::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value;
   if (eta <= 0.0) {
     if (eta < _Pmin / _K0toK40[0]) {
@@ -367,7 +368,7 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::MinInternalEnergyFromDensity(const Real r
 }
 PORTABLE_INLINE_FUNCTION Real PowerMG::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Real *lambda) const {
-  Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = std::log(TemperatureFromDensityInternalEnergy(rho, sie) / _T0);
   value = _S0 - _G0 * _Cv0 * eta + _Cv0 * value;
   if (value < 0.0) {
