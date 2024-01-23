@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Fixed (Repair bugs, etc)
+- [[PR335]](https://github.com/lanl/singularity-eos/pull/335) Fix missing hermite.hpp in CMake install required for Helmholtz EOS
 
 ### Added (new features/APIs/variables/...)
 - [[PR334]](https://github.com/lanl/singularity-eos/pull/334) Include plugins infrastructure

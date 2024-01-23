@@ -33,6 +33,7 @@ register_headers(
     base/eos_error.hpp
     base/sp5/singularity_eos_sp5.hpp
     eos/default_variant.hpp
+    base/hermite.hpp
     eos/eos_variant.hpp
     eos/singularity_eos.hpp
     eos/eos_stellar_collapse.hpp
