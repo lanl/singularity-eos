@@ -77,10 +77,9 @@ if (SINGULARITY_BUILD_CLOSURE)
 endif()
 
 if (SINGULARITY_USE_FORTRAN)
-  register_srcs(eos/singularity_eos.f90)
-  register_srcs(eos/singularity_eos.cpp)
+  register_srcs(
+    eos/singularity_eos.f90
+    eos/singularity_eos.cpp
+  )
   register_headers(eos/singularity_eos.hpp)
 endif()
-
-# export to parent scope
-export_source()

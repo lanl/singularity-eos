@@ -389,12 +389,14 @@ foreach(_plugin ${SINGULARITY_PLUGINS})
 endforeach()
 
 # TODO(JMM): Kind of nice to have?
+get_property(eos_headers GLOBAL PROPERTY EOS_HEADERS)
+get_property(eos_srcs GLOBAL PROPERTY EOS_SRCS)
 if (SINGULARITY_VERBOSE_CONFIG)
-  message(STATUS "EOS Headers:\n\t${EOS_HEADERS}")
-  message(STATUS "EOS Sources:\n\t${EOS_SRCS}")
+  message(STATUS "EOS Headers:\n\t${eos_headers}")
+  message(STATUS "EOS Sources:\n\t${eos_srcs}")
 endif()
 
-target_sources(singularity-eos PRIVATE ${EOS_SRCS} ${EOS_HEADERS})
+target_sources(singularity-eos PRIVATE ${eos_srcs} ${eos_headers})
 
 if(SINGULARITY_USE_FORTRAN)
   # Turn on preprocessor for fortran files
@@ -414,8 +416,8 @@ target_include_directories(
 target_include_directories(
   singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated>)
 
-
-foreach(path ${PLUGIN_INCLUDE_PATHS})
+get_property(plugin_include_paths GLOBAL PROPERTY PLUGIN_INCLUDE_PATHS)
+foreach(path ${plugin_include_paths})
   target_include_directories(singularity-eos PUBLIC $<BUILD_INTERFACE:${path}>)
 endforeach()
 

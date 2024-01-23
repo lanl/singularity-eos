@@ -63,12 +63,6 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     variant("closure", default=True, description="Build closure module")
 
-    variant("plugins", default=False, sticky=True,
-            when="@main", # TODO: Change this on next version
-            description=("Support plugins via the "
-                         + "SINGULARITY_PLUGINS and SINGULARITY_VARIANT "
-                         + "environment variables"))
-
     # building/testing/docs
     depends_on("cmake@3.19:")
     depends_on("catch2@3.0.1:", when="@main +tests")
@@ -157,7 +151,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     # TODO some options are now version specific. For now it should be 
     # benign, but good practice to do some version guards.
     def cmake_args(self):
-
         args = [
             self.define("SINGULARITY_PATCH_MPARK_VARIANT", False),
             self.define_from_variant("SINGULARITY_USE_CUDA", "cuda"),
@@ -193,14 +186,6 @@ class SingularityEos(CMakePackage, CudaPackage):
         #TODO: do we need this?
         if "+kokkos+cuda" in self.spec:
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
-        
-        if self.spec.satisfies("+plugins"):
-            PLUGIN_PATHS=os.environ.get("SINGULARITY_PLUGINS", "")
-            SINGULARITY_VARIANT=os.envirn.get("SINGULARITY_VARIANT", "")
-            if len(PLUGIN_PATHS) > 0:
-                args.append(self.define("SINGULARITY_PLUGINS", PLUGIN_PATHS))
-            if len(SINGULARITY_VARIANT) > 0:
-                args.append(self.define("SINGULARITY_VARIANT", SINGULARITY_VARIANT))
 
         return args
 

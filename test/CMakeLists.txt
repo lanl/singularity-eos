@@ -43,12 +43,13 @@ add_executable(
   test_eos_stellar_collapse.cpp
   )
 
-if (PLUGIN_TESTS)
+get_property(plugin_tests GLOBAL PROPERTY PLUGIN_TESTS)
+if (plugin_tests)
   add_executable(
     eos_plugin_tests
     catch2_define.cpp
     eos_unit_test_helpers.hpp
-    ${PLUGIN_TESTS}
+    ${plugin_tests}
     )
 endif()
 
@@ -71,7 +72,7 @@ target_link_libraries(eos_infrastructure_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
 target_link_libraries(eos_tabulated_unit_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
-if (PLUGIN_TESTS)
+if (plugin_tests)
   target_link_libraries(eos_plugin_tests PRIVATE Catch2::Catch2
     singularity-eos::singularity-eos)
 endif()
@@ -79,7 +80,7 @@ include(Catch)
 catch_discover_tests(eos_analytic_unit_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_infrastructure_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_tabulated_unit_tests PROPERTIES TIMEOUT 60)
-if (PLUGIN_TESTS)
+if (plugin_tests)
   catch_discover_tests(eos_plugin_tests PROPERTIES TIMEOUT 60)
 endif()
 
