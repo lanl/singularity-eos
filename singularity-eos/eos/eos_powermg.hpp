@@ -265,7 +265,7 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::PressureFromDensityTemperature(
 PORTABLE_INLINE_FUNCTION Real PowerMG::EntropyFromDensityTemperature(const Real rho,
                                                                      const Real temp,
                                                                      Real *lambda) const {
-   const Real eta = 1.0 - robust::ratio(_rho0, rho);
+  const Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = _S0 - _G0 * _Cv0 * eta + _Cv0 * std::log(temp / _T0);
   return value;
 }
