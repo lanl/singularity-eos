@@ -32,7 +32,7 @@
 #endif
 
 #include <dust/dust.hpp>
-#include <eos/eos.hpp>
+#include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::Dust;
