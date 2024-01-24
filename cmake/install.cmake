@@ -74,19 +74,15 @@ get_property(install_headers GLOBAL PROPERTY _install_headers)
 list(LENGTH install_headers length)
 math(EXPR max_index "${length} - 1")
 foreach(index RANGE ${max_index})
-  list(GET EOS_HEADERS ${index} src)
+  list(GET eos_headers ${index} src)
   list(GET install_headers ${index} dst)
   get_filename_component(DIR ${dst} DIRECTORY)
-  install(FILES ${src}
-          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${DIR})
+  install(FILES ${src} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${DIR})
 endforeach() # file
 
 # Special sauce so generated file has proper include path
-install(FILES
-  ${CMAKE_BINARY_DIR}/generated/singularity-eos/eos/eos.hpp
-  DESTINATION
-  ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/eos
-  )
+install(FILES ${CMAKE_BINARY_DIR}/generated/singularity-eos/eos/eos.hpp
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/singularity-eos/eos)
 
 # install the fortran modules NB: cmake doesn't provide a clean way to handle
 if(SINGULARITY_USE_FORTRAN)
