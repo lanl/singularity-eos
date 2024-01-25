@@ -118,6 +118,11 @@ option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
 option(SINGULARITY_PATCH_MPARK_VARIANT
        "Apply GPU patch to mpark-variant submodule" ON)
 
+# Plugins
+set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
+set(SINGULARITY_VARIANT "singularity-eos/eos/default_variant.hpp" CACHE STRING
+  "The include path for the file containing the definition of singularity::EOS.")
+
 # ------------------------------------------------------------------------------#
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
@@ -359,27 +364,34 @@ if(SINGULARITY_BUILD_TESTS)
   endif()
 endif()
 
-# ##########################OLD
+# ------------------------------------------------------------------------------#
+# Plugin infrastructure
+# ------------------------------------------------------------------------------#
+include(cmake/plugins.cmake)
+set(PLUGIN_BUILD_ROOT "${CMAKE_CURRENT_BINARY_DIR}/plugins")
+
 # ------------------------------------------------------------------------------#
 # singularity-eos library
 # ------------------------------------------------------------------------------#
 
-# this subdirectory populates `EOS_HEADERS/EOS_SRCS` NOTE: these include path
+# Here we populate `EOS_HEADERS/EOS_SRCS` NOTE: these include path
 # prefixes of subdirectories on files (e.g. eos/eos.hpp) see
 # singularity-eos/CMakeLists.txt
-
 add_subdirectory(singularity-eos)
 
-foreach(_header ${EOS_HEADERS})
-  list(APPEND _install_headers ${_header})
-  list(APPEND _headers singularity-eos/${_header})
+foreach(_plugin ${SINGULARITY_PLUGINS})
+  message(STATUS "Adding plugin ${_plugin}...")
+  get_filename_component(BINDIR_LOC ${_plugin} NAME)
+  add_subdirectory(${_plugin} ${PLUGIN_BUILD_ROOT}/${BINDIR_LOC})
 endforeach()
 
-foreach(_src ${EOS_SRCS})
-  list(APPEND _srcs singularity-eos/${_src})
-endforeach()
+# TODO(JMM): Kind of nice to have?
+get_property(eos_headers GLOBAL PROPERTY EOS_HEADERS)
+get_property(eos_srcs GLOBAL PROPERTY EOS_SRCS)
+message(VERBOSE "EOS Headers:\n\t${eos_headers}")
+message(VERBOSE "EOS Sources:\n\t${eos_srcs}")
 
-target_sources(singularity-eos PRIVATE ${_srcs} ${_headers})
+target_sources(singularity-eos PRIVATE ${eos_srcs} ${eos_headers})
 
 if(SINGULARITY_USE_FORTRAN)
   # Turn on preprocessor for fortran files
@@ -396,6 +408,13 @@ endif() # SINGULARITY_USE_FORTRAN
 target_include_directories(
   singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
                          $<INSTALL_INTERFACE:include>)
+target_include_directories(
+  singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated>)
+
+get_property(plugin_include_paths GLOBAL PROPERTY PLUGIN_INCLUDE_PATHS)
+foreach(path ${plugin_include_paths})
+  target_include_directories(singularity-eos PUBLIC $<BUILD_INTERFACE:${path}>)
+endforeach()
 
 # plug in collected includes/libs/definitions
 
