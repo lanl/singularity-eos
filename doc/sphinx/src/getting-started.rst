@@ -11,7 +11,7 @@ At it's most basic, you can download and compile ``singularity-eos`` with:
   cd singularity-eos
   mkdir bin
   cd bin
-  cmake -DSINGULARITY_FORCE_SUBMODULEMODE=ON -DSINGULARITY_USE_FORTRAN=OFF ..
+  cmake -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_FORTRAN=OFF ..
   make -j 
   make install # optional: install into directory defined via CMAKE_INSTALL_PREFIX
 
