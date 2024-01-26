@@ -215,9 +215,7 @@ class SingularityEos(CMakePackage, CudaPackage):
         ]
 
         if "none" not in self.spec.variants["plugins"].value:
-            pdirs = []
-            for p in self.spec.variants["plugins"].value:
-                pdirs.append(join_path(self.stage.source_path, self.plugins[p]))
+            pdirs = [join_path(self.stage.source_path, self.plugins[p]) for p in self.spec.variants["plugins"].value]
             args.append(self.define("SINGULARITY_PLUGINS", ";".join(pdirs)))
 
         if self.spec.variants["variant"].value != "default":
