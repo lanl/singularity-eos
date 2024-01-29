@@ -42,8 +42,9 @@ using namespace singularity;
 using duration = std::chrono::microseconds;
 using dvec = std::vector<double>;
 using ivec = std::vector<int>;
-using Spiner::RegularGrid1D;
+
 using DataBox = Spiner::DataBox<Real>;
+using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using RView = Kokkos::View<Real *>;

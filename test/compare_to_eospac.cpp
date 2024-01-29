@@ -47,9 +47,12 @@
 
 #include <singularity-eos/eos/eos.hpp>
 
-using namespace Spiner;
+//using namespace Spiner;
 using namespace singularity;
 using namespace EospacWrapper;
+
+using DataBox = Spiner::DataBox<Real>;
+using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 
 using duration = std::chrono::microseconds;
 constexpr char diffFileName[] = "diffs.sp5";
