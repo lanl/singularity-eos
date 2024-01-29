@@ -147,6 +147,12 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                                            Real *lambda = nullptr) const;
 
   PORTABLE_INLINE_FUNCTION
+  void ChemicalPotentialsFromDensityTemperature(const Real rho, const Real temperature,
+                                                Real &mu_e, Real &mu_n, Real &mu_p,
+                                                Real &muhat, Real &munu,
+                                                Real *lambda = nullptr) const;
+
+  PORTABLE_INLINE_FUNCTION
   void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
                const unsigned long output, Real *lambda = nullptr) const;
 
@@ -301,6 +307,11 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   DataBox Xp_;      // mass fraction of protons
   DataBox Abar_;    // Average atomic mass
   DataBox Zbar_;    // Average atomic number
+  DataBox mu_e;     // chemical potential of electorns
+  DataBox mu_n;     // chemical potential of neutrons
+  DataBox mu_p;     // chemical potential of protons
+  DataBox muhat;    // mu_n-mu_p
+  DataBox munu;     // chemical potential of neutrinos
   // Spiner::DataBox gamma_; // polytropic index. dlog(P)/dlog(rho).
   // dTdRho_, dTdE_, dEdRho_, dEdT_;
 
@@ -409,6 +420,11 @@ inline void StellarCollapse::Save(const std::string &filename) {
   status += lBMod_.saveHDF(file, "logbulkmodulus");
   status += eCold_.saveHDF(file, "ecold");
   status += eHot_.saveHDF(file, "ehot");
+  status += mu_e_.saveHDF(file, "mu_e");
+  status += mu_n_.saveHDF(file, "mu_n");
+  status += mu_p_.saveHDF(file, "mu_p");
+  status += muhat_.saveHDF(file, "muhat");
+  status += munu_.saveHDF(file, "munu");
 
   status += H5Fclose(file);
   if (status != H5_SUCCESS) {
@@ -433,6 +449,11 @@ inline StellarCollapse StellarCollapse::GetOnDevice() {
   other.lBMod_ = Spiner::getOnDeviceDataBox<Real>(lBMod_);
   other.eCold_ = Spiner::getOnDeviceDataBox<Real>(eCold_);
   other.eHot_ = Spiner::getOnDeviceDataBox<Real>(eHot_);
+  other.mu_e_ = Spiner::getOnDeviceDataBox<Real>(mu_e_);
+  other.mu_n_ = Spiner::getOnDeviceDataBox<Real>(mu_n_);
+  other.mu_p_ = Spiner::getOnDeviceDataBox<Real>(mu_p_);
+  other.muhat_ = Spiner::getOnDeviceDataBox<Real>(muhat_);
+  other.munu_ = Spiner::getOnDeviceDataBox<Real>(munu_);
   other.memoryStatus_ = DataStatus::OnDevice;
   other.numRho_ = numRho_;
   other.numT_ = numT_;
@@ -471,6 +492,11 @@ inline void StellarCollapse::Finalize() {
   lBMod_.finalize();
   eCold_.finalize();
   eHot_.finalize();
+  mu_e_.finalize();
+  mu_n_.finalize();
+  mu_p_.finalize();
+  muhat_.finalize();
+  munu_.finalize();
   memoryStatus_ = DataStatus::Deallocated;
 }
 
@@ -621,6 +647,19 @@ void StellarCollapse::MassFractionsFromDensityTemperature(
 }
 
 PORTABLE_INLINE_FUNCTION
+void StellarCollapse::ChemicalPotentialsFromDensityTemperature(
+    const Real rho, const Real temperature, Real &mu_e, Real &mu_n, Real &mu_p,
+    Real &muhat, Real &munu, Real *lambda) const {
+  Real lRho, lT, Ye;
+  getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+  mu_e = mu_e_.interpToReal(Ye, lT, lRho);
+  mu_n = mu_n_.interpToReal(Ye, lT, lRho);
+  mu_p = mu_p_.interpToReal(Ye, lT, lRho);
+  muhat = muhat_.interpToReal(Ye, lT, lRho);
+  munu = munu_.interpToReal(Ye, lT, lRho);
+}
+
+PORTABLE_INLINE_FUNCTION
 void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
                               Real &bmod, const unsigned long output,
                               Real *lambda) const {
@@ -700,6 +739,11 @@ inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
   status += lBMod_.loadHDF(file, "logbulkmodulus");
   status += eCold_.loadHDF(file, "ecold");
   status += eHot_.loadHDF(file, "ehot");
+  status += mu_e_.loadHDF(file, "mu_e");
+  status += mu_n_.loadHDF(file, "mu_n");
+  status += mu_p_.loadHDF(file, "mu_p");
+  status += muhat_.loadHDF(file, "muhat");
+  status += munu_.loadHDF(file, "munu");
 
   status += H5Fclose(file);
   if (status != H5_SUCCESS) {
@@ -780,6 +824,11 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   readSCDset_(file_id, "Xp", Ye_grid, lT_grid, lRho_grid, Xp_);
   readSCDset_(file_id, "Abar", Ye_grid, lT_grid, lRho_grid, Abar_);
   readSCDset_(file_id, "Zbar", Ye_grid, lT_grid, lRho_grid, Zbar_);
+  readSCDset_(file_id, "mu_e", Ye_grid, lT_grid, lRho_grid, mu_e_);
+  readSCDset_(file_id, "mu_n", Ye_grid, lT_grid, lRho_grid, mu_n_);
+  readSCDset_(file_id, "mu_p", Ye_grid, lT_grid, lRho_grid, mu_p_);
+  readSCDset_(file_id, "muhat", Ye_grid, lT_grid, lRho_grid, muhat_);
+  readSCDset_(file_id, "munu", Ye_grid, lT_grid, lRho_grid, munu_);
 
   H5Fclose(file_id);
   // -----------------------------------------------------------------------
