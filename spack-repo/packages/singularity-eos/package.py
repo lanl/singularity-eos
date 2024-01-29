@@ -91,8 +91,9 @@ class SingularityEos(CMakePackage, CudaPackage):
         default="none",
         validator=plugin_validator,
         description="list of plugins to build",
+        when="@main"
     )
-    variant("variant", default="default", description="include path used for variant header")
+    variant("variant", default="default", description="include path used for variant header", when="@main")
 
     # building/testing/docs
     depends_on("cmake@3.19:")
@@ -214,12 +215,13 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define("SINGULARITY_USE_EOSPAC", "^eospac" in self.spec),
         ]
 
-        if "none" not in self.spec.variants["plugins"].value:
-            pdirs = [join_path(self.stage.source_path, self.plugins[p]) for p in self.spec.variants["plugins"].value]
-            args.append(self.define("SINGULARITY_PLUGINS", ";".join(pdirs)))
+        if self.spec.satisfies("@main"):
+            if "none" not in self.spec.variants["plugins"].value:
+                pdirs = [join_path(self.stage.source_path, self.plugins[p]) for p in self.spec.variants["plugins"].value]
+                args.append(self.define("SINGULARITY_PLUGINS", ";".join(pdirs)))
 
-        if self.spec.variants["variant"].value != "default":
-            args.append(self.define_from_variant("SINGULARITY_VARIANT", "variant"))
+            if self.spec.variants["variant"].value != "default":
+                args.append(self.define_from_variant("SINGULARITY_VARIANT", "variant"))
 
         #TODO: do we need this?
         if "+kokkos+cuda" in self.spec:
