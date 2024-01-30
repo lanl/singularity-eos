@@ -5,7 +5,25 @@
 
 import os
 
+from spack.error import SpackError
 from spack.package import *
+from spack.directives import directive
+
+
+@directive("singularity_eos_plugins")
+def singularity_eos_plugin(name, path):
+    def _execute_register(pkg):
+        pkg.plugins[name] = path
+
+    return _execute_register
+
+
+def plugin_validator(pkg_name, variant_name, values):
+    if values == ("none",):
+        return
+    for v in values:
+        if v not in SingularityEos.plugins:
+            raise SpackError(f"Unknown Singularity-EOS plugin '{v}'")
 
 
 class SingularityEos(CMakePackage, CudaPackage):
@@ -62,6 +80,20 @@ class SingularityEos(CMakePackage, CudaPackage):
     variant("spiner", default=True, description="Use Spiner")
 
     variant("closure", default=True, description="Build closure module")
+
+    plugins = {}
+
+    singularity_eos_plugin("dust", "example/plugin")
+
+    variant(
+        "plugins",
+        multi=True,
+        default="none",
+        validator=plugin_validator,
+        description="list of plugins to build",
+        when="@main"
+    )
+    variant("variant", default="default", description="include path used for variant header", when="@main")
 
     # building/testing/docs
     depends_on("cmake@3.19:")
@@ -182,6 +214,14 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define("SINGULARITY_USE_HDF5", "^hdf5" in self.spec),
             self.define("SINGULARITY_USE_EOSPAC", "^eospac" in self.spec),
         ]
+
+        if self.spec.satisfies("@main"):
+            if "none" not in self.spec.variants["plugins"].value:
+                pdirs = [join_path(self.stage.source_path, self.plugins[p]) for p in self.spec.variants["plugins"].value]
+                args.append(self.define("SINGULARITY_PLUGINS", ";".join(pdirs)))
+
+            if self.spec.variants["variant"].value != "default":
+                args.append(self.define_from_variant("SINGULARITY_VARIANT", "variant"))
 
         #TODO: do we need this?
         if "+kokkos+cuda" in self.spec:
