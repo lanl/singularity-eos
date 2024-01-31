@@ -20,6 +20,7 @@ Documentation approved for unlimited release. LA-UR-21-31131.
    src/using-eos
    src/models
    src/modifiers
+   src/customization
    src/using-closures
    src/python
    src/contributing
