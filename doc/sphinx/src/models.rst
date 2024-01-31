@@ -608,6 +608,13 @@ in terms of :math:`\eta` as
 When the unitless user parameter :math:`b=0`, the Gruneisen parameter is of a
 form where :math:`\rho\Gamma =` constant in compression, i.e. when
 :math:`\eta > 0`.
+If the unitless user parameter :math:`b=\Gamma_0`, the Gruneisen parameter is of a
+form where :math:`\Gamma_0 =` constant in compression. These two limitig cases are 
+shown in the figure below.
+
+.. image:: ../SteinbergGammarho.pdf
+  :width: 500
+  :alt: Figure: Demonstration of how the parameter b interpolated between two common approximations for Gamma
 
 The reference pressure along the Hugoniot is determined by
 
@@ -887,7 +894,7 @@ isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
 
 .. image:: ../ApproxForTH.pdf
   :width: 500
-  :alt: Different approximations for the temperature on the Hugoniot.
+  :alt: Figure: Different approximations for the temperature on the Hugoniot.
 
 The constructor for the ``MGUsup`` EOS has the signature
 
@@ -906,7 +913,9 @@ Mie-Gruneisen power expansion EOS
 `````````````````````````````````
 As we noted above, the assumption of a linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions. At 
 Sandia National Laboratories Z-pinch machine, the compression is routinely so large that a new Mie-Gruneisen EOS was developped,
-by `Robinson <PowerMG_>`_, that could handle these large compressions. The overall structure and motivation for approximations are as described above, in compression it is only the formula for :math:`P_H`, and by extension :math:`T_H`, that differ. This EOS is however modified in expansion to follow an isentrope instead of the invalid-in-expansion Hugoniot.
+by `Robinson <PowerMG_>`_, that could handle these large compressions. The overall structure and motivation for approximations 
+are as described above; in compression it is only the formula for :math:`P_H`, and by extension :math:`T_H`, that differ. This 
+EOS is however modified in expansion to follow an isentrope instead of the invalid-in-expansion Hugoniot.
 
 In the PowerMG model the pressure on the Hugoniot in the compression region, :math:`\eta \geq 0` is expressed as a power series
 
@@ -925,7 +934,7 @@ In the figure below we have used :math:`M=20` with these coefficients and show h
 
 .. image:: ../PMGvsMGUsupPress.pdf
   :width: 500
-  :alt: Comparing Hugoniot pressure for PowerMG and MGUsup
+  :alt: Figure: Comparing Hugoniot pressure for PowerMG and MGUsup
 
 For  :math:`\eta < 0`, that is, in expansion, the isentrope with a single :math:`K_0` is used until a user defined minimum pressure is obtained
 

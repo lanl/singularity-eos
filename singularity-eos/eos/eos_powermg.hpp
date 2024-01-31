@@ -32,7 +32,7 @@ using namespace eos_base;
 using namespace robust;
 
 // COMMENT: This is a complete, thermodynamically consistent Mie-Gruneisen
-// EOS based on a linear Us-up Hugoniot, Us=Cs+s*up.
+// EOS based on a power series in eta for the Hugoniot pressure.
 class PowerMG : public EosBase<PowerMG> {
  public:
   PowerMG() = default;
@@ -196,10 +196,14 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::_HugTemperatureFromDensity(Real rho) cons
     gamma2 = _G0 * eta / (ind + 2) * gamma2 + 1.0 / (ind + 2);
     sum = eta * sum + ind * _K0toK40[ind] * gamma2;
   }
-  Real temp = eta * eta * eta * sum * _K0toK40[0] / _Cv0 / 2.0 / _rho0;
+  Real temp = eta * eta * eta * sum * (_K0toK40[0] / _Cv0 / 2.0 / _rho0);
   temp = _T0 * exp(eta * _G0) + temp;
   return temp;
 }
+// The function S_2^N is described in Robinson's report (SAND2019-6025
+// equations 1.29-3nd 1.30 with n=M+2)  and is the largest coefficient in
+// the series in eta for the Hugoniot temperature, equation 1.34. Other
+// coefficients are calculated recusively from this one according to equation 1.36.
 PORTABLE_INLINE_FUNCTION Real PowerMG::_SN2Mp2(const Real x) const {
   Real ind = _M + 2;
   int maxind = 200;
@@ -207,6 +211,8 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::_SN2Mp2(const Real x) const {
   Real sum = ak;
   Real pf = exp(x) - 1.0;
   Real ek = pf * ak;
+  // Add terms to the series sum until the relative error ek
+  // is smaller than machine presision.
   while ((ek > sum * 1.e-15) && (ind < maxind)) {
     ind = ind + 1;
     ak = ak * x / ind;
