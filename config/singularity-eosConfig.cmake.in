@@ -20,17 +20,38 @@
 # ------------------------------------------------------------------------------#
 # add singularity-eos cmake files
 # ------------------------------------------------------------------------------#
-get_filename_component(singularity-eos_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}"
-                       PATH)
 if(NOT SINGULARITY_EOS_CMAKE)
-  get_filename_component(singularity-eos_CMAKE_BASE_DIR
-                         "${singularity-eos_CMAKE_DIR}" DIRECTORY)
   message(
     STATUS "Found singularity-eos CMake Modules (appending CMAKE_MODULE_PATH): "
-           ${singularity-eos_CMAKE_BASE_DIR})
-  list(APPEND CMAKE_MODULE_PATH ${singularity-eos_CMAKE_BASE_DIR})
+           ${CMAKE_CURRENT_LIST_DIR})
+  list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
   set(SINGULARITY_EOS_CMAKE TRUE)
 endif()
+
+# ------------------------------------------------------------------------------#
+# check for selected components
+# ------------------------------------------------------------------------------#
+if(${CMAKE_FIND_PACKAGE_NAME}_FIND_COMPONENTS)
+  foreach(comp IN LISTS ${CMAKE_FIND_PACKAGE_NAME}_comps)
+    if(NOT comp IN_LIST "Interface;Library")
+      set(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE "singularity-eos unknown component: ${comp}")
+      set(${CMAKE_FIND_PACKAGE_NAME}_FOUND FALSE)
+      return()
+    endif()
+  endforeach()
+  set(${CMAKE_FIND_PACKAGE_NAME}_comps ${${CMAKE_FIND_PACKAGE_NAME}_FIND_COMPONENT})
+else()
+  set(${CMAKE_FIND_PACKAGE_NAME}_comps Interface Library)
+endif()
+
+foreach(comp IN LISTS ${CMAKE_FIND_PACKAGE_NAME}_comps)
+  if(${CMAKE_FIND_PACKAGE_NAME}_FIND_REQUIRED_${comp} AND NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/singularity-eos_${comp}.cmake)
+    set(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE "singularity-eos missing required component: ${comp}")
+    set(${CMAKE_FIND_PACKAGE_NAME}_FOUND FALSE)
+    return()
+  endif()
+endforeach()
+
 
 # ------------------------------------------------------------------------------#
 # library dependencies
@@ -38,9 +59,11 @@ endif()
 
 include(CMakeFindDependencyMacro)
 
-find_dependency(ports-of-call)
-
-find_dependency(mpark_variant)
+# header-only dependencies
+if("Interface" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_comps)
+  find_dependency(ports-of-call)
+  find_dependency(mpark_variant)
+endif()
 
 if(@SINGULARITY_USE_SPINER@)
   find_dependency(spiner)
@@ -75,9 +98,22 @@ if(@SINGULARITY_USE_EOSPAC@)
   endif()
 endif()
 
+foreach(comp IN LISTS ${CMAKE_FIND_PACKAGE_NAME}_comps)
+  include(${CMAKE_CURRENT_LIST_DIR}/singularity-eos_${comp}.cmake OPTIONAL)
+endforeach()
+
 # ------------------------------------------------------------------------------#
-# singularity-eos imported targets
+# singularity-eos convenience target
 # ------------------------------------------------------------------------------#
 if(NOT TARGET singularity-eos AND NOT singularity-eos_BINARY_DIR)
-  include(${singularity-eos_CMAKE_DIR}/singularity-eosTargets.cmake)
+  add_library(singularity-eos INTERFACE)
+  add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
+
+  if("Interface" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_comps)
+    target_link_libraries(singularity-eos INTERFACE singularity-eos::singularity-eos_Interface)
+  endif()
+
+  if("Library" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_comps)
+    target_link_libraries(singularity-eos INTERFACE singularity-eos::singularity-eos_Library)
+  endif()
 endif()

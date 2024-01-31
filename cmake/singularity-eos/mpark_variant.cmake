@@ -21,5 +21,5 @@ macro(singularity_find_mpark_variant)
 endmacro()
 
 macro(singularity_enable_mpark_variant target)
-  target_link_libraries(${target} PUBLIC mpark_variant)
+  target_link_libraries(${target} INTERFACE mpark_variant)
 endmacro()
