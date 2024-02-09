@@ -55,6 +55,17 @@ install(FILES ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
 # install export target
 # ----------------------------------------------------------------------------#
 install(
+  TARGETS singularity-eos_Common
+  EXPORT singularity-eos_Common
+  DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+install(
+  EXPORT singularity-eos_Common
+  FILE singularity-eos_Common.cmake
+  NAMESPACE "singularity-eos::"
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos)
+
+install(
   TARGETS singularity-eos_Interface
   EXPORT singularity-eos_Interface
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
@@ -107,6 +118,11 @@ endif()
 
 # same as install step, but just places the file in the build tree. useful for
 # downstream projects that use the source directly
+export(
+  EXPORT singularity-eos_Common
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eos_Common.cmake
+  NAMESPACE singularity-eos::)
+
 export(
   EXPORT singularity-eos_Interface
   FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eos_Interface.cmake

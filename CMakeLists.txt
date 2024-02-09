@@ -137,17 +137,21 @@ include(singularity-eos/ports-of-call)
 
 add_library(singularity-eos INTERFACE)
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
+
+# interface target to collect runtime libraries
+add_library(singularity-eos_Common INTERFACE)
+add_library(singularity-eos::singularity-eos_Common ALIAS singularity-eos_Common)
+
 add_library(singularity-eos_Interface INTERFACE)
-
-
 add_library(singularity-eos::singularity-eos_Interface ALIAS singularity-eos_Interface)
+target_link_libraries(singularity-eos_Interface INTERFACE singularity-eos_Common)
 target_link_libraries(singularity-eos INTERFACE singularity-eos_Interface)
 
 if(SINGULARITY_BUILD_CLOSURE)
   add_library(singularity-eos_Library)
   set_target_properties(singularity-eos_Library PROPERTIES OUTPUT_NAME singularity-eos)
-  target_link_libraries(singularity-eos_Library PRIVATE singularity-eos_Interface)
   add_library(singularity-eos::singularity-eos_Library ALIAS singularity-eos_Library)
+  target_link_libraries(singularity-eos_Library INTERFACE singularity-eos_Common)
   target_link_libraries(singularity-eos INTERFACE singularity-eos_Library)
 endif()
 
@@ -283,12 +287,12 @@ endif()
 # cases.
 
 if(SINGULARITY_USE_SPINER_WITH_HDF5)
-  singularity_enable_hdf5(singularity-eos_Interface)
+  singularity_enable_hdf5(singularity-eos_Common)
 endif()
 
 if(SINGULARITY_USE_EOSPAC)
   # NB This will add the `eospac-wrapper` directory.
-  singularity_enable_eospac(singularity-eos_Interface)
+  singularity_enable_eospac(singularity-eos_Common)
 endif()
 
 if(SINGULARITY_SUBMODULE_MODE)
@@ -481,6 +485,22 @@ target_compile_options(
 if(SINGULARITY_BUILD_CLOSURE)
   target_compile_options(singularity-eos_Library PRIVATE ${xlfix})
   target_link_options(singularity-eos_Library PRIVATE ${xlfix})
+
+  # target_link_libraries(singularity-eos_Library PRIVATE singularity-eos_Interface)
+  #
+  # Can not use PRIVATE, since it would add singularity-eos_Interface as LINK_ONLY
+  # in the singularity-eos_Library export
+  #
+  # CMake 3.26 gives us $<BUILD_LOCAL_INTERFACE:...>, for now we need to do this workaround
+  if(CMAKE_VERSION VERSION_LESS "3.26.0")
+    target_link_options(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_LINK_OPTIONS>)
+    target_include_directories(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_compile_options(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_COMPILE_OPTIONS>)
+    target_compile_definitions(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_COMPILE_DEFINITIONS>)
+    target_sources(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_SOURCES>)
+  else()
+    target_link_libraries(singularity-eos_Library PRIVATE $<BUILD_LOCAL_INTERFACE:singularity-eos_Interface>)
+  endif()
 endif()
 
 # ----------------------------------------------------------------------------#
