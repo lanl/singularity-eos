@@ -37,52 +37,57 @@ macro(singularity_enable_hdf5 target)
       REQUIRED)
   endif()
 
-  # I'm bailing out here if these arn't filled in. I don't know if this is
-  # correct for every downstream use, but right now we need to enforce some kind
-  # of uniformity, otherwise we will need 100s of toolchain files JUST for hdf5
+  # If we're doing an in-tree cray build, skip all this stuff.  Fixes
+  # in-tree builds on Roci + Chicoma This is if (NOT (IN_TREE AND
+  # CRAY_THING)), but no composite expressions in cmake
+  if(NOT HDF5_C_COMPILER_EXECUTABLE_NO_INTERROGATE OR NOT SINGULARITY_FORCE_SUBMODULE_MODE)
 
-  if(NOT HDF5_LIBRARIES OR NOT HDF5_INCLUDE_DIRS)
-    message(SEND_ERROR "Could not locate the required HDF5 libraries!")
-    message(SEND_ERROR "-- HDF5_LIBRARIES=\"${HDF5_LIBRARIES}\"")
-    message(SEND_ERROR "-- HDF5_INCLUDE_DIRS=\"${HDF5_INCLUDE_DIRS}\"")
-    message(FATAL_ERROR "Cannot continue without HDF5 libraries!")
-  endif()
-
-  # NOTE: `HDF5_LIBRARIES` should have "all requested bindings" according to
-  # docs, but some distributions completely seperate the HL libs to
-  # `HDF5_HL_LIBRARIES`. or sometimes they don't. So, check for HL, if it's not
-  # set, then check if they are placed in HDF5_LIBRARIES (simple substring
-  # search). If, finally, they're not found then bail.
-  if(NOT HDF5_HL_LIBRARIES)
-    string(FIND ${HDF5_LIBRARIES} "hdf5_hl" _hl_in_libs)
-    # if HL libs are not found in HDF5_LIBRARIES, then bail
-    if(_hl_in_libs LESS 0)
-      message(
-        SEND_ERROR
-          "Found HDF5 libraries, but could not locate required HDF5_HL libraries!"
-      )
+    # I'm bailing out here if these arn't filled in. I don't know if this is
+    # correct for every downstream use, but right now we need to enforce some kind
+    # of uniformity, otherwise we will need 100s of toolchain files JUST for hdf5
+    if(NOT HDF5_LIBRARIES OR NOT HDF5_INCLUDE_DIRS)
+      message(SEND_ERROR "Could not locate the required HDF5 libraries!")
       message(SEND_ERROR "-- HDF5_LIBRARIES=\"${HDF5_LIBRARIES}\"")
-      message(SEND_ERROR "-- HDF5_HL_LIBRARIES=\"${HDF5_HL_LIBRARIES}\"")
-      message(FATAL_ERROR "Cannot continue without HDF5 and HDF5_HL libraries!")
+      message(SEND_ERROR "-- HDF5_INCLUDE_DIRS=\"${HDF5_INCLUDE_DIRS}\"")
+      message(FATAL_ERROR "Cannot continue without HDF5 libraries!")
     endif()
-  endif()
-
-  target_include_directories(${target} SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
-  target_link_libraries(${target} PUBLIC ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
-
-  if(HDF5_IS_PARALLEL)
-    # find_package(MPI COMPONENTS C CXX REQUIRED)
-    # target_link_libraries(${target} PUBLIC MPI::MPI_C MPI::MPI_CXX)
-    enable_language(C)
-    find_package(
-      MPI
-      COMPONENTS C CXX
-      REQUIRED)
-    target_link_libraries(${target} PUBLIC MPI::MPI_CXX)
-    set(SINGULARITY_USE_SPINER_WITH_PARALLEL_HDF5
-        ON
-        CACHE BOOL "" FORCE)
-  endif()
+    
+    # NOTE: `HDF5_LIBRARIES` should have "all requested bindings" according to
+    # docs, but some distributions completely seperate the HL libs to
+    # `HDF5_HL_LIBRARIES`. or sometimes they don't. So, check for HL, if it's not
+    # set, then check if they are placed in HDF5_LIBRARIES (simple substring
+    # search). If, finally, they're not found then bail.
+    if(NOT HDF5_HL_LIBRARIES)
+      string(FIND ${HDF5_LIBRARIES} "hdf5_hl" _hl_in_libs)
+      # if HL libs are not found in HDF5_LIBRARIES, then bail
+      if(_hl_in_libs LESS 0)
+        message(
+          SEND_ERROR
+            "Found HDF5 libraries, but could not locate required HDF5_HL libraries!"
+        )
+        message(SEND_ERROR "-- HDF5_LIBRARIES=\"${HDF5_LIBRARIES}\"")
+        message(SEND_ERROR "-- HDF5_HL_LIBRARIES=\"${HDF5_HL_LIBRARIES}\"")
+        message(FATAL_ERROR "Cannot continue without HDF5 and HDF5_HL libraries!")
+      endif()
+    endif()
+    
+    target_include_directories(${target} SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+    target_link_libraries(${target} PUBLIC ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+    
+    if(HDF5_IS_PARALLEL)
+      # find_package(MPI COMPONENTS C CXX REQUIRED)
+      # target_link_libraries(${target} PUBLIC MPI::MPI_C MPI::MPI_CXX)
+      enable_language(C)
+      find_package(
+        MPI
+        COMPONENTS C CXX
+        REQUIRED)
+      target_link_libraries(${target} PUBLIC MPI::MPI_CXX)
+      set(SINGULARITY_USE_SPINER_WITH_PARALLEL_HDF5
+          ON
+          CACHE BOOL "" FORCE)
+    endif()
+  endif() # in tree cray
 
   target_compile_definitions(${target} PUBLIC SINGULARITY_USE_HDF5)
 
