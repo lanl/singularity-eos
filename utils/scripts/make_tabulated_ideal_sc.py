@@ -95,6 +95,11 @@ Xp = YE
 Xn = 1. - Xp
 Abar = np.ones_like(PRS)
 Zbar = np.ones_like(PRS)
+mu_e = np.ones_like(PRS)
+mu_n = np.ones_like(PRS)
+mu_p = np.ones_like(PRS)
+muhat = np.ones_like(PRS)
+munu = np.ones_like(PRS)
 
 # Output
 if filename is None:
@@ -123,3 +128,8 @@ with h5py.File(filename, 'w') as f:
   f.create_dataset("Xn", data = Xn)
   f.create_dataset("Abar", data = Abar)
   f.create_dataset("Zbar", data = Zbar)
+  f.create_dataset("mu_e", data = mu_e)
+  f.create_dataset("mu_n", data = mu_n)
+  f.create_dataset("mu_p", data = mu_p)
+  f.create_dataset("muhat", data = muhat)
+  f.create_dataset("munu", data = munu)
