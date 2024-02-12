@@ -307,11 +307,11 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   DataBox Xp_;      // mass fraction of protons
   DataBox Abar_;    // Average atomic mass
   DataBox Zbar_;    // Average atomic number
- DataBox mu_e;     // chemical potential of electrons
-  DataBox mu_n;     // chemical potential of neutrons
-  DataBox mu_p;     // chemical potential of protons
-  DataBox muhat;    // mu_n-mu_p
-  DataBox munu;     // chemical potential of neutrinos
+  DataBox mu_e_;     // chemical potential of electrons
+  DataBox mu_n_;     // chemical potential of neutrons
+  DataBox mu_p_;     // chemical potential of protons
+  DataBox muhat_;    // mu_n-mu_p
+  DataBox munu_;     // chemical potential of neutrinos
   // Spiner::DataBox gamma_; // polytropic index. dlog(P)/dlog(rho).
   // dTdRho_, dTdE_, dEdRho_, dEdT_;
 
