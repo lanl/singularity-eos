@@ -363,6 +363,7 @@ namespace callable_interp {
 
 class LogT {
  public:
+  using DataBox = Spiner::DataBox<Real>;
   PORTABLE_INLINE_FUNCTION
   LogT(const DataBox &field, const Real Ye, const Real lRho)
       : field_(field), Ye_(Ye), lRho_(lRho) {}
