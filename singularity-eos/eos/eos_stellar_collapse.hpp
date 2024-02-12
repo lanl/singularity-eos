@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -352,6 +352,7 @@ namespace callable_interp {
 
 class LogT {
  public:
+  using DataBox = Spiner::DataBox<Real>;
   PORTABLE_INLINE_FUNCTION
   LogT(const DataBox &field, const Real Ye, const Real lRho)
       : field_(field), Ye_(Ye), lRho_(lRho) {}
