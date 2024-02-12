@@ -19,6 +19,8 @@
 
 .. _StiffGas: https://doi.org/10.1016/j.ijthermalsci.2003.09.002
 
+.. _PowerMG: https://www.osti.gov/biblio/1762624
+
 
 EOS Models
 ===========
@@ -606,6 +608,13 @@ in terms of :math:`\eta` as
 When the unitless user parameter :math:`b=0`, the Gruneisen parameter is of a
 form where :math:`\rho\Gamma =` constant in compression, i.e. when
 :math:`\eta > 0`.
+If the unitless user parameter :math:`b=\Gamma_0`, the Gruneisen parameter is of a
+form where :math:`\Gamma_0 =` constant in compression. These two limitig cases are 
+shown in the figure below.
+
+.. image:: ../SteinbergGammarho.pdf
+  :width: 500
+  :alt: Figure: Demonstration of how the parameter b interpolated between two common approximations for Gamma
 
 The reference pressure along the Hugoniot is determined by
 
@@ -829,7 +838,7 @@ velocity. As is pointed out in the description of the Gruneisen EOS,
 for many materials, the :math:`U_s`- :math:`u_p` relationship is roughly linear 
 so only this :math:`s` parameter is needed. The units for :math:`C_s` is velocity while
 :math:`s` is unitless. Note that the parameter :math:`s` is related to the
-fundamental derivative of shock physics as shown by `Wills <WillsThermo_>`_.
+fundamental derivative of shock physics as shown by `Mattsson-Wills <WillsThermo_>`_.
 
 Solving the jump equations above gives that the reference pressure along the Hugoniot is determined by
 
@@ -852,6 +861,7 @@ The temperature on the Hugoniot is hard to derive explicitely but with the help 
 we can solve
 
 .. math::
+    :label: TH
 
     T_H(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{e^{\Gamma(\rho_0) \eta}}{2 C_V \rho_0}
                 \int_0^\eta e^{-\Gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz 
@@ -882,6 +892,10 @@ The first omitted term in the expansion inside the square brackets is :math:`\Ga
 in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the 
 isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
 
+.. image:: ../ApproxForTH.pdf
+  :width: 500
+  :alt: Figure: Different approximations for the temperature on the Hugoniot.
+
 The constructor for the ``MGUsup`` EOS has the signature
 
 .. code-block:: cpp
@@ -894,6 +908,87 @@ where
 ``Cs`` is :math:`C_s`, ``s`` is :math:`s`, 
 ``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_V`,
 ``E0`` is :math:`E_0`, and ``S0`` is :math:`S_0`. 
+
+Mie-Gruneisen power expansion EOS
+`````````````````````````````````
+As we noted above, the assumption of a linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions. At 
+Sandia National Laboratories Z-pinch machine, the compression is routinely so large that a new Mie-Gruneisen EOS was developped,
+by `Robinson <PowerMG_>`_, that could handle these large compressions. The overall structure and motivation for approximations 
+are as described above; in compression it is only the formula for :math:`P_H`, and by extension :math:`T_H`, that differ. This 
+EOS is however modified in expansion to follow an isentrope instead of the invalid-in-expansion Hugoniot.
+
+In the PowerMG model the pressure on the Hugoniot in the compression region, :math:`\eta \geq 0` is expressed as a power series
+
+.. math::
+
+    P_H(\rho) = K_0 \eta \left( 1 + K_1 \eta + K_2 \eta^2 + K_3 \eta^3 + \cdots + K_M \eta^M \right)  
+
+By expanding the MGUsup Hugoniot pressure into a power series in :math:`\eta` we see that we can recover the MGUsup results by setting
+
+.. math::
+    
+    K_0 &=& C_s^2 \rho_0 \ \ \ \ \ \ \ \ & \\
+    K_n &=& (n+1) s^n & \ \ \ \ \ \ n >= 1
+
+In the figure below we have used :math:`M=20` with these coefficients and show how the divergence in the MGUsup pressure at :math:`\eta = \frac{1}{s}` is avoided in the PowerMG, making it more suitable for modeling high pressures.
+
+.. image:: ../PMGvsMGUsupPress.pdf
+  :width: 500
+  :alt: Figure: Comparing Hugoniot pressure for PowerMG and MGUsup
+
+For  :math:`\eta < 0`, that is, in expansion, the isentrope with a single :math:`K_0` is used until a user defined minimum pressure is obtained
+
+.. math::
+
+    P_H &= K_0 \eta& \ \ \ \ \ \ \ \ \ \ & \frac{P_{min}}{K_0} \leq \eta < 0 \\
+    P_H &= P_{min} & \ \ \ \ \ \ \ \ \ \ & \eta <  \frac{P_{min}}{K_0}
+
+If the user have not set :math:`P_{min}` or if a positive value has been given, a default value of :math:`P_{min} = -1000 K_0` is used.
+
+If we now insert the formula for :math:`P_H` in compression into equation :math:numref:`TH`, for :math:`\eta \geq 0` we arrive at
+
+.. math::
+
+    T_H = T_0 e^{\Gamma(\rho_0) \eta} + \frac{e^{\Gamma(\rho_0) \eta}}{2 C_V \rho_0} K_0 \left( K_1 I_2 + 2 K_2 I_3 + 3 K_3 I_4 + \cdots + M K_M I_{M+1} \right)
+
+where 
+
+.. math::
+
+    I_n = \int_0^\eta e^{-\Gamma(\rho_0) z} z^{n-1} dz
+
+that can be rewritten in terms of the lower incomplete gamma function. For :math:`\eta < 0` the isentropic temperature is used,
+
+.. math::
+
+    T_H = T_0 e^{\Gamma(\rho_0) \eta} \ \ \ \ \ \ \ \ \ \  \eta < 0  \, .
+
+It has been verified that this temperature is following the black, true temperature line in the figure late in the MGUsup section in compression and the blue isentropic temperature in expansion. More information about how to implement :math:`T_H` into codes is given in `Robinson <PowerMG_>`_.
+
+For completeness we give :math:`E_H` as well,
+
+.. math::
+
+    E_H &= \frac{P_H \eta}{2 \rho_0} + E_0  & \ \ \ \ \ \ \ \ \ \ & \eta \geq 0 \\
+    E_H &=  \frac{K_0 \eta^2}{2 \rho_0} + E_0 & \ \ \ \ \ \ \ \ \ \ & \frac{P_{min}}{K_0} \leq \eta < 0 \\
+    E_H &= \frac{K_0 \eta_{min}^2}{2 \rho_0} + E_0 + \frac{P_{min}}{\rho_0} (\eta - \eta_{min})& \ \ \ \ \ \ \ \ \ \ & \eta <  \eta_{min} = \frac{P_{min}}{K_0}
+
+The constructor for the ``PowerMG`` EOS has the signature
+
+.. code-block:: cpp
+
+  PowerMG(const Real rho0, const Real T0, const Real G0, const Real Cv0, const Real E0,
+          const Real S0, const Real Pmin, const Real *expconsts)
+
+where
+``rho0`` is :math:`\rho_0`, ``T0`` is :math:`T_0`,
+``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_V`,
+``E0`` is :math:`E_0`, ``S0`` is :math:`S_0`, ``Pmin`` is :math:`P_{min}`, and
+``expconsts`` is a pointer to the constant array of length
+41 containing the expansion coefficients
+:math:`K_0` to :math:`K_{40}`. Expansion coefficients not used should be set to
+:math:`0.0`.
+
 
 
 JWL EOS

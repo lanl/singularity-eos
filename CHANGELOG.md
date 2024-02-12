@@ -2,12 +2,17 @@
 
 ## Current develop
 
+### Added (new features/APIs/variables/...)
+- [[PR#336]](https://github.com/lanl/singularity-eos/pull/336) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a pressure power law expansion in eta = 1-V/V0. PowerMG.
+
 ### Fixed (Repair bugs, etc)
+- [[PR341]](https://github.com/lanl/singularity-eos/pull/341) Short-circuit HDF5 machinery when cray-wrappers used in-tree
+- [[PR340]](https://github.com/lanl/singularity-eos/pull/335) Fix in-tree builds with plugin infrastructure
 - [[PR335]](https://github.com/lanl/singularity-eos/pull/335) Fix missing hermite.hpp in CMake install required for Helmholtz EOS
 
 ### Added (new features/APIs/variables/...)
 - [[PR334]](https://github.com/lanl/singularity-eos/pull/334) Include plugins infrastructure
-- [[PR331]](https://github.com/lanl/singularity-eos/pull/331) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a linear Us-up relation.
+- [[PR331]](https://github.com/lanl/singularity-eos/pull/331) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a linear Us-up relation. MGUsup.
 - [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release
 
 ### Changed (changing behavior/API/variables/...)
