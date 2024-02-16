@@ -12,34 +12,25 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <cassert>
-#include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/singularity_eos.hpp>
 
 using namespace singularity;
 
-int init_sg_eos(const int nmat, EOS *&eos) {
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-  if (!Kokkos::is_initialized()) Kokkos::initialize();
-#endif // PORTABILITY_STRATEGY_KOKKOS
-  EOS *eos_p = new EOS[nmat];
-  eos = eos_p;
+int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
+                                             const double *sies, double *pressures,
+                                             const int len) {
+  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
   return 0;
 }
-
-int finalize_sg_eos(const int nmat, EOS *&eos, const int own_kokkos) {
-  {
-    for (int i = 0; i < nmat; ++i)
-      eos[i].Finalize();
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-    Kokkos::fence();
-#endif // PORTABILITY_STRATEGY_KOKKOS
-  }
-  delete[] eos;
-  eos = nullptr;
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-  if (own_kokkos != 0) Kokkos::finalize();
-#endif
+int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos,
+                                        double *sies, const int len) {
+  eos[matindex].MinInternalEnergyFromDensity(rhos, sies, len);
+  return 0;
+}
+int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos,
+                                                const double *rhos, const double *sies,
+                                                double *bmods, const int len) {
+  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
   return 0;
 }

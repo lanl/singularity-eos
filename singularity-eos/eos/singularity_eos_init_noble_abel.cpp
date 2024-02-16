@@ -12,34 +12,21 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <cassert>
-#include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/singularity_eos.hpp>
+#include <singularity-eos/eos/singularity_eos_init.hpp>
 
 using namespace singularity;
 
-int init_sg_eos(const int nmat, EOS *&eos) {
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-  if (!Kokkos::is_initialized()) Kokkos::initialize();
-#endif // PORTABILITY_STRATEGY_KOKKOS
-  EOS *eos_p = new EOS[nmat];
-  eos = eos_p;
+int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
+                      const double bb, const double qq, int const *const enabled,
+                      double *const vals) {
+  EOS eos_ = NobleAbel(gm1, Cv, bb, qq);
+  apply_mods_and_dev_transfer(matindex, eos_, eos, enabled, vals);
   return 0;
 }
 
-int finalize_sg_eos(const int nmat, EOS *&eos, const int own_kokkos) {
-  {
-    for (int i = 0; i < nmat; ++i)
-      eos[i].Finalize();
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-    Kokkos::fence();
-#endif // PORTABILITY_STRATEGY_KOKKOS
-  }
-  delete[] eos;
-  eos = nullptr;
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-  if (own_kokkos != 0) Kokkos::finalize();
-#endif
-  return 0;
+int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
+                      const double bb, const double qq) {
+  return init_sg_NobleAbel(matindex, eos, gm1, Cv, bb, qq, def_en, def_v);
 }

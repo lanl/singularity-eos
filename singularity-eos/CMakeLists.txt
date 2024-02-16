@@ -81,6 +81,26 @@ if (SINGULARITY_USE_FORTRAN)
   register_srcs(
     eos/singularity_eos.f90
     eos/singularity_eos.cpp
+    eos/singularity_eos_vector.cpp
+    eos/singularity_eos_init_ideal.cpp
+    eos/singularity_eos_init_gruneisen.cpp
+    eos/singularity_eos_init_jwl.cpp
+    eos/singularity_eos_init_davis.cpp
+    eos/singularity_eos_init_sap_polynomial.cpp
+    eos/singularity_eos_init_stiff.cpp
+    eos/singularity_eos_init_noble_abel.cpp
   )
-  register_headers(eos/singularity_eos.hpp)
+  if (SINGULARITY_USE_HELMHOLTZ)
+    register_srcs(eos/singularity_eos_init_helmholtz.cpp)
+  endif()
+  if (SINGULARITY_USE_SPINER_WITH_HDF5)
+    register_srcs(eos/singularity_eos_init_spiner.cpp)
+  endif()
+  if (SINGULARITY_USE_EOSPAC)
+    register_srcs(eos/singularity_eos_init_eospac.cpp)
+  endif()
+  register_headers(
+    eos/singularity_eos.hpp
+    eos/singularity_eos_init.hpp
+  )
 endif()
