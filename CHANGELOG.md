@@ -6,6 +6,10 @@
 - [[PR#336]](https://github.com/lanl/singularity-eos/pull/336) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a pressure power law expansion in eta = 1-V/V0. PowerMG.
 
 ### Fixed (Repair bugs, etc)
+- [[PR343]](https://github.com/lanl/singularity-eos/pull/343) Add chemical potentials to stellar collapse gold files
+- [[PR342]](https://github.com/lanl/singularity-eos/pull/342) Fix missing using statement in stellar collapse root finding routines
+- [[PR341]](https://github.com/lanl/singularity-eos/pull/341) Short-circuit HDF5 machinery when cray-wrappers used in-tree
+- [[PR340]](https://github.com/lanl/singularity-eos/pull/335) Fix in-tree builds with plugin infrastructure
 - [[PR335]](https://github.com/lanl/singularity-eos/pull/335) Fix missing hermite.hpp in CMake install required for Helmholtz EOS
 
 ### Added (new features/APIs/variables/...)
@@ -46,6 +50,7 @@ Date: 11/28/2023
 - [[PR308]](https://github.com/lanl/singularity-eos/pull/308) spack builds +fortran now compile via correct blocking out of interfaces via preprocessor ifdef
 
 ### Added (new features/APIs/variables/...)
+- [[PR338]](https://github.com/lanl/singularity-eos/pull/338) added chemical potentials from EoS
 - [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added EOSPAC option functionality in class constructor
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new function for returning the minimum energy as a function of density for an EOS (only EOSPAC at the moment)
