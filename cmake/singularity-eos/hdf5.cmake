@@ -71,24 +71,24 @@ macro(singularity_enable_hdf5 target)
       endif()
     endif()
     
-    target_include_directories(${target} SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
-    target_link_libraries(${target} PUBLIC ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
+    target_include_directories(${target} SYSTEM INTERFACE ${HDF5_INCLUDE_DIRS})
+    target_link_libraries(${target} INTERFACE ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
     
     if(HDF5_IS_PARALLEL)
       # find_package(MPI COMPONENTS C CXX REQUIRED)
-      # target_link_libraries(${target} PUBLIC MPI::MPI_C MPI::MPI_CXX)
+      # target_link_libraries(${target} INTERFACE MPI::MPI_C MPI::MPI_CXX)
       enable_language(C)
       find_package(
         MPI
         COMPONENTS C CXX
         REQUIRED)
-      target_link_libraries(${target} PUBLIC MPI::MPI_CXX)
+      target_link_libraries(${target} INTERFACE MPI::MPI_CXX)
       set(SINGULARITY_USE_SPINER_WITH_PARALLEL_HDF5
           ON
           CACHE BOOL "" FORCE)
     endif()
   endif() # in tree cray
 
-  target_compile_definitions(${target} PUBLIC SINGULARITY_USE_HDF5)
+  target_compile_definitions(${target} INTERFACE SINGULARITY_USE_HDF5)
 
 endmacro()

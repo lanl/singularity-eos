@@ -55,27 +55,49 @@ install(FILES ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
 # install export target
 # ----------------------------------------------------------------------------#
 install(
-  TARGETS singularity-eos
-  EXPORT singularity-eosTargets
+  TARGETS singularity-eos_Common
+  EXPORT singularity-eos_Common
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 install(
-  EXPORT singularity-eosTargets
-  FILE singularity-eosTargets.cmake
+  EXPORT singularity-eos_Common
+  FILE singularity-eos_Common.cmake
   NAMESPACE "singularity-eos::"
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos)
+
+install(
+  TARGETS singularity-eos_Interface
+  EXPORT singularity-eos_Interface
+  DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+install(
+  EXPORT singularity-eos_Interface
+  FILE singularity-eos_Interface.cmake
+  NAMESPACE "singularity-eos::"
+  COMPONENT singularity-eos_Interface
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos)
+
+if(SINGULARITY_BUILD_CLOSURE)
+  install(
+    TARGETS singularity-eos_Library
+    EXPORT singularity-eos_Library
+    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+
+  install(
+    EXPORT singularity-eos_Library
+    FILE singularity-eos_Library.cmake
+    NAMESPACE "singularity-eos::"
+    COMPONENT singularity-eos_Library
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos)
+endif()
 
 # ----------------------------------------------------------------------------#
 # Install headers
 # ----------------------------------------------------------------------------#
 
 # install singularity-eos headers
-get_property(install_headers GLOBAL PROPERTY _install_headers)
-list(LENGTH install_headers length)
-math(EXPR max_index "${length} - 1")
-foreach(index RANGE ${max_index})
-  list(GET eos_headers ${index} src)
-  list(GET install_headers ${index} dst)
+get_property(install_headers GLOBAL PROPERTY EOS_INSTALL_HEADERS)
+foreach(src dst IN ZIP_LISTS eos_headers install_headers)
   get_filename_component(DIR ${dst} DIRECTORY)
   install(FILES ${src} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${DIR})
 endforeach() # file
@@ -97,9 +119,21 @@ endif()
 # same as install step, but just places the file in the build tree. useful for
 # downstream projects that use the source directly
 export(
-  EXPORT singularity-eosTargets
-  FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eosTargets.cmake
+  EXPORT singularity-eos_Common
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eos_Common.cmake
   NAMESPACE singularity-eos::)
+
+export(
+  EXPORT singularity-eos_Interface
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eos_Interface.cmake
+  NAMESPACE singularity-eos::)
+
+if(SINGULARITY_BUILD_CLOSURE)
+  export(
+    EXPORT singularity-eos_Library
+    FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eos_Library.cmake
+    NAMESPACE singularity-eos::)
+endif()
 
 # ----------------------------------------------------------------------------#
 # Data files

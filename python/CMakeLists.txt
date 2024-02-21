@@ -23,7 +23,7 @@ pybind11_add_module(singularity_eos
   modifier_relativistic.cpp
   modifier_bilinear_ramp.cpp
 )
-target_link_libraries(singularity_eos PRIVATE singularity-eos)
+target_link_libraries(singularity_eos PRIVATE singularity-eos_Interface)
 
 include(GNUInstallDirs)
 

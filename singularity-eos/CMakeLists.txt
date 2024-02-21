@@ -35,7 +35,6 @@ register_headers(
     eos/default_variant.hpp
     base/hermite.hpp
     eos/eos_variant.hpp
-    eos/singularity_eos.hpp
     eos/eos_stellar_collapse.hpp
     eos/eos_ideal.hpp
     eos/eos_models.hpp
@@ -57,8 +56,6 @@ register_headers(
     eos/eos_noble_abel.hpp
     eos/eos_stiff.hpp
 )
-
-register_srcs(eos/eos.cpp)
 
 if (SINGULARITY_BUILD_CLOSURE)
   register_headers(closure/mixed_cell_models.hpp)
