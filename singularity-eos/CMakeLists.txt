@@ -59,6 +59,8 @@ register_headers(
 
 if (SINGULARITY_BUILD_CLOSURE)
   register_headers(closure/mixed_cell_models.hpp)
+  register_headers(eos/singularity_eos.hpp)
+  register_srcs(eos/singularity_eos.cpp)
   if (SINGULARITY_USE_FORTRAN)
     register_srcs(eos/get_sg_eos.cpp)
     if (SINGULARITY_USE_KOKKOS)
@@ -77,7 +79,5 @@ endif()
 if (SINGULARITY_USE_FORTRAN)
   register_srcs(
     eos/singularity_eos.f90
-    eos/singularity_eos.cpp
   )
-  register_headers(eos/singularity_eos.hpp)
 endif()
