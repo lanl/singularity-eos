@@ -14,34 +14,49 @@ variables:
   SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+hdf5+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
   COLOR_CYAN: "\e[1;36m"
   COLOR_PLAIN: "\e[0m"
+  CLUSTER: darwin
   # set to different spack upstream for testing
   SINGULARITY_EOS_TEMP_SPACK_DIR: ""
   # uncomment for debugging the CI and persist the Spack installation
   # SPACK_USER_CACHE_PATH: "${CI_PROJECT_DIR}/spack-local"
   # DEVEL_SPACK_CHECKOUT: "${CI_PROJECT_DIR}/spack"
 
-before_script:
-  - echo "Running on $(hostname)"
-  - section() { echo $'\e[0K'"section_$1:$(date +%s):$2"$'\r\e[0K'"${3+${COLOR_CYAN}$3${COLOR_PLAIN}}"; }
-  - export PYTHONNOUSERSITE=1
-  - export SPACK_DISABLE_LOCAL_CONFIG=true
-  - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH:-/tmp/spack-local}
-  - export DEVEL_SPACK_CHECKOUT=${DEVEL_SPACK_CHECKOUT:-/tmp/spack}
-  - export SINGULARITY_EOS_SPACK_DIR=${SINGULARITY_EOS_TEMP_SPACK_DIR:=$XCAP_OSS_SPACK_DIR}
-  - section start "spack_init[collapsed=true]" "Creating Spack instance at ${DEVEL_SPACK_CHECKOUT}"
-  - |
-    rsync -rpl \
-        --exclude=".git" \
-        --exclude="etc/spack/repos.yaml" \
-        --exclude="etc/spack/packages.yaml" \
-        --include="etc/spack/**" \
-        --include="lib/spack/**" \
-        --exclude-from=${SINGULARITY_EOS_SPACK_DIR}/.gitignore \
-        ${SINGULARITY_EOS_SPACK_DIR}/ ${DEVEL_SPACK_CHECKOUT}/
-  - source ${DEVEL_SPACK_CHECKOUT}/share/spack/setup-env.sh
-  - spack --version
-  - spack compiler list
-  - section end spack_init
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+default:
+  tags:
+    - darwin-slurm-shared
+  id_tokens:
+    SITE_ID_TOKEN:
+      aud: https://asc-git.lanl.gov
+  before_script:
+    - echo "Running on $(hostname)"
+    - section() { echo $'\e[0K'"section_$1:$(date +%s):$2"$'\r\e[0K'"${3+${COLOR_CYAN}$3${COLOR_PLAIN}}"; }
+    - export PYTHONNOUSERSITE=1
+    - export SPACK_DISABLE_LOCAL_CONFIG=true
+    - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH:-/tmp/spack-local}
+    - export DEVEL_SPACK_CHECKOUT=${DEVEL_SPACK_CHECKOUT:-/tmp/spack}
+    - export SINGULARITY_EOS_SPACK_DIR=${SINGULARITY_EOS_TEMP_SPACK_DIR:=$XCAP_OSS_SPACK_DIR}
+    - section start "spack_init[collapsed=true]" "Creating Spack instance at ${DEVEL_SPACK_CHECKOUT}"
+    - |
+      rsync -rpl \
+          --exclude=".git" \
+          --exclude="etc/spack/repos.yaml" \
+          --exclude="etc/spack/packages.yaml" \
+          --include="etc/spack/**" \
+          --include="lib/spack/**" \
+          --exclude-from=${SINGULARITY_EOS_SPACK_DIR}/.gitignore \
+          ${SINGULARITY_EOS_SPACK_DIR}/ ${DEVEL_SPACK_CHECKOUT}/
+    - source ${DEVEL_SPACK_CHECKOUT}/share/spack/setup-env.sh
+    - spack --version
+    - spack compiler list
+    - section end spack_init
 
 ##########################
 # Build Matrix Variables #
@@ -66,36 +81,27 @@ before_script:
 .nofort: &nofort
   SINGULARITY_USE_FORTRAN: "false"
 
-.skylake: &skylake
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
-
-.power9: &power9
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=power9-rhel7"
-
-.x86volta: &x86volta
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86 -C cpu_family:haswell"
-
 .python: &python
     SINGULARITY_BUILD_PYTHON: "ON"
 
-#################
-# General Setup #
-#################
+######################
+# Platform Variables #
+######################
 
-.job: &job_def
-  id_tokens:
-    SITE_ID_TOKEN:
-      aud: https://asc-git.lanl.gov
+.rocinante_batch:
   tags:
-    - darwin-slurm-shared
+    - rocinante
+    - batch
   variables:
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=skylake-gold,skylake-platinum"
-  only:
-    refs:
-      - main
-      - merge_requests
-  except:
-    refs:
+    CLUSTER: rocinante
+    SINGULARITY_EOS_GCC_VERSION: "12.2.0"
+    SCHEDULER_PARAMETERS: "-N 1 -t 30 -A asc-ci --partition=ci --qos=ci --reservation=ci"
+
+.skylake: &skylake
+  SCHEDULER_PARAMETERS: "--nodes=1 -p skylake-gold,skylake-platinum"
+
+.x86volta: &x86volta
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86 -C cpu_family:haswell"
 
 #######################
 # Job Script Template #
@@ -103,11 +109,15 @@ before_script:
 
 .test:
   stage: build_n_test
-  extends:
-    - .job
   script:
-    - module load gcc/${SINGULARITY_EOS_GCC_VERSION}
-    - module load cuda/${SINGULARITY_EOS_CUDA_VERSION}
+    - |
+      if [[ "${CLUSTER}" = "rocinante" ]]; then
+        module load PrgEnv-gnu
+        module load gcc/${SINGULARITY_EOS_GCC_VERSION}
+      else
+        module load gcc/${SINGULARITY_EOS_GCC_VERSION}
+        module load cuda/${SINGULARITY_EOS_CUDA_VERSION}
+      fi
     - |
       if [[ "${CI_COMMIT_BRANCH}" == "${CI_DEFAULT_BRANCH}" ]];
       then
@@ -182,29 +192,12 @@ before_script:
 ########
 
 test_gnu_skylake:
-  <<: *job_def
   extends: .test
   variables:
     <<: *skylake
     <<: *python
 
-test_gnu_power9:
-  <<: *job_def
-  extends: .test
-  variables:
-    <<: *power9
-    <<: *python
-
-test_gnu_power9_gpu:
-  <<: *job_def
-  extends: .test
-  variables:    
-    <<: *power9
-    <<: *buildtype_release
-    <<: *gpu
-
 test_x86_volta_gpu:
-  <<: *job_def
   extends: .test
   variables:    
     <<: *x86volta
@@ -212,7 +205,6 @@ test_x86_volta_gpu:
     <<: *gpu
 
 install_gnu_skylake_fort:
-  <<: *job_def
   extends: .test
   variables:
     <<: *skylake
@@ -220,9 +212,31 @@ install_gnu_skylake_fort:
     <<: *fort
 
 install_gnu_skylake_nofort:
-  <<: *job_def
   extends: .test
   variables:
     <<: *skylake
+    <<: *python
+    <<: *nofort
+
+test_gnu_rocinante:
+  extends:
+   - .rocinante_batch
+   - .test
+  variables:
+    <<: *python
+
+install_gnu_rocinante_fort:
+  extends:
+   - .rocinante_batch
+   - .test
+  variables:
+    <<: *python
+    <<: *fort
+
+install_gnu_rocinante_nofort:
+  extends:
+   - .rocinante_batch
+   - .test
+  variables:
     <<: *python
     <<: *nofort
