@@ -95,6 +95,7 @@ default:
   variables:
     CLUSTER: rocinante
     SINGULARITY_EOS_GCC_VERSION: "12.2.0"
+    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+hdf5+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cray-mpich"
     SCHEDULER_PARAMETERS: "-N 1 -t 30 -A asc-ci --partition=ci --qos=ci --reservation=ci"
 
 .skylake: &skylake
