@@ -73,7 +73,7 @@ default:
 
 .gpu: &gpu
   SINGULARITY_USE_CUDA: "true"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos+hdf5 cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos+hdf5 cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=14 ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"
