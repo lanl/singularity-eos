@@ -73,7 +73,7 @@ default:
 
 .gpu: &gpu
   SINGULARITY_USE_CUDA: "true"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos+hdf5 cuda_arch=70 +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=14 ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos+hdf5 cuda_arch=${SINGULARITY_CUDA_ARCH} +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=14 ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"
@@ -102,7 +102,12 @@ default:
   SCHEDULER_PARAMETERS: "--nodes=1 -p skylake-gold,skylake-platinum"
 
 .x86volta: &x86volta
+    SINGULARITY_CUDA_ARCH: 70
     SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86 -C cpu_family:haswell"
+
+.a100: &a100
+    SINGULARITY_CUDA_ARCH: 80
+    SCHEDULER_PARAMETERS: "--nodes=1 --partition=shared-gpu-ampere"
 
 #######################
 # Job Script Template #
@@ -200,8 +205,15 @@ test_gnu_skylake:
 
 test_x86_volta_gpu:
   extends: .test
-  variables:    
+  variables:
     <<: *x86volta
+    <<: *buildtype_release
+    <<: *gpu
+
+test_x86_ampere_gpu:
+  extends: .test
+  variables:
+    <<: *a100
     <<: *buildtype_release
     <<: *gpu
 
