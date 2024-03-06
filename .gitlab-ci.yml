@@ -44,6 +44,7 @@ default:
     - export DEVEL_SPACK_CHECKOUT=${DEVEL_SPACK_CHECKOUT:-/tmp/spack}
     - export SINGULARITY_EOS_SPACK_DIR=${SINGULARITY_EOS_TEMP_SPACK_DIR:=$XCAP_OSS_SPACK_DIR}
     - section start "spack_init[collapsed=true]" "Creating Spack instance at ${DEVEL_SPACK_CHECKOUT}"
+    - echo "Upstream ${SINGULARITY_EOS_SPACK_DIR}"
     - |
       rsync -rpl \
           --exclude=".git" \
