@@ -26,7 +26,7 @@ EOS Models
 ===========
 
 The mathematical descriptions of these models are presented below while the
-details of using them is presented in the description of the 
+details of using them is presented in the description of the
 :doc:`EOS API <using-eos>`.
 
 EOS Theory
@@ -130,7 +130,7 @@ can be extended to third derivatives (as Davis does in his Appendix B `here
 
 .. math::
 
-    \frac{V}{C_V^2}\left(\frac{\partial C_V}{\partial V}\right)_S = 
+    \frac{V}{C_V^2}\left(\frac{\partial C_V}{\partial V}\right)_S =
       \left(\frac{\partial \Gamma}{\partial S}\right)_V.
 
 This is often referred to as a "compatibility condition" (see also
@@ -294,8 +294,8 @@ This should be differentiated from
 
     \gamma := \frac{V}{P} \left( \frac{\partial P}{\partial V} \right)_S =
             \frac{B_S}{P}
- 
-though, which is the adiabatic exponent. 
+
+though, which is the adiabatic exponent.
 
 For an ideal gas, the adiabatic exponent is simply the ratio of the heat
 capacities,
@@ -429,6 +429,26 @@ these values are not set, they will be the same as those returned by the
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
 
+Isothermal Gas
+``````````````
+
+The locally isothermal model in `singularity-eos` takes the form
+
+.. math::
+
+    P = c_s^2 \rho
+
+Here the sound speed is a user-specified constant, although it can vary in space
+and time.
+
+The ``IsothermalGas`` constructor takes no arguments:
+
+.. code-block:: cpp
+
+    IsothermalGas()
+
+and the sound speed is provided to each EOS call through the ``lambda`` argument.
+
 Stiffened Gas
 `````````````
 
@@ -509,7 +529,7 @@ The entropy for the Noble-Abel EoS is given by
 
     S = C_V \ln\left(\frac{T}{T_0}\right) + C_V (\gamma-1) \ln\left(\frac{v - b}
      {v_0 - b}\right) + q',
-     
+
 
 where :math:`S(\rho_0,T_0)=q'`. By default, :math:`T_0 = 298` K and the
 reference density is given by
@@ -602,14 +622,14 @@ in terms of :math:`\eta` as
     \Gamma(\rho) =
       \begin{cases}
         \Gamma_0                                          & \eta \leq 0 \\
-        \Gamma_0 (1 - \eta) + b\eta                       & 0 \leq \eta < 1 
+        \Gamma_0 (1 - \eta) + b\eta                       & 0 \leq \eta < 1
       \end{cases}
 
 When the unitless user parameter :math:`b=0`, the Gruneisen parameter is of a
 form where :math:`\rho\Gamma =` constant in compression, i.e. when
 :math:`\eta > 0`.
 If the unitless user parameter :math:`b=\Gamma_0`, the Gruneisen parameter is of a
-form where :math:`\Gamma_0 =` constant in compression. These two limitig cases are 
+form where :math:`\Gamma_0 =` constant in compression. These two limitig cases are
 shown in the figure below.
 
 .. image:: ../SteinbergGammarho.pdf
@@ -633,7 +653,7 @@ where :math:`P_0` is the reference pressure and :math:`c_0`, :math:`s_1`,
 
 .. math::
 
-    U_s = c_0 + u_p \left( s_1 + s_2 \frac{u_p}{U_s} 
+    U_s = c_0 + u_p \left( s_1 + s_2 \frac{u_p}{U_s}
                            + s_3\left(\frac{u_p}{U_s}\right)^2 \right).
 
 Here :math:`U_s` is the shock velocity and :math:`u_p` is the particle
@@ -694,7 +714,7 @@ While the Mie-Gruneisen EOS is based on a Hugoniot as reference curve, the Vinet
 is based on an isotherm:
 
 .. math::
- 
+
     P(\rho,T) = P_{ref}(\rho) + \alpha_0 B_0 (T - T_{ref})
 
 where the reference isotherm is
@@ -720,8 +740,8 @@ and that
 By assuming that also the constant volume heat capacity is a constant,
 :math:`{C_V}_0`, an entropy can be derived
 
-.. math:: 
-    
+.. math::
+
     S(V,T) = S_0 + \alpha_0 B_0 (V - V_0) + {C_V}_0 \ln \frac{T}{T_{ref}}
 
 and from that a thermodynamic consistent energy
@@ -747,7 +767,7 @@ coefficients :math:`d_n`, :math:`n\geq 2`, by
     The entropy diverges to negative infinity at absolute zero due to the
     constant heat capacity assumption. Care should be taken when using
     temperatures significantly below that of the reference state.
-    
+
 The constructor for the ``Vinet`` EOS has the signature
 
 .. code-block:: cpp
@@ -777,7 +797,7 @@ The pressure follows the traditional Mie-Gruneisen form,
     P(\rho, e) = P_H(\rho) + \rho\Gamma(\rho) \left(e - e_H(\rho) \right),
 
 Here the subscript :math:`H` is a reminder that the reference curve is a
-Hugoniot. :math:`\Gamma` is the Gruneisen parameter and the first approximation 
+Hugoniot. :math:`\Gamma` is the Gruneisen parameter and the first approximation
 is that :math:`\rho\Gamma(\rho)=\rho_0\Gamma(\rho_0)`
 which is the same assumption as in the Gruneisen EOS when :math:`b=0`.
 
@@ -790,9 +810,9 @@ heat capacity is assumed so that
 
     T(\rho, e) = \frac{\left(e-e_H(\rho)\right)}{C_V} + T_H(\rho)
 
-Note the difference from the Gruneisen EOS described above. We still use a constant :math:`C_V`, 
+Note the difference from the Gruneisen EOS described above. We still use a constant :math:`C_V`,
 and it is usually taken at the reference temperature, but
-we now extrapolate from the temperature on the Hugoniot, :math:`T_H(\rho)`, and not 
+we now extrapolate from the temperature on the Hugoniot, :math:`T_H(\rho)`, and not
 from the reference temperature, :math:`T_0`.
 
 With this consistent temperature we can derive an entropy in a similar way as for the Vinet EOS. Using
@@ -802,7 +822,7 @@ thermodynamic derivatives we can show that
 
     \Gamma \rho = \frac{\alpha B_T}{C_V} ,
 
-and we arrive at 
+and we arrive at
 
 .. math::
 
@@ -817,25 +837,25 @@ where :math:`\eta` is a measure of compression given by
 
 This is convenient because :math:`\eta = 0` when :math:`\rho = \rho_0`,
 :math:`\eta = 1` at the infinite density limit, and :math:`\eta = -\infty` at
-the zero density limit. 
+the zero density limit.
 
-The pressure, energy, and temperature, on the Hugoniot are derived from the 
+The pressure, energy, and temperature, on the Hugoniot are derived from the
 shock jump conditions,
 
 .. math::
 
   \rho_0 U_s &= \rho (U_s - u_p) \\
-  P_H &= \rho_0 U_s u_p \ , 
+  P_H &= \rho_0 U_s u_p \ ,
 
 assuming a linear :math:`U_s`- :math:`u_p` relation,
 
 .. math::
 
-    U_s = C_s + s u_p . 
+    U_s = C_s + s u_p .
 
 Here :math:`U_s` is the shock velocity and :math:`u_p` is the particle
-velocity. As is pointed out in the description of the Gruneisen EOS, 
-for many materials, the :math:`U_s`- :math:`u_p` relationship is roughly linear 
+velocity. As is pointed out in the description of the Gruneisen EOS,
+for many materials, the :math:`U_s`- :math:`u_p` relationship is roughly linear
 so only this :math:`s` parameter is needed. The units for :math:`C_s` is velocity while
 :math:`s` is unitless. Note that the parameter :math:`s` is related to the
 fundamental derivative of shock physics as shown by `Mattsson-Wills <WillsThermo_>`_.
@@ -848,7 +868,7 @@ Solving the jump equations above gives that the reference pressure along the Hug
 
 Note the singularity at :math:`s \eta = 1` which limits this model's validity to compressions
 :math:`\eta << 1/s`. If your problem can be expected to have compressions of this order, you should use the PowerMG
-EOS that is explicitely constructed for large compressions. 
+EOS that is explicitely constructed for large compressions.
 The assumption of linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions.
 
 The energy along the Hugoniot is given by
@@ -864,23 +884,23 @@ we can solve
     :label: TH
 
     T_H(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{e^{\Gamma(\rho_0) \eta}}{2 C_V \rho_0}
-                \int_0^\eta e^{-\Gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz 
+                \int_0^\eta e^{-\Gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz
 
 
 into the explicit formula
 
 .. math::
 
-      T_H(\rho) &= T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2} 
-                \left[\frac{- s \eta}{(1 - s \eta)^2} + \left( \frac{\Gamma(\rho_0)}{s} - 3 \right) 
+      T_H(\rho) &= T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2}
+                \left[\frac{- s \eta}{(1 - s \eta)^2} + \left( \frac{\Gamma(\rho_0)}{s} - 3 \right)
                                         \left( e^{\Gamma(\rho_0) \eta} - \frac{1}{(1-s \eta)}\right)\right. \\
-           & \ \left. + e^{-\frac{\Gamma(\rho_0)}{s} (1-s \eta)} 
+           & \ \left. + e^{-\frac{\Gamma(\rho_0)}{s} (1-s \eta)}
                         \left( Ei(\frac{\Gamma(\rho_0)}{s}(1-s \eta))-Ei(\frac{\Gamma(\rho_0)}{s}) \right)
-                        \left((\frac{\Gamma(\rho_0)}{s})^2 - 4 \frac{\Gamma(\rho_0)}{s} + 2 \right) \right]                        
+                        \left((\frac{\Gamma(\rho_0)}{s})^2 - 4 \frac{\Gamma(\rho_0)}{s} + 2 \right) \right]
 
 where :math:`Ei` is the exponential integral function. We replace the :math:`Ei` difference with a sum with cutoff
-giving an error less than machine precision. For :math:`s \eta` close to :math:`0`, there are 
-severe cancellations in this formula and we use the expansion 
+giving an error less than machine precision. For :math:`s \eta` close to :math:`0`, there are
+severe cancellations in this formula and we use the expansion
 
 .. math::
 
@@ -889,7 +909,7 @@ severe cancellations in this formula and we use the expansion
 
 
 The first omitted term in the expansion inside the square brackets is :math:`\Gamma(\rho_0) \eta^4 / 6`. This expansion is
-in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the 
+in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the
 isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
 
 .. image:: ../ApproxForTH.pdf
@@ -903,30 +923,30 @@ The constructor for the ``MGUsup`` EOS has the signature
   MGUsup(const Real rho0, const Real T0, const Real Cs, const Real s, const Real G0,
          const Real Cv0, const Real E0, const Real S0)
 
-where 
+where
 ``rho0`` is :math:`\rho_0`, ``T0`` is :math:`T_0`,
-``Cs`` is :math:`C_s`, ``s`` is :math:`s`, 
+``Cs`` is :math:`C_s`, ``s`` is :math:`s`,
 ``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_V`,
-``E0`` is :math:`E_0`, and ``S0`` is :math:`S_0`. 
+``E0`` is :math:`E_0`, and ``S0`` is :math:`S_0`.
 
 Mie-Gruneisen power expansion EOS
 `````````````````````````````````
-As we noted above, the assumption of a linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions. At 
+As we noted above, the assumption of a linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions. At
 Sandia National Laboratories Z-pinch machine, the compression is routinely so large that a new Mie-Gruneisen EOS was developped,
-by `Robinson <PowerMG_>`_, that could handle these large compressions. The overall structure and motivation for approximations 
-are as described above; in compression it is only the formula for :math:`P_H`, and by extension :math:`T_H`, that differ. This 
+by `Robinson <PowerMG_>`_, that could handle these large compressions. The overall structure and motivation for approximations
+are as described above; in compression it is only the formula for :math:`P_H`, and by extension :math:`T_H`, that differ. This
 EOS is however modified in expansion to follow an isentrope instead of the invalid-in-expansion Hugoniot.
 
 In the PowerMG model the pressure on the Hugoniot in the compression region, :math:`\eta \geq 0` is expressed as a power series
 
 .. math::
 
-    P_H(\rho) = K_0 \eta \left( 1 + K_1 \eta + K_2 \eta^2 + K_3 \eta^3 + \cdots + K_M \eta^M \right)  
+    P_H(\rho) = K_0 \eta \left( 1 + K_1 \eta + K_2 \eta^2 + K_3 \eta^3 + \cdots + K_M \eta^M \right)
 
 By expanding the MGUsup Hugoniot pressure into a power series in :math:`\eta` we see that we can recover the MGUsup results by setting
 
 .. math::
-    
+
     K_0 &=& C_s^2 \rho_0 \ \ \ \ \ \ \ \ & \\
     K_n &=& (n+1) s^n & \ \ \ \ \ \ n >= 1
 
@@ -951,7 +971,7 @@ If we now insert the formula for :math:`P_H` in compression into equation :math:
 
     T_H = T_0 e^{\Gamma(\rho_0) \eta} + \frac{e^{\Gamma(\rho_0) \eta}}{2 C_V \rho_0} K_0 \left( K_1 I_2 + 2 K_2 I_3 + 3 K_3 I_4 + \cdots + M K_M I_{M+1} \right)
 
-where 
+where
 
 .. math::
 
@@ -1200,7 +1220,7 @@ constant heat capacity leads to the energy being a simple funciton of the
 temperature deviation from the reference isentrope such that
 
 .. math::
-    
+
     e(\rho, T) = e_S(\rho) + C_{V,0} (T - T_S(\rho)).
 
 The Gruneisen parameter is given by
@@ -1223,7 +1243,7 @@ Here the calibration parameters :math:`a` and :math:`n` are dimensionless while
 Finally, the pressure, energy, and temperature along the isentrope are given by
 
 .. math::
-    
+
     P_S(\rho) = P_{\mathrm{C}} G(\rho) \frac{k - 1 + F(\rho)}{k - 1 + a}
 
 .. math::
@@ -1239,7 +1259,7 @@ where
 .. math::
 
     G(\rho) = \frac{
-      \left( \frac{1}{2}(\rho V_{\mathrm{C}})^{-n} 
+      \left( \frac{1}{2}(\rho V_{\mathrm{C}})^{-n}
         + \frac{1}{2}(\rho V_{\mathrm{C}})^n \right)^{a/n}}
       {(\rho V_{\mathrm{C}})^{-(k+a)}}
 
@@ -1499,7 +1519,7 @@ where ``filename`` is the file containing the tabulated model,
 original `Stellar Collapse`_ format, and ``filter_bmod`` specifies
 whether or not to apply the above-described median filter.
 
-``StellarCollapse`` also provides 
+``StellarCollapse`` also provides
 
 .. cpp:function:: void Save(const std::string &filename)
 
@@ -1619,13 +1639,13 @@ compared to other EOSs. Here the Gruneisen parameter is the
     \Gamma_3 - 1 = \left. \frac{\mathrm{d} \ln T}{ \mathrm{d} \ln \rho}\right|_\mathrm{ad}
 
 Some important formulas to be used when using this EOS:
- - the temperature and density exponents (c&g 9.81 9.82)  
- - the specific heat at constant volume (c&g 9.92)  
- - the third adiabatic exponent (c&g 9.93)  
- - the first adiabatic exponent (c&g 9.97)  
- - the second adiabatic exponent (c&g 9.105)  
- - the specific heat at constant pressure (c&g 9.98)  
- - and relativistic formula for the sound speed (c&g 14.29)  
+ - the temperature and density exponents (c&g 9.81 9.82)
+ - the specific heat at constant volume (c&g 9.92)
+ - the third adiabatic exponent (c&g 9.93)
+ - the first adiabatic exponent (c&g 9.97)
+ - the second adiabatic exponent (c&g 9.105)
+ - the specific heat at constant pressure (c&g 9.98)
+ - and relativistic formula for the sound speed (c&g 14.29)
 
 
 .. _Timmes and Swesty: https://doi.org/10.1086/313304
@@ -1667,19 +1687,19 @@ This is a striaghtforward wrapper of the `EOSPAC`_ library for the
 
 where ``matid`` is the unique material number in the database,
 ``invert_at_setup`` specifies whether or not pre-compute tables of
-temperature as a function of density and energy, ``insert_data`` 
-inserts specified number of grid points between original grid points 
-in the `Sesame`_ table, ``monotonicity` enforces monotonicity in x, 
-y or both (:math:`monotonicityX/Y/XY`), ``apply_smoothing`` enables 
-data table smoothing that imposes a linear floor on temperature dependence, 
-forces linear temperature dependence for low temperature, and forces 
-linear density dependence for low and high density, ``apply_splitting`` 
-has the following options for ion data tables not found in the `Sesame`_ 
-database :. :math:`splitNumProp` uses the cold curve plus number-proportional 
-model, :math:`splitIdealGas` uses the cold curve plus ideal gas model 
-and :math:`splitCowan` uses the cold curve plus Cowan-nuclear model 
-for ions and the final option ``linear_interp`` uses linear instead of 
-bilinear interpolation. 
+temperature as a function of density and energy, ``insert_data``
+inserts specified number of grid points between original grid points
+in the `Sesame`_ table, ``monotonicity` enforces monotonicity in x,
+y or both (:math:`monotonicityX/Y/XY`), ``apply_smoothing`` enables
+data table smoothing that imposes a linear floor on temperature dependence,
+forces linear temperature dependence for low temperature, and forces
+linear density dependence for low and high density, ``apply_splitting``
+has the following options for ion data tables not found in the `Sesame`_
+database :. :math:`splitNumProp` uses the cold curve plus number-proportional
+model, :math:`splitIdealGas` uses the cold curve plus ideal gas model
+and :math:`splitCowan` uses the cold curve plus Cowan-nuclear model
+for ions and the final option ``linear_interp`` uses linear instead of
+bilinear interpolation.
 
 Note for performance reasons this EOS uses a slightly different vector API.
 See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
