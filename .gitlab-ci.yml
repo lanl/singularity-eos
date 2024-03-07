@@ -134,6 +134,9 @@ default:
         spack env activate spack_build_env
         spack repo add ${DEVEL_SPACK_CHECKOUT}/var/spack/repos/xcap_deployment
         spack repo add spack-repo
+        spack develop -p ${CI_PROJECT_DIR}/utils/spiner spiner@main
+        spack develop -p ${CI_PROJECT_DIR}/utils/ports-of-call ports-of-call@main
+        spack develop -p ${CI_PROJECT_DIR} singularity-eos@main
         spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
         spack dev-build -j $(nproc) ${SINGULARITY_EOS_SPACK_SPEC}
         spack env deactivate
@@ -145,6 +148,9 @@ default:
     - spack env activate spack_env
     - spack repo add ${DEVEL_SPACK_CHECKOUT}/var/spack/repos/xcap_deployment
     - spack repo add spack-repo
+    - spack develop -p ${CI_PROJECT_DIR}/utils/spiner spiner@main
+    - spack develop -p ${CI_PROJECT_DIR}/utils/ports-of-call ports-of-call@main
+    - spack develop -p ${CI_PROJECT_DIR} singularity-eos@main
     - spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
     - spack spec -I ${SINGULARITY_EOS_SPACK_SPEC}
     - spack add ${SINGULARITY_EOS_SPACK_SPEC}
