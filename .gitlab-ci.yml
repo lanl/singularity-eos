@@ -11,7 +11,7 @@ variables:
   SINGULARITY_EOS_OPENMPI_VERSION: "4.1.3"
   SINGULARITY_EOS_CUDA_VERSION: "11.6.0"
   SINGULARITY_EOS_BUILD_TYPE: "RelWithDebInfo"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+hdf5+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+spiner+hdf5+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
   COLOR_CYAN: "\e[1;36m"
   COLOR_PLAIN: "\e[0m"
   CLUSTER: darwin
@@ -74,7 +74,7 @@ default:
 
 .gpu: &gpu
   SINGULARITY_USE_CUDA: "true"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos+hdf5 cuda_arch=${SINGULARITY_CUDA_ARCH} +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=14 ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos+spiner+hdf5 cuda_arch=${SINGULARITY_CUDA_ARCH} +kokkos-kernels%gcc@${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=14 ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 
 .fort: &fort
   SINGULARITY_USE_FORTRAN: "true"
@@ -96,7 +96,7 @@ default:
   variables:
     CLUSTER: rocinante
     SINGULARITY_EOS_GCC_VERSION: "12.2.0"
-    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+hdf5+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cray-mpich"
+    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+spiner+hdf5+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cray-mpich"
     SCHEDULER_PARAMETERS: "-N 1 -t 30 -A asc-ci --partition=ci --qos=ci --reservation=ci"
 
 .skylake: &skylake
