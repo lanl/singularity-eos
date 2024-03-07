@@ -132,6 +132,7 @@ default:
         mkdir -p spack_build_env
         spack env create spack_build_env
         spack env activate spack_build_env
+        spack repo add ${DEVEL_SPACK_CHECKOUT}/var/spack/repos/xcap_deployment
         spack repo add spack-repo
         spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
         spack dev-build -j $(nproc) ${SINGULARITY_EOS_SPACK_SPEC}
@@ -142,6 +143,7 @@ default:
     - mkdir -p spack_env
     - spack env create spack_env
     - spack env activate spack_env
+    - spack repo add ${DEVEL_SPACK_CHECKOUT}/var/spack/repos/xcap_deployment
     - spack repo add spack-repo
     - spack config add upstreams:default:install_tree:${SINGULARITY_EOS_SPACK_DIR}/opt/spack/
     - spack spec -I ${SINGULARITY_EOS_SPACK_SPEC}
