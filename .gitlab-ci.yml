@@ -3,10 +3,12 @@
 ###################
 
 stages:
+  - prepare
   - build_n_test
 
 variables:
   GIT_SUBMODULE_STRATEGY: normal
+  SINGULARITY_GOLDFILES_VERSION: "goldfiles-1.8.0"
   SINGULARITY_EOS_GCC_VERSION: "10.3.0"
   SINGULARITY_EOS_OPENMPI_VERSION: "4.1.3"
   SINGULARITY_EOS_CUDA_VERSION: "11.6.0"
@@ -89,6 +91,11 @@ default:
 # Platform Variables #
 ######################
 
+.rocinante_shell:
+  tags:
+    - rocinante
+    - shell
+
 .rocinante_batch:
   tags:
     - rocinante
@@ -113,6 +120,14 @@ default:
 #######################
 # Job Script Template #
 #######################
+
+.download_prereq:
+  stage: prepare
+  script:
+   - wget https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/goldfiles.tar.gz
+  artifacts:
+    paths:
+      - goldfiles.tar.gz
 
 .test:
   stage: build_n_test
@@ -183,6 +198,7 @@ default:
             -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_KOKKOSKERNELS=${SINGULARITY_USE_CUDA:-OFF} \
             -DSINGULARITY_USE_FORTRAN=${SINGULARITY_USE_FORTRAN:-OFF} \
+            -DSINGULARITY_GOLDFILE_URL=file://${CI_PROJECT_DIR}/goldfiles.tar.gz \
             ..
     - make -j $(nproc) || make VERBOSE=1
     - |
@@ -206,13 +222,19 @@ default:
 # Jobs #
 ########
 
+download_prereq:
+  extends:
+    - .download_prereq
+
 test_gnu_skylake:
+  needs: [download_prereq]
   extends: .test
   variables:
     <<: *skylake
     <<: *python
 
 test_x86_volta_gpu:
+  needs: [download_prereq]
   extends: .test
   variables:
     <<: *x86volta
@@ -220,6 +242,7 @@ test_x86_volta_gpu:
     <<: *gpu
 
 test_x86_ampere_gpu:
+  needs: [download_prereq]
   extends: .test
   variables:
     <<: *a100
@@ -227,6 +250,7 @@ test_x86_ampere_gpu:
     <<: *gpu
 
 install_gnu_skylake_fort:
+  needs: [download_prereq]
   extends: .test
   variables:
     <<: *skylake
@@ -234,6 +258,7 @@ install_gnu_skylake_fort:
     <<: *fort
 
 install_gnu_skylake_nofort:
+  needs: [download_prereq]
   extends: .test
   variables:
     <<: *skylake
@@ -241,6 +266,7 @@ install_gnu_skylake_nofort:
     <<: *nofort
 
 test_gnu_rocinante:
+  needs: [download_prereq]
   extends:
    - .rocinante_batch
    - .test
@@ -248,6 +274,7 @@ test_gnu_rocinante:
     <<: *python
 
 install_gnu_rocinante_fort:
+  needs: [download_prereq]
   extends:
    - .rocinante_batch
    - .test
@@ -256,6 +283,7 @@ install_gnu_rocinante_fort:
     <<: *fort
 
 install_gnu_rocinante_nofort:
+  needs: [download_prereq]
   extends:
    - .rocinante_batch
    - .test
