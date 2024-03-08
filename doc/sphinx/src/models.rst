@@ -441,11 +441,14 @@ The locally isothermal model in `singularity-eos` takes the form
 Here the sound speed is a user-specified constant, although it can vary in space
 and time.
 
-The ``IsothermalGas`` constructor takes no arguments:
+This model is equivalent to an ideal gas with specific heat :math:`c_v=\infty`
+and adiabatic index :math:`\gamma=1`.
+
+The ``IsothermalGas`` constructor takes a mean molecular weight argument:
 
 .. code-block:: cpp
 
-    IsothermalGas()
+    IsothermalGas(Real mu)
 
 and the sound speed is provided to each EOS call through the ``lambda`` argument.
 

@@ -37,43 +37,53 @@ using namespace eos_base;
 
 class IsothermalGas : public EosBase<IsothermalGas> {
  public:
-  IdealGas() = default;
-  PORTABLE_INLINE_FUNCTION IsothermalGas(Real Cv)
-      : _Cv(Cv), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
+  IsothermalGas() = default;
+  PORTABLE_INLINE_FUNCTION IsothermalGas(Real mu)
+      : _mu(mu), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
         _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(_T0), _EntropyRho0(_rho0) {
     checkParams();
   }
 
-  struct Lambda {
-    enum Index { cs = 0 };
-  };
+  enum class Lambda { cs = 0 };
+
+  PORTABLE_FORCEINLINE_FUNCTION void checkLambda_(Real *lambda) const noexcept {
+    if (lambda == nullptr) {
+      EOS_ERROR("StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
+    }
+  }
 
   IdealGas GetOnDevice() { return *this; }
-  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda) const {
+
+  PORTABLE_INLINE_FUNCTION void checkParams() const {
+    PORTABLE_ALWAYS_REQUIRE(_mu >= 0, "Heat capacity must be positive");
+  }
+
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(const Real rho,
+                                                                     const Real sie,
+                                                                     Real *lambda) const {
+    checkLambda_(lambda);
     const Real cs = lambda[Lambda::cs];
 
-    return MYMAX(0.0, cs * cs / _Cv);
-  }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
-    // Portable_require seems to do the opposite of what it should. Conditions
-    // reflect this and the code should be changed when ports-of-call changes
-    PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
+    return MYMAX(0.0, cs * cs * _mu / KB);
   }
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    const Real cs = lambda[Lambda::cs];
-
-    return MYMAX(0.0, _Cv * temperature);
+    return std::numeric_limits<Real>::infinity;
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    return MYMAX(0.0, _gm1 * rho * _Cv * temperature);
+    checkLambda_(lambda);
+    const Real cs = lambda[Lambda::cs];
+
+    return MYMAX(0.0, rho * cs * cs);
   }
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return MYMAX(0.0, _gm1 * rho * sie);
+    checkLambda_(lambda);
+    const Real cs = lambda[Lambda::cs];
+
+    return MYMAX(0.0, rho * cs * cs);
   }
   PORTABLE_INLINE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
@@ -82,37 +92,39 @@ class IsothermalGas : public EosBase<IsothermalGas> {
 
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    return _Cv * log(robust::ratio(temperature, _EntropyT0)) +
-           _gm1 * _Cv * log(robust::ratio(_EntropyRho0, rho));
+    return std::numeric_limits<Real>::infinity;
   }
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
-    return EntropyFromDensityTemperature(rho, temp, lambda);
+    return std::numeric_limits<Real>::infinity;
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    return _Cv;
+    return std::numeric_limits<Real>::infinity;
   }
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return _Cv;
+    return std::numeric_limits<Real>::infinity;
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    return MYMAX(0.0, (_gm1 + 1) * _gm1 * rho * _Cv * temperature);
+    checkLambda_(lambda);
+    const Real cs = lambda[Lambda::cs];
+    return MYMAX(0.0, rho * cs * cs);
   }
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return MYMAX(0.0, (_gm1 + 1) * _gm1 * rho * sie);
+    checkLambda_(lambda);
+    const Real cs = lambda[Lambda::cs];
+    return MYMAX(0.0, rho * cs * cs);
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Real *lambda = nullptr) const {
-    return _gm1;
+    return 0.;
   }
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Real *lambda = nullptr) const {
-    return _gm1;
+    return 0.;
   }
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
@@ -142,20 +154,23 @@ class IsothermalGas : public EosBase<IsothermalGas> {
   }
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
-    printf("Ideal Gas Parameters:\nGamma = %g\nCv    = %g\n", _gm1 + 1.0, _Cv);
+    printf("Isothermal Gas Parameters:\nmu = %g\n\n", _mu);
   }
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
                                        Real &rho, Real &sie) const {
-    sie = MYMAX(0.0, _Cv * temp);
-    rho = MYMAX(0.0, press / (_gm1 * sie));
+    // TODO(BRR) implement)
+    sie = 0.;
+    rho = 0.;
+    // sie = MYMAX(0.0, _Cv * temp);
+    // rho = MYMAX(0.0, press / (_gm1 * sie));
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("IdealGas"); }
   static std::string EosPyType() { return EosType(); }
 
  private:
-  Real _Cv, _gm1;
+  Real _mu;
   // reference values
   Real _rho0, _sie0, _bmod0, _dpde0, _dvdt0;
   static constexpr const Real _T0 = ROOM_TEMPERATURE;

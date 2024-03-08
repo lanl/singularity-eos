@@ -21,6 +21,7 @@
 #include <singularity-eos/eos/eos_gruneisen.hpp>
 #include <singularity-eos/eos/eos_helmholtz.hpp>
 #include <singularity-eos/eos/eos_ideal.hpp>
+#include <singularity-eos/eos/eos_isothermal.hpp>
 #include <singularity-eos/eos/eos_jwl.hpp>
 #include <singularity-eos/eos/eos_mgusup.hpp>
 #include <singularity-eos/eos/eos_noble_abel.hpp>
