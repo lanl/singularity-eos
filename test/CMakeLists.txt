@@ -110,8 +110,10 @@ endif()
 
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)
   set(SINGULARITY_GOLDFILE_URL
-      https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/goldfiles.tar.gz
+      "https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/goldfiles.tar.gz"
+      CACHE STRING "URL to goldfiles.tar.gz"
   )
+  mark_as_advanced(SINGULARITY_GOLDFILE_URL)
   message(
     STATUS
       "Attempting to download gold files for regression tests. "
