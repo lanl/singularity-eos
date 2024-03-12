@@ -77,7 +77,7 @@ install(
   COMPONENT singularity-eos_Interface
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos)
 
-if(SINGULARITY_BUILD_CLOSURE)
+if(TARGET singularity-eos_Library)
   install(
     TARGETS singularity-eos_Library
     EXPORT singularity-eos_Library
@@ -128,7 +128,7 @@ export(
   FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eos_Interface.cmake
   NAMESPACE singularity-eos::)
 
-if(SINGULARITY_BUILD_CLOSURE)
+if(TARGET singularity-eos_Library)
   export(
     EXPORT singularity-eos_Library
     FILE ${CMAKE_CURRENT_BINARY_DIR}/singularity-eos_Library.cmake
