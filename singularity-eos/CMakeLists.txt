@@ -59,10 +59,12 @@ register_headers(
 
 if (SINGULARITY_BUILD_CLOSURE)
   register_headers(closure/mixed_cell_models.hpp)
-  register_headers(eos/singularity_eos.hpp)
-  register_srcs(eos/singularity_eos.cpp)
   if (SINGULARITY_USE_FORTRAN)
+    # while these are C++ files, they
+    # are only needed for the fortran backend
     register_srcs(eos/get_sg_eos.cpp)
+    register_srcs(eos/singularity_eos.cpp)
+    register_headers(eos/singularity_eos.hpp)
     if (SINGULARITY_USE_KOKKOS)
       register_srcs(
            eos/get_sg_eos_p_t.cpp
