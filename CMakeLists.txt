@@ -147,14 +147,6 @@ add_library(singularity-eos::singularity-eos_Interface ALIAS singularity-eos_Int
 target_link_libraries(singularity-eos_Interface INTERFACE singularity-eos_Common)
 target_link_libraries(singularity-eos INTERFACE singularity-eos_Interface)
 
-if(SINGULARITY_BUILD_CLOSURE)
-  add_library(singularity-eos_Library)
-  set_target_properties(singularity-eos_Library PROPERTIES OUTPUT_NAME singularity-eos)
-  add_library(singularity-eos::singularity-eos_Library ALIAS singularity-eos_Library)
-  target_link_libraries(singularity-eos_Library INTERFACE singularity-eos_Common)
-  target_link_libraries(singularity-eos INTERFACE singularity-eos_Library)
-endif()
-
 # ------------------------------------------------------------------------------#
 # Compiler & language setup
 # ------------------------------------------------------------------------------#
@@ -405,11 +397,19 @@ message(VERBOSE "EOS Headers:\n\t${eos_headers}")
 
 if(SINGULARITY_BUILD_CLOSURE)
   get_property(eos_srcs GLOBAL PROPERTY EOS_SRCS)
-  target_sources(singularity-eos_Library PRIVATE ${eos_srcs})
-  message(VERBOSE "EOS Library Sources:\n\t${eos_srcs}")
+
+  if(eos_srcs)
+    add_library(singularity-eos_Library)
+    set_target_properties(singularity-eos_Library PROPERTIES OUTPUT_NAME singularity-eos)
+    add_library(singularity-eos::singularity-eos_Library ALIAS singularity-eos_Library)
+    target_link_libraries(singularity-eos_Library INTERFACE singularity-eos_Common)
+    target_link_libraries(singularity-eos INTERFACE singularity-eos_Library)
+    target_sources(singularity-eos_Library PRIVATE ${eos_srcs})
+    message(VERBOSE "EOS Library Sources:\n\t${eos_srcs}")
+  endif()
 endif()
 
-if(SINGULARITY_USE_FORTRAN)
+if(TARGET singularity-eos_Library AND SINGULARITY_USE_FORTRAN)
   # Turn on preprocessor for fortran files
   set_target_properties(singularity-eos_Library PROPERTIES Fortran_PREPROCESS ON)
   # make sure .mods are placed in build path, and installed along with includes
@@ -482,7 +482,7 @@ target_compile_options(
          > # cuda
 )
 
-if(SINGULARITY_BUILD_CLOSURE)
+if(TARGET singularity-eos_Library)
   target_compile_options(singularity-eos_Library PRIVATE ${xlfix})
   target_link_options(singularity-eos_Library PRIVATE ${xlfix})
 
