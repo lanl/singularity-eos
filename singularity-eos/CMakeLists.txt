@@ -37,6 +37,7 @@ register_headers(
     eos/eos_variant.hpp
     eos/eos_stellar_collapse.hpp
     eos/eos_ideal.hpp
+    eos/eos_isothermal.hpp
     eos/eos_models.hpp
     eos/eos_spiner.hpp
     eos/eos_davis.hpp
