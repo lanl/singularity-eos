@@ -82,6 +82,7 @@ default:
     SINGULARITY_EOS_GCC_VERSION: "12.2.0"
     SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+spiner+hdf5+python+tests%gcc@${SINGULARITY_EOS_GCC_VERSION} ^cray-mpich"
     SCHEDULER_PARAMETERS: "--nodes=1 --time 2:00:00 -L none@slurmdb --account=asc-ci --qos=ci --reservation=ci --partition=ci"
+    HDF5_USE_FILE_LOCKING: "FALSE"
 
 .skylake: &skylake
   SCHEDULER_PARAMETERS: "--nodes=1 -p skylake-gold,skylake-platinum"

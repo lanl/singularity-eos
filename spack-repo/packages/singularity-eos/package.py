@@ -49,8 +49,6 @@ class SingularityEos(CMakePackage, CudaPackage):
         "kokkos-kernels", default=False, description="Enable kokkos-kernals for linear algebra"
     )
 
-    variant("openmp", default=False, description="Enable openmp")
-
     # for compatibility with downstream projects
     variant("mpi", default=False, description="Build with MPI support")
 
@@ -141,7 +139,7 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("kokkos-kernels" + _kver, when=_myver + '+kokkos-kernels')
 
     # set up kokkos offloading dependencies
-    for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
+    for _flag in ("~cuda", "+cuda"):
         depends_on("kokkos ~shared" + _flag, when="+kokkos" + _flag)
         depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
 
@@ -164,7 +162,6 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # these are mirrored in the cmake configuration
     conflicts("+cuda", when="~kokkos")
-    conflicts("+openmp", when="~kokkos")
     conflicts("+kokkos-kernels", when="~kokkos")
     conflicts("+hdf5", when="~spiner")
 
