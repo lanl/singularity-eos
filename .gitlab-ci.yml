@@ -116,6 +116,7 @@ default:
     - section() { echo $'\e[0K'"section_$1:$(date +%s):$2"$'\r\e[0K'"${3+${COLOR_CYAN}$3${COLOR_PLAIN}}"; }
     - export PYTHONNOUSERSITE=1
     - export SPACK_DISABLE_LOCAL_CONFIG=true
+    - export SPACK_SKIP_MODULES=true
     - export TMP_USER_PROJECT_DIR="/tmp/${USER}/${CI_PROJECT_NAME}/${CI_JOB_NAME}"
     - export PROJECT_TMP_CI_DIR=${PROJECT_TMP_CI_DIR:-${TMP_USER_PROJECT_DIR}}
     - export SPACK_USER_CACHE_PATH="${PROJECT_TMP_CI_DIR}/spack-local"
