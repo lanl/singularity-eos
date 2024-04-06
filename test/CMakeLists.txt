@@ -99,6 +99,13 @@ if(SINGULARITY_BUILD_CLOSURE)
     target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(pte test_pte)
   endif()
+  if(SINGULARITY_USE_SPINER)
+    add_executable(test_pte_phase test_pte_phase.cpp)
+    target_link_libraries(test_pte_phase PRIVATE Catch2::Catch2
+                                         singularity-eos::singularity-eos)
+    target_include_directories(test_pte_phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(pte_phase test_pte_phase)
+  endif()
   if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN)
     add_executable(test_get_sg_eos test_get_sg_eos.cpp)
     target_link_libraries(test_get_sg_eos PRIVATE Catch2::Catch2

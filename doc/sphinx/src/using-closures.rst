@@ -11,14 +11,21 @@ to assume pressure-temperature equilibrium (PTE). This implies that there's
 a single pressure in the cell and a single temperature, which are the
 same for all materials.
 
+In Lagrangian codes, a PTE solver is needed, for example, when using 
+multi-phase models. In this case the situation corresponds to an 
+Eulerian multi-material simulation since each phase has its on set 
+of materials models, in particular the EOS is different in every phase.
+
 ``singularity-eos`` provides several methods for finding a PTE
-soluution. These methods differ in what they treat as independent
+solution. These methods differ in what they treat as independent
 variables, and thus what precise system of equations they solve
 for. However they all share some common characteristics.
 
 Governing Equations and Assumptions
 ------------------------------------
 
+Using volume fractions
+``````````````````````
 Given a set of :math:`N` materials ranging from :math:`i = 0` to
 :math:`N-1`, each material can, in principle, have a distinct pressure
 :math:`P_i`, a distinct temperature :math:`T_i`, a distinct material
@@ -53,6 +60,56 @@ where :math:`u = E/V` is the energy density by volume for total energy
 :math:`E` and total volume :math:`V`, and :math:`\varepsilon` is the
 total specific internal energy within that volume.
 
+Using mass fractions
+````````````````````
+
+When using a PTE solver for a mixture of phases, it is common to use
+*mass fractions* :math:`\lambda_i` instead of volume fractions, since 
+this is the quantity directly related to mass conservation in the sum of
+all phases. We have
+
+.. math::
+
+  \sum_{i=0}^{N - 1} \lambda_i = 1
+
+The density of the mixture is
+
+.. math::
+  
+  \frac{1}{\rho} = V = \sum_{i=0}^{N - 1} \lambda_i V_i = \sum_{i=0}^{N - 1} \lambda_i \frac{1}{\rho_i}
+
+where :math:`V` is the specific volume, and the total specific internal energy is
+
+.. math::
+
+  \varepsilon =  \sum_{i=0}^{N - 1} \lambda_i \varepsilon_i
+
+For a PTE solver, :math:`\varepsilon`, :math:`\rho`, and the set of :math:`\lambda_i` are
+obtained from the rest of the host code and are used as input. Of course, we also give guesses
+for :math:`\rho_i` and :math:`\varepsilon_i` to obtain fast convergance. Written in terms of the 
+volume fraction set of parameters, we have
+
+.. math::
+
+  \bar{\rho}_i = \lambda_i \rho
+
+Note that this gives a direct translation between the volume fraction and mass fraction equations.
+It is only the nomenclature that is different. 
+
+In the current version of the PTE solver :math:`f_i` and :math:`\rho_i` are given as independent
+input but these parameters are adjusted during the calculation, while keeping the product, :math:`\bar{\rho_i}`, constant.
+In order to use this when having only the set of :math:`\lambda_i` and :math:`\rho` available, 
+set a guess for :math:`\rho_i` (or :math:`f_i`) and set
+
+.. math::
+
+  f_i = \frac{\lambda_i \rho}{\rho_i} \qquad \qquad   \left(\mbox{or } \rho_i = \frac{\lambda_i \rho}{f_i} \right)
+
+
+
+Pressure equilibrium
+````````````````````
+
 The assumption of pressure equilibrium implies that
 
 .. math::
@@ -85,7 +142,7 @@ The Density-Energy Formulation
 One choice is to treat volume fractions and material energies as
 independent quantities. The material energies provide :math:`N` more
 unknowns. The equality of pressures provides :math:`N-1` additional
-constraints. Additionally, the euqality of material temperatures, evaluated as
+constraints. Additionally, the equality of material temperatures, evaluated as
 
 .. math::
 
