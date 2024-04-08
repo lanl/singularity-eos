@@ -16,7 +16,9 @@
 #define _SINGULARITY_EOS_CLOSURE_MIXED_CELL_MODELS_
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #include <cmath>
@@ -52,6 +54,9 @@ constexpr Real line_search_fac = 0.5;
 constexpr Real vfrac_safety_fac = 0.95;
 constexpr Real minimum_temperature = 1.e-9;
 constexpr Real maximum_temperature = 1.e9;
+constexpr Real temperature_limit = 1.0e15;
+constexpr Real default_tguess = 300.;
+constexpr Real min_dtde = 1.0e-16;
 } // namespace mix_params
 
 namespace mix_impl {
@@ -167,8 +172,9 @@ class PTESolverBase {
     Real vsum = 0;
     for (int m = 0; m < nmat; ++m)
       vsum += vfrac[m];
+    PORTABLE_REQUIRE(vsum > 0., "Volume fraction sum is non-positive")
     for (int m = 0; m < nmat; ++m)
-      vfrac[m] *= vfrac_total / vsum;
+      vfrac[m] *= robust::ratio(vfrac_total, vsum);
   }
   // Finalize restores the temperatures, energies, and pressures to unscaled values from
   // the internally scaled quantities used by the solvers
@@ -212,6 +218,7 @@ class PTESolverBase {
     // material m averaged over the full PTE volume
     rho_total = 0.0;
     for (int m = 0; m < nmat; ++m) {
+      PORTABLE_REQUIRE(vfrac[m] >= 0., "Negative volume fraction")
       rhobar[m] = rho[m] * vfrac[m];
       rho_total += rhobar[m];
     }
@@ -223,13 +230,13 @@ class PTESolverBase {
     // set volume fractions
     for (int m = 0; m < nmat; ++m) {
       const Real rho_min = eos[m].RhoPmin(T);
-      const Real vmax = std::min(0.9 * rhobar[m] / rho_min, 1.0);
+      const Real vmax = std::min(0.9 * robust::ratio(rhobar[m], rho_min), 1.0);
       vfrac[m] = (vfrac[m] > 0.0 ? std::min(vmax, vfrac[m]) : vmax);
       vsum += vfrac[m];
     }
     // Normalize vfrac
     for (int m = 0; m < nmat; ++m) {
-      vfrac[m] *= vfrac_total / vsum;
+      vfrac[m] *= robust::ratio(vfrac_total, vsum);
     }
   }
 
@@ -241,12 +248,14 @@ class PTESolverBase {
     if (Tnorm > 0.0) {
       Tguess = Tnorm;
     } else {
-      Tguess = 300.0;
+      Tguess = mix_params::default_tguess;
       for (int m = 0; m < nmat; ++m)
         Tguess = std::max(Tguess, temp[m]);
     }
+    PORTABLE_REQUIRE(Tguess > 0., "Non-positive temperature guess for PTE")
     // check for sanity.  basically checks that the input temperatures weren't garbage
-    assert(Tguess < 1.0e15);
+    PORTABLE_REQUIRE(Tguess < mix_params::temperature_limit,
+                     "Very large input temperature or temperature guess");
     // iteratively increase temperature guess until all rho's are above rho_at_pmin
     const Real Tfactor = 10.0;
     bool rho_fail;
@@ -256,8 +265,8 @@ class PTESolverBase {
       rho_fail = false;
       for (int m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
-        rho[m] = rhobar[m] / vfrac[m];
-        if (rho[m] < rho_min) {
+        rho[m] = robust::ratio(rhobar[m], vfrac[m]);
+        if (rho[m] < rho_min and rho[m] > 0.) {
           rho_fail = true;
           Tguess *= Tfactor;
           break;
@@ -299,7 +308,7 @@ class PTESolverBase {
 
     // intialize rhobar array and final density
     InitRhoBarandRho();
-    uscale = rho_total * sie_total;
+    uscale = rho_total * abs(sie_total);
 
     // guess some non-zero temperature to start
     const Real Tguess = GetTguess();
@@ -311,14 +320,13 @@ class PTESolverBase {
       temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, Cache[m]);
       // note the scaling of pressure
-      press[m] = this->GetPressureFromPreferred(eos[m], rho[m], Tguess, sie[m], Cache[m],
-                                                false) /
-                 uscale;
+      press[m] = robust::ratio(this->GetPressureFromPreferred(
+        eos[m], rho[m], Tguess, sie[m], Cache[m], false), uscale);
     }
 
     // note the scaling of the material internal energy densities
     for (int m = 0; m < nmat; ++m)
-      u[m] = sie[m] * rhobar[m] / uscale;
+      u[m] = sie[m] * robust::ratio(rhobar[m], uscale);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -339,13 +347,16 @@ class PTESolverBase {
     Real rhoBsum = 0.0;
     Real Asum = 0.0;
     for (int m = 0; m < nmat; m++) {
-      Asum += vfrac[m] * press[m] / temp[m];
-      rhoBsum += rho[m] * vfrac[m] * sie[m] / temp[m];
+      Asum += vfrac[m] * robust::ratio(press[m], temp[m]);
+      rhoBsum += rho[m] * vfrac[m] * robust::ratio(sie[m], temp[m]);
     }
+    PORTABLE_REQUIRE(Tnorm > 0., "Non-positive temperature guess")
     Asum *= uscale / Tnorm;
     rhoBsum /= Tnorm;
+    PORTABLE_REQUIRE(rhoBsum > 0., "Non-positive energy density")
     Tideal = uscale / rhoBsum / Tnorm;
-    Pideal = Tnorm * Tideal * Asum / vfrac_total / uscale;
+    PORTABLE_REQUIRE(vfrac_total > 0., "Non-positive volume fraction sum")
+    Pideal = robust::ratio(Tnorm * Tideal * Asum, uscale * vfrac_total);
   }
 
   // Compute the ideal EOS PTE solution and replace the initial guess if it has a lower
@@ -374,10 +385,10 @@ class PTESolverBase {
       res_norm_old += res[m] * res[m];
     }
     // check if the volume fractions are reasonable
-    const Real alpha = Pideal / Tideal;
+    const Real alpha = robust::ratio(Pideal, Tideal);
     for (int m = 0; m < nmat; ++m) {
-      vfrac[m] *= press[m] / (temp[m] * alpha);
-      if (rhobar[m] / vfrac[m] < eos[m].RhoPmin(Tnorm * Tideal)) {
+      vfrac[m] *= robust::ratio(press[m], (temp[m] * alpha));
+      if (robust::ratio(rhobar[m], vfrac[m]) < eos[m].RhoPmin(Tnorm * Tideal)) {
         // abort because this is putting this material into a bad state
         for (int n = m; n >= 0; n--)
           vfrac[n] = vtemp[n];
@@ -386,13 +397,14 @@ class PTESolverBase {
     }
     // fill in the rest of the state
     for (int m = 0; m < nmat; ++m) {
-      rho[m] = rhobar[m] / vfrac[m];
+      rho[m] = robust::ratio(rhobar[m], vfrac[m]);
+
       const Real sie_m =
           eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * Tideal, Cache[m]);
-      u[m] = rhobar[m] * sie_m / uscale;
-      press[m] = this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tideal, sie_m,
-                                                Cache[m], false) /
-                 uscale;
+      u[m] = rhobar[m] * robust::ratio(sie_m, uscale);
+      press[m] = robust::ratio(this->GetPressureFromPreferred(
+        eos[m], rho[m], Tnorm * Tideal, sie_m, Cache[m], false),
+        uscale);
     }
     // fill in the residual
     solver->Residual();
@@ -415,7 +427,7 @@ class PTESolverBase {
       // did work, fill in temp and energy density
       for (int m = 0; m < nmat; ++m) {
         temp[m] = Tideal;
-        sie[m] = uscale * u[m] / rhobar[m];
+        sie[m] = uscale * robust::ratio(u[m], rhobar[m]);
       }
     }
   }
@@ -493,7 +505,7 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
     iter++;
   }
 
-  const Real alpha = (u_tot - ulo) / (uhi - ulo);
+  const Real alpha = robust::ratio((u_tot - ulo), (uhi - ulo));
   return FastMath::pow2((1.0 - alpha) * lTlo + alpha * lThi);
 }
 
@@ -611,27 +623,29 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       //////////////////////////////
       Real dv = (vfrac[m] < 0.5 ? 1.0 : -1.0) * vfrac[m] * derivative_eps;
       const Real vf_pert = vfrac[m] + dv;
-      const Real rho_pert = rhobar[m] / vf_pert;
+      const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
       Real p_pert{};
       Real e_pert =
           eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
-      p_pert = this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil, e_pert,
-                                              Cache[m], false) /
-               uscale;
-      dpdv[m] = (p_pert - press[m]) / dv;
-      dedv[m] = (rhobar[m] * e_pert / uscale - u[m]) / dv;
+      p_pert = robust::ratio(
+        this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil, e_pert, Cache[m],
+                                       false),
+        uscale);
+      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
+      dedv[m] = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dv);
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
       Real dT = Tequil * derivative_eps;
       e_pert = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * (Tequil + dT),
                                                            Cache[m]);
-      p_pert = this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * (Tequil + dT),
-                                              e_pert, Cache[m], false) /
-               uscale;
-      dpdT[m] = (p_pert - press[m]) / dT;
-      dedT_sum += (rhobar[m] * e_pert / uscale - u[m]) / dT;
+      p_pert = robust::ratio(
+        this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * (Tequil + dT), e_pert,
+                                       Cache[m], false),
+        uscale);
+      dpdT[m] = robust::ratio((p_pert - press[m]), dT);
+      dedT_sum += robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dT);
     }
 
     // Fill in the Jacobian
@@ -657,7 +671,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
       if (scale * dx[m] < -vfrac_safety_fac * vfrac[m]) {
-        scale = -vfrac_safety_fac * vfrac[m] / dx[m];
+        scale = -vfrac_safety_fac * robust::ratio(vfrac[m], dx[m]);
       }
     }
     const Real Tnew = Tequil + scale * dx[nmat];
@@ -665,14 +679,14 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     for (int m = 0; m < nmat; m++) {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
-      const Real alpha_max = rhobar[m] / rho_min;
+      const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = 0.5 * (alpha_max - vfrac[m]) / dx[m];
+        scale = robust::ratio(0.5 * alpha_max - vfrac[m], dx[m]);
       }
     }
     // control how big of a step toward T = 0 is allowed
     if (scale * dx[nmat] < -0.95 * Tequil) {
-      scale = -0.95 * Tequil / dx[nmat];
+      scale = robust::ratio(-0.95 * Tequil, dx[nmat]);
     }
     // Now apply the overall scaling
     for (int i = 0; i < neq; ++i)
@@ -692,15 +706,16 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     Tequil = Ttemp + scale * dx[nmat];
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
-      rho[m] = rhobar[m] / vfrac[m];
+      rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
                              rho[m], Tnorm * Tequil, Cache[m]);
-      sie[m] = u[m] / rhobar[m];
-      u[m] /= uscale;
+      sie[m] = robust::ratio(u[m], rhobar[m]);
+      u[m] = robust::ratio(u[m], uscale);
       temp[m] = Tequil;
-      press[m] = this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tequil, sie[m],
-                                                Cache[m], false) /
-                 uscale;
+      press[m] = robust::ratio(
+        this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tequil, sie[m], Cache[m],
+                                       false),
+        uscale);
     }
     Residual();
     return ResidualNorm();
@@ -784,15 +799,15 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       // volume fractions have been potentially reset to ensure densitites are
       // larger than rho(Pmin(Tequil)); set the physical density to reflect
       // this change in volume fraction
-      rho[m] = rhobar[m] / vfrac[m];
+      rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, Cache[m]);
       uscale += sie[m] * rho[m];
       // note the scaling of pressure
       press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]);
     }
     for (int m = 0; m < nmat; ++m) {
-      press[m] /= uscale;
-      u[m] = sie[m] * rhobar[m] / uscale;
+      press[m] = robust::ratio(pres[m], uscale);
+      u[m] = sie[m] * robust::ratio(rhobar[m], uscale);
     }
     Residual();
     return ResidualNorm();
@@ -838,11 +853,11 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       //////////////////////////////
       Real dv = (vfrac[m] < 0.5 ? 1.0 : -1.0) * vfrac[m] * derivative_eps;
       const Real vf_pert = vfrac[m] + dv;
-      const Real rho_pert = rhobar[m] / vf_pert;
+      const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
-      Real p_pert =
-          eos[m].PressureFromDensityTemperature(rho_pert, Tequil, Cache[m]) / uscale;
-      dpdv[m] = (p_pert - press[m]) / dv;
+      Real p_pert = robust::ratio(
+          eos[m].PressureFromDensityTemperature(rho_pert, Tequil, Cache[m]), uscale);
+      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
     }
 
     // Fill in the Jacobian
@@ -864,15 +879,15 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
       if (scale * dx[m] < -vfrac_safety_fac * vfrac[m]) {
-        scale = -vfrac_safety_fac * vfrac[m] / dx[m];
+        scale = robust::ratio(-vfrac_safety_fac * vfrac[m], dx[m]);
       }
     }
     // control how big of a step toward rho = rho(Pmin) is allowed
     for (int m = 0; m < nmat; m++) {
       const Real rho_min = eos[m].RhoPmin(Tequil);
-      const Real alpha_max = rhobar[m] / rho_min;
+      const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = 0.5 * (alpha_max - vfrac[m]) / dx[m];
+        scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
       }
     }
     // Now apply the overall scaling
@@ -891,12 +906,13 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     }
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
-      rho[m] = rhobar[m] / vfrac[m];
+      rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] *
              eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, Cache[m]);
-      sie[m] = u[m] / rhobar[m];
-      u[m] /= uscale;
-      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]) / uscale;
+      sie[m] = robust::ratio(u[m], rhobar[m]);
+      u[m] = robust::ratio(u[m], uscale);
+      press[m] = robust::ratio(
+        eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]), uscale);
     }
     Residual();
     return ResidualNorm();
@@ -990,8 +1006,9 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 
     // note the scaling of the material internal energy densities
     for (int m = 0; m < nmat; ++m) {
-      u[m] = sie[m] * rhobar[m] / uscale;
-      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tguess, Cache[m]) / uscale;
+      u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
+      press[m] = robust::ratio(
+        eos[m].PressureFromDensityTemperature(rho[m], Tguess, Cache[m]), uscale);
     }
     Residual();
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -1006,7 +1023,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Real vsum = 0.0;
     for (int m = 0; m < nmat; ++m) {
       vsum += vfrac[m];
-      residual[m] = Pequil / uscale - press[m];
+      residual[m] = robust::ratio(Pequil, uscale) - press[m];
     }
     residual[nmat] = vfrac_total - vsum;
   }
@@ -1036,23 +1053,25 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       //////////////////////////////
       Real dv = (vfrac[m] < 0.5 ? 1.0 : -1.0) * vfrac[m] * derivative_eps;
       const Real vf_pert = vfrac[m] + dv;
-      const Real rho_pert = rhobar[m] / vf_pert;
+      const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
       Real p_pert{};
       Real e_pert{};
-      p_pert = this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil, e_pert,
-                                              Cache[m], true) /
-               uscale;
-      dpdv[m] = (p_pert - press[m]) / dv;
+      p_pert = robust::ratio(
+        this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil, e_pert, Cache[m],
+                                       true),
+               uscale);
+      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
       Real dT = Tequil * derivative_eps;
 
-      p_pert = this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * (Tequil + dT),
-                                              e_pert, Cache[m], true) /
-               uscale;
-      dpdT[m] = (p_pert - press[m]) / dT;
+      p_pert = robust::ratio(
+        this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * (Tequil + dT), e_pert,
+                                       Cache[m], true),
+        uscale);
+      dpdT[m] = robust::ratio((p_pert - press[m]), dT);
     }
 
     // Fill in the Jacobian
@@ -1074,7 +1093,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
       if (scale * dx[m] < -vfrac_safety_fac * vfrac[m]) {
-        scale = -vfrac_safety_fac * vfrac[m] / dx[m];
+        scale = -vfrac_safety_fac * robust::ratio(vfrac[m], dx[m]);
       }
     }
     const Real Tnew = Tequil + scale * dx[nmat];
@@ -1082,14 +1101,14 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     for (int m = 0; m < nmat; m++) {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
-      const Real alpha_max = rhobar[m] / rho_min;
+      const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = 0.5 * (alpha_max - vfrac[m]) / dx[m];
+        scale = 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]);
       }
     }
     // control how big of a step toward T = 0 is allowed
     if (scale * dx[nmat] < -0.95 * Tequil) {
-      scale = -0.95 * Tequil / dx[nmat];
+      scale = -0.95 * robust::ratio(Tequil, dx[nmat]);
     }
     // Now apply the overall scaling
     for (int i = 0; i < neq; ++i)
@@ -1109,13 +1128,14 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Tequil = Ttemp + scale * dx[nmat];
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
-      rho[m] = rhobar[m] / vfrac[m];
+      rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
                              rho[m], Tnorm * Tequil, Cache[m]);
-      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tnorm * Tequil, Cache[m]) /
-                 uscale;
-      sie[m] = u[m] / rhobar[m];
-      u[m] /= uscale;
+      press[m] = robust::ratio(
+          eos[m].PressureFromDensityTemperature(rho[m], Tnorm * Tequil, Cache[m]),
+          uscale);
+      sie[m] = robust::ratio(u[m], rhobar[m]);
+      u[m] = robust::ratio(u[m], uscale);
       temp[m] = Tequil;
     }
     Residual();
@@ -1228,7 +1248,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       error_p += residual[m + 1] * residual[m + 1];
       error_t += residual[m + nmat] * residual[m + nmat];
     }
-    mean_t /= rho_total;
+    mean_t = robust::ratio(mean_t, rho_total);
     error_p = std::sqrt(error_p);
     error_t = std::sqrt(error_t);
     // Check for convergence
@@ -1248,31 +1268,33 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       //////////////////////////////
       Real dv = (vfrac[m] < 0.5 ? 1.0 : -1.0) * vfrac[m] * derivative_eps;
       const Real vf_pert = vfrac[m] + dv;
-      const Real rho_pert = rhobar[m] / vf_pert;
+      const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
       Real p_pert;
-      Real t_pert =
-          eos[m].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]) / Tnorm;
-      p_pert = this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * t_pert, sie[m],
-                                              Cache[m], false) /
-               uscale;
-      dpdv[m] = (p_pert - press[m]) / dv;
-      dtdv[m] = (t_pert - temp[m]) / dv;
+      Real t_pert = robust::ratio(
+          eos[m].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]), Tnorm);
+      p_pert = robust::ratio(
+        this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * t_pert, sie[m], Cache[m],
+                                       false),
+        uscale);
+      dpdv[m] = robust::ratio(p_pert - press[m], dv);
+      dtdv[m] = robust::ratio(t_pert - temp[m], dv);
       //////////////////////////////
       // perturb energies
       //////////////////////////////
       const Real de = std::abs(u[m]) * derivative_eps;
-      Real e_pert = (u[m] + de) / rhobar[m];
+      Real e_pert = robust::ratio(u[m] + de, rhobar[m]);
 
-      t_pert =
-          eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert, Cache[m]) /
-          Tnorm;
-      p_pert = this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert,
-                                              uscale * e_pert, Cache[m], false) /
-               uscale;
-      dpde[m] = (p_pert - press[m]) / de;
-      dtde[m] = (t_pert - temp[m]) / de;
-      if (std::abs(dtde[m]) < 1.e-16) { // must be on the cold curve
+      t_pert = robust::ratio(
+          eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert, Cache[m]),
+          Tnorm);
+      p_pert = robust::ratio(
+          this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert, uscale * e_pert,
+                                         Cache[m], false),
+          uscale);
+      dpde[m] = robust::ratio(p_pert - press[m], de);
+      dtde[m] = robust::ratio(t_pert - temp[m], de);
+      if (std::abs(dtde[m]) < mix_impl::min_dtde) { // must be on the cold curve
         dtde[m] = derivative_eps;
       }
     }
@@ -1310,20 +1332,20 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     for (int m = 0; m < nmat; ++m) {
       // control how big of a step toward vfrac = 0 is allowed
       if (scale * dx[m] < -0.1 * vfrac[m]) {
-        scale = -0.1 * vfrac[m] / dx[m];
+        scale = -0.1 * robust::ratio(vfrac[m], dx[m]);
       }
       // try to control steps toward T = 0
       const Real dt = (dtdv[m] * dx[m] + dtde[m] * dx[m + nmat]);
       if (scale * dt < -0.1 * temp[m]) {
-        scale = -0.1 * temp[m] / dt;
+        scale = -0.1 * robust::ratio(temp[m], dt);
       }
       const Real tt = temp[m] + scale * dt;
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * temp[m]), eos[m].RhoPmin(Tnorm * tt));
-      const Real alpha_max = rhobar[m] / rho_min;
+      const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       // control how big of a step toward rho = rho(Pmin) is allowed
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = 0.5 * (alpha_max - vfrac[m]) / dx[m];
+        scale = 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]);
       }
     }
     // Now apply the overall scaling
@@ -1344,14 +1366,15 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     }
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
-      rho[m] = rhobar[m] / vfrac[m];
+      rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = utemp[m] + scale * dx[nmat + m];
-      sie[m] = uscale * u[m] / rhobar[m];
-      temp[m] =
-          eos[m].TemperatureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]) / Tnorm;
-      press[m] = this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * temp[m], sie[m],
-                                                Cache[m], false) /
-                 uscale;
+      sie[m] = uscale * robust::ratio(u[m], rhobar[m]);
+      temp[m] = robust::ratio(
+          eos[m].TemperatureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]), Tnorm);
+      press[m] = robust::ratio(
+          this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * temp[m], sie[m],
+                                         Cache[m], false),
+          uscale);
     }
     Residual();
     return ResidualNorm();
@@ -1401,7 +1424,7 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
       // backtrack
       Real err_mid = s.TestUpdate(0.5);
       if (err_mid < err && err_mid < err_old) {
-        scale = 0.75 + 0.5 * (err_mid - err) / (err - 2.0 * err_mid + err_old);
+        scale = 0.75 + 0.5 * robust::ratio(err_mid - err, err - 2.0 * err_mid + err_old);
       } else {
         scale = line_search_fac;
       }
