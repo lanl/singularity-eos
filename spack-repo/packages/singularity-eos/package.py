@@ -144,6 +144,8 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("kokkos" + _flag, when="+kokkos" + _flag)
         depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
 
+    depends_on("kokkos+pic", when="+kokkos-kernels")
+
     # specfic specs when using GPU/cuda offloading
     # TODO remove +wrapper for clang builds
     # TODO version guard +cuda_lambda
