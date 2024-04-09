@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -218,7 +218,8 @@ class PTESolverBase {
     // material m averaged over the full PTE volume
     rho_total = 0.0;
     for (int m = 0; m < nmat; ++m) {
-      PORTABLE_REQUIRE(vfrac[m] >= 0., "Negative volume fraction");
+      PORTABLE_REQUIRE(vfrac[m] > 0., "Non-positive volume fraction");
+      PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density");
       rhobar[m] = rho[m] * vfrac[m];
       rho_total += rhobar[m];
     }
@@ -266,7 +267,7 @@ class PTESolverBase {
       for (int m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
         rho[m] = robust::ratio(rhobar[m], vfrac[m]);
-        if (rho[m] < rho_min and rho[m] > 0.) {
+        if (rho[m] < rho_min) {
           rho_fail = true;
           Tguess *= Tfactor;
           break;
