@@ -321,8 +321,9 @@ class PTESolverBase {
       temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, Cache[m]);
       // note the scaling of pressure
-      press[m] = robust::ratio(this->GetPressureFromPreferred(
-        eos[m], rho[m], Tguess, sie[m], Cache[m], false), uscale);
+      press[m] = robust::ratio(
+          this->GetPressureFromPreferred(eos[m], rho[m], Tguess, sie[m], Cache[m], false),
+          uscale);
     }
 
     // note the scaling of the material internal energy densities
@@ -403,9 +404,10 @@ class PTESolverBase {
       const Real sie_m =
           eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * Tideal, Cache[m]);
       u[m] = rhobar[m] * robust::ratio(sie_m, uscale);
-      press[m] = robust::ratio(this->GetPressureFromPreferred(
-        eos[m], rho[m], Tnorm * Tideal, sie_m, Cache[m], false),
-        uscale);
+      press[m] =
+          robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tideal,
+                                                       sie_m, Cache[m], false),
+                        uscale);
     }
     // fill in the residual
     solver->Residual();
@@ -629,10 +631,10 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       Real p_pert{};
       Real e_pert =
           eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
-      p_pert = robust::ratio(
-        this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil, e_pert, Cache[m],
-                                       false),
-        uscale);
+      p_pert =
+          robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
+                                                       e_pert, Cache[m], false),
+                        uscale);
       dpdv[m] = robust::ratio((p_pert - press[m]), dv);
       dedv[m] = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dv);
       //////////////////////////////
@@ -641,10 +643,10 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       Real dT = Tequil * derivative_eps;
       e_pert = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * (Tequil + dT),
                                                            Cache[m]);
-      p_pert = robust::ratio(
-        this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * (Tequil + dT), e_pert,
-                                       Cache[m], false),
-        uscale);
+      p_pert = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m],
+                                                            Tnorm * (Tequil + dT), e_pert,
+                                                            Cache[m], false),
+                             uscale);
       dpdT[m] = robust::ratio((p_pert - press[m]), dT);
       dedT_sum += robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dT);
     }
@@ -713,10 +715,10 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
       temp[m] = Tequil;
-      press[m] = robust::ratio(
-        this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tequil, sie[m], Cache[m],
-                                       false),
-        uscale);
+      press[m] =
+          robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tequil,
+                                                       sie[m], Cache[m], false),
+                        uscale);
     }
     Residual();
     return ResidualNorm();
@@ -913,7 +915,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
       press[m] = robust::ratio(
-        eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]), uscale);
+          eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]), uscale);
     }
     Residual();
     return ResidualNorm();
@@ -1009,7 +1011,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     for (int m = 0; m < nmat; ++m) {
       u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
       press[m] = robust::ratio(
-        eos[m].PressureFromDensityTemperature(rho[m], Tguess, Cache[m]), uscale);
+          eos[m].PressureFromDensityTemperature(rho[m], Tguess, Cache[m]), uscale);
     }
     Residual();
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -1058,20 +1060,20 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 
       Real p_pert{};
       Real e_pert{};
-      p_pert = robust::ratio(
-        this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil, e_pert, Cache[m],
-                                       true),
-               uscale);
+      p_pert =
+          robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
+                                                       e_pert, Cache[m], true),
+                        uscale);
       dpdv[m] = robust::ratio((p_pert - press[m]), dv);
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
       Real dT = Tequil * derivative_eps;
 
-      p_pert = robust::ratio(
-        this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * (Tequil + dT), e_pert,
-                                       Cache[m], true),
-        uscale);
+      p_pert = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m],
+                                                            Tnorm * (Tequil + dT), e_pert,
+                                                            Cache[m], true),
+                             uscale);
       dpdT[m] = robust::ratio((p_pert - press[m]), dT);
     }
 
@@ -1274,10 +1276,10 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       Real p_pert;
       Real t_pert = robust::ratio(
           eos[m].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]), Tnorm);
-      p_pert = robust::ratio(
-        this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * t_pert, sie[m], Cache[m],
-                                       false),
-        uscale);
+      p_pert =
+          robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * t_pert,
+                                                       sie[m], Cache[m], false),
+                        uscale);
       dpdv[m] = robust::ratio(p_pert - press[m], dv);
       dtdv[m] = robust::ratio(t_pert - temp[m], dv);
       //////////////////////////////
@@ -1289,10 +1291,10 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       t_pert = robust::ratio(
           eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert, Cache[m]),
           Tnorm);
-      p_pert = robust::ratio(
-          this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert, uscale * e_pert,
-                                         Cache[m], false),
-          uscale);
+      p_pert =
+          robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert,
+                                                       uscale * e_pert, Cache[m], false),
+                        uscale);
       dpde[m] = robust::ratio(p_pert - press[m], de);
       dtde[m] = robust::ratio(t_pert - temp[m], de);
       if (std::abs(dtde[m]) < mix_params::min_dtde) { // must be on the cold curve
@@ -1372,10 +1374,10 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       sie[m] = uscale * robust::ratio(u[m], rhobar[m]);
       temp[m] = robust::ratio(
           eos[m].TemperatureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]), Tnorm);
-      press[m] = robust::ratio(
-          this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * temp[m], sie[m],
-                                         Cache[m], false),
-          uscale);
+      press[m] =
+          robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * temp[m],
+                                                       sie[m], Cache[m], false),
+                        uscale);
     }
     Residual();
     return ResidualNorm();
