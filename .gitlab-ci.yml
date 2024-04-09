@@ -270,6 +270,15 @@ install_gnu_skylake_fort:
     <<: *python
     <<: *fort
 
+install_gnu_skylake_fort_kokkos:
+  needs: [download_prereq]
+  extends: .test
+  variables:
+    <<: *skylake
+    <<: *python
+    <<: *fort
+    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+kokkos+spiner+hdf5+kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos +openmp ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+
 install_gnu_skylake_nofort:
   needs: [download_prereq]
   extends: .test
