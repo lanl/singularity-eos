@@ -172,7 +172,7 @@ class PTESolverBase {
     Real vsum = 0;
     for (int m = 0; m < nmat; ++m)
       vsum += vfrac[m];
-    PORTABLE_REQUIRE(vsum > 0., "Volume fraction sum is non-positive")
+    PORTABLE_REQUIRE(vsum > 0., "Volume fraction sum is non-positive");
     for (int m = 0; m < nmat; ++m)
       vfrac[m] *= robust::ratio(vfrac_total, vsum);
   }
@@ -218,7 +218,7 @@ class PTESolverBase {
     // material m averaged over the full PTE volume
     rho_total = 0.0;
     for (int m = 0; m < nmat; ++m) {
-      PORTABLE_REQUIRE(vfrac[m] >= 0., "Negative volume fraction")
+      PORTABLE_REQUIRE(vfrac[m] >= 0., "Negative volume fraction");
       rhobar[m] = rho[m] * vfrac[m];
       rho_total += rhobar[m];
     }
@@ -252,7 +252,7 @@ class PTESolverBase {
       for (int m = 0; m < nmat; ++m)
         Tguess = std::max(Tguess, temp[m]);
     }
-    PORTABLE_REQUIRE(Tguess > 0., "Non-positive temperature guess for PTE")
+    PORTABLE_REQUIRE(Tguess > 0., "Non-positive temperature guess for PTE");
     // check for sanity.  basically checks that the input temperatures weren't garbage
     PORTABLE_REQUIRE(Tguess < mix_params::temperature_limit,
                      "Very large input temperature or temperature guess");
@@ -350,12 +350,12 @@ class PTESolverBase {
       Asum += vfrac[m] * robust::ratio(press[m], temp[m]);
       rhoBsum += rho[m] * vfrac[m] * robust::ratio(sie[m], temp[m]);
     }
-    PORTABLE_REQUIRE(Tnorm > 0., "Non-positive temperature guess")
+    PORTABLE_REQUIRE(Tnorm > 0., "Non-positive temperature guess");
     Asum *= uscale / Tnorm;
     rhoBsum /= Tnorm;
-    PORTABLE_REQUIRE(rhoBsum > 0., "Non-positive energy density")
+    PORTABLE_REQUIRE(rhoBsum > 0., "Non-positive energy density");
     Tideal = uscale / rhoBsum / Tnorm;
-    PORTABLE_REQUIRE(vfrac_total > 0., "Non-positive volume fraction sum")
+    PORTABLE_REQUIRE(vfrac_total > 0., "Non-positive volume fraction sum");
     Pideal = robust::ratio(Tnorm * Tideal * Asum, uscale * vfrac_total);
   }
 
@@ -806,7 +806,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]);
     }
     for (int m = 0; m < nmat; ++m) {
-      press[m] = robust::ratio(pres[m], uscale);
+      press[m] = robust::ratio(press[m], uscale);
       u[m] = sie[m] * robust::ratio(rhobar[m], uscale);
     }
     Residual();
@@ -1294,7 +1294,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
           uscale);
       dpde[m] = robust::ratio(p_pert - press[m], de);
       dtde[m] = robust::ratio(t_pert - temp[m], de);
-      if (std::abs(dtde[m]) < mix_impl::min_dtde) { // must be on the cold curve
+      if (std::abs(dtde[m]) < mix_params::min_dtde) { // must be on the cold curve
         dtde[m] = derivative_eps;
       }
     }
