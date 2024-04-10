@@ -12,6 +12,12 @@ macro(singularity_import_kokkos)
         CACHE BOOL "" FORCE)
   endif()
 
+  if(Kokkos_ENABLE_CUDA)
+    set(Kokkos_COMPILE_LANGUAGE CUDA)
+  elseif(Kokkos_ENABLE_HIP)
+    set(Kokkos_COMPILE_LANGUAGE HIP)
+  endif()
+
   if(NOT TARGET Kokkos::kokkos)
     add_subdirectory(utils/kokkos)
   endif()

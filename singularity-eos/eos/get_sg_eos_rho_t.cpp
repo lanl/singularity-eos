@@ -62,15 +62,15 @@ void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
         } else {
           // pure cell (nmat = 1)
           // calculate sie from single eos
-          sie_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
-                                .InternalEnergyFromDensityTemperature(
-                                    rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
-          // set total sie to material 0 value
-          sie_tot_true = sie_pte(tid, 0);
-          // set pressure
-          press_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
-                                  .PressureFromDensityTemperature(
-                                      rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
+	  eos_v(pte_idxs(tid, 0)).Evaluate([&](auto const& eos) {
+            sie_pte(tid, 0) = eos.InternalEnergyFromDensityTemperature(
+                              rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
+            // set total sie to material 0 value
+            sie_tot_true = sie_pte(tid, 0);
+            // set pressure
+            press_pte(tid, 0) = eos.PressureFromDensityTemperature(
+                                rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
+	  });
         }
         // total sie is known
         sie_v(i) = sie_tot_true;

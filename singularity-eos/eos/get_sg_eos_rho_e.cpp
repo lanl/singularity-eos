@@ -55,12 +55,13 @@ void get_sg_eos_rho_e(const char *name, int ncell, indirection_v &offsets_v,
           const bool res_{PTESolver(method)};
         } else {
           // pure cell (nmat = 1)
-          temp_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
-                                 .TemperatureFromDensityInternalEnergy(
-                                     rho_pte(tid, 0), sie_pte(tid, 0), cache[0]);
-          press_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
-                                  .PressureFromDensityTemperature(
-                                      rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
+	  eos_v(pte_idxs(tid, 0)).Evaluate([&](auto& eos) {
+	    temp_pte(tid, 0) = eos.TemperatureFromDensityInternalEnergy(
+                               rho_pte(tid, 0), sie_pte(tid, 0), cache[0]);
+	    press_pte(tid, 0) = eos.PressureFromDensityTemperature(
+                                rho_pte(tid, 0), temp_pte(tid, 0), cache[0]);
+	    return;
+	  });
         }
         // assign outputs
         f_func(i, tid, npte, mass_sum, 1.0, 0.0, 1.0, cache);

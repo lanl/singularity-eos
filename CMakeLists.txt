@@ -154,6 +154,10 @@ if(SINGULARITY_USE_FORTRAN)
   enable_language(Fortran)
   include(CMakeDetermineFortranCompiler)
 endif()
+if(SINGULARITY_USE_CUDA)
+  enable_language(CUDA)
+  #include(CMakeDetermineCUDACompiler)
+endif()
 
 include(GNUInstallDirs)
 
@@ -165,7 +169,7 @@ endif()
 # checks if this is our build, or we've been imported via `add_subdirectory` NB:
 # this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
 else()

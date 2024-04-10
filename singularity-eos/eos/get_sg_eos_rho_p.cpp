@@ -61,25 +61,27 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
         } else {
           // pure cell (nmat = 1)
           // calculate sie from single eos
-          auto p_from_t = [&](const Real &t_i) {
-            return eos_v(pte_idxs(tid, 0))
-                .PressureFromDensityTemperature(rho_pte(tid, 0), t_i, cache[0]);
-          };
-          // calculate sie root bounds
-          Real r_rho{}, r_temp{}, r_sie{}, r_press{}, r_cv{}, r_bmod{};
-          Real r_dpde{}, r_dvdt{};
-          eos_v(pte_idxs(tid, 0))
-              .ValuesAtReferenceState(r_rho, r_temp, r_sie, r_press, r_cv, r_bmod, r_dpde,
-                                      r_dvdt);
-          Real temp_i;
-          RootFinding1D::findRoot(p_from_t, press_v(i), r_temp, 1.e-10 * r_temp,
-                                  1.e10 * r_temp, 1.e-12, 1.e-12, temp_i);
-          sie_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
-                                .InternalEnergyFromDensityTemperature(rho_pte(tid, 0),
-                                                                      temp_i, cache[0]);
-          sie_tot_true = sie_pte(tid, 0);
-          // set temperature
-          temp_pte(tid, 0) = temp_i;
+	  eos_v(pte_idxs(tid, 0)).Evaluate([&](auto const& eos) {
+            auto p_from_t = [&](const Real &t_i) {
+              return eos.PressureFromDensityTemperature(
+                     rho_pte(tid, 0), t_i, cache[0]);
+            };
+            // calculate sie root bounds
+            Real r_rho{}, r_temp{}, r_sie{}, r_press{}, r_cv{}, r_bmod{};
+            Real r_dpde{}, r_dvdt{};
+            eos.ValuesAtReferenceState(r_rho, r_temp, r_sie, r_press, r_cv,
+	                               r_bmod, r_dpde, r_dvdt);
+            Real temp_i;
+            RootFinding1D::findRoot(p_from_t, press_v(i), r_temp,
+				    1.e-10 * r_temp, 1.e10 * r_temp, 1.e-12,
+				    1.e-12, temp_i);
+            sie_pte(tid, 0) =
+              eos.InternalEnergyFromDensityTemperature(rho_pte(tid, 0), temp_i,
+						       cache[0]);
+            sie_tot_true = sie_pte(tid, 0);
+            // set temperature
+            temp_pte(tid, 0) = temp_i;
+	  });
         }
         // sie calculate explicitly already
         sie_v(i) = sie_tot_true;

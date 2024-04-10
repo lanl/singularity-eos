@@ -20,8 +20,8 @@ using namespace singularity;
 
 int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const double Cv,
                      int const *const enabled, double *const vals) {
-  EOS eos_ = IdealGas(gm1, Cv);
-  apply_mods_and_dev_transfer(matindex, eos_, eos, enabled, vals);
+  //EOS eos_ = IdealGas(gm1, Cv);
+  apply_mods_and_dev_transfer(matindex, IdealGas(gm1, Cv), eos, enabled, vals);
   return 0;
 }
 

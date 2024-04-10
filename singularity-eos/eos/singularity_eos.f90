@@ -56,7 +56,9 @@ module singularity_eos
     get_sg_PressureFromDensityInternalEnergy_f,&
     get_sg_MinInternalEnergyFromDensity_f,&
     get_sg_BulkModulusFromDensityInternalEnergy_f,&
+#if 0
     get_sg_eos_f,&
+#endif
     finalize_sg_eos_f
 
 ! interface functions
@@ -275,6 +277,7 @@ module singularity_eos
     end function
   end interface
   
+#if 0
   interface
     integer(kind=c_int) function &
       get_sg_eos(nmat, ncell, cell_dim,&
@@ -313,7 +316,7 @@ module singularity_eos
       type(c_ptr), value, intent(in) :: frac_cv
     end function get_sg_eos
   end interface
-
+#endif
   interface
     integer(kind=c_int) function &
       finalize_sg_eos(nmat, eos, own_kokkos) &
@@ -327,7 +330,7 @@ module singularity_eos
 
 ! fortran functions
 contains
-
+#if 0
   integer function get_sg_eos_f(nmat, ncell, cell_dim,&
                                 option,&
                                 eos_offsets,&
@@ -385,7 +388,7 @@ contains
                      c_loc(frac_vol),c_loc(frac_sie), bmod_ptr, dpde_ptr,&
                      cv_ptr)
   end function get_sg_eos_f
-
+#endif
   integer function init_sg_eos_f(nmat, eos) &
     result(err)
     integer(kind=c_int), intent(in) :: nmat

@@ -12,6 +12,9 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#ifndef _SINGULARITY_EOS_EOS_SINGULARITY_EOS_INIT_
+#define _SINGULARITY_EOS_EOS_SINGULARITY_EOS_INIT_
+
 #include <cassert>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
@@ -24,10 +27,11 @@ static double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 // function that applies scale, shift, and ramp in the correct order
 // and does the correct p-alpha conversion if necessary
-void apply_modifiers(EOS& eos, bool const apply_scale, bool const apply_shift,
-		     bool const apply_ramp, bool const convert_pa_to_bl,
-		     Real const& scale, Real const& shift,
-		     Real& r0, Real& a, Real& b, Real& c) {
+inline void apply_modifiers(EOS& eos, bool const apply_scale,
+			    bool const apply_shift, bool const apply_ramp,
+			    bool const convert_pa_to_bl, Real const& scale,
+			    Real const& shift, Real& r0, Real& a, Real& b,
+			    Real& c) {
   if (apply_shift) {
     eos = eos.Modify<ShiftedEOS>(shift);
   }
@@ -47,8 +51,8 @@ void apply_modifiers(EOS& eos, bool const apply_scale, bool const apply_shift,
 }
 
 // calls the apply modifiers function given the expected arrays
-void apply_modifiers_from_arrs(EOS& eos, int const *const enabled,
-			       double *const vals) {
+inline void apply_modifiers_from_arrs(EOS& eos, int const *const enabled,
+			              double *const vals) {
   apply_modifiers(eos, enabled[0] == 1, enabled[1] == 1,
 		  enabled[2] == 1 || enabled[3] == 1, enabled[3] == 1,
 		  vals[0], vals[1], vals[2], vals[3], vals[4], vals[5]);
@@ -57,9 +61,12 @@ void apply_modifiers_from_arrs(EOS& eos, int const *const enabled,
 
 // applies modifiers given arrays and does the device transfer
 // and index assertion
-void apply_mods_and_dev_transfer(int const matidx, EOS eos, EOS* eoss,
-				 int const *const enabled, double *const vals) {
+inline void apply_mods_and_dev_transfer(int const matidx, EOS eos, EOS* eoss,
+					int const *const enabled,
+					double *const vals) {
   assert(matidx >= 0);
   apply_modifiers_from_arrs(eos, enabled, vals);
   eoss[matidx] = eos.GetOnDevice();
 }
+
+#endif

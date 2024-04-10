@@ -177,22 +177,20 @@ struct final_functor {
       frac_ie_v(i, m) = ie_m;
       /* assign volume fraction based on pte calculation */
       frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
-      /* calculate bulk modulus for material m */
-      const Real bmod_m = eos_v(pte_idxs(tid, mp))
-                              .BulkModulusFromDensityTemperature(
-                                  rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+      /* calculate bulk modulus, specific heat, and gruneisen for material m */
+      Real bmod_m{}, cv_m{}, dpde_m{};
+      eos_v(pte_idxs(tid, mp)).Evaluate([&](auto const& eos) {
+        bmod_m = eos.BulkModulusFromDensityTemperature(
+		 rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+	cv_m = eos.SpecificHeatFromDensityTemperature(
+               rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+	dpde_m = eos.GruneisenParamFromDensityTemperature(
+                 rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
+      });
       /* add bmod contribution from material m */
       bmod_v(i) += bmod_m * vfrac_pte(tid, mp);
-      /* calculate specific heat for material m */
-      const Real cv_m = ev2k * eos_v(pte_idxs(tid, mp))
-                                   .SpecificHeatFromDensityTemperature(
-                                       rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
       /* add mass weighted contribution specific heat for material m */
       cv_v(i) += cv_m * frac_mass_v(i, m);
-      /* calculate gruneisen parameter for material m */
-      const Real dpde_m = eos_v(pte_idxs(tid, mp))
-                              .GruneisenParamFromDensityTemperature(
-                                  rho_pte(tid, mp), temp_pte(tid, mp), cache[mp]);
       /* add gruneisen param contribution from material m */
       dpde_v(i) += dpde_m * vfrac_pte(tid, mp);
       /* optionally assign per material quantities to per material arrays */

@@ -24,6 +24,8 @@ add_executable(sesame2spiner
   main.cpp
 )
 
+set_property(TARGET sesame2spiner PROPERTY CUDA_RESOLVE_DEVICE_SYMBOLS ON)
+
 target_include_directories(sesame2spiner
   PUBLIC  
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

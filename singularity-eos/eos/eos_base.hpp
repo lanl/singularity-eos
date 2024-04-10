@@ -85,7 +85,8 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::MinInternalEnergyIsNotEnabled;                              \
   using EosBase<EOSDERIVED>::IsModified;                                                 \
   using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
-  using EosBase<EOSDERIVED>::GetUnmodifiedObject;
+  using EosBase<EOSDERIVED>::GetUnmodifiedObject;                                        \
+  using EosBase<EOSDERIVED>::Evaluate;
 
 class Factor {
   Real value_ = 1.0;
@@ -133,7 +134,7 @@ class EosBase {
 
   // Generic evaluator
   template <typename Functor_t>
-  constexpr void Evaluate(Functor_t &f) const {
+  PORTABLE_INLINE_FUNCTION void Evaluate(Functor_t &&f) const {
     CRTP copy = *(static_cast<CRTP const *>(this));
     f(copy);
   }
