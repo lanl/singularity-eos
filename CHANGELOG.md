@@ -5,6 +5,9 @@
 ### Added (new features/APIs/variables/...)
 - [[PR#339]](https://github.com/lanl/singularity-eos/pull/339) Added COMPONENTS to singularity-eos CMake install, allowing to select a minimal subset needed e.g. for Fortran bindings only
 - [[PR#336]](https://github.com/lanl/singularity-eos/pull/336) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a pressure power law expansion in eta = 1-V/V0. PowerMG.
+- [[PR334]](https://github.com/lanl/singularity-eos/pull/334) Include plugins infrastructure
+- [[PR331]](https://github.com/lanl/singularity-eos/pull/331) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a linear Us-up relation. MGUsup.
+- [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release
 
 ### Fixed (Repair bugs, etc)
 - [[PR343]](https://github.com/lanl/singularity-eos/pull/343) Add chemical potentials to stellar collapse gold files
@@ -13,11 +16,7 @@
 - [[PR340]](https://github.com/lanl/singularity-eos/pull/335) Fix in-tree builds with plugin infrastructure
 - [[PR335]](https://github.com/lanl/singularity-eos/pull/335) Fix missing hermite.hpp in CMake install required for Helmholtz EOS
 - [[PR356]](https://github.com/lanl/singularity-eos/pull/356) Guard against FPEs in the PTE solver
-
-### Added (new features/APIs/variables/...)
-- [[PR334]](https://github.com/lanl/singularity-eos/pull/334) Include plugins infrastructure
-- [[PR331]](https://github.com/lanl/singularity-eos/pull/331) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a linear Us-up relation. MGUsup.
-- [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release
+- [[PR356]](https://github.com/lanl/singularity-eos/pull/356) Update CMake for proper Kokkos linking in Fortran interface
 
 ### Changed (changing behavior/API/variables/...)
 
