@@ -156,8 +156,8 @@ default:
         module load openmpi/${SINGULARITY_EOS_OPENMPI_VERSION}-gcc_${SINGULARITY_EOS_GCC_VERSION}
       fi
     - |
-      if [[ "${CI_COMMIT_BRANCH}" == "${CI_DEFAULT_BRANCH}" ]];
-      then
+      #if [[ "${CI_COMMIT_BRANCH}" == "${CI_DEFAULT_BRANCH}" ]];
+      #then
         section start "spack_build[collapsed=true]" "Building via Spack"
         spack env create spack_build_env
         spack env activate spack_build_env
@@ -165,12 +165,11 @@ default:
         spack repo add spack-repo
         spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/spiner spiner@main
         spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/ports-of-call ports-of-call@main
-        spack develop --no-clone -p ${CI_PROJECT_DIR} singularity-eos@main
         spack config add upstreams:default:install_tree:${PROJECT_SPACK_ROOT}/opt/spack/
         spack dev-build -j $(nproc) ${SINGULARITY_EOS_SPACK_SPEC}
         spack env deactivate
         section end spack_build
-      fi
+      #fi
     - section start "spack_env[collapsed=true]" "Creating Spack environment"
     - spack env create spack_env
     - spack env activate spack_env
