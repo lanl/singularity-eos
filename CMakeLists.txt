@@ -334,6 +334,8 @@ if(SINGULARITY_USE_SPINER)
   # singularity_enable_hdf5(singularity-eos_Interface) endif()
 endif()
 
+# Both the interface (headers) and the library (compiled) need to link to Kokkos
+# see get_sg_eos.cpp
 if(SINGULARITY_USE_KOKKOS)
   singularity_enable_kokkos(singularity-eos_Common)
   if(SINGULARITY_USE_KOKKOSKERNELS)
@@ -402,6 +404,8 @@ if(SINGULARITY_BUILD_CLOSURE)
     add_library(singularity-eos_Library)
     set_target_properties(singularity-eos_Library PROPERTIES OUTPUT_NAME singularity-eos)
     add_library(singularity-eos::singularity-eos_Library ALIAS singularity-eos_Library)
+    # Public scope ensures explicit Kokkos dependency for library and anything
+    # that links to it
     target_link_libraries(singularity-eos_Library PUBLIC singularity-eos_Common)
     target_link_libraries(singularity-eos INTERFACE singularity-eos_Library)
     target_sources(singularity-eos_Library PRIVATE ${eos_srcs})
