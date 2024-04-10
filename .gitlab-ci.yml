@@ -165,7 +165,6 @@ default:
         spack repo add spack-repo
         spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/spiner spiner@main
         spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/ports-of-call ports-of-call@main
-        spack develop --no-clone -p ${CI_PROJECT_DIR} singularity-eos@main
         spack config add upstreams:default:install_tree:${PROJECT_SPACK_ROOT}/opt/spack/
         spack dev-build -j $(nproc) ${SINGULARITY_EOS_SPACK_SPEC}
         spack env deactivate
