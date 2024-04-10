@@ -226,6 +226,13 @@ class SingularityEos(CMakePackage, CudaPackage):
         if "+kokkos+cuda" in self.spec:
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
 
+        if "+kokkos" in self.spec:
+            if "cxxstd" in self.spec["kokkos"].variants:
+              cxx_std_variant = "cxxstd" # current spack
+            else:
+              cxx_std_variant = "std" # older spack
+            args.append(self.define("CMAKE_CXX_STANDARD", self.spec["kokkos"].variants[cxx_std_variant].value))
+
         return args
 
     def setup_run_environment(self, env):
