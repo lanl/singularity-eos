@@ -167,7 +167,7 @@ if(SINGULARITY_BUILD_PYTHON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-target_compile_features(singularity-eos_Common INTERFACE cxx_std_14)
+target_compile_features(singularity-eos_Interface INTERFACE cxx_std_14)
 
 # checks if this is our build, or we've been imported via `add_subdirectory` NB:
 # this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
