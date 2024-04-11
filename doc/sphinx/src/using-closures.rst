@@ -35,19 +35,19 @@ The average density in a given material-occupied volume is
 
 .. math::
 
-  \bar{\rho} = \rho_i f_i
+  \bar{\rho}_i = \rho_i f_i
 
 and thus the density averaged over all materials is
 
 .. math::
 
-  \rho = \sum_{i=0}^{N - 1} \bar{\rho} = \sum_{i=0}^{N-1} \rho_i f_i
+  \rho = \sum_{i=0}^{N - 1} \bar{\rho}_i = \sum_{i=0}^{N-1} \rho_i f_i
 
 Conservation of energy implies that
 
 .. math::
 
-  u = \rho \varepsilon = \sum_{i = 0}^{N - 1} \rho_i \varepsilon_i
+  u = \rho \varepsilon = \sum_{i = 0}^{N - 1} \bar{\rho}_i \varepsilon_i
 
 where :math:`u = E/V` is the energy density by volume for total energy
 :math:`E` and total volume :math:`V`, and :math:`\varepsilon` is the

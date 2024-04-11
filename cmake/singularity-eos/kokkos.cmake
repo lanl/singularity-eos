@@ -29,9 +29,9 @@ endmacro()
 
 macro(singularity_enable_kokkos target)
 
-  target_link_libraries(${target} PUBLIC Kokkos::kokkos)
+  target_link_libraries(${target} INTERFACE Kokkos::kokkos)
 
-  target_compile_definitions(${target} PUBLIC PORTABILITY_STRATEGY_KOKKOS)
+  target_compile_definitions(${target} INTERFACE PORTABILITY_STRATEGY_KOKKOS)
   # #TODO: shouldn't be needed target_compile_definitions(${target} PUBLIC
   # SPINER_USE_KOKKOS)
 
@@ -114,6 +114,6 @@ macro(singularity_find_kokkoskernels)
 endmacro()
 
 macro(singularity_enable_kokkoskernels target)
-  target_compile_definitions(${target} PUBLIC SINGULARITY_USE_KOKKOSKERNELS)
-  target_link_libraries(${target} PUBLIC Kokkos::kokkoskernels)
+  target_compile_definitions(${target} INTERFACE SINGULARITY_USE_KOKKOSKERNELS)
+  target_link_libraries(${target} INTERFACE Kokkos::kokkoskernels)
 endmacro()

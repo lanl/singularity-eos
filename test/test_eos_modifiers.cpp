@@ -20,6 +20,10 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 
+#ifdef SINGULARITY_BUILD_CLOSURE
+#include <singularity-eos/eos/singularity_eos.hpp>
+#endif
+
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
@@ -41,6 +45,7 @@ using singularity::ScaledEOS;
 using singularity::ShiftedEOS;
 using singularity::UnitSystem;
 
+#ifndef SINGULARITY_BUILD_CLOSURE
 // recreate variadic list
 template <typename... Ts>
 using tl = variadic_utils::type_list<Ts...>;
@@ -93,6 +98,7 @@ static constexpr const auto ramped_all =
 static constexpr const auto combined_list =
     variadic_utils::concat(combined_list_1, ramped_all);
 using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
+#endif
 
 SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
 

@@ -9,5 +9,5 @@ macro(singularity_find_ports_of_call)
 endmacro()
 
 macro(singularity_enable_ports_of_call target)
-  target_link_libraries(${target} PUBLIC ports-of-call::ports-of-call)
+  target_link_libraries(${target} INTERFACE ports-of-call::ports-of-call)
 endmacro()

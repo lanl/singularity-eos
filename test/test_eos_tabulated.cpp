@@ -23,10 +23,6 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
-#ifdef SINGULARITY_BUILD_CLOSURE
-#include <singularity-eos/eos/singularity_eos.hpp>
-#endif
-
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
