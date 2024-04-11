@@ -15,4 +15,4 @@
 	url = https://github.com/lanl/ports-of-call.git
 [submodule "utils/kokkos-kernels"]
 	path = utils/kokkos-kernels
-	url = https://github.com/kokkos/kokkos-kernels.git
+	url = https://github.com/rbberger/kokkos-kernels.git
