@@ -53,12 +53,12 @@ considered (in principle, different closure models can be used for different
 sets of materials). To consider the entire volume, :math:`f_\mathrm{tot}` can
 simply be set to one.
 
-The average density, :math:`\bar{\rho}_i`, (i.e. mass per *total* volume) for a
-material in the total volume is
+The average density, :math:`\overline{\rho}_i`, (i.e. mass per *total* volume)
+for a material in the total volume is
 
 .. math::
 
-  \bar{\rho}_i = \rho_i f_i,
+  \overline{\rho}_i = \rho_i f_i,
 
 where :math:`\rho_i` is the physical density (i.e. material mass per *material*
 volume). The total density (mass of *participating* materials per total volume)
@@ -66,7 +66,7 @@ is then
 
 .. math::
 
-  \rho = \sum_{i=0}^{N - 1} \bar{\rho}_i = \sum_{i=0}^{N-1} \rho_i f_i
+  \rho = \sum_{i=0}^{N - 1} \overline{\rho}_i = \sum_{i=0}^{N-1} \rho_i f_i
 
 Similarly the energy can be summed in a similar way so that
 
@@ -76,13 +76,14 @@ Similarly the energy can be summed in a similar way so that
   = \sum_{i = 0}^{N - 1} u_i
 
 where :math:`u` is the total internal energy density (internal energy per unit
-volume). Similarly, :math:`u_i` is analagous to :math:`\bar{\rho}_i` in that it
-is the internal energy for a material averaged over the entire control volume.
+volume). Similarly, :math:`u_i` is analagous to :math:`\overline{\rho}_i` in
+that it is the internal energy for a material averaged over the entire control
+volume.
 
 Internally, the closer models in ``singularity-eos`` operate on :math:`f_i`,
-:math:`\bar{\rho}_i`, and :math:`u_i` as well as their total counterparts. This
-is different than the forms stated at the beginning of this section so that in
-essence the PTE solver has the form
+:math:`\overline{\rho}_i`, and :math:`u_i` as well as their total counterparts.
+ This is different than the forms stated at the beginning of this section so
+ that in essence the PTE solver has the form
 
 .. math::
 
@@ -385,7 +386,7 @@ materials.
 .. warning::
 
   It bears repeating: **both the volume fractions and densities act as inputs
-  and outputs**. They are used to define the internal :math:`\bar
+  and outputs**. They are used to define the internal :math:`\overline
   {\rho}_i` variables at the beginning of the PTE solve. The volume fractions
   and densities at the end of the PTE solve will represent those for the new
   PTE state.
