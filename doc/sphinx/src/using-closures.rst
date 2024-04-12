@@ -3,97 +3,214 @@
 Mixed Cell Closures
 ====================
 
-In Eulerian multi-material fluid simulations, a single grid point or
-finite volume cell may have more than one material in it. In this
-situation, one must decide how to compute thermodynamic quantities in
-that cell. One choice, though not necessarily the optimal choice, is
-to assume pressure-temperature equilibrium (PTE). This implies that there's
-a single pressure in the cell and a single temperature, which are the
-same for all materials.
+In the single-material Euler equations, the mass and energy are typically
+evolved and the EOS is called to provide a pressure for the momentum equations.
+When transitioning to a multi-material approach, a single velocity is typically
+used and the Euler equations are solved with respect to the bulk fluid motion.
+In this case, the pressure contribution to momentum isn't well-defined and in
+principle each material could have its own pressure contribution to material
+motion. Furthermore, the paritioning of volume and energy between the materials
+in the flow is not well-defined either.
 
-``singularity-eos`` provides several methods for finding a PTE
-soluution. These methods differ in what they treat as independent
-variables, and thus what precise system of equations they solve
-for. However they all share some common characteristics.
+As a result, a multi-material closure rule is needed to determine both how to
+compute the pressure response of the flow and how to partition the volume and
+energy between the individual materials. In this situation, one must decide how
+to compute thermodynamic quantities in that cell for each material.
 
 Governing Equations and Assumptions
 ------------------------------------
 
-Given a set of :math:`N` materials ranging from :math:`i = 0` to
-:math:`N-1`, each material can, in principle, have a distinct pressure
-:math:`P_i`, a distinct temperature :math:`T_i`, a distinct material
-density :math:`\rho_i`, and a distinct specific material energy
-:math:`\varepsilon_i`. For some finite total volume :math:`V`, each
-material also occupies some fraction of that volume given by the
-*volume fraction* :math:`f_i` such that
+In a general sense then the mixed
+material closure rule takes the form
 
 .. math::
 
-  \sum_{i=0}^{N - 1} f_i = 1
+  P_i = F(rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1}) \\
+  \rho_i = G(rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1}) \\
+  \epsilon_i = H(rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1}) \\
+  T_i = J(rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1})
 
-The average density in a given material-occupied volume is
+where each material has its own density, :math:`\rho_i`, and specific internal
+energy, :math:`e_i`, as well as in principle its own pressure and temperature.
+Each will be a function of the bulk density, :math:`\rho`, the bulk specific
+internal energy, :math:`\epsilon`, and both the mass fraction, :math:`\mu_j`,
+of all materials present.
 
-.. math::
+For convenience of minimizing input arguments though, the solvers in
+``singularity-eos`` are typically posed in a different way that can sometimes be
+unintuitive.
 
-  \bar{\rho} = \rho_i f_i
-
-and thus the density averaged over all materials is
-
-.. math::
-
-  \rho = \sum_{i=0}^{N - 1} \bar{\rho} = \sum_{i=0}^{N-1} \rho_i f_i
-
-Conservation of energy implies that
-
-.. math::
-
-  u = \rho \varepsilon = \sum_{i = 0}^{N - 1} \rho_i \varepsilon_i
-
-where :math:`u = E/V` is the energy density by volume for total energy
-:math:`E` and total volume :math:`V`, and :math:`\varepsilon` is the
-total specific internal energy within that volume.
-
-The assumption of pressure equilibrium implies that
+For some finite total volume :math:`V`, each material occupies some fraction of
+that volume given by the *volume fraction*
+:math:`f_i` such that
 
 .. math::
 
-  P = P_0 = P_1 = \ldots = P_{N - 1}
+  \sum_{i=0}^{N - 1} f_i = f_\mathrm{tot},
 
-where each pressure is computed as either
+where :math:`f_\mathrm{tot}` is the total fraction of the total volume being
+considered (in principle, different closure models can be used for different
+sets of materials). To consider the entire volume, :math:`f_\mathrm{tot}` can
+simply be set to one.
+
+The average density, :math:`\bar{\rho}_i`, (i.e. mass per *total* volume) for a
+material in the total volume is
 
 .. math::
 
-  P_i = P_i(\rho_i, T_i)
+  \bar{\rho}_i = \rho_i f_i,
+
+where :math:`\rho_i` is the physical density (i.e. material mass per *material*
+volume). The total density (mass of *participating* materials per total volume)
+is then
 
 .. math::
 
-  P_i = P_i(\rho_i, \varepsilon_i)
+  \rho = \sum_{i=0}^{N - 1} \bar{\rho}_i = \sum_{i=0}^{N-1} \rho_i f_i
 
-depending on the treatment.
+Similarly the energy can be summed in a similar way so that
 
-In ``singularity-eos`` the :math:`N` volume fractions are treated as
-unknowns, for which one must solve, and the fact that the volume
-fractions sum to 1 implies one constraint. At this point, we have 1
-constraint and :math:`N` unknowns (the volume fractions). To guarantee
-uniqueness (but not existence) of a PTE solution, we must find a way
-to have at least as many equations as unknowns. There are several
-choices:
+.. math::
+
+  u = \rho \epsilon = \sum_{i = 0}^{N - 1} \rho_i \epsilon_i 
+  = \sum_{i = 0}^{N - 1} u_i
+
+where :math:`u` is the total internal energy density (internal energy per unit
+volume). Similarly, :math:`u_i` is analagous to :math:`\bar{\rho}_i` in that it
+is the internal energy for a material averaged over the entire control volume.
+
+Internally, the closer models in ``singularity-eos`` operate on :math:`f_i`,
+:math:`\bar{\rho}_i`, and :math:`u_i` as well as their total counterparts. This
+is different than the forms stated at the beginning of this section so that in
+essence the PTE solver has the form
+
+.. math::
+
+  P_i = F(\epsilon, f_\mathrm{tot}, f_1, ..., f_i, ..., f_{N-1},
+          \rho_1, ..., \rho_i, ..., \rho_{N-1}) \\
+  \rho_i = G(\epsilon, f_\mathrm{tot}, f_1, ..., f_i, ..., f_{N-1},
+          \rho_1, ..., \rho_i, ..., \rho_{N-1}) \\
+  \epsilon_i = H(\epsilon, f_\mathrm{tot}, f_1, ..., f_i, ..., f_{N-1},
+          \rho_1, ..., \rho_i, ..., \rho_{N-1}) \\
+  T_i = J(\epsilon, f_\mathrm{tot}, f_1, ..., f_i, ..., f_{N-1},
+          \rho_1, ..., \rho_i, ..., \rho_{N-1})
+
+
+The important nuance here is the **the volume fractions are both inputs and
+outputs** in the current ``singularity-eos`` formulation of the closure models.
+From physics perspective this can be confusing, but from a code perspective this
+limits the number of variables that need to be passed to the PTE solver and
+provides a convenient way to specify an initial guess for the closure state.
+
+.. note::
+
+  The mass fraction information is encoded in the specifciation of :math:`f_i`
+  and :math:`\rho_i`. In order to convert to component densities,
+  :math:`\rho_i` from mass fractions, :math:`\mu_i` and total density,
+  :math:`\rho`, volume fractions must be ***assumed*** in some consistent way
+  so that
+
+  .. math::
+
+    \rho_i = \frac{\mu_i \rho}{f_i}
+
+  .. math::
+
+    \sum\limits_{i=0}^{N-1} f_i = f_\mathrm{tot}.
+
+  One such assumption would be to **equipartition** the volume between all
+  materials such that
+
+  .. math::
+
+    f_i = \frac{1}{N}
+
+Pressure-Temperature Equilibirum
+================================
+
+At present, ``singularity-eos`` focuses on several methods for finding a PTE
+solution, i.e. one where the pressures and temperatures of the individual
+materials are all the same. The methods presented differ in what they treat as
+independent variables, and thus what precise system of equations they solve.
+However they all share the above mathematicaly formulation.
+
+In essence, the PTE equations can be posed as two residual equations:
+
+.. math::
+
+  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i = 
+    \sum\limits_{i=0}^{N-1} f_i^*(x_i*, y_i*) - f_i(x_i, y_i)
+
+.. math::
+
+  u_\mathrm{tot} - \sum\limits_{i=0}^{N-1} u_i = 
+    \sum\limits_{i=0}^{N-1} u_i^*(x_i*, y_i*) - u_i(x_i, y_i)
+
+where the superscript :math:`^*` denotes the variables at the PTE state,
+:math:`f` corresponds to the volume fractions, and :math:`u` to the energy
+density (see the previous section for more information). In these equations,
+:math:`x` and :math:`y` represent some choice of independent thermodynamic
+variables.
+
+Then the energy and volume fraction constraint equations can be Taylor-expanded
+about the equilibrium states :math:`f_i^*(\rho_i, y_i)` and
+:math:`u_i^*(\rho_i, y_i)` so that they become
+
+.. math::
+
+  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i(\rho_i, y_i) \approx
+    \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
+      \left(\frac{\partial f_i}{\partial \rho_i}\right)_{y_i}
+    + \sum\limits_{i=0}^{N-1} (y_i^* - y_i)
+      \left(\frac{\partial f_i}{\partial y_i}\right)_{\rho_i}
+
+.. math::
+
+  u - \sum\limits_{i=0}^{N-1} u_i(\rho_i, y_i) \approx
+    \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
+      \left(\frac{\partial u_i}{\partial \rho_i}\right)_{y_i}
+    + \sum\limits_{i=0}^{N-1} (y_i^* - y_i)
+      \left(\frac{\partial u_i}{\partial y_i}\right)_{\rho_i},
+
+removing the dependence on the unknown equilibrium state. Minor manipulations
+are needed to recast the derivatives in terms of accessible thermodynamic
+derivatives and then these equations can be written in matrix form to solve for
+the unknown distance away from the equilibrum state.
+
+The choice of :math:`x` and :math:`y` is discussed below, but crucially it
+determines the number of equations and unknowns needed to specify the system.
+For example, if pressure, :math:`P`, and temperature, :math:`T`, are chosen,
+then the subscripts are eliminated since we seek a solution where all materials
+have the same temperature and pressure. In this formulation, there are two
+equations and two unkowns, but due to the difficulty of inverting an
+equation of state to be a function of pressure and temperature,
+``singularity-eos`` does not have any PTE solvers that are designed to use
+pressure and temperature as independent variables.
+
+Instead, all of the current PTE solvers in ``singularity-eos`` are cast in terms
+of density and another independent variable. This introduces
+:math:`N - 1` additional unknowns since the each material density is independent
+except for the last. The assumption of pressure equilibrium naturally leads to
+an addition :math:`N - 1` residual equations of the form
+
+.. math::
+
+  P_i(\rho_i, y_j) - P_j(\rho_j, y_j) = 0
+
+The choice of the second independent variable is discussed below:
 
 The Density-Energy Formulation
 ---------------------------------
 
-One choice is to treat volume fractions and material energies as
-independent quantities. The material energies provide :math:`N` more
-unknowns. The equality of pressures provides :math:`N-1` additional
-constraints. Additionally, the euqality of material temperatures, evaluated as
+One choice is to treat volume fractions and material energies as independent
+quantities. However, the material energies provide :math:`N - 1` additional
+unknowns. This requires that euqality of material temperatures satisfy the
+additional degrees of freedom. As a result, we add :math:`N - 1` residual
+equations of the form
 
 .. math::
 
-  T = T_0(\rho_0, \varepsilon_0) = T_1(\rho_1, \varepsilon_1) = \ldots = T_{N-1}(\rho_{N-1},\varepsilon_{N-1})
-
-provides :math:`N-1` additional constraints. Finally, conservation of
-energy provides one more constraint. In the end we have :math:`2 N`
-constraints and :math:`2 N` unknowns.
+  T_i(\rho_i, \epsilon_j) - T_j(\rho_j, \epsilon_j) = 0.
 
 In the code this is referred to as the ``PTESolverRhoU``.
 
@@ -101,28 +218,27 @@ The Density-Temperature Formulation
 ------------------------------------
 
 Another choice is to treat the temperature as an independent
-variable. Then the assumption of PTE implies that
+variable. Then the assumption of temperature equilibrium requires no additional
+equations, and the energy and volume fraction constraints take the form
 
 .. math::
 
-  T = T_0 = T_1 = \ldots = T_{N - 1}
-
-which leads to a single additional unknown, the temperature
-:math:`T`. The equality of pressure, now computed as
-
-.. math::
-
-  P_0(\rho_0, T) = P_1(\rho_1, T) = \ldots = P_{N-1}(\rho_{N-1}, T)
-
-provides an additional :math:`N-1` constraints. Conservation of
-energy, now computed as
+  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i(\rho_i, y_i) \approx
+    \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
+      \left(\frac{\partial f_i}{\partial \rho_i}\right)_{y_i}
+    + (T^* - T)\sum\limits_{i=0}^{N-1}
+      \left(\frac{\partial f_i}{\partial T}\right)_{\rho_i}
 
 .. math::
 
-  u = \sum_{i=}^{N-1} \rho_i \varepsilon_i(\rho_i, T)
+  u - \sum\limits_{i=0}^{N-1} u_i(\rho_i, y_i) \approx
+    \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
+      \left(\frac{\partial u_i}{\partial \rho_i}\right)_{y_i}
+    + (T^* - T)\sum\limits_{i=0}^{N-1}
+      \left(\frac{\partial u_i}{\partial T}\right)_{\rho_i},
 
-provides another constraint. This leads to :math:`N+1` constraints and
-:math:`N+1` unknowns.
+where the temperature difference can be factored out of the sum since it doesn't
+depend on material index.
 
 In the code this is referred to as the ``PTESolverRhoT``.
 
@@ -166,6 +282,23 @@ state, the independent and dependent variables, and the ``lambda``
 objects for each equation of state, similar to the vector API for a
 given EOS. Here the indexers/vectors are not over cells, but
 materials.
+
+.. warning::
+
+  It bears repeating: **both the volume fractions and densities act as inputs
+  and outputs**. They are used to define the internal :math:`\bar
+  {\rho}_i` variables at the beginning of the PTE solve. The volume fractions
+  and densities at the end of the PTE solve will represent those for the new
+  PTE state.
+
+.. warning::
+
+  The PTE solvers ***require*** that all input densities and volume fractions
+  are non-zero. As a result, ``nmat`` refers to the number of *participating*
+  materials. The user is encouraged to wrap their data arrays using an
+  ``Indexer`` concept where, for example, three paricipating PTE materials
+  might be indexed as 5, 7, 20 in the material arrays. This requires overloading
+  the square bracket operator to map from PTE idex to material index.
 
 The constructor for the ``PTESolverRhoT`` is of the form
 
