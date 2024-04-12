@@ -25,10 +25,10 @@ material closure rule takes the form
 
 .. math::
 
-  P_i = F(rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1}) \\
-  \rho_i = G(rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1}) \\
-  \epsilon_i = H(rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1}) \\
-  T_i = J(rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1})
+  P_i = F(\rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1}) \\
+  \rho_i = G(\rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1}) \\
+  \epsilon_i = H(\rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1}) \\
+  T_i = J(\rho, \epsilon, \mu_1, ..., \mu_i, ..., \mu_{N-1})
 
 where each material has its own density, :math:`\rho_i`, and specific internal
 energy, :math:`e_i`, as well as in principle its own pressure and temperature.
@@ -96,11 +96,16 @@ essence the PTE solver has the form
           \rho_1, ..., \rho_i, ..., \rho_{N-1})
 
 
-The important nuance here is the **the volume fractions are both inputs and
-outputs** in the current ``singularity-eos`` formulation of the closure models.
-From physics perspective this can be confusing, but from a code perspective this
-limits the number of variables that need to be passed to the PTE solver and
-provides a convenient way to specify an initial guess for the closure state.
+The important nuance here is the **the volume fractions and densities are both
+inputs and outputs** in the current ``singularity-eos`` formulation of the
+closure models. From physics perspective this can be confusing, but from a code
+perspective this limits the number of variables that need to be passed to the
+PTE solver and provides a convenient way to specify an initial guess for the
+closure state.
+
+.. warning::
+
+  The volume fractions and material densities must be consistent in some way
 
 .. note::
 
@@ -197,7 +202,9 @@ an addition :math:`N - 1` residual equations of the form
 
   P_i(\rho_i, y_j) - P_j(\rho_j, y_j) = 0
 
-The choice of the second independent variable is discussed below:
+At this point, there are :math:`N + 1` equations and unknowns in the PTE sover.
+The choice of the second independent variable is discussed below and has
+implications for complexity of the numerics.
 
 The Density-Energy Formulation
 ---------------------------------
@@ -212,6 +219,14 @@ equations of the form
 
   T_i(\rho_i, \epsilon_j) - T_j(\rho_j, \epsilon_j) = 0.
 
+This leads to a total number of :math:`2N` equations and unknowns. The large
+matrix means that this algorithm is fairly hard to solve, and may not converge.
+Further, the density-energy derivatives may require inversion for EOS specified
+with density and temperature as their natural variables. This could result in
+an iterative inversion step for the EOS and/or a loss of accuracy in the
+derivatives depending on how they're calculated. In general, the
+density-temperature formulation seems to be more stable and performant.
+
 In the code this is referred to as the ``PTESolverRhoU``.
 
 The Density-Temperature Formulation
@@ -223,17 +238,17 @@ equations, and the energy and volume fraction constraints take the form
 
 .. math::
 
-  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i(\rho_i, y_i) \approx
+  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i(\rho_i, T) \approx
     \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
-      \left(\frac{\partial f_i}{\partial \rho_i}\right)_{y_i}
+      \left(\frac{\partial f_i}{\partial \rho_i}\right)_{T}
     + (T^* - T)\sum\limits_{i=0}^{N-1}
       \left(\frac{\partial f_i}{\partial T}\right)_{\rho_i}
 
 .. math::
 
-  u - \sum\limits_{i=0}^{N-1} u_i(\rho_i, y_i) \approx
+  u - \sum\limits_{i=0}^{N-1} u_i(\rho_i, T) \approx
     \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
-      \left(\frac{\partial u_i}{\partial \rho_i}\right)_{y_i}
+      \left(\frac{\partial u_i}{\partial \rho_i}\right)_{T}
     + (T^* - T)\sum\limits_{i=0}^{N-1}
       \left(\frac{\partial u_i}{\partial T}\right)_{\rho_i},
 
