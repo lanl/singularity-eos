@@ -131,7 +131,7 @@ closure state.
     f_i = \frac{1}{N}
 
 Pressure-Temperature Equilibirum
-================================
+--------------------------------
 
 At present, ``singularity-eos`` focuses on several methods for finding a PTE
 solution, i.e. one where the pressures and temperatures of the individual
@@ -144,12 +144,12 @@ In essence, the PTE equations can be posed as two residual equations:
 .. math::
 
   f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i = 
-    \sum\limits_{i=0}^{N-1} f_i^*(x_i*, y_i*) - f_i(x_i, y_i)
+    \sum\limits_{i=0}^{N-1} f_i^*(x_i^*, y_i*) - f_i(x_i, y_i)
 
 .. math::
 
   u_\mathrm{tot} - \sum\limits_{i=0}^{N-1} u_i = 
-    \sum\limits_{i=0}^{N-1} u_i^*(x_i*, y_i*) - u_i(x_i, y_i)
+    \sum\limits_{i=0}^{N-1} u_i^*(x_i^*, y_i*) - u_i(x_i, y_i)
 
 where the superscript :math:`^*` denotes the variables at the PTE state,
 :math:`f` corresponds to the volume fractions, and :math:`u` to the energy
@@ -163,19 +163,19 @@ about the equilibrium states :math:`f_i^*(\rho_i, y_i)` and
 
 .. math::
 
-  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i(\rho_i, y_i) \approx
-    \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
-      \left(\frac{\partial f_i}{\partial \rho_i}\right)_{y_i}
+  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i(x_i, y_i) \approx
+    \sum\limits_{i=0}^{N-1} (x_i^* - x_i)
+      \left(\frac{\partial f_i}{\partial x_i}\right)_{y_i}
     + \sum\limits_{i=0}^{N-1} (y_i^* - y_i)
-      \left(\frac{\partial f_i}{\partial y_i}\right)_{\rho_i}
+      \left(\frac{\partial f_i}{\partial y_i}\right)_{x_i}
 
 .. math::
 
-  u - \sum\limits_{i=0}^{N-1} u_i(\rho_i, y_i) \approx
-    \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
-      \left(\frac{\partial u_i}{\partial \rho_i}\right)_{y_i}
+  u - \sum\limits_{i=0}^{N-1} u_i(x_i, y_i) \approx
+    \sum\limits_{i=0}^{N-1} (x_i^* - x_i)
+      \left(\frac{\partial u_i}{\partial x_i}\right)_{y_i}
     + \sum\limits_{i=0}^{N-1} (y_i^* - y_i)
-      \left(\frac{\partial u_i}{\partial y_i}\right)_{\rho_i},
+      \left(\frac{\partial u_i}{\partial y_i}\right)_{x_i},
 
 removing the dependence on the unknown equilibrium state. Minor manipulations
 are needed to recast the derivatives in terms of accessible thermodynamic
@@ -200,14 +200,44 @@ an addition :math:`N - 1` residual equations of the form
 
 .. math::
 
-  P_i(\rho_i, y_j) - P_j(\rho_j, y_j) = 0
+  P_i(\rho_i, y_i) - P_j(\rho_j, y_j) = 0,
 
-At this point, there are :math:`N + 1` equations and unknowns in the PTE sover.
-The choice of the second independent variable is discussed below and has
-implications for complexity of the numerics.
+
+which can be written as a Taylor expansion about the equilibrium state so that
+
+.. math::
+
+  P_i(\rho_i, y_j) - P_j(\rho_j, y_j)
+    = (f^*_i - f_i) \left(\frac{\partial P_i}{\partial f_i}\right)_{y_i}
+    + (y^*_i - y_i) \left(\frac{\partial P_i}{\partial y_i}\right)_{f_i} \\
+    - (f^*_j - f_j) \left(\frac{\partial P_j}{\partial f_j}\right)_{y_j}
+    - (y^*_j - y_j) \left(\frac{\partial P_j}{\partial y_j}\right)_{f_j}
+
+and typically the equations are written such that :math:`j = i + 1`.
+Additionally, the volume fractions are pure functions of density, so the volume
+contstraint equation can be rewritten simply as
+
+.. math::
+
+  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i =
+    \sum\limits_{i=0}^{N-1} (f_i^* - f_i)
+
+where the other equations can also be re-written to be in terms of volume
+fractions instead of densities. Since the EOS returns derivatives in terms of
+density, these can be transformed to volume fraction derivatives via
+
+.. math::
+
+  \left(\frac{\partial Q}{\partial f_i}\right)_X 
+    = - \frac{\rho_i^2}{\rho}\left(\frac{\partial Q}{\partial \rho_i}\right)_X,
+
+where :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this
+point, there are :math:`N + 1` equations and unknowns in the PTE sover. The
+choice of the second independent variable is discussed below and has
+implications on the number of additional unknowns and equations.
 
 The Density-Energy Formulation
----------------------------------
+''''''''''''''''''''''''''''''
 
 One choice is to treat volume fractions and material energies as independent
 quantities. However, the material energies provide :math:`N - 1` additional
@@ -218,6 +248,19 @@ equations of the form
 .. math::
 
   T_i(\rho_i, \epsilon_j) - T_j(\rho_j, \epsilon_j) = 0.
+
+Again Taylor expanding about the equilibirum state, this results in a set of
+equations of the form
+
+.. math::
+
+  T_i(\rho_i, \epsilon_j) - T_j(\rho_j, \epsilon_j)
+    = (f^*_i - f_i) \left(\frac{\partial T_i}{\partial f_i}\right)_{\epsilon_i}
+    + (\epsilon^*_i - \epsilon_i) \
+        \left(\frac{\partial T_i}{\partial \epsilon_i}\right)_{f_i} \\
+    - (f^*_j - f_j) \left(\frac{\partial T_j}{\partial f_j}\right)_{\epsilon_j}
+    - (\epsilon^*_j - \epsilon_j)
+        \left(\frac{\partial T_j}{\partial \epsilon_j}\right)_{f_j}
 
 This leads to a total number of :math:`2N` equations and unknowns. The large
 matrix means that this algorithm is fairly hard to solve, and may not converge.
@@ -230,19 +273,11 @@ density-temperature formulation seems to be more stable and performant.
 In the code this is referred to as the ``PTESolverRhoU``.
 
 The Density-Temperature Formulation
-------------------------------------
+'''''''''''''''''''''''''''''''''''
 
 Another choice is to treat the temperature as an independent
 variable. Then the assumption of temperature equilibrium requires no additional
-equations, and the energy and volume fraction constraints take the form
-
-.. math::
-
-  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i(\rho_i, T) \approx
-    \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
-      \left(\frac{\partial f_i}{\partial \rho_i}\right)_{T}
-    + (T^* - T)\sum\limits_{i=0}^{N-1}
-      \left(\frac{\partial f_i}{\partial T}\right)_{\rho_i}
+equations, and the energy residual equation takes the form
 
 .. math::
 
@@ -257,8 +292,57 @@ depend on material index.
 
 In the code this is referred to as the ``PTESolverRhoT``.
 
+Fixed Pressure or Temperature
+"""""""""""""""""""""""""""""
+
+For initialization, the energy of a mixed material region is usually unknown
+while the density, mass fractions, and either temperature or pressure *are*
+known. To find the energy, a PTE solve is required, but with the added
+constraint of the fixed pressure or temperature.
+
+Fixed temperature
+^^^^^^^^^^^^^^^^^
+
+When the temperature and total density are known, the equilibrium pressure and
+the component densities are unknown. This requires a total of :math:`N`
+equations and unknowns. Since the total energy is unknown, it can be dropped
+from the contraints leaving just the :math:`N - 1` pressure equality equations
+and the volume fraction sum constraint. The pressure residuals can then be
+simplified to be
+
+.. math::
+
+  P_i(\rho_i, T) - P_j(\rho_j, T)
+    = (f^*_i - f_i) \left(\frac{\partial P_i}{\partial f_i}\right)_{T}
+    - (f^*_j - f_j) \left(\frac{\partial P_j}{\partial f_j}\right)_{T}
+
+In the code this is referred to as the ``PTESolverFixedT``.
+
+Fixed pressure
+^^^^^^^^^^^^^^
+
+When the pressure and total density are known, the procedure is slightly more
+complicated. Since the pressure is known but the independent variables are
+density and temperature, there are :math:`N + 1` unknowns for the component
+densities and the unknown equilibrium temperature.
+
+Once again, the energy constraint is dropped since the energy is unknown, but
+since the equilibrium pressure is unknown, the pressure residual equations must
+be modified to take the form
+
+.. math::
+
+  P_i^*(\rho^*_i, T) - P_i(\rho_i, T)
+    = (f^*_i - f_i) \left(\frac{\partial P_i}{\partial f_i}\right)_{T}
+    - (T^* - T) \left(\frac{\partial P_i}{\partial T}\right)_{f_i}.
+
+Note that this results in :math:`N` equations for each of the individual
+material pressures.
+
+In the code this is referred to as the ``PTESolverFixedP``.
+
 Using the Pressure-Temperature Equilibrium Solver
---------------------------------------------------
+'''''''''''''''''''''''''''''''''''''''''''''''''
 
 The PTE machinery is implemented in the
 ``singularity-es/closure/mixed_cell_models.hpp`` header. It is
@@ -371,7 +455,7 @@ For an example of the PTE solver machinery in use, see the
 ``test_pte.cpp`` file in the tests directory.
 
 Initial Guesses for PTE Solvers
-------------------------------------
+'''''''''''''''''''''''''''''''
 
 As is always the case when solving systems of nonlinear equations, good initial
 guesses are important to ensure rapid convergence to the solution.  For the PTE
