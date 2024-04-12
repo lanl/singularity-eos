@@ -145,12 +145,12 @@ In essence, the PTE equations can be posed as two residual equations:
 .. math::
 
   f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i = 
-    \sum\limits_{i=0}^{N-1} f_i^*(x_i^*, y_i*) - f_i(x_i, y_i)
+    \sum\limits_{i=0}^{N-1} f_i^*(x_i^*, y_i^*) - f_i(x_i, y_i)
 
 .. math::
 
   u_\mathrm{tot} - \sum\limits_{i=0}^{N-1} u_i = 
-    \sum\limits_{i=0}^{N-1} u_i^*(x_i^*, y_i*) - u_i(x_i, y_i)
+    \sum\limits_{i=0}^{N-1} u_i^*(x_i^*, y_i^*) - u_i(x_i, y_i)
 
 where the superscript :math:`^*` denotes the variables at the PTE state,
 :math:`f` corresponds to the volume fractions, and :math:`u` to the energy
@@ -248,14 +248,14 @@ equations of the form
 
 .. math::
 
-  T_i(\rho_i, \epsilon_j) - T_j(\rho_j, \epsilon_j) = 0.
+  T_i(\rho_i, \epsilon_i) - T_j(\rho_j, \epsilon_j) = 0.
 
 Again Taylor expanding about the equilibirum state, this results in a set of
 equations of the form
 
 .. math::
 
-  T_i(\rho_i, \epsilon_j) - T_j(\rho_j, \epsilon_j)
+  T_i(\rho_i, \epsilon_i) - T_j(\rho_j, \epsilon_j)
     = (f^*_i - f_i) \left(\frac{\partial T_i}{\partial f_i}\right)_{\epsilon_i}
     + (\epsilon^*_i - \epsilon_i) \
         \left(\frac{\partial T_i}{\partial \epsilon_i}\right)_{f_i} \\
