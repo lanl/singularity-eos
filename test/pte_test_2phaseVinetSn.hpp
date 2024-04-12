@@ -82,19 +82,4 @@ inline void set_eos(T *eos) {
   return;
 }
 
-template <typename RealIndexer, typename EOSIndexer>
-inline void set_state(RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
-                      RealIndexer &&temp, EOSIndexer &&eos) {
-
-  vfrac[0] = 47.0/100.0;
-  vfrac[1] = 53.0/100.0;
-  rho[0] = 7.278 * 0.500480901 / vfrac[0];
-  rho[1] = 7.278 * 0.499519099 / vfrac[1];
-  sie[0] = 8.41323509e08;
-  sie[1] = 8.41323509e08;
-
-
-  return;
-}
-
 #endif // _SINGULARITY_EOS_TEST_PTE_TEST_2PHASEVINETSN_
