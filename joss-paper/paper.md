@@ -231,9 +231,11 @@ in [@NQT] to significantly enhance performance of log-like lookups.
 
 # Acknowledgements
 
-This work was supported by the U.S. Department of Energy through the
-Los Alamos National Laboratory (LANL). LANL is operated by Triad
-National Security, LLC, for the National Nuclear Security
+This work was supported through the Laboratory Directed Research and
+Development program, the Center for Space and Earth Sciences, and the
+center for Nonlinear Studies under project numbers 20240477CR-SES and
+20220564ECR at Los Alamos National Laboratory (LANL). LANL is operated
+by Triad National Security, LLC, for the National Nuclear Security
 Administration of U.S. Department of Energy (Contract
 No. 89233218CNA000001). This research used resources provided by the
 Darwin testbed at LANL which is funded by the Computational Systems
