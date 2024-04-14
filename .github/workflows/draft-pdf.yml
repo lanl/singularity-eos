@@ -1,3 +1,5 @@
+name: Generate JOSS paper
+
 on:
   push:
     branches: [ jmm/joss-paper ]
