@@ -17,7 +17,7 @@ authors:
   - name: Jeffrey H. Peterson
     affiliation: 4
   - name: Christopher M. Mauney
-    affiliation: 5
+    affiliation: "2, 5"
   - name: Richard Berger
     orcid: 0000-0002-3044-8266
     affiliation: 3
