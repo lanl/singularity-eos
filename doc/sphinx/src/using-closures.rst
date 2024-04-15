@@ -394,7 +394,7 @@ materials.
 
 .. warning::
 
-  The PTE solvers ***require*** that all input densities and volume fractions
+  The PTE solvers **require** that all input densities and volume fractions
   are non-zero. As a result, ``nmat`` refers to the number of *participating*
   materials. The user is encouraged to wrap their data arrays using an
   ``Indexer`` concept where, for example, three paricipating PTE materials
