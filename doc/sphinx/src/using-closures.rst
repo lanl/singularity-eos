@@ -343,8 +343,8 @@ density and temperature, there are :math:`N + 1` unknowns for the component
 densities and the unknown equilibrium temperature.
 
 Once again, the energy constraint is dropped since the energy is unknown, but
-since the equilibrium pressure is unknown, the pressure residual equations must
-be modified to take the form
+since the equilibrium pressure is a *specified* quantity, the pressure residual
+equations must be modified to take the form
 
 .. math::
 
