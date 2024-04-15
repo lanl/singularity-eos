@@ -40,6 +40,7 @@ authors:
   - name: Sriram Swaminarayan
     affiliation: 3
   - name: Christoph Junghans
+    orcid: 0000-0003-0925-1458
     affiliation: 3
 affiliations:
   - name: CCS-2, Computational Physics and Methods, Los Alamos National Laboratory, USA
