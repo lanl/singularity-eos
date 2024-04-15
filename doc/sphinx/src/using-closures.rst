@@ -208,16 +208,15 @@ which can be written as a Taylor expansion about the equilibrium state so that
 
 .. math::
 
-  P_i(\rho_i, y_j) - P_j(\rho_j, y_j)
+  P_i(f_i, y_j) - P_j(f_j, y_j)
     = (f^*_i - f_i) \left(\frac{\partial P_i}{\partial f_i}\right)_{y_i}
     + (y^*_i - y_i) \left(\frac{\partial P_i}{\partial y_i}\right)_{f_i} \\
     - (f^*_j - f_j) \left(\frac{\partial P_j}{\partial f_j}\right)_{y_j}
     - (y^*_j - y_j) \left(\frac{\partial P_j}{\partial y_j}\right)_{f_j}
 
 and typically the equations are written such that :math:`j = i + 1`.
-Additionally, using volume fractions instead of densities allows us to use the
-volume fraction constraint directly without any dependence on other variables
-so that
+Additionally, using volume fractions instead of densities allows the volume
+constraint to be written in terms of just the volume fractions:
 
 .. math::
 
@@ -225,15 +224,15 @@ so that
     \sum\limits_{i=0}^{N-1} (f_i^* - f_i).
 
 The other equations can also be re-written to be in terms of volume fractions
-instead of densities. Since the EOS returns derivatives in terms of density,
+instead of densities, and since the EOS returns derivatives in terms of density,
 these can be transformed to volume fraction derivatives via
 
 .. math::
 
   \left(\frac{\partial Q}{\partial f_i}\right)_X 
-    = - \frac{\rho_i^2}{\rho}\left(\frac{\partial Q}{\partial \rho_i}\right)_X,
+    = - \frac{\rho_i^2}{\rho}\left(\frac{\partial Q}{\partial \rho_i}\right)_X.
 
-where :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this
+Here :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this
 point, there are :math:`N + 1` equations and unknowns in the PTE sover. The
 choice of the second independent variable is discussed below and has
 implications on the number of additional unknowns and equations.
