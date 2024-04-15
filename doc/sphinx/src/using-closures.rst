@@ -194,7 +194,7 @@ equation of state to be a function of pressure and temperature,
 pressure and temperature as independent variables.
 
 Instead, all of the current PTE solvers in ``singularity-eos`` are cast in terms
-of density and another independent variable. This introduces
+of volume fraction and another independent variable. This introduces
 :math:`N - 1` additional unknowns since the each material density is independent
 except for the last. The assumption of pressure equilibrium naturally leads to
 an addition :math:`N - 1` residual equations of the form
@@ -215,17 +215,18 @@ which can be written as a Taylor expansion about the equilibrium state so that
     - (y^*_j - y_j) \left(\frac{\partial P_j}{\partial y_j}\right)_{f_j}
 
 and typically the equations are written such that :math:`j = i + 1`.
-Additionally, the volume fractions are pure functions of density, so the volume
-contstraint equation can be rewritten simply as
+Additionally, using volume fractions instead of densities allows us to use the
+volume fraction constraint directly without any dependence on other variables
+so that
 
 .. math::
 
   f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i =
-    \sum\limits_{i=0}^{N-1} (f_i^* - f_i)
+    \sum\limits_{i=0}^{N-1} (f_i^* - f_i).
 
-where the other equations can also be re-written to be in terms of volume
-fractions instead of densities. Since the EOS returns derivatives in terms of
-density, these can be transformed to volume fraction derivatives via
+The other equations can also be re-written to be in terms of volume fractions
+instead of densities. Since the EOS returns derivatives in terms of density,
+these can be transformed to volume fraction derivatives via
 
 .. math::
 
