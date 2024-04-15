@@ -255,7 +255,7 @@ equations of the form
 
 .. math::
 
-  T_i(\rho_i, \epsilon_i) - T_j(\rho_j, \epsilon_j)
+  T_i(f_i, \epsilon_i) - T_j(f_j, \epsilon_j)
     = (f^*_i - f_i) \left(\frac{\partial T_i}{\partial f_i}\right)_{\epsilon_i}
     + (\epsilon^*_i - \epsilon_i) \
         \left(\frac{\partial T_i}{\partial \epsilon_i}\right)_{f_i} \\
