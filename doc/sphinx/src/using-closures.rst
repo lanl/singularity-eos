@@ -158,9 +158,12 @@ density (see the previous section for more information). In these equations,
 :math:`x` and :math:`y` represent some choice of independent thermodynamic
 variables.
 
-Then the energy and volume fraction constraint equations can be Taylor-expanded
-about the equilibrium states :math:`f_i^*(\rho_i, y_i)` and
-:math:`u_i^*(\rho_i, y_i)` so that they become
+These are two non-linear residual equations that will need to be solved. In
+``singularity-eos`` a Newton-Raphson method is used that first relies on Taylor-
+expanding the equations about the equilibrium state in order to cast the
+equations in terms of an update to the unknowns. The expansion about an
+equilibrium state described by :math:`f_i^*(\rho_i, y_i)` and
+:math:`u_i^*(\rho_i, y_i)` becomes
 
 .. math::
 
@@ -178,10 +181,14 @@ about the equilibrium states :math:`f_i^*(\rho_i, y_i)` and
     + \sum\limits_{i=0}^{N-1} (y_i^* - y_i)
       \left(\frac{\partial u_i}{\partial y_i}\right)_{x_i},
 
-removing the dependence on the unknown equilibrium state. Minor manipulations
-are needed to recast the derivatives in terms of accessible thermodynamic
-derivatives and then these equations can be written in matrix form to solve for
-the unknown distance away from the equilibrum state.
+providing a means to update the guess for the equilbrium state. Minor
+manipulations are needed to recast the derivatives in terms of accessible
+thermodynamic derivatives and then these equations can be written in matrix
+form to solve for the unknown distance away from the equilibrum state. At each
+iteration of the Newton-Raphson solver, the derivatives are recomputed and a
+new update is found until some tolerance is reached. When a good initial guess
+is used (such as a previous PTE state), some algorithms may converge in
+relatively few iterations.
 
 The choice of :math:`x` and :math:`y` is discussed below, but crucially it
 determines the number of equations and unknowns needed to specify the system.
@@ -194,17 +201,19 @@ equation of state to be a function of pressure and temperature,
 pressure and temperature as independent variables.
 
 Instead, all of the current PTE solvers in ``singularity-eos`` are cast in terms
-of volume fraction and another independent variable. This introduces
-:math:`N - 1` additional unknowns since the each material density is independent
-except for the last. The assumption of pressure equilibrium naturally leads to
-an addition :math:`N - 1` residual equations of the form
+of volume fraction and some other independent variable. Using material
+densities introduces :math:`N - 1` additional unknowns since all but one
+material density are independent from each other. The assumption of pressure
+equilibrium naturally leads to the addition of :math:`N - 1` residual equations
+with the form
 
 .. math::
 
   P_i(\rho_i, y_i) - P_j(\rho_j, y_j) = 0,
 
 
-which can be written as a Taylor expansion about the equilibrium state so that
+These can also be written as a Taylor expansion about the equilibrium state such
+that
 
 .. math::
 
@@ -212,30 +221,35 @@ which can be written as a Taylor expansion about the equilibrium state so that
     = (f^*_i - f_i) \left(\frac{\partial P_i}{\partial f_i}\right)_{y_i}
     + (y^*_i - y_i) \left(\frac{\partial P_i}{\partial y_i}\right)_{f_i} \\
     - (f^*_j - f_j) \left(\frac{\partial P_j}{\partial f_j}\right)_{y_j}
-    - (y^*_j - y_j) \left(\frac{\partial P_j}{\partial y_j}\right)_{f_j}
+    - (y^*_j - y_j) \left(\frac{\partial P_j}{\partial y_j}\right)_{f_j},
 
-and typically the equations are written such that :math:`j = i + 1`.
-Additionally, using volume fractions instead of densities allows the volume
-constraint to be written in terms of just the volume fractions:
+where the equations are typically written such that :math:`j = i + 1`. Since the
+equlibrium pressure is the same for both materials, it cancels out.
+
+
+In general, ``singularity-eos`` formulates the closure equations in terms of
+volume fractions instead of densities since it allows the volume constraint to
+be written in terms of just the volume fractions:
 
 .. math::
 
   f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i =
     \sum\limits_{i=0}^{N-1} (f_i^* - f_i).
 
-The other equations can also be re-written to be in terms of volume fractions
-instead of densities, and since the EOS returns derivatives in terms of density,
-these can be transformed to volume fraction derivatives via
+The other equations can also be easily re-written to be in terms of volume
+fractions instead of densities. However, the EOS only returns derivatives in
+terms of density, so a transformation is required:
 
 .. math::
 
   \left(\frac{\partial Q}{\partial f_i}\right)_X 
-    = - \frac{\rho_i^2}{\rho}\left(\frac{\partial Q}{\partial \rho_i}\right)_X.
+    = - \frac{\rho_i^2}{\rho}\left(\frac{\partial Q}{\partial \rho_i}\right)_X,
 
-Here :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this
+were :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this
 point, there are :math:`N + 1` equations and unknowns in the PTE sover. The
 choice of the second independent variable is discussed below and has
-implications on the number of additional unknowns and equations.
+implications on both the number of additional unknowns and the stability of the
+method.
 
 The Density-Energy Formulation
 ''''''''''''''''''''''''''''''
@@ -263,30 +277,31 @@ equations of the form
     - (\epsilon^*_j - \epsilon_j)
         \left(\frac{\partial T_j}{\partial \epsilon_j}\right)_{f_j}
 
-This leads to a total number of :math:`2N` equations and unknowns. The large
-matrix means that this algorithm is fairly hard to solve, and may not converge.
-Further, the density-energy derivatives may require inversion for EOS specified
-with density and temperature as their natural variables. This could result in
-an iterative inversion step for the EOS and/or a loss of accuracy in the
-derivatives depending on how they're calculated. In general, the
-density-temperature formulation seems to be more stable and performant.
+This leads to a total number of :math:`2N` equations and unknowns, resulting in
+a fairly large matrix to invert when many materials are present in a cell.
+Further, the density-energy derivatives may require inversion of EOS written in
+terms of density and temperature as their natural variables. In some cases, an
+iterative inversion step is required to find the density-energy state along
+with the derivative; there may also be a loss of accuracy in the derivatives
+depending on how they're calculated. In general, a density-temperature
+formulation seems to be more stable and performant.
 
 In the code this is referred to as the ``PTESolverRhoU``.
 
 The Density-Temperature Formulation
 '''''''''''''''''''''''''''''''''''
 
-Another choice is to treat the temperature as an independent
-variable. Then the assumption of temperature equilibrium requires no additional
-equations, and the energy residual equation takes the form
+Another choice is to treat the temperature as an independent variable. Then the
+assumption of temperature equilibrium requires no additional equations, and the
+energy residual equation takes the form
 
 .. math::
 
-  u - \sum\limits_{i=0}^{N-1} u_i(\rho_i, T) \approx
-    \sum\limits_{i=0}^{N-1} (\rho_i^* - \rho_i)
-      \left(\frac{\partial u_i}{\partial \rho_i}\right)_{T}
+  u - \sum\limits_{i=0}^{N-1} u_i(f_i, T) \approx
+    \sum\limits_{i=0}^{N-1} (f_i^* - f_i)
+      \left(\frac{\partial u_i}{\partial f_i}\right)_{T}
     + (T^* - T)\sum\limits_{i=0}^{N-1}
-      \left(\frac{\partial u_i}{\partial T}\right)_{\rho_i},
+      \left(\frac{\partial u_i}{\partial T}\right)_{f_i},
 
 where the temperature difference can be factored out of the sum since it doesn't
 depend on material index.
@@ -313,7 +328,7 @@ simplified to be
 
 .. math::
 
-  P_i(\rho_i, T) - P_j(\rho_j, T)
+  P_i(f_i, T) - P_j(f_j, T)
     = (f^*_i - f_i) \left(\frac{\partial P_i}{\partial f_i}\right)_{T}
     - (f^*_j - f_j) \left(\frac{\partial P_j}{\partial f_j}\right)_{T}
 
@@ -333,7 +348,7 @@ be modified to take the form
 
 .. math::
 
-  P_i^*(\rho^*_i, T) - P_i(\rho_i, T)
+  P_i^*(f^*_i, T) - P_i(f_i, T)
     = (f^*_i - f_i) \left(\frac{\partial P_i}{\partial f_i}\right)_{T}
     - (T^* - T) \left(\frac{\partial P_i}{\partial T}\right)_{f_i}.
 
