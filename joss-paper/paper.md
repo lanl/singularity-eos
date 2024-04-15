@@ -15,6 +15,7 @@ authors:
   - name: Daniel A. Holladay
     affiliation: "2, 3"
   - name: Jeffrey H. Peterson
+    orcid: 0000-0001-9425-4674
     affiliation: 4
   - name: Christopher M. Mauney
     affiliation: "2, 5"
