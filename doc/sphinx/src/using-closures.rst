@@ -61,8 +61,11 @@ for a material in the total volume is
   \overline{\rho}_i = \rho_i f_i,
 
 where :math:`\rho_i` is the physical density (i.e. material mass per *material*
-volume). The total density (mass of *participating* materials per total volume)
-is then
+volume). It is important to note here that while the densities, :math:`\rho_i`,
+and the volume fractions, :math:`f_i`, will vary as the closure model is
+applied, the average densities, :math:`\overline{\rho}_i`, will all remain
+constant, motiviating their internal use in the closure solvers. The total
+density (mass of *participating* materials per total volume) is then
 
 .. math::
 
