@@ -13,6 +13,7 @@ authors:
     affiliation: "1, 2"
     corresponding: true
   - name: Daniel A. Holladay
+  - orcid: 0000-0002-0673-9741
     affiliation: "2, 3"
   - name: Jeffrey H. Peterson
     orcid: 0000-0001-9425-4674
