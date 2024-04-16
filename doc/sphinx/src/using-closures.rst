@@ -33,8 +33,8 @@ material closure rule takes the form
 where each material has its own density, :math:`\rho_i`, and specific internal
 energy, :math:`e_i`, as well as in principle its own pressure and temperature.
 Each will be a function of the bulk density, :math:`\rho`, the bulk specific
-internal energy, :math:`\epsilon`, and both the mass fraction, :math:`\mu_j`,
-of all materials present.
+internal energy, :math:`\epsilon`, and the mass fractions, :math:`\mu_j`,
+of all other materials present.
 
 For convenience of minimizing input arguments though, the solvers in
 ``singularity-eos`` are typically posed in a different way that can sometimes be
@@ -106,15 +106,18 @@ closure state.
 
 .. warning::
 
-  The volume fractions and material densities must be consistent in some way
+  The volume fractions and material densities must be consistent so that
+
+  .. math::
+
+    \rho = \sum_{i=0}^{N - 1} \overline{\rho}_i = \sum_{i=0}^{N-1} \rho_i f_i
 
 .. note::
 
-  The mass fraction information is encoded in the specifciation of :math:`f_i`
-  and :math:`\rho_i`. In order to convert to component densities,
-  :math:`\rho_i` from mass fractions, :math:`\mu_i` and total density,
-  :math:`\rho`, volume fractions must be ***assumed*** in some consistent way
-  so that
+  Since the mass fraction information is encoded in the specifciation
+  of :math:`f_i` and :math:`\rho_i`. In order to convert to component
+  densities, :math:`\rho_i` from mass fractions, :math:`\mu_i` and total
+  density, :math:`\rho`, volume fractions must be consistent so that
 
   .. math::
 
@@ -124,12 +127,29 @@ closure state.
 
     \sum\limits_{i=0}^{N-1} f_i = f_\mathrm{tot}.
 
-  One such assumption would be to **equipartition** the volume between all
-  materials such that
+  For most practical applications, the volume fractions and densities
+  of a previous PTE state (i.e. a previous timestep) are usually available and
+  are probably the best inputs.
+
+  When a previous state is not available, an assuption must be made for how volume
+  is partitioned between the materials. The simplest (but perhaps not the most
+  effective) assumption is that volume is *equipartitioned* such that
 
   .. math::
 
-    f_i = \frac{1}{N}
+    f_i = \frac{1}{N}.
+
+  It is important to note though that this may not be sufficient in *many*
+  cases. A better guess just use the mass fractions so that
+
+  .. math::
+
+    f_i = \mu_i = \frac{\overline{\rho}_i}{\rho},
+
+  but this is really only valid when the materials have similar
+  compressibilities. A further improvement could be made by weighting the mass
+  fractions by the material bulk moduli to reflect the relative
+  compressibilities.
 
 Pressure-Temperature Equilibirum
 --------------------------------
@@ -138,7 +158,7 @@ At present, ``singularity-eos`` focuses on several methods for finding a PTE
 solution, i.e. one where the pressures and temperatures of the individual
 materials are all the same. The methods presented differ in what they treat as
 independent variables, and thus what precise system of equations they solve.
-However they all share the above mathematicaly formulation.
+However they all share the above mathematical formulation.
 
 In essence, the PTE equations can be posed as two residual equations:
 
@@ -256,7 +276,7 @@ The Density-Energy Formulation
 
 One choice is to treat volume fractions and material energies as independent
 quantities. However, the material energies provide :math:`N - 1` additional
-unknowns. This requires that euqality of material temperatures satisfy the
+unknowns. This requires that equality of material temperatures satisfy the
 additional degrees of freedom. As a result, we add :math:`N - 1` residual
 equations of the form
 
