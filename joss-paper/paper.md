@@ -91,12 +91,13 @@ architectures.
 When expressed mathematically for continuous materials, the laws of
 conservation of mass, energy, and momentum form the Navier-Stokes
 equations of fluid dynamics. In the limit of zero molecular viscosity,
-they become the Euler equations. These laws can describe everything
-from the flow of air over an airplane wing to the cataclysmic deaths
-of stars. However, the fluid equations are not complete, and the
-system must be *closed* by a description of the material at a
-sub-continuum (e.g., molecular or atomic) scale. This closure is
-commonly called the *equation of state* (EOS).
+they become the Euler equations. These laws have been used to describe
+phenomena as disparate as flow of air over an airplane wing, bacterial
+motion in fluids, and the cataclysmic deaths of stars. However, the
+fluid equations are not complete, and the system must be *closed* by a
+description of the material at a sub-continuum (e.g., molecular or
+atomic) scale. This closure is commonly called the *equation of state*
+(EOS).
 
 Equations of state vary from the simple ideal gas law, to
 sophisticated descriptions multi-phase descriptions of the lattice
@@ -152,14 +153,15 @@ Python wrappers, *modifiers*, which allow the user to transform a
 given EOS, and solvers which can find the state in which multiple
 EOS's are in PTE. To support usability, the library is extensively
 documented and tested and supports builds through both ``cmake``
-and ``Spack`` [@spack]. Singularity-EOS leverages the
-``Kokkos`` [@Kokkos] library for performance portability,
-meaning the code can run on both CPUs and GPUs, as well as other
-accelerators. This fills an important need, as modern super computing
-capabilities increasingly rely on GPUs for
+and ``Spack`` [@spack].
+
+Singularity-EOS leverages the ``Kokkos`` [@Kokkos] library for
+performance portability, meaning the code can run on both CPUs and
+GPUs, as well as other accelerators. This fills an important need, as
+modern super computing capabilities increasingly rely on GPUs for
 performance. Singularity-EOS is now used in the ongoing open-source
-[Phoebus](https://github.com/lanl/phoebus) project which
-has a separate code paper in-prep.
+[Phoebus](https://github.com/lanl/phoebus) project which has a
+separate code paper in-prep.
 
 # Design Principles and Feature Highlights
 
@@ -193,14 +195,14 @@ requires computing a root find to invert the relation
 $$\varepsilon = \varepsilon(\rho, T).$$
 
 In these cases, we expose an initial guess for temperature, which
-helps guarantee rapid convergence. Similarly, the performance of a
+helps the solution rapidly converge. Similarly, the performance of a
 sequence of EOS calls may depend on the ordering of the calls. For
 example, if both temperature and pressure are required from an
 equation of state that requires inversion, requesting pressure first
 will be less performant than requesting temperature first, as the
 former requires two root finds, and the latter requires only one. To
-enable this, we expose a function ``FillEos``, in which the user
-may request multiple quantities at once, and the code uses ordering
+enable this, we expose a function ``FillEos``, in which the user may
+request multiple quantities at once, and the code uses ordering
 knowledge to compute them as performantly as possible.
 
 ## Performance-portable polymorphism
