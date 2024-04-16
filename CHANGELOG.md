@@ -5,6 +5,7 @@
 ### Added (new features/APIs/variables/...)
 - [[PR#339]](https://github.com/lanl/singularity-eos/pull/339) Added COMPONENTS to singularity-eos CMake install, allowing to select a minimal subset needed e.g. for Fortran bindings only
 - [[PR#336]](https://github.com/lanl/singularity-eos/pull/336) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a pressure power law expansion in eta = 1-V/V0. PowerMG.
+- [[PR#357]](https://github.com/lanl/singularity-eos/pull/357) Added support for C++17 (e.g., needed when using newer Kokkos).
 
 ### Fixed (Repair bugs, etc)
 - [[PR343]](https://github.com/lanl/singularity-eos/pull/343) Add chemical potentials to stellar collapse gold files

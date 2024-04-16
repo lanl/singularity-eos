@@ -78,6 +78,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     variant("spiner", default=True, description="Use Spiner")
 
     variant("closure", default=True, description="Build closure module")
+    variant("shared", default=False, description="Build shared libs")
 
     plugins = {}
 
@@ -140,8 +141,10 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # set up kokkos offloading dependencies
     for _flag in ("~cuda", "+cuda"):
-        depends_on("kokkos ~shared" + _flag, when="+kokkos" + _flag)
+        depends_on("kokkos" + _flag, when="+kokkos" + _flag)
         depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
+
+    depends_on("kokkos+pic", when="+kokkos-kernels")
 
     # specfic specs when using GPU/cuda offloading
     # TODO remove +wrapper for clang builds
@@ -150,7 +153,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # fix for older spacks
     if spack.version.Version(spack.spack_version) >= spack.version.Version("0.17"):
-        depends_on("kokkos-kernels ~shared", when="+kokkos-kernels")
+        depends_on("kokkos-kernels", when="+kokkos-kernels")
 
     for _flag in list(CudaPackage.cuda_arch_values):
         depends_on("kokkos cuda_arch=" + _flag, when="+cuda+kokkos cuda_arch=" + _flag)
@@ -188,6 +191,7 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_BUILD_PYTHON", "python"),
             self.define_from_variant("SINGULARITY_USE_SPINER", "spiner"),
             self.define_from_variant("SINGULARITY_USE_SPINER_WITH_HDF5", "hdf5"),
+            self.define_from_variant("BUILD_SHARED_LIBS", "shared"),
             self.define("SINGULARITY_BUILD_TESTS", self.run_tests),
             self.define(
                 "SINGULARITY_BUILD_SESAME2SPINER", "sesame" in self.spec.variants["build_extra"].value
@@ -221,6 +225,13 @@ class SingularityEos(CMakePackage, CudaPackage):
         #TODO: do we need this?
         if "+kokkos+cuda" in self.spec:
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
+
+        if "+kokkos" in self.spec:
+            if "cxxstd" in self.spec["kokkos"].variants:
+              cxx_std_variant = "cxxstd" # current spack
+            else:
+              cxx_std_variant = "std" # older spack
+            args.append(self.define("CMAKE_CXX_STANDARD", self.spec["kokkos"].variants[cxx_std_variant].value))
 
         return args
 
