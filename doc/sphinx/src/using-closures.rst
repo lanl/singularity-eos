@@ -100,7 +100,7 @@ that in essence the PTE solver has the form
           \rho_1, ..., \rho_i, ..., \rho_{N-1})
 
 
-The important nuance here is the **the volume fractions and densities are both
+The important nuance here is that **the volume fractions and densities are both
 inputs and outputs** in the current ``singularity-eos`` formulation of the
 closure models. From physics perspective this can be confusing, but from a code
 perspective this limits the number of variables that need to be passed to the
@@ -117,10 +117,9 @@ closure state.
 
 .. note::
 
-  Since the mass fraction information is encoded in the specifciation
-  of :math:`f_i` and :math:`\rho_i`. In order to convert to component
-  densities, :math:`\rho_i` from mass fractions, :math:`\mu_i` and total
-  density, :math:`\rho`, volume fractions must be consistent so that
+  Since mass fraction information is encoded in the specification of the
+  component densities, :math:`\rho_i`, and component volume fractions,
+  :math:`f_i`, they must be consistent so that
 
   .. math::
 
@@ -130,9 +129,12 @@ closure state.
 
     \sum\limits_{i=0}^{N-1} f_i = f_\mathrm{tot}.
 
-  For most practical applications, the volume fractions and densities
-  of a previous PTE state (i.e. a previous timestep) are usually available and
-  are probably the best inputs.
+  For most practical applications, a previous PTE state for the current masses
+  (i.e. from a previous timestep in a Lagrangian frame) or an appropriate
+  prediction of the new PTE state (i.e. from advected values in an Eulerian
+  frame) is usually available. This is usually the preferred input for the
+  volume fractions and densities provided that they are consistent with the
+  current mass fractions in the control volume.
 
   When a previous state is not available, an assuption must be made for how volume
   is partitioned between the materials. The simplest (but perhaps not the most
@@ -182,11 +184,11 @@ density (see the previous section for more information). In these equations,
 variables.
 
 These are two non-linear residual equations that will need to be solved. In
-``singularity-eos`` a Newton-Raphson method is used that first relies on Taylor-
-expanding the equations about the equilibrium state in order to cast the
+``singularity-eos`` a Newton-Raphson method is used that first relies on
+Taylor-expanding the equations about the equilibrium state in order to cast the
 equations in terms of an update to the unknowns. The expansion about an
 equilibrium state described by :math:`f_i^*(\rho_i, y_i)` and
-:math:`u_i^*(\rho_i, y_i)` becomes
+:math:`u_i^*(\rho_i, y_i)` is
 
 .. math::
 
@@ -206,7 +208,7 @@ equilibrium state described by :math:`f_i^*(\rho_i, y_i)` and
 
 providing a means to update the guess for the equilbrium state. Minor
 manipulations are needed to recast the derivatives in terms of accessible
-thermodynamic derivatives and then these equations can be written in matrix
+thermodynamic derivatives, and then these equations can be written in matrix
 form to solve for the unknown distance away from the equilibrum state. At each
 iteration of the Newton-Raphson solver, the derivatives are recomputed and a
 new update is found until some tolerance is reached. When a good initial guess
@@ -224,15 +226,15 @@ equation of state to be a function of pressure and temperature,
 pressure and temperature as independent variables.
 
 Instead, all of the current PTE solvers in ``singularity-eos`` are cast in terms
-of volume fraction and some other independent variable. Using material
-densities introduces :math:`N - 1` additional unknowns since all but one
-material density are independent from each other. The assumption of pressure
+of volume fraction and some other independent variable. Using material volume
+fractions introduces :math:`N - 1` additional unknowns since all but one of the
+volume fractions are independent from each other. The assumption of pressure
 equilibrium naturally leads to the addition of :math:`N - 1` residual equations
-with the form
+of the form
 
 .. math::
 
-  P_i(\rho_i, y_i) - P_j(\rho_j, y_j) = 0,
+  P_i(f_i, y_i) - P_j(f_j, y_j) = 0,
 
 
 These can also be written as a Taylor expansion about the equilibrium state such
@@ -247,21 +249,21 @@ that
     - (y^*_j - y_j) \left(\frac{\partial P_j}{\partial y_j}\right)_{f_j},
 
 where the equations are typically written such that :math:`j = i + 1`. Since the
-equlibrium pressure is the same for both materials, it cancels out.
+equlibrium pressure is the same for both materials, the term cancels out and
+the material pressures are left.
 
 
-In general, ``singularity-eos`` formulates the closure equations in terms of
-volume fractions instead of densities since it allows the volume constraint to
-be written in terms of just the volume fractions:
+Formulating the closure equations in terms of volume fractions instead of
+densities has the benefit of allowing the volume constraint to be written in
+terms of just the volume fractions:
 
 .. math::
 
   f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i =
     \sum\limits_{i=0}^{N-1} (f_i^* - f_i).
 
-The other equations can also be easily re-written to be in terms of volume
-fractions instead of densities. However, the EOS only returns derivatives in
-terms of density, so a transformation is required:
+The EOS only returns derivatives in terms of density though, so a the density
+derivatives must be transformed to volume fraction derivatives via
 
 .. math::
 
@@ -271,16 +273,16 @@ terms of density, so a transformation is required:
 were :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this
 point, there are :math:`N + 1` equations and unknowns in the PTE sover. The
 choice of the second independent variable is discussed below and has
-implications on both the number of additional unknowns and the stability of the
+implications for both the number of additional unknowns and the stability of the
 method.
 
 The Density-Energy Formulation
 ''''''''''''''''''''''''''''''
 
 One choice is to treat volume fractions and material energies as independent
-quantities. However, the material energies provide :math:`N - 1` additional
-unknowns. This requires that equality of material temperatures satisfy the
-additional degrees of freedom. As a result, we add :math:`N - 1` residual
+quantities, but the material energies provide :math:`N - 1` additional
+unknowns. The additional degrees of freedom are satisfied by requiring that the
+material temperatures be equal. As a result, we add :math:`N - 1` residual
 equations of the form
 
 .. math::
@@ -300,23 +302,24 @@ equations of the form
     - (\epsilon^*_j - \epsilon_j)
         \left(\frac{\partial T_j}{\partial \epsilon_j}\right)_{f_j}
 
-This leads to a total number of :math:`2N` equations and unknowns, resulting in
-a fairly large matrix to invert when many materials are present in a cell.
-Further, the density-energy derivatives may require inversion of EOS written in
-terms of density and temperature as their natural variables. In some cases, an
-iterative inversion step is required to find the density-energy state along
-with the derivative; there may also be a loss of accuracy in the derivatives
-depending on how they're calculated. In general, a density-temperature
-formulation seems to be more stable and performant.
+Here there are a total number of :math:`2N` equations and unknowns, which
+results in a fairly large matrix to invert when many materials are present in a
+cell. Further, the density-energy derivatives may require inversion of any EOS
+with density and temperature as the natural variables. In the case of tabular
+EOS, an iterative inversion step may be required to find the density-energy
+state by iterating on temperature; there may also be a loss of accuracy in the
+derivatives depending on how they are calculated.
+
+In general, the density-temperature formulation of the PTE solver seems to be
+more stable and performant and is usually preferrred to this formulation.
 
 In the code this is referred to as the ``PTESolverRhoU``.
 
 The Density-Temperature Formulation
 '''''''''''''''''''''''''''''''''''
 
-Another choice is to treat the temperature as an independent variable. Then the
-assumption of temperature equilibrium requires no additional equations, and the
-energy residual equation takes the form
+Another choice is to treat the temperature as an independent variable, requiring
+no additional equations. The energy residual equation then takes the form
 
 .. math::
 
