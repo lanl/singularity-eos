@@ -424,7 +424,8 @@ materials.
   and outputs**. They are used to define the internal :math:`\overline
   {\rho}_i` variables at the beginning of the PTE solve. The volume fractions
   and densities at the end of the PTE solve will represent those for the new
-  PTE state.
+  PTE state. It's important to note that :math:`\overline{\rho}_i` remain
+  constant throughout the calculation.
 
 .. warning::
 
