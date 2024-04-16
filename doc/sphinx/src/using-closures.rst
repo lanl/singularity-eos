@@ -85,8 +85,8 @@ volume.
 
 Internally, the closer models in ``singularity-eos`` operate on :math:`f_i`,
 :math:`\overline{\rho}_i`, and :math:`u_i` as well as their total counterparts.
- This is different than the forms stated at the beginning of this section so
- that in essence the PTE solver has the form
+This is different than the forms stated at the beginning of this section so
+that in essence the PTE solver has the form
 
 .. math::
 
