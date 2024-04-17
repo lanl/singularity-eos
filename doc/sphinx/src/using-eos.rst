@@ -109,10 +109,12 @@ models (or a subset of models), you may do so by using the
 ``eos_variant`` class. For example,
 
 .. code-block:: cpp
+
   #include <singularity-eos/eos.hpp>
   using namespace singularity;
   
   using MyEOS_t = eos_variant<IdealGas, Gruneisen>;
+
 This will create a new type, ``MyEOS_t`` which contains only the
 ``IdealGas`` and ``Gruneisen`` classes. (All of these live under the
 ``singularity`` namespace.)
