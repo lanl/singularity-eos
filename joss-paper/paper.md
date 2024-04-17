@@ -235,6 +235,24 @@ are, however, expensive operations and the performance of lookups can
 suffer. We instead use the not-quite-transcendental lookups described
 in [@NQT] to significantly enhance performance of log-like lookups.
 
+## Extensibility via modular parts and plugins
+
+Singularity-EOS is designed to be extensible. The
+``std::variant``-based polymorphism, combined with modifiers, as
+described above, already provides significant flexibility. However,
+downstream codes may wish to add functionality to the library. This
+may be implemented in several ways. **First**, as Singularity-EOS is
+open source, contributions from downstream developers are
+welcome. **Second**, a C++ code that depends on Singularity-EOS may
+implement their own models and include them in a local variant
+object. Singularity-EOS provides tooling to build variants up
+iteratively. **Finally**, Singularity-EOS provides a flexible plugin
+infrastructure that allows downstream users to add capability to the
+core library locally by telling the build system to include a locally
+downloaded plugin. This final capability allows downstream users to
+share code with each other, even when committing that code to
+Singularity-EOS proper is not possible due to, e.g., licensing issues.
+
 # Acknowledgements
 
 This work was supported through the Laboratory Directed Research and
