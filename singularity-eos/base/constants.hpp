@@ -27,7 +27,8 @@ constexpr unsigned long pressure = (1 << 2);
 constexpr unsigned long temperature = (1 << 3);
 constexpr unsigned long specific_heat = (1 << 4);
 constexpr unsigned long bulk_modulus = (1 << 5);
-constexpr unsigned long all_values = (1 << 6) - 1;
+constexpr unsigned long lambda = (1 << 6);
+constexpr unsigned long all_values = (1 << 7) - 1;
 } // namespace thermalqs
 
 constexpr size_t MAX_NUM_LAMBDAS = 3;
