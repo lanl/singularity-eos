@@ -50,44 +50,59 @@ class JWL : public EosBase<JWL> {
     assert(Cv > 0.0);
   }
   JWL GetOnDevice() { return *this; }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
-                                        Real *lambda = nullptr) const;
+                                        Indexer_t &&lambda = nullptr) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(JWL)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = nullptr) const;
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return 0;
@@ -98,9 +113,10 @@ class JWL : public EosBase<JWL> {
     printf("%sA:%e B:%e R1: %e\nR2:%e w:%e rho0:%e\nCv:%e\n", s1, _A, _B, _R1, _R2, _w,
            _rho0, _Cv);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
-                                       Real &rho, Real &sie) const;
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("JWL"); }
   static std::string EosPyType() { return EosType(); }
@@ -122,36 +138,41 @@ PORTABLE_FORCEINLINE_FUNCTION Real JWL::ReferenceEnergy(const Real rho) const {
   const Real x = robust::ratio(_rho0, rho);
   return _c1 * robust::safe_arg_exp(-_R1 * x) + _c2 * robust::safe_arg_exp(-_R2 * x);
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real JWL::InternalEnergyFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   return ReferenceEnergy(rho) + _Cv * temp;
 }
-PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(const Real rho,
-                                                                     const Real sie,
-                                                                     Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   return ReferencePressure(rho) + _w * rho * (sie - ReferenceEnergy(rho));
 }
-PORTABLE_INLINE_FUNCTION Real JWL::MinInternalEnergyFromDensity(const Real rho,
-                                                                Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+JWL::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
   MinInternalEnergyIsNotEnabled("JWL");
   return 0.0;
 }
-PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(const Real rho,
-                                                                    const Real sie,
-                                                                    Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   EntropyIsNotEnabled("JWL");
   return 1.0;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real JWL::TemperatureFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   return robust::ratio((sie - ReferenceEnergy(rho)), _Cv);
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real JWL::SpecificHeatFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   return _Cv;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real JWL::BulkModulusFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   const Real x = robust::ratio(_rho0, rho);
   // return
   // (_w+1)*(PressureFromDensityInternalEnergy(rho,sie)-ReferencePressure(rho))+x*(_A*_R1*std::exp(-_R1*x)+_B*_R2*std::exp(-_R2*x));
@@ -159,43 +180,44 @@ PORTABLE_INLINE_FUNCTION Real JWL::BulkModulusFromDensityInternalEnergy(
          x * (_A * _R1 * robust::safe_arg_exp(-_R1 * x) +
               _B * _R2 * robust::safe_arg_exp(-_R2 * x));
 }
-PORTABLE_INLINE_FUNCTION
-Real JWL::GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
-                                                  Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real JWL::GruneisenParamFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   return _w;
 }
 // Below are "unimplemented" routines
-PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityTemperature(const Real rho,
-                                                                  const Real temp,
-                                                                  Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityTemperature(const Real rho,
-                                                                 const Real temp,
-                                                                 Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   EntropyIsNotEnabled("JWL");
   return 1.0;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real JWL::SpecificHeatFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   return SpecificHeatFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_INLINE_FUNCTION Real JWL::BulkModulusFromDensityTemperature(const Real rho,
-                                                                     const Real temp,
-                                                                     Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real JWL::BulkModulusFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   return BulkModulusFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
-PORTABLE_INLINE_FUNCTION
-Real JWL::GruneisenParamFromDensityTemperature(const Real rho, const Real temp,
-                                               Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real JWL::GruneisenParamFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   return _w;
 }
-PORTABLE_INLINE_FUNCTION void
-JWL::DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
-                                          Real &rho, Real &sie) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void JWL::DensityEnergyFromPressureTemperature(
+    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   // sie = sie_r + cv*T;  Thus sie-sie_r = cv*T
   // Thus P = P_r +_w*rho*cv*T ==> Invertable?
   // Turns out not to be exactly invertible
@@ -212,10 +234,10 @@ JWL::DensityEnergyFromPressureTemperature(const Real press, const Real temp, Rea
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
-PORTABLE_INLINE_FUNCTION void JWL::FillEos(Real &rho, Real &temp, Real &sie, Real &press,
-                                           Real &cv, Real &bmod,
-                                           const unsigned long output,
-                                           Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+JWL::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
+             const unsigned long output, Indexer_t &&lambda) const {
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::temperature)
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
@@ -228,9 +250,11 @@ PORTABLE_INLINE_FUNCTION void JWL::FillEos(Real &rho, Real &temp, Real &sie, Rea
 // TODO(JMM): pre-cache these rather than recomputing them each time
 // TODO: Chad, please decide if STP is actually right here. Should it be
 // based on the reference energy and pressure instead?
-PORTABLE_INLINE_FUNCTION
-void JWL::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                                 Real &bmod, Real &dpde, Real &dvdt, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+JWL::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                            Real &bmod, Real &dpde, Real &dvdt,
+                            Indexer_t &&lambda) const {
   rho = _rho0;
   temp = ROOM_TEMPERATURE;
   sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
