@@ -37,80 +37,96 @@ class DavisReactants : public EosBase<DavisReactants> {
       : _rho0(rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C), _G0(G0), _Z(Z),
         _alpha(alpha), _Cv0(Cv0) {}
   DavisReactants GetOnDevice() { return *this; }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real es = Es(rho);
     const Real tmp = std::pow((1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - es) + 1.0,
                               1.0 / (1.0 + _alpha));
     if (tmp > 0) return Ts(rho) * tmp;
     return Ts(rho) + (sie - es) / _Cv0; // This branch is a negative temperature
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     const Real t_s = Ts(rho);
     return Es(rho) +
            _Cv0 * t_s / (1.0 + _alpha) * (std::pow(temp / t_s, 1.0 + _alpha) - 1.0);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     return PressureFromDensityInternalEnergy(
         rho, InternalEnergyFromDensityTemperature(rho, temp));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return Ps(rho) + Gamma(rho) * rho * (sie - Es(rho));
   }
 
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const {
     MinInternalEnergyIsNotEnabled("DavisReactants");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     EntropyIsNotEnabled("DavisReactants");
     return 1.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     EntropyIsNotEnabled("DavisReactants");
     return 1.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     return SpecificHeatFromDensityInternalEnergy(
         rho, InternalEnergyFromDensityTemperature(rho, temp));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return _Cv0 / std::pow((1 + _alpha) / (Ts(rho) * _Cv0) * (sie - Es(rho)) + 1,
                            -_alpha / (1 + _alpha));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     return BulkModulusFromDensityInternalEnergy(
         rho, InternalEnergyFromDensityTemperature(rho, temp));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return Gamma(rho);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return Gamma(rho);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
-                                        Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const;
+                                        Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
-                                       Real &rho, Real &sie) const;
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(DavisReactants)
@@ -151,71 +167,87 @@ class DavisProducts : public EosBase<DavisProducts> {
                 const Real pc, const Real Cv, const Real E0)
       : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv), _E0(E0) {}
   DavisProducts GetOnDevice() { return *this; }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return Ts(rho) + (sie - Es(rho)) / _Cv;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     return _Cv * (temp - Ts(rho)) + Es(rho);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     return PressureFromDensityInternalEnergy(
         rho, InternalEnergyFromDensityTemperature(rho, temp));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return Ps(rho) + rho * Gamma(rho) * (sie - Es(rho));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const {
     MinInternalEnergyIsNotEnabled("DavisProducts");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     EntropyIsNotEnabled("DavisProducts");
     return 1.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     EntropyIsNotEnabled("DavisProducts");
     return 1.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return _Cv;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return _Cv;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     return BulkModulusFromDensityInternalEnergy(
         rho, InternalEnergyFromDensityTemperature(rho, temp));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return Gamma(rho);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return Gamma(rho);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
-                                       Real &rho, Real &sie) const;
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
-                                        Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const;
+                                        Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = nullptr) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(DavisProducts)
@@ -315,8 +347,9 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Gamma(const Real rho) const {
   }
 }
 
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   using namespace math_utils;
   const Real y = 1 - _rho0 / rho;
   const Real phat = 0.25 * _A * _A / _B * _rho0;
@@ -334,8 +367,9 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
          rho;
 }
 
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperature(
-    const Real press, const Real temp, Real *lambda, Real &rho, Real &sie) const {
+    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   // First, solve P=P(rho,T) for rho.  Note P(rho,e) has an sie-es term, which is only a
   // function of T
   auto PofRatT = [&](const Real r) {
@@ -353,9 +387,11 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
 
-PORTABLE_INLINE_FUNCTION
-void DavisReactants::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                             Real &bmod, const unsigned long output, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void DavisReactants::FillEos(Real &rho, Real &temp, Real &sie,
+                                                      Real &press, Real &cv, Real &bmod,
+                                                      const unsigned long output,
+                                                      Indexer_t &&lambda) const {
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::temperature)
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
@@ -367,10 +403,11 @@ void DavisReactants::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real
 
 // TODO: Chad please decide if this is sane
 // TODO(JMM): Pre-cache values instead of computing inline
-PORTABLE_INLINE_FUNCTION
-void DavisReactants::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                                            Real &cv, Real &bmod, Real &dpde, Real &dvdt,
-                                            Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+DavisReactants::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
+                                       Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+                                       Indexer_t &&lambda) const {
   rho = _rho0;
   temp = _T0;
   sie = InternalEnergyFromDensityTemperature(_rho0, _T0);
@@ -383,8 +420,9 @@ void DavisReactants::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Re
   dvdt = gm1 * cv / bmod;
 }
 
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   using namespace math_utils;
   const Real vvc = 1 / (rho * _vc);
   const Real Fx = -4 * _a * std::pow(vvc, 2 * _n - 1) / pow<2>(1 + std::pow(vvc, 2 * _n));
@@ -403,8 +441,9 @@ PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnerg
   return -(psv + (sie - Es(rho)) * rho * (gammav - gamma * rho) - gamma * rho * esv) /
          rho;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperature(
-    const Real press, const Real temp, Real *lambda, Real &rho, Real &sie) const {
+    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   auto PofRatT = [&](const Real r) {
     return (Ps(r) + Gamma(r) * r * _Cv * (temp - Ts(r)));
   };
@@ -419,9 +458,10 @@ PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperatur
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
-PORTABLE_INLINE_FUNCTION
-void DavisProducts::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                            Real &bmod, const unsigned long output, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+DavisProducts::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                       Real &bmod, const unsigned long output, Indexer_t &&lambda) const {
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::temperature)
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
@@ -432,10 +472,11 @@ void DavisProducts::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real 
 }
 // TODO: pre-cache values instead of computing them
 // TODO: chad please decide if these choices are sane
-PORTABLE_INLINE_FUNCTION
-void DavisProducts::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                                           Real &cv, Real &bmod, Real &dpde, Real &dvdt,
-                                           Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+DavisProducts::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
+                                      Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+                                      Indexer_t &&lambda) const {
   rho = 1.0 / _vc;
   sie = 2. * Es(rho);
   temp = TemperatureFromDensityInternalEnergy(rho, sie);
