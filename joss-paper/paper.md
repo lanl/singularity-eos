@@ -31,7 +31,7 @@ authors:
     affiliation: "1, 2, 6, 7"
   - name: Alexander Holas
     affiliation: "2, 3, 8"
-  - name: Ann E. Wills
+  - name: Ann E. Mattsson
     affiliation: 9
   - name: Mariam Gogilashvili
     affiliation: "1, 2, 7, 10"
