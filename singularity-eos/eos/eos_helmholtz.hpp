@@ -6,7 +6,7 @@
 // Original work is open-sourced under the CC-By license
 // https://creativecommons.org/licenses/by/4.0/
 //------------------------------------------------------------------------------
-// © 2023. Triad National Security, LLC. All rights reserved.  This
+// © 2023-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
