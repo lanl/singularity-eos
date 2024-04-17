@@ -64,51 +64,66 @@ class Gruneisen : public EosBase<Gruneisen> {
   static PORTABLE_INLINE_FUNCTION Real ComputeRhoMax(const Real s1, const Real s2,
                                                      const Real s3, const Real rho0);
   Gruneisen GetOnDevice() { return *this; }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return _T0 + sie / _Cv;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     return _Cv * (temp - _T0);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperatummmmmmre, Real *lambda = nullptr) const {
+      const Real rho, const Real temperatummmmmmre, Indexer_t &&lambda = nullptr) const {
     return _Cv;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return _Cv;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const;
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return Gamma(std::min(rho, _rho_max));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return Gamma(std::min(rho, _rho_max));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
-                                        Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const;
+                                        Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = nullptr) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Gruneisen)
@@ -125,9 +140,10 @@ class Gruneisen : public EosBase<Gruneisen> {
            "rho_max:%e\n",
            s1, _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max);
   }
+  template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
-                                       Real &rho, Real &sie) const;
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("Gruneisen"); }
   static std::string EosPyType() { return EosType(); }
@@ -297,8 +313,9 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::dPres_drho_e(const Real rho_in,
   }
 }
 
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
-    const Real rho_in, const Real sie, Real *lambda) const {
+    const Real rho_in, const Real sie, Indexer_t &&lambda) const {
   using namespace math_utils;
   const Real rho = std::min(rho_in, _rho_max);
   Real P_H;
@@ -315,20 +332,23 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
   }
   return P_H + Gamma(rho) * rho * (sie - E_H);
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
-Gruneisen::MinInternalEnergyFromDensity(const Real rho_in, Real *lambda) const {
+Gruneisen::MinInternalEnergyFromDensity(const Real rho_in, Indexer_t &&lambda) const {
   const Real rho = std::min(rho_in, _rho_max);
   MinInternalEnergyIsNotEnabled("Gruneisen");
   return 0.0;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityInternalEnergy(
-    const Real rho_in, const Real sie, Real *lambda) const {
+    const Real rho_in, const Real sie, Indexer_t &&lambda) const {
   const Real rho = std::min(rho_in, _rho_max);
   EntropyIsNotEnabled("Gruneisen");
   return 1.0;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
-    const Real rho_in, const Real sie, Real *lambda) const {
+    const Real rho_in, const Real sie, Indexer_t &&lambda) const {
   using namespace gruneisen_utils;
   const Real rho = std::min(rho_in, _rho_max);
   // The if statement exists here to avoid the divide by zero
@@ -343,26 +363,30 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityInternalEnergy(
   }
 }
 // Below are "unimplemented" routines
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityTemperature(
-    const Real rho_in, const Real temp, Real *lambda) const {
+    const Real rho_in, const Real temp, Indexer_t &&lambda) const {
   const Real rho = std::min(rho_in, _rho_max);
   return PressureFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityTemperature(
-    const Real rho_in, const Real temp, Real *lambda) const {
+    const Real rho_in, const Real temp, Indexer_t &&lambda) const {
   const Real rho = std::min(rho_in, _rho_max);
   const Real sie = InternalEnergyFromDensityTemperature(rho, temp);
   return EntropyFromDensityInternalEnergy(rho, sie);
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityTemperature(
-    const Real rho_in, const Real temp, Real *lambda) const {
+    const Real rho_in, const Real temp, Indexer_t &&lambda) const {
   const Real rho = std::min(rho_in, _rho_max);
   return BulkModulusFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
-    const Real press, const Real temp, Real *lambda, Real &rho, Real &sie) const {
+    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   sie = _Cv * (temp - _T0);
   // We have a branch at rho0, so we need to decide, based on our pressure, whether we
   // should be above or below rho0
@@ -383,10 +407,10 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     }
   }
 }
-PORTABLE_INLINE_FUNCTION void Gruneisen::FillEos(Real &rho_in, Real &temp, Real &sie,
-                                                 Real &press, Real &cv, Real &bmod,
-                                                 const unsigned long output,
-                                                 Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+Gruneisen::FillEos(Real &rho_in, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
+                   const unsigned long output, Indexer_t &&lambda) const {
   // The following could be sped up with work!
   const unsigned long input = ~output;
   if (thermalqs::temperature & input && thermalqs::pressure & input) {
@@ -408,10 +432,11 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::FillEos(Real &rho_in, Real &temp, Real 
 }
 
 // TODO(JMM): pre-cache these rather than recomputing them each time
-PORTABLE_INLINE_FUNCTION
-void Gruneisen::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                                       Real &cv, Real &bmod, Real &dpde, Real &dvdt,
-                                       Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+Gruneisen::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                                  Real &bmod, Real &dpde, Real &dvdt,
+                                  Indexer_t &&lambda) const {
   rho = _rho0;
   temp = _T0;
   sie = 0;
