@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -49,23 +49,27 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   PORTABLE_INLINE_FUNCTION void checkParams() const {
     PORTABLE_ALWAYS_REQUIRE(_rho0 >= 0, "Reference density must be non-negative");
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real mu = MuFromDensity(rho);
     if (mu >= 0) // Compression
       return _a0 + _a1 * mu + _a2c * mu * mu + _a3 * mu * mu * mu +
@@ -75,52 +79,61 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
              sie * (_b0 + _b1 * mu + _b2e * mu * mu + _b3 * mu * mu * mu);
   }
 
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const {
     MinInternalEnergyIsNotEnabled("SAP Polynomial");
     return 0.0;
   };
 
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     return 0.0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real mu = MuFromDensity(rho);
     if (mu >= 0) // Compression
       return _b0 + _b1 * mu + _b2c * mu * mu + _b3 * mu * mu * mu;
     else
       return _b0 + _b1 * mu + _b2e * mu * mu + _b3 * mu * mu * mu;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real mu = MuFromDensity(rho);
     if (mu >= 0) // Compression
       return (1 + mu) * (_a1 + 2 * _a2c * mu + 3 * _a3 * mu * mu +
@@ -129,19 +142,22 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
       return (1 + mu) * (_a1 + 2 * _a2e * mu + 3 * _a3 * mu * mu +
                          sie * (_b1 + 2 * _b2e * mu + 3 * _b3 * mu * mu));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MuFromDensity(const Real rho,
-                                              Real *lambda = nullptr) const {
+                                              Indexer_t &&lambda = nullptr) const {
     return rho / _rho0 - 1;
   }
 
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
-                                        Real *lambda = nullptr) const;
+                                        Indexer_t &&lambda = nullptr) const;
 
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = nullptr) const {
     // use STP: 1 atmosphere, room temperature
     rho = _rho0;
     temp = 0.0;
@@ -176,9 +192,10 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
     printf("      b2e = %g\n", _b2e);
     printf("      b3  = %g\n", _b3);
   }
+  template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
-                                       Real &rho, Real &sie) const {
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
     PORTABLE_WARN("This function is a stub for an incomplete EoS.");
     sie = 0.0;
     rho = 0.0;
@@ -196,9 +213,11 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
       thermalqs::density | thermalqs::specific_internal_energy;
 };
 
-PORTABLE_INLINE_FUNCTION
-void SAP_Polynomial::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                             Real &bmod, const unsigned long output, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void SAP_Polynomial::FillEos(Real &rho, Real &temp, Real &sie,
+                                                      Real &press, Real &cv, Real &bmod,
+                                                      const unsigned long output,
+                                                      Indexer_t &&lambda) const {
   if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
     if (output & thermalqs::pressure || output & thermalqs::temperature) {
       UNDEFINED_ERROR;
