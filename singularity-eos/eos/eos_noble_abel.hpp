@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -57,8 +57,9 @@ class NobleAbel : public EosBase<NobleAbel> {
     checkParams();
   }
   NobleAbel GetOnDevice() { return *this; }
-  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return std::max(robust::SMALL(), (sie - _qq) / _Cv);
   }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
@@ -66,77 +67,91 @@ class NobleAbel : public EosBase<NobleAbel> {
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
     PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");
   }
-  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return std::max(_qq, _Cv * temperature + _qq);
   }
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return std::max(robust::SMALL(),
                     robust::ratio(_gm1 * rho * _Cv * temperature, 1.0 - _bb * rho));
   }
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return std::max(robust::SMALL(),
                     robust::ratio(_gm1 * rho * (sie - _qq), 1.0 - _bb * rho));
   }
-  PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const {
     MinInternalEnergyIsNotEnabled("Noble Abel");
     return 0.0;
   }
 
-  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     const Real vol = robust::ratio(1.0, rho);
     return _Cv * std::log(robust::ratio(temperature, _T0) + robust::SMALL()) +
            _gm1 * _Cv *
                std::log(robust::ratio(vol - _bb, _vol0 - _bb) + robust::SMALL()) +
            _qp;
   }
-  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real vol = robust::ratio(1.0, rho);
     return _Cv * std::log(robust::ratio(sie - _qq, _sie0 - _qq) + robust::SMALL()) +
            _gm1 * _Cv *
                std::log(robust::ratio(vol - _bb, _vol0 - _bb) + robust::SMALL()) +
            _qp;
   }
-  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return _Cv;
   }
-  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return _Cv;
   }
-  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return std::max(robust::SMALL(),
                     robust::ratio(_gm1 * (_gm1 + 1.0) * rho * _Cv * temperature,
                                   (1.0 - _bb * rho) * (1.0 - _bb * rho)));
   }
-  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return std::max(robust::SMALL(),
                     robust::ratio(_gm1 * (_gm1 + 1.0) * rho * (sie - _qq),
                                   (1.0 - _bb * rho) * (1.0 - _bb * rho)));
   }
-  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return robust::ratio(_gm1, (1.0 - _bb * rho));
   }
-  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return robust::ratio(_gm1, (1.0 - _bb * rho));
   }
-  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
-                                        Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
+                                        Indexer_t &&lambda = nullptr) const;
+  template<typename Indexer_t = Real*>
+PORTABLE_INLINE_FUNCTION
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const {
+                              Indexer_t &&lambda = nullptr) const {
     // use STP: 1 atmosphere, room temperature
     rho = _rho0;
     temp = _T0;
@@ -161,9 +176,10 @@ class NobleAbel : public EosBase<NobleAbel> {
            "%g\n",
            _gm1 + 1.0, _Cv, _bb, _qq);
   }
+  template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
-                                       Real &rho, Real &sie) const {
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
     sie = std::max(_qq, _Cv * temp + _qq);
     rho =
         std::max(robust::SMALL(), robust::ratio(press, _gm1 * _Cv * temp + _bb * press));
@@ -184,9 +200,10 @@ class NobleAbel : public EosBase<NobleAbel> {
       thermalqs::density | thermalqs::specific_internal_energy;
 };
 
+  template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION
 void NobleAbel::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                        Real &bmod, const unsigned long output, Real *lambda) const {
+                        Real &bmod, const unsigned long output, Indexer_t &&lambda) const {
   if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
     if (output & thermalqs::pressure || output & thermalqs::temperature) {
       UNDEFINED_ERROR;
