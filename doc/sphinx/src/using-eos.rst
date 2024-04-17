@@ -104,21 +104,6 @@ Similarly the method
 prints relevant parameters that the EOS object was created with, such
 as the Gruneisen coefficient and specific heat for an ideal gas model.
 
-If you would like to create your own custom variant with additional
-models (or a subset of models), you may do so by using the
-``eos_variant`` class. For example,
-
-.. code-block:: cpp
-
-  #include <singularity-eos/eos.hpp>
-  using namespace singularity;
-  
-  using MyEOS_t = eos_variant<IdealGas, Gruneisen>;
-
-This will create a new type, ``MyEOS_t`` which contains only the
-``IdealGas`` and ``Gruneisen`` classes. (All of these live under the
-``singularity`` namespace.)
-
 Reference Semantics and ``GetOnDevice``
 -----------------------------------------
 
@@ -488,10 +473,17 @@ currently:
 * ``thermalqs::temperature``
 * ``thermalqs::specific_heat``
 * ``thermalqs::bulk_modulus``
+* ``thermalqs::lambda``
 * ``thermalqs::all_values``
 
 however, most EOS models only specify that they prefer density and
 temperature or density and specific internal energy.
+
+.. note::
+
+   The ``thermalqs::lambda`` flag is a bit special. It specifies that
+   eos-specific operations are to be performed on the additional
+   quantities passed in through the ``lambda`` variable.
 
 .. _eos builder section:
 
