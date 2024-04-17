@@ -97,69 +97,72 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 
   inline StellarCollapse GetOnDevice();
 
-  PORTABLE_INLINE_FUNCTION
-  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real PressureFromDensityTemperature(const Real rho, const Real temperature,
-                                      Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                         Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
-                                     Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                        Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
-                                          Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
-                                             Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
-                                         Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
-                                               Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho, Real &sie) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+  template <typename Indexer_t>
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
 
   // Properties of an NSE EOS
-  PORTABLE_INLINE_FUNCTION
-  void MassFractionsFromDensityTemperature(const Real rho, const Real temperature,
-                                           Real &Xa, Real &Xh, Real &Xn, Real &Xp,
-                                           Real &Abar, Real &Zbar,
-                                           Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  MassFractionsFromDensityTemperature(const Real rho, const Real temperature, Real &Xa,
+                                      Real &Xh, Real &Xn, Real &Xp, Real &Abar,
+                                      Real &Zbar, Indexer_t &&lambda = nullptr) const;
 
-  PORTABLE_INLINE_FUNCTION
-  void ChemicalPotentialsFromDensityTemperature(const Real rho, const Real temperature,
-                                                Real &mu_e, Real &mu_n, Real &mu_p,
-                                                Real &muhat, Real &munu,
-                                                Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void ChemicalPotentialsFromDensityTemperature(
+      const Real rho, const Real temperature, Real &mu_e, Real &mu_n, Real &mu_p,
+      Real &muhat, Real &munu, Indexer_t &&lambda = nullptr) const;
 
-  PORTABLE_INLINE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
-               const unsigned long output, Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                        Real &cv, Real &bmod, const unsigned long output,
+                                        Indexer_t &&lambda = nullptr) const;
 
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = nullptr) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -222,7 +225,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline void computeColdAndHotCurves_();
   inline void setNormalValues_();
 
-  PORTABLE_FORCEINLINE_FUNCTION void checkLambda_(Real *lambda) const noexcept {
+  template <typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION void checkLambda_(Indexer_t &&lambda) const noexcept {
     if (lambda == nullptr) {
       EOS_ERROR("StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
     }
@@ -275,20 +279,23 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     return toLog_(B, lBOffset_);
   }
 
+  template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION Real lTFromlRhoSie_(const Real lRho, const Real sie,
-                                               Real *lambda) const noexcept;
+                                               Indexer_t &&lambda) const noexcept;
+  template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
-  getLogsFromRhoT_(const Real rho, const Real temp, Real *lambda, Real &lRho, Real &lT,
-                   Real &Ye) const noexcept {
+  getLogsFromRhoT_(const Real rho, const Real temp, Indexer_t &&lambda, Real &lRho,
+                   Real &lT, Real &Ye) const noexcept {
     checkLambda_(lambda);
     lRho = lRho_(rho);
     lT = lT_(temp);
     Ye = lambda[Lambda::Ye];
     lambda[Lambda::lT] = lT;
   }
+  template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
-  getLogsFromRhoSie_(const Real rho, const Real sie, Real *lambda, Real &lRho, Real &lT,
-                     Real &Ye) const noexcept {
+  getLogsFromRhoSie_(const Real rho, const Real sie, Indexer_t &&lambda, Real &lRho,
+                     Real &lT, Real &Ye) const noexcept {
     lRho = lRho_(rho);
     lT = lTFromlRhoSie_(lRho, sie, lambda);
     Ye = lambda[Lambda::Ye];
@@ -501,91 +508,86 @@ inline void StellarCollapse::Finalize() {
   memoryStatus_ = DataStatus::Deallocated;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                                           Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::TemperatureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   const Real lRho = lRho_(rho);
   const Real lT = lTFromlRhoSie_(lRho, sie, lambda);
   return T_(lT);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::InternalEnergyFromDensityTemperature(const Real rho,
-                                                           const Real temp,
-                                                           Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::InternalEnergyFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temp, lambda, lRho, lT, Ye);
   const Real lE = lE_.interpToReal(Ye, lT, lRho);
   return le2e_(lE);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::PressureFromDensityTemperature(const Real rho,
-                                                     const Real temperature,
-                                                     Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::PressureFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
   const Real lP = lP_.interpToReal(Ye, lT, lRho);
   return lP2P_(lP);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::PressureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                                        Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::PressureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real lP = lP_.interpToReal(Ye, lT, lRho);
   return lP2P_(lP);
 }
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::MinInternalEnergyFromDensity(const Real rho, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+StellarCollapse::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
   MinInternalEnergyIsNotEnabled("Stellar Collapse");
   return 0.0;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::EntropyFromDensityTemperature(const Real rho,
-                                                    const Real temperature,
-                                                    Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::EntropyFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
   const Real entropy = entropy_.interpToReal(Ye, lT, lRho);
   return (entropy > robust::EPS() ? entropy : robust::EPS());
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                                       Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::EntropyFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real entropy = entropy_.interpToReal(Ye, lT, lRho);
   return (entropy > robust::EPS() ? entropy : robust::EPS());
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::SpecificHeatFromDensityTemperature(const Real rho,
-                                                         const Real temperature,
-                                                         Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::SpecificHeatFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
   const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
   return (Cv > robust::EPS() ? Cv : robust::EPS());
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::SpecificHeatFromDensityInternalEnergy(const Real rho,
-                                                            const Real sie,
-                                                            Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::SpecificHeatFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real Cv = dEdT_.interpToReal(Ye, lT, lRho);
   return (Cv > robust::EPS() ? Cv : robust::EPS());
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::BulkModulusFromDensityTemperature(const Real rho,
-                                                        const Real temperature,
-                                                        Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::BulkModulusFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
   const Real lbmod = lBMod_.interpToReal(Ye, lT, lRho);
@@ -593,10 +595,9 @@ Real StellarCollapse::BulkModulusFromDensityTemperature(const Real rho,
   return bMod > robust::EPS() ? bMod : robust::EPS();
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::GruneisenParamFromDensityTemperature(const Real rho,
-                                                           const Real temp,
-                                                           Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::GruneisenParamFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temp, lambda, lRho, lT, Ye);
   const Real dpde = dPdE_.interpToReal(Ye, lT, lRho);
@@ -604,9 +605,9 @@ Real StellarCollapse::GruneisenParamFromDensityTemperature(const Real rho,
   return gm1;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
-                                                           Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::BulkModulusFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real lbmod = lBMod_.interpToReal(Ye, lT, lRho);
@@ -614,10 +615,9 @@ Real StellarCollapse::BulkModulusFromDensityInternalEnergy(const Real rho, const
   return bMod;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::GruneisenParamFromDensityInternalEnergy(const Real rho,
-                                                              const Real sie,
-                                                              Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::GruneisenParamFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoSie_(rho, sie, lambda, lRho, lT, Ye);
   const Real dpde = dPdE_.interpToReal(Ye, lT, lRho);
@@ -626,17 +626,16 @@ Real StellarCollapse::GruneisenParamFromDensityInternalEnergy(const Real rho,
 }
 
 // TODO(JMM): Fill in this stub if we ever use this EOS in a PTE code.
-PORTABLE_INLINE_FUNCTION
-void StellarCollapse::DensityEnergyFromPressureTemperature(const Real press,
-                                                           const Real temp, Real *lambda,
-                                                           Real &rho, Real &sie) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void StellarCollapse::DensityEnergyFromPressureTemperature(
+    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   EOS_ERROR("StellarCollapse::DensityEnergyFromPRessureTemperature is a stub");
 }
 
-PORTABLE_INLINE_FUNCTION
-void StellarCollapse::MassFractionsFromDensityTemperature(
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void StellarCollapse::MassFractionsFromDensityTemperature(
     const Real rho, const Real temperature, Real &Xa, Real &Xh, Real &Xn, Real &Xp,
-    Real &Abar, Real &Zbar, Real *lambda) const {
+    Real &Abar, Real &Zbar, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
   Xa = Xa_.interpToReal(Ye, lT, lRho);
@@ -647,10 +646,10 @@ void StellarCollapse::MassFractionsFromDensityTemperature(
   Zbar = Zbar_.interpToReal(Ye, lT, lRho);
 }
 
-PORTABLE_INLINE_FUNCTION
-void StellarCollapse::ChemicalPotentialsFromDensityTemperature(
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void StellarCollapse::ChemicalPotentialsFromDensityTemperature(
     const Real rho, const Real temperature, Real &mu_e, Real &mu_n, Real &mu_p,
-    Real &muhat, Real &munu, Real *lambda) const {
+    Real &muhat, Real &munu, Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
   mu_e = mu_e_.interpToReal(Ye, lT, lRho);
@@ -660,10 +659,11 @@ void StellarCollapse::ChemicalPotentialsFromDensityTemperature(
   munu = munu_.interpToReal(Ye, lT, lRho);
 }
 
-PORTABLE_INLINE_FUNCTION
-void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
-                              Real &bmod, const unsigned long output,
-                              Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
+                         Real &bmod, const unsigned long output,
+                         Indexer_t &&lambda) const {
   Real lRho, lT, Ye;
   const unsigned long input = ~output;
   if (output == thermalqs::none) {
@@ -697,10 +697,11 @@ void StellarCollapse::FillEos(Real &rho, Real &temp, Real &energy, Real &press, 
   }
 }
 
-PORTABLE_INLINE_FUNCTION
-void StellarCollapse::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
-                                             Real &press, Real &cv, Real &bmod,
-                                             Real &dpde, Real &dvdt, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+StellarCollapse::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
+                                        Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+                                        Indexer_t &&lambda) const {
   rho = rhoNormal_;
   temp = TNormal_;
   sie = sieNormal_;
@@ -1118,9 +1119,9 @@ inline void StellarCollapse::setNormalValues_() {
   dVdTNormal_ = dPdENormal_ * CvNormal_ / (rhoNormal_ * rhoNormal_ * dPdR);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real StellarCollapse::lTFromlRhoSie_(const Real lRho, const Real sie,
-                                     Real *lambda) const noexcept {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real StellarCollapse::lTFromlRhoSie_(
+    const Real lRho, const Real sie, Indexer_t &&lambda) const noexcept {
   checkLambda_(lambda);
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
   using RootFinding1D::regula_falsi;
