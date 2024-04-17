@@ -26,16 +26,20 @@ constexpr int NTRIAL = 5;
 constexpr int NPTS = NTRIAL * NMAT;
 constexpr int HIST_SIZE = 10;
 
-constexpr Real in_rho_tot[5] = {7.27800000, 7.27981950, 7.28163945, 7.28345986, 7.28528073};
-constexpr Real in_sie_tot[5] = {8.41323509e08, 8.41325565e08, 8.41331734e08, 8.41342022e08, 8.41356432e08};
+constexpr Real in_rho_tot[5] = {7.27800000, 7.27981950, 7.28163945, 7.28345986,
+                                7.28528073};
+constexpr Real in_sie_tot[5] = {8.41323509e08, 8.41325565e08, 8.41331734e08,
+                                8.41342022e08, 8.41356432e08};
 constexpr Real in_lambda0 = 0.500480901;
 constexpr Real in_lambda1 = 0.499519099;
 
-constexpr Real trial_vfrac0 = 47.0/100.0;
-constexpr Real trial_vfrac1 = 53.0/100.0;
+constexpr Real trial_vfrac0 = 47.0 / 100.0;
+constexpr Real trial_vfrac1 = 53.0 / 100.0;
 
-constexpr Real out_press[5] = {-3.29164604e-6,1.19722694e8,2.3968114450000003e8,3.598077865e8,4.80104422e8};
-constexpr Real out_temp[5] = {298.,298.192952,298.38594450000005,298.5790125,298.7721535};
+constexpr Real out_press[5] = {-3.29164604e-6, 1.19722694e8, 2.3968114450000003e8,
+                               3.598077865e8, 4.80104422e8};
+constexpr Real out_temp[5] = {298., 298.192952, 298.38594450000005, 298.5790125,
+                              298.7721535};
 constexpr Real out_rho0[5] = {7.28500000, 7.28653963, 7.28808705, 7.28963516, 7.29118416};
 constexpr Real out_rho1[5] = {7.27100000, 7.27309885, 7.27519088, 7.27728316, 7.27937551};
 constexpr Real out_vfrac0[5] = {0.5, 0.500019325, 0.500038138, 0.500056927, 0.500075679};
@@ -70,13 +74,15 @@ class Indexer2D {
 template <typename T>
 inline void set_eos(T *eos) {
   constexpr Real d2to40[39] = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                                 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
+                               0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                               0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
 
-  singularity::EOS Snbeta = singularity::Vinet(7.285, 298.0, 0.529e12, 5.3345, 0.000072977, 0.2149e07,
-                                               0.658e09, 0.4419e07, d2to40);
-  singularity::EOS Sngamma = singularity::Vinet(7.271, 298.0, 0.3878e12, 6.0532, 0.0001085405, 0.2161e07,
-                                               1.025e09, 0.5051e07, d2to40);
+  singularity::EOS Snbeta =
+      singularity::Vinet(7.285, 298.0, 0.529e12, 5.3345, 0.000072977, 0.2149e07, 0.658e09,
+                         0.4419e07, d2to40);
+  singularity::EOS Sngamma =
+      singularity::Vinet(7.271, 298.0, 0.3878e12, 6.0532, 0.0001085405, 0.2161e07,
+                         1.025e09, 0.5051e07, d2to40);
   eos[0] = Snbeta.GetOnDevice();
   eos[1] = Sngamma.GetOnDevice();
   return;

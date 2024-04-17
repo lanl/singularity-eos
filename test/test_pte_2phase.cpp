@@ -114,13 +114,13 @@ int main(int argc, char *argv[]) {
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
 
-      vfrac_hm(n,0) = trial_vfrac0;
-      vfrac_hm(n,1) = trial_vfrac1;
-      rho_hm(n,0) = in_lambda0 * in_rho_tot[n] / vfrac_hm(n,0);
-      rho_hm(n,1) = in_lambda1 * in_rho_tot[n] / vfrac_hm(n,1);
+      vfrac_hm(n, 0) = trial_vfrac0;
+      vfrac_hm(n, 1) = trial_vfrac1;
+      rho_hm(n, 0) = in_lambda0 * in_rho_tot[n] / vfrac_hm(n, 0);
+      rho_hm(n, 1) = in_lambda1 * in_rho_tot[n] / vfrac_hm(n, 1);
       // same sie in both phases gives sie_tot=sie below
-      sie_hm(n,0) = in_sie_tot[n];
-      sie_hm(n,1) = in_sie_tot[n];
+      sie_hm(n, 0) = in_sie_tot[n];
+      sie_hm(n, 1) = in_sie_tot[n];
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;
@@ -151,9 +151,13 @@ int main(int argc, char *argv[]) {
       std::cout << "Trial number: " << n << std::endl;
       std::cout << "Total Specific Internal energy: \t\t" << in_sie_tot[n] << std::endl;
       std::cout << "Total density: \t\t\t\t\t" << in_rho_tot[n] << std::endl;
-      std::cout << "Mass fractions: beta, gamma: \t\t\t" << in_lambda0 << ", " << in_lambda1 << std::endl;
-      std::cout << "Assuming volume fractions: beta, gamma: \t" << vfrac_hm(n,0) << ", " << vfrac_hm(n,1) << std::endl;
-      std::cout << "gives starting phase densities: beta, gamma: \t" << rho_hm(n,0) << ", " << rho_hm(n,1) << std::endl << std::endl;
+      std::cout << "Mass fractions: beta, gamma: \t\t\t" << in_lambda0 << ", "
+                << in_lambda1 << std::endl;
+      std::cout << "Assuming volume fractions: beta, gamma: \t" << vfrac_hm(n, 0) << ", "
+                << vfrac_hm(n, 1) << std::endl;
+      std::cout << "gives starting phase densities: beta, gamma: \t" << rho_hm(n, 0)
+                << ", " << rho_hm(n, 1) << std::endl
+                << std::endl;
     }
 
     portableFor(
@@ -177,11 +181,10 @@ int main(int argc, char *argv[]) {
           }
           sie_tot /= rho_tot;
 
-
           const Real Tguess =
               ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
 
-	  std::cout << "Tguess " << Tguess << std::endl;
+          std::cout << "Tguess " << Tguess << std::endl;
 
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
@@ -215,12 +218,22 @@ int main(int argc, char *argv[]) {
 
     for (int n = 0; n < NTRIAL; n++) {
       std::cout << "Trial number: " << n << std::endl;
-      std::cout << "Total Specific Internal energy: \t" << sie_hm(n,0)*in_lambda0+sie_hm(n,1)*in_lambda1 << ", (" << in_sie_tot[n] << ")" << std::endl;
-      std::cout << "Total density: \t\t\t\t" << 1.0/(1.0/rho_hm(n,0)*in_lambda0+1.0/rho_hm(n,1)*in_lambda1) << ", (" << in_rho_tot[n] << ")" << std::endl;
-      std::cout << "Volume fractions: beta, gamma: \t\t" << vfrac_hm(n,0) << ", " << vfrac_hm(n,1) <<  std::endl;
-      std::cout << "Density: beta, gamma: \t\t\t" << rho_hm(n,0) << ", " << rho_hm(n,1) << ", (" << out_rho0[n] << ", " << out_rho1[n] << ")" << std::endl;
-      std::cout << "Pressure: beta, gamma: \t\t\t" << press_hm(n,0) << ", " << press_hm(n,1) << ", (" << out_press[n] << ")" << std::endl;
-      std::cout << "Temperature: beta, gamma: \t\t" << temp_hm(n,0) << ", " << temp_hm(n,1)  << ", (" << out_temp[n] << ")" << std::endl << std::endl;
+      std::cout << "Total Specific Internal energy: \t"
+                << sie_hm(n, 0) * in_lambda0 + sie_hm(n, 1) * in_lambda1 << ", ("
+                << in_sie_tot[n] << ")" << std::endl;
+      std::cout << "Total density: \t\t\t\t"
+                << 1.0 /
+                       (1.0 / rho_hm(n, 0) * in_lambda0 + 1.0 / rho_hm(n, 1) * in_lambda1)
+                << ", (" << in_rho_tot[n] << ")" << std::endl;
+      std::cout << "Volume fractions: beta, gamma: \t\t" << vfrac_hm(n, 0) << ", "
+                << vfrac_hm(n, 1) << std::endl;
+      std::cout << "Density: beta, gamma: \t\t\t" << rho_hm(n, 0) << ", " << rho_hm(n, 1)
+                << ", (" << out_rho0[n] << ", " << out_rho1[n] << ")" << std::endl;
+      std::cout << "Pressure: beta, gamma: \t\t\t" << press_hm(n, 0) << ", "
+                << press_hm(n, 1) << ", (" << out_press[n] << ")" << std::endl;
+      std::cout << "Temperature: beta, gamma: \t\t" << temp_hm(n, 0) << ", "
+                << temp_hm(n, 1) << ", (" << out_temp[n] << ")" << std::endl
+                << std::endl;
     }
 
     std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess

@@ -113,22 +113,22 @@ int main(int argc, char *argv[]) {
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
 
-      vfrac_hm(n,0) = trial_vfrac0;
-      vfrac_hm(n,1) = trial_vfrac1;
-//      vfrac_hm(n,x) = 0.0;
-      vfrac_hm(n,2) = trial_vfrac2;
-//      vfrac_hm(n,x) = 0.0;
-      rho_hm(n,0) = in_lambda0[n] * in_rho_tot[n] / vfrac_hm(n,0);
-      rho_hm(n,1) = in_lambda1[n] * in_rho_tot[n] / vfrac_hm(n,1);
-//      rho_hm(n,x) = 7.380;
-      rho_hm(n,2) = in_lambda2[n] * in_rho_tot[n] / vfrac_hm(n,2);
-//      rho_hm(n,x) = 7.116;
+      vfrac_hm(n, 0) = trial_vfrac0;
+      vfrac_hm(n, 1) = trial_vfrac1;
+      //      vfrac_hm(n,x) = 0.0;
+      vfrac_hm(n, 2) = trial_vfrac2;
+      //      vfrac_hm(n,x) = 0.0;
+      rho_hm(n, 0) = in_lambda0[n] * in_rho_tot[n] / vfrac_hm(n, 0);
+      rho_hm(n, 1) = in_lambda1[n] * in_rho_tot[n] / vfrac_hm(n, 1);
+      //      rho_hm(n,x) = 7.380;
+      rho_hm(n, 2) = in_lambda2[n] * in_rho_tot[n] / vfrac_hm(n, 2);
+      //      rho_hm(n,x) = 7.116;
       // same sie in both phases gives sie_tot=sie below
-      sie_hm(n,0) = in_sie_tot[n];
-      sie_hm(n,1) = in_sie_tot[n];
-//      sie_hm(n,x) = in_sie_tot[n];
-      sie_hm(n,2) = in_sie_tot[n];
-//      sie_hm(n,x) = in_sie_tot[n];
+      sie_hm(n, 0) = in_sie_tot[n];
+      sie_hm(n, 1) = in_sie_tot[n];
+      //      sie_hm(n,x) = in_sie_tot[n];
+      sie_hm(n, 2) = in_sie_tot[n];
+      //      sie_hm(n,x) = in_sie_tot[n];
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;
@@ -159,9 +159,13 @@ int main(int argc, char *argv[]) {
       std::cout << "Trial number: " << n << std::endl;
       std::cout << "Total Specific Internal energy: \t\t\t" << in_sie_tot[n] << std::endl;
       std::cout << "Total density: \t\t\t\t\t\t" << in_rho_tot[n] << std::endl;
-      std::cout << "Mass fractions: beta, gamma, hcp: \t\t\t" << in_lambda0[n] << ", " << in_lambda1[n] << ", " << in_lambda2[n] << std::endl;
-      std::cout << "Assuming volume fractions: beta, gamma, hcp: \t\t" << vfrac_hm(n,0) << ", " << vfrac_hm(n,1) << ", " << vfrac_hm(n,2) << std::endl;
-      std::cout << "gives starting phase densities: beta, gamma, hcp: \t" << rho_hm(n,0) << ", " << rho_hm(n,1) << ", " << rho_hm(n,2) << std::endl << std::endl;
+      std::cout << "Mass fractions: beta, gamma, hcp: \t\t\t" << in_lambda0[n] << ", "
+                << in_lambda1[n] << ", " << in_lambda2[n] << std::endl;
+      std::cout << "Assuming volume fractions: beta, gamma, hcp: \t\t" << vfrac_hm(n, 0)
+                << ", " << vfrac_hm(n, 1) << ", " << vfrac_hm(n, 2) << std::endl;
+      std::cout << "gives starting phase densities: beta, gamma, hcp: \t" << rho_hm(n, 0)
+                << ", " << rho_hm(n, 1) << ", " << rho_hm(n, 2) << std::endl
+                << std::endl;
     }
 
     portableFor(
@@ -185,11 +189,10 @@ int main(int argc, char *argv[]) {
           }
           sie_tot /= rho_tot;
 
-
           const Real Tguess =
               ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
 
-	  std::cout << "Tguess " << Tguess << std::endl;
+          std::cout << "Tguess " << Tguess << std::endl;
 
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
@@ -223,13 +226,30 @@ int main(int argc, char *argv[]) {
 
     for (int n = 0; n < NTRIAL; n++) {
       std::cout << "Trial number: " << n << std::endl;
-      std::cout << "Total Specific Internal energy: \t" << sie_hm(n,0)*in_lambda0[n]+sie_hm(n,1)*in_lambda1[n]+sie_hm(n,2)*in_lambda2[n] << ", (" << in_sie_tot[n] << ")" << std::endl;
-      std::cout << "Total density: \t\t\t\t" << 1.0/(1.0/rho_hm(n,0)*in_lambda0[n]+1.0/rho_hm(n,1)*in_lambda1[n]+1.0/rho_hm(n,2)*in_lambda2[n]) << ", (" << in_rho_tot[n] << ")" << std::endl;
-      std::cout << "Volume fractions: beta, gamma, hcp: \t" << vfrac_hm(n,0) << ", " << vfrac_hm(n,1) <<  ", " << vfrac_hm(n,2) << std::endl;
-      std::cout << "Density: beta, gamma, hcp: \t\t" << rho_hm(n,0) << ", " << rho_hm(n,1) << ", " << rho_hm(n,2) << ", (" << out_rho0[n] << ", " << out_rho1[n] << ", " << out_rho2[n] << ")" << std::endl;
-      std::cout << "Pressure: beta, gamma, hcp: \t\t" << press_hm(n,0) << ", " << press_hm(n,1) << ", " << press_hm(n,2) << ", (" << out_press[n] << ")" << std::endl;
-      std::cout << "Temperature: beta, gamma, hcp: \t\t" << temp_hm(n,0) << ", " << temp_hm(n,1)  << ", " << temp_hm(n,2) << ", (" << out_temp[n] << ")" << std::endl;
-      std::cout << "Internal energy: beta, gamma, hcp: \t" << sie_hm(n,0) << ", " << sie_hm(n,1)  << ", " << sie_hm(n,2) << ", (" << out_sie0[n] << ", " << out_sie1[n] << ", " << out_sie2[n] << ")" << std::endl << std::endl;
+      std::cout << "Total Specific Internal energy: \t"
+                << sie_hm(n, 0) * in_lambda0[n] + sie_hm(n, 1) * in_lambda1[n] +
+                       sie_hm(n, 2) * in_lambda2[n]
+                << ", (" << in_sie_tot[n] << ")" << std::endl;
+      std::cout << "Total density: \t\t\t\t"
+                << 1.0 / (1.0 / rho_hm(n, 0) * in_lambda0[n] +
+                          1.0 / rho_hm(n, 1) * in_lambda1[n] +
+                          1.0 / rho_hm(n, 2) * in_lambda2[n])
+                << ", (" << in_rho_tot[n] << ")" << std::endl;
+      std::cout << "Volume fractions: beta, gamma, hcp: \t" << vfrac_hm(n, 0) << ", "
+                << vfrac_hm(n, 1) << ", " << vfrac_hm(n, 2) << std::endl;
+      std::cout << "Density: beta, gamma, hcp: \t\t" << rho_hm(n, 0) << ", "
+                << rho_hm(n, 1) << ", " << rho_hm(n, 2) << ", (" << out_rho0[n] << ", "
+                << out_rho1[n] << ", " << out_rho2[n] << ")" << std::endl;
+      std::cout << "Pressure: beta, gamma, hcp: \t\t" << press_hm(n, 0) << ", "
+                << press_hm(n, 1) << ", " << press_hm(n, 2) << ", (" << out_press[n]
+                << ")" << std::endl;
+      std::cout << "Temperature: beta, gamma, hcp: \t\t" << temp_hm(n, 0) << ", "
+                << temp_hm(n, 1) << ", " << temp_hm(n, 2) << ", (" << out_temp[n] << ")"
+                << std::endl;
+      std::cout << "Internal energy: beta, gamma, hcp: \t" << sie_hm(n, 0) << ", "
+                << sie_hm(n, 1) << ", " << sie_hm(n, 2) << ", (" << out_sie0[n] << ", "
+                << out_sie1[n] << ", " << out_sie2[n] << ")" << std::endl
+                << std::endl;
     }
 
     std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess
