@@ -62,7 +62,7 @@ class EOS(unittest.TestCase):
                                                thermalqs.temperature   |
                                                thermalqs.specific_heat |
                                                thermalqs.bulk_modulus  |
-                                               thermalqs.lambda)
+                                               thermalqs.do_lambda)
 
     def testIdealGas(self):
         eos = singularity_eos.IdealGas(1,1)
