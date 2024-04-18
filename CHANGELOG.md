@@ -20,6 +20,7 @@
 - [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR363]](https://github.com/lanl/singularity-eos/pull/363) Template lambda values for scalar calls
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR329]](https://github.com/lanl/singularity-eos/pull/329) Move vinet tests into analytic test suite
