@@ -16,6 +16,7 @@
 #define SINGULARITY_EOS_BASE_VARIADIC_UTILS_HPP_
 
 #include <type_traits>
+#include <utility>
 
 namespace singularity {
 namespace variadic_utils {
@@ -27,13 +28,13 @@ namespace variadic_utils {
 template <typename T, typename = typename std::enable_if<
                           std::is_pointer<typename std::remove_reference<
                               typename std::remove_cv<T>::type>::type>::value>::type>
-inline bool is_nullptr(T &&t) {
+constexpr inline bool is_nullptr(T &&t) {
   return std::forward<T>(t) == nullptr;
 }
 template <typename T,
           typename std::enable_if<!std::is_pointer<typename std::remove_reference<
               typename std::remove_cv<T>::type>::type>::value>::type * = nullptr>
-inline bool is_nullptr(T &&) {
+constexpr inline bool is_nullptr(T &&) {
   return false;
 }
 
