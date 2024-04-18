@@ -121,7 +121,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
     THEN("We can load the file") { // don't bother filtering bmod here.
       StellarCollapse sc(filename, false, false);
       AND_THEN("Some properties we expect for ideal gas hold") {
-        Real lambda[2];
+        std::vector<Real> lambda(2);
         Real rho, t, sie, p, cv, b, dpde, dvdt;
         sc.ValuesAtReferenceState(rho, t, sie, p, cv, b, dpde, dvdt, lambda);
         Real yemin = sc.YeMin();
