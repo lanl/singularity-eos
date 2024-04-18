@@ -28,6 +28,7 @@ authors:
   - name: Karen Tsai
     affiliation: 3
   - name: Brandon Barker
+    orcid: 0000-0002-8825-0893
     affiliation: "1, 2, 6, 7"
   - name: Alexander Holas
     affiliation: "2, 3, 8"
