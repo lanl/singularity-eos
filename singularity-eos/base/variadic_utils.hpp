@@ -23,6 +23,16 @@ namespace variadic_utils {
 // Some generic variatic utilities
 // ======================================================================
 
+// SFINAE to check if a value is a null ptr
+template <typename T, typename std::enable_if<std::is_pointer<T>::value, int>::type = 0>
+inline bool is_nullptr(T &&t) {
+  return t == nullptr;
+}
+template <typename T, typename std::enable_if<!std::is_pointer<T>::value, int>::type = 0>
+inline bool is_nullptr(T &&t) {
+  return false;
+}
+
 // Backport of C++17 bool_constant.
 // With C++17, can be replaced with
 // using std::bool_constant
