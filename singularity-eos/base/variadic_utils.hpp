@@ -24,12 +24,16 @@ namespace variadic_utils {
 // ======================================================================
 
 // SFINAE to check if a value is a null ptr
-template <typename T, typename std::enable_if<std::is_pointer<T>::value, int>::type = 0>
+template <typename T, typename = typename std::enable_if<
+                          std::is_pointer<typename std::remove_reference<
+                              typename std::remove_cv<T>::type>::type>::value>::type>
 inline bool is_nullptr(T &&t) {
-  return t == nullptr;
+  return std::forward<T>(t) == nullptr;
 }
-template <typename T, typename std::enable_if<!std::is_pointer<T>::value, int>::type = 0>
-inline bool is_nullptr(T &&t) {
+template <typename T,
+          typename std::enable_if<!std::is_pointer<typename std::remove_reference<
+              typename std::remove_cv<T>::type>::type>::value>::type * = nullptr>
+inline bool is_nullptr(T &&) {
   return false;
 }
 
