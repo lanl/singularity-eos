@@ -551,7 +551,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     vtemp = AssignIncrement(scratch, nmat);
     // TODO(JCD): use whatever lambdas are passed in
     /*for (int m = 0; m < nmat; m++) {
-      if (lambda[m] != nullptr) Cache[m] = lambda[m];
+      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
     }*/
   }
 
@@ -766,7 +766,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Tnorm = 1.0;
     // TODO(JCD): use whatever lambdas are passed in
     /*for (int m = 0; m < nmat; m++) {
-      if (lambda[m] != nullptr) Cache[m] = lambda[m];
+      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
     }*/
   }
 
@@ -963,7 +963,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Pequil = P;
     // TODO(JCD): use whatever lambdas are passed in
     /*for (int m = 0; m < nmat; m++) {
-      if (lambda[m] != nullptr) Cache[m] = lambda[m];
+      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
     }*/
   }
 
@@ -1184,7 +1184,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     utemp = AssignIncrement(scratch, nmat);
     // TODO(JCD): use whatever lambdas are passed in
     /*for (int m = 0; m < nmat; m++) {
-      if (lambda[m] != nullptr) Cache[m] = lambda[m];
+      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
     }*/
   }
 

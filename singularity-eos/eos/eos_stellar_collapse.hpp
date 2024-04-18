@@ -37,6 +37,7 @@
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 // spiner
@@ -227,7 +228,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 
   template <typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION void checkLambda_(Indexer_t &&lambda) const noexcept {
-    if (lambda == nullptr) {
+    if (variadic_utils::is_nullptr(lambda)) {
       EOS_ERROR("StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
     }
   }
