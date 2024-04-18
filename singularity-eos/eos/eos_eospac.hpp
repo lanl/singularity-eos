@@ -165,47 +165,47 @@ class EOSPAC : public EosBase<EOSPAC> {
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
-  SG_PIF_NOWARN 
+  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
- PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
- PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
- PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
- PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
- PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
- PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
- PORTABLE_INLINE_FUNCTION void
-  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
-          const unsigned long output, Indexer_t &&lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                        Real &cv, Real &bmod, const unsigned long output,
+                                        Indexer_t &&lambda = nullptr) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
- PORTABLE_INLINE_FUNCTION void
+  PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
- PORTABLE_INLINE_FUNCTION void
+  PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = nullptr) const;
@@ -1197,7 +1197,7 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
 
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::TemperatureFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, E[1] = {sieToSesame(sie)}, T[1], dTdr[1], dTde[1];
@@ -1209,7 +1209,7 @@ template <typename Indexer_t>
 
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, P[1], T[1] = {temperatureToSesame(temp)}, dPdr[1], dPdT[1];
@@ -1221,7 +1221,7 @@ template <typename Indexer_t>
 
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
     const Real rho, const Real temperature, Indexer_t &&lambda) const {
   EntropyIsNotEnabled("EOSPAC");
   return 1.0;
@@ -1229,7 +1229,7 @@ template <typename Indexer_t>
 
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION void
+PORTABLE_INLINE_FUNCTION void
 EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
                 const unsigned long output, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
@@ -1313,7 +1313,7 @@ EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &b
 
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::InternalEnergyFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::InternalEnergyFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
@@ -1323,7 +1323,7 @@ template <typename Indexer_t>
 }
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
@@ -1333,7 +1333,7 @@ template <typename Indexer_t>
 }
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
@@ -1343,7 +1343,7 @@ template <typename Indexer_t>
 }
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
@@ -1359,7 +1359,7 @@ template <typename Indexer_t>
 }
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real
+PORTABLE_INLINE_FUNCTION Real
 EOSPAC::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   EOS_INTEGER options[]{EOS_F_CONVERT};
@@ -1375,7 +1375,7 @@ EOSPAC::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
 }
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
@@ -1383,7 +1383,7 @@ template <typename Indexer_t>
 }
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
@@ -1391,7 +1391,7 @@ template <typename Indexer_t>
 }
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
@@ -1400,7 +1400,7 @@ template <typename Indexer_t>
 
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityTemperature(
     const Real rho, const Real temperature, Indexer_t &&lambda) const {
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, T[1] = {temperatureToSesame(temperature)};
@@ -1418,16 +1418,15 @@ template <typename Indexer_t>
 }
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION Real
-EOSPAC::GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
-                                                Indexer_t &&lambda) const {
+PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real temperature = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return GruneisenParamFromDensityTemperature(rho, temperature, lambda);
 }
 
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
+PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   using namespace EospacWrapper;
   EOS_REAL P[1] = {pressureToSesame(press)};
@@ -1447,7 +1446,7 @@ template <typename Indexer_t>
 
 SG_PIF_NOWARN
 template <typename Indexer_t>
- PORTABLE_INLINE_FUNCTION void
+PORTABLE_INLINE_FUNCTION void
 EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                                Real &bmod, Real &dpde, Real &dvdt,
                                Indexer_t &&lambda) const {
