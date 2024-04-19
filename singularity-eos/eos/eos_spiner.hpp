@@ -1821,7 +1821,7 @@ SpinerEOSDependsRhoSie::FillEos(Real &rho, Real &temp, Real &energy, Real &press
     }
   } else {
     lRho = toLog_(rho, lRhoOffset_);
-    if (!variadic_utils::is_nullptr(lambda)) *lambda = lRho;
+    if (!variadic_utils::is_nullptr(lambda)) lambda[0] = lRho;
   }
   if (output & thermalqs::temperature) {
     lE = toLog_(energy, lEOffset_);
@@ -1871,7 +1871,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::interpRhoT_(
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lT = toLog_(T, lTOffset_);
   if (!variadic_utils::is_nullptr(lambda)) {
-    *lambda = lRho;
+    lambda[0] = lRho;
   }
   return db.interpToReal(lRho, lT);
 }
@@ -1882,7 +1882,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::interpRhoSie_(
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lE = toLog_(sie, lEOffset_);
   if (!variadic_utils::is_nullptr(lambda)) {
-    *lambda = lRho;
+    lambda[0] = lRho;
   }
   return db.interpToReal(lRho, lE);
 }
@@ -1903,9 +1903,9 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
     }
   } else {
     Real lRhoGuess = reproducible_ ? lRhoMin_ : 0.5 * (lRhoMin_ + lRhoMax_);
-    if (!variadic_utils::is_nullptr(lambda) && lRhoMin_ <= *lambda &&
-        *lambda <= lRhoMax_) {
-      lRhoGuess = *lambda;
+    if (!variadic_utils::is_nullptr(lambda) && lRhoMin_ <= lambda[0] &&
+        lambda[0] <= lRhoMax_) {
+      lRhoGuess = lambda[0];
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
     auto status = ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
@@ -1926,7 +1926,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
       lRho = reproducible_ ? lRhoMin_ : lRhoGuess;
     }
   }
-  if (!variadic_utils::is_nullptr(lambda)) *lambda = lRho;
+  if (!variadic_utils::is_nullptr(lambda)) lambda[0] = lRho;
   return lRho;
 }
 
