@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------#
-# © 2021-2023. Triad National Security, LLC. All rights reserved.  This program
+# © 2021-2024. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -340,10 +340,12 @@ if(SINGULARITY_USE_SPINER)
   # singularity_enable_hdf5(singularity-eos_Interface) endif()
 endif()
 
+# Both the interface (headers) and the library (compiled) need to link to Kokkos
+# see get_sg_eos.cpp
 if(SINGULARITY_USE_KOKKOS)
-  singularity_enable_kokkos(singularity-eos_Interface)
+  singularity_enable_kokkos(singularity-eos_Common)
   if(SINGULARITY_USE_KOKKOSKERNELS)
-    singularity_enable_kokkoskernels(singularity-eos_Interface)
+    singularity_enable_kokkoskernels(singularity-eos_Common)
   endif()
 endif()
 if(SINGULARITY_USE_EIGEN)
@@ -408,7 +410,9 @@ if(SINGULARITY_BUILD_CLOSURE)
     add_library(singularity-eos_Library)
     set_target_properties(singularity-eos_Library PROPERTIES OUTPUT_NAME singularity-eos)
     add_library(singularity-eos::singularity-eos_Library ALIAS singularity-eos_Library)
-    target_link_libraries(singularity-eos_Library INTERFACE singularity-eos_Common)
+    # Public scope ensures explicit Kokkos dependency for library and anything
+    # that links to it
+    target_link_libraries(singularity-eos_Library PUBLIC singularity-eos_Common)
     target_link_libraries(singularity-eos INTERFACE singularity-eos_Library)
     target_sources(singularity-eos_Library PRIVATE ${eos_srcs})
     message(VERBOSE "EOS Library Sources:\n\t${eos_srcs}")
