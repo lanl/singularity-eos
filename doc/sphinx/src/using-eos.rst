@@ -488,10 +488,17 @@ currently:
 * ``thermalqs::temperature``
 * ``thermalqs::specific_heat``
 * ``thermalqs::bulk_modulus``
+* ``thermalqs::do_lambda``
 * ``thermalqs::all_values``
 
 however, most EOS models only specify that they prefer density and
 temperature or density and specific internal energy.
+
+.. note::
+
+   The ``thermalqs::do_lambda`` flag is a bit special. It specifies that
+   eos-specific operations are to be performed on the additional
+   quantities passed in through the ``lambda`` variable.
 
 .. _eos builder section:
 

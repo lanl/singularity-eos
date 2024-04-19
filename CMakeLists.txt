@@ -167,7 +167,13 @@ if(SINGULARITY_BUILD_PYTHON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-target_compile_features(singularity-eos_Interface INTERFACE cxx_std_14)
+# require at least C++14, but allow newer versions to become a client requirement if
+# explicitly set at build time (needed for building with newer Kokkos)
+if(CMAKE_CXX_STANDARD)
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
+else()
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_14)
+endif()
 
 # checks if this is our build, or we've been imported via `add_subdirectory` NB:
 # this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
