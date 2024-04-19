@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -27,7 +27,8 @@ constexpr unsigned long pressure = (1 << 2);
 constexpr unsigned long temperature = (1 << 3);
 constexpr unsigned long specific_heat = (1 << 4);
 constexpr unsigned long bulk_modulus = (1 << 5);
-constexpr unsigned long all_values = (1 << 6) - 1;
+constexpr unsigned long do_lambda = (1 << 6);
+constexpr unsigned long all_values = (1 << 7) - 1;
 } // namespace thermalqs
 
 constexpr size_t MAX_NUM_LAMBDAS = 3;

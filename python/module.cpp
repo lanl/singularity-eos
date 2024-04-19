@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -141,6 +141,7 @@ PYBIND11_MODULE(singularity_eos, m) {
   thermalqs.attr("temperature") = pybind11::int_(thermalqs::temperature);
   thermalqs.attr("specific_heat") = pybind11::int_(thermalqs::specific_heat);
   thermalqs.attr("bulk_modulus") = pybind11::int_(thermalqs::bulk_modulus);
+  thermalqs.attr("do_lambda") = pybind11::int_(thermalqs::do_lambda);
   thermalqs.attr("all_values") = pybind11::int_(thermalqs::all_values);
 
   py::module eos_units = m.def_submodule("eos_units");
