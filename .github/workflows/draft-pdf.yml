@@ -2,7 +2,12 @@ name: Generate JOSS paper
 
 on:
   push:
-    branches: [ jmm/joss-paper ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types:
+      - created
 
 jobs:
   paper:
