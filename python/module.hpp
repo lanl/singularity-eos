@@ -34,7 +34,7 @@ Real two_params(const T& self, const Real a, const Real b, py::array_t<Real> lam
 
 template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*&&) const>
 Real two_params_no_lambda(const T& self, const Real a, const Real b) {
-  return (self.*Func)(a, b, nullptr);
+  return (self.*Func)(a, b, static_cast<Real*>(nullptr));
 }
 
 class LambdaHelper {
