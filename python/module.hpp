@@ -27,12 +27,12 @@ using namespace singularity;
 
 // Helper function to convert lambda numpy array to double* buffer
 // With std::optional we would add support for a default value of lambda=None
-template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*) const>
+template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*&&) const>
 Real two_params(const T& self, const Real a, const Real b, py::array_t<Real> lambda) {
   return (self.*Func)(a, b, lambda.mutable_data());
 }
 
-template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*) const>
+template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*&&) const>
 Real two_params_no_lambda(const T& self, const Real a, const Real b) {
   return (self.*Func)(a, b, nullptr);
 }
