@@ -25,7 +25,8 @@ authors:
     affiliation: 3
   - name: Anna Pietarila Graham
     affiliation: 5
-  - name: Karen Tsai
+  - name: Karen C. Tsai
+    orcid: 0000-0003-2848-832X
     affiliation: 3
   - name: Brandon Barker
     orcid: 0000-0002-8825-0893
