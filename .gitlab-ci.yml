@@ -126,7 +126,7 @@ default:
     - rm -rf ${SPACK_USER_CACHE_PATH} ${DEVEL_SPACK_ROOT}
     - |
       if [[ -z "${PROJECT_TMP_SPACK_DIR}" ]]; then
-        export PROJECT_SPACK_ROOT=${XCAP_PROJECT_DIR}/spack
+        export PROJECT_SPACK_ROOT="${XCAP_PROJECT_DIR}/spack-${TESTING_CLUSTER}"
       else
         export PROJECT_SPACK_ROOT="${XCAP_PROJECT_DIR}/${PROJECT_TMP_SPACK_DIR}-${TESTING_CLUSTER}"
       fi
