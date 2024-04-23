@@ -13,7 +13,7 @@ authors:
     affiliation: "1, 2"
     corresponding: true
   - name: Daniel A. Holladay
-  - orcid: 0000-0002-0673-9741
+    orcid: 0000-0002-0673-9741
     affiliation: "2, 3"
   - name: Jeffrey H. Peterson
     orcid: 0000-0001-9425-4674
@@ -68,6 +68,7 @@ affiliations:
   - name: Department of Physics, Florida State University, USA
     index: 10
   - name: XCP-4, Continuum Models and Numerical Methods, Los Alamos National Laboratory, USA
+    index: 11
 date: 13 April 2024
 bibliography: refs.bib
 
