@@ -113,7 +113,8 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
         std::vector<Real> lambda(steelEOS_host_polymorphic.nlambda());
         steelEOS_host_polymorphic.DensityEnergyFromPressureTemperature(
             P, T, lambda.data(), rho, sie);
-        eospac.DensityEnergyFromPressureTemperature(P, T, nullptr, rho_pac, sie_pac);
+        eospac.DensityEnergyFromPressureTemperature(P, T, static_cast<Real *>(nullptr),
+                                                    rho_pac, sie_pac);
         REQUIRE(isClose(rho, rho_pac));
       }
     }
