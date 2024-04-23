@@ -49,69 +49,84 @@ class Vinet : public EosBase<Vinet> {
   Vinet GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const;
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const;
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const;
+  PressureFromDensityTemperature(const Real rho, const Real temp,
+                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Entropy added AEM Dec. 2022
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION Real
+  EntropyFromDensityTemperature(const Real rho, const Real temp,
+                                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv0;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv0;
   }
   // Thermal Bulk Modulus added AEM Dec 2022
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TBulkModulusFromDensityTemperature(
-      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const;
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Thermal expansion coefficient added AEM 2022
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TExpansionCoeffFromDensityTemperature(
-      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return robust::ratio(_A0 * _B0, _Cv0 * rho);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return robust::ratio(_A0 * _B0, _Cv0 * rho);
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
-                                        Real &cv, Real &bmod, const unsigned long output,
-                                        Indexer_t &&lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION void
+  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+          const unsigned long output,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
-                         Indexer_t &&lambda = nullptr) const;
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Vinet)

@@ -462,7 +462,8 @@ class Helmholtz : public EosBase<Helmholtz> {
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real rl = rho;
     Real el = sie;
     Real temperature, p, cv, bmod;
@@ -471,7 +472,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real rl = rho;
     Real tl = temperature;
     Real sie, p, cv, bmod;
@@ -480,7 +482,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real rl = rho;
     Real tl = temperature;
     Real sie, p, cv, bmod;
@@ -489,7 +492,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real rl = rho;
     Real el = sie;
     Real temperature, p, cv, bmod;
@@ -498,22 +502,24 @@ class Helmholtz : public EosBase<Helmholtz> {
     return p;
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const {
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     MinInternalEnergyIsNotEnabled("Helmholtz");
     return 0.0;
   }
 
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+  PORTABLE_INLINE_FUNCTION Real
+  EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
     GetFromDensityTemperature_(rho, temperature, lambda, p, e, s, etaele, nep);
     return s[HelmUtils::VAL];
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
     GetFromDensityInternalEnergy_(rho, sie, lambda, p, e, s, etaele, nep);
     return s[HelmUtils::VAL];
@@ -521,7 +527,8 @@ class Helmholtz : public EosBase<Helmholtz> {
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real rl = rho;
     Real tl = temperature;
     Real sie, p, cv, bmod;
@@ -530,7 +537,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real rl = rho;
     Real el = sie;
     Real temperature, p, cv, bmod;
@@ -540,7 +548,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real rl = rho;
     Real tl = temperature;
     Real sie, p, cv, bmod;
@@ -549,7 +558,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real rl = rho;
     Real el = sie;
     Real temperature, p, cv, bmod;
@@ -560,7 +570,8 @@ class Helmholtz : public EosBase<Helmholtz> {
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     using namespace HelmUtils;
     Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
     GetFromDensityTemperature_(rho, temperature, lambda, p, e, s, etaele, nep);
@@ -569,7 +580,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     using namespace HelmUtils;
     Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
     Real abar = lambda[Lambda::Abar];
@@ -585,15 +597,16 @@ class Helmholtz : public EosBase<Helmholtz> {
   }
 
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
-                                        Real &cv, Real &bmod, const unsigned long output,
-                                        Indexer_t &&lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION void
+  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+          const unsigned long output,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
-                         Indexer_t &&lambda = nullptr) const {
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     // JMM: I'm not sure what to put here or if it matters. Some
     // reference state, maybe stellar denity, would be appropriate.
     PORTABLE_ALWAYS_ABORT("Stub");

@@ -54,7 +54,8 @@ class IdealGas : public EosBase<IdealGas> {
   IdealGas GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return MYMAX(0.0, sie / _Cv);
   }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
@@ -69,76 +70,88 @@ class IdealGas : public EosBase<IdealGas> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return MYMAX(0.0, _Cv * temperature);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return MYMAX(0.0, _gm1 * rho * _Cv * temperature);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return MYMAX(0.0, _gm1 * rho * sie);
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const {
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return 0.0;
   };
 
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+  PORTABLE_INLINE_FUNCTION Real
+  EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv * log(robust::ratio(temperature, _EntropyT0)) +
            _gm1 * _Cv * log(robust::ratio(_EntropyRho0, rho));
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
     return EntropyFromDensityTemperature(rho, temp, lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return MYMAX(0.0, (_gm1 + 1) * _gm1 * rho * _Cv * temperature);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return MYMAX(0.0, (_gm1 + 1) * _gm1 * rho * sie);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _gm1;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _gm1;
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
-                                        Real &cv, Real &bmod, const unsigned long output,
-                                        Indexer_t &&lambda = nullptr) const;
+  PORTABLE_INLINE_FUNCTION void
+  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+          const unsigned long output,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
-                         Indexer_t &&lambda = nullptr) const {
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     // use STP: 1 atmosphere, room temperature
     rho = _rho0;
     temp = _T0;
