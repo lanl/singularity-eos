@@ -37,12 +37,16 @@ authors:
   - name: Ann E. Mattsson
     affiliation: 9
   - name: Mariam Gogilashvili
+    orcid: 0000-0002-6944-8052
     affiliation: "1, 2, 7, 10"
   - name: Joshua C. Dolence
+    orcid: 0000-0003-4353-8751
     affiliation: "1, 2"
   - name: Chad D. Meyer
+    orcid: 0000-0002-7530-6173
     affiliation: 11
   - name: Sriram Swaminarayan
+    orcid: 0000-0003-1809-5231
     affiliation: 3
   - name: Christoph Junghans
     orcid: 0000-0003-0925-1458
