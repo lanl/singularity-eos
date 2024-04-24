@@ -38,12 +38,12 @@ using remove_cvref_t = typename remove_cvref<T>::type;
 // SFINAE to check if a value is a null ptr
 template <typename T, typename = typename std::enable_if<
                           std::is_pointer<remove_cvref_t<T>>::value>::type>
-inline bool is_nullptr(T &&t) {
+constexpr inline bool is_nullptr(T &&t) {
   return std::forward<T>(t) == nullptr;
 }
 template <typename T, typename std::enable_if<
                           !std::is_pointer<remove_cvref_t<T>>::value>::type * = nullptr>
-inline bool is_nullptr(T &&) {
+constexpr inline bool is_nullptr(T &&) {
   return false;
 }
 
