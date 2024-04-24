@@ -18,6 +18,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <ports-of-call/portability.hpp>
+
 namespace singularity {
 namespace variadic_utils {
 
@@ -38,13 +40,32 @@ using remove_cvref_t = typename remove_cvref<T>::type;
 // SFINAE to check if a value is a null ptr
 template <typename T, typename = typename std::enable_if<
                           std::is_pointer<remove_cvref_t<T>>::value>::type>
-inline bool is_nullptr(T &&t) {
+constexpr inline bool is_null(T &&t) {
   return std::forward<T>(t) == nullptr;
 }
 template <typename T, typename std::enable_if<
                           !std::is_pointer<remove_cvref_t<T>>::value>::type * = nullptr>
-inline bool is_nullptr(T &&) {
+constexpr inline bool is_null(T &&) {
   return false;
+}
+
+// constexpr function to generate a real* nullptr
+template<typename T=Real>
+constexpr inline T *ptrt_nullptr() {
+  return static_cast<T*>(nullptr);
+}
+
+template <typename T, typename Func_t,
+          typename std::enable_if_t<
+            std::is_null_pointer<remove_cvref_t<T>>::value, T>* = nullptr>
+constexpr inline void DoIfNotNull(T &&t, const Func_t &f) {}
+template <typename T, typename Func_t,
+          typename std::enable_if_t<
+            !std::is_null_pointer<remove_cvref_t<T>>::value, T>* = nullptr>
+constexpr inline void DoIfNotNull(T &&t, const Func_t &f) {
+  if (!is_nullptr(std::forward<T>(t))) {
+    f(std::forward<T>(t));
+  }
 }
 
 // Backport of C++17 bool_constant.

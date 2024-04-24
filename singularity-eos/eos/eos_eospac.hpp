@@ -29,12 +29,15 @@
 #include <eospac-wrapper/eospac_wrapper.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
 
 using namespace eos_base;
 using namespace EospacWrapper;
+using variadic_utils::ptrt_nullptr;
+using variadic_utils::DoIfNotNull;
 
 // How do I make a destructor? How do I free the EOS memory if more than one
 // points to the same table? Does EOSPAC give me multiple (reference-counted)
@@ -145,72 +148,72 @@ class EOSPAC : public EosBase<EOSPAC> {
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   PressureFromDensityTemperature(const Real rho, const Real temperature,
-                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+                                 Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      const Real rho, Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
-                                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+                                Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie,
-      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+      Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,
-          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+          Indexer_t &&lambda = ptrt_nullptr()) const;
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
@@ -221,7 +224,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
-                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+                         Indexer_t &&lambda = ptrt_nullptr()) const;
 
   // Generic (Scalar)
   using EosBase<EOSPAC>::is_raw_pointer;
