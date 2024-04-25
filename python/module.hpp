@@ -14,6 +14,7 @@
 // clang-format off
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <map>
 #include <string>
@@ -24,6 +25,7 @@
 
 namespace py = pybind11;
 using namespace singularity;
+using singularity::variadic_utils::np;
 
 // Helper function to convert lambda numpy array to double* buffer
 // With std::optional we would add support for a default value of lambda=None
@@ -34,7 +36,7 @@ Real two_params(const T& self, const Real a, const Real b, py::array_t<Real> lam
 
 template<typename T, PORTABLE_FUNCTION Real(T::*Func)(const Real, const Real, Real*&&) const>
 Real two_params_no_lambda(const T& self, const Real a, const Real b) {
-  return (self.*Func)(a, b, static_cast<Real*>(nullptr));
+  return (self.*Func)(a, b, np<Real>());
 }
 
 class LambdaHelper {
@@ -326,7 +328,7 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
         auto lambda = kwargs["lmbda"].cast<py::array_t<Real>>();
         self.FillEos(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, output, lambda.mutable_data());
       } else {
-        self.FillEos(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, output, static_cast<Real*>(nullptr));
+        self.FillEos(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, output, np<Real>());
       }
       return s;
     })
@@ -337,7 +339,7 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
     })
     .def("ValuesAtReferenceState", [](const T & self){
       EOSState s;
-      self.ValuesAtReferenceState(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, s.dpde, s.dvdt, static_cast<Real*>(nullptr));
+      self.ValuesAtReferenceState(s.density, s.temperature, s.specific_internal_energy, s.pressure, s.specific_heat, s.bulk_modulus, s.dpde, s.dvdt, np<Real>());
       return s;
     })
 
@@ -354,7 +356,7 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
     }, py::arg("press"), py::arg("temp"), py::arg("lmbda"))
     .def("DensityEnergyFromPressureTemperature", [](const T & self, const Real press, const Real temp) {
       Real rho, sie;
-      self.DensityEnergyFromPressureTemperature(press, temp, static_cast<Real*>(nullptr), rho, sie);
+      self.DensityEnergyFromPressureTemperature(press, temp, np<Real>(), rho, sie);
       return std::pair<Real, Real>(rho, sie);
     }, py::arg("press"), py::arg("temp"))
     .def("Finalize", &T::Finalize)

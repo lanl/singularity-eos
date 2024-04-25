@@ -24,6 +24,12 @@ namespace variadic_utils {
 // Some generic variatic utilities
 // ======================================================================
 
+// Useful for generating nullptr of a specific pointer type
+template <typename T>
+inline constexpr T *np() {
+  return nullptr;
+}
+
 // C++14 implementation of std::remove_cvref (available since C++20)
 // credit to CJ + Diego
 template <typename T>
