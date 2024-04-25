@@ -460,11 +460,11 @@ total specific internal energy in the problem, ``rho`` is an indexer
 over densities, one per material. ``vfract`` is an indexer over volume
 fractions, one per material. ``sie`` is an indexer over temperatures,
 one per material. ``press`` is an indexer over pressures, one per
-material. ``lambda`` is an indexer over lambda arrays, one ``Real *``
-object per material. ``scratch`` is a pointer to pre-allocated scratch
-memory, as described above. It is assumed enough scratch has been
-allocated.  Finally, the optional argument ``Tguess`` allows for host
-codes to pass in an initial temperature guess for the solver.  For more
+material. ``lambda`` is an indexer over lambda arrays, one per
+material. ``scratch`` is a pointer to pre-allocated scratch memory, as
+described above. It is assumed enough scratch has been allocated.
+Finally, the optional argument ``Tguess`` allows for host codes to
+pass in an initial temperature guess for the solver.  For more
 information on initial guesses, see the section below.
 
 The constructor for the ``PTESolverRhoU`` has the same structure:
