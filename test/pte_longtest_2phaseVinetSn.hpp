@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_TEST_PTE_TEST_2PHASEVINETSN_
-#define _SINGULARITY_EOS_TEST_PTE_TEST_2PHASEVINETSN_
+#ifndef _SINGULARITY_EOS_TEST_PTE_LONGTEST_2PHASEVINETSN_
+#define _SINGULARITY_EOS_TEST_PTE_LONGTEST_2PHASEVINETSN_
 
 #include <stdlib.h>
 
@@ -21,6 +21,7 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
+namespace pte_longtest_2phaseVinetSn {
 constexpr int NMAT = 2;
 constexpr int NTRIAL = 20;
 constexpr int NPTS = NTRIAL * NMAT;
@@ -35,12 +36,8 @@ constexpr Real in_sie_tot[NTRIAL] = {
     1.43767572e9, 1.72535639e9,         2.07977629e9,  2.50588681e9,  3.00885704e9,
     3.59408011e9, 4.2671792100000005e9, 5.03401308e9,  5.90068122e9,  6.87352878e9,
     7.95915117e9, 9.16439846e9,         1.04963795e10, 1.19624656e10, 1.35702945e10};
-constexpr Real in_lambda0 = 0.500480901;
-constexpr Real in_lambda1 = 0.499519099;
-
-constexpr Real trial_vfrac0 = 47.0 / 100.0;
-constexpr Real trial_vfrac1 = 53.0 / 100.0;
-
+constexpr Real in_lambda[NMAT] = {0.500480901,0.499519099};
+constexpr Real trial_vfrac[NMAT] = {47.0 / 100.0, 53.0/100.0};
 constexpr Real out_press[NTRIAL] = {
     -3.29164604e-6,        1.284232715e10,        2.753234765e10,
     4.423652945000001e10,  6.313670939999999e10,  8.443021825e10,
@@ -76,32 +73,6 @@ constexpr Real out_vfrac1[NTRIAL] = {0.5,         0.498282729, 0.49686481,  0.49
                                      0.491435452, 0.491541508, 0.491680878, 0.491850697};
 
 template <typename T>
-class LinearIndexer {
- public:
-  PORTABLE_FUNCTION LinearIndexer() = default;
-  LinearIndexer(const T &t) : data_(t) {}
-  PORTABLE_INLINE_FUNCTION
-  auto &operator[](const int i) const { return data_(i); }
-
- private:
-  T data_;
-};
-
-template <typename T>
-class Indexer2D {
- public:
-  PORTABLE_FUNCTION Indexer2D() = default;
-  PORTABLE_FUNCTION Indexer2D(const int j, const T &t) : j_(j), data_(t) {}
-  Indexer2D(const int j, const T &&t) = delete; // prevents r-value binding
-  PORTABLE_INLINE_FUNCTION
-  auto &operator[](const int i) const { return data_(j_, i); }
-
- private:
-  const int j_;
-  const T &data_;
-};
-
-template <typename T>
 inline void set_eos(T *eos) {
   constexpr Real d2to40[39] = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
                                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
@@ -119,17 +90,24 @@ inline void set_eos(T *eos) {
 }
 
 template <typename RealIndexer, typename EOSIndexer>
-inline void set_state(RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
-                      RealIndexer &&temp, EOSIndexer &&eos) {
+inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                      EOSIndexer &&eos) {
 
-  vfrac[0] = 47.0 / 100.0;
-  vfrac[1] = 53.0 / 100.0;
-  rho[0] = 7.278 * 0.500480901 / vfrac[0];
-  rho[1] = 7.278 * 0.499519099 / vfrac[1];
-  sie[0] = 8.41323509e08;
-  sie[1] = 8.41323509e08;
+  Real vsum = 0.;
+  for (int i = 0; i < NMAT; i++) {
+    vfrac[i] = trial_vfrac[i];
+    rho[i] = in_lambda[i]*in_rho_tot[n]/vfrac[i];
+    // same sie in both phases gives sie_tot=sie
+    sie[i] = in_sie_tot[n];
+    vsum += vfrac[i];
+  }
+
+  for (int i = 0; i < NMAT; i++)
+    vfrac[i] *= 1.0 / vsum;
 
   return;
 }
 
-#endif // _SINGULARITY_EOS_TEST_PTE_TEST_2PHASEVINETSN_
+} // namespace pte_longtest_2phaseVinetSn
+
+#endif // _SINGULARITY_EOS_TEST_PTE_LONGTEST_2PHASEVINETSN_

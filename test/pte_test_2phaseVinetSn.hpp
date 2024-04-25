@@ -21,55 +21,28 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
+namespace pte_test_2phaseVinetSn {
+
 constexpr int NMAT = 2;
 constexpr int NTRIAL = 5;
 constexpr int NPTS = NTRIAL * NMAT;
 constexpr int HIST_SIZE = 10;
 
-constexpr Real in_rho_tot[5] = {7.27800000, 7.27981950, 7.28163945, 7.28345986,
+constexpr Real in_rho_tot[NTRIAL] = {7.27800000, 7.27981950, 7.28163945, 7.28345986,
                                 7.28528073};
-constexpr Real in_sie_tot[5] = {8.41323509e08, 8.41325565e08, 8.41331734e08,
+constexpr Real in_sie_tot[NTRIAL] = {8.41323509e08, 8.41325565e08, 8.41331734e08,
                                 8.41342022e08, 8.41356432e08};
-constexpr Real in_lambda0 = 0.500480901;
-constexpr Real in_lambda1 = 0.499519099;
+constexpr Real in_lambda[NMAT] = {0.500480901,0.499519099};
+constexpr Real trial_vfrac[NMAT] = {47.0 / 100.0, 53.0/100.0};
 
-constexpr Real trial_vfrac0 = 47.0 / 100.0;
-constexpr Real trial_vfrac1 = 53.0 / 100.0;
-
-constexpr Real out_press[5] = {-3.29164604e-6, 1.19722694e8, 2.3968114450000003e8,
+constexpr Real out_press[NTRIAL] = {-3.29164604e-6, 1.19722694e8, 2.3968114450000003e8,
                                3.598077865e8, 4.80104422e8};
-constexpr Real out_temp[5] = {298., 298.192952, 298.38594450000005, 298.5790125,
+constexpr Real out_temp[NTRIAL] = {298., 298.192952, 298.38594450000005, 298.5790125,
                               298.7721535};
-constexpr Real out_rho0[5] = {7.28500000, 7.28653963, 7.28808705, 7.28963516, 7.29118416};
-constexpr Real out_rho1[5] = {7.27100000, 7.27309885, 7.27519088, 7.27728316, 7.27937551};
-constexpr Real out_vfrac0[5] = {0.5, 0.500019325, 0.500038138, 0.500056927, 0.500075679};
-constexpr Real out_vfrac1[5] = {0.5, 0.499980675, 0.499961862, 0.499943073, 0.499924321};
-
-template <typename T>
-class LinearIndexer {
- public:
-  PORTABLE_FUNCTION LinearIndexer() = default;
-  LinearIndexer(const T &t) : data_(t) {}
-  PORTABLE_INLINE_FUNCTION
-  auto &operator[](const int i) const { return data_(i); }
-
- private:
-  T data_;
-};
-
-template <typename T>
-class Indexer2D {
- public:
-  PORTABLE_FUNCTION Indexer2D() = default;
-  PORTABLE_FUNCTION Indexer2D(const int j, const T &t) : j_(j), data_(t) {}
-  Indexer2D(const int j, const T &&t) = delete; // prevents r-value binding
-  PORTABLE_INLINE_FUNCTION
-  auto &operator[](const int i) const { return data_(j_, i); }
-
- private:
-  const int j_;
-  const T &data_;
-};
+constexpr Real out_rho0[NTRIAL] = {7.28500000, 7.28653963, 7.28808705, 7.28963516, 7.29118416};
+constexpr Real out_rho1[NTRIAL] = {7.27100000, 7.27309885, 7.27519088, 7.27728316, 7.27937551};
+constexpr Real out_vfrac0[NTRIAL] = {0.5, 0.500019325, 0.500038138, 0.500056927, 0.500075679};
+constexpr Real out_vfrac1[NTRIAL] = {0.5, 0.499980675, 0.499961862, 0.499943073, 0.499924321};
 
 template <typename T>
 inline void set_eos(T *eos) {
@@ -87,5 +60,26 @@ inline void set_eos(T *eos) {
   eos[1] = Sngamma.GetOnDevice();
   return;
 }
+
+template <typename RealIndexer, typename EOSIndexer>
+inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                      EOSIndexer &&eos) {
+
+  Real vsum = 0.;
+  for (int i = 0; i < NMAT; i++) {
+    vfrac[i] = trial_vfrac[i];
+    rho[i] = in_lambda[i]*in_rho_tot[n]/vfrac[i];
+    // same sie in both phases gives sie_tot=sie 
+    sie[i] = in_sie_tot[n];
+    vsum += vfrac[i];
+  }
+
+  for (int i = 0; i < NMAT; i++)
+    vfrac[i] *= 1.0 / vsum;
+
+  return;
+}
+
+} // namespace pte_test_2phaseVinetSn
 
 #endif // _SINGULARITY_EOS_TEST_PTE_TEST_2PHASEVINETSN_

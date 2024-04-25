@@ -22,6 +22,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <pte_test_5phaseSesameSn.hpp>
+#include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <spiner/databox.hpp>
@@ -48,9 +49,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     LinearIndexer<decltype(eos_hv)> eos_h(eos_hv);
-    std::cout << "Before set_eos" << std::endl;
     set_eos(eos_hv.data());
-    std::cout << "After set_eos" << std::endl;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(eos_v, eos_hv);
@@ -109,26 +108,13 @@ int main(int argc, char *argv[]) {
     int *hist_d = hist_vh;
 #endif
 
-    // setup state
+    // setup state 
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
-
-      vfrac_hm(n, 0) = trial_vfrac0;
-      vfrac_hm(n, 1) = trial_vfrac1;
-      //      vfrac_hm(n,x) = 0.0;
-      vfrac_hm(n, 2) = trial_vfrac2;
-      //      vfrac_hm(n,x) = 0.0;
-      rho_hm(n, 0) = in_lambda0[n] * in_rho_tot[n] / vfrac_hm(n, 0);
-      rho_hm(n, 1) = in_lambda1[n] * in_rho_tot[n] / vfrac_hm(n, 1);
-      //      rho_hm(n,x) = 7.380;
-      rho_hm(n, 2) = in_lambda2[n] * in_rho_tot[n] / vfrac_hm(n, 2);
-      //      rho_hm(n,x) = 7.116;
-      // same sie in both phases gives sie_tot=sie below
-      sie_hm(n, 0) = in_sie_tot[n];
-      sie_hm(n, 1) = in_sie_tot[n];
-      //      sie_hm(n,x) = in_sie_tot[n];
-      sie_hm(n, 2) = in_sie_tot[n];
-      //      sie_hm(n,x) = in_sie_tot[n];
+      Indexer2D<decltype(rho_hm)> r(n, rho_hm);
+      Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
+      Indexer2D<decltype(sie_hm)> e(n, sie_hm);
+      set_trial_3state(n, r, vf, e, eos_h);
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;
@@ -159,8 +145,8 @@ int main(int argc, char *argv[]) {
       std::cout << "Trial number: " << n << std::endl;
       std::cout << "Total Specific Internal energy: \t\t\t" << in_sie_tot[n] << std::endl;
       std::cout << "Total density: \t\t\t\t\t\t" << in_rho_tot[n] << std::endl;
-      std::cout << "Mass fractions: beta, gamma, hcp: \t\t\t" << in_lambda0[n] << ", "
-                << in_lambda1[n] << ", " << in_lambda2[n] << std::endl;
+      std::cout << "Mass fractions: beta, gamma, hcp: \t\t\t" << in_lambda[0][n] << ", "
+                << in_lambda[1][n] << ", " << in_lambda[2][n] << std::endl;
       std::cout << "Assuming volume fractions: beta, gamma, hcp: \t\t" << vfrac_hm(n, 0)
                 << ", " << vfrac_hm(n, 1) << ", " << vfrac_hm(n, 2) << std::endl;
       std::cout << "gives starting phase densities: beta, gamma, hcp: \t" << rho_hm(n, 0)
@@ -227,13 +213,13 @@ int main(int argc, char *argv[]) {
     for (int n = 0; n < NTRIAL; n++) {
       std::cout << "Trial number: " << n << std::endl;
       std::cout << "Total Specific Internal energy: \t"
-                << sie_hm(n, 0) * in_lambda0[n] + sie_hm(n, 1) * in_lambda1[n] +
-                       sie_hm(n, 2) * in_lambda2[n]
+                << sie_hm(n, 0) * in_lambda[0][n] + sie_hm(n, 1) * in_lambda[1][n] +
+                       sie_hm(n, 2) * in_lambda[2][n]
                 << ", (" << in_sie_tot[n] << ")" << std::endl;
       std::cout << "Total density: \t\t\t\t"
-                << 1.0 / (1.0 / rho_hm(n, 0) * in_lambda0[n] +
-                          1.0 / rho_hm(n, 1) * in_lambda1[n] +
-                          1.0 / rho_hm(n, 2) * in_lambda2[n])
+                << 1.0 / (1.0 / rho_hm(n, 0) * in_lambda[0][n] +
+                          1.0 / rho_hm(n, 1) * in_lambda[1][n] +
+                          1.0 / rho_hm(n, 2) * in_lambda[2][n])
                 << ", (" << in_rho_tot[n] << ")" << std::endl;
       std::cout << "Volume fractions: beta, gamma, hcp: \t" << vfrac_hm(n, 0) << ", "
                 << vfrac_hm(n, 1) << ", " << vfrac_hm(n, 2) << std::endl;
