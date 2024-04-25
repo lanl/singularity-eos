@@ -104,12 +104,14 @@ if(SINGULARITY_BUILD_CLOSURE)
                                          singularity-eos::singularity-eos)
     target_include_directories(test_pte_2phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(pte_2phase test_pte_2phase)
-#####   
-    add_executable(test_pte_3phase test_pte_3phase.cpp)
-    target_link_libraries(test_pte_3phase PRIVATE Catch2::Catch2
-                                         singularity-eos::singularity-eos)
-    target_include_directories(test_pte_3phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    add_test(pte_3phase test_pte_3phase)
+
+    if(SINGULARITY_USE_EOSPAC)
+      add_executable(test_pte_3phase test_pte_3phase.cpp)
+      target_link_libraries(test_pte_3phase PRIVATE Catch2::Catch2
+                                           singularity-eos::singularity-eos)
+      target_include_directories(test_pte_3phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+      add_test(pte_3phase test_pte_3phase)
+    endif()
   endif()
   if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN)
     add_executable(test_get_sg_eos test_get_sg_eos.cpp)

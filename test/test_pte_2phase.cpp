@@ -219,8 +219,8 @@ int main(int argc, char *argv[]) {
                 << sie_hm(n, 0) * in_lambda[0] + sie_hm(n, 1) * in_lambda[1] << ", ("
                 << in_sie_tot[n] << ")" << std::endl;
       std::cout << "Total density: \t\t\t\t"
-                << 1.0 /
-                       (1.0 / rho_hm(n, 0) * in_lambda[0] + 1.0 / rho_hm(n, 1) * in_lambda[1])
+                << 1.0 / (1.0 / rho_hm(n, 0) * in_lambda[0] +
+                          1.0 / rho_hm(n, 1) * in_lambda[1])
                 << ", (" << in_rho_tot[n] << ")" << std::endl;
       std::cout << "Volume fractions: beta, gamma: \t\t" << vfrac_hm(n, 0) << ", "
                 << vfrac_hm(n, 1) << std::endl;

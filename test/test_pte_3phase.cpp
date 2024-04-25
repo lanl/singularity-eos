@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     int *hist_d = hist_vh;
 #endif
 
-    // setup state 
+    // setup state
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);

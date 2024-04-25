@@ -21,6 +21,10 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
+// This data is taken from the .ult file for a test case in Flag, MPMat_KPT_PTsolv.ult.std
+// Note that at this point in time (April 2024) the global and phase times are not alinged
+// in .ult but they will be in the near future.
+
 namespace pte_longtest_2phaseVinetSn {
 constexpr int NMAT = 2;
 constexpr int NTRIAL = 20;
@@ -36,8 +40,8 @@ constexpr Real in_sie_tot[NTRIAL] = {
     1.43767572e9, 1.72535639e9,         2.07977629e9,  2.50588681e9,  3.00885704e9,
     3.59408011e9, 4.2671792100000005e9, 5.03401308e9,  5.90068122e9,  6.87352878e9,
     7.95915117e9, 9.16439846e9,         1.04963795e10, 1.19624656e10, 1.35702945e10};
-constexpr Real in_lambda[NMAT] = {0.500480901,0.499519099};
-constexpr Real trial_vfrac[NMAT] = {47.0 / 100.0, 53.0/100.0};
+constexpr Real in_lambda[NMAT] = {0.500480901, 0.499519099};
+constexpr Real trial_vfrac[NMAT] = {47.0 / 100.0, 53.0 / 100.0};
 constexpr Real out_press[NTRIAL] = {
     -3.29164604e-6,        1.284232715e10,        2.753234765e10,
     4.423652945000001e10,  6.313670939999999e10,  8.443021825e10,
@@ -90,13 +94,13 @@ inline void set_eos(T *eos) {
 }
 
 template <typename RealIndexer, typename EOSIndexer>
-inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
-                      EOSIndexer &&eos) {
+inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
+                            RealIndexer &&sie, EOSIndexer &&eos) {
 
   Real vsum = 0.;
   for (int i = 0; i < NMAT; i++) {
     vfrac[i] = trial_vfrac[i];
-    rho[i] = in_lambda[i]*in_rho_tot[n]/vfrac[i];
+    rho[i] = in_lambda[i] * in_rho_tot[n] / vfrac[i];
     // same sie in both phases gives sie_tot=sie
     sie[i] = in_sie_tot[n];
     vsum += vfrac[i];
