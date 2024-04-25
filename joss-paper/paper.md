@@ -32,16 +32,21 @@ authors:
     orcid: 0000-0002-8825-0893
     affiliation: "1, 2, 6, 7"
   - name: Alexander Holas
+    orcid: 0000-0001-5184-6928
     affiliation: "2, 3, 8"
   - name: Ann E. Mattsson
     affiliation: 9
   - name: Mariam Gogilashvili
+    orcid: 0000-0002-6944-8052
     affiliation: "1, 2, 7, 10"
   - name: Joshua C. Dolence
+    orcid: 0000-0003-4353-8751
     affiliation: "1, 2"
   - name: Chad D. Meyer
+    orcid: 0000-0002-7530-6173
     affiliation: 11
   - name: Sriram Swaminarayan
+    orcid: 0000-0003-1809-5231
     affiliation: 3
   - name: Christoph Junghans
     orcid: 0000-0003-0925-1458
@@ -51,7 +56,7 @@ affiliations:
     index: 1
   - name: Center for Theoretical Astrophysics, Los Alamos National Laboratory, Los Alamos, NM
     index: 2
-  - name: CCS-7, Applied Computer Scienc, Los Alamos National Laboratory, USA
+  - name: CCS-7, Applied Computer Science, Los Alamos National Laboratory, USA
     index: 3
   - name: XCP-2, Eulerian Codes, Los Alamos National Laboratory, USA
     index: 4
