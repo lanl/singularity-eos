@@ -12,6 +12,7 @@
 - [[PR#357]](https://github.com/lanl/singularity-eos/pull/357) Added support for C++17 (e.g., needed when using newer Kokkos).
 
 ### Fixed (Repair bugs, etc)
+- [[PR370]](https://github.com/lanl/singularity-eos/pull/370) Fix bulk modulus calculation in spiner EOS
 - [[PR343]](https://github.com/lanl/singularity-eos/pull/343) Add chemical potentials to stellar collapse gold files
 - [[PR342]](https://github.com/lanl/singularity-eos/pull/342) Fix missing using statement in stellar collapse root finding routines
 - [[PR341]](https://github.com/lanl/singularity-eos/pull/341) Short-circuit HDF5 machinery when cray-wrappers used in-tree
@@ -36,7 +37,7 @@ Date: 11/28/2023
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Fixed EOSPAC unit conversion errors for scalar lookups
 - [[PR316]](https://github.com/lanl/singularity-eos/pull/316) removed `fmax-errors=3` from `singularity-eos` compile flags
 - [[PR296]](https://github.com/lanl/singularity-eos/pull/296) changed `CMAKE_SOURCE_DIR` to `PROJECT_SOURCE_DIR` to fix downstream submodule build
-- [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options 
+- [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options
 - [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
 - [[PR288]](https://github.com/lanl/singularity-eos/pull/288) Don't build tests that depend on spiner when spiner is disabled
 - [[PR287]](https://github.com/lanl/singularity-eos/pull/287) Fix testing logic with new HDF5 options
