@@ -875,7 +875,7 @@ inline void SpinerEOSDependsRhoT::fixBulkModulus_() {
       Real DEDR_T = dEdRho_.interpToReal(lRho, lT);
       Real DPDR_T = DPDR_E + DPDE_R * DEDR_T;
       Real bMod;
-      if (DPDE > 0.0 && rho > 0.0) {
+      if (DPDE_R > 0.0 && rho > 0.0) {
         bMod = rho * DPDR_E + DPDE_R * (press / rho);
       } else if (rho > 0.0) {
         bMod = std::max(rho * DPDR_T, 0.0);
@@ -1642,7 +1642,7 @@ inline void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
       Real DEDR_T = tables.dEdRho(j, i);
       Real DPDR_T = DPDR_E + DPDE_R * DEDR_T;
       Real bMod;
-      if (DPDE > 0.0 && rho > 0.0) {
+      if (DPDE_R > 0.0 && rho > 0.0) {
         bMod = rho * DPDR_E + DPDE_R * (press / rho);
       } else if (rho > 0.0) {
         bMod = std::max(rho * DPDR_T, 0.0);
