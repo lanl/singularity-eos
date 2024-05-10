@@ -11,6 +11,8 @@
 
 .. _DavisReactants: https://doi.org/10.1016/S0010-2180(99)00112-1
 
+.. _DavisProducts: https://doi.org/10.1063/1.2035310
+
 .. _ProbingOffHugoniotStates: https://doi.org/10.1063/1.4939675
 
 .. _WillsThermo: https://www.osti.gov/biblio/1561015
@@ -1194,10 +1196,11 @@ Davis Products EOS
 .. warning::
     Entropy is not yet available for this EOS
 
-The Davis products EOS is created from the reference isentrope passing through
-the CJ state of the high explosive along with a constant heat capacity. The
-constant heat capacity leads to the energy being a simple funciton of the
-temperature deviation from the reference isentrope such that
+The `Davis products EOS <DavisProducts_>`_ is created from the reference
+isentrope passing through the CJ state of the high explosive along with a
+constant heat capacity. The constant heat capacity leads to the energy being a
+simple funciton of the temperature deviation from the reference isentrope such
+that
 
 .. math::
     
@@ -1228,7 +1231,7 @@ Finally, the pressure, energy, and temperature along the isentrope are given by
 
 .. math::
 
-    e_S(\rho) = e_{\mathrm{C}} G(\rho) \frac{1}{\rho V_{\mathrm{C}}}
+    e_S(\rho) = e_{\mathrm{C}} G(\rho) \frac{1}{\rho V_{\mathrm{C}}} - e_0
 
 .. math::
 
@@ -1253,6 +1256,29 @@ Here, there are four dimensionless parameters that are settable by the user,
 :math:`a`, :math:`b`, :math:`k`, and :math:`n`, while :math:`P_\mathrm{C}`,
 :math:`e_\mathrm{C}`, :math:`V_\mathrm{C}` and :math:`T_\mathrm{C}` are tuning
 parameters with units related to their non-subscripted counterparts.
+
+Note that the energy zero (i.e. the reference energy) for the Davis products EOS
+is arbitrary. For the isentrope to properly pass through the CJ state of a
+reacting material, the energy release of the reaction needs to be accounted for
+properly. If done external to the EOS, an energy source term is required in the
+Euler equations. However, a common convention is to specify the reactants and
+product EOS in a consistent way such that the reference energy corresponds to
+the rest state of the material *before* it reacts.
+
+The energy at the CJ state can be calculated as
+
+.. math::
+
+    e_\mathrm{CJ} = \frac{P_0 + P_\mathrm{CJ}}{2(V_0 - V_\mathrm{CJ})},
+
+relative to :math:`e = 0` at the reference state of the *reactants*. Therefore
+the :math:`e_0` energy offset of the products EOS is given by
+
+.. math::
+
+    e_0 = e_S(V_\mathrm{CJ}) - e_\mathrm{CJ}.
+
+Practically, this means :math:`e_0` should be positive for any energetic material.
 
 The constructor for the Davis Products EOS is
 
