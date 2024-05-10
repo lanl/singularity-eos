@@ -182,6 +182,7 @@ class PTESolverBase {
   void Finalize() {
     for (int m = 0; m < nmat; m++) {
       temp[m] *= Tnorm;
+      PORTABLE_REQUIRE(temp[m] > 0., "Non-positive temperature returned");
       u[m] *= uscale;
       press[m] *= uscale;
     }
