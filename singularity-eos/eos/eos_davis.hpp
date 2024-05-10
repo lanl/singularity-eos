@@ -314,7 +314,8 @@ class DavisProducts : public EosBase<DavisProducts> {
     const Real ec = _pc * _vc / (_k - 1.0 + _a);
     // const Real de = ecj-(Es(rho0)-_E0);
     return ec * std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _a / _n) /
-           std::pow(vvc, _k - 1.0 + _a) - _E0;
+               std::pow(vvc, _k - 1.0 + _a) -
+           _E0;
   }
   PORTABLE_INLINE_FUNCTION Real Ts(const Real rho) const {
     const Real vvc = 1 / (rho * _vc);
