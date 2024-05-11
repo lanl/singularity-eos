@@ -154,23 +154,23 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
 
 int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const double b,
                           const double k, const double n, const double vc,
-                          const double pc, const double Cv, const double E0,
+                          const double pc, const double Cv,
                           int const *const enabled, double *const vals) {
   assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(DavisProducts(a, b, k, n, vc, pc, Cv, E0));
+  EOS eosi = SGAPPLYMODSIMPLE(DavisProducts(a, b, k, n, vc, pc, Cv));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
   }
-  EOS eos_ = SGAPPLYMOD(DavisProducts(a, b, k, n, vc, pc, Cv, E0));
+  EOS eos_ = SGAPPLYMOD(DavisProducts(a, b, k, n, vc, pc, Cv));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
 
 int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const double b,
                           const double k, const double n, const double vc,
-                          const double pc, const double Cv, const double E0) {
-  return init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, E0, def_en, def_v);
+                          const double pc, const double Cv) {
+  return init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, def_en, def_v);
 }
 
 int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,

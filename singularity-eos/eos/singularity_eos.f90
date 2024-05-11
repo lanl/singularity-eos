@@ -112,13 +112,13 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, E0, &
+      init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, &
                             sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_DavisProducts')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
-      real(kind=c_double), value, intent(in) :: a, b, k, n, vc, pc, Cv, E0
+      real(kind=c_double), value, intent(in) :: a, b, k, n, vc, pc, Cv
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_DavisProducts
   end interface
