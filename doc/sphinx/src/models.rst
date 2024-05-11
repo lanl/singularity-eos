@@ -1290,12 +1290,11 @@ The constructor for the Davis Products EOS is
 .. code-block:: cpp
 
   DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
-                const Real pc, const Real Cv, const Real E0)
+                const Real pc, const Real Cv)
 
 where ``a`` is :math:`a`, ``b`` is :math:`b`, ``k`` is :math:`k`,
 ``n`` is :math:`n`, ``vc`` is :math:`V_\mathrm{C}`, ``pc`` is
-:math:`P_\mathrm{C}`, ``Cv`` is :math:`C_{V,0}`, and ``E0`` is
-:math:`e_\mathrm{C}`.
+:math:`P_\mathrm{C}`, ``Cv`` is :math:`C_{V,0}`.
 
 Spiner EOS
 ````````````
