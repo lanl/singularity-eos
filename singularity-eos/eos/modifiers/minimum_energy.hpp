@@ -111,7 +111,8 @@ class MinimumEnergy : public EosBase<MinimumEnergy<T>> {
   PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real min_sie = t_.MinInternalEnergyFromDensity(rho);
-    return t_.GruneisenParamFromDensityInternalEnergy(rho, std::max(sie, min_sie), lambda);
+    return t_.GruneisenParamFromDensityInternalEnergy(rho, std::max(sie, min_sie),
+                                                      lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real PressureFromDensityTemperature(
@@ -154,8 +155,8 @@ class MinimumEnergy : public EosBase<MinimumEnergy<T>> {
   inline void choose_max_sie(const Real *sies, const Real *sie_use, const int num) const {
     // This code makes the assumption that `sie_use` is first populated with the
     // apprioriate minimum values
-    static auto const name =
-        singularity::mfuncname::member_func_name(typeid(MinimumEnergy<T>).name(), __func__);
+    static auto const name = singularity::mfuncname::member_func_name(
+        typeid(MinimumEnergy<T>).name(), __func__);
     static auto const cname = name.c_str();
     portableFor(
         cname, 0, num,
@@ -171,9 +172,9 @@ class MinimumEnergy : public EosBase<MinimumEnergy<T>> {
     t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
     // Chose the maximum between the input and the minimum energy
     choose_max_sie(sies, sie_used, num);
-    t_.TemperatureFromDensityInternalEnergy(
-        rhos, sie_used, temperatures, &scratch[num], num,
-        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+    t_.TemperatureFromDensityInternalEnergy(rhos, sie_used, temperatures, &scratch[num],
+                                            num, std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -196,8 +197,8 @@ class MinimumEnergy : public EosBase<MinimumEnergy<T>> {
     t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
     // Chose the maximum between the input and the minimum energy
     choose_max_sie(sies, sie_used, num);
-    t_.PressureFromDensityInternalEnergy(rhos, sie_used, pressures, &scratch[num],
-                                         num, std::forward<LambdaIndexer>(lambdas),
+    t_.PressureFromDensityInternalEnergy(rhos, sie_used, pressures, &scratch[num], num,
+                                         std::forward<LambdaIndexer>(lambdas),
                                          std::forward<Transform>(transform));
   }
 
@@ -274,8 +275,8 @@ class MinimumEnergy : public EosBase<MinimumEnergy<T>> {
     t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
     // Chose the maximum between the input and the minimum energy
     choose_max_sie(sies, sie_used, num);
-    t_.GruneisenParamFromDensityInternalEnergy(rhos, sie_used, gm1s, &scratch[num],
-                                               num, std::forward<LambdaIndexer>(lambdas),
+    t_.GruneisenParamFromDensityInternalEnergy(rhos, sie_used, gm1s, &scratch[num], num,
+                                               std::forward<LambdaIndexer>(lambdas),
                                                std::forward<Transform>(transform));
   }
 
@@ -337,9 +338,7 @@ class MinimumEnergy : public EosBase<MinimumEnergy<T>> {
     return m;
   }
 
-  PORTABLE_FUNCTION void PrintParams() const {
-    t_.PrintParams();
-  }
+  PORTABLE_FUNCTION void PrintParams() const { t_.PrintParams(); }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
