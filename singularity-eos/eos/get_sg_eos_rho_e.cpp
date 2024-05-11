@@ -39,6 +39,10 @@ void get_sg_eos_rho_e(const char *name, int ncell, indirection_v &offsets_v,
         int npte{0};
         // initialize values for solver / lookup
         i_func(i, tid, mass_sum, npte, 0.0, 1.0, 0.0);
+        // need to initialize the scratch before it's used to avoid undefined behavior
+        for (int idx = 0; idx < solver_scratch.extent(1); ++idx) {
+          solver_scratch(tid, idx) = 0.0;
+        }
         // get cache from offsets into scratch
         const int neq = npte + 1;
         singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +

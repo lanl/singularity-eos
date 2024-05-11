@@ -306,7 +306,6 @@ class DavisProducts : public EosBase<DavisProducts> {
   inline void Finalize() {}
   static std::string EosType() { return std::string("DavisProducts"); }
   static std::string EosPyType() { return EosType(); }
-  // TODO (JHP): Create helper function to find the CJ state given the reference state
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
@@ -337,8 +336,7 @@ class DavisProducts : public EosBase<DavisProducts> {
     const Real ec = _pc * _vc / (_k - 1.0 + _a);
     // const Real de = ecj-(Es(rho0)-_E0);
     return ec * std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _a / _n) /
-               std::pow(vvc, _k - 1.0 + _a) -
-           _E0;
+           std::pow(vvc, _k - 1.0 + _a);
   }
   PORTABLE_INLINE_FUNCTION Real Ts(const Real rho) const {
     if (rho <= 0) {
