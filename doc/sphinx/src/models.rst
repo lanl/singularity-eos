@@ -1231,7 +1231,7 @@ Finally, the pressure, energy, and temperature along the isentrope are given by
 
 .. math::
 
-    e_S(\rho) = e_{\mathrm{C}} G(\rho) \frac{1}{\rho V_{\mathrm{C}}} - e_0
+    e_S(\rho) = e_{\mathrm{C}} G(\rho) \frac{1}{\rho V_{\mathrm{C}}}
 
 .. math::
 
@@ -1272,13 +1272,18 @@ The energy at the CJ state can be calculated as
     e_\mathrm{CJ} = \frac{P_0 + P_\mathrm{CJ}}{2(V_0 - V_\mathrm{CJ})},
 
 relative to :math:`e = 0` at the reference state of the *reactants*. Therefore
-the :math:`e_0` energy offset of the products EOS is given by
+the energy offset of the products EOS is given by
 
 .. math::
 
     e_0 = e_S(V_\mathrm{CJ}) - e_\mathrm{CJ}.
 
 Practically, this means :math:`e_0` should be positive for any energetic material.
+
+To provide the energy offset to the Davis Products EOS, `the energy shift
+modifier<modifiers shifted EOS>`_ should be used. Note that the convention there
+is that the shift is positive, so :math:`-e_0` should be provided to the shift
+modifier.
 
 The constructor for the Davis Products EOS is
 
