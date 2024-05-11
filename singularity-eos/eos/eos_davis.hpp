@@ -178,7 +178,7 @@ class DavisProducts : public EosBase<DavisProducts> {
   PORTABLE_INLINE_FUNCTION
   DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
                 const Real pc, const Real Cv)
-      : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv), {}
+      : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv) {}
   DavisProducts GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
