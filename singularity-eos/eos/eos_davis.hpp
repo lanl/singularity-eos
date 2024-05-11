@@ -286,8 +286,8 @@ class DavisProducts : public EosBase<DavisProducts> {
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisProducts Params: "};
-    printf("%sa:%e b:%e k:%e\nn:%e vc:%e pc:%e\nCv:%e E0:%e\n", s1, _a, _b, _k, _n, _vc,
-           _pc, _Cv);
+    printf("%sa:%e b:%e k:%e\nn:%e vc:%e pc:%e\nCv:%e \n", s1, _a, _b, _k, _n, _vc, _pc,
+           _Cv);
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("DavisProducts"); }
