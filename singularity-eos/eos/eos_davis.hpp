@@ -428,7 +428,7 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   // First, solve P=P(rho,T) for rho.  Note P(rho,e) has an sie-es term, which is only a
   // function of T
-  PORTABLE_REQUIRE(temp >= 0, "Negative temperature provided")
+  PORTABLE_REQUIRE(temp >= 0, "Negative temperature provided");
   auto PofRatT = [&](const Real r) {
     return (Ps(r) + Gamma(r) * r * _Cv0 * Ts(r) / (1 + _alpha) *
                         (std::pow(temp / Ts(r), 1 + _alpha) - 1.0));
