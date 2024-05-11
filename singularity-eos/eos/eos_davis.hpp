@@ -163,7 +163,7 @@ class DavisReactants : public EosBase<DavisReactants> {
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return 0;
   }
-  static inline unsigned long std::max_scratch_size(unsigned int nelements) { return 0; }
+  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisReactants Params: "};
     printf("%srho0:%e e0:%e P0:%e\nT0:%e A:%e B:%e\nC:%e G0:%e Z:%e\nalpha:%e "
@@ -417,9 +417,9 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
                  3 * y / pow<4>(1 - y) + 4 * pow<2>(y) / pow<5>(1 - y))
           : -phat * 4 * _B * _rho0 * std::exp(b4y);
   const Real gammav = (rho >= _rho0) ? _Z * _rho0 : 0.0;
-  return -(psv + (sie - Es(rho)) * rho * (gammav - gamma * std::max(rho, 0.)) -
-               robust::ratio(gamma * std::max(rho, 0.) * esv),
-           rho);
+  const Real numerator = -(psv + (sie - Es(rho)) * rho * (gammav - gamma *
+     std::max(rho, 0.)) - gamma * std::max(rho, 0.) * esv);
+  return robust::ratio(numerator, rho);
 }
 
 template <typename Indexer_t>
