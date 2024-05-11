@@ -67,9 +67,6 @@ class JWL : public EosBase<JWL> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
@@ -160,12 +157,6 @@ template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real JWL::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   return ReferencePressure(rho) + _w * rho * (sie - ReferenceEnergy(rho));
-}
-template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION Real
-JWL::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
-  MinInternalEnergyIsNotEnabled("JWL");
-  return 0.0;
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real JWL::EntropyFromDensityInternalEnergy(
