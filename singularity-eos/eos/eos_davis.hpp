@@ -177,8 +177,8 @@ class DavisProducts : public EosBase<DavisProducts> {
   DavisProducts() = default;
   PORTABLE_INLINE_FUNCTION
   DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
-                const Real pc, const Real Cv, const Real E0)
-      : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv), _E0(E0) {}
+                const Real pc, const Real Cv)
+      : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv), {}
   DavisProducts GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -287,7 +287,7 @@ class DavisProducts : public EosBase<DavisProducts> {
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisProducts Params: "};
     printf("%sa:%e b:%e k:%e\nn:%e vc:%e pc:%e\nCv:%e E0:%e\n", s1, _a, _b, _k, _n, _vc,
-           _pc, _Cv, _E0);
+           _pc, _Cv);
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("DavisProducts"); }
@@ -296,7 +296,7 @@ class DavisProducts : public EosBase<DavisProducts> {
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
-  Real _a, _b, _k, _n, _vc, _pc, _Cv, _E0;
+  Real _a, _b, _k, _n, _vc, _pc, _Cv;
   // static constexpr const char _eos_type[] = "DavisProducts";
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
@@ -314,8 +314,7 @@ class DavisProducts : public EosBase<DavisProducts> {
     const Real ec = _pc * _vc / (_k - 1.0 + _a);
     // const Real de = ecj-(Es(rho0)-_E0);
     return ec * std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _a / _n) /
-               std::pow(vvc, _k - 1.0 + _a) -
-           _E0;
+               std::pow(vvc, _k - 1.0 + _a);
   }
   PORTABLE_INLINE_FUNCTION Real Ts(const Real rho) const {
     const Real vvc = 1 / (rho * _vc);
