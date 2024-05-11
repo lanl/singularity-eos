@@ -379,12 +379,14 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const {
   } else {
     e_s = -y - (1.0 - std::exp(b4y)) / (4.0 * _B);
   }
-  return _e0 + _P0 * (1.0 / _rho0 - robust::ratio(1.0, std::max(rho, 0.))) + phat / _rho0 * e_s;
+  return _e0 + _P0 * (1.0 / _rho0 - robust::ratio(1.0, std::max(rho, 0.))) +
+         phat / _rho0 * e_s;
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ts(const Real rho) const {
   if (rho >= _rho0) {
     const Real y = 1 - robust::ratio(_rho0, std::max(rho, 0.));
-    return _T0 * std::exp(-_Z * y) * std::pow(robust::ratio(_rho0, std::max(rho, 0.)), -_G0 - _Z);
+    return _T0 * std::exp(-_Z * y) *
+           std::pow(robust::ratio(_rho0, std::max(rho, 0.)), -_G0 - _Z);
   } else {
     return _T0 * std::pow(robust::ratio(_rho0, rho), -_G0);
   }
@@ -414,8 +416,9 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
                  3 * y / pow<4>(1 - y) + 4 * pow<2>(y) / pow<5>(1 - y))
           : -phat * 4 * _B * _rho0 * std::exp(b4y);
   const Real gammav = (rho >= _rho0) ? _Z * _rho0 : 0.0;
-  return -(psv + (sie - Es(rho)) * rho * (gammav - gamma * std::max(rho, 0.)) - robust::ratio(gamma * std::max(rho, 0.) * esv),
-         rho);
+  return -(psv + (sie - Es(rho)) * rho * (gammav - gamma * std::max(rho, 0.)) -
+               robust::ratio(gamma * std::max(rho, 0.) * esv),
+           rho);
 }
 
 template <typename Indexer_t>
