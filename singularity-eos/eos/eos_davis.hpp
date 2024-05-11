@@ -417,8 +417,9 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
                  3 * y / pow<4>(1 - y) + 4 * pow<2>(y) / pow<5>(1 - y))
           : -phat * 4 * _B * _rho0 * std::exp(b4y);
   const Real gammav = (rho >= _rho0) ? _Z * _rho0 : 0.0;
-  const Real numerator = -(psv + (sie - Es(rho)) * rho * (gammav - gamma *
-     std::max(rho, 0.)) - gamma * std::max(rho, 0.) * esv);
+  const Real numerator =
+      -(psv + (sie - Es(rho)) * rho * (gammav - gamma * std::max(rho, 0.)) -
+        gamma * std::max(rho, 0.) * esv);
   return robust::ratio(numerator, rho);
 }
 
