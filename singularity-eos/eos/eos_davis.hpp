@@ -354,8 +354,7 @@ class DavisProducts : public EosBase<DavisProducts> {
 };
 
 PORTABLE_FORCEINLINE_FUNCTION Real DavisReactants::DimlessEdiff(const real sie) const {
-  return (1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - es) + 1.0
-}
+    return (1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - es) + 1.0}
 
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   using namespace math_utils;
