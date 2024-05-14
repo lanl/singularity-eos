@@ -292,7 +292,6 @@ class DavisProducts : public EosBase<DavisProducts> {
   inline void Finalize() {}
   static std::string EosType() { return std::string("DavisProducts"); }
   static std::string EosPyType() { return EosType(); }
-  // TODO (JHP): Create helper function to find the CJ state given the reference state
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;

@@ -42,6 +42,10 @@ void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
         i_func(i, tid, mass_sum, npte, 1.0, 0.0, 0.0);
         // calculate pte condition (lookup for 1 mat cell)
         Real sie_tot_true{0.0};
+        // need to initialize the scratch before it's used to avoid undefined behavior
+        for (int idx = 0; idx < solver_scratch.extent(1); ++idx) {
+          solver_scratch(tid, idx) = 0.0;
+        }
         const int neq = npte;
         singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
                                                    neq * (neq + 4) + 2 * npte);

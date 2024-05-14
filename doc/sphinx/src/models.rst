@@ -11,8 +11,6 @@
 
 .. _DavisReactants: https://doi.org/10.1016/S0010-2180(99)00112-1
 
-.. _DavisProducts: https://doi.org/10.1063/1.2035310
-
 .. _ProbingOffHugoniotStates: https://doi.org/10.1063/1.4939675
 
 .. _WillsThermo: https://www.osti.gov/biblio/1561015
@@ -1196,11 +1194,10 @@ Davis Products EOS
 .. warning::
     Entropy is not yet available for this EOS
 
-The `Davis products EOS <DavisProducts_>`_ is created from the reference
-isentrope passing through the CJ state of the high explosive along with a
-constant heat capacity. The constant heat capacity leads to the energy being a
-simple funciton of the temperature deviation from the reference isentrope such
-that
+The Davis products EOS is created from the reference isentrope passing through
+the CJ state of the high explosive along with a constant heat capacity. The
+constant heat capacity leads to the energy being a simple funciton of the
+temperature deviation from the reference isentrope such that
 
 .. math::
     
