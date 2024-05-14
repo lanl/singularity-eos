@@ -1254,17 +1254,44 @@ Here, there are four dimensionless parameters that are settable by the user,
 :math:`e_\mathrm{C}`, :math:`V_\mathrm{C}` and :math:`T_\mathrm{C}` are tuning
 parameters with units related to their non-subscripted counterparts.
 
+Note that the energy zero (i.e. the reference energy) for the Davis products EOS
+is arbitrary. For the isentrope to properly pass through the CJ state of a
+reacting material, the energy release of the reaction needs to be accounted for
+properly. If done external to the EOS, an energy source term is required in the
+Euler equations. However, a common convention is to specify the reactants and
+product EOS in a consistent way such that the reference energy corresponds to
+the rest state of the material *before* it reacts.
+
+The energy at the CJ state can be calculated as
+
+.. math::
+
+    e_\mathrm{CJ} = \frac{P_0 + P_\mathrm{CJ}}{2(V_0 - V_\mathrm{CJ})},
+
+relative to :math:`e = 0` at the reference state of the *reactants*. Therefore
+the energy offset of the products EOS is given by
+
+.. math::
+
+    e_0 = e_S(V_\mathrm{CJ}) - e_\mathrm{CJ}.
+
+Practically, this means :math:`e_0` should be positive for any energetic material.
+
+To provide the energy offset to the Davis Products EOS, `the energy shift
+modifier<modifiers shifted EOS>`_ should be used. Note that the convention there
+is that the shift is positive, so :math:`-e_0` should be provided to the shift
+modifier.
+
 The constructor for the Davis Products EOS is
 
 .. code-block:: cpp
 
   DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
-                const Real pc, const Real Cv, const Real E0)
+                const Real pc, const Real Cv)
 
 where ``a`` is :math:`a`, ``b`` is :math:`b`, ``k`` is :math:`k`,
 ``n`` is :math:`n`, ``vc`` is :math:`V_\mathrm{C}`, ``pc`` is
-:math:`P_\mathrm{C}`, ``Cv`` is :math:`C_{V,0}`, and ``E0`` is
-:math:`e_\mathrm{C}`.
+:math:`P_\mathrm{C}`, ``Cv`` is :math:`C_{V,0}`.
 
 Spiner EOS
 ````````````

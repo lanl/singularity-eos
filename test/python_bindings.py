@@ -87,7 +87,7 @@ class EOS(unittest.TestCase):
         eos = singularity_eos.DavisReactants(1,1,1,1,1,1,1,1,1,1,1)
 
     def testDavisProducts(self):
-        eos = singularity_eos.DavisProducts(1,1,1,1,1,1,1,1)
+        eos = singularity_eos.DavisProducts(1,1,1,1,1,1,1)
 
 class Modifiers(unittest.TestCase, EOSTestBase):
     def setUp(self):
