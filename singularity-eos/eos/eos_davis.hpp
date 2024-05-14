@@ -430,8 +430,8 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
   // function of T
   PORTABLE_REQUIRE(temp >= 0, "Negative temperature provided");
   auto PofRatT = [&](const Real r) {
-    return (Ps(r) + Gamma(r) * r * _Cv0 * Ts(r) / (1 + _alpha) *
-                        (std::pow(temp / Ts(r), 1 + _alpha) - 1.0));
+    return (Ps(r) + Gamma(r) * std::max(r, 0.) * _Cv0 * Ts(r) / (1 + _alpha) *
+                        (std::pow(robust::ratio(temp,  Ts(r)), 1 + _alpha) - 1.0));
   };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
@@ -507,7 +507,7 @@ PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperatur
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   PORTABLE_REQUIRE(temp >= 0, "Negative temperature provided");
   auto PofRatT = [&](const Real r) {
-    return (Ps(r) + Gamma(r) * r * _Cv * (temp - Ts(r)));
+    return (Ps(r) + Gamma(r) * std::max(r, 0.) * _Cv * (temp - Ts(r)));
   };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
