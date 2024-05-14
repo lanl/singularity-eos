@@ -22,6 +22,8 @@ We list below the available modifiers and their constructors.
 The Shifted EOS
 -----------------
 
+.. _modifiers shifted EOS:
+
 The shifted equation of state modifies zero point energy of an
 underlying model by some shift. So for example, it transforms
 

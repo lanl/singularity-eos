@@ -39,6 +39,10 @@ void get_sg_eos_p_t(const char *name, int ncell, int nmat, indirection_v &offset
         // for small loops
         const int32_t token{tokens.acquire()};
         const int32_t tid{small_loop ? iloop : token};
+        // need to initialize the scratch before it's used to avoid undefined behavior
+        for (int idx = 0; idx < solver_scratch.extent(1); ++idx) {
+          solver_scratch(tid, idx) = 0.0;
+        }
         // caching mechanism
         singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0));
         double mass_sum{0.0};
