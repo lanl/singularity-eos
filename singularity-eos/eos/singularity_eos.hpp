@@ -39,8 +39,8 @@ int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const doubl
 
 int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const double b,
                           const double k, const double n, const double vc,
-                          const double pc, const double Cv, const double E0,
-                          int const *const enabled, double *const vals);
+                          const double pc, const double Cv, int const *const enabled,
+                          double *const vals);
 
 int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                            const double e0, const double P0, const double T0,
@@ -134,7 +134,7 @@ int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const doubl
 
 int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const double b,
                           const double k, const double n, const double vc,
-                          const double pc, const double Cv, const double E0);
+                          const double pc, const double Cv);
 
 int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
                            const double e0, const double P0, const double T0,
