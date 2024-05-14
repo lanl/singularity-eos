@@ -444,7 +444,7 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
   }
   if (rho < 0.) {
     EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
-              "Root find resulted in a negative density")
+              "Root find resulted in a negative density\n");
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
@@ -525,7 +525,7 @@ PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperatur
   }
   if (rho < 0.) {
     EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
-              "Root find resulted in a negative density")
+              "Root find resulted in a negative density\n");
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
