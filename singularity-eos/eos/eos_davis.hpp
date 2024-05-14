@@ -43,7 +43,6 @@ class DavisReactants : public EosBase<DavisReactants> {
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real es = Es(rho);
     const Real power_base = DimlessEdiff(rho, sie);
     if (power_base <= 0) {
       // This case would result in an imaginary temperature (i.e. negative), but we won't
@@ -355,7 +354,7 @@ class DavisProducts : public EosBase<DavisProducts> {
 
 PORTABLE_FORCEINLINE_FUNCTION Real DavisReactants::DimlessEdiff(const Real rho,
                                                                 const Real sie) const {
-    return (1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - es) + 1.0}
+    return (1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - Es(rho)) + 1.0}
 
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   using namespace math_utils;
