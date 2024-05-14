@@ -83,7 +83,7 @@ class DavisReactants : public EosBase<DavisReactants> {
     // when the base to the exponent is zero (see T(rho, e) equation)
     const Real es = Es(rho);
     const Real ts = Ts(rho);
-    return es - (1 + _alpha) / (_Cv0 * ts);
+    return es - (_Cv0 * ts) / (1 + _alpha);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
@@ -354,7 +354,7 @@ class DavisProducts : public EosBase<DavisProducts> {
 
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   using namespace math_utils;
-  const Real y = 1.0 - robust::ratio(_rho0, rho);
+  const Real y = 1.0 - robust::ratio(_rho0, std::max(rho, 0.));
   const Real phat = 0.25 * _A * _A / _B * _rho0;
   const Real b4y = 4.0 * _B * y;
 
@@ -384,13 +384,9 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const {
          phat / _rho0 * e_s;
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ts(const Real rho) const {
-  if (rho >= _rho0) {
-    const Real y = 1 - robust::ratio(_rho0, std::max(rho, 0.));
-    return _T0 * std::exp(-_Z * y) *
-           std::pow(robust::ratio(_rho0, std::max(rho, 0.)), -_G0 - _Z);
-  } else {
-    return _T0 * std::pow(robust::ratio(_rho0, rho), -_G0);
-  }
+  const Real rho0overrho = robust::ratio(_rho0, std::max(rho, 0.));
+  const Real y = 1 - rho0overrho;
+  return _T0 * std::exp(-_Z * y) * std::pow(rho0overrho, -_G0 - _Z);
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Gamma(const Real rho) const {
   if (rho >= _rho0) {
