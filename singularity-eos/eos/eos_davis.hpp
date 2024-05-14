@@ -44,7 +44,7 @@ class DavisReactants : public EosBase<DavisReactants> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real es = Es(rho);
-    const Real power_base = (1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - es) + 1.0;
+    const Real power_base = DimlessEdiff(sie);
     if (power_base <= 0) {
       // This case would result in an imaginary temperature (i.e. negative), but we won't
       // allow that so return zero
@@ -110,7 +110,7 @@ class DavisReactants : public EosBase<DavisReactants> {
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real power_base = (1 + _alpha) / (Ts(rho) * _Cv0) * (sie - Es(rho)) + 1;
+    const Real power_base = DimlessEdiff(sie);
     if (power_base <= 0) {
       // Return zero heat capacity instead of an imaginary value
       return 0.;
@@ -180,6 +180,7 @@ class DavisReactants : public EosBase<DavisReactants> {
   // static constexpr const char _eos_type[] = "DavisReactants";
   static constexpr unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
+  PORTABLE_FORCEINLINE_FUNCTION Real DimlessEdiff(const Real sie) const;
   PORTABLE_INLINE_FUNCTION Real Ps(const Real rho) const;
   PORTABLE_INLINE_FUNCTION Real Es(const Real rho) const;
   PORTABLE_INLINE_FUNCTION Real Ts(const Real rho) const;
@@ -351,6 +352,10 @@ class DavisProducts : public EosBase<DavisProducts> {
     return _k - 1.0 + (1.0 - _b) * F(rho);
   }
 };
+
+PORTABLE_FORCEINLINE_FUNCTION Real DavisReactants::DimlessEdiff(const real sie) const {
+  return (1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - es) + 1.0
+}
 
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   using namespace math_utils;
