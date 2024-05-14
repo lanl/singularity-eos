@@ -353,7 +353,7 @@ class DavisProducts : public EosBase<DavisProducts> {
   }
 };
 
-PORTABLE_FORCEINLINE_FUNCTION Real DavisReactants::DimlessEdiff(const real sie) const {
+PORTABLE_FORCEINLINE_FUNCTION Real DavisReactants::DimlessEdiff(const Real sie) const {
     return (1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - es) + 1.0}
 
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
@@ -430,7 +430,7 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
   // function of T
   PORTABLE_REQUIRE(temp >= 0, "Negative temperature provided");
   auto PofRatT = [&](const Real r) {
-    return (Ps(r) + Gamma(r) * std::max(r, 0.) * _Cv0 * Ts(r) / (1 + _alpha) *
+    return (Ps(r) + Gamma(r) * r * _Cv0 * Ts(r) / (1 + _alpha) *
                         (std::pow(robust::ratio(temp, Ts(r)), 1 + _alpha) - 1.0));
   };
   using RootFinding1D::regula_falsi;
@@ -440,6 +440,10 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
               "Root find failed to find a solution given P, T\n");
+  }
+  if (rho < 0.) {
+    EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
+              "Root find resulted in a negative density")
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
@@ -507,7 +511,7 @@ PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperatur
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   PORTABLE_REQUIRE(temp >= 0, "Negative temperature provided");
   auto PofRatT = [&](const Real r) {
-    return (Ps(r) + Gamma(r) * std::max(r, 0.) * _Cv * (temp - Ts(r)));
+    return (Ps(r) + Gamma(r) * r * _Cv * (temp - Ts(r)));
   };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
@@ -517,6 +521,10 @@ PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperatur
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("DavisProducts::DensityEnergyFromPressureTemperature: "
               "Root find failed to find a solution given P, T\n");
+  }
+  if (rho < 0.) {
+    EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
+              "Root find resulted in a negative density")
   }
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
