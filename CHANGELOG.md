@@ -20,6 +20,7 @@
 - [[PR335]](https://github.com/lanl/singularity-eos/pull/335) Fix missing hermite.hpp in CMake install required for Helmholtz EOS
 - [[PR356]](https://github.com/lanl/singularity-eos/pull/356) Guard against FPEs in the PTE solver
 - [[PR356]](https://github.com/lanl/singularity-eos/pull/356) Update CMake for proper Kokkos linking in Fortran interface
+- [[PR373]](https://github.com/lanl/singularity-eos/pull/373) Initialize cache in `get_sg_eos*` functions
 - [[PR374]](https://github.com/lanl/singularity-eos/pull/374) Make the Davis EOS more numerically robust
 
 ### Changed (changing behavior/API/variables/...)
