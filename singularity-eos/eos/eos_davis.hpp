@@ -404,8 +404,8 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
   const Real y = 1 - robust::ratio(_rho0, std::max(rho, 0.));
   const Real phat = 0.25 * _A * _A / _B * _rho0;
   const Real b4y = 4 * _B * y;
-  const Real gamma = Gamma(rho);
-  const Real esv = -Ps(rho);
+  const Real gamma = Gamma(std::max(rho, 0.));
+  const Real esv = -Ps(std::max(rho, 0.));
   const Real psv =
       (rho >= _rho0)
           ? -phat * _rho0 *
@@ -414,9 +414,9 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
           : -phat * 4 * _B * _rho0 * std::exp(b4y);
   const Real gammav = (rho >= _rho0) ? _Z * _rho0 : 0.0;
   const Real numerator =
-      -(psv + (sie - Es(rho)) * rho * (gammav - gamma * std::max(rho, 0.)) -
+      -(psv + (sie - Es(std::max(rho, 0.))) * rho * (gammav - gamma * std::max(rho, 0.)) -
         gamma * std::max(rho, 0.) * esv);
-  return robust::ratio(numerator, rho);
+  return robust::ratio(numerator, std::max(rho, 0.));
 }
 
 template <typename Indexer_t>
