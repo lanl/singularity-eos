@@ -43,7 +43,7 @@ res = init_sg_DavisReactants_f(mat, eos, 1.890d0, 4.115d10, 1.0d6, 297.0d0, 1.8d
                             4.6d0, 0.34d0, 0.56d0,0.d0, 0.4265d0, 0.001074d10)
 mat = mat + 1
 res = init_sg_DavisProducts_f(mat, eos, 0.798311d0, 0.58d0, 1.35d0, 2.66182d0,&
-                           0.75419d0, 3.2d10, 0.001072d10, 0.d0)
+                           0.75419d0, 3.2d10, 0.001072d10)
 
 ! cleanup
 res = finalize_sg_eos_f(nmat, eos)

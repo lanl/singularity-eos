@@ -24,6 +24,7 @@
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR363]](https://github.com/lanl/singularity-eos/pull/363) Template lambda values for scalar calls
+- [[PR372]](https://github.com/lanl/singularity-eos/pull/372) Removed E0 from Davis Products EOS in favor of using the shifted EOS modifier. CHANGES API!
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR329]](https://github.com/lanl/singularity-eos/pull/329) Move vinet tests into analytic test suite
