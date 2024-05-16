@@ -127,6 +127,7 @@ set(SINGULARITY_VARIANT "singularity-eos/eos/default_variant.hpp" CACHE STRING
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
 
+include(singularity_utils)
 include(singularity-eos/mpark_variant)
 include(singularity-eos/Eigen3)
 include(singularity-eos/eospac)
@@ -418,9 +419,11 @@ if(SINGULARITY_BUILD_CLOSURE)
     message(VERBOSE "EOS Library Sources:\n\t${eos_srcs}")
   endif()
 
+  message(STATUS "SOURCES: ${eos_srcs}")
+
   if(SINGULARITY_USE_KOKKOS)
     if(Kokkos_ENABLE_COMPILE_AS_CMAKE_LANGUAGE)
-      set_cpp_files_list_to_lang(eos_srcs Kokkos_COMPILE_LANGUGE)
+      set_cpp_files_list_to_lang(${Kokkos_COMPILE_LANGUAGE} ${eos_srcs})
     endif()
   endif()
 endif()
@@ -543,4 +546,4 @@ endif()
 # ----------------------------------------------------------------------------#
 
 # clang format
-include(cmake/Format.cmake)
+#include(cmake/Format.cmake)
