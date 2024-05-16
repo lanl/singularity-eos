@@ -52,4 +52,15 @@ function(print_target_properties target)
     endforeach()
 endfunction()
 
+function(set_cpp_files_list_to_lang srcs_list lang)
+  foreach(arg ${srcs_list})
+    get_filename_component(FILE_EXT ${arg} LAST_EXT)
+    string(REPLACE "." "" ext ${FILE_EXT})
+    if(ext IN_LIST CMAKE_CXX_SOURCE_FILE_EXTENSIONS)
+      message(STATUS "Setting ${arg} to language ${lang}")
+      set_source_files_properties(${arg} PROPERTIES LANGUAGE ${lang})
+    endif()
+  endforeach()
+endfunction()
+
 

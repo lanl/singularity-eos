@@ -11,37 +11,46 @@
 # publicly and display publicly, and to permit others to do so.
 # ------------------------------------------------------------------------------
 
+set(eos_analytic_srcs
+    catch2_define.cpp
+    test_eos_ideal.cpp
+    test_eos_gruneisen.cpp
+    test_eos_sap_polynomial.cpp
+    test_eos_noble_abel.cpp
+    test_eos_stiff.cpp
+    test_eos_vinet.cpp
+    test_eos_mgusup.cpp
+    test_eos_powermg.cpp)
+
 add_executable(
   eos_analytic_unit_tests
-  catch2_define.cpp
   eos_unit_test_helpers.hpp
-  test_eos_ideal.cpp
-  test_eos_gruneisen.cpp
-  test_eos_sap_polynomial.cpp
-  test_eos_noble_abel.cpp
-  test_eos_stiff.cpp
-  test_eos_vinet.cpp
-  test_eos_mgusup.cpp
-  test_eos_powermg.cpp
+  ${eos_analytic_srcs}
   )
+
+set(eos_infrastructure_srcs
+    catch2_define.cpp
+    test_eos_modifiers.cpp
+    test_eos_vector.cpp
+    test_math_utils.cpp
+    test_variadic_utils.cpp)
 
 add_executable(
   eos_infrastructure_tests
-  catch2_define.cpp
   eos_unit_test_helpers.hpp
-  test_eos_modifiers.cpp
-  test_eos_vector.cpp
-  test_math_utils.cpp
-  test_variadic_utils.cpp
+  ${eos_infrastructure_srcs}
   )
+
+set(eos_tabulated_srcs
+    catch2_define.cpp
+    test_eos_helmholtz.cpp
+    test_eos_tabulated.cpp
+    test_eos_stellar_collapse.cpp)
 
 add_executable(
   eos_tabulated_unit_tests
-  catch2_define.cpp
   eos_unit_test_helpers.hpp
-  test_eos_helmholtz.cpp
-  test_eos_tabulated.cpp
-  test_eos_stellar_collapse.cpp
+  ${eos_tabulated_srcs}
   )
 
 get_property(plugin_tests GLOBAL PROPERTY PLUGIN_TESTS)
