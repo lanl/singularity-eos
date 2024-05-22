@@ -51,6 +51,7 @@ register_headers(
     eos/modifiers/ramps_eos.hpp
     eos/modifiers/shifted_eos.hpp
     eos/modifiers/eos_unitsystem.hpp
+    eos/modifiers/minimum_energy.hpp
     eos/eos_base.hpp
     eos/eos_eospac.hpp
     eos/eos_noble_abel.hpp

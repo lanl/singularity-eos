@@ -88,12 +88,6 @@ class NobleAbel : public EosBase<NobleAbel> {
     return std::max(robust::SMALL(),
                     robust::ratio(_gm1 * rho * (sie - _qq), 1.0 - _bb * rho));
   }
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    MinInternalEnergyIsNotEnabled("Noble Abel");
-    return 0.0;
-  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
