@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
-#define _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
+#ifndef _SINGULARITY_EOS_EOS_VARIANT_UTILS_HPP_
+#define _SINGULARITY_EOS_EOS_VARIANT_UTILS_HPP_
 
 #include <cassert>
 #include <cmath>
@@ -24,24 +24,21 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
-
-// Base stuff
-#include <singularity-eos/base/constants.hpp>
-#include <singularity-eos/base/eos_error.hpp>
-#include <singularity-eos/base/variadic_utils.hpp>
-
-// EOS models
-#include <singularity-eos/eos/eos_type_lists.hpp>
-#include <singularity-eos/eos/variant_utils.hpp>
 
 namespace singularity {
 
-// create the alias
-using EOS =
-  typename decltype(singularity::tl_to_Variant(singularity::combined_list))::vt;
+// a function that returns a Variant from a typelist
+template <typename... Ts>
+struct tl_to_Variant_struct {
+  using vt = Variant<Ts...>;
+};
+
+template <typename... Ts>
+constexpr auto tl_to_Variant(tl<Ts...>) {
+  return tl_to_Variant_struct<Ts...>{};
+}
 
 } // namespace singularity
 
-#endif // _SINGULARITY_EOS_EOS_DEFAULT_VARIANT_HPP_
+#endif // _SINGULARITY_EOS_EOS_VARIANT_UTILS_HPP_
