@@ -39,8 +39,7 @@
 namespace singularity {
 
 // create the alias
-using EOS =
-  typename decltype(singularity::tl_to_Variant(singularity::combined_list))::vt;
+using EOS = typename decltype(singularity::tl_to_Variant(singularity::combined_list))::vt;
 
 } // namespace singularity
 
