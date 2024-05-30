@@ -69,23 +69,31 @@ struct init_functor {
     for (int m = 0; m < nmat; ++m) {
       frac_mass_v(i, m) /= mass_sum;
     }
-    /* set inputs */
+    // count the number of participating materials and zero the inputs
     npte = 0;
     for (int m = 0; m < nmat; ++m) {
       if (frac_mass_v(i, m) > 1.e-12) {
+        // participating materials are those with non-negligible mass fractions
         pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
         pte_mats(tid, npte) = m;
         npte += 1;
       }
+      // zero the inputs
       vfrac_pte(tid, m) = 0.0;
       sie_pte(tid, m) = 0.0;
       temp_pte(tid, m) = 0.0;
       press_pte(tid, m) = 0.0;
     }
+    // Populate the inputs with consistent values.
+    // NOTE: the volume fractions and densities need to be consistent with the
+    // total specific volume since they are used to calculate internal
+    // quantities for the PTE solver
     for (int mp = 0; mp < npte; ++mp) {
       const int m = pte_mats(tid, mp);
-      rho_pte(tid, mp) = npte / spvol_v(i) * frac_mass_v(i, m);
-      vfrac_pte(tid, mp) = 1.0 / npte;
+      // Need to guess volume fractions
+      vfrac_pte(tid, mp) = frac_mass_v(i, m);
+      // Calculate densities to be consistent with these volume fractions
+      rho_pte(tid, mp) = frac_mass_v(i, m) / spvol_v(i) / vfrac_pte(tid, mp);
       temp_pte(tid, mp) = temp_v(i) * ev2k * t_mult;
       press_pte(tid, mp) = press_v(i) * p_mult;
       sie_pte(tid, mp) = sie_v(i) * frac_mass_v(i, m) * s_mult;
