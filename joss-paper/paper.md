@@ -19,6 +19,7 @@ authors:
     orcid: 0000-0001-9425-4674
     affiliation: 4
   - name: Christopher M. Mauney
+    orcid: 0000-0002-7827-2247
     affiliation: "2, 5"
   - name: Richard Berger
     orcid: 0000-0002-3044-8266
@@ -35,6 +36,7 @@ authors:
     orcid: 0000-0001-5184-6928
     affiliation: "2, 3, 8"
   - name: Ann E. Mattsson
+    orcid: 0000-0002-0677-7537
     affiliation: 9
   - name: Mariam Gogilashvili
     orcid: 0000-0002-6944-8052
