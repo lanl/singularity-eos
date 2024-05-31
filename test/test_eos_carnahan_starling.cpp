@@ -28,7 +28,7 @@
 
 using singularity::IdealGas;
 using singularity::CarnahanStarling;
-using EOS = singularity::Variant<IdealGas, NobleAbel>;
+using EOS = singularity::Variant<IdealGas, CarnahanStarling>;
 
 SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
   GIVEN("Parameters for a CarnahanStarling EOS") {
