@@ -556,20 +556,35 @@ the form
 
 .. math::
 
-    Z(\rho) = \frac{1+\eta+\eta^2-\eta^3}{(1-\eta)^3}
+    Z(\rho) = \frac{1+\eta+\eta^2-\eta^3}{(1-\eta)^3},
+
+where :math:`\eta` is the packing fraction given by
 
 .. math::
 
-    \eta = b\rho
+    \eta = b\rho.
+
+The energy is related to the temperature through
 
 .. math::
 
     e = C_V T + q,
 
-the inputs for the equation of state are similar to the Noble-Abel model.
+where :math:`q` is an energy offset.
+
 As with the Noble-Abel EOS, it should be noted that covolume is physically
 significant as it represents the maximum compressibility of the gas,
 and as a result it should be non-negative.
+
+The Carnahan-Starling EOS is intended to represent a hard sphere fluid, and the
+covolume parameter, :math:`b`, can be related to the hard sphere
+diameter, :math:`\sigma`, through
+
+.. math::
+
+    b = \frac{\pi}{6}\frac{\sigma^3}{M},
+
+where :math:`M` is the molar mass of the gas.
 
 The entropy for the Carnahan-Starling EOS is given by
 
