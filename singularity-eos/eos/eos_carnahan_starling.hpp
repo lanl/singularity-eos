@@ -61,8 +61,9 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     checkParams();
   }
   CarnahanStarling GetOnDevice() { return *this; }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(), (sie - _qq) / _Cv);
   }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
@@ -70,21 +71,24 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
     PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real ZedFromDensity(const Real rho,
-                                               Real *lambda = nullptr) const {
+                                               Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real eta = _bb * rho;
     const Real zed =
         1.0 + robust::ratio(eta * (4.0 - 2.0 * eta), math_utils::pow<3>(1.0 - eta));
     return zed;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PartialRhoZedFromDensity(const Real rho,
-                                                         Real *lambda = nullptr) const {
+                                                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real eta = _bb * rho;
     return 1.0 + robust::ratio(eta * (8.0 - 2.0 * eta), math_utils::pow<4>(1.0 - eta));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real DensityFromPressureTemperature(
       const Real press, const Real temperature, const Real guess = robust::SMALL(),
-      Real *lambda = nullptr) const {
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real real_root;
     auto poly = [=](Real dens) {
       return _Cv * temperature * _gm1 * dens * ZedFromDensity(dens);
@@ -104,22 +108,26 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     }
     return std::max(robust::SMALL(), real_root);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(_qq, _Cv * temperature + _qq);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real zed = ZedFromDensity(rho);
     return std::max(robust::SMALL(), zed * rho * temperature * _Cv * _gm1);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real zed = ZedFromDensity(rho);
     return std::max(robust::SMALL(), zed * rho * (sie - _qq) * _gm1);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real vol = robust::ratio(1.0, rho);
     const Real one_by_vb = robust::ratio(1.0, vol - _bb);
     const Real one_by_v0b = robust::ratio(1.0, _vol0 - _bb);
@@ -129,8 +137,9 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
                (4.0 + _bb * (one_by_vb + one_by_v0b)) +
            _qp;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real vol = robust::ratio(1.0, rho);
     const Real one_by_vb = robust::ratio(1.0, vol - _bb);
     const Real one_by_v0b = robust::ratio(1.0, _vol0 - _bb);
@@ -140,47 +149,56 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
                (4.0 + _bb * (one_by_vb + one_by_v0b)) +
            _qp;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(),
                     rho * _Cv * temperature * _gm1 *
                         (PartialRhoZedFromDensity(rho) +
                          ZedFromDensity(rho) * ZedFromDensity(rho) * _gm1));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(),
                     rho * (sie - _qq) * _gm1 *
                         (PartialRhoZedFromDensity(rho) +
                          ZedFromDensity(rho) * ZedFromDensity(rho) * _gm1));
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, Real *lambda = nullptr) const {
+      const Real rho, const Real temperature, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return ZedFromDensity(rho) * _gm1;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return ZedFromDensity(rho) * _gm1;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _qq;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
-                                        Real *lambda = nullptr) const;
+                                        Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION
   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                               Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const {
+                              Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     // use STP: 1 atmosphere, room temperature
     rho = _rho0;
     temp = _T0;
@@ -205,6 +223,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
            "%g\n",
            _gm1 + 1.0, _Cv, _bb, _qq);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
                                        Real &rho, Real &sie) const {
@@ -226,7 +245,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
 };
-
+template <typename Indexer_t = Real *>
 PORTABLE_INLINE_FUNCTION
 void CarnahanStarling::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                                Real &bmod, const unsigned long output,
