@@ -656,14 +656,15 @@ SCENARIO("CarnahanStarling6", "[CarnahanStarling][CarnahanStarling6]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       WHEN("A rho(P, T) lookup is performed") {
-        portableFor("rho(P, T) FillEos lookup", 0, num, PORTABLE_LAMBDA(int i) {
-          Real cv, bmod;
-          static constexpr const unsigned long _output =
-              singularity::thermalqs::density |
-              singularity::thermalqs::specific_internal_energy;
-          eos.FillEos(v_density[i], v_temperature[i], v_energy[i], v_pressure[i], cv,
-                      bmod, _output);
-        });
+        portableFor(
+            "rho(P, T) FillEos lookup", 0, num, PORTABLE_LAMBDA(int i) {
+              Real cv, bmod;
+              static constexpr const unsigned long _output =
+                  singularity::thermalqs::density |
+                  singularity::thermalqs::specific_internal_energy;
+              eos.FillEos(v_density[i], v_temperature[i], v_energy[i], v_pressure[i], cv,
+                          bmod, _output);
+            });
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::fence();
