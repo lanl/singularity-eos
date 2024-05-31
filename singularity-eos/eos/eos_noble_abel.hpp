@@ -91,8 +91,7 @@ class NobleAbel : public EosBase<NobleAbel> {
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
       const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    MinInternalEnergyIsNotEnabled("Noble Abel");
-    return 0.0;
+    return _qq;
   }
 
   template <typename Indexer_t = Real *>

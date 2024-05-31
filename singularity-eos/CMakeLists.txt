@@ -55,6 +55,7 @@ register_headers(
     eos/eos_eospac.hpp
     eos/eos_noble_abel.hpp
     eos/eos_stiff.hpp
+    eos/eos_carnahan_starling.hpp
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
