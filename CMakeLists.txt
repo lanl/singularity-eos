@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------#
-# © 2021-2023. Triad National Security, LLC. All rights reserved.  This program
+# © 2021-2024. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -29,9 +29,9 @@ project(
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
-set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.6.2")
+set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.8.0")
 set(SINGULARITY_GOLDFILE_HASH
-    33ef74b29937cc1347b525f72662933dd2b0556550f6541f97fc1de8a01c3c2a)
+    249772f3314c4b6b9386aa08895280698ae905ef188f4383b819f28c1484603b)
 
 # ------------------------------------------------------------------------------#
 # Options
@@ -118,6 +118,11 @@ option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
 option(SINGULARITY_PATCH_MPARK_VARIANT
        "Apply GPU patch to mpark-variant submodule" ON)
 
+# Plugins
+set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
+set(SINGULARITY_VARIANT "singularity-eos/eos/default_variant.hpp" CACHE STRING
+  "The include path for the file containing the definition of singularity::EOS.")
+
 # ------------------------------------------------------------------------------#
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
@@ -130,12 +135,17 @@ include(singularity-eos/kokkos)
 include(singularity-eos/spiner)
 include(singularity-eos/ports-of-call)
 
-add_library(singularity-eos)
+add_library(singularity-eos INTERFACE)
 add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
 
-# ?
-target_include_directories(singularity-eos
-                           PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}>)
+# interface target to collect runtime libraries
+add_library(singularity-eos_Common INTERFACE)
+add_library(singularity-eos::singularity-eos_Common ALIAS singularity-eos_Common)
+
+add_library(singularity-eos_Interface INTERFACE)
+add_library(singularity-eos::singularity-eos_Interface ALIAS singularity-eos_Interface)
+target_link_libraries(singularity-eos_Interface INTERFACE singularity-eos_Common)
+target_link_libraries(singularity-eos INTERFACE singularity-eos_Interface)
 
 # ------------------------------------------------------------------------------#
 # Compiler & language setup
@@ -157,11 +167,17 @@ if(SINGULARITY_BUILD_PYTHON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
+# require at least C++14, but allow newer versions to become a client requirement if
+# explicitly set at build time (needed for building with newer Kokkos)
+if(CMAKE_CXX_STANDARD)
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
+else()
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_14)
+endif()
+
 # checks if this is our build, or we've been imported via `add_subdirectory` NB:
 # this should make the `option(SINGULARITY_SUBMODULE_MODE ...)` unnecessary
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  set(CMAKE_CXX_STANDARD 14)
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
 else()
   message(
@@ -236,21 +252,21 @@ endif()
 
 # defines
 if(SINGULARITY_USE_SINGLE_LOGS)
-  target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_SINGLE_LOGS)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SINGLE_LOGS)
 endif()
 if(SINGULARITY_USE_HIGH_RISK_MATH)
-  target_compile_definitions(singularity-eos
-                             PUBLIC SINGULARITY_USE_HIGH_RISK_MATH)
+  target_compile_definitions(singularity-eos_Interface
+                             INTERFACE SINGULARITY_USE_HIGH_RISK_MATH)
 endif()
 
 if(SINGULARITY_TEST_SESAME)
-  target_compile_definitions(singularity-eos PRIVATE SINGULARITY_TEST_SESAME)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_BUILD_CLOSURE)
-  target_compile_definitions(singularity-eos PRIVATE SINGULARITY_BUILD_CLOSURE)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_BUILD_CLOSURE)
 endif()
 if(SINGULARITY_USE_HELMHOLTZ)
-  target_compile_definitions(singularity-eos PUBLIC SINGULARITY_USE_HELMHOLTZ)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_HELMHOLTZ)
 endif()
 
 # ------------------------------------------------------------------------------#
@@ -269,12 +285,12 @@ endif()
 # cases.
 
 if(SINGULARITY_USE_SPINER_WITH_HDF5)
-  singularity_enable_hdf5(singularity-eos)
+  singularity_enable_hdf5(singularity-eos_Common)
 endif()
 
 if(SINGULARITY_USE_EOSPAC)
   # NB This will add the `eospac-wrapper` directory.
-  singularity_enable_eospac(singularity-eos)
+  singularity_enable_eospac(singularity-eos_Common)
 endif()
 
 if(SINGULARITY_SUBMODULE_MODE)
@@ -315,23 +331,25 @@ else()
 
 endif()
 
-singularity_enable_mpark_variant(singularity-eos)
-singularity_enable_ports_of_call(singularity-eos)
+singularity_enable_mpark_variant(singularity-eos_Interface)
+singularity_enable_ports_of_call(singularity-eos_Interface)
 
 if(SINGULARITY_USE_SPINER)
-  singularity_enable_spiner(singularity-eos)
+  singularity_enable_spiner(singularity-eos_Interface)
   # if(SINGULARITY_USE_SPINER_WITH_HDF5)
-  # singularity_enable_hdf5(singularity-eos) endif()
+  # singularity_enable_hdf5(singularity-eos_Interface) endif()
 endif()
 
+# Both the interface (headers) and the library (compiled) need to link to Kokkos
+# see get_sg_eos.cpp
 if(SINGULARITY_USE_KOKKOS)
-  singularity_enable_kokkos(singularity-eos)
+  singularity_enable_kokkos(singularity-eos_Common)
   if(SINGULARITY_USE_KOKKOSKERNELS)
-    singularity_enable_kokkoskernels(singularity-eos)
+    singularity_enable_kokkoskernels(singularity-eos_Common)
   endif()
 endif()
 if(SINGULARITY_USE_EIGEN)
-  singularity_enable_eigen(singularity-eos)
+  singularity_enable_eigen(singularity-eos_Interface)
 endif()
 
 # ----------------------------------------------------------------------------#
@@ -352,66 +370,91 @@ if(SINGULARITY_BUILD_TESTS)
     FetchContent_Declare(
       Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      # MAUNEYC: On my side, this version works. The ones pinned onto upstream
-      # codes do not like to play with clang and/or newer compilers.
-      GIT_TAG v2.13.7)
+      # or later is fine too
+      GIT_TAG v3.0.1)
     FetchContent_MakeAvailable(Catch2)
     list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
   endif()
 endif()
 
-# ##########################OLD
+# ------------------------------------------------------------------------------#
+# Plugin infrastructure
+# ------------------------------------------------------------------------------#
+include(cmake/plugins.cmake)
+set(PLUGIN_BUILD_ROOT "${CMAKE_CURRENT_BINARY_DIR}/plugins")
+
 # ------------------------------------------------------------------------------#
 # singularity-eos library
 # ------------------------------------------------------------------------------#
 
-# this subdirectory populates `EOS_HEADERS/EOS_SRCS` NOTE: these include path
+# Here we populate `EOS_HEADERS/EOS_SRCS` NOTE: these include path
 # prefixes of subdirectories on files (e.g. eos/eos.hpp) see
 # singularity-eos/CMakeLists.txt
-
 add_subdirectory(singularity-eos)
 
-foreach(_header ${EOS_HEADERS})
-  list(APPEND _install_headers ${_header})
-  list(APPEND _headers singularity-eos/${_header})
+foreach(_plugin ${SINGULARITY_PLUGINS})
+  message(STATUS "Adding plugin ${_plugin}...")
+  get_filename_component(BINDIR_LOC ${_plugin} NAME)
+  add_subdirectory(${_plugin} ${PLUGIN_BUILD_ROOT}/${BINDIR_LOC})
 endforeach()
 
-foreach(_src ${EOS_SRCS})
-  list(APPEND _srcs singularity-eos/${_src})
-endforeach()
+# TODO(JMM): Kind of nice to have?
+get_property(eos_headers GLOBAL PROPERTY EOS_HEADERS)
+target_sources(singularity-eos_Interface PRIVATE ${eos_headers})
+message(VERBOSE "EOS Headers:\n\t${eos_headers}")
 
-target_sources(singularity-eos PRIVATE ${_srcs} ${_headers})
+if(SINGULARITY_BUILD_CLOSURE)
+  get_property(eos_srcs GLOBAL PROPERTY EOS_SRCS)
 
-if(SINGULARITY_USE_FORTRAN)
+  if(eos_srcs)
+    add_library(singularity-eos_Library)
+    set_target_properties(singularity-eos_Library PROPERTIES OUTPUT_NAME singularity-eos)
+    add_library(singularity-eos::singularity-eos_Library ALIAS singularity-eos_Library)
+    # Public scope ensures explicit Kokkos dependency for library and anything
+    # that links to it
+    target_link_libraries(singularity-eos_Library PUBLIC singularity-eos_Common)
+    target_link_libraries(singularity-eos INTERFACE singularity-eos_Library)
+    target_sources(singularity-eos_Library PRIVATE ${eos_srcs})
+    message(VERBOSE "EOS Library Sources:\n\t${eos_srcs}")
+  endif()
+endif()
+
+if(TARGET singularity-eos_Library AND SINGULARITY_USE_FORTRAN)
   # Turn on preprocessor for fortran files
-  set_target_properties(singularity-eos PROPERTIES Fortran_PREPROCESS ON)
+  set_target_properties(singularity-eos_Library PROPERTIES Fortran_PREPROCESS ON)
   # make sure .mods are placed in build path, and installed along with includes
-  set_target_properties(singularity-eos PROPERTIES Fortran_MODULE_DIRECTORY
+  set_target_properties(singularity-eos_Library PROPERTIES Fortran_MODULE_DIRECTORY
                                                    ${CMAKE_CURRENT_BINARY_DIR}/fortran)
   target_include_directories(
-    singularity-eos INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/fortran>
+    singularity-eos_Library INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/fortran>
                               $<INSTALL_INTERFACE:include/singularity-eos/eos>)
-  set_target_properties(singularity-eos PROPERTIES Fortran_PREPROCESS ON)
 endif() # SINGULARITY_USE_FORTRAN
 
-target_include_directories(
-  singularity-eos PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-                         $<INSTALL_INTERFACE:include>)
+target_include_directories(singularity-eos_Interface INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated>
+  $<INSTALL_INTERFACE:include>
+)
+
+get_property(plugin_include_paths GLOBAL PROPERTY PLUGIN_INCLUDE_PATHS)
+foreach(path ${plugin_include_paths})
+  target_include_directories(singularity-eos_Interface INTERFACE $<BUILD_INTERFACE:${path}>)
+endforeach()
 
 # plug in collected includes/libs/definitions
 
 target_include_directories(
-  singularity-eos
+  singularity-eos_Interface
   PUBLIC ${SINGULARITY_PUBLIC_INCS}
   PRIVATE ${SINGULARITY_PRIVATE_INCS})
 
 target_link_libraries(
-  singularity-eos
+  singularity-eos_Interface
   PUBLIC ${SINGULARITY_PUBLIC_LIBS}
   PRIVATE ${SINGULARITY_PRIVATE_LIBS})
 
 target_compile_definitions(
-  singularity-eos
+  singularity-eos_Interface
   PUBLIC ${SINGULARITY_PUBLIC_DEFINES}
   PRIVATE ${SINGULARITY_PRIVATE_DEFINES})
 
@@ -430,9 +473,8 @@ set(with_better_flags "$<BOOL:${SINGULARITY_BETTER_DEBUG_FLAGS}>")
 set(xlfix "$<${with_xlcxx}:-std=c++1y;-qxflag=disable__cplusplusOverride>")
 
 target_compile_options(
-  singularity-eos
-  PRIVATE ${xlfix}
-  PUBLIC $<${with_cuda}:
+  singularity-eos_Interface
+  INTERFACE $<${with_cuda}:
          $<${with_cxx}:
          --expt-relaxed-constexpr
          $<${with_warnings}:
@@ -450,7 +492,26 @@ target_compile_options(
          > # cuda
 )
 
-target_link_options(singularity-eos PRIVATE ${xlfix})
+if(TARGET singularity-eos_Library)
+  target_compile_options(singularity-eos_Library PRIVATE ${xlfix})
+  target_link_options(singularity-eos_Library PRIVATE ${xlfix})
+
+  # target_link_libraries(singularity-eos_Library PRIVATE singularity-eos_Interface)
+  #
+  # Can not use PRIVATE, since it would add singularity-eos_Interface as LINK_ONLY
+  # in the singularity-eos_Library export
+  #
+  # CMake 3.26 gives us $<BUILD_LOCAL_INTERFACE:...>, for now we need to do this workaround
+  if(CMAKE_VERSION VERSION_LESS "3.26.0")
+    target_link_options(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_LINK_OPTIONS>)
+    target_include_directories(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_INCLUDE_DIRECTORIES>)
+    target_compile_options(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_COMPILE_OPTIONS>)
+    target_compile_definitions(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_COMPILE_DEFINITIONS>)
+    target_sources(singularity-eos_Library PRIVATE $<TARGET_PROPERTY:singularity-eos_Interface,INTERFACE_SOURCES>)
+  else()
+    target_link_libraries(singularity-eos_Library PRIVATE $<BUILD_LOCAL_INTERFACE:singularity-eos_Interface>)
+  endif()
+endif()
 
 # ----------------------------------------------------------------------------#
 # Export/install

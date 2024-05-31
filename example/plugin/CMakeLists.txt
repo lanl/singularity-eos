@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------#
-# © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+# © 2024. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -12,4 +12,11 @@
 # publicly and display publicly, and to permit others to do so.
 #------------------------------------------------------------------------------#
 
-set(singularity-eosCMake_PREFIX @CMAKE_INSTALL_PREFIX@/share/singularity-eos/cmake)
+# Add the header file to the list of headers
+register_headers(PLUGIN dust dust.hpp dust_variant.hpp)
+
+# Register this test to be built in the test suite
+register_tests(tst/test_dust.cpp)
+
+# Export lists to parent scope
+export_plugin()

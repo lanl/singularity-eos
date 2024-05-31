@@ -17,5 +17,9 @@ detail.  Why is this change required?  What problem does it solve?-->
 - [ ] Format your changes by using the `make format` command after configuring with `cmake`.
 - [ ] Document any new features, update documentation for changes made.
 - [ ] Make sure the copyright notice on any files you modified is up to date.
-- [ ] After creating a pull request, note it in the CHANGELOG.md file
-- [ ] If preparing for a new release, update the version in cmake.
+- [ ] After creating a pull request, note it in the CHANGELOG.md file.
+- [ ] LANL employees: make sure tests pass both on the github CI and on the Darwin CI
+
+If preparing for a new release, in addition please check the following:
+- [ ] Update the version in cmake.
+- [ ] Move the changes in the CHANGELOG.md file under a new header for the new release, and reset the categories.

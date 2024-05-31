@@ -15,6 +15,7 @@
 #ifndef SINGULARITY_EOS_BASE_ROBUST_UTILS_HPP_
 #define SINGULARITY_EOS_BASE_ROBUST_UTILS_HPP_
 
+#include <cmath>
 #include <limits>
 #include <ports-of-call/portability.hpp>
 
@@ -29,6 +30,16 @@ PORTABLE_FORCEINLINE_FUNCTION constexpr auto SMALL() {
 template <typename T = Real>
 PORTABLE_FORCEINLINE_FUNCTION constexpr auto EPS() {
   return 10 * std::numeric_limits<T>::epsilon();
+}
+
+template <typename T = Real>
+PORTABLE_FORCEINLINE_FUNCTION constexpr T min_exp_arg() {
+  return (std::numeric_limits<T>::min_exponent - 1) * M_LN2;
+}
+
+template <typename T = Real>
+PORTABLE_FORCEINLINE_FUNCTION constexpr T max_exp_arg() {
+  return std::numeric_limits<T>::max_exponent * M_LN2;
 }
 
 template <typename T>
@@ -49,6 +60,13 @@ PORTABLE_FORCEINLINE_FUNCTION int sgn(const T &val) {
 template <typename A, typename B>
 PORTABLE_FORCEINLINE_FUNCTION auto ratio(const A &a, const B &b) {
   return a / (b + sgn(b) * SMALL<B>());
+}
+
+template <typename T>
+PORTABLE_FORCEINLINE_FUNCTION T safe_arg_exp(const T &x) {
+  return x < min_exp_arg<T>()   ? 0.0
+         : x > max_exp_arg<T>() ? std::numeric_limits<T>::infinity()
+                                : std::exp(x);
 }
 
 } // namespace robust

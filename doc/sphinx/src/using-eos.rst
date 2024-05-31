@@ -77,7 +77,7 @@ method. ``get`` is templated and type deduction is not possible. You
 must specify the type of the class you're pulling out of the
 variant. For example:
 
-.. code-block::
+.. code-block:: cpp
 
    auto my_ideal_gas = my_eos.get<singularity::IdealGas>();
 
@@ -91,7 +91,7 @@ The EOS model also allows some host-side introspection. The method
 returns a string representing the equation of state an ``EOS`` object
 currently is. For example:
 
-.. code-block::
+.. code-block:: cpp
 
   auto tpe_str = my_ideal_gas.EosType();
   // prints "IdealGas"
@@ -158,20 +158,16 @@ method, which can be called as, e.g.,
 
   eos.Finalize();
 
-Vector and Scalar API, Accessors
----------------------------------
+Accessors and Indexers
+-----------------------
 
-Most ``EOS`` methods have both scalar and vector overloads, where the
-scalar version returns a value, and the vector version modifies an
-array. By default the vector version is called from host on device (if
-``singularity-eos`` was compiled for device).
-
-The vector API is templated to accept *accessors*. An accessor is any
-object with a square bracket operator. One-dimensional arrays,
-pointers, and ``std::vector<double>`` are all examples of what we call
-an accessor. However, the value of an accessor is it doesn't have to
-be an array. You can create an accessor class that wraps your
-preferred memory layout, and ``singularity-eos`` will handle it
+Many functions in ``singularity-eos`` accept **accessors**, also
+called **indexers**. An accessor is any object with a square bracket
+operator. One-dimensional arrays, pointers, and
+``std::vector<double>`` are all examples of what we call an
+accessor. However, the value of an accessor is it doesn't have to be
+an array. You can create an accessor class that wraps your preferred
+memory layout, and ``singularity-eos`` will handle it
 appropriately. An accessor that indexes into an array with some stride
 might look like this:
 
@@ -186,8 +182,20 @@ might look like this:
     int stride_;
   };
 
-We do note, however, that vectorization may suffer if your underlying
-data structure is not contiguous in memory.
+The Vector API and the ``lambda`` optional arguments all use
+accessors, as discussed below.
+
+Vector and Scalar API
+----------------------
+
+Most ``EOS`` methods have both scalar and vector overloads, where the
+scalar version returns a value, and the vector version modifies an
+array. By default the vector version is called from host on device (if
+``singularity-eos`` was compiled for device).
+
+The vector API is templated to accept accessors. We do note, however,
+that vectorization may suffer if your underlying data structure is not
+contiguous in memory.
 
 .. _eospac_vector:
 
@@ -246,7 +254,7 @@ decorated so that it may be evaluated on either host or device,
 depending on desired use-case. Alternatively, you may use an anonymous
 function with an `auto` argument as the input, e.g.,
 
-.. code-block::
+.. code-block:: cpp
 
    // equivalent to [=], but with device markings
    eos.Evaluate(PORTABLE_LAMBDA(auto eos) { /* my code snippet */ });
@@ -339,12 +347,16 @@ Lambdas and Optional Parameters
 --------------------------------
 
 Most methods for ``EOS`` objects accept an optional ``lambda``
-parameter, which is a ``Real *``. Unless specified in :ref:`the
-models section <models>`, this parameter does nothing. However, some
-models require or benefit from additional information. For example
-models with internal root finds can leverage initial guesses and
-models with composition mixing parameters may need additional input to
-return a meaningful state.
+parameter, which is an accessor as discussed above. ``lambda[i]``
+should return a real number unless ``lambda==nullptr``. Unless
+specified in :ref:`the models section <models>`, this parameter does
+nothing, and the default type is ``Real*`` with a default value of
+``nullptr``
+
+However, some models require or benefit from additional
+information. For example models with internal root finds can leverage
+initial guesses and models with composition mixing parameters may need
+additional input to return a meaningful state.
 
 ``EOS`` models are introspective and can provide the desired/required
 size of the lambda array with:
@@ -352,8 +364,8 @@ size of the lambda array with:
 .. cpp:function:: int EOS::nlambda()
 
 which is the desired size of the ``lambda`` array per scalar call. For
-vector calls, there should be one such array per grid point. An
-accessor for ``lambda`` should return a ``Real *`` pointer at each
+vector calls, there should be one such accessor per grid point. A
+vector accessor for ``lambda`` should return an accessor at each
 index. A trivial example of such an indexer for ``lambda`` might be
 the null indexer:
 
@@ -488,10 +500,17 @@ currently:
 * ``thermalqs::temperature``
 * ``thermalqs::specific_heat``
 * ``thermalqs::bulk_modulus``
+* ``thermalqs::do_lambda``
 * ``thermalqs::all_values``
 
 however, most EOS models only specify that they prefer density and
 temperature or density and specific internal energy.
+
+.. note::
+
+   The ``thermalqs::do_lambda`` flag is a bit special. It specifies that
+   eos-specific operations are to be performed on the additional
+   quantities passed in through the ``lambda`` variable.
 
 .. _eos builder section:
 
@@ -544,13 +563,17 @@ cgs. Unless specified, all functions work on device, if the code is
 compiled appropriately. The exceptions are constructors,
 ``GetOnDevice``, and ``Finalize``, all of which are host-only.
 
-.. cpp:function:: Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie, Rela &lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
+                                             Indexer_t &&lambda = nullptr) const;
 
 Returns temperature in Kelvin. Inputs are density in :math:`g/cm^3`
 and specific internal energy in :math:`erg/g`. The vector equivalent
 of this function is
 
-.. code-block::
+.. code-block:: cpp
 
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void
@@ -567,33 +590,57 @@ parameter is always last in the function signature. As they are all
 almost exactly analogous to their scalar counterparts, we will mostly
 not list the vector functions here.
 
-.. cpp:function:: Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature, Real *lambda=nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
+                                             Indexer_t &&lambda = nullptr) const;
 
 returns specific internal energy in :math:`erg/g` given a density in
 :math:`g/cm^3` and a temperature in Kelvin.
 
-.. cpp:function:: Real PressureFromDensityTemperature(const Real rho, const Real temperature, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real PressureFromDensityTemperature(const Real rho, const Real temperature,
+                                       Indexer_t &&lambda = nullptr) const;
 
 returns pressure in Barye given density in :math:`g/cm^3` and temperature in Kelvin.
 
-.. cpp:function:: Real PressureFromDensityInternalEnergy(const Real rho, const Real temperature, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real PressureFromDensityInternalEnergy(const Real rho, const Real temperature,
+                                          Indexer_t &&lambda = nullptr) const;
 
 returns pressure in Barye given density in :math:`g/cm^3` and specific
 internal energy in :math:`erg/g`.
 
-.. cpp:function:: Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
+                                           Indexer_t &&lambda = nullptr) const;
 
 returns specific heat capacity at constant volume, in units of
 :math:`erg/(g K)` in terms of density in :math:`g/cm^3` and
 temperature in Kelvin.
 
-.. cpp:function:: Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
+                                              Indexer_t &&lambda = nullptr) const;
 
 returns specific heat capacity at constant volume, in units of
 :math:`erg/(g K)` in terms of density in :math:`g/cm^3` and specific
 internal energy in :math:`erg/g`.
 
-.. cpp:function:: Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
+                                          Indexer_t &&lambda = nullptr) const;
 
 returns the the bulk modulus
 
@@ -620,12 +667,20 @@ enthalpy by volume. The sound speed may also differ for, e.g., porous
 models, where the pressure is less directly correlated with the
 density.
 
-.. cpp:function:: Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
+                                             Indexer_t &&lambda = nullptr) const;
 
 returns the bulk modulus in units of :math:`g cm^2/s^2` given density
 in :math:`g/cm^3` and specific internal energy in :math:`erg/g`.
 
-.. cpp:function:: Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
+                                             Indexer_t &&lambda = nullptr) const;
 
 returns the unitless Gruneisen parameter
 
@@ -635,14 +690,23 @@ returns the unitless Gruneisen parameter
 
 given density in :math:`g/cm^3` and temperature in Kelvin.
 
-.. cpp:function:: Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                Indexer_t &&lambda = nullptr) const;
 
 returns the unitless Gruneisen parameter given density in
 :math:`g/cm^3` and specific internal energy in :math:`erg/g`.
 
 The function
 
-.. cpp:function:: void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod, Real &dpde, Real &dvdt, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
+                               Real &cv, Real &bmod, Real &dpde, Real &dvdt,
+                               Indexer_t &&lambda = nullptr) const;
 
 fills the density, temperature, specific internal energy, pressure,
 and thermodynamic derivatives a specifically chosen characteristic
@@ -653,7 +717,13 @@ representative energy and density scale.
 
 The function
 
-.. cpp:function:: void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod, const unsigned long output, Real *lambda = nullptr) const;
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   void FillEos(Real &rho, Real &temp, Real &energy,
+                Real &press, Real &cv, Real &bmod,
+                const unsigned long output,
+                Indexer_t &&lambda = nullptr) const;
 
 is a a bit of a special case. ``output`` is a bitfield represented as
 an unsigned 64 bit number. Quantities such ``pressure`` and

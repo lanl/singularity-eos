@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# © 2021-2023. Triad National Security, LLC. All rights reserved.  This program
+# © 2021-2024. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -21,6 +21,9 @@ add_executable(
   test_eos_noble_abel.cpp
   test_eos_stiff.cpp
   test_eos_carnahan_starling.cpp
+  test_eos_vinet.cpp
+  test_eos_mgusup.cpp
+  test_eos_powermg.cpp
   )
 
 add_executable(
@@ -37,11 +40,20 @@ add_executable(
   eos_tabulated_unit_tests
   catch2_define.cpp
   eos_unit_test_helpers.hpp
-  test_eos_vinet.cpp
   test_eos_helmholtz.cpp
   test_eos_tabulated.cpp
   test_eos_stellar_collapse.cpp
   )
+
+get_property(plugin_tests GLOBAL PROPERTY PLUGIN_TESTS)
+if (plugin_tests)
+  add_executable(
+    eos_plugin_tests
+    catch2_define.cpp
+    eos_unit_test_helpers.hpp
+    ${plugin_tests}
+    )
+endif()
 
 if(SINGULARITY_TEST_HELMHOLTZ)
     configure_file(${PROJECT_SOURCE_DIR}/data/helmholtz/helm_table.dat ${CMAKE_BINARY_DIR}/data/helmholtz/helm_table.dat COPYONLY)
@@ -62,10 +74,17 @@ target_link_libraries(eos_infrastructure_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
 target_link_libraries(eos_tabulated_unit_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
+if (plugin_tests)
+  target_link_libraries(eos_plugin_tests PRIVATE Catch2::Catch2
+    singularity-eos::singularity-eos)
+endif()
 include(Catch)
 catch_discover_tests(eos_analytic_unit_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_infrastructure_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_tabulated_unit_tests PROPERTIES TIMEOUT 60)
+if (plugin_tests)
+  catch_discover_tests(eos_plugin_tests PROPERTIES TIMEOUT 60)
+endif()
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
   add_executable(compare_to_eospac compare_to_eospac.cpp)
@@ -92,8 +111,10 @@ endif()
 
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)
   set(SINGULARITY_GOLDFILE_URL
-      https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/goldfiles.tar.gz
+      "https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/goldfiles.tar.gz"
+      CACHE STRING "URL to goldfiles.tar.gz"
   )
+  mark_as_advanced(SINGULARITY_GOLDFILE_URL)
   message(
     STATUS
       "Attempting to download gold files for regression tests. "

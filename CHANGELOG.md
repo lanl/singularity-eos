@@ -2,14 +2,35 @@
 
 ## Current develop
 
-### Fixed (Repair bugs, etc)
-
 ### Added (new features/APIs/variables/...)
 - [[PR292]](https://github.com/lanl/singularity-eos/pull/292) Added Carnahan-Starling EoS
+- [[PR#362]](https://github.com/lanl/singularity-eos/pull/362) Add lambda to thermalqs
+- [[PR#339]](https://github.com/lanl/singularity-eos/pull/339) Added COMPONENTS to singularity-eos CMake install, allowing to select a minimal subset needed e.g. for Fortran bindings only
+- [[PR#336]](https://github.com/lanl/singularity-eos/pull/336) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a pressure power law expansion in eta = 1-V/V0. PowerMG.
+- [[PR334]](https://github.com/lanl/singularity-eos/pull/334) Include plugins infrastructure
+- [[PR331]](https://github.com/lanl/singularity-eos/pull/331) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a linear Us-up relation. MGUsup.
+- [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release
+- [[PR#357]](https://github.com/lanl/singularity-eos/pull/357) Added support for C++17 (e.g., needed when using newer Kokkos).
+
+### Fixed (Repair bugs, etc)
+- [[PR370]](https://github.com/lanl/singularity-eos/pull/370) Fix bulk modulus calculation in spiner EOS
+- [[PR343]](https://github.com/lanl/singularity-eos/pull/343) Add chemical potentials to stellar collapse gold files
+- [[PR342]](https://github.com/lanl/singularity-eos/pull/342) Fix missing using statement in stellar collapse root finding routines
+- [[PR341]](https://github.com/lanl/singularity-eos/pull/341) Short-circuit HDF5 machinery when cray-wrappers used in-tree
+- [[PR340]](https://github.com/lanl/singularity-eos/pull/335) Fix in-tree builds with plugin infrastructure
+- [[PR335]](https://github.com/lanl/singularity-eos/pull/335) Fix missing hermite.hpp in CMake install required for Helmholtz EOS
+- [[PR356]](https://github.com/lanl/singularity-eos/pull/356) Guard against FPEs in the PTE solver
+- [[PR356]](https://github.com/lanl/singularity-eos/pull/356) Update CMake for proper Kokkos linking in Fortran interface
+- [[PR373]](https://github.com/lanl/singularity-eos/pull/373) Initialize cache in `get_sg_eos*` functions
+- [[PR374]](https://github.com/lanl/singularity-eos/pull/374) Make the Davis EOS more numerically robust
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR363]](https://github.com/lanl/singularity-eos/pull/363) Template lambda values for scalar calls
+- [[PR372]](https://github.com/lanl/singularity-eos/pull/372) Removed E0 from Davis Products EOS in favor of using the shifted EOS modifier. CHANGES API!
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR329]](https://github.com/lanl/singularity-eos/pull/329) Move vinet tests into analytic test suite
+- [[PR328]](https://github.com/lanl/singularity-eos/pull/328) Move to catch2 v3
 
 ### Removed (removing behavior/API/varaibles/...)
 
@@ -20,7 +41,7 @@ Date: 11/28/2023
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Fixed EOSPAC unit conversion errors for scalar lookups
 - [[PR316]](https://github.com/lanl/singularity-eos/pull/316) removed `fmax-errors=3` from `singularity-eos` compile flags
 - [[PR296]](https://github.com/lanl/singularity-eos/pull/296) changed `CMAKE_SOURCE_DIR` to `PROJECT_SOURCE_DIR` to fix downstream submodule build
-- [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options 
+- [[PR291]](https://github.com/lanl/singularity-eos/pull/291) package.py updates to reflect new CMake options
 - [[PR290]](https://github.com/lanl/singularity-eos/pull/290) Added target guards on export config
 - [[PR288]](https://github.com/lanl/singularity-eos/pull/288) Don't build tests that depend on spiner when spiner is disabled
 - [[PR287]](https://github.com/lanl/singularity-eos/pull/287) Fix testing logic with new HDF5 options
@@ -38,6 +59,7 @@ Date: 11/28/2023
 - [[PR308]](https://github.com/lanl/singularity-eos/pull/308) spack builds +fortran now compile via correct blocking out of interfaces via preprocessor ifdef
 
 ### Added (new features/APIs/variables/...)
+- [[PR338]](https://github.com/lanl/singularity-eos/pull/338) added chemical potentials from EoS
 - [[PR269]](https://github.com/lanl/singularity-eos/pull/269) Add SAP Polynomial EoS
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added EOSPAC option functionality in class constructor
 - [[PR278]](https://github.com/lanl/singularity-eos/pull/278) Added a new function for returning the minimum energy as a function of density for an EOS (only EOSPAC at the moment)

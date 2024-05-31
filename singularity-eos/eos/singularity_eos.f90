@@ -113,13 +113,13 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, E0, &
+      init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, &
                             sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_DavisProducts')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
-      real(kind=c_double), value, intent(in) :: a, b, k, n, vc, pc, Cv, E0
+      real(kind=c_double), value, intent(in) :: a, b, k, n, vc, pc, Cv
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_DavisProducts
   end interface
@@ -474,12 +474,12 @@ contains
   end function init_sg_JWL_f
   
   integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc, &
-                                           Cv, E0, sg_mods_enabled, &
+                                           Cv, sg_mods_enabled, &
                                            sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
-    real(kind=8), value, intent(in)   :: a, b, k, n, vc, pc, Cv, E0
+    real(kind=8), value, intent(in)   :: a, b, k, n, vc, pc, Cv
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
@@ -492,7 +492,7 @@ contains
     if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
 
     err = init_sg_DavisProducts(matindex-1, eos%ptr, a, b, k, n, vc, pc, Cv, &
-                                E0, c_loc(sg_mods_enabled_use), &
+                                c_loc(sg_mods_enabled_use), &
                                 c_loc(sg_mods_values_use))
   end function init_sg_DavisProducts_f
 

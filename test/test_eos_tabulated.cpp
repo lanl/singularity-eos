@@ -21,15 +21,12 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
-
-#ifdef SINGULARITY_BUILD_CLOSURE
-#include <singularity-eos/eos/singularity_eos.hpp>
-#endif
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
-#include "catch2/catch.hpp"
+#include <catch2/catch_test_macros.hpp>
 #endif
 
 #include <test/eos_unit_test_helpers.hpp>
@@ -44,6 +41,7 @@ using singularity::EOSPAC;
 #endif
 
 namespace thermalqs = singularity::thermalqs;
+using singularity::variadic_utils::np;
 
 const std::string eosName = "../materials.sp5";
 const std::string airName = "air";
@@ -117,7 +115,7 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
         std::vector<Real> lambda(steelEOS_host_polymorphic.nlambda());
         steelEOS_host_polymorphic.DensityEnergyFromPressureTemperature(
             P, T, lambda.data(), rho, sie);
-        eospac.DensityEnergyFromPressureTemperature(P, T, nullptr, rho_pac, sie_pac);
+        eospac.DensityEnergyFromPressureTemperature(P, T, np<Real>(), rho_pac, sie_pac);
         REQUIRE(isClose(rho, rho_pac));
       }
     }

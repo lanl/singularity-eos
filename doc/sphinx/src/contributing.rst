@@ -697,3 +697,52 @@ floating point representation.
 This approach is described in more detail in our `short note`_ on the topic.
 
 .. _Short note: https://arxiv.org/abs/2206.08957
+
+
+How to Make a Release
+----------------------
+
+``singularity-eos`` uses *semantic versioning*. A version is written
+as ``v[major version].[minor version].[patch number]``. To make a new
+release, first make a new pull request where you (1) change the
+version number in the ``project`` field of the of the top-level
+``CmakeLists.txt`` file and (2) add a new release field to the
+``CHANGELOG.md``, moving all the changes listed under ``Current Main``
+to that release. Then add empty categories for ``Current
+Main``. Typically the branch for this merge request should be called
+``v[release number]-rc`` for "release candidate." Make sure that the
+full test suite passes for this PR.
+
+After that pull request is merged, go to the ``releases`` tab on the
+right sidebar on github, and draft a new release. Set the tag to
+``v[release number]``, fill the comment with the changes in the
+changelog since the last release, and make the release.
+
+Finally, the Spackages must be updated. To do so, you will need the
+checksum for the tarball for the newest release. Download the tarball
+from the release page, and then run
+
+.. code-block:: bash
+
+   sha256sum path/to/tarball.tar.gz
+
+and copy down the resulting checksum. Then create a new pull request
+and edit
+``singularity-eos/spack-repo/packages/singularity-eos/package.py`` and
+find the line ``version("main", branch="main")``. Below this line add
+a new line of the form
+
+.. code-block:: python
+
+   version("[release number]", sha256="[checksum]")
+
+where you should fill in ``[release number]`` and ``[checksum]``
+appropriately. You may then remove the oldest version from the
+spackace, and add the ``deprecated=True`` flag to the two oldest
+remaining versions.
+
+Finally, the new ``package.py`` file needs to be synchronized with
+`Spack upstream`_, and a pull request to that repository containing
+the new ``package.py`` file.
+
+.. _Spack upstream: https://github.com/spack/spack
