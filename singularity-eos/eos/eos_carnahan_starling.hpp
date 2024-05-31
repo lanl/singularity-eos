@@ -170,6 +170,10 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
       const Real rho, const Real sie, Real *lambda = nullptr) const {
     return ZedFromDensity(rho) * _gm1;
   }
+  PORTABLE_INLINE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+    return _qq;
+  }
   PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                         Real &cv, Real &bmod, const unsigned long output,
                                         Real *lambda = nullptr) const;

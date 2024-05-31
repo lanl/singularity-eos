@@ -82,8 +82,7 @@ class NobleAbel : public EosBase<NobleAbel> {
   }
   PORTABLE_INLINE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
-    MinInternalEnergyIsNotEnabled("Noble Abel");
-    return 0.0;
+    return _qq;
   }
 
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
