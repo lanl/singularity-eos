@@ -238,7 +238,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Indexer_t &&lambda,
                                        Real &rho, Real &sie) const {
     sie = std::max(_qq, _Cv * temp + _qq);
     rho = DensityFromPressureTemperature(press, temp);
@@ -261,7 +261,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
 template <typename Indexer_t = Real *>
 PORTABLE_INLINE_FUNCTION void
 CarnahanStarling::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                          Real &bmod, const unsigned long output, Real *lambda) const {
+                          Real &bmod, const unsigned long output, Indexer_t &&lambda) const {
   if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
     if (output & thermalqs::pressure || output & thermalqs::temperature) {
       UNDEFINED_ERROR;
