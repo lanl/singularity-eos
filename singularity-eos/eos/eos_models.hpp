@@ -16,6 +16,7 @@
 #define _SINGULARITY_EOS_EOS_EOS_MODELS_HPP_
 
 // EOS models
+#include <singularity-eos/eos/eos_carnahan_starling.hpp>
 #include <singularity-eos/eos/eos_davis.hpp>
 #include <singularity-eos/eos/eos_eospac.hpp>
 #include <singularity-eos/eos/eos_gruneisen.hpp>
@@ -24,7 +25,6 @@
 #include <singularity-eos/eos/eos_jwl.hpp>
 #include <singularity-eos/eos/eos_mgusup.hpp>
 #include <singularity-eos/eos/eos_noble_abel.hpp>
-#include <singularity-eos/eos/eos_carnahan_starling.hpp>
 #include <singularity-eos/eos/eos_powermg.hpp>
 #include <singularity-eos/eos/eos_sap_polynomial.hpp>
 #include <singularity-eos/eos/eos_spiner.hpp>
