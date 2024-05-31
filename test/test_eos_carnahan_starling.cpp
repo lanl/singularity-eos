@@ -535,7 +535,6 @@ SCENARIO("Test C-S Entropy Calls", "[CarnahanStarling][CarnahanStarling5]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
-      constexpr std::array<Real, num> pressure_true{1.0132500000000000e+08};
       constexpr std::array<Real, num> temperature_true{4.0000000000000000e+03};
       constexpr std::array<Real, num> entropy_true{-2.2983150752058342e+10};
 
@@ -631,8 +630,8 @@ SCENARIO("CarnahanStarling6", "[CarnahanStarling][CarnahanStarling6]") {
       // just used for the comparisons
       auto pressure = Kokkos::create_mirror_view(v_pressure);
       auto temperature = Kokkos::create_mirror_view(v_temperature);
-      Kokkos::deep_copy(density, v_pressure);
-      Kokkos::deep_copy(energy, v_temperature);
+      Kokkos::deep_copy(pressure, v_pressure);
+      Kokkos::deep_copy(temperature, v_temperature);
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
