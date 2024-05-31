@@ -236,7 +236,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
            "%g\n",
            _gm1 + 1.0, _Cv, _bb, _qq);
   }
-  template <typename Indexer_t = Real *>
+  template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
@@ -258,7 +258,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
 };
-template <typename Indexer_t = Real *>
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void CarnahanStarling::FillEos(Real &rho, Real &temp, Real &sie,
                                                         Real &press, Real &cv, Real &bmod,
                                                         const unsigned long output,
