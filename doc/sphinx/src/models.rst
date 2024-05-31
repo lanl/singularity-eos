@@ -544,6 +544,92 @@ these values are not set, they will be the same as those returned by the
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
 
+Carnahan-Starling
+`````````````````
+
+The (quasi-exact) Carnahan-Starling model in ``singularity-eos`` takes
+the form
+
+.. math::
+
+    P = Z(\rho) \rho (e-q) (\gamma-1)
+
+.. math::
+
+    Z(\rho) = \frac{1+\eta+\eta^2-\eta^3}{(1-\eta)^3},
+
+where :math:`\eta` is the packing fraction given by
+
+.. math::
+
+    \eta = b\rho.
+
+The energy is related to the temperature through
+
+.. math::
+
+    e = C_V T + q,
+
+where :math:`q` is an energy offset.
+
+As with the Noble-Abel EOS, it should be noted that covolume is physically
+significant as it represents the maximum compressibility of the gas,
+and as a result it should be non-negative.
+
+The Carnahan-Starling EOS is intended to represent a hard sphere fluid, and the
+covolume parameter, :math:`b`, can be related to the hard sphere
+diameter, :math:`\sigma`, through
+
+.. math::
+
+    b = \frac{\pi}{6}\frac{\sigma^3}{M},
+
+where :math:`M` is the molar mass of the gas.
+
+The entropy for the Carnahan-Starling EOS is given by
+
+.. math::
+    
+    S =  C_V \ln\left(\frac{T}{T_0}\right) + C_V (\gamma-1) \left\{ \ln\left(\frac{v}
+     {v_0}\right) - S^{CS} \right\} + q',
+
+.. math::
+   S^{CS} = b\left(4\left(\frac{1}{v-b} - \frac{1}{v_0-b}\right)+
+     b\left(\frac{1}{(v-b)^2} - \frac{1}{(v_0-b)^2}\right)\right)
+
+where :math:`S(\rho_0,T_0)=q'`. By default, :math:`T_0 = 298` K and the
+reference density is given by
+
+.. math::
+
+    P_0 = \rho_0 Z(\rho_0) C_V T_0(\gamma-1),
+
+where :math:`P_0` is by default 1 bar. Denisty is obtained through root finding methods.
+
+The settable parameters for this EOS are :math:`\gamma-1`, specific
+heat capacity (:math:`C_V`), covolume (:math:`b`) and offset internal energy (:math:`q`). Optionally, the reference state for the entropy calculation can
+be provided by setting the reference temperature, pressure, and entropy offset.
+
+The ``CarnahanStarling`` EOS constructor has four arguments: ``gm1``, which is :math:`\gamma-1`; ``Cv``, the
+specific heat :math:`C_V`; :math:`b`, the covolume; and :math:`q`, the internal energy offset.
+
+.. code-block:: cpp
+
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q)
+
+Optionally, the reference state for the entropy calculation,
+can be provided in the constructor via ``qp``, ``T0`` and ``P0``:
+
+.. code-block:: cpp
+
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0)
+
+Note that these parameters are provided solely for the entropy calculation. When
+these values are not set, they will be the same as those returned by the
+:code:`ValuesAtReferenceState()` function. However, if the entropy reference
+conditions are given, the return values of the :code:`ValuesAtReferenceState()`
+function will not be the same.
+
 Gruneisen EOS
 `````````````
 
