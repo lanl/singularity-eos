@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_EOS_EOS_NOBLE_ABEL_HPP_
-#define _SINGULARITY_EOS_EOS_EOS_NOBLE_ABEL_HPP_
+#ifndef _SINGULARITY_EOS_EOS_EOS_CARNAHAN_STARLING_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_CARNAHAN_STARLING_HPP_
 
 // stdlib
 #include <cmath>
@@ -26,37 +26,41 @@
 // Base stuff
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
 
 using namespace eos_base;
 
-class NobleAbel : public EosBase<NobleAbel> {
+class CarnahanStarling : public EosBase<CarnahanStarling> {
  public:
-  NobleAbel() = default;
-  PORTABLE_INLINE_FUNCTION NobleAbel(Real gm1, Real Cv, Real bb, Real qq)
+  CarnahanStarling() = default;
+  PORTABLE_INLINE_FUNCTION CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq)
       : _Cv(Cv), _gm1(gm1), _bb(bb), _qq(qq), _T0(ROOM_TEMPERATURE),
         _P0(ATMOSPHERIC_PRESSURE), _qp(0.0),
-        _rho0(robust::ratio(_P0, gm1 * Cv * _T0 + bb * _P0)),
-        _vol0(robust::ratio(gm1 * Cv * _T0 + bb * _P0, _P0)), _sie0(Cv * _T0 + qq),
-        _bmod0(robust::ratio(_rho0 * Cv * _T0 * gm1 * (gm1 + 1.0),
-                             (1.0 - bb * _rho0) * (1.0 - bb * _rho0))),
-        _dpde0(robust::ratio(_rho0 * gm1, 1.0 - bb * _rho0)) {
+        _rho0(DensityFromPressureTemperature(_P0, _T0)), _vol0(robust::ratio(1.0, _rho0)),
+        _sie0(Cv * _T0 + qq),
+        _bmod0(_rho0 * Cv * _T0 *
+               (PartialRhoZedFromDensity(_rho0) +
+                ZedFromDensity(_rho0) * ZedFromDensity(_rho0) * gm1)),
+        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1) {
     checkParams();
   }
-  PORTABLE_INLINE_FUNCTION NobleAbel(Real gm1, Real Cv, Real bb, Real qq, Real qp,
-                                     Real T0, Real P0)
+  PORTABLE_INLINE_FUNCTION CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq, Real qp,
+                                            Real T0, Real P0)
       : _Cv(Cv), _gm1(gm1), _bb(bb), _qq(qq), _T0(T0), _P0(P0), _qp(qp),
-        _rho0(robust::ratio(P0, gm1 * Cv * T0 + bb * P0)),
-        _vol0(robust::ratio(gm1 * Cv * T0 + bb * P0, P0)), _sie0(Cv * T0 + qq),
-        _bmod0(robust::ratio(_rho0 * Cv * T0 * gm1 * (gm1 + 1.0),
-                             (1.0 - bb * _rho0) * (1.0 - bb * _rho0))),
-        _dpde0(robust::ratio(_rho0 * gm1, 1.0 - bb * _rho0)) {
+        _rho0(DensityFromPressureTemperature(P0, T0)), _vol0(robust::ratio(1.0, _rho0)),
+        _sie0(Cv * T0 + qq),
+        _bmod0(_rho0 * Cv * T0 *
+               (PartialRhoZedFromDensity(_rho0) +
+                ZedFromDensity(_rho0) * ZedFromDensity(_rho0) * gm1)),
+        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1) {
     checkParams();
   }
-  NobleAbel GetOnDevice() { return *this; }
+  CarnahanStarling GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
@@ -64,9 +68,46 @@ class NobleAbel : public EosBase<NobleAbel> {
     return std::max(robust::SMALL(), (sie - _qq) / _Cv);
   }
   PORTABLE_INLINE_FUNCTION void checkParams() const {
-    PORTABLE_ALWAYS_REQUIRE(_Cv > 0, "Heat capacity must be positive");
+    PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
     PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real ZedFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real eta = _bb * rho;
+    const Real zed =
+        1.0 + robust::ratio(eta * (4.0 - 2.0 * eta), math_utils::pow<3>(1.0 - eta));
+    return zed;
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PartialRhoZedFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real eta = _bb * rho;
+    return 1.0 + robust::ratio(eta * (8.0 - 2.0 * eta), math_utils::pow<4>(1.0 - eta));
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real DensityFromPressureTemperature(
+      const Real press, const Real temperature, const Real guess = robust::SMALL(),
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real real_root;
+    auto poly = [=](Real dens) {
+      return _Cv * temperature * _gm1 * dens * ZedFromDensity(dens);
+    };
+    using RootFinding1D::findRoot;
+    using RootFinding1D::Status;
+    static constexpr Real xtol = 1.0e-12;
+    static constexpr Real ytol = 1.0e-12;
+    static constexpr Real lo_bound = robust::SMALL();
+    const Real hi_bound = robust::ratio(1.0, _bb);
+    auto status = findRoot(poly, press, guess, lo_bound, hi_bound, xtol, ytol, real_root);
+    if (status != Status::SUCCESS) {
+      // Root finder failed even though the solution was bracketed... this is an error
+      EOS_ERROR("*** (Warning) DensityFromPressureTemperature :: Convergence not met in "
+                "Carnahan-Starling EoS (root finder util) ***\n");
+      real_root = -1.0;
+    }
+    return std::max(robust::SMALL(), real_root);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
@@ -78,30 +119,27 @@ class NobleAbel : public EosBase<NobleAbel> {
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return std::max(robust::SMALL(),
-                    robust::ratio(_gm1 * rho * _Cv * temperature, 1.0 - _bb * rho));
+    const Real zed = ZedFromDensity(rho);
+    return std::max(robust::SMALL(), zed * rho * temperature * _Cv * _gm1);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return std::max(robust::SMALL(),
-                    robust::ratio(_gm1 * rho * (sie - _qq), 1.0 - _bb * rho));
+    const Real zed = ZedFromDensity(rho);
+    return std::max(robust::SMALL(), zed * rho * (sie - _qq) * _gm1);
   }
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return _qq;
-  }
-
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real vol = robust::ratio(1.0, rho);
+    const Real one_by_vb = robust::ratio(1.0, vol - _bb);
+    const Real one_by_v0b = robust::ratio(1.0, _vol0 - _bb);
     return _Cv * std::log(robust::ratio(temperature, _T0) + robust::SMALL()) +
-           _gm1 * _Cv *
-               std::log(robust::ratio(vol - _bb, _vol0 - _bb) + robust::SMALL()) +
+           _gm1 * _Cv * std::log(robust::ratio(vol, _vol0) + robust::SMALL()) -
+           _gm1 * _Cv * _bb * (one_by_vb - one_by_v0b) *
+               (4.0 + _bb * (one_by_vb + one_by_v0b)) +
            _qp;
   }
   template <typename Indexer_t = Real *>
@@ -109,9 +147,12 @@ class NobleAbel : public EosBase<NobleAbel> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real vol = robust::ratio(1.0, rho);
+    const Real one_by_vb = robust::ratio(1.0, vol - _bb);
+    const Real one_by_v0b = robust::ratio(1.0, _vol0 - _bb);
     return _Cv * std::log(robust::ratio(sie - _qq, _sie0 - _qq) + robust::SMALL()) +
-           _gm1 * _Cv *
-               std::log(robust::ratio(vol - _bb, _vol0 - _bb) + robust::SMALL()) +
+           _gm1 * _Cv * std::log(robust::ratio(vol, _vol0) + robust::SMALL()) -
+           _gm1 * _Cv * _bb * (one_by_vb - one_by_v0b) *
+               (4.0 + _bb * (one_by_vb + one_by_v0b)) +
            _qp;
   }
   template <typename Indexer_t = Real *>
@@ -131,28 +172,35 @@ class NobleAbel : public EosBase<NobleAbel> {
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(),
-                    robust::ratio(_gm1 * (_gm1 + 1.0) * rho * _Cv * temperature,
-                                  (1.0 - _bb * rho) * (1.0 - _bb * rho)));
+                    rho * _Cv * temperature * _gm1 *
+                        (PartialRhoZedFromDensity(rho) +
+                         ZedFromDensity(rho) * ZedFromDensity(rho) * _gm1));
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(),
-                    robust::ratio(_gm1 * (_gm1 + 1.0) * rho * (sie - _qq),
-                                  (1.0 - _bb * rho) * (1.0 - _bb * rho)));
+                    rho * (sie - _qq) * _gm1 *
+                        (PartialRhoZedFromDensity(rho) +
+                         ZedFromDensity(rho) * ZedFromDensity(rho) * _gm1));
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return robust::ratio(_gm1, (1.0 - _bb * rho));
+    return ZedFromDensity(rho) * _gm1;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return robust::ratio(_gm1, (1.0 - _bb * rho));
+    return ZedFromDensity(rho) * _gm1;
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return _qq;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
@@ -175,7 +223,7 @@ class NobleAbel : public EosBase<NobleAbel> {
   }
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
-  SG_ADD_BASE_CLASS_USINGS(NobleAbel)
+  SG_ADD_BASE_CLASS_USINGS(CarnahanStarling)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -184,7 +232,7 @@ class NobleAbel : public EosBase<NobleAbel> {
   }
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
-    printf("Noble-Abel Parameters:\nGamma = %g\nCv    = %g\nb     = %g\nq     = "
+    printf("Carnahan-Starling Parameters:\nGamma = %g\nCv    = %g\nb     = %g\nq     = "
            "%g\n",
            _gm1 + 1.0, _Cv, _bb, _qq);
   }
@@ -193,11 +241,10 @@ class NobleAbel : public EosBase<NobleAbel> {
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
     sie = std::max(_qq, _Cv * temp + _qq);
-    rho =
-        std::max(robust::SMALL(), robust::ratio(press, _gm1 * _Cv * temp + _bb * press));
+    rho = DensityFromPressureTemperature(press, temp);
   }
   inline void Finalize() {}
-  static std::string EosType() { return std::string("NobleAbel"); }
+  static std::string EosType() { return std::string("CarnahanStarling"); }
   static std::string EosPyType() { return EosType(); }
 
  private:
@@ -211,11 +258,11 @@ class NobleAbel : public EosBase<NobleAbel> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
 };
-
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void
-NobleAbel::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
-                   const unsigned long output, Indexer_t &&lambda) const {
+PORTABLE_INLINE_FUNCTION void CarnahanStarling::FillEos(Real &rho, Real &temp, Real &sie,
+                                                        Real &press, Real &cv, Real &bmod,
+                                                        const unsigned long output,
+                                                        Indexer_t &&lambda) const {
   if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
     if (output & thermalqs::pressure || output & thermalqs::temperature) {
       UNDEFINED_ERROR;
@@ -229,7 +276,7 @@ NobleAbel::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real
     sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
   }
   if (output & thermalqs::temperature && output & thermalqs::specific_internal_energy) {
-    sie = press * (1.0 - _bb * rho) / _gm1 + _qq;
+    sie = robust::ratio(press, ZedFromDensity(rho) * rho * _gm1) + _qq;
   }
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::temperature)
@@ -242,4 +289,4 @@ NobleAbel::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real
 
 } // namespace singularity
 
-#endif // _SINGULARITY_EOS_EOS_EOS_NOBLE_ABEL_HPP_
+#endif // _SINGULARITY_EOS_EOS_EOS_CARNAHAN_STARLING_HPP_
