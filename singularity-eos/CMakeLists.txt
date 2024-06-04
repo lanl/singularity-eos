@@ -56,6 +56,7 @@ register_headers(
     eos/eos_eospac.hpp
     eos/eos_noble_abel.hpp
     eos/eos_stiff.hpp
+    eos/singularity_eos_init_utils.hpp
     eos/variant_utils.hpp
 )
 
