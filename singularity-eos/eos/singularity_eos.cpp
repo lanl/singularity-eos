@@ -21,6 +21,15 @@
 
 using namespace singularity;
 
+int init_sg_eos(const int nmat, EOS *&eos) {
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  if (!Kokkos::is_initialized()) Kokkos::initialize();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+  EOS *eos_p = new EOS[nmat];
+  eos = eos_p;
+  return 0;
+}
+
 int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const double Cv,
                      int const *const enabled, double *const vals) {
   assert(matindex >= 0);
