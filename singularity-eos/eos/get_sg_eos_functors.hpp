@@ -18,6 +18,8 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/get_sg_eos.hpp>
 
+#include <cmath>
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 
 namespace singularity {
@@ -57,6 +59,11 @@ struct init_functor {
   PORTABLE_INLINE_FUNCTION
   void operator()(const int i, const int tid, double &mass_sum, int &npte,
                   const Real t_mult, const Real s_mult, const Real p_mult) const {
+    // Debug checks for inputs
+    check_val(spvol_v(i));
+    check_val(sie_v(i));
+    check_val(press_v(i));
+    // check_val(temp_v(i));
     /* normalize mass fractions */
     /* first find the mass sum */
     /* also set idxs as the decrement of the eos offsets */
@@ -68,6 +75,7 @@ struct init_functor {
     }
     for (int m = 0; m < nmat; ++m) {
       frac_mass_v(i, m) /= mass_sum;
+      check_val(frac_mass_v(i, m));
     }
     // count the number of participating materials and zero the inputs
     npte = 0;
@@ -99,6 +107,14 @@ struct init_functor {
       sie_pte(tid, mp) = sie_v(i) * frac_mass_v(i, m) * s_mult;
     }
     return;
+  }
+ private:
+  // Debug check to make sure a value is normal or zero
+  template<typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION
+  void check_val(valT value) const {
+    PORTABLE_ALWAYS_REQUIRE(value == valT{0} || std::isnormal(value),
+                     "Bad value input to singularity-eos interface");
   }
 };
 
@@ -183,8 +199,10 @@ struct final_functor {
       sie_v(i) += ie_m * s_mult;
       /* assign per material specific internal energy */
       frac_ie_v(i, m) = ie_m;
+      check_val(frac_ie_v(i, m));
       /* assign volume fraction based on pte calculation */
       frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
+      check_val(frac_vol_v(i, m));
       /* calculate bulk modulus for material m */
       const Real bmod_m = eos_v(pte_idxs(tid, mp))
                               .BulkModulusFromDensityTemperature(
@@ -206,13 +224,17 @@ struct final_functor {
       /* optionally assign per material quantities to per material arrays */
       if (do_frac_bmod) {
         frac_bmod_v(i, m) = bmod_m;
+        check_val(frac_bmod_v(i, m));
       }
       if (do_frac_cv) {
         frac_cv_v(i, m) = cv_m;
+        check_val(frac_cv_v(i, m));
       }
       if (do_frac_dpde) {
         frac_dpde_v(i, m) = dpde_m;
+        check_val(frac_cv_v(i, m));
       }
+      check_val(frac_mass_v(i, m));
     }
     if (do_t) {
       temp_v(i) /= ev2k;
@@ -224,7 +246,23 @@ struct final_functor {
     for (int m = 0; m < nmat; ++m) {
       frac_mass_v(i, m) *= mass_sum;
     }
+    check_val(press_v(i));
+    check_val(temp_v(i));
+    check_val(sie_v(i));
+    check_val(bmod_v(i));
+    check_val(cv_v(i));
+    check_val(dpde_v(i));
     return;
+  }
+ private:
+  // Debug check to make sure returned values are normal or zero. Extra NDEBUG
+  // check probably not required, but it's there just in case the compiler tries
+  // to evaluate the boolean
+  template<typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION
+  void check_val(valT value) const {
+    PORTABLE_ALWAYS_REQUIRE(value == valT{0} || (std::isnormal(1e8 * value) && std::isnormal(value)),
+                     "Bad value returned from singularity-eos interface");
   }
 };
 
