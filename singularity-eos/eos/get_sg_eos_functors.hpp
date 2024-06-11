@@ -113,7 +113,7 @@ struct init_functor {
   template<typename valT>
   PORTABLE_FORCEINLINE_FUNCTION
   void check_val(valT value) const {
-    PORTABLE_ALWAYS_REQUIRE(value == valT{0} || std::isnormal(value),
+    PORTABLE_ALWAYS_REQUIRE(value == valT{0} || (std::isnormal(1e50 * value) && std::isnormal(value)),
                      "Bad value input to singularity-eos interface");
   }
 };
@@ -261,7 +261,7 @@ struct final_functor {
   template<typename valT>
   PORTABLE_FORCEINLINE_FUNCTION
   void check_val(valT value) const {
-    PORTABLE_ALWAYS_REQUIRE(value == valT{0} || (std::isnormal(1e8 * value) && std::isnormal(value)),
+    PORTABLE_ALWAYS_REQUIRE(value == valT{0} || (std::isnormal(1e50 * value) && std::isnormal(value)),
                      "Bad value returned from singularity-eos interface");
   }
 };
