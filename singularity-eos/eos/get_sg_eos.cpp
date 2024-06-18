@@ -151,9 +151,9 @@ int get_sg_eos( // sizing information
                        frac_dpde_v, nmat, do_frac_bmod, do_frac_cv, do_frac_dpde);
   // only initialize init functor when needed
   if (input_int_enum != input_condition::P_T_INPUT) {
-    i_func = init_functor(frac_mass_v, pte_idxs, eos_offsets_v, frac_vol_v, pte_mats,
-                          vfrac_pte, sie_pte, temp_pte, press_pte, rho_pte, spvol_v,
-                          temp_v, press_v, sie_v, nmat);
+    i_func = init_functor(frac_mass_v, pte_idxs, eos_offsets_v, frac_vol_v, frac_ie_v,
+                          pte_mats, vfrac_pte, sie_pte, temp_pte, press_pte, rho_pte,
+                          spvol_v, temp_v, press_v, sie_v, nmat);
   }
 
   // create helper lambdas to reduce code duplication
