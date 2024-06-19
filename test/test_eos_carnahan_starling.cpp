@@ -535,7 +535,7 @@ SCENARIO("Test C-S Entropy Calls", "[CarnahanStarling][CarnahanStarling5]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
-      constexpr std::array<Real, num> temperature_true{4.0000000000000000e+03};
+      //constexpr std::array<Real, num> temperature_true{4.0000000000000000e+03};
       constexpr std::array<Real, num> entropy_true{-2.2983150752058342e+10};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
