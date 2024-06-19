@@ -22,7 +22,8 @@ namespace singularity {
 // TODO: Replace these with the new Modify method in EOSBuilder.
 // NOTE: The new EOSBuilder machinery will likely be slower than these.
 template <typename T>
-inline EOS applyShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shift) {
+inline EOS applyShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale,
+                              Real shift) {
   if (shifted && scaled) {
     ShiftedEOS<T> a(std::forward<T>(eos), shift);
     ScaledEOS<ShiftedEOS<T>> b(std::move(a), scale);
@@ -38,8 +39,8 @@ inline EOS applyShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Re
 }
 
 template <typename T, template <typename> class W, typename... ARGS>
-inline EOS applyWrappedShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shift,
-                              ARGS... args) {
+inline EOS applyWrappedShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale,
+                                     Real shift, ARGS... args) {
   if (shifted && scaled) {
     ShiftedEOS<T> a(std::forward<T>(eos), shift);
     ScaledEOS<ShiftedEOS<T>> b(std::move(a), scale);
@@ -58,9 +59,9 @@ inline EOS applyWrappedShiftAndScale(T &&eos, bool scaled, bool shifted, Real sc
 }
 
 template <typename T>
-inline EOS applyShiftAndScaleAndBilinearRamp(T &&eos, bool scaled, bool shifted, bool ramped,
-                                      Real scale, Real shift, Real r0, Real a, Real b,
-                                      Real c) {
+inline EOS applyShiftAndScaleAndBilinearRamp(T &&eos, bool scaled, bool shifted,
+                                             bool ramped, Real scale, Real shift, Real r0,
+                                             Real a, Real b, Real c) {
   if (ramped) {
     return applyWrappedShiftAndScale<T, BilinearRampEOS>(
         std::forward<T>(eos), scaled, shifted, scale, shift, r0, a, b, c);

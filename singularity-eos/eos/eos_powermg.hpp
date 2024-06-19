@@ -469,7 +469,7 @@ PowerMG::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, R
                                 Real &bmod, Real &dpde, Real &dvdt,
                                 Indexer_t &&lambda) const {
   // AEM: Added all variables I think should be output eventually
-  //Real tbmod;
+  // Real tbmod;
   // Real entropy, alpha, Gamma;
 
   rho = _rho0;
@@ -478,7 +478,7 @@ PowerMG::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, R
   press = PressureFromDensityTemperature(rho, temp, lambda);
   // entropy = _S0;
   cv = _Cv0;
-  //tbmod = _K0toK40[0] - _G0 * _G0 * _Cv0 * _rho0 * _T0;
+  // tbmod = _K0toK40[0] - _G0 * _G0 * _Cv0 * _rho0 * _T0;
   // alpha = _A0;
   bmod = _K0toK40[0];
   // Gamma = _G0;
