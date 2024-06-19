@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -28,6 +28,7 @@ struct init_functor {
   ScratchV<int> pte_idxs;
   indirection_v eos_offsets_v;
   dev_frac_v frac_vol_v;
+  dev_frac_v frac_ie_v;
   ScratchV<int> pte_mats;
   ScratchV<double> vfrac_pte;
   ScratchV<double> sie_pte;
@@ -44,15 +45,16 @@ struct init_functor {
   init_functor() = default;
   init_functor(dev_frac_v &frac_mass_v_, ScratchV<int> &pte_idxs_,
                indirection_v &eos_offsets_v_, dev_frac_v &frac_vol_v_,
-               ScratchV<int> &pte_mats_, ScratchV<double> &vfrac_pte_,
-               ScratchV<double> &sie_pte_, ScratchV<double> &temp_pte_,
-               ScratchV<double> &press_pte_, ScratchV<double> &rho_pte_, dev_v &spvol_v_,
-               dev_v &temp_v_, dev_v &press_v_, dev_v &sie_v_, int &nmat)
+               dev_frac_v frac_ie_v_, ScratchV<int> &pte_mats_,
+               ScratchV<double> &vfrac_pte_, ScratchV<double> &sie_pte_,
+               ScratchV<double> &temp_pte_, ScratchV<double> &press_pte_,
+               ScratchV<double> &rho_pte_, dev_v &spvol_v_, dev_v &temp_v_,
+               dev_v &press_v_, dev_v &sie_v_, int &nmat)
       : frac_mass_v{frac_mass_v_}, pte_idxs{pte_idxs_}, eos_offsets_v{eos_offsets_v_},
-        frac_vol_v{frac_vol_v_}, pte_mats{pte_mats_}, vfrac_pte{vfrac_pte_},
-        sie_pte{sie_pte_}, temp_pte{temp_pte_}, press_pte{press_pte_}, rho_pte{rho_pte_},
-        spvol_v{spvol_v_}, temp_v{temp_v_}, press_v{press_v_}, sie_v{sie_v_}, nmat{nmat} {
-  }
+        frac_vol_v{frac_vol_v_}, frac_ie_v{frac_ie_v_}, pte_mats{pte_mats_},
+        vfrac_pte{vfrac_pte_}, sie_pte{sie_pte_}, temp_pte{temp_pte_},
+        press_pte{press_pte_}, rho_pte{rho_pte_}, spvol_v{spvol_v_}, temp_v{temp_v_},
+        press_v{press_v_}, sie_v{sie_v_}, nmat{nmat} {}
 
   PORTABLE_INLINE_FUNCTION
   void operator()(const int i, const int tid, double &mass_sum, int &npte,
@@ -76,6 +78,8 @@ struct init_functor {
         pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
         pte_mats(tid, npte) = m;
         npte += 1;
+      } else {
+        frac_ie_v(i, m) = 0.0;
       }
       vfrac_pte(tid, m) = 0.0;
       sie_pte(tid, m) = 0.0;

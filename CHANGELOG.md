@@ -13,6 +13,7 @@
 - [[PR#357]](https://github.com/lanl/singularity-eos/pull/357) Added support for C++17 (e.g., needed when using newer Kokkos).
 
 ### Fixed (Repair bugs, etc)
+- [[PR380]](https://github.com/lanl/singularity-eos/pull/380) Set material internal energy to 0 if not participating in the pte solve to make sure potentially uninitialized data is set.
 - [[PR370]](https://github.com/lanl/singularity-eos/pull/370) Fix bulk modulus calculation in spiner EOS
 - [[PR343]](https://github.com/lanl/singularity-eos/pull/343) Add chemical potentials to stellar collapse gold files
 - [[PR342]](https://github.com/lanl/singularity-eos/pull/342) Fix missing using statement in stellar collapse root finding routines
