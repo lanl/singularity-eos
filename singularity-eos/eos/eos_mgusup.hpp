@@ -386,7 +386,7 @@ MGUsup::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Re
                                Real &bmod, Real &dpde, Real &dvdt,
                                Indexer_t &&lambda) const {
   // AEM: Added all variables I think should be output eventually
-  Real tbmod;
+  // Real tbmod;
   // Real entropy, alpha, Gamma;
 
   rho = _rho0;
@@ -395,7 +395,7 @@ MGUsup::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Re
   press = PressureFromDensityTemperature(rho, temp, lambda);
   // entropy = _S0;
   cv = _Cv0;
-  tbmod = _Cs * _Cs * _rho0 - _G0 * _G0 * _Cv0 * _rho0 * _T0;
+  // tbmod = _Cs * _Cs * _rho0 - _G0 * _G0 * _Cv0 * _rho0 * _T0;
   // alpha = _A0;
   bmod = _Cs * _Cs * _rho0;
   // Gamma = _G0;
