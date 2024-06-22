@@ -21,6 +21,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
+#include <singularity-eos/base/error_utils.hpp>
 
 namespace singularity {
 namespace mfuncname {
@@ -34,31 +35,6 @@ static inline auto member_func_name(const char *type_name, const char *func_name
 
 namespace singularity {
 namespace eos_base {
-
-namespace impl {
-constexpr std::size_t MAX_NUM_CHARS = 121;
-// Cuda doesn't have strcat, so we implement it ourselves
-PORTABLE_FORCEINLINE_FUNCTION
-char *StrCat(char *destination, const char *source) {
-  int i, j; // not in loops because they're re-used.
-
-  // specifically avoid strlen, which isn't on GPU
-  for (i = 0; destination[i] != '\0'; i++) {
-  }
-  // assumes destination has enough memory allocated
-  for (j = 0; source[j] != '\0'; j++) {
-    // MAX_NUM_CHARS-1 to leave room for null terminator
-    PORTABLE_REQUIRE((i + j) < MAX_NUM_CHARS - 1,
-                     "Concat string must be within allowed size");
-    destination[i + j] = source[j];
-  }
-  // null terminate destination string
-  destination[i + j] = '\0';
-
-  // the destination is returned by standard `strcat()`
-  return destination;
-}
-} // namespace impl
 
 // This Macro adds the `using` statements that allow for the base class
 // vector functionality to overload the scalar implementations in the derived
@@ -636,9 +612,9 @@ class EosBase {
     // base msg length 32 + 5 chars = 37 chars
     // + 1 char for null terminator
     // maximum allowed EOS length = 44 chars
-    char msg[impl::MAX_NUM_CHARS] = "Singularity-EOS: Entropy is not enabled for the '";
-    impl::StrCat(msg, eosname);
-    impl::StrCat(msg, "' EOS");
+    char msg[error_utils::MAX_NUM_CHARS] = "Singularity-EOS: Entropy is not enabled for the '";
+    error_utils::StrCat(msg, eosname);
+    error_utils::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 
@@ -661,10 +637,10 @@ class EosBase {
     // base msg length 32 + 5 chars = 37 chars
     // + 1 char for null terminator
     // maximum allowed EOS length = 44 chars
-    char msg[impl::MAX_NUM_CHARS] =
+    char msg[error_utils::MAX_NUM_CHARS] =
         "Singularity-EOS: MinInternalEnergyFromDensity() is not enabled for the '";
-    impl::StrCat(msg, eosname);
-    impl::StrCat(msg, "' EOS");
+    error_utils::StrCat(msg, eosname);
+    error_utils::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 
