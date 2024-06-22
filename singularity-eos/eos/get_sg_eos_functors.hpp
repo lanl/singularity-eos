@@ -17,6 +17,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/get_sg_eos.hpp>
+#include <singularity-eos/base/error_utils.hpp>
 
 #include <cmath>
 
@@ -61,11 +62,6 @@ struct init_functor {
   PORTABLE_INLINE_FUNCTION
   void operator()(const int i, const int tid, double &mass_sum, int &npte,
                   const Real t_mult, const Real s_mult, const Real p_mult) const {
-    // Debug checks for inputs
-    check_val(spvol_v(i));
-    check_val(sie_v(i));
-    check_val(press_v(i));
-    // check_val(temp_v(i));
     /* normalize mass fractions */
     /* first find the mass sum */
     /* also set idxs as the decrement of the eos offsets */
@@ -77,8 +73,8 @@ struct init_functor {
     }
     for (int m = 0; m < nmat; ++m) {
       frac_mass_v(i, m) /= mass_sum;
-      check_val(frac_mass_v(i, m));
     }
+    check_all_vals(i);
     // count the number of participating materials and zero the inputs
     npte = 0;
     for (int m = 0; m < nmat; ++m) {
@@ -113,12 +109,50 @@ struct init_functor {
     return;
   }
  private:
-  // Debug check to make sure a value is normal or zero
+  // Debug check to make sure returned values are normal or zero. Extra NDEBUG
+  // check probably not required, but it's there just in case the compiler tries
+  // to evaluate the boolean
   template<typename valT>
   PORTABLE_FORCEINLINE_FUNCTION
-  void check_val(valT value) const {
-    PORTABLE_ALWAYS_REQUIRE(value == valT{0} || (std::isnormal(1e50 * value) && std::isnormal(value)),
-                     "Bad value input to singularity-eos interface");
+  int bad_val(valT const value, const char *const var_name) const {
+    const bool bad = (value == valT{0}) || (std::isnormal(1e10 * value) && std::isnormal(value));
+    if (bad) {
+      using PortsOfCall::printf;
+      printf("### ERROR: Bad singularity-eos input\n  Var: %s\n  Value: %e\n",
+             var_name, value);
+    }
+    return bad;
+  }
+  PORTABLE_FORCEINLINE_FUNCTION
+  void check_all_vals(int const i) const {
+    int n_bad_vals = 0;
+
+    for (int m = 0; m < nmat; ++m) {
+      n_bad_vals += bad_val(frac_mass_v(i, m), "frac_mass");
+    }
+    n_bad_vals += bad_val(press_v(i), "pres");
+    n_bad_vals += bad_val(sie_v(i), "sie");
+    n_bad_vals += bad_val(spvol_v(i), "bmod");
+
+    if (n_bad_vals > 0) {
+      using PortsOfCall::printf;
+      printf("### Bad Value Output state:\n");
+      printf("  - Bulk state -\n");
+      printf("    Pressure        : % #24.15g\n", press_v(i));
+      printf("    Specific IE     : % #24.15g\n", sie_v(i));
+      printf("    Specific Volume : % #24.15g\n", spvol_v(i));
+      printf("  - Material States -\n");
+      printf("     i:");
+      printf(" %23s", "Mass fraction");
+      printf("\n");
+      for (int m = 0; m < nmat; ++m) {
+        printf("   %3i:", m);
+        printf(" %24.15g", frac_mass_v(i, m));
+        printf("\n");
+      }
+      PORTABLE_ALWAYS_ABORT(
+          "Bad value input to singularity-eos interface. See output for details");
+    }
   }
 };
 
@@ -203,10 +237,8 @@ struct final_functor {
       sie_v(i) += ie_m * s_mult;
       /* assign per material specific internal energy */
       frac_ie_v(i, m) = ie_m;
-      check_val(frac_ie_v(i, m));
       /* assign volume fraction based on pte calculation */
       frac_vol_v(i, m) = vfrac_pte(tid, mp) * vol_v(i);
-      check_val(frac_vol_v(i, m));
       /* calculate bulk modulus for material m */
       const Real bmod_m = eos_v(pte_idxs(tid, mp))
                               .BulkModulusFromDensityTemperature(
@@ -228,17 +260,13 @@ struct final_functor {
       /* optionally assign per material quantities to per material arrays */
       if (do_frac_bmod) {
         frac_bmod_v(i, m) = bmod_m;
-        check_val(frac_bmod_v(i, m));
       }
       if (do_frac_cv) {
         frac_cv_v(i, m) = cv_m;
-        check_val(frac_cv_v(i, m));
       }
       if (do_frac_dpde) {
         frac_dpde_v(i, m) = dpde_m;
-        check_val(frac_cv_v(i, m));
       }
-      check_val(frac_mass_v(i, m));
     }
     if (do_t) {
       temp_v(i) /= ev2k;
@@ -246,16 +274,11 @@ struct final_functor {
     if (do_s) {
       sie_v(i) /= mass_sum;
     }
+    check_all_vals(i, npte);
     /* reset mass fractions to original values if not normalized to 1 */
     for (int m = 0; m < nmat; ++m) {
       frac_mass_v(i, m) *= mass_sum;
     }
-    check_val(press_v(i));
-    check_val(temp_v(i));
-    check_val(sie_v(i));
-    check_val(bmod_v(i));
-    check_val(cv_v(i));
-    check_val(dpde_v(i));
     return;
   }
  private:
@@ -264,9 +287,85 @@ struct final_functor {
   // to evaluate the boolean
   template<typename valT>
   PORTABLE_FORCEINLINE_FUNCTION
-  void check_val(valT value) const {
-    PORTABLE_ALWAYS_REQUIRE(value == valT{0} || (std::isnormal(1e50 * value) && std::isnormal(value)),
-                     "Bad value returned from singularity-eos interface");
+  int bad_val(valT const value, const char *const var_name) const {
+    const bool bad = (value == valT{0}) || (std::isnormal(1e10 * value) && std::isnormal(value));
+    if (bad) {
+      using PortsOfCall::printf;
+      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n",
+             var_name, value);
+    }
+    return bad;
+  }
+  PORTABLE_FORCEINLINE_FUNCTION
+  void check_all_vals(int const i, int const npte) const {
+    int n_bad_vals = 0;
+
+    for (int mp = 0; mp < npte; ++mp) {
+      n_bad_vals += bad_val(frac_mass_v(i, mp), "frac_mass");
+      n_bad_vals += bad_val(frac_ie_v(i, mp), "frac_ie");
+      n_bad_vals += bad_val(frac_vol_v(i, mp), "frac_vol");
+      if (do_frac_bmod) {
+        n_bad_vals += bad_val(frac_bmod_v(i, mp), "frac_bmod");
+      }
+      if (do_frac_cv) {
+        n_bad_vals += bad_val(frac_cv_v(i, mp), "frac_cv");
+      }
+      if (do_frac_dpde) {
+        n_bad_vals += bad_val(frac_dpde_v(i, mp), "frac_dpde");
+      }
+    }
+    n_bad_vals += bad_val(press_v(i), "pres");
+    n_bad_vals += bad_val(temp_v(i), "temp");
+    n_bad_vals += bad_val(sie_v(i), "sie");
+    n_bad_vals += bad_val(bmod_v(i), "bmod");
+    n_bad_vals += bad_val(cv_v(i), "cv");
+    n_bad_vals += bad_val(dpde_v(i), "dpde");
+
+    if (n_bad_vals > 0) {
+      using PortsOfCall::printf;
+      printf("### Bad Value Output state:\n");
+      printf("  - Bulk state -\n");
+      printf("    Pressure      : % #24.15g\n", press_v(i));
+      printf("    Temperature   : % #24.15g\n", temp_v(i));
+      printf("    Specific IE   : % #24.15g\n", sie_v(i));
+      printf("    Bulk Modulus  : % #24.15g\n", bmod_v(i));
+      printf("    Heat Capacity : % #24.15g\n", cv_v(i));
+      printf("    dPdE          : % #24.15g\n", dpde_v(i));
+      printf("  - Material States -\n");
+      // Maybe we can loop, but this is pretty straight-forward
+      printf("     i:");
+      printf(" %23s", "Mass fraction");
+      printf(" %23s", "Material IE");
+      printf(" %23s", "Material Volume");
+      if (do_frac_bmod) {
+        printf(" %23s", "Material Bulk Modulus");
+      }
+      if (do_frac_cv) {
+        printf(" %23s", "Material Heat Capacity");
+      }
+      if (do_frac_dpde) {
+        printf(" %23s", "Material dPdE");
+      }
+      printf("\n");
+      for (int mp = 0; mp < npte; ++mp) {
+        printf("   %3i:", mp);
+        printf(" %24.15g", frac_mass_v(i, mp));
+        printf(" %24.15g", frac_ie_v(i, mp));
+        printf(" %24.15g", frac_vol_v(i, mp));
+        if (do_frac_bmod) {
+          printf(" %24.15g", frac_bmod_v(i, mp));
+        }
+        if (do_frac_cv) {
+          printf(" %24.15g", frac_cv_v(i, mp));
+        }
+        if (do_frac_dpde) {
+          printf(" %24.15g", frac_dpde_v(i, mp));
+        }
+        printf("\n");
+      }
+      PORTABLE_ALWAYS_ABORT(
+          "Bad value returned from singularity-eos interface. See output for details");
+    }
   }
 };
 
