@@ -19,4 +19,32 @@
 #define EOS_ERROR(x) PORTABLE_ABORT(x)
 #define UNDEFINED_ERROR EOS_ERROR("DEFINE ME\n")
 
+namespace singularity {
+namespace error_utils {
+constexpr std::size_t MAX_NUM_CHARS = 121;
+// Cuda doesn't have strcat, so we implement it ourselves
+PORTABLE_FORCEINLINE_FUNCTION
+char *StrCat(char *destination, const char *source) {
+  int i, j; // not in loops because they're re-used.
+
+  // specifically avoid strlen, which isn't on GPU
+  for (i = 0; destination[i] != '\0'; i++) {
+  }
+  // assumes destination has enough memory allocated
+  for (j = 0; source[j] != '\0'; j++) {
+    // MAX_NUM_CHARS-1 to leave room for null terminator
+    PORTABLE_REQUIRE((i + j) < MAX_NUM_CHARS - 1,
+                     "Concat string must be within allowed size");
+    destination[i + j] = source[j];
+  }
+  // null terminate destination string
+  destination[i + j] = '\0';
+
+  // the destination is returned by standard `strcat()`
+  return destination;
+}
+} // namespace error_util
+} // namespace singularity
+
+
 #endif // SINGULARITY_EOS_BASE_EOS_ERROR_HPP_

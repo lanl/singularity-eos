@@ -519,9 +519,9 @@ endif()
 
 # if in submod mode, assume `add_subdirectory` has been done and do not generate
 # export files or install anything
-if(NOT SINGULARITY_SUBMODULE_MODE)
-  include(cmake/install.cmake)
-endif()
+#if(NOT SINGULARITY_SUBMODULE_MODE)
+include(cmake/install.cmake)
+#endif()
 
 # ----------------------------------------------------------------------------#
 # Testing
