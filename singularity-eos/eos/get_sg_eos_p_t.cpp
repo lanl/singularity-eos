@@ -85,7 +85,7 @@ void get_sg_eos_p_t(const char *name, int ncell, int nmat, indirection_v &offset
           vfrac_pte(tid, m) /= vfrac_tot;
         }
         // assign remaining outputs
-        f_func(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, cache);
+        f_func(i, tid, nmat, mass_sum, 0.0, 0.0, 0.0, true, cache);
         // assign max pressure
         pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
         // release the token used for scratch arrays
