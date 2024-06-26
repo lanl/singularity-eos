@@ -18,6 +18,8 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/get_sg_eos.hpp>
 
+#include <cmath>
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 
 namespace singularity {
@@ -71,31 +73,87 @@ struct init_functor {
     for (int m = 0; m < nmat; ++m) {
       frac_mass_v(i, m) /= mass_sum;
     }
-    /* set inputs */
+    check_all_vals(i);
+    // count the number of participating materials and zero the inputs
     npte = 0;
     for (int m = 0; m < nmat; ++m) {
       if (frac_mass_v(i, m) > 1.e-12) {
+        // participating materials are those with non-negligible mass fractions
         pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
         pte_mats(tid, npte) = m;
         npte += 1;
       } else {
         frac_ie_v(i, m) = 0.0;
       }
+      // zero the inputs
       vfrac_pte(tid, m) = 0.0;
       sie_pte(tid, m) = 0.0;
       temp_pte(tid, m) = 0.0;
       press_pte(tid, m) = 0.0;
     }
+    // Populate the inputs with consistent values.
+    // NOTE: the volume fractions and densities need to be consistent with the
+    // total specific volume since they are used to calculate internal
+    // quantities for the PTE solver
     for (int mp = 0; mp < npte; ++mp) {
       const int m = pte_mats(tid, mp);
-      rho_pte(tid, mp) = npte / spvol_v(i) * frac_mass_v(i, m);
+      // Need to guess volume fractions
       vfrac_pte(tid, mp) = 1.0 / npte;
+      // Calculate densities to be consistent with these volume fractions
+      rho_pte(tid, mp) = frac_mass_v(i, m) / spvol_v(i) / vfrac_pte(tid, mp);
       temp_pte(tid, mp) = temp_v(i) * ev2k * t_mult;
       press_pte(tid, mp) = press_v(i) * p_mult;
       sie_pte(tid, mp) = sie_v(i) * frac_mass_v(i, m) * s_mult;
     }
     return;
   }
+ private:
+  // Check to make sure returned values are normal or zero
+  template<typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION
+  int bad_val(valT const value, const char *const var_name) const {
+    const bool good = (value == valT{0}) or (std::isnormal(1e10 * value) and std::isnormal(value));
+    if (not good) {
+      using PortsOfCall::printf;
+      printf("### ERROR: Bad singularity-eos input\n  Var: %s\n  Value: %e\n",
+             var_name, value);
+    }
+    return not good;
+  }
+  // Only run these checks when built with debug flags
+  PORTABLE_FORCEINLINE_FUNCTION
+  void check_all_vals(int const i) const {
+#ifndef NDEBUG
+    int n_bad_vals = 0;
+
+    for (int m = 0; m < nmat; ++m) {
+      n_bad_vals += bad_val(frac_mass_v(i, m), "frac_mass");
+    }
+    n_bad_vals += bad_val(press_v(i), "pres");
+    n_bad_vals += bad_val(sie_v(i), "sie");
+    n_bad_vals += bad_val(spvol_v(i), "spvol");
+
+    if (n_bad_vals > 0) {
+      using PortsOfCall::printf;
+      printf("### Bad Value Output state:\n");
+      printf("  - Bulk state -\n");
+      printf("    Pressure        : % #24.15g\n", press_v(i));
+      printf("    Specific IE     : % #24.15g\n", sie_v(i));
+      printf("    Specific Volume : % #24.15g\n", spvol_v(i));
+      printf("  - Material States -\n");
+      printf("   mat:");
+      printf(" %24s", "Mass fraction");
+      printf("\n");
+      for (int m = 0; m < nmat; ++m) {
+        printf("   %3i:", m + 1);
+        printf(" %24.15g", frac_mass_v(i, m));
+        printf("\n");
+      }
+      PORTABLE_ALWAYS_ABORT(
+          "Bad values input to singularity-eos interface. See output for details");
+    }
+  }
+#endif // #ifndef NDEBUG
 };
 
 struct final_functor {
@@ -150,6 +208,7 @@ struct final_functor {
   PORTABLE_INLINE_FUNCTION
   void operator()(const int i, const int tid, const int npte, const Real mass_sum,
                   const Real t_mult, const Real s_mult, const Real p_mult,
+                  const bool pte_converged,
                   singularity::mix_impl::CacheAccessor &cache) const {
     /* initialize averaged quantities to 0 */
     const bool do_t = t_mult == 1.0;
@@ -216,12 +275,113 @@ struct final_functor {
     if (do_s) {
       sie_v(i) /= mass_sum;
     }
+    check_all_vals(i, npte, tid, pte_converged);
     /* reset mass fractions to original values if not normalized to 1 */
     for (int m = 0; m < nmat; ++m) {
       frac_mass_v(i, m) *= mass_sum;
     }
     return;
   }
+ private:
+  // Check to make sure returned values are normal or zero
+  template<typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION
+  int bad_val(valT const value, const char *const var_name) const {
+    const bool good = (value == valT{0} or (std::isnormal(1e10 * value) and std::isnormal(value)));
+    if (not good) {
+      using PortsOfCall::printf;
+      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n",
+             var_name, value);
+    }
+    return not good;
+  }
+  // Only run these checks when built with debug flags
+  PORTABLE_FORCEINLINE_FUNCTION
+  void check_all_vals(int const i, int const npte, int const tid, 
+                      bool const pte_converged) const {
+#ifndef NDEBUG
+    int n_bad_vals = 0;
+    for (int mp = 0; mp < npte; ++mp) {
+      const int m = pte_mats(tid, mp);
+      n_bad_vals += bad_val(frac_mass_v(i, m), "frac_mass");
+      n_bad_vals += bad_val(frac_ie_v(i, m), "frac_ie");
+      n_bad_vals += bad_val(frac_vol_v(i, m), "frac_vol");
+      if (frac_vol_v(i, m) <= 0) {
+        // This material has a non-zero mass fraction but a non-positive volume
+        n_bad_vals += 1;
+      }
+      if (do_frac_bmod) {
+        n_bad_vals += bad_val(frac_bmod_v(i, m), "frac_bmod");
+      }
+      if (do_frac_cv) {
+        n_bad_vals += bad_val(frac_cv_v(i, m), "frac_cv");
+      }
+      if (do_frac_dpde) {
+        n_bad_vals += bad_val(frac_dpde_v(i, m), "frac_dpde");
+      }
+    }
+    n_bad_vals += bad_val(press_v(i), "pres");
+    n_bad_vals += bad_val(temp_v(i), "temp");
+    n_bad_vals += bad_val(sie_v(i), "sie");
+    n_bad_vals += bad_val(bmod_v(i), "bmod");
+    n_bad_vals += bad_val(cv_v(i), "cv");
+    n_bad_vals += bad_val(dpde_v(i), "dpde");
+
+    if (n_bad_vals > 0) {
+      using PortsOfCall::printf;
+      printf("### Bad Value Output state:\n");
+      printf("  ~~Bulk state~~\n");
+      printf("    Pressure      : % #24.15e\n", press_v(i));
+      printf("    Temperature   : % #24.15g\n", temp_v(i));
+      printf("    Specific IE   : % #24.15e\n", sie_v(i));
+      printf("    Bulk Modulus  : % #24.15e\n", bmod_v(i));
+      printf("    Heat Capacity : % #24.15e\n", cv_v(i));
+      printf("    dPdE          : % #24.15g\n", dpde_v(i));
+      printf("  ~~Material States~~\n");
+      // Maybe we can loop, but this is pretty straight-forward
+      printf("    mat:");
+      printf(" %24s", "Mass fraction");
+      printf(" %24s", "Material IE");
+      printf(" %24s", "Material Volume");
+      if (do_frac_bmod) {
+        printf(" %24s", "Material Bulk Modulus");
+      }
+      if (do_frac_cv) {
+        printf(" %24s", "Material Heat Capacity");
+      }
+      if (do_frac_dpde) {
+        printf(" %24s", "Material dPdE");
+      }
+      printf("\n");
+      for (int mp = 0; mp < npte; ++mp) {
+        const int m = pte_mats(tid, mp);
+        printf("%7i:", m + 1);
+        printf(" %24.15g", frac_mass_v(i, m));
+        printf(" %24.15e", frac_ie_v(i, m));
+        printf(" %24.15g", frac_vol_v(i, m));
+        if (do_frac_bmod) {
+          printf(" %24.15e", frac_bmod_v(i, m));
+        }
+        if (do_frac_cv) {
+          printf(" %24.15e", frac_cv_v(i, m));
+        }
+        if (do_frac_dpde) {
+          printf(" %24.15g", frac_dpde_v(i, m));
+        }
+        printf("\n");
+      }
+      if (npte > 1) {
+        if (pte_converged) {
+          printf("  ~~PTE iteration converged~~\n");
+        } else {
+          printf("  ~~PTE iteration *DID NOT* converge~~\n");
+        }
+      }
+      PORTABLE_ALWAYS_ABORT(
+          "Bad value returned from singularity-eos interface. See output for details");
+    }
+  }
+#endif // #ifndef NDEBUG
 };
 
 } // namespace singularity
