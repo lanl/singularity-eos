@@ -107,16 +107,18 @@ struct init_functor {
     }
     return;
   }
+
  private:
   // Check to make sure returned values are normal or zero
-  template<typename valT>
-  PORTABLE_FORCEINLINE_FUNCTION
-  int bad_val(valT const value, const char *const var_name) const {
-    const bool good = (value == valT{0}) or (std::isnormal(1e10 * value) and std::isnormal(value));
+  template <typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION int bad_val(valT const value,
+                                            const char *const var_name) const {
+    const bool good =
+        (value == valT{0}) or (std::isnormal(1e10 * value) and std::isnormal(value));
     if (not good) {
       using PortsOfCall::printf;
-      printf("### ERROR: Bad singularity-eos input\n  Var: %s\n  Value: %e\n",
-             var_name, value);
+      printf("### ERROR: Bad singularity-eos input\n  Var: %s\n  Value: %e\n", var_name,
+             value);
     }
     return not good;
   }
@@ -282,46 +284,48 @@ struct final_functor {
     }
     return;
   }
+
  private:
   // Check to make sure returned values are normal or zero
-  template<typename valT>
-  PORTABLE_FORCEINLINE_FUNCTION
-  int bad_val(valT const value, const char *const var_name) const {
-    const bool good = (value == valT{0} or (std::isnormal(1e10 * value) and std::isnormal(value)));
+  template <typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION int bad_val(valT const value,
+                                            const char *const var_name) const {
+    const bool good =
+        (value == valT{0} or (std::isnormal(1e10 * value) and std::isnormal(value)));
     if (not good) {
       using PortsOfCall::printf;
-      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n",
-             var_name, value);
+      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n", var_name,
+             value);
     }
     return not good;
   }
   // Check for prrecluding zero and negative (non-positive) values
-  template<typename valT>
-  PORTABLE_FORCEINLINE_FUNCTION
-  int non_positive_val(valT const value, const char *const var_name) const {
+  template <typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION int non_positive_val(valT const value,
+                                                     const char *const var_name) const {
     const bool not_positive = value <= valT{0};
     if (not_positive) {
       using PortsOfCall::printf;
-      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n",
-             var_name, value);
+      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n", var_name,
+             value);
     }
     return not_positive;
   }
   // Check for prrecluding negative values
-  template<typename valT>
-  PORTABLE_FORCEINLINE_FUNCTION
-  int negative_val(valT const value, const char *const var_name) const {
+  template <typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION int negative_val(valT const value,
+                                                 const char *const var_name) const {
     const bool negative = value < valT{0};
     if (negative) {
       using PortsOfCall::printf;
-      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n",
-             var_name, value);
+      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n", var_name,
+             value);
     }
     return negative;
   }
   // Only run these checks when built with debug flags
   PORTABLE_FORCEINLINE_FUNCTION
-  void check_all_vals(int const i, int const npte, int const tid, 
+  void check_all_vals(int const i, int const npte, int const tid,
                       bool const pte_converged) const {
 #ifndef NDEBUG
     int n_bad_vals = 0;
