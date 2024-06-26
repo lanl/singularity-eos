@@ -138,11 +138,11 @@ struct init_functor {
     if (n_bad_vals > 0) {
       using PortsOfCall::printf;
       printf("### Bad Value Output state:\n");
-      printf("  - Bulk state -\n");
+      printf("  ~~Bulk state~~\n");
       printf("    Pressure        : % #24.15g\n", press_v(i));
       printf("    Specific IE     : % #24.15g\n", sie_v(i));
       printf("    Specific Volume : % #24.15g\n", spvol_v(i));
-      printf("  - Material States -\n");
+      printf("  ~~Mass fractions~~\n");
       printf("   mat:");
       printf(" %24s", "Mass fraction");
       printf("\n");
