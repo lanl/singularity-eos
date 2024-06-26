@@ -295,6 +295,30 @@ struct final_functor {
     }
     return not good;
   }
+  // Check for prrecluding zero and negative (non-positive) values
+  template<typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION
+  int non_positive_val(valT const value, const char *const var_name) const {
+    const bool not_positive = value <= valT{0};
+    if (not_positive) {
+      using PortsOfCall::printf;
+      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n",
+             var_name, value);
+    }
+    return not_positive;
+  }
+  // Check for prrecluding negative values
+  template<typename valT>
+  PORTABLE_FORCEINLINE_FUNCTION
+  int negative_val(valT const value, const char *const var_name) const {
+    const bool negative = value < valT{0};
+    if (negative) {
+      using PortsOfCall::printf;
+      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n",
+             var_name, value);
+    }
+    return negative;
+  }
   // Only run these checks when built with debug flags
   PORTABLE_FORCEINLINE_FUNCTION
   void check_all_vals(int const i, int const npte, int const tid, 
@@ -306,26 +330,31 @@ struct final_functor {
       n_bad_vals += bad_val(frac_mass_v(i, m), "frac_mass");
       n_bad_vals += bad_val(frac_ie_v(i, m), "frac_ie");
       n_bad_vals += bad_val(frac_vol_v(i, m), "frac_vol");
-      if (frac_vol_v(i, m) <= 0) {
-        // This material has a non-zero mass fraction but a non-positive volume
-        n_bad_vals += 1;
-      }
+      n_bad_vals += negative_val(frac_mass_v(i, m), "frac_mass");
+      n_bad_vals += non_positive_val(frac_vol_v(i, m), "frac_vol");
       if (do_frac_bmod) {
         n_bad_vals += bad_val(frac_bmod_v(i, m), "frac_bmod");
+        n_bad_vals += negative_val(frac_bmod_v(i, m), "frac_bmod");
       }
       if (do_frac_cv) {
         n_bad_vals += bad_val(frac_cv_v(i, m), "frac_cv");
+        n_bad_vals += negative_val(frac_cv_v(i, m), "frac_cv");
       }
       if (do_frac_dpde) {
         n_bad_vals += bad_val(frac_dpde_v(i, m), "frac_dpde");
+        n_bad_vals += negative_val(frac_dpde_v(i, m), "frac_dpde");
       }
     }
     n_bad_vals += bad_val(press_v(i), "pres");
     n_bad_vals += bad_val(temp_v(i), "temp");
+    n_bad_vals += negative_val(temp_v(i), "temp");
     n_bad_vals += bad_val(sie_v(i), "sie");
     n_bad_vals += bad_val(bmod_v(i), "bmod");
+    n_bad_vals += non_positive_val(bmod_v(i), "bmod");
     n_bad_vals += bad_val(cv_v(i), "cv");
+    n_bad_vals += non_positive_val(cv_v(i), "cv");
     n_bad_vals += bad_val(dpde_v(i), "dpde");
+    n_bad_vals += non_positive_val(dpde_v(i), "dpde");
 
     if (n_bad_vals > 0) {
       using PortsOfCall::printf;
