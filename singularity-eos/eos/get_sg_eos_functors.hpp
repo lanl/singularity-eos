@@ -114,7 +114,7 @@ struct init_functor {
   PORTABLE_FORCEINLINE_FUNCTION int bad_val(valT const value,
                                             const char *const var_name) const {
     const bool good =
-        (value == valT{0}) or (std::isnormal(1e10 * value) && std::isnormal(value));
+        (value == valT{0}) || (std::isnormal(1e10 * value) && std::isnormal(value));
     if (not good) {
       using PortsOfCall::printf;
       printf("### ERROR: Bad singularity-eos input\n  Var: %s\n  Value: %e\n", var_name,
@@ -291,7 +291,7 @@ struct final_functor {
   PORTABLE_FORCEINLINE_FUNCTION int bad_val(valT const value,
                                             const char *const var_name) const {
     const bool good =
-        (value == valT{0} or (std::isnormal(1e10 * value) && std::isnormal(value)));
+        (value == valT{0} || (std::isnormal(1e10 * value) && std::isnormal(value)));
     if (not good) {
       using PortsOfCall::printf;
       printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n", var_name,
