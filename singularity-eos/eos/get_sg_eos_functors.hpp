@@ -98,7 +98,7 @@ struct init_functor {
     for (int mp = 0; mp < npte; ++mp) {
       const int m = pte_mats(tid, mp);
       // Need to guess volume fractions
-      vfrac_pte(tid, mp) = rac_mass_v(i, m);
+      vfrac_pte(tid, mp) = frac_mass_v(i, m);
       // Calculate densities to be consistent with these volume fractions
       rho_pte(tid, mp) = frac_mass_v(i, m) / spvol_v(i) / vfrac_pte(tid, mp);
       temp_pte(tid, mp) = temp_v(i) * ev2k * t_mult;
