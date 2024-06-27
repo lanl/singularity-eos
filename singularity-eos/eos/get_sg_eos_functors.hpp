@@ -331,7 +331,7 @@ struct final_functor {
       printf("    Temperature     : % #24.15g eV\n", temp_v(i));
       printf("    Specific IE     : % #24.15e erg/g\n", sie_v(i));
       printf("    Bulk Modulus    : % #24.15e microbar\n", bmod_v(i));
-      printf("    Heat Capacity   : % #24.15e erg/g/K\n", cv_v(i));
+      printf("    Heat Capacity   : % #24.15e erg/g/eV\n", cv_v(i));
       printf("    dPdE            : % #24.15g g/cm^3\n", dpde_v(i));
       printf("  ~~Material States~~\n");
       // Maybe we can loop, but this is pretty straight-forward
