@@ -1417,11 +1417,10 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
 
     // possibly scale the update to stay within reasonable bounds
     Real scale = s.ScaleDx();
-    // const Real scale_save = scale;
 
     // Line search
     Real gradfdx = -2.0 * scale * err;
-    scale = 1.0;
+    scale = 1.0;  // New scale for line search
     Real err_old = err;
     err = s.TestUpdate(scale);
     if (err > err_old + line_search_alpha * gradfdx) {
