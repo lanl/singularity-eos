@@ -117,7 +117,7 @@ struct init_functor {
   void check_all_vals(int const i) const {
 #ifndef NDEBUG
     bool any_bad_vals = false;
-    for (int m = 0; m < nmat; ++m) {
+    for (auto m = 0; m < nmat; ++m) {
       any_bad_vals =
           any_bad_vals || error_utils::bad_value(frac_mass_v(i, m), "frac_mass");
     }
@@ -136,7 +136,7 @@ struct init_functor {
       printf("   mat:");
       printf(" %24s", "Mass fraction");
       printf("\n");
-      for (int m = 0; m < nmat; ++m) {
+      for (auto m = 0; m < nmat; ++m) {
         printf("   %3i:", m + 1);
         printf(" %24.15g", frac_mass_v(i, m));
         printf("\n");
@@ -283,7 +283,7 @@ struct final_functor {
 #ifndef NDEBUG
     bool any_bad_vals = false;
     for (auto mp = 0; mp < npte; ++mp) {
-      const int m = pte_mats(tid, mp);
+      const auto m = pte_mats(tid, mp);
       any_bad_vals =
           any_bad_vals || error_utils::bad_value(frac_mass_v(i, m), "frac_mass");
       any_bad_vals = any_bad_vals || error_utils::bad_value(frac_ie_v(i, m), "frac_ie");
@@ -348,7 +348,7 @@ struct final_functor {
       }
       printf("\n");
       for (auto mp = 0; mp < npte; ++mp) {
-        const int m = pte_mats(tid, mp);
+        const auto m = pte_mats(tid, mp);
         printf("%7i:", m + 1);
         printf(" %24.15g", frac_mass_v(i, m));
         printf(" %24.15e", frac_ie_v(i, m));
