@@ -17,6 +17,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/eos/get_sg_eos.hpp>
+#include <singularity-eos/base/error_utils.hpp>
 
 #include <cmath>
 
@@ -42,6 +43,7 @@ struct init_functor {
   dev_v press_v;
   dev_v sie_v;
   int nmat;
+  double mass_frac_cutoff;
 
  public:
   init_functor() = default;
@@ -51,12 +53,14 @@ struct init_functor {
                ScratchV<double> &vfrac_pte_, ScratchV<double> &sie_pte_,
                ScratchV<double> &temp_pte_, ScratchV<double> &press_pte_,
                ScratchV<double> &rho_pte_, dev_v &spvol_v_, dev_v &temp_v_,
-               dev_v &press_v_, dev_v &sie_v_, int &nmat)
+               dev_v &press_v_, dev_v &sie_v_, int &nmat,
+               double &mass_frac_cutoff_)
       : frac_mass_v{frac_mass_v_}, pte_idxs{pte_idxs_}, eos_offsets_v{eos_offsets_v_},
         frac_vol_v{frac_vol_v_}, frac_ie_v{frac_ie_v_}, pte_mats{pte_mats_},
         vfrac_pte{vfrac_pte_}, sie_pte{sie_pte_}, temp_pte{temp_pte_},
         press_pte{press_pte_}, rho_pte{rho_pte_}, spvol_v{spvol_v_}, temp_v{temp_v_},
-        press_v{press_v_}, sie_v{sie_v_}, nmat{nmat} {}
+        press_v{press_v_}, sie_v{sie_v_}, nmat{nmat}, mass_frac_cutoff{mass_frac_cutoff_}
+        {}
 
   PORTABLE_INLINE_FUNCTION
   void operator()(const int i, const int tid, double &mass_sum, int &npte,
@@ -77,7 +81,7 @@ struct init_functor {
     // count the number of participating materials and zero the inputs
     npte = 0;
     for (int m = 0; m < nmat; ++m) {
-      if (frac_mass_v(i, m) > 1.e-12) {
+      if (frac_mass_v(i, m) > mass_frac_cutoff) {
         // participating materials are those with non-negligible mass fractions
         pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
         pte_mats(tid, npte) = m;
@@ -109,33 +113,20 @@ struct init_functor {
   }
 
  private:
-  // Check to make sure returned values are normal or zero
-  template <typename valT>
-  PORTABLE_FORCEINLINE_FUNCTION int bad_val(valT const value,
-                                            const char *const var_name) const {
-    const bool good =
-        (value == valT{0}) || (std::isnormal(1e10 * value) && std::isnormal(value));
-    if (not good) {
-      using PortsOfCall::printf;
-      printf("### ERROR: Bad singularity-eos input\n  Var: %s\n  Value: %e\n", var_name,
-             value);
-    }
-    return not good;
-  }
   // Only run these checks when built with debug flags
   PORTABLE_FORCEINLINE_FUNCTION
   void check_all_vals(int const i) const {
 #ifndef NDEBUG
-    int n_bad_vals = 0;
-
+    bool any_bad_vals = false;
     for (int m = 0; m < nmat; ++m) {
-      n_bad_vals += bad_val(frac_mass_v(i, m), "frac_mass");
+      any_bad_vals = any_bad_vals || error_utils::bad_value(frac_mass_v(i, m),
+                                                            "frac_mass");
     }
-    n_bad_vals += bad_val(press_v(i), "pres");
-    n_bad_vals += bad_val(sie_v(i), "sie");
-    n_bad_vals += bad_val(spvol_v(i), "spvol");
+    any_bad_vals = any_bad_vals || error_utils::bad_value(press_v(i), "pres");
+    any_bad_vals = any_bad_vals || error_utils::bad_value(sie_v(i), "sie");
+    any_bad_vals = any_bad_vals || error_utils::bad_value(spvol_v(i), "spvol");
 
-    if (n_bad_vals > 0) {
+    if (any_bad_vals) {
       using PortsOfCall::printf;
       printf("### Bad Value Output state:\n");
       printf("  ~~Bulk state~~\n");
@@ -152,7 +143,7 @@ struct init_functor {
         printf("\n");
       }
       PORTABLE_ALWAYS_ABORT(
-          "Bad values input to singularity-eos interface. See output for details");
+          "Bad values INPUT to singularity-eos interface. See output for details");
     }
   }
 #endif // #ifndef NDEBUG
@@ -286,81 +277,44 @@ struct final_functor {
   }
 
  private:
-  // Check to make sure returned values are normal or zero
-  template <typename valT>
-  PORTABLE_FORCEINLINE_FUNCTION int bad_val(valT const value,
-                                            const char *const var_name) const {
-    const bool good =
-        (value == valT{0} || (std::isnormal(1e10 * value) && std::isnormal(value)));
-    if (not good) {
-      using PortsOfCall::printf;
-      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n", var_name,
-             value);
-    }
-    return not good;
-  }
-  // Check for prrecluding zero and negative (non-positive) values
-  template <typename valT>
-  PORTABLE_FORCEINLINE_FUNCTION int non_positive_val(valT const value,
-                                                     const char *const var_name) const {
-    const bool not_positive = value <= valT{0};
-    if (not_positive) {
-      using PortsOfCall::printf;
-      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n", var_name,
-             value);
-    }
-    return not_positive;
-  }
-  // Check for prrecluding negative values
-  template <typename valT>
-  PORTABLE_FORCEINLINE_FUNCTION int negative_val(valT const value,
-                                                 const char *const var_name) const {
-    const bool negative = value < valT{0};
-    if (negative) {
-      using PortsOfCall::printf;
-      printf("### ERROR: Bad singularity-eos output\n  Var: %s\n  Value: %e\n", var_name,
-             value);
-    }
-    return negative;
-  }
   // Only run these checks when built with debug flags
   PORTABLE_FORCEINLINE_FUNCTION
   void check_all_vals(int const i, int const npte, int const tid,
                       bool const pte_converged) const {
 #ifndef NDEBUG
-    int n_bad_vals = 0;
-    for (int mp = 0; mp < npte; ++mp) {
+    bool any_bad_vals = false;
+    for (auto mp = 0; mp < npte; ++mp) {
       const int m = pte_mats(tid, mp);
-      n_bad_vals += bad_val(frac_mass_v(i, m), "frac_mass");
-      n_bad_vals += bad_val(frac_ie_v(i, m), "frac_ie");
-      n_bad_vals += bad_val(frac_vol_v(i, m), "frac_vol");
-      n_bad_vals += negative_val(frac_mass_v(i, m), "frac_mass");
-      n_bad_vals += non_positive_val(frac_vol_v(i, m), "frac_vol");
+      any_bad_vals = any_bad_vals || error_utils::bad_value(frac_mass_v(i, m), "frac_mass");
+      any_bad_vals = any_bad_vals || error_utils::bad_value(frac_ie_v(i, m), "frac_ie");
+      any_bad_vals = any_bad_vals || error_utils::bad_value(frac_vol_v(i, m), "frac_vol");
+      any_bad_vals = any_bad_vals || error_utils::negative_value(frac_mass_v(i, m), "frac_mass");
+      any_bad_vals = any_bad_vals || error_utils::non_positive_value(frac_vol_v(i, m), "frac_vol");
       if (do_frac_bmod) {
-        n_bad_vals += bad_val(frac_bmod_v(i, m), "frac_bmod");
-        n_bad_vals += negative_val(frac_bmod_v(i, m), "frac_bmod");
+        any_bad_vals = any_bad_vals || error_utils::bad_value(frac_bmod_v(i, m), "frac_bmod");
+        any_bad_vals = any_bad_vals || error_utils::negative_value(frac_bmod_v(i, m), "frac_bmod");
       }
       if (do_frac_cv) {
-        n_bad_vals += bad_val(frac_cv_v(i, m), "frac_cv");
-        n_bad_vals += negative_val(frac_cv_v(i, m), "frac_cv");
+        any_bad_vals = any_bad_vals || error_utils::bad_value(frac_cv_v(i, m), "frac_cv");
+        any_bad_vals = any_bad_vals || error_utils::negative_value(frac_cv_v(i, m), "frac_cv");
       }
       if (do_frac_dpde) {
-        n_bad_vals += bad_val(frac_dpde_v(i, m), "frac_dpde");
-        n_bad_vals += negative_val(frac_dpde_v(i, m), "frac_dpde");
+        any_bad_vals = any_bad_vals || error_utils::bad_value(frac_dpde_v(i, m), "frac_dpde");
+        any_bad_vals = any_bad_vals || error_utils::negative_value(frac_dpde_v(i, m), "frac_dpde");
       }
     }
-    n_bad_vals += bad_val(press_v(i), "pres");
-    n_bad_vals += bad_val(temp_v(i), "temp");
-    n_bad_vals += negative_val(temp_v(i), "temp");
-    n_bad_vals += bad_val(sie_v(i), "sie");
-    n_bad_vals += bad_val(bmod_v(i), "bmod");
-    n_bad_vals += non_positive_val(bmod_v(i), "bmod");
-    n_bad_vals += bad_val(cv_v(i), "cv");
-    n_bad_vals += non_positive_val(cv_v(i), "cv");
-    n_bad_vals += bad_val(dpde_v(i), "dpde");
-    n_bad_vals += non_positive_val(dpde_v(i), "dpde");
+    any_bad_vals = any_bad_vals || error_utils::bad_value(press_v(i), "pres");
+    any_bad_vals = any_bad_vals || error_utils::bad_value(temp_v(i), "temp");
+    any_bad_vals = any_bad_vals || error_utils::negative_value(temp_v(i), "temp");
+    any_bad_vals = any_bad_vals || error_utils::bad_value(sie_v(i), "sie");
+    any_bad_vals = any_bad_vals || error_utils::bad_value(bmod_v(i), "bmod");
+    any_bad_vals = any_bad_vals || error_utils::non_positive_value(bmod_v(i), "bmod");
+    any_bad_vals = any_bad_vals || error_utils::bad_value(cv_v(i), "cv");
+    any_bad_vals = any_bad_vals || error_utils::non_positive_value(cv_v(i), "cv");
+    any_bad_vals = any_bad_vals || error_utils::bad_value(dpde_v(i), "dpde");
+    any_bad_vals = any_bad_vals || error_utils::non_positive_value(dpde_v(i), "dpde");
 
-    if (n_bad_vals > 0) {
+    if (any_bad_vals) {
       using PortsOfCall::printf;
       printf("### Bad Value Output state:\n");
       printf("  ~~Bulk state~~\n");
@@ -386,7 +340,7 @@ struct final_functor {
         printf(" %24s", "Material dPdE");
       }
       printf("\n");
-      for (int mp = 0; mp < npte; ++mp) {
+      for (auto mp = 0; mp < npte; ++mp) {
         const int m = pte_mats(tid, mp);
         printf("%7i:", m + 1);
         printf(" %24.15g", frac_mass_v(i, m));
@@ -411,7 +365,7 @@ struct final_functor {
         }
       }
       PORTABLE_ALWAYS_ABORT(
-          "Bad value returned from singularity-eos interface. See output for details");
+          "Bad value RETURNED from singularity-eos. See output for details");
     }
   }
 #endif // #ifndef NDEBUG
