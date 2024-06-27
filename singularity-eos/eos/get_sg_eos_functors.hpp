@@ -178,8 +178,8 @@ struct final_functor {
   bool do_frac_dpde;
 
  public:
-  final_functor(dev_v &spvol_v_, dev_v &temp_v_, dev_v &press_v_, dev_v &sie_v_, dev_v &bmod_v_,
-                dev_v &cv_v_, dev_v &dpde_v_, ScratchV<int> &pte_mats_,
+  final_functor(dev_v &spvol_v_, dev_v &temp_v_, dev_v &press_v_, dev_v &sie_v_,
+                dev_v &bmod_v_, dev_v &cv_v_, dev_v &dpde_v_, ScratchV<int> &pte_mats_,
                 ScratchV<double> &press_pte_, ScratchV<double> &vfrac_pte_,
                 ScratchV<double> &temp_pte_, ScratchV<double> &sie_pte_,
                 dev_frac_v &frac_mass_v_, dev_frac_v &frac_ie_v_, dev_frac_v &frac_vol_v_,
