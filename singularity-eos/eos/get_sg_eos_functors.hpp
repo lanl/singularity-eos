@@ -150,6 +150,7 @@ struct init_functor {
 
 struct final_functor {
  private:
+  dev_v spvol_v;
   dev_v temp_v;
   dev_v press_v;
   dev_v sie_v;
@@ -177,7 +178,7 @@ struct final_functor {
   bool do_frac_dpde;
 
  public:
-  final_functor(dev_v &temp_v_, dev_v &press_v_, dev_v &sie_v_, dev_v &bmod_v_,
+  final_functor(dev_v &spvol_v_, dev_v &temp_v_, dev_v &press_v_, dev_v &sie_v_, dev_v &bmod_v_,
                 dev_v &cv_v_, dev_v &dpde_v_, ScratchV<int> &pte_mats_,
                 ScratchV<double> &press_pte_, ScratchV<double> &vfrac_pte_,
                 ScratchV<double> &temp_pte_, ScratchV<double> &sie_pte_,
