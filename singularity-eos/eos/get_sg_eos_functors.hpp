@@ -129,9 +129,9 @@ struct init_functor {
       using PortsOfCall::printf;
       printf("### Bad Value Output state:\n");
       printf("  ~~Bulk state~~\n");
-      printf("    Pressure        : % #24.15g\n", press_v(i));
-      printf("    Specific IE     : % #24.15g\n", sie_v(i));
-      printf("    Specific Volume : % #24.15g\n", spvol_v(i));
+      printf("    Pressure        : % #24.15g microbar\n", press_v(i));
+      printf("    Specific IE     : % #24.15g erg/g\n", sie_v(i));
+      printf("    Specific Volume : % #24.15g cm^3/g\n", spvol_v(i));
       printf("  ~~Mass fractions~~\n");
       printf("   mat:");
       printf(" %24s", "Mass fraction");
@@ -325,26 +325,27 @@ struct final_functor {
       using PortsOfCall::printf;
       printf("### Bad Value Output state:\n");
       printf("  ~~Bulk state~~\n");
-      printf("    Pressure      : % #24.15e\n", press_v(i));
-      printf("    Temperature   : % #24.15g\n", temp_v(i));
-      printf("    Specific IE   : % #24.15e\n", sie_v(i));
-      printf("    Bulk Modulus  : % #24.15e\n", bmod_v(i));
-      printf("    Heat Capacity : % #24.15e\n", cv_v(i));
-      printf("    dPdE          : % #24.15g\n", dpde_v(i));
+      printf("    Pressure        : % #24.15e microbar\n", press_v(i));
+      printf("    Specific Volume : % #24.15e cm^3/g\n", spvol_v(i));
+      printf("    Temperature     : % #24.15g eV\n", temp_v(i));
+      printf("    Specific IE     : % #24.15e erg/g\n", sie_v(i));
+      printf("    Bulk Modulus    : % #24.15e microbar\n", bmod_v(i));
+      printf("    Heat Capacity   : % #24.15e erg/g/K\n", cv_v(i));
+      printf("    dPdE            : % #24.15g g/cm^3\n", dpde_v(i));
       printf("  ~~Material States~~\n");
       // Maybe we can loop, but this is pretty straight-forward
       printf("    mat:");
-      printf(" %24s", "Mass fraction");
-      printf(" %24s", "Material IE");
-      printf(" %24s", "Material Volume");
+      printf(" %24s", "Mass fraction (--)");
+      printf(" %24s", "Material IE (erg)");
+      printf(" %24s", "Material Volume (cm^3)");
       if (do_frac_bmod) {
-        printf(" %24s", "Material Bulk Modulus");
+        printf(" %24s", "Material BMod (ubar)");
       }
       if (do_frac_cv) {
-        printf(" %24s", "Material Heat Capacity");
+        printf(" %24s", "Material Cv (erg/g/eV)");
       }
       if (do_frac_dpde) {
-        printf(" %24s", "Material dPdE");
+        printf(" %24s", "Material dPdE (g/cm^3)");
       }
       printf("\n");
       for (auto mp = 0; mp < npte; ++mp) {
