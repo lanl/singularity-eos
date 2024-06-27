@@ -114,9 +114,11 @@ int get_sg_eos( // sizing information
     double *press, double *pmax, double *vol, double *spvol, double *sie, double *temp,
     double *bmod, double *dpde, double *cv,
     // per material quantities
-    double *frac_mass, double *frac_vol, double *frac_sie,
+    double *frac_mass, double *frac_vol, double *frac_ie,
     // optional per material quantities
-    double *frac_bmod, double *frac_dpde, double *frac_cv);
+    double *frac_bmod, double *frac_dpde, double *frac_cv,
+    // Mass fraction cutoff for PTE
+    double mass_frac_cutoff);
 
 int finalize_sg_eos(const int nmat, EOS *&eos, const int own_kokkos = 0);
 
