@@ -31,6 +31,7 @@ register_headers(
     base/math_utils.hpp
     base/constants.hpp
     base/eos_error.hpp
+    base/error_utils.hpp
     base/sp5/singularity_eos_sp5.hpp
     eos/default_variant.hpp
     base/hermite.hpp
