@@ -30,7 +30,7 @@ constexpr double _NORMAL_FACTOR = 1.0e10;
 struct is_normal_or_zero {
   template <typename valT>
   bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
-    static_assert(std::is_floating_point_v<valT>);
+    static_assert(std::is_floating_point<valT>::value);
     return (value == valT{0}) ||
            (std::isnormal(_NORMAL_FACTOR * value) && std::isnormal(value));
   }
@@ -39,7 +39,7 @@ struct is_normal_or_zero {
 struct is_strictly_positive {
   template <typename valT>
   bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
-    static_assert(std::is_arithmetic_v<valT>);
+    static_assert(std::is_arithmetic<valT>::value);
     return value > valT{0};
   }
 };
@@ -47,7 +47,7 @@ struct is_strictly_positive {
 struct is_non_negative {
   template <typename valT>
   bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
-    static_assert(std::is_arithmetic_v<valT>);
+    static_assert(std::is_arithmetic<valT>::value);
     return value >= valT{0};
   }
 };
