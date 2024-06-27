@@ -188,12 +188,12 @@ struct final_functor {
                 dev_frac_v &frac_bmod_v_, dev_frac_v &frac_cv_v_,
                 dev_frac_v &frac_dpde_v_, int &nmat_, bool do_frac_bmod_,
                 bool do_frac_cv_, bool do_frac_dpde_)
-      : temp_v{temp_v_}, press_v{press_v_}, sie_v{sie_v_}, bmod_v{bmod_v_}, cv_v{cv_v_},
-        dpde_v{dpde_v_}, pte_mats{pte_mats_}, press_pte{press_pte_},
-        vfrac_pte{vfrac_pte_}, temp_pte{temp_pte_}, sie_pte{sie_pte_},
-        frac_mass_v{frac_mass_v_}, frac_ie_v{frac_ie_v_}, frac_vol_v{frac_vol_v_},
-        vol_v{vol_v_}, eos_v{eos_v_}, pte_idxs{pte_idxs_}, rho_pte{rho_pte_},
-        frac_bmod_v{frac_bmod_v_}, frac_cv_v{frac_cv_v_},
+      : spvol_v{spvol_v_}, temp_v{temp_v_}, press_v{press_v_}, sie_v{sie_v_},
+        bmod_v{bmod_v_}, cv_v{cv_v_}, dpde_v{dpde_v_}, pte_mats{pte_mats_},
+        press_pte{press_pte_}, vfrac_pte{vfrac_pte_}, temp_pte{temp_pte_},
+        sie_pte{sie_pte_}, frac_mass_v{frac_mass_v_}, frac_ie_v{frac_ie_v_},
+        frac_vol_v{frac_vol_v_}, vol_v{vol_v_}, eos_v{eos_v_}, pte_idxs{pte_idxs_},
+        rho_pte{rho_pte_}, frac_bmod_v{frac_bmod_v_}, frac_cv_v{frac_cv_v_},
         frac_dpde_v{frac_dpde_v_}, nmat{nmat_}, do_frac_bmod{do_frac_bmod_},
         do_frac_cv{do_frac_cv_}, do_frac_dpde{do_frac_dpde_} {}
 
