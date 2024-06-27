@@ -298,7 +298,8 @@ module singularity_eos
                  offsets,&
                  press, pmax, vol, spvol, sie, temp, bmod, dpde, cv,&
                  frac_mass, frac_vol, frac_sie,&
-                 frac_bmod, frac_dpde, frac_cv, mass_frac_cutoff)&
+                 frac_bmod, frac_dpde, frac_cv,&
+                 mass_frac_cutoff)&
       bind(C, name='get_sg_eos')
       import
       integer(kind=c_int), value, intent(in) :: nmat
