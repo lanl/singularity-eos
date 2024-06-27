@@ -1,8 +1,8 @@
 #ifndef SINGULARITY_EOS_BASE_ERROR_UTILS_HPP_
 #define SINGULARITY_EOS_BASE_ERROR_UTILS_HPP_
 
-#include <type_traits>
 #include <cmath>
+#include <type_traits>
 
 #include <ports-of-call/portability.hpp>
 
@@ -17,8 +17,8 @@ struct is_normal_or_zero {
   template <typename valT>
   bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
     static_assert(std::is_floating_point_v<valT>);
-    return (value == valT{0}) || (std::isnormal(_NORMAL_FACTOR * value) 
-                                   && std::isnormal(value));
+    return (value == valT{0}) ||
+           (std::isnormal(_NORMAL_FACTOR * value) && std::isnormal(value));
   }
 };
 
@@ -53,17 +53,17 @@ PORTABLE_FORCEINLINE_FUNCTION bool violates_condition(valT&& value, condT&& cond
 
 // Create specialized functions using the above conditions
 template <typename valT, typename nameT>
-PORTABLE_FORCEINLINE_FUNCTION bool bad_value(valT&& value, nameT&& var_name) {
+PORTABLE_FORCEINLINE_FUNCTION bool bad_value(valT &&value, nameT&& var_name) {
   return violates_condition(std::forward<valT>(value), is_normal_or_zero{},
                             std::forward<nameT>(var_name));
 }
 template <typename valT, typename nameT>
-PORTABLE_FORCEINLINE_FUNCTION bool non_positive_value(valT&& value, nameT&& var_name) {
+PORTABLE_FORCEINLINE_FUNCTION bool non_positive_value(valT &&value, nameT&& var_name) {
   return violates_condition(std::forward<valT>(value), is_strictly_positive{},
                             std::forward<nameT>(var_name));
 }
 template <typename valT, typename nameT>
-PORTABLE_FORCEINLINE_FUNCTION bool negative_value(valT&& value, nameT&& var_name) {
+PORTABLE_FORCEINLINE_FUNCTION bool negative_value(valT &&value, nameT&& var_name) {
   return violates_condition(std::forward<valT>(value), is_strictly_positive{},
                             std::forward<nameT>(var_name));
 }
