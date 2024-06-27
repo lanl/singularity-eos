@@ -377,7 +377,7 @@ contains
     real(kind=8), dimension(:,:), target, optional, intent(inout) :: frac_bmod
     real(kind=8), dimension(:,:), target, optional, intent(inout) :: frac_dpde
     real(kind=8), dimension(:,:), target, optional, intent(inout) :: frac_cv
-    real(kind=c_double),                  optional, intent(in) :: mass_frac_cutoff
+    real(kind=8),                         optional, intent(in)    :: mass_frac_cutoff
 
     ! pointers
     type(c_ptr) :: bmod_ptr, dpde_ptr, cv_ptr
