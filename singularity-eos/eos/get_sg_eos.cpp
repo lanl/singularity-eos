@@ -48,7 +48,9 @@ int get_sg_eos( // sizing information
     // per material quantities
     double *frac_mass, double *frac_vol, double *frac_ie,
     // optional per material quantities
-    double *frac_bmod, double *frac_dpde, double *frac_cv) {
+    double *frac_bmod, double *frac_dpde, double *frac_cv,
+    // Mass fraction cutoff for PTE
+    double mass_frac_cutoff) {
   // printBacktrace();
   // kernel return value will be the number of failures
   int ret{0};
@@ -153,7 +155,7 @@ int get_sg_eos( // sizing information
   if (input_int_enum != input_condition::P_T_INPUT) {
     i_func = init_functor(frac_mass_v, pte_idxs, eos_offsets_v, frac_vol_v, frac_ie_v,
                           pte_mats, vfrac_pte, sie_pte, temp_pte, press_pte, rho_pte,
-                          spvol_v, temp_v, press_v, sie_v, nmat);
+                          spvol_v, temp_v, press_v, sie_v, nmat, mass_frac_cutoff);
   }
 
   // create helper lambdas to reduce code duplication
