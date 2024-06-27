@@ -16,8 +16,8 @@
 #define _SINGULARITY_EOS_EOS_GET_SG_EOS_LAMBDAS_HPP_
 
 #include <ports-of-call/portability.hpp>
-#include <singularity-eos/eos/get_sg_eos.hpp>
 #include <singularity-eos/base/error_utils.hpp>
+#include <singularity-eos/eos/get_sg_eos.hpp>
 
 #include <cmath>
 
@@ -53,14 +53,13 @@ struct init_functor {
                ScratchV<double> &vfrac_pte_, ScratchV<double> &sie_pte_,
                ScratchV<double> &temp_pte_, ScratchV<double> &press_pte_,
                ScratchV<double> &rho_pte_, dev_v &spvol_v_, dev_v &temp_v_,
-               dev_v &press_v_, dev_v &sie_v_, int &nmat,
-               double &mass_frac_cutoff_)
+               dev_v &press_v_, dev_v &sie_v_, int &nmat, double &mass_frac_cutoff_)
       : frac_mass_v{frac_mass_v_}, pte_idxs{pte_idxs_}, eos_offsets_v{eos_offsets_v_},
         frac_vol_v{frac_vol_v_}, frac_ie_v{frac_ie_v_}, pte_mats{pte_mats_},
         vfrac_pte{vfrac_pte_}, sie_pte{sie_pte_}, temp_pte{temp_pte_},
         press_pte{press_pte_}, rho_pte{rho_pte_}, spvol_v{spvol_v_}, temp_v{temp_v_},
-        press_v{press_v_}, sie_v{sie_v_}, nmat{nmat}, mass_frac_cutoff{mass_frac_cutoff_}
-        {}
+        press_v{press_v_}, sie_v{sie_v_}, nmat{nmat}, mass_frac_cutoff{
+                                                          mass_frac_cutoff_} {}
 
   PORTABLE_INLINE_FUNCTION
   void operator()(const int i, const int tid, double &mass_sum, int &npte,
@@ -119,8 +118,8 @@ struct init_functor {
 #ifndef NDEBUG
     bool any_bad_vals = false;
     for (int m = 0; m < nmat; ++m) {
-      any_bad_vals = any_bad_vals || error_utils::bad_value(frac_mass_v(i, m),
-                                                            "frac_mass");
+      any_bad_vals =
+          any_bad_vals || error_utils::bad_value(frac_mass_v(i, m), "frac_mass");
     }
     any_bad_vals = any_bad_vals || error_utils::bad_value(press_v(i), "pres");
     any_bad_vals = any_bad_vals || error_utils::bad_value(sie_v(i), "sie");
@@ -285,22 +284,30 @@ struct final_functor {
     bool any_bad_vals = false;
     for (auto mp = 0; mp < npte; ++mp) {
       const int m = pte_mats(tid, mp);
-      any_bad_vals = any_bad_vals || error_utils::bad_value(frac_mass_v(i, m), "frac_mass");
+      any_bad_vals =
+          any_bad_vals || error_utils::bad_value(frac_mass_v(i, m), "frac_mass");
       any_bad_vals = any_bad_vals || error_utils::bad_value(frac_ie_v(i, m), "frac_ie");
       any_bad_vals = any_bad_vals || error_utils::bad_value(frac_vol_v(i, m), "frac_vol");
-      any_bad_vals = any_bad_vals || error_utils::negative_value(frac_mass_v(i, m), "frac_mass");
-      any_bad_vals = any_bad_vals || error_utils::non_positive_value(frac_vol_v(i, m), "frac_vol");
+      any_bad_vals =
+          any_bad_vals || error_utils::negative_value(frac_mass_v(i, m), "frac_mass");
+      any_bad_vals =
+          any_bad_vals || error_utils::non_positive_value(frac_vol_v(i, m), "frac_vol");
       if (do_frac_bmod) {
-        any_bad_vals = any_bad_vals || error_utils::bad_value(frac_bmod_v(i, m), "frac_bmod");
-        any_bad_vals = any_bad_vals || error_utils::negative_value(frac_bmod_v(i, m), "frac_bmod");
+        any_bad_vals =
+            any_bad_vals || error_utils::bad_value(frac_bmod_v(i, m), "frac_bmod");
+        any_bad_vals =
+            any_bad_vals || error_utils::negative_value(frac_bmod_v(i, m), "frac_bmod");
       }
       if (do_frac_cv) {
         any_bad_vals = any_bad_vals || error_utils::bad_value(frac_cv_v(i, m), "frac_cv");
-        any_bad_vals = any_bad_vals || error_utils::negative_value(frac_cv_v(i, m), "frac_cv");
+        any_bad_vals =
+            any_bad_vals || error_utils::negative_value(frac_cv_v(i, m), "frac_cv");
       }
       if (do_frac_dpde) {
-        any_bad_vals = any_bad_vals || error_utils::bad_value(frac_dpde_v(i, m), "frac_dpde");
-        any_bad_vals = any_bad_vals || error_utils::negative_value(frac_dpde_v(i, m), "frac_dpde");
+        any_bad_vals =
+            any_bad_vals || error_utils::bad_value(frac_dpde_v(i, m), "frac_dpde");
+        any_bad_vals =
+            any_bad_vals || error_utils::negative_value(frac_dpde_v(i, m), "frac_dpde");
       }
     }
     any_bad_vals = any_bad_vals || error_utils::bad_value(press_v(i), "pres");
