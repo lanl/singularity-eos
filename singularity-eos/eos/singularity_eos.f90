@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------------
-! © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+! © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 ! program was produced under U.S. Government contract 89233218CNA000001
 ! for Los Alamos National Laboratory (LANL), which is operated by Triad
 ! National Security, LLC for the U.S.  Department of Energy/National
@@ -298,7 +298,8 @@ module singularity_eos
                  offsets,&
                  press, pmax, vol, spvol, sie, temp, bmod, dpde, cv,&
                  frac_mass, frac_vol, frac_sie,&
-                 frac_bmod, frac_dpde, frac_cv)&
+                 frac_bmod, frac_dpde, frac_cv,&
+                 mass_frac_cutoff)&
       bind(C, name='get_sg_eos')
       import
       integer(kind=c_int), value, intent(in) :: nmat
@@ -325,6 +326,7 @@ module singularity_eos
       type(c_ptr), value, intent(in) :: frac_bmod
       type(c_ptr), value, intent(in) :: frac_dpde
       type(c_ptr), value, intent(in) :: frac_cv
+      real(kind=c_double), value, intent(in) :: mass_frac_cutoff
     end function get_sg_eos
   end interface
 
@@ -350,7 +352,8 @@ contains
                                 press, pmax, vol, spvol, sie, temp, bmod,&
                                 dpde, cv,&
                                 frac_mass, frac_vol, frac_sie,&
-                                frac_bmod, frac_dpde, frac_cv) &
+                                frac_bmod, frac_dpde, frac_cv,&
+                                mass_frac_cutoff) &
     result(err)
     integer(kind=c_int), intent(in) :: nmat
     integer(kind=c_int), intent(in) :: ncell
@@ -375,9 +378,12 @@ contains
     real(kind=8), dimension(:,:), target, optional, intent(inout) :: frac_bmod
     real(kind=8), dimension(:,:), target, optional, intent(inout) :: frac_dpde
     real(kind=8), dimension(:,:), target, optional, intent(inout) :: frac_cv
+    real(kind=8),                         optional, intent(in)    :: mass_frac_cutoff
 
     ! pointers
     type(c_ptr) :: bmod_ptr, dpde_ptr, cv_ptr
+
+    real(kind=c_double) :: mass_frac_cutoff_used
 
     bmod_ptr = C_NULL_PTR
     dpde_ptr = C_NULL_PTR
@@ -391,13 +397,18 @@ contains
     if(present(frac_cv)) then
       cv_ptr = c_loc(frac_cv)
     endif
+    if(present(mass_frac_cutoff)) then
+      mass_frac_cutoff_used = mass_frac_cutoff
+    else
+      mass_frac_cutoff_used = 1.0d-12
+    endif
 
     err = get_sg_eos(nmat, ncell, cell_dim, option, c_loc(eos_offsets),&
                      eos%ptr, c_loc(offsets), c_loc(press), c_loc(pmax),&
                      c_loc(vol), c_loc(spvol), c_loc(sie), c_loc(temp),&
                      c_loc(bmod), c_loc(dpde),c_loc(cv), c_loc(frac_mass),&
                      c_loc(frac_vol),c_loc(frac_sie), bmod_ptr, dpde_ptr,&
-                     cv_ptr)
+                     cv_ptr, mass_frac_cutoff_used)
   end function get_sg_eos_f
 
   integer function init_sg_eos_f(nmat, eos) &

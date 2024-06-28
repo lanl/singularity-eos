@@ -12,6 +12,7 @@
 - [[PR331]](https://github.com/lanl/singularity-eos/pull/331) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a linear Us-up relation. MGUsup.
 - [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release
 - [[PR#357]](https://github.com/lanl/singularity-eos/pull/357) Added support for C++17 (e.g., needed when using newer Kokkos).
+- [[PR#382]](https://github.com/lanl/singularity-eos/pull/382) Added debug checks to the `get_sg_eos()` interface to ensure sane values are returned
 
 ### Fixed (Repair bugs, etc)
 - [[PR380]](https://github.com/lanl/singularity-eos/pull/380) Set material internal energy to 0 if not participating in the pte solve to make sure potentially uninitialized data is set.
@@ -29,6 +30,7 @@
 ### Changed (changing behavior/API/variables/...)
 - [[PR363]](https://github.com/lanl/singularity-eos/pull/363) Template lambda values for scalar calls
 - [[PR372]](https://github.com/lanl/singularity-eos/pull/372) Removed E0 from Davis Products EOS in favor of using the shifted EOS modifier. CHANGES API!
+- [[PR#382]](https://github.com/lanl/singularity-eos/pull/382) Changed `get_sg_eos()` API to allow optionally specifying the mass fraction cutoff for materials to participate in the PTE solver 
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR329]](https://github.com/lanl/singularity-eos/pull/329) Move vinet tests into analytic test suite

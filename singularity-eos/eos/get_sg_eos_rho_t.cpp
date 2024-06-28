@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -49,6 +49,7 @@ void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
         const int neq = npte;
         singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
                                                    neq * (neq + 4) + 2 * npte);
+        bool pte_converged = true;
         if (npte > 1) {
           // create solver lambda
           // eos accessor
@@ -57,7 +58,7 @@ void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
               npte, eos_inx, 1.0, temp_pte(tid, 0), &rho_pte(tid, 0), &vfrac_pte(tid, 0),
               &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), cache,
               &solver_scratch(tid, 0));
-          const bool res_{PTESolver(method)};
+          pte_converged = PTESolver(method);
           // calculate total internal energy
           for (int mp = 0; mp < npte; ++mp) {
             const int m = pte_mats(tid, mp);
@@ -79,7 +80,7 @@ void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
         // total sie is known
         sie_v(i) = sie_tot_true;
         // assign quantities
-        f_func(i, tid, npte, mass_sum, 0.0, 0.0, 1.0, cache);
+        f_func(i, tid, npte, mass_sum, 0.0, 0.0, 1.0, pte_converged, cache);
         // assign max pressure
         pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
         // release the token used for scratch arrays
