@@ -62,8 +62,9 @@ struct init_functor {
                                                           mass_frac_cutoff_} {}
 
   PORTABLE_INLINE_FUNCTION
-  void operator()(const int i, const int tid, double &mass_sum, int &npte, double &vfrac_sum,
-                  const Real t_mult, const Real s_mult, const Real p_mult) const {
+  void operator()(const int i, const int tid, double &mass_sum, int &npte,
+                  double &vfrac_sum, const Real t_mult, const Real s_mult,
+                  const Real p_mult) const {
     /* normalize mass fractions */
     /* first find the mass sum */
     /* also set idxs as the decrement of the eos offsets */
