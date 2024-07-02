@@ -675,7 +675,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
       if (scale * dx[m] < -vfrac_safety_fac * vfrac[m]) {
-        scale = std::min(scale, -vfrac_safety_fac * robust::ratio(vfrac[m], dx[m]));
+        scale = -vfrac_safety_fac * robust::ratio(vfrac[m], dx[m]);
       }
     }
     const Real Tnew = Tequil + scale * dx[nmat];
@@ -685,12 +685,12 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = std::min(scale, robust::ratio(0.5 * alpha_max - vfrac[m], dx[m]));
+        scale = robust::ratio(0.5 * alpha_max - vfrac[m], dx[m]);
       }
     }
     // control how big of a step toward T = 0 is allowed
     if (scale * dx[nmat] < -0.95 * Tequil) {
-      scale = std::min(scale, robust::ratio(-0.95 * Tequil, dx[nmat]));
+      scale = robust::ratio(-0.95 * Tequil, dx[nmat]);
     }
     // Now apply the overall scaling
     for (int i = 0; i < neq; ++i)
@@ -883,7 +883,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
       if (scale * dx[m] < -vfrac_safety_fac * vfrac[m]) {
-        scale = std::min(scale, robust::ratio(-vfrac_safety_fac * vfrac[m], dx[m]));
+        scale = robust::ratio(-vfrac_safety_fac * vfrac[m], dx[m]);
       }
     }
     // control how big of a step toward rho = rho(Pmin) is allowed
@@ -891,7 +891,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       const Real rho_min = eos[m].RhoPmin(Tequil);
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = std::min(scale, robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]));
+        scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
       }
     }
     // Now apply the overall scaling
@@ -1097,7 +1097,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
       if (scale * dx[m] < -vfrac_safety_fac * vfrac[m]) {
-        scale = std::min(scale, -vfrac_safety_fac * robust::ratio(vfrac[m], dx[m]));
+        scale = -vfrac_safety_fac * robust::ratio(vfrac[m], dx[m]);
       }
     }
     const Real Tnew = Tequil + scale * dx[nmat];
@@ -1107,12 +1107,12 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = std::min(scale, 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]));
+        scale = 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]);
       }
     }
     // control how big of a step toward T = 0 is allowed
     if (scale * dx[nmat] < -0.95 * Tequil) {
-      scale = std::min(scale, -0.95 * robust::ratio(Tequil, dx[nmat]));
+      scale = -0.95 * robust::ratio(Tequil, dx[nmat]);
     }
     // Now apply the overall scaling
     for (int i = 0; i < neq; ++i)
@@ -1336,12 +1336,12 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     for (int m = 0; m < nmat; ++m) {
       // control how big of a step toward vfrac = 0 is allowed
       if (scale * dx[m] < -0.1 * vfrac[m]) {
-        scale = std::min(scale, -0.1 * robust::ratio(vfrac[m], dx[m]));
+        scale = -0.1 * robust::ratio(vfrac[m], dx[m]);
       }
       // try to control steps toward T = 0
       const Real dt = (dtdv[m] * dx[m] + dtde[m] * dx[m + nmat]);
       if (scale * dt < -0.1 * temp[m]) {
-        scale = std::min(scale, -0.1 * robust::ratio(temp[m], dt));
+        scale = -0.1 * robust::ratio(temp[m], dt);
       }
       const Real tt = temp[m] + scale * dt;
       const Real rho_min =
@@ -1349,7 +1349,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       // control how big of a step toward rho = rho(Pmin) is allowed
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = std::min(scale, 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]));
+        scale = 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]);
       }
     }
     // Now apply the overall scaling
@@ -1424,7 +1424,7 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
     Real err_old = err;
     err = s.TestUpdate(scale);
     if (err > err_old + line_search_alpha * gradfdx) {
-      // backtrack
+      // backtrack to middle of step
       scale = 0.5;
       Real err_mid = s.TestUpdate(scale);
       if (err_mid < err && err_mid < err_old) {
