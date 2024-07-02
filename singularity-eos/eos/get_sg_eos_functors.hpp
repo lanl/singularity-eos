@@ -115,6 +115,7 @@ struct init_functor {
       press_pte(tid, mp) = press_v(i) * p_mult;
       sie_pte(tid, mp) = sie_v(i) * frac_mass_v(i, m) * s_mult;
     }
+    PORTABLE_REQUIRE(vfrac_sum <= 1.0, "Volume fraction sum is greater than 1");
     return;
   }
 
