@@ -63,7 +63,8 @@ struct init_functor {
 
   PORTABLE_INLINE_FUNCTION
   void operator()(const int i, const int tid, double &mass_sum, int &npte,
-                  const Real t_mult, const Real s_mult, const Real p_mult) const {
+                  double &vfrac_sum, const Real t_mult, const Real s_mult,
+                  const Real p_mult) const {
     /* normalize mass fractions */
     /* first find the mass sum */
     /* also set idxs as the decrement of the eos offsets */
@@ -71,13 +72,19 @@ struct init_functor {
     for (int m = 0; m < nmat; ++m) {
       mass_sum += frac_mass_v(i, m);
       pte_idxs(tid, m) = eos_offsets_v(m) - 1;
-      frac_vol_v(i, m) = 0.0;
+      // Assume non-participating materials are all at cell density. PTE volumes
+      // will be overwritten
+      frac_vol_v(i, m) = frac_mass_v(i, m);
+      // Initialize all materials to the cell sie (if provided). PTE sie values
+      // will be overwritten. This also means that the sie for the PTE
+      // materials is the same as the cell PTE after removing small materials
+      frac_ie_v(i, m) = sie_v(i) * frac_mass_v(i, m) * s_mult;
     }
     for (int m = 0; m < nmat; ++m) {
       frac_mass_v(i, m) /= mass_sum;
     }
     check_all_vals(i);
-    // count the number of participating materials and zero the inputs
+    // count the number of participating materials
     npte = 0;
     for (int m = 0; m < nmat; ++m) {
       if (frac_mass_v(i, m) > mass_frac_cutoff) {
@@ -85,10 +92,8 @@ struct init_functor {
         pte_idxs(tid, npte) = eos_offsets_v(m) - 1;
         pte_mats(tid, npte) = m;
         npte += 1;
-      } else {
-        frac_ie_v(i, m) = 0.0;
       }
-      // zero the inputs
+      // zero the PTE solver material inputs
       vfrac_pte(tid, m) = 0.0;
       sie_pte(tid, m) = 0.0;
       temp_pte(tid, m) = 0.0;
@@ -98,10 +103,12 @@ struct init_functor {
     // NOTE: the volume fractions and densities need to be consistent with the
     // total specific volume since they are used to calculate internal
     // quantities for the PTE solver
+    vfrac_sum = 0.;
     for (int mp = 0; mp < npte; ++mp) {
       const int m = pte_mats(tid, mp);
       // Need to guess volume fractions
       vfrac_pte(tid, mp) = frac_mass_v(i, m);
+      vfrac_sum += vfrac_pte(tid, mp);
       // Calculate densities to be consistent with these volume fractions
       rho_pte(tid, mp) = frac_mass_v(i, m) / spvol_v(i) / vfrac_pte(tid, mp);
       temp_pte(tid, mp) = temp_v(i) * ev2k * t_mult;
