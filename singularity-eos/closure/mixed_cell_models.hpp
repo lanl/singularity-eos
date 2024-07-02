@@ -676,6 +676,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   PORTABLE_INLINE_FUNCTION
   Real ScaleDx() const {
     using namespace mix_params;
+    // Each check reduces the scale further if necessary
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
@@ -886,6 +887,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PORTABLE_INLINE_FUNCTION
   Real ScaleDx() const {
     using namespace mix_params;
+    // Each check reduces the scale further if necessary
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
@@ -1100,6 +1102,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PORTABLE_INLINE_FUNCTION
   Real ScaleDx() const {
     using namespace mix_params;
+    // Each check reduces the scale further if necessary
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
@@ -1341,6 +1344,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   PORTABLE_INLINE_FUNCTION
   Real ScaleDx() const {
     using namespace mix_params;
+    // Each check reduces the scale further if necessary
     Real scale = 1.0;
     for (int m = 0; m < nmat; ++m) {
       // control how big of a step toward vfrac = 0 is allowed
