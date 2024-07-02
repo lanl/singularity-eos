@@ -170,9 +170,11 @@ class PTESolverBase {
   PORTABLE_INLINE_FUNCTION
   virtual void Fixup() const {
     Real vsum = 0;
-    for (int m = 0; m < nmat; ++m)
+    for (int m = 0; m < nmat; ++m) {
+      PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in Fixup");
       vsum += vfrac[m];
-    PORTABLE_REQUIRE(vsum > 0., "Volume fraction sum is non-positive");
+    }
+    PORTABLE_REQUIRE(vsum > 0., "Volume fraction sum is non-positive in Fixup");
     for (int m = 0; m < nmat; ++m)
       vfrac[m] *= robust::ratio(vfrac_total, vsum);
   }
@@ -182,7 +184,7 @@ class PTESolverBase {
   void Finalize() {
     for (int m = 0; m < nmat; m++) {
       temp[m] *= Tnorm;
-      PORTABLE_REQUIRE(temp[m] >= 0., "Non-positive temperature returned");
+      PORTABLE_REQUIRE(temp[m] >= 0., "Non-positive temperature returned in Finalize");
       u[m] *= uscale;
       press[m] *= uscale;
     }
@@ -219,8 +221,9 @@ class PTESolverBase {
     // material m averaged over the full PTE volume
     rho_total = 0.0;
     for (int m = 0; m < nmat; ++m) {
-      PORTABLE_REQUIRE(vfrac[m] > 0., "Non-positive volume fraction");
-      PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density");
+      PORTABLE_REQUIRE(vfrac[m] > 0.,
+                       "Non-positive volume fraction provided to PTE solver");
+      PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density provided to PTE solver");
       rhobar[m] = rho[m] * vfrac[m];
       rho_total += rhobar[m];
     }
@@ -353,12 +356,12 @@ class PTESolverBase {
       Asum += vfrac[m] * robust::ratio(press[m], temp[m]);
       rhoBsum += rho[m] * vfrac[m] * robust::ratio(sie[m], temp[m]);
     }
-    PORTABLE_REQUIRE(Tnorm > 0., "Non-positive temperature guess");
+    PORTABLE_REQUIRE(Tnorm > 0., "Non-positive Ideal PTE temperature guess");
     Asum *= uscale / Tnorm;
     rhoBsum /= Tnorm;
-    PORTABLE_REQUIRE(rhoBsum > 0., "Non-positive energy density");
+    PORTABLE_REQUIRE(rhoBsum > 0., "Non-positive Ideal PTE energy density guess");
     Tideal = uscale / rhoBsum / Tnorm;
-    PORTABLE_REQUIRE(vfrac_total > 0., "Non-positive volume fraction sum");
+    PORTABLE_REQUIRE(vfrac_total > 0., "Non-positive Ideal PTE volume fraction sum");
     Pideal = robust::ratio(Tnorm * Tideal * Asum, uscale * vfrac_total);
   }
 
@@ -629,6 +632,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real vf_pert = vfrac[m] + dv;
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
+      PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in rho-T PTE iteration");
+
       Real p_pert{};
       Real e_pert =
           eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
@@ -708,6 +713,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
         vtemp[m] = vfrac[m];
     }
     Tequil = Ttemp + scale * dx[nmat];
+    PORTABLE_REQUIRE(Tequil >= 0., "Negative temperature update in rho-T PTE solver iteration");
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
@@ -1130,6 +1136,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
         vtemp[m] = vfrac[m];
     }
     Tequil = Ttemp + scale * dx[nmat];
+    PORTABLE_REQUIRE(Tequil >= 0., "Negative temperature in Fixed P PTE solver iteration");
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
