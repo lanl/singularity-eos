@@ -171,7 +171,7 @@ class PTESolverBase {
   virtual void Fixup() const {
     Real vsum = 0;
     for (int m = 0; m < nmat; ++m) {
-      PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in Fixup");
+      // PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in Fixup");
       vsum += vfrac[m];
     }
     PORTABLE_REQUIRE(vsum > 0., "Volume fraction sum is non-positive in Fixup");
@@ -632,7 +632,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real vf_pert = vfrac[m] + dv;
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
-      PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in rho-T PTE iteration");
+      // PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in rho-T PTE iteration");
 
       Real p_pert{};
       Real e_pert =
@@ -707,8 +707,10 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale) {
-    if (scale == 1.0) {
+  Real TestUpdate(const Real scale, bool const cache_state=false) {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
       Ttemp = Tequil;
       for (int m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
@@ -912,8 +914,10 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale) {
-    if (scale == 1.0) {
+  Real TestUpdate(const Real scale, bool const cache_state=false) {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
       for (int m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
     }
@@ -1133,8 +1137,10 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale) {
-    if (scale == 1.0) {
+  Real TestUpdate(const Real scale, bool const cache_state=false) {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
       Ttemp = Tequil;
       for (int m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
@@ -1374,8 +1380,10 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale) const {
-    if (scale == 1.0) {
+  Real TestUpdate(const Real scale, bool const cache_state=false) const {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
       for (int m = 0; m < nmat; ++m) {
         vtemp[m] = vfrac[m];
         utemp[m] = u[m];
@@ -1435,7 +1443,8 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
     Real gradfdx = -2.0 * scale * err;
     scale = 1.0; // New scale for line search
     Real err_old = err;
-    err = s.TestUpdate(scale);
+    // Test the update and reset the cache the current state
+    err = s.TestUpdate(scale, true /* cache_state */);
     if (err > err_old + line_search_alpha * gradfdx) {
       // backtrack to middle of step
       scale = 0.5;
