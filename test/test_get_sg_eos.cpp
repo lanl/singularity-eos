@@ -58,7 +58,7 @@ int run_sg_get_eos_tests() {
   Real vfrac_true[NMAT], ie_true[NMAT];
   get_sg_eos(NMAT, 1, 1, -1, eos_offset, eoss, &cell_offset, &P_true, &pmax, &v_true,
              &spvol, &sie_tot_true, &T_true_ev, &bmod, &dpde, &cv, mfrac, vfrac_true,
-             ie_true, nullptr, nullptr, nullptr);
+             ie_true, nullptr, nullptr, nullptr, 1.0e-12);
   Real sie_tot_check = 0.0;
   for (int m = 0; m < NMAT; ++m) {
     const Real r_m = mfrac[m] / vfrac_true[m];
@@ -85,7 +85,7 @@ int run_sg_get_eos_tests() {
   Real p_check, vfrac_check[NMAT], ie_check[NMAT];
   get_sg_eos(NMAT, 1, 1, -3, eos_offset, eoss, &cell_offset, &p_check, &pmax, &v_true,
              &spvol, &sie_tot_check, &T_true_ev, &bmod, &dpde, &cv, mfrac, vfrac_check,
-             ie_check, nullptr, nullptr, nullptr);
+             ie_check, nullptr, nullptr, nullptr, 1.0e-12);
   // check output pressure and sie, indicate failure if relative err is too large
   if (std::abs(P_true - p_check) / std::abs(P_true) > 1.e-5 ||
       std::abs(sie_tot_true - sie_tot_check) / std::abs(sie_tot_true) > 1.e-5) {
@@ -109,7 +109,7 @@ int run_sg_get_eos_tests() {
   Real t_check;
   get_sg_eos(NMAT, 1, 1, -2, eos_offset, eoss, &cell_offset, &P_true, &pmax, &v_true,
              &spvol, &sie_tot_check, &t_check, &bmod, &dpde, &cv, mfrac, vfrac_check,
-             ie_check, nullptr, nullptr, nullptr);
+             ie_check, nullptr, nullptr, nullptr, 1.0e-12);
   // check output temperature and sie, indicate failure if relative err is too large
   if (std::abs(T_true_ev - t_check) / std::abs(T_true_ev) > 1.e-5 ||
       std::abs(sie_tot_true - sie_tot_check) / std::abs(sie_tot_true) > 1.e-5) {
