@@ -383,8 +383,8 @@ struct final_functor {
       PORTABLE_ALWAYS_ABORT(
           "Bad value RETURNED from singularity-eos. See output for details");
     }
-  }
 #endif // #ifndef NDEBUG
+  }
 };
 
 } // namespace singularity
