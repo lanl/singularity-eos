@@ -151,8 +151,8 @@ struct init_functor {
       PORTABLE_ALWAYS_ABORT(
           "Bad values INPUT to singularity-eos interface. See output for details");
     }
-  }
 #endif // #ifndef NDEBUG
+  }
 };
 
 struct final_functor {
