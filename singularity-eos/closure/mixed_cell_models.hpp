@@ -632,7 +632,8 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real vf_pert = vfrac[m] + dv;
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
-      // PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in rho-T PTE iteration");
+      // PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in rho-T PTE
+      // iteration");
 
       Real p_pert{};
       Real e_pert =
@@ -707,7 +708,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale, bool const cache_state=false) {
+  Real TestUpdate(const Real scale, bool const cache_state = false) {
     if (cache_state) {
       // Store the current state in temp variables for first iteration of line
       // search
@@ -914,7 +915,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale, bool const cache_state=false) {
+  Real TestUpdate(const Real scale, bool const cache_state = false) {
     if (cache_state) {
       // Store the current state in temp variables for first iteration of line
       // search
@@ -1137,7 +1138,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale, bool const cache_state=false) {
+  Real TestUpdate(const Real scale, bool const cache_state = false) {
     if (cache_state) {
       // Store the current state in temp variables for first iteration of line
       // search
@@ -1380,7 +1381,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale, bool const cache_state=false) const {
+  Real TestUpdate(const Real scale, bool const cache_state = false) const {
     if (cache_state) {
       // Store the current state in temp variables for first iteration of line
       // search
