@@ -112,6 +112,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     depends_on("ports-of-call@1.4.2,1.5.2:", when="@:1.7.0")
     depends_on("ports-of-call@1.5.2:", when="@1.7.1:")
+    depends_on("ports-of-call@1.6.0:", when="@1.7.2:")
     # request HEAD of main branch
     depends_on("ports-of-call@main", when="@main")
     
