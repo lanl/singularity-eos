@@ -39,6 +39,7 @@ register_headers(
     eos/eos_stellar_collapse.hpp
     eos/eos_ideal.hpp
     eos/eos_models.hpp
+    eos/eos_mgusup.hpp
     eos/eos_spiner.hpp
     eos/eos_davis.hpp
     eos/eos_gruneisen.hpp
