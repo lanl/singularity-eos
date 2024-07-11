@@ -77,8 +77,10 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
       constexpr Real sie_bulk = -1.441692060406520e+10;
       const std::array<const Real, num_eos> mass_frac = {
           1.10382442033331e-10, 0.124935312146569, 0.875064687743048};
+
       // Initial guess: all materials at the cell density
       const std::array<const Real, num_eos> vol_frac = mass_frac;
+
       // Calculate material densities (and corresponding energies) and the total
       // volume fraction
       std::array<Real, num_eos> densities;
@@ -89,9 +91,11 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         sies[i] = sie_bulk * mass_frac[i];
         vfrac_sum += vol_frac[i];
       }
+
       // Initialize pressure and temperature arrays to zero
       std::array<Real, num_eos> temperatures = {0., 0., 0.};
       std::array<Real, num_eos> pressures = {0., 0., 0.};
+
       // Copy values to device (when available)
       constexpr size_t bytes = num_eos * sizeof(Real);
       Real *v_densities = (Real *)PORTABLE_MALLOC(bytes);
@@ -105,7 +109,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
       Real *v_pressures = (Real *)PORTABLE_MALLOC(bytes);
       portableCopyToDevice(v_pressures, pressures.data(), bytes);
 
-      THEN("The PTE solver will converge") {
+      THEN("The PTE solver should converge") {
         // Allocate scratch space for the PTE solver
         int pte_solver_scratch_size = PTESolverRhoTRequiredScratch(num_eos);
         double *scratch = (double *)PORTABLE_MALLOC(pte_solver_scratch_size);
@@ -113,14 +117,14 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
             num_eos, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
             v_temperatures, v_pressures, lambdas, scratch);
-        bool pte_converged = PTESolver(method);
-        CHECK(!pte_converged);
 
-        // Free scratch and lambda memory
-        PORTABLE_FREE(scratch);
+        // Solve the PTE system and ensure it converged
+        bool pte_converged = PTESolver(method);
+        CHECK(pte_converged);
         PORTABLE_FREE(lambdas);
       }
     }
+    // Free EOS memory
     PORTABLE_FREE(v_EOS);
   }
 }
