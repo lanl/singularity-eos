@@ -22,6 +22,7 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <test/eos_unit_test_helpers.hpp>
 
 using namespace singularity;
 
@@ -113,9 +114,14 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
             num_eos, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
             v_temperatures, v_pressures, lambdas, scratch);
         bool pte_converged = PTESolver(method);
-        REQUIRE(pte_converged);
+        CHECK(!pte_converged);
+
+        // Free scratch and lambda memory
+        PORTABLE_FREE(scratch);
+        PORTABLE_FREE(lambdas);
       }
     }
+    PORTABLE_FREE(v_EOS);
   }
 }
 #endif // SPINER_USE_HDF
