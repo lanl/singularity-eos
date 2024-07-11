@@ -696,7 +696,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
         // dPdV_T > 0) so we would actually want to *increase* the step instead
         // of decreasing it. As a result, this code doesn't work as intended and
         // should be skipped.
-        continue
+        continue;
       }
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
         scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
