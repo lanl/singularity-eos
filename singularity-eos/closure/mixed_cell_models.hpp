@@ -1463,6 +1463,7 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
 
     // possibly scale the update to stay within reasonable bounds
     Real scale = s.ScaleDx();
+    PORTABLE_REQUIRE(scale <= 1.0, "PTE Solver is attempting to increase the step size");
 
     // Line search
     Real gradfdx = -2.0 * scale * err;
