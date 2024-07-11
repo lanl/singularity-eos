@@ -47,6 +47,7 @@ add_executable(
 
 add_executable(
   closure_unit_tests
+  catch2_define.cpp
   test_closure_pte.cpp
   )
 
