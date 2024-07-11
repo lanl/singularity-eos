@@ -171,7 +171,6 @@ class PTESolverBase {
   virtual void Fixup() const {
     Real vsum = 0;
     for (int m = 0; m < nmat; ++m) {
-      // PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in Fixup");
       vsum += vfrac[m];
     }
     PORTABLE_REQUIRE(vsum > 0., "Volume fraction sum is non-positive in Fixup");
@@ -631,9 +630,6 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       Real dv = (vfrac[m] < 0.5 ? 1.0 : -1.0) * vfrac[m] * derivative_eps;
       const Real vf_pert = vfrac[m] + dv;
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
-
-      // PORTABLE_REQUIRE(vfrac[m] > 0, "Negative volume fraction in rho-T PTE
-      // iteration");
 
       Real p_pert{};
       Real e_pert =
