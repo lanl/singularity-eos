@@ -121,8 +121,15 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         // Solve the PTE system and ensure it converged
         bool pte_converged = PTESolver(method);
         CHECK(pte_converged);
+
+        // Free temp memory
         PORTABLE_FREE(lambdas);
+        PORTABLE_FREE(scratch);
       }
+    }
+    // Call Finalize on each EOS
+    for (auto eos : eos_arr) {
+      eos.Finalize();
     }
     // Free EOS memory
     PORTABLE_FREE(v_EOS);
