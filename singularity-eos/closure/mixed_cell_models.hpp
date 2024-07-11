@@ -691,8 +691,15 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
+      if (alpha_max < vfrac[m]) {
+        // Despite our best efforts, we're already in the unstable regime (i.e.
+        // dPdV_T > 0) so we would actually want to *increase* the step instead
+        // of decreasing it. As a result, this code doesn't work as intended and
+        // should be skipped.
+        continue
+      }
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = robust::ratio(0.5 * alpha_max - vfrac[m], dx[m]);
+        scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
       }
     }
     // control how big of a step toward T = 0 is allowed
