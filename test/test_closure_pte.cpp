@@ -111,9 +111,11 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
 
       THEN("The PTE solver should converge") {
         // Allocate scratch space for the PTE solver
-        int pte_solver_scratch_size = PTESolverRhoTRequiredScratch(num_eos);
-        double *scratch = (double *)PORTABLE_MALLOC(pte_solver_scratch_size);
-        double **lambdas = (double **)PORTABLE_MALLOC(MAX_NUM_LAMBDAS * num_eos);
+        const int pte_solver_scratch_size = PTESolverRhoTRequiredScratch(num_eos);
+        const size_t scratch_bytes = pte_solver_scratch_size * sizeof(Real);
+        double *scratch = (double *)PORTABLE_MALLOC(scratch_bytes);
+        constexpr size_t lambda_bytes = MAX_NUM_LAMBDAS * num_eos * sizeof(Real);
+        double **lambdas = (double **)PORTABLE_MALLOC(lambda_bytes);
         PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
             num_eos, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
             v_temperatures, v_pressures, lambdas, scratch);
