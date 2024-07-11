@@ -909,6 +909,13 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     for (int m = 0; m < nmat; m++) {
       const Real rho_min = eos[m].RhoPmin(Tequil);
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
+      if (alpha_max < vfrac[m]) {
+        // Despite our best efforts, we're already in the unstable regime (i.e.
+        // dPdV_T > 0) so we would actually want to *increase* the step instead
+        // of decreasing it. As a result, this code doesn't work as intended and
+        // should be skipped.
+        continue;
+      }
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
         scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
       }
@@ -1128,6 +1135,13 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
+      if (alpha_max < vfrac[m]) {
+        // Despite our best efforts, we're already in the unstable regime (i.e.
+        // dPdV_T > 0) so we would actually want to *increase* the step instead
+        // of decreasing it. As a result, this code doesn't work as intended and
+        // should be skipped.
+        continue;
+      }
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
         scale = 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]);
       }
@@ -1375,6 +1389,13 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
           std::max(eos[m].RhoPmin(Tnorm * temp[m]), eos[m].RhoPmin(Tnorm * tt));
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       // control how big of a step toward rho = rho(Pmin) is allowed
+      if (alpha_max < vfrac[m]) {
+        // Despite our best efforts, we're already in the unstable regime (i.e.
+        // dPdV_T > 0) so we would actually want to *increase* the step instead
+        // of decreasing it. As a result, this code doesn't work as intended and
+        // should be skipped.
+        continue;
+      }
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
         scale = 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]);
       }
