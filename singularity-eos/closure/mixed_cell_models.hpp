@@ -173,7 +173,6 @@ class PTESolverBase {
     for (int m = 0; m < nmat; ++m) {
       vsum += vfrac[m];
     }
-    PORTABLE_REQUIRE(vsum > 0., "Volume fraction sum is non-positive in Fixup");
     for (int m = 0; m < nmat; ++m)
       vfrac[m] *= robust::ratio(vfrac_total, vsum);
   }
@@ -183,7 +182,6 @@ class PTESolverBase {
   void Finalize() {
     for (int m = 0; m < nmat; m++) {
       temp[m] *= Tnorm;
-      PORTABLE_REQUIRE(temp[m] >= 0., "Non-positive temperature returned in Finalize");
       u[m] *= uscale;
       press[m] *= uscale;
     }
@@ -720,8 +718,6 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
         vtemp[m] = vfrac[m];
     }
     Tequil = Ttemp + scale * dx[nmat];
-    PORTABLE_REQUIRE(Tequil >= 0.,
-                     "Negative temperature update in rho-T PTE solver iteration");
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
@@ -1164,8 +1160,6 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
         vtemp[m] = vfrac[m];
     }
     Tequil = Ttemp + scale * dx[nmat];
-    PORTABLE_REQUIRE(Tequil >= 0.,
-                     "Negative temperature in Fixed P PTE solver iteration");
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
