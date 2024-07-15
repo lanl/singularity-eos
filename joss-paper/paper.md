@@ -110,7 +110,7 @@ atomic) scale. This closure is commonly called the *equation of state*
 (EOS).
 
 Equations of state vary from the simple ideal gas law, to
-sophisticated descriptions multi-phase descriptions of the lattice
+sophisticated multi-phase descriptions of the lattice
 structure of ice or wood, to models of quark-gluon plasma and nuclear
 pasta at ultra high densities. A common form to write an equation of
 state is as a pair of relations:
@@ -125,17 +125,17 @@ collection of knowledge needed to reconstruct some intrinsic
 thermodynamic quantities from others. For example, the speed of sound
 through a material or the specific heat capacity, which are
 thermodynamic derivatives of the pressure and the specific internal
-energy, are both determined by the EOS.
+energy respectively, can both be determined by the EOS.
 
 In multi-material fluid dynamics simulations, one often will end up
 with a so-called *mixed cell*, where two materials exist within
 the same simulation zone. This can be an artifact of the numerical
 representation; for example a steel bar and the surrounding air may
 end up sharing a finite volume cell if the boundaries of the cell do
-not align exactly with the surface of the steel bar. Or it may
+not align exactly with the surface of the steel bar, or, it may
 represent physical reality; for example, air is a mixture of nitrogen
 and oxygen gases, as well as water vapor. Regardless of the nature of
-the mixed cell, one must somehow provide to the fluid code what the
+the mixed cell, one must somehow provide, to the fluid code, what the
 material properties of the cell are as a whole. This is called a
 *mixed cell closure.* One such closure is
 *pressure-temperature equilibrium* (PTE), where all materials
@@ -171,7 +171,7 @@ GPUs, as well as other accelerators. This fills an important need, as
 modern super computing capabilities increasingly rely on GPUs for
 performance. Singularity-EOS is now used in the ongoing open-source
 [Phoebus](https://github.com/lanl/phoebus) project which has a
-separate code paper in-prep.
+separate code paper in-preparation.
 
 # Design Principles and Feature Highlights
 
@@ -200,7 +200,7 @@ memory.
 Many equations of state are most naturally represented as functions of
 density and temperature. However, fluid codes require pressure as a
 function of density and internal energy. Extracting this often
-requires computing a root find to invert the relation
+requires computing a root to invert the relation
 
 $$\varepsilon = \varepsilon(\rho, T).$$
 
@@ -217,7 +217,7 @@ knowledge to compute them as performantly as possible.
 
 ## Performance-portable polymorphism
 
-Accelerators provide new challenges to standard object-oriented
+Accelerators present new challenges to standard object-oriented
 programming. In particular, not all compiler stacks (such as Sycl
 [@SYCL] or OpenMP Target Offload [@chandra2001parallel])
 support relocatable device code, which is required for standard C++
@@ -239,7 +239,7 @@ way. Modifiers may also be chained.
 
 ## Fast log-lookups
 
-To span the required orders of magnitude, tabulated equations of state
+To span the required orders of magnitude, equations of state
 are often tabulated on log-spaced grids. Logarithms and exponentials
 are, however, expensive operations and the performance of lookups can
 suffer. We instead use the not-quite-transcendental lookups described
@@ -267,7 +267,7 @@ Singularity-EOS proper is not possible due to, e.g., licensing issues.
 
 This work was supported through the Laboratory Directed Research and
 Development program, the Center for Space and Earth Sciences, and the
-center for Nonlinear Studies under project numbers 20240477CR-SES and
+Center for Nonlinear Studies under project numbers 20240477CR-SES and
 20220564ECR at Los Alamos National Laboratory (LANL). LANL is operated
 by Triad National Security, LLC, for the National Nuclear Security
 Administration of U.S. Department of Energy (Contract
