@@ -33,8 +33,7 @@ constexpr Real GPa = 1.0e10;
 constexpr Real MJ_per_kg = 1.0e10;
 
 #ifdef SINGULARITY_TEST_SESAME
-#ifdef SINGULARITY_USE_SPINER
-#ifdef SPINER_USE_HDF
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
 using myEOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
                                    SpinerEOSDependsRhoT>;
@@ -210,7 +209,6 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     }
   }
 }
-#endif // SPINER_USE_HDF
-#endif // SINGULARITY_USE_SPINER
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #endif // SINGULARITY_TEST_SESAME
 #endif // SINGULARITY_BUILD_CLOSURE
