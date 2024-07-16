@@ -119,7 +119,7 @@ bool run_PTE_from_state(const int num_eos, EOS *v_EOS, const Real spvol_bulk,
   constexpr size_t bool_bytes = 1 * sizeof(bool);
   bool *pte_converged_d = (bool *)PORTABLE_MALLOC(bool_bytes);
   portableFor(
-      "Device execution of PTE Test", 0, 1, PORTABLE_LAMBDA(auto i) {
+      "Device execution of PTE Test", 0, 1, PORTABLE_LAMBDA(int i) {
         PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
             num_eos, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
             v_temperatures, v_pressures, lambdas, scratch);
