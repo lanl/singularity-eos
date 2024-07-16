@@ -13,6 +13,7 @@
 
 #ifdef SINGULARITY_BUILD_CLOSURE
 
+#include <array>
 #include <string>
 #include <vector>
 
