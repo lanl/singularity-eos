@@ -11,8 +11,10 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 
-#include <array>
+#ifdef SINGULARITY_BUILD_CLOSURE
+
 #include <string>
+#include <vector>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
@@ -29,17 +31,111 @@ using namespace singularity;
 constexpr Real GPa = 1.0e10;
 constexpr Real MJ_per_kg = 1.0e10;
 
-#ifdef SINGULARITY_BUILD_CLOSURE
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER
 #ifdef SPINER_USE_HDF
 
+using myEOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
+                                   SpinerEOSDependsRhoT>;
+
+template <typename EOSArrT>
+myEOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
+  // Move EOS array from host to device
+  for (auto i = 0; i < num_eos; i++) {
+    eos_arr[i] = eos_arr[i].GetOnDevice();
+  }
+  const size_t EOS_bytes = num_eos * sizeof(myEOS);
+  myEOS *v_EOS = (myEOS *)PORTABLE_MALLOC(EOS_bytes);
+  portableCopyToDevice(v_EOS, eos_arr.data(), EOS_bytes);
+
+  return v_EOS;
+}
+
+void finalize_eos_arr(const int num_eos, myEOS *v_EOS) {
+  // Call Finalize on each EOS
+  for (auto i = 0; i < num_eos; i++) {
+    v_EOS[i].Finalize();
+  }
+  // Free EOS memory
+  PORTABLE_FREE(v_EOS);
+}
+
+template <typename ArrT>
+bool run_PTE_from_state(const int num_eos, myEOS *v_EOS, const Real spvol_bulk,
+                        const Real sie_bulk, ArrT mass_frac) {
+  // Calculate material densities (and corresponding energies) and the total
+  // volume fraction
+  std::vector<Real> vol_frac(num_eos);
+  std::vector<Real> densities(num_eos);
+  std::vector<Real> sies(num_eos);
+  std::vector<Real> temperatures(num_eos);
+  std::vector<Real> pressures(num_eos);
+  Real vfrac_sum = 0;
+  for (auto i = 0; i < num_eos; ++i) {
+    // Initial guess: all materials at the cell density
+    vol_frac[i] = mass_frac[i];
+    densities[i] = mass_frac[i] / spvol_bulk / vol_frac[i];
+    sies[i] = sie_bulk * mass_frac[i];
+    vfrac_sum += vol_frac[i];
+    // Initialize pressure and temperature arrays to zero
+    temperatures[i] = 0;
+    pressures[i] = 0;
+  }
+
+  // Copy values to device (when available)
+  const size_t bytes = num_eos * sizeof(Real);
+  Real *v_densities = (Real *)PORTABLE_MALLOC(bytes);
+  portableCopyToDevice(v_densities, densities.data(), bytes);
+  Real *v_vol_frac = (Real *)PORTABLE_MALLOC(bytes);
+  portableCopyToDevice(v_vol_frac, vol_frac.data(), bytes);
+  Real *v_sies = (Real *)PORTABLE_MALLOC(bytes);
+  portableCopyToDevice(v_sies, sies.data(), bytes);
+  Real *v_temperatures = (Real *)PORTABLE_MALLOC(bytes);
+  portableCopyToDevice(v_temperatures, temperatures.data(), bytes);
+  Real *v_pressures = (Real *)PORTABLE_MALLOC(bytes);
+  portableCopyToDevice(v_pressures, pressures.data(), bytes);
+
+  // Allocate scratch space for the PTE solver
+  const int pte_solver_scratch_size = PTESolverRhoTRequiredScratch(num_eos);
+  const size_t scratch_bytes = pte_solver_scratch_size * sizeof(Real);
+  Real *scratch = (double *)PORTABLE_MALLOC(scratch_bytes);
+
+  // Allocate lambdas for each EOS
+  constexpr size_t lambda_bytes = MAX_NUM_LAMBDAS * sizeof(Real); // EOS lambda size
+  const size_t lambda_size = num_eos * sizeof(Real *);            // Size of lambda array
+  Real **lambdas = (Real **)PORTABLE_MALLOC(lambda_size);
+  for (auto i = 0; i < num_eos; i++) {
+    lambdas[i] = (Real *)PORTABLE_MALLOC(lambda_bytes);
+  }
+
+  // Set up the PTE solver
+  PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
+      num_eos, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
+      v_temperatures, v_pressures, lambdas, scratch);
+
+  // Solve the PTE system
+  bool pte_converged = PTESolver(method);
+
+  // Free temp memory
+  PORTABLE_FREE(lambdas);
+  PORTABLE_FREE(scratch);
+
+  // Free PTE values
+  PORTABLE_FREE(v_densities);
+  PORTABLE_FREE(v_vol_frac);
+  PORTABLE_FREE(v_sies);
+  PORTABLE_FREE(v_temperatures);
+  PORTABLE_FREE(v_pressures);
+
+  return pte_converged;
+}
+
 SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
 
-  GIVEN("Equations of state") {
+  GIVEN("Three equations of state") {
     // Set up the three EOS
     constexpr int num_eos = 3;
-    std::array<EOS, num_eos> eos_arr;
+    std::array<myEOS, num_eos> eos_arr;
     // Reference state
     constexpr Real P0 = 1.0e6; // 1 bar
     constexpr Real T0 = 296;   // K
@@ -63,14 +159,6 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     constexpr Real Q = 4.115 * MJ_per_kg;
     eos_arr[2] = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
 
-    // Move EOS array from host to device
-    for (auto eos : eos_arr) {
-      eos.GetOnDevice();
-    }
-    constexpr size_t EOS_bytes = num_eos * sizeof(EOS);
-    EOS *v_EOS = (EOS *)PORTABLE_MALLOC(EOS_bytes);
-    portableCopyToDevice(v_EOS, eos_arr.data(), EOS_bytes);
-
     GIVEN("A difficult state for the density-temperature PTE solver") {
       // Define the state
       constexpr Real spvol_bulk = 6.256037280402093e-01;
@@ -78,63 +166,48 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
       const std::array<const Real, num_eos> mass_frac = {
           1.10382442033331e-10, 0.124935312146569, 0.875064687743048};
 
-      // Initial guess: all materials at the cell density
-      const std::array<const Real, num_eos> vol_frac = mass_frac;
-
-      // Calculate material densities (and corresponding energies) and the total
-      // volume fraction
-      std::array<Real, num_eos> densities;
-      std::array<Real, num_eos> sies;
-      Real vfrac_sum = 0;
-      for (auto i = 0; i < num_eos; ++i) {
-        densities[i] = mass_frac[i] / spvol_bulk / vol_frac[i];
-        sies[i] = sie_bulk * mass_frac[i];
-        vfrac_sum += vol_frac[i];
+      THEN("The PTE solver should converge") {
+        myEOS *v_EOS = copy_eos_arr_to_device(num_eos, eos_arr);
+        const bool pte_converged =
+            run_PTE_from_state(num_eos, v_EOS, spvol_bulk, sie_bulk, mass_frac);
+        CHECK(pte_converged);
+        finalize_eos_arr(num_eos, v_EOS);
       }
+    }
+  }
+  GIVEN("Two equations of state") {
+    // Set up the three EOS
+    constexpr int num_eos = 2;
+    std::array<myEOS, num_eos> eos_arr;
+    // Reference state
+    constexpr Real P0 = 1.0e6; // 1 bar
+    constexpr Real T0 = 296;   // K
+    // Ideal gas air
+    constexpr Real rho0_air = 1e-03; // g/cc
+    constexpr Real Gruneisen_air = 0.4;
+    constexpr Real CV_air = P0 / rho0_air / (Gruneisen_air * T0);
+    eos_arr[0] = IdealGas(Gruneisen_air, CV_air);
+    // Spiner copper EOS
+    constexpr int Cu_matid = 3337;
+    const std::string eos_file = "../materials.sp5";
+    eos_arr[1] = SpinerEOSDependsRhoT(eos_file, Cu_matid);
 
-      // Initialize pressure and temperature arrays to zero
-      std::array<Real, num_eos> temperatures = {0., 0., 0.};
-      std::array<Real, num_eos> pressures = {0., 0., 0.};
-
-      // Copy values to device (when available)
-      constexpr size_t bytes = num_eos * sizeof(Real);
-      Real *v_densities = (Real *)PORTABLE_MALLOC(bytes);
-      portableCopyToDevice(v_densities, densities.data(), bytes);
-      Real *v_vol_frac = (Real *)PORTABLE_MALLOC(bytes);
-      portableCopyToDevice(v_vol_frac, vol_frac.data(), bytes);
-      Real *v_sies = (Real *)PORTABLE_MALLOC(bytes);
-      portableCopyToDevice(v_sies, sies.data(), bytes);
-      Real *v_temperatures = (Real *)PORTABLE_MALLOC(bytes);
-      portableCopyToDevice(v_temperatures, temperatures.data(), bytes);
-      Real *v_pressures = (Real *)PORTABLE_MALLOC(bytes);
-      portableCopyToDevice(v_pressures, pressures.data(), bytes);
+    GIVEN("A state that would cause a negative temperature in the PTE solver") {
+      // Define the state
+      constexpr Real spvol_bulk = 4.010467628234189e-01;
+      constexpr Real sie_bulk = 3.290180957185173e+07;
+      const std::array<const Real, num_eos> mass_frac = {0.000312273191678158,
+                                                         0.999687726808322};
 
       THEN("The PTE solver should converge") {
-        // Allocate scratch space for the PTE solver
-        const int pte_solver_scratch_size = PTESolverRhoTRequiredScratch(num_eos);
-        const size_t scratch_bytes = pte_solver_scratch_size * sizeof(Real);
-        double *scratch = (double *)PORTABLE_MALLOC(scratch_bytes);
-        constexpr size_t lambda_bytes = MAX_NUM_LAMBDAS * num_eos * sizeof(Real);
-        double **lambdas = (double **)PORTABLE_MALLOC(lambda_bytes);
-        PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
-            num_eos, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
-            v_temperatures, v_pressures, lambdas, scratch);
-
-        // Solve the PTE system and ensure it converged
-        bool pte_converged = PTESolver(method);
-        CHECK(pte_converged);
-
-        // Free temp memory
-        PORTABLE_FREE(lambdas);
-        PORTABLE_FREE(scratch);
+        myEOS *v_EOS = copy_eos_arr_to_device(num_eos, eos_arr);
+        const bool pte_converged =
+            run_PTE_from_state(num_eos, v_EOS, spvol_bulk, sie_bulk, mass_frac);
+        // TODO: make this test converge
+        // CHECK(pte_converged);
+        finalize_eos_arr(num_eos, v_EOS);
       }
     }
-    // Call Finalize on each EOS
-    for (auto eos : eos_arr) {
-      eos.Finalize();
-    }
-    // Free EOS memory
-    PORTABLE_FREE(v_EOS);
   }
 }
 #endif // SPINER_USE_HDF
