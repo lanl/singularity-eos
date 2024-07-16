@@ -42,11 +42,12 @@ template <typename EOSArrT>
 myEOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
   // Move EOS array from host to device
   const size_t EOS_bytes = num_eos * sizeof(myEOS);
-  myEOS *v_EOS = (myEOS *)PORTABLE_MALLOC(EOS_bytes);
   for (auto i = 0; i < num_eos; i++) {
-    v_EOS[i] = eos_arr[i].GetOnDevice();
+    eos_arr[i] = eos_arr[i].GetOnDevice();
   }
-
+  myEOS *v_EOS = (myEOS *)PORTABLE_MALLOC(EOS_bytes);
+  const size_t bytes = num_eos * sizeof(myEOS);
+  portableCopyToDevice(v_EOS, eos_arr.data(), bytes);
   return v_EOS;
 }
 
@@ -116,7 +117,11 @@ bool run_PTE_from_state(const int num_eos, myEOS *v_EOS, const Real spvol_bulk,
   bool pte_converged = PTESolver(method);
 
   // Free temp memory
-  PORTABLE_FREE(lambdas);
+  for (auto i = 0; i < num_eos; i++) {
+    // Free each lambda separately first
+    PORTABLE_FREE(lambdas[i]);
+  }
+  PORTABLE_FREE(lambdas); // Free entire lambda array
   PORTABLE_FREE(scratch);
 
   // Free PTE values
