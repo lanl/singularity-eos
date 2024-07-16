@@ -27,31 +27,37 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using namespace singularity;
-
 constexpr Real GPa = 1.0e10;
 constexpr Real MJ_per_kg = 1.0e10;
 
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
-using myEOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
+using singularity::IdealGas;
+using singularity::ShiftedEOS;
+using singularity::DavisProducts;
+using singularity::SpinerEOSDependsRhoT;
+using singularity::PTESolverRhoT;
+using singularity::PTESolverRhoTRequiredScratch;
+using singularity::MAX_NUM_LAMBDAS;
+
+using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
                                    SpinerEOSDependsRhoT>;
 
 template <typename EOSArrT>
-myEOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
+EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
   // Move EOS array from host to device
-  const size_t EOS_bytes = num_eos * sizeof(myEOS);
+  const size_t EOS_bytes = num_eos * sizeof(EOS);
   for (auto i = 0; i < num_eos; i++) {
     eos_arr[i] = eos_arr[i].GetOnDevice();
   }
-  myEOS *v_EOS = (myEOS *)PORTABLE_MALLOC(EOS_bytes);
-  const size_t bytes = num_eos * sizeof(myEOS);
+  EOS *v_EOS = (EOS *)PORTABLE_MALLOC(EOS_bytes);
+  const size_t bytes = num_eos * sizeof(EOS);
   portableCopyToDevice(v_EOS, eos_arr.data(), bytes);
   return v_EOS;
 }
 
-void finalize_eos_arr(const int num_eos, myEOS *v_EOS) {
+void finalize_eos_arr(const int num_eos, EOS *v_EOS) {
   // Call Finalize on each EOS
   for (auto i = 0; i < num_eos; i++) {
     v_EOS[i].Finalize();
@@ -61,7 +67,7 @@ void finalize_eos_arr(const int num_eos, myEOS *v_EOS) {
 }
 
 template <typename ArrT>
-bool run_PTE_from_state(const int num_eos, myEOS *v_EOS, const Real spvol_bulk,
+bool run_PTE_from_state(const int num_eos, EOS *v_EOS, const Real spvol_bulk,
                         const Real sie_bulk, ArrT mass_frac) {
   // Calculate material densities (and corresponding energies) and the total
   // volume fraction
@@ -139,7 +145,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
   GIVEN("Three equations of state") {
     // Set up the three EOS
     constexpr int num_eos = 3;
-    std::array<myEOS, num_eos> eos_arr;
+    std::array<EOS, num_eos> eos_arr;
     // Reference state
     constexpr Real P0 = 1.0e6; // 1 bar
     constexpr Real T0 = 296;   // K
@@ -171,7 +177,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
           1.10382442033331e-10, 0.124935312146569, 0.875064687743048};
 
       THEN("The PTE solver should converge") {
-        myEOS *v_EOS = copy_eos_arr_to_device(num_eos, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device(num_eos, eos_arr);
         const bool pte_converged =
             run_PTE_from_state(num_eos, v_EOS, spvol_bulk, sie_bulk, mass_frac);
         CHECK(pte_converged);
@@ -182,7 +188,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
   GIVEN("Two equations of state") {
     // Set up the three EOS
     constexpr int num_eos = 2;
-    std::array<myEOS, num_eos> eos_arr;
+    std::array<EOS, num_eos> eos_arr;
     // Reference state
     constexpr Real P0 = 1.0e6; // 1 bar
     constexpr Real T0 = 296;   // K
@@ -204,7 +210,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
                                                          0.999687726808322};
 
       THEN("The PTE solver should converge") {
-        myEOS *v_EOS = copy_eos_arr_to_device(num_eos, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device(num_eos, eos_arr);
         const bool pte_converged =
             run_PTE_from_state(num_eos, v_EOS, spvol_bulk, sie_bulk, mass_frac);
         // TODO: make this test converge
