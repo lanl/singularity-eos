@@ -114,13 +114,17 @@ bool run_PTE_from_state(const int num_eos, EOS *v_EOS, const Real spvol_bulk,
     lambdas[i] = (Real *)PORTABLE_MALLOC(lambda_bytes);
   }
 
-  // Set up the PTE solver
-  PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
-      num_eos, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
-      v_temperatures, v_pressures, lambdas, scratch);
-
-  // Solve the PTE system
-  bool pte_converged = PTESolver(method);
+  // Solve the PTE system on device using a one-teration portableFor
+  bool pte_converged;
+  constexpr size_t bool_bytes = 1 * sizeof(bool);
+  bool *pte_converged_d = (bool *)PORTABLE_MALLOC(bool_bytes);
+  portableFor("Device execution of PTE Test", 0, 1, PORTABLE_LAMBDA(auto i) {
+    PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
+    num_eos, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
+    v_temperatures, v_pressures, lambdas, scratch);
+    pte_converged_d[0] = PTESolver(method);
+  });
+  portableCopyToHost(&pte_converged, pte_converged_d, bool_bytes);
 
   // Free temp memory
   for (auto i = 0; i < num_eos; i++) {
