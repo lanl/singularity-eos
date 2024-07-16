@@ -41,12 +41,11 @@ using myEOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisPro
 template <typename EOSArrT>
 myEOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
   // Move EOS array from host to device
-  for (auto i = 0; i < num_eos; i++) {
-    eos_arr[i] = eos_arr[i].GetOnDevice();
-  }
   const size_t EOS_bytes = num_eos * sizeof(myEOS);
   myEOS *v_EOS = (myEOS *)PORTABLE_MALLOC(EOS_bytes);
-  portableCopyToDevice(v_EOS, eos_arr.data(), EOS_bytes);
+  for (auto i = 0; i < num_eos; i++) {
+    v_EOS[i] = eos_arr[i].GetOnDevice();
+  }
 
   return v_EOS;
 }
