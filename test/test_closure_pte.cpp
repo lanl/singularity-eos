@@ -33,16 +33,16 @@ constexpr Real MJ_per_kg = 1.0e10;
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
-using singularity::IdealGas;
-using singularity::ShiftedEOS;
 using singularity::DavisProducts;
-using singularity::SpinerEOSDependsRhoT;
+using singularity::IdealGas;
+using singularity::MAX_NUM_LAMBDAS;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
-using singularity::MAX_NUM_LAMBDAS;
+using singularity::ShiftedEOS;
+using singularity::SpinerEOSDependsRhoT;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
-                                   SpinerEOSDependsRhoT>;
+                                 SpinerEOSDependsRhoT>;
 
 template <typename EOSArrT>
 EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
