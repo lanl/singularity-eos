@@ -33,6 +33,7 @@ constexpr Real MJ_per_kg = 1.0e10;
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
+using singularity::miximpl::CacheAccessor;
 using singularity::DavisProducts;
 using singularity::IdealGas;
 using singularity::MAX_NUM_LAMBDAS;
@@ -106,13 +107,10 @@ bool run_PTE_from_state(const int num_eos, EOS *v_EOS, const Real spvol_bulk,
   const size_t scratch_bytes = pte_solver_scratch_size * sizeof(Real);
   Real *scratch = (double *)PORTABLE_MALLOC(scratch_bytes);
 
-  // Allocate lambdas for each EOS
-  constexpr size_t lambda_bytes = MAX_NUM_LAMBDAS * sizeof(Real); // EOS lambda size
-  const size_t lambda_size = num_eos * sizeof(Real *);            // Size of lambda array
-  Real **lambdas = (Real **)PORTABLE_MALLOC(lambda_size);
-  for (auto i = 0; i < num_eos; i++) {
-    lambdas[i] = (Real *)PORTABLE_MALLOC(lambda_bytes);
-  }
+  // Allocate lambdas for all EOS and use an accessor to index into it
+  const size_t lambda_bytes = num_eos * MAX_NUM_LAMBDAS * sizeof(Real *);
+  Real *lambda_memory = (Real *)PORTABLE_MALLOC(lambda_bytes);
+  CacheAccessor lambdas = CacheAccessor(lambda_memory);
 
   // Solve the PTE system on device using a one-teration portableFor
   bool pte_converged;
@@ -128,10 +126,6 @@ bool run_PTE_from_state(const int num_eos, EOS *v_EOS, const Real spvol_bulk,
   portableCopyToHost(&pte_converged, pte_converged_d, bool_bytes);
 
   // Free temp memory
-  for (auto i = 0; i < num_eos; i++) {
-    // Free each lambda separately first
-    PORTABLE_FREE(lambdas[i]);
-  }
   PORTABLE_FREE(lambdas); // Free entire lambda array
   PORTABLE_FREE(scratch);
 
