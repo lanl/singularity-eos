@@ -33,7 +33,6 @@ constexpr Real MJ_per_kg = 1.0e10;
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
-using singularity::miximpl::CacheAccessor;
 using singularity::DavisProducts;
 using singularity::IdealGas;
 using singularity::MAX_NUM_LAMBDAS;
@@ -41,6 +40,7 @@ using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
 using singularity::ShiftedEOS;
 using singularity::SpinerEOSDependsRhoT;
+using singularity::miximpl::CacheAccessor;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
                                  SpinerEOSDependsRhoT>;
