@@ -40,7 +40,7 @@ using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
 using singularity::ShiftedEOS;
 using singularity::SpinerEOSDependsRhoT;
-using singularity::miximpl::CacheAccessor;
+using singularity::mix_impl::CacheAccessor;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
                                  SpinerEOSDependsRhoT>;
