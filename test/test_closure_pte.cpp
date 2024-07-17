@@ -34,6 +34,7 @@ constexpr Real MJ_per_kg = 1.0e10;
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
 using singularity::DavisProducts;
+using singularity::DavisReactants;
 using singularity::IdealGas;
 using singularity::MAX_NUM_LAMBDAS;
 using singularity::PTESolverRhoT;
@@ -151,24 +152,24 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     constexpr Real rho0_air = 1e-03; // g/cc
     constexpr Real Gruneisen_air = 0.4;
     constexpr Real Cv_air = P0 / rho0_air / (Gruneisen_air * T0);
-    air_eos = IdealGas(Gruneisen_air, Cv_air);
+    EOS air_eos = IdealGas(Gruneisen_air, Cv_air);
     // Spiner copper EOS
     constexpr int Cu_matid = 3337;
     const std::string eos_file = "../materials.sp5";
-    copper_eos = SpinerEOSDependsRhoT(eos_file, Cu_matid);
+    EOS copper_eos = SpinerEOSDependsRhoT(eos_file, Cu_matid);
     // Davis Reactants EOS
-    constexpr rho0_DP = 1.890;
-    constexpr e0_DP = 0.;               // erg / g
-    constexpr P0_DP = 0.;               // microbar
-    constexpr T0_DP = 297;              // K
-    constexpr A = 1.8 * std::sqrt(GPa); // sqrt(microbar)
-    constexpr B = 4.6;
-    constexpr C = 0.34;
-    constexpr G0 = 0.56;
-    constexpr Z = 0.0;
-    constexpr alpha = 0.4265;
-    constexpr Cv_DP = 0.001074 * MJ_per_kg; // erg / g / K
-    davis_r_eos =
+    constexpr Real rho0_DP = 1.890;
+    constexpr Real e0_DP = 0.;               // erg / g
+    constexpr Real P0_DP = 0.;               // microbar
+    constexpr Real T0_DP = 297;              // K
+    constexpr Real A = 1.8 * std::sqrt(GPa); // sqrt(microbar)
+    constexpr Real B = 4.6;
+    constexpr Real C = 0.34;
+    constexpr Real G0 = 0.56;
+    constexpr Real Z = 0.0;
+    constexpr Real alpha = 0.4265;
+    constexpr Real Cv_DP = 0.001074 * MJ_per_kg; // erg / g / K
+    EOS davis_r_eos =
         DavisReactants(rho0_DP, e0_DP, P0_DP, T0_DP, A, B, C, G0, Z, alpha, Cv_DP);
     // Davis Products EOS
     constexpr Real a = 0.798311;
@@ -179,7 +180,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     constexpr Real pc = 3.2 * GPa;            // microbar
     constexpr Real Cv = 0.001072 * MJ_per_kg; // erg / g / K
     constexpr Real Q = 4.115 * MJ_per_kg;
-    davis_p_eos = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
+    EOS davis_p_eos = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
 
     GIVEN("A difficult three-material state") {
       // Define the state
@@ -199,14 +200,15 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
       }
-      finalize_eos(eos_arr);
+      finalize_eos_arr(eos_arr);
     }
     GIVEN("A difficult two-material state") {
       // TODO: make this test converge
       // Define the state
       constexpr Real spvol_bulk = 4.010467628234189e-01;
       constexpr Real sie_bulk = 3.290180957185173e+07;
-      const std::array<const Real, num_eos> mass_frac = {0.000312273191678158,
+      constexpr int num_pte = 2;
+      const std::array<const Real, num_pte> mass_frac = {0.000312273191678158,
                                                          0.999687726808322};
       std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(),
                                           copper_eos.GetOnDevice()};
@@ -218,7 +220,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
       }
-      finalize_eos(eos_arr);
+      finalize_eos_arr(eos_arr);
     }
     // Clean up original EOS objects before they go out of scope
     air_eos.Finalize();     // irrelevant because no data allocated
