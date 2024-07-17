@@ -43,7 +43,7 @@ using singularity::SpinerEOSDependsRhoT;
 using singularity::mix_impl::CacheAccessor;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
-                                 SpinerEOSDependsRhoT>;
+                                 DavisReactants, SpinerEOSDependsRhoT>;
 
 template <typename EOSArrT>
 EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
@@ -58,13 +58,12 @@ EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
   return v_EOS;
 }
 
-void finalize_eos_arr(const int num_eos, EOS *v_EOS) {
-  // Call Finalize on each EOS
-  for (auto i = 0; i < num_eos; i++) {
-    v_EOS[i].Finalize();
+template <typename EOSArrT>
+void finalize_eos_arr(EOSArrT eos_arr) {
+  // Call Finalize on each EOS on the host
+  for (auto eos : eos_arr) {
+    eos.Finalize();
   }
-  // Free EOS memory
-  PORTABLE_FREE(v_EOS);
 }
 
 template <typename ArrT>
@@ -141,22 +140,35 @@ bool run_PTE_from_state(const int num_eos, EOS *v_EOS, const Real spvol_bulk,
 
 SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
 
-  GIVEN("Three equations of state") {
-    // Set up the three EOS
-    constexpr int num_eos = 3;
-    std::array<EOS, num_eos> eos_arr;
+  GIVEN("Four equations of state") {
+    // A series of tests using some subset of these four EOS
+    constexpr int num_eos = 4;
+
     // Reference state
     constexpr Real P0 = 1.0e6; // 1 bar
     constexpr Real T0 = 296;   // K
     // Ideal gas air
     constexpr Real rho0_air = 1e-03; // g/cc
     constexpr Real Gruneisen_air = 0.4;
-    constexpr Real CV_air = P0 / rho0_air / (Gruneisen_air * T0);
-    eos_arr[0] = IdealGas(Gruneisen_air, CV_air);
+    constexpr Real Cv_air = P0 / rho0_air / (Gruneisen_air * T0);
+    air_eos = IdealGas(Gruneisen_air, Cv_air);
     // Spiner copper EOS
     constexpr int Cu_matid = 3337;
     const std::string eos_file = "../materials.sp5";
-    eos_arr[1] = SpinerEOSDependsRhoT(eos_file, Cu_matid);
+    copper_eos = SpinerEOSDependsRhoT(eos_file, Cu_matid);
+    // Davis Reactants EOS
+    constexpr rho0_DP = 1.890;
+    constexpr e0_DP = 0.;  // erg / g
+    constexpr P0_DP = 0.;  // microbar
+    constexpr T0_DP = 297; // K
+    constexpr A = 1.8 * std::sqrt(GPa); // sqrt(microbar)
+    constexpr B = 4.6;
+    constexpr C = 0.34;
+    constexpr G0 = 0.56;
+    constexpr Z = 0.0;
+    constexpr alpha = 0.4265;
+    constexpr Cv_DP = 0.001074 * MJ_per_kg; // erg / g / K
+    davis_r_eos = DavisReactants(rho0_DP, e0_DP, P0_DP, T0_DP, A, B, C, G0, Z, alpha, Cv_DP);
     // Davis Products EOS
     constexpr Real a = 0.798311;
     constexpr Real b = 0.58;
@@ -166,57 +178,50 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     constexpr Real pc = 3.2 * GPa;            // microbar
     constexpr Real Cv = 0.001072 * MJ_per_kg; // erg / g / K
     constexpr Real Q = 4.115 * MJ_per_kg;
-    eos_arr[2] = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
+    davis_p_eos = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
 
-    GIVEN("A difficult state for the density-temperature PTE solver") {
+    GIVEN("A difficult three-material state") {
       // Define the state
       constexpr Real spvol_bulk = 6.256037280402093e-01;
       constexpr Real sie_bulk = -1.441692060406520e+10;
-      const std::array<const Real, num_eos> mass_frac = {
+      constexpr int num_pte = 3;
+      const std::array<const Real, num_pte> mass_frac = {
           1.10382442033331e-10, 0.124935312146569, 0.875064687743048};
+      std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(), copper_eos.GetOnDevice(), davis_p_eos.GetOnDevice()};
 
       THEN("The PTE solver should converge") {
-        EOS *v_EOS = copy_eos_arr_to_device(num_eos, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
         const bool pte_converged =
-            run_PTE_from_state(num_eos, v_EOS, spvol_bulk, sie_bulk, mass_frac);
+            run_PTE_from_state(num_pte, v_EOS, spvol_bulk, sie_bulk, mass_frac);
         CHECK(pte_converged);
-        finalize_eos_arr(num_eos, v_EOS);
+        // Free EOS copies on device
+        PORTABLE_FREE(v_EOS);
       }
+      finalize_eos(eos_arr);
     }
-  }
-  GIVEN("Two equations of state") {
-    // Set up the three EOS
-    constexpr int num_eos = 2;
-    std::array<EOS, num_eos> eos_arr;
-    // Reference state
-    constexpr Real P0 = 1.0e6; // 1 bar
-    constexpr Real T0 = 296;   // K
-    // Ideal gas air
-    constexpr Real rho0_air = 1e-03; // g/cc
-    constexpr Real Gruneisen_air = 0.4;
-    constexpr Real CV_air = P0 / rho0_air / (Gruneisen_air * T0);
-    eos_arr[0] = IdealGas(Gruneisen_air, CV_air);
-    // Spiner copper EOS
-    constexpr int Cu_matid = 3337;
-    const std::string eos_file = "../materials.sp5";
-    eos_arr[1] = SpinerEOSDependsRhoT(eos_file, Cu_matid);
-
-    GIVEN("A state that would cause a negative temperature in the PTE solver") {
+    GIVEN("A difficult two-material state") {
+      // TODO: make this test converge
       // Define the state
       constexpr Real spvol_bulk = 4.010467628234189e-01;
       constexpr Real sie_bulk = 3.290180957185173e+07;
       const std::array<const Real, num_eos> mass_frac = {0.000312273191678158,
                                                          0.999687726808322};
-
+      std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(), copper_eos.GetOnDevice()};
       THEN("The PTE solver should converge") {
         EOS *v_EOS = copy_eos_arr_to_device(num_eos, eos_arr);
         const bool pte_converged =
             run_PTE_from_state(num_eos, v_EOS, spvol_bulk, sie_bulk, mass_frac);
-        // TODO: make this test converge
         // CHECK(pte_converged);
-        finalize_eos_arr(num_eos, v_EOS);
+        // Free EOS copies on device
+        PORTABLE_FREE(v_EOS);
       }
+      finalize_eos(eos_arr);
     }
+    // Clean up original EOS objects before they go out of scope
+    air_eos.Finalize(); // irrelevant because no data allocated
+    copper_eos.Finalize(); // actually does something
+    davis_r_eos.Finalize(); // irrelevant because no data allocated
+    davis_p_eos.Finalize(); // irrelevant because no data allocated
   }
 }
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
