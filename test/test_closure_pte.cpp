@@ -126,7 +126,7 @@ bool run_PTE_from_state(const int num_eos, EOS *v_EOS, const Real spvol_bulk,
   portableCopyToHost(&pte_converged, pte_converged_d, bool_bytes);
 
   // Free temp memory
-  PORTABLE_FREE(lambdas); // Free entire lambda array
+  PORTABLE_FREE(lambda_memory); // Free entire lambda array
   PORTABLE_FREE(scratch);
 
   // Free PTE values
