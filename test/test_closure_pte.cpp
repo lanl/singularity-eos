@@ -158,9 +158,9 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     copper_eos = SpinerEOSDependsRhoT(eos_file, Cu_matid);
     // Davis Reactants EOS
     constexpr rho0_DP = 1.890;
-    constexpr e0_DP = 0.;  // erg / g
-    constexpr P0_DP = 0.;  // microbar
-    constexpr T0_DP = 297; // K
+    constexpr e0_DP = 0.;               // erg / g
+    constexpr P0_DP = 0.;               // microbar
+    constexpr T0_DP = 297;              // K
     constexpr A = 1.8 * std::sqrt(GPa); // sqrt(microbar)
     constexpr B = 4.6;
     constexpr C = 0.34;
@@ -168,7 +168,8 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     constexpr Z = 0.0;
     constexpr alpha = 0.4265;
     constexpr Cv_DP = 0.001074 * MJ_per_kg; // erg / g / K
-    davis_r_eos = DavisReactants(rho0_DP, e0_DP, P0_DP, T0_DP, A, B, C, G0, Z, alpha, Cv_DP);
+    davis_r_eos =
+        DavisReactants(rho0_DP, e0_DP, P0_DP, T0_DP, A, B, C, G0, Z, alpha, Cv_DP);
     // Davis Products EOS
     constexpr Real a = 0.798311;
     constexpr Real b = 0.58;
@@ -187,7 +188,8 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
       constexpr int num_pte = 3;
       const std::array<const Real, num_pte> mass_frac = {
           1.10382442033331e-10, 0.124935312146569, 0.875064687743048};
-      std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(), copper_eos.GetOnDevice(), davis_p_eos.GetOnDevice()};
+      std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(), copper_eos.GetOnDevice(),
+                                          davis_p_eos.GetOnDevice()};
 
       THEN("The PTE solver should converge") {
         EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
@@ -206,7 +208,8 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
       constexpr Real sie_bulk = 3.290180957185173e+07;
       const std::array<const Real, num_eos> mass_frac = {0.000312273191678158,
                                                          0.999687726808322};
-      std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(), copper_eos.GetOnDevice()};
+      std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(),
+                                          copper_eos.GetOnDevice()};
       THEN("The PTE solver should converge") {
         EOS *v_EOS = copy_eos_arr_to_device(num_eos, eos_arr);
         const bool pte_converged =
@@ -218,8 +221,8 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
       finalize_eos(eos_arr);
     }
     // Clean up original EOS objects before they go out of scope
-    air_eos.Finalize(); // irrelevant because no data allocated
-    copper_eos.Finalize(); // actually does something
+    air_eos.Finalize();     // irrelevant because no data allocated
+    copper_eos.Finalize();  // actually does something
     davis_r_eos.Finalize(); // irrelevant because no data allocated
     davis_p_eos.Finalize(); // irrelevant because no data allocated
   }
