@@ -258,7 +258,6 @@ if(SINGULARITY_USE_HIGH_RISK_MATH)
   target_compile_definitions(singularity-eos_Interface
                              INTERFACE SINGULARITY_USE_HIGH_RISK_MATH)
 endif()
-
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_TEST_SESAME)
 endif()
@@ -267,6 +266,9 @@ if(SINGULARITY_BUILD_CLOSURE)
 endif()
 if(SINGULARITY_USE_HELMHOLTZ)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_HELMHOLTZ)
+endif()
+if(SINGULARITY_USE_SPINER_WITH_HDF5)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SPINER_WITH_HDF5)
 endif()
 
 # ------------------------------------------------------------------------------#
