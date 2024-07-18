@@ -14,9 +14,9 @@
 #ifdef SINGULARITY_BUILD_CLOSURE
 
 #include <array>
+#include <cmath>
 #include <string>
 #include <vector>
-#include <cmath>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
@@ -160,9 +160,9 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     EOS copper_eos = SpinerEOSDependsRhoT(eos_file, Cu_matid);
     // Davis Reactants EOS
     constexpr Real rho0_DP = 1.890;
-    constexpr Real e0_DP = 0.;               // erg / g
-    constexpr Real P0_DP = 0.;               // microbar
-    constexpr Real T0_DP = 297;              // K
+    constexpr Real e0_DP = 0.;      // erg / g
+    constexpr Real P0_DP = 0.;      // microbar
+    constexpr Real T0_DP = 297;     // K
     constexpr Real A = 1.8 * 1.0e5; // 1.8 * sqrt(GPa) -> sqrt(microbar)
     constexpr Real B = 4.6;
     constexpr Real C = 0.34;
