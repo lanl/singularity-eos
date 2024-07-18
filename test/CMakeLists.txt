@@ -74,9 +74,9 @@ if(SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_tabulated_unit_tests
                              PRIVATE SINGULARITY_TEST_STELLAR_COLLAPSE)
 endif()
-if(SINGULARITY_USE_SPINER)
+if(SINGULARITY_USE_SPINER_WITH_HDF5)
   target_compile_definitions(closure_unit_tests
-                             PRIVATE SINGULARITY_USE_SPINER)
+                             PRIVATE SINGULARITY_USE_SPINER_WITH_HDF5)
 endif()
 if(SINGULARITY_BUILD_CLOSURE)
   target_compile_definitions(closure_unit_tests
