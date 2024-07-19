@@ -49,11 +49,8 @@ using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProdu
 
 template <typename EOSArrT>
 EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
-  // Move EOS array from host to device
+  // Assumes that GetOnDevice() has already been called for each EOS in eos_arr
   const size_t EOS_bytes = num_eos * sizeof(EOS);
-  for (auto i = 0; i < num_eos; i++) {
-    eos_arr[i] = eos_arr[i].GetOnDevice();
-  }
   EOS *v_EOS = (EOS *)PORTABLE_MALLOC(EOS_bytes);
   const size_t bytes = num_eos * sizeof(EOS);
   portableCopyToDevice(v_EOS, eos_arr.data(), bytes);
@@ -221,6 +218,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
       }
+      // Deallocates device memory for each EOS (if applicable)
       finalize_eos_arr(eos_arr);
     }
     // Clean up original EOS objects before they go out of scope
