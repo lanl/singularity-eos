@@ -1470,13 +1470,15 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
       scale = 0.5;
       Real err_mid = s.TestUpdate(scale);
       if (err_mid < err && err_mid < err_old) {
-        // try a larger step since a half step reduces the error
+        // We know the half step is better than both the full step and the
+        // prior result, so try a pseudo parabolic fit to the error and find its
+        // minimum. The `scale` value is bound between 0.75 and 0.25.
         scale = 0.75 + 0.5 * robust::ratio(err_mid - err, err - 2.0 * err_mid + err_old);
       }
       for (int line_iter = 0; line_iter < line_search_max_iter; line_iter++) {
         err = s.TestUpdate(scale);
         if (err < err_old + line_search_alpha * scale * gradfdx) break;
-        // shrink the step if the error isn't reduced
+        // shrink the step if the error isn't reduced enough
         scale *= line_search_fac;
       }
     }
