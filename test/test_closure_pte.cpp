@@ -140,9 +140,6 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
 SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
 
   GIVEN("Four equations of state") {
-    // A series of tests using some subset of these four EOS
-    constexpr int num_eos = 4;
-
     // Reference state
     constexpr Real P0 = 1.0e6; // 1 bar
     constexpr Real T0 = 296;   // K
