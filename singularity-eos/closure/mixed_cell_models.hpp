@@ -353,12 +353,9 @@ class PTESolverBase {
       Asum += vfrac[m] * robust::ratio(press[m], temp[m]);
       rhoBsum += rho[m] * vfrac[m] * robust::ratio(sie[m], temp[m]);
     }
-    PORTABLE_REQUIRE(Tnorm > 0., "Non-positive Ideal PTE temperature guess");
     Asum *= uscale / Tnorm;
     rhoBsum /= Tnorm;
-    PORTABLE_REQUIRE(rhoBsum > 0., "Non-positive Ideal PTE energy density guess");
     Tideal = uscale / rhoBsum / Tnorm;
-    PORTABLE_REQUIRE(vfrac_total > 0., "Non-positive Ideal PTE volume fraction sum");
     Pideal = robust::ratio(Tnorm * Tideal * Asum, uscale * vfrac_total);
   }
 
@@ -391,7 +388,8 @@ class PTESolverBase {
     const Real alpha = robust::ratio(Pideal, Tideal);
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] *= robust::ratio(press[m], (temp[m] * alpha));
-      if (robust::ratio(rhobar[m], vfrac[m]) < eos[m].RhoPmin(Tnorm * Tideal)) {
+      if (Tnorm * Tideal < 0 ||
+          robust::ratio(rhobar[m], vfrac[m]) < eos[m].RhoPmin(Tnorm * Tideal)) {
         // abort because this is putting this material into a bad state
         for (int n = m; n >= 0; n--)
           vfrac[n] = vtemp[n];
