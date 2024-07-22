@@ -108,6 +108,7 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_BUILD_CLOSURE``           OFF      Build the mixed cell closure models
  ``SINGULARITY_BUILD_TESTS``             OFF      Build test infrastructure.
  ``SINGULARITY_BUILD_PYTHON``            OFF      Build Python bindings.
+ ``SINGULARITY_BUILD_PYTHON``            OFF      Build examples of ``singularity-eos`` in use.
  ``SINGULARITY_INVERT_AT_SETUP``         OFF      For tests, pre-invert eospac tables.
  ``SINGULARITY_BETTER_DEBUG_FLAGS``      ON       Enables nicer GPU debug flags. May interfere with in-tree builds as a submodule.
  ``SINGULARITY_HIDE_MORE_WARNINGS``      OFF      Makes warnings less verbose. May interfere with in-tree builds as a submodule.
