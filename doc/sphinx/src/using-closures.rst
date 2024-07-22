@@ -3,7 +3,7 @@
 Mixed Cell Closures
 ====================
 
-In the single-material Euler equations, the mass and energy are typically
+In the single-material Euler equations, mass and energy are typically
 evolved and the EOS is called to provide a pressure for the momentum equations.
 When transitioning to a multi-material approach, a single velocity is typically
 used and the Euler equations are solved with respect to the bulk fluid motion.
@@ -20,7 +20,7 @@ to compute thermodynamic quantities in that cell for each material.
 Governing Equations and Assumptions
 ------------------------------------
 
-In a general sense then the mixed
+In a general sense the mixed
 material closure rule takes the form
 
 .. math::
@@ -75,7 +75,7 @@ Similarly the energy can be summed in a similar way so that
 
 .. math::
 
-  u = \rho \epsilon = \sum_{i = 0}^{N - 1} \rho_i \epsilon_i 
+  u = \rho \epsilon = \sum_{i = 0}^{N - 1} \rho_i \epsilon_i
   = \sum_{i = 0}^{N - 1} u_i
 
 where :math:`u` is the total internal energy density (internal energy per unit
@@ -156,7 +156,7 @@ closure state.
   fractions by the material bulk moduli to reflect the relative
   compressibilities.
 
-Pressure-Temperature Equilibirum
+Pressure-Temperature Equilibrium
 --------------------------------
 
 At present, ``singularity-eos`` focuses on several methods for finding a PTE
@@ -169,12 +169,12 @@ In essence, the PTE equations can be posed as two residual equations:
 
 .. math::
 
-  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i = 
+  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i =
     \sum\limits_{i=0}^{N-1} f_i^*(x_i^*, y_i^*) - f_i(x_i, y_i)
 
 .. math::
 
-  u_\mathrm{tot} - \sum\limits_{i=0}^{N-1} u_i = 
+  u_\mathrm{tot} - \sum\limits_{i=0}^{N-1} u_i =
     \sum\limits_{i=0}^{N-1} u_i^*(x_i^*, y_i^*) - u_i(x_i, y_i)
 
 where the superscript :math:`^*` denotes the variables at the PTE state,
@@ -267,7 +267,7 @@ derivatives must be transformed to volume fraction derivatives via
 
 .. math::
 
-  \left(\frac{\partial Q}{\partial f_i}\right)_X 
+  \left(\frac{\partial Q}{\partial f_i}\right)_X
     = - \frac{\rho_i^2}{\rho}\left(\frac{\partial Q}{\partial \rho_i}\right)_X,
 
 were :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this

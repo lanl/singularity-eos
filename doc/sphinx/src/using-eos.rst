@@ -646,7 +646,7 @@ returns the the bulk modulus
 
 .. math::
 
-  B_s = (\partial P/\partial \rho)_s
+  B_s = \rho (\partial P/\partial \rho)_s
 
 in units of :math:`g cm^2/s^2` given density in :math:`g/cm^3` and
 temperature in Kelvin. For most material models, the square of the
