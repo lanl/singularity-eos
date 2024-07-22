@@ -6,7 +6,7 @@ Contributing
 =============
 
 If you have any trouble with the project, or are interested in
-participating, please contact us by creating an issue on the github
+participating, please contact us by creating an issue on the GitHub
 repository, or submit a pull request!
 
 Pull request protocol
@@ -37,7 +37,7 @@ useful output. For example:
 
 Several sets of tests are triggered on a pull request: a static format
 check, a docs buld, and unit tests of analytic models and the stellar
-collapse model. These are run through github's CPU infrastructure. We
+collapse model. These are run through GitHub's CPU infrastructure. We
 have a second set of tests run on a wider set of architectures that
 also access the Sesame library, which we are not able to make public.
 
@@ -127,7 +127,7 @@ Interwoven Dependencies
 ``singularity-eos`` depends on several other open-source, Los Alamos
 maintained, projects. In particular, ``spiner`` and
 ``ports-of-call``. If you have issues with these projects, ideally
-submit issues on the relevant github pages. However, if you can't
+submit issues on the relevant GitHub pages. However, if you can't
 figure out where an issue belongs, no big deal. Submit where you can
 and we'll engage with you to figure out how to proceed.
 
@@ -217,7 +217,7 @@ wrapped with ``#ifdef SINGULARITY_USE_EOSPAC``. This might look something like
     #endif
            >{};
 
-Note the placement of commas and angle brackets. This example excludes 
+Note the placement of commas and angle brackets. This example excludes
 
 Step 3: Create tests for your EOS
 `````````````````````````````````
@@ -229,7 +229,7 @@ same. In general, we recommend you copy the general structure of one of the
 existing EOS-specific unit tests.
 
 After creating your tests, you will need to include the ``.cpp`` for your new
-test in the ``CMakeLists.txt`` file, 
+test in the ``CMakeLists.txt`` file,
 
 .. code-block:: cmake
 
@@ -402,7 +402,7 @@ Some notes on style and code architecture
   but many of the coding habits advocated for by Holzmann produce
   long-lived, easy to understand, easy to parse, and easy to maintain code.
   And we take many of the rules to heart. Here are a few that are most
-  relevant to ``singularity-eos``. They have been adapted slightly to 
+  relevant to ``singularity-eos``. They have been adapted slightly to
   our context.
 
     #. Avoid complex flow constructs such as gotos.
@@ -458,7 +458,7 @@ style. Here we briefly discuss a few things one should be aware of.
   ``PORTABLE_FORCEINLINE_FUNCTION``. These macros are imported from
   the `ports-of-call`_ library and resolve to the appropriate
   decorations for a given device-side backend such as cuda so the code
-  compiles correctly. Code that doesn't need to run on device, 
+  compiles correctly. Code that doesn't need to run on device,
   such as EOS class constructors, does not need these decorations.
 
 * **Relocatable device code:** It is common in C++ to split code
@@ -714,7 +714,7 @@ Main``. Typically the branch for this merge request should be called
 full test suite passes for this PR.
 
 After that pull request is merged, go to the ``releases`` tab on the
-right sidebar on github, and draft a new release. Set the tag to
+right sidebar on GitHub, and draft a new release. Set the tag to
 ``v[release number]``, fill the comment with the changes in the
 changelog since the last release, and make the release.
 
