@@ -57,3 +57,9 @@ internal energy to evaluate at.
 
 The example demonstrates how to call the pressure, energy, and
 thermodynamic derivatives of a table at that point in phase space.
+
+Plugins
+----------
+
+The example directory also contains an example plugin that can be
+included via the plugin infrastructure, as described in :ref:`our customization section <customization>`.
