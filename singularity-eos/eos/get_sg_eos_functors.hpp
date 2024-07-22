@@ -144,8 +144,8 @@ struct init_functor {
       PORTABLE_ALWAYS_ABORT(
           "Bad values INPUT to singularity-eos interface. See output for details");
     }
-  }
 #endif // #ifndef NDEBUG
+  }
 };
 
 struct final_functor {
@@ -376,8 +376,8 @@ struct final_functor {
       PORTABLE_ALWAYS_ABORT(
           "Bad value RETURNED from singularity-eos. See output for details");
     }
-  }
 #endif // #ifndef NDEBUG
+  }
 };
 
 } // namespace singularity
