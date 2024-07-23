@@ -38,8 +38,9 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
         const int32_t tid{small_loop ? iloop : token};
         double mass_sum{0.0};
         int npte{0};
+        double vfrac_sum{0.0};
         // initialize values for solver / lookup
-        i_func(i, tid, mass_sum, npte, 0.0, 0.0, 1.0);
+        i_func(i, tid, mass_sum, npte, vfrac_sum, 0.0, 0.0, 1.0);
         Real sie_tot_true{0.0};
         // need to initialize the scratch before it's used to avoid undefined behavior
         for (int idx = 0; idx < solver_scratch.extent(1); ++idx) {
@@ -54,9 +55,9 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           // eos accessor
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
           PTESolverFixedP<singularity::EOSAccessor_, Real *, Real *> method(
-              npte, eos_inx, 1.0, press_pte(tid, 0), &rho_pte(tid, 0), &vfrac_pte(tid, 0),
-              &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), cache[0],
-              &solver_scratch(tid, 0));
+              npte, eos_inx, vfrac_sum, press_pte(tid, 0), &rho_pte(tid, 0),
+              &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0),
+              cache[0], &solver_scratch(tid, 0));
           pte_converged = PTESolver(method);
           // calculate total sie
           for (int mp = 0; mp < npte; ++mp) {
