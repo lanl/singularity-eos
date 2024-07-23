@@ -78,7 +78,7 @@ And that's it!
 Going Deeper
 --------------
 
-* You can find code examples in the ``example`` source directory.
+* You can find code examples in the ``example`` source directory. We describe them :ref:`here <examples>`.
 * To learn more about the design philosophy, look :ref:`here <philosophy>`.
 * To learn about how to build, look at :ref:`our build document <building>`.
 * To learn more about the equation of state API, look :ref:`here <using-eos>`.

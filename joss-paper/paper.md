@@ -96,7 +96,7 @@ specific internal energy. All capabilities are performance portable,
 meaning they compile and run on both CPU and GPU for a wide variety of
 architectures.
 
-# Statement of need
+# Statement of need and State of the Field
 
 When expressed mathematically for continuous materials, the laws of
 conservation of mass, energy, and momentum form the Navier-Stokes
@@ -140,8 +140,6 @@ material properties of the cell are as a whole. This is called a
 *mixed cell closure.* One such closure is
 *pressure-temperature equilibrium* (PTE), where all materials
 in the cell are assumed to be at the same pressure and temperature.
-
-# State of the Field
 
 Typically fluid dynamics codes each develop an EOS package
 individually to meet a given problem's needs. Databases of tabulated

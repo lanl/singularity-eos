@@ -15,6 +15,7 @@ Documentation approved for unlimited release. LA-UR-21-31131.
    :caption: Contents:
 
    src/getting-started
+   src/examples
    src/philosophy
    src/building
    src/integration
