@@ -3,7 +3,7 @@
 Examples
 =========
 
-The ``examples`` directory of ``singularity-eos`` contains several
+The ``example`` directory of ``singularity-eos`` contains several
 examples of using the code. You can build the examples by setting
 ``-DSINGULARITY_BUILD_EXAMPLES=ON`` at ``CMake`` configuration
 time. For example:
