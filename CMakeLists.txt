@@ -238,8 +238,9 @@ if(SINGULARITY_SUBMODULE_MODE)
       CACHE BOOL "" FORCE)
 endif()
 
-# side-projects TODO: hdf5 again if(SINGULARITY_BUILD_EXAMPLES)
-# add_subdirectory(example) endif()
+if(SINGULARITY_BUILD_EXAMPLES)
+  add_subdirectory(example)
+endif()
 
 # add subdirs
 if(SINGULARITY_BUILD_PYTHON)
