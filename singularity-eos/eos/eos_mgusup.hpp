@@ -44,26 +44,43 @@ class MGUsup : public EosBase<MGUsup> {
   }
 
   MGUsup GetOnDevice() { return *this; }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
+  PressureFromDensityTemperature(const Real rho, const Real temp,
+                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  EntropyFromDensityTemperature(const Real rho, const Real temp,
+                                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv0;
   }
   // added for testing AEM Dec 2023
@@ -71,30 +88,45 @@ class MGUsup : public EosBase<MGUsup> {
   PORTABLE_INLINE_FUNCTION Real HugInternalEnergyFromDensity(const Real rho) const;
   PORTABLE_INLINE_FUNCTION Real HugTemperatureFromDensity(const Real rho) const;
   // Thermal Bulk Modulus added AEM Dec 2022
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TBulkModulusFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Thermal expansion coefficient added AEM 2022
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TExpansionCoeffFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return robust::ratio(_G0 * _rho0, rho);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return robust::ratio(_G0 * _rho0, rho);
   }
-  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
-                                        Real &cv, Real &bmod, const unsigned long output,
-                                        Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+          const unsigned long output,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(MGUsup)
@@ -112,9 +144,10 @@ class MGUsup : public EosBase<MGUsup> {
     printf("\n\n");
   }
   // Density/Energy from P/T not unique, if used will give error
+  template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
-                                       Real &rho, Real &sie) const;
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("MGUsup"); }
   static std::string EosPyType() { return EosType(); }
@@ -201,34 +234,37 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::HugTemperatureFromDensity(Real rho) const 
   return temp;
 }
 
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real MGUsup::InternalEnergyFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real value =
       HugInternalEnergyFromDensity(rho) + _Cv0 * (temp - HugTemperatureFromDensity(rho));
   return value;
 }
-PORTABLE_INLINE_FUNCTION Real MGUsup::PressureFromDensityTemperature(const Real rho,
-                                                                     const Real temp,
-                                                                     Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real MGUsup::PressureFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real value = HugPressureFromDensity(rho) +
                _G0 * _rho0 * _Cv0 * (temp - HugTemperatureFromDensity(rho));
   return value;
 }
-PORTABLE_INLINE_FUNCTION Real MGUsup::EntropyFromDensityTemperature(const Real rho,
-                                                                    const Real temp,
-                                                                    Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real MGUsup::EntropyFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = _S0 - _G0 * _Cv0 * eta + _Cv0 * std::log(temp / _T0);
   return value;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real MGUsup::TExpansionCoeffFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real value =
       robust::ratio(_Cv0 * _rho0 * _G0, TBulkModulusFromDensityTemperature(rho, temp));
   return value;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real MGUsup::TBulkModulusFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = robust::ratio((1.0 + _s * eta - _G0 * _s * eta * eta), (1.0 - _s * eta));
   if (eta == 0.0) {
@@ -240,8 +276,9 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::TBulkModulusFromDensityTemperature(
   value = robust::ratio(_rho0, rho) * value;
   return value;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real MGUsup::BulkModulusFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value =
       robust::ratio((1.0 + _s * eta - _G0 * _s * eta * eta), eta * (1.0 - _s * eta));
@@ -254,8 +291,9 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::BulkModulusFromDensityTemperature(
   value = robust::ratio(_rho0, rho) * value;
   return value;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real MGUsup::TemperatureFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real value =
       (sie - HugInternalEnergyFromDensity(rho)) / _Cv0 + HugTemperatureFromDensity(rho);
   if (value < 0.0) {
@@ -266,19 +304,22 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::TemperatureFromDensityInternalEnergy(
   }
   return value;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real MGUsup::PressureFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real value = HugPressureFromDensity(rho) +
                _rho0 * _G0 * (sie - HugInternalEnergyFromDensity(rho));
   return value;
 }
-PORTABLE_INLINE_FUNCTION Real MGUsup::MinInternalEnergyFromDensity(const Real rho,
-                                                                   Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+MGUsup::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
   MinInternalEnergyIsNotEnabled("MGUsup");
   return 0.0;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real MGUsup::EntropyFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = std::log(TemperatureFromDensityInternalEnergy(rho, sie) / _T0);
   value = _S0 - _G0 * _Cv0 * eta + _Cv0 * value;
@@ -290,8 +331,9 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::EntropyFromDensityInternalEnergy(
   }
   return value;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real MGUsup::BulkModulusFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real value = robust::ratio((1.0 + _s * eta - _G0 * _s * eta * eta), (1.0 - _s * eta));
   if (eta == 0.0) {
@@ -304,18 +346,18 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::BulkModulusFromDensityInternalEnergy(
   return value;
 }
 // AEM: Give error since function is not well defined
-PORTABLE_INLINE_FUNCTION void
-MGUsup::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                             Real *lambda, Real &rho, Real &sie) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void MGUsup::DensityEnergyFromPressureTemperature(
+    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   EOS_ERROR("MGUsup::DensityEnergyFromPressureTemperature: "
             "Not implemented.\n");
 }
 // AEM: We should add entropy and Gruneissen parameters here so that it is complete
 // If we add also alpha and BT, those should also be in here.
-PORTABLE_INLINE_FUNCTION void MGUsup::FillEos(Real &rho, Real &temp, Real &sie,
-                                              Real &press, Real &cv, Real &bmod,
-                                              const unsigned long output,
-                                              Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+MGUsup::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
+                const unsigned long output, Indexer_t &&lambda) const {
   const unsigned long input = ~output; // everything that is not output is input
   if (thermalqs::density & output) {
     EOS_ERROR("MGUsup FillEos: Density is required input.\n");
@@ -338,12 +380,13 @@ PORTABLE_INLINE_FUNCTION void MGUsup::FillEos(Real &rho, Real &temp, Real &sie,
 }
 
 // TODO(JMM): pre-cache these rather than recomputing them each time
-PORTABLE_INLINE_FUNCTION
-void MGUsup::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                                    Real &cv, Real &bmod, Real &dpde, Real &dvdt,
-                                    Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+MGUsup::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                               Real &bmod, Real &dpde, Real &dvdt,
+                               Indexer_t &&lambda) const {
   // AEM: Added all variables I think should be output eventually
-  Real tbmod;
+  // Real tbmod;
   // Real entropy, alpha, Gamma;
 
   rho = _rho0;
@@ -352,7 +395,7 @@ void MGUsup::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &pres
   press = PressureFromDensityTemperature(rho, temp, lambda);
   // entropy = _S0;
   cv = _Cv0;
-  tbmod = _Cs * _Cs * _rho0 - _G0 * _G0 * _Cv0 * _rho0 * _T0;
+  // tbmod = _Cs * _Cs * _rho0 - _G0 * _G0 * _Cv0 * _rho0 * _T0;
   // alpha = _A0;
   bmod = _Cs * _Cs * _rho0;
   // Gamma = _G0;

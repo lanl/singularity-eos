@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -110,108 +110,111 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   }
   inline void Finalize() { t_.Finalize(); }
 
-  PORTABLE_FUNCTION
-  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real temp =
         t_.TemperatureFromDensityInternalEnergy(rho * rho_unit_, sie * sie_unit_, lambda);
     return inv_temp_unit_ * temp;
   }
-  PORTABLE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     const Real sie = t_.InternalEnergyFromDensityTemperature(
         rho * rho_unit_, temperature * temp_unit_, lambda);
     return inv_sie_unit_ * sie;
   }
-  PORTABLE_FUNCTION
-  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                         Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real P =
         t_.PressureFromDensityInternalEnergy(rho * rho_unit_, sie * sie_unit_, lambda);
     return inv_press_unit_ * P;
   }
-  PORTABLE_FUNCTION
-  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const {
     const Real S = t_.MinInternalEnergyFromDensity(rho * rho_unit_, lambda);
     return inv_sie_unit_ * S;
   }
-  PORTABLE_FUNCTION
-  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                        Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real S =
         t_.EntropyFromDensityInternalEnergy(rho * rho_unit_, sie * sie_unit_, lambda);
     return inv_entropy_unit_ * S;
   }
-  PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
-                                             Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real cv = t_.SpecificHeatFromDensityInternalEnergy(rho * rho_unit_,
                                                              sie * sie_unit_, lambda);
     return inv_cv_unit_ * cv;
   }
-  PORTABLE_FUNCTION
-  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real bmod =
         t_.BulkModulusFromDensityInternalEnergy(rho * rho_unit_, sie * sie_unit_, lambda);
     return inv_bmod_unit_ * bmod;
   }
-  PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
-                                               Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real gm1 = t_.GruneisenParamFromDensityInternalEnergy(rho * rho_unit_,
                                                                 sie * sie_unit_, lambda);
     return gm1;
   }
-  PORTABLE_FUNCTION
-  Real PressureFromDensityTemperature(const Real rho, const Real temp,
-                                      Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     const Real P =
         t_.PressureFromDensityTemperature(rho * rho_unit_, temp * temp_unit_, lambda);
     return inv_press_unit_ * P;
   }
-  PORTABLE_FUNCTION
-  Real EntropyFromDensityTemperature(const Real rho, const Real temp,
-                                     Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     const Real S =
         t_.EntropyFromDensityTemperature(rho * rho_unit_, temp * temp_unit_, lambda);
     return inv_entropy_unit_ * S;
   }
-  PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temp,
-                                          Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     const Real cv =
         t_.SpecificHeatFromDensityTemperature(rho * rho_unit_, temp * temp_unit_, lambda);
     return inv_cv_unit_ * cv;
   }
-  PORTABLE_FUNCTION
-  Real BulkModulusFromDensityTemperature(const Real rho, const Real temp,
-                                         Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     const Real bmod =
         t_.BulkModulusFromDensityTemperature(rho * rho_unit_, temp * temp_unit_, lambda);
     return inv_bmod_unit_ * bmod;
   }
-  PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temp,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temp, Indexer_t &&lambda = nullptr) const {
     const Real gm1 = t_.GruneisenParamFromDensityTemperature(rho * rho_unit_,
                                                              temp * temp_unit_, lambda);
     return gm1;
   }
 
-  PORTABLE_FUNCTION
-  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho, Real &sie) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
     t_.DensityEnergyFromPressureTemperature(press * press_unit_, temp * temp_unit_,
                                             lambda, rho, sie);
     rho *= inv_rho_unit_;
     sie *= inv_sie_unit_;
   }
 
-  PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
-               const unsigned long output, Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                 Real &cv, Real &bmod, const unsigned long output,
+                                 Indexer_t &&lambda = nullptr) const {
     // TODO(JMM): Is this general enough? Do I need more switches/scales?
     Real srho = rho_unit_ * rho;
     switch (t_.PreferredInput()) {
@@ -235,10 +238,11 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     bmod *= inv_bmod_unit_;
   }
 
-  PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
+                                                Real &press, Real &cv, Real &bmod,
+                                                Real &dpde, Real &dvdt,
+                                                Indexer_t &&lambda = nullptr) const {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
     rho *= inv_rho_unit_;
     temp *= inv_temp_unit_;

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -47,54 +47,86 @@ class Vinet : public EosBase<Vinet> {
   }
 
   Vinet GetOnDevice() { return *this; }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
+  PressureFromDensityTemperature(const Real rho, const Real temp,
+                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Entropy added AEM Dec. 2022
-  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  EntropyFromDensityTemperature(const Real rho, const Real temp,
+                                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv0;
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv0;
   }
   // Thermal Bulk Modulus added AEM Dec 2022
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TBulkModulusFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const;
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Thermal expansion coefficient added AEM 2022
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TExpansionCoeffFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const;
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temp, Real *lambda = nullptr) const {
+      const Real rho, const Real temp,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return robust::ratio(_A0 * _B0, _Cv0 * rho);
   }
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, Real *lambda = nullptr) const {
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return robust::ratio(_A0 * _B0, _Cv0 * rho);
   }
-  PORTABLE_INLINE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
-                                        Real &cv, Real &bmod, const unsigned long output,
-                                        Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+          const unsigned long output,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Vinet)
@@ -116,9 +148,10 @@ class Vinet : public EosBase<Vinet> {
     printf("\n\n");
   }
   // Density/Energy from P/T not unique, if used will give error
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp, Real *lambda,
-                                       Real &rho, Real &sie) const;
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("Vinet"); }
   static std::string EosPyType() { return EosType(); }
@@ -252,75 +285,84 @@ PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real 
 
   return;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Vinet::InternalEnergyFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real output[8];
   Vinet_F_DT_func(rho, temp, output);
   return output[0];
 }
-PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityTemperature(const Real rho,
-                                                                    const Real temp,
-                                                                    Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real output[8];
   Vinet_F_DT_func(rho, temp, output);
   return output[1];
 }
-PORTABLE_INLINE_FUNCTION Real Vinet::EntropyFromDensityTemperature(const Real rho,
-                                                                   const Real temp,
-                                                                   Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real Vinet::EntropyFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real output[8];
   Vinet_F_DT_func(rho, temp, output);
   return output[6];
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Vinet::TExpansionCoeffFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real output[8];
   Vinet_F_DT_func(rho, temp, output);
   return robust::ratio(output[3], output[2] * rho);
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Vinet::TBulkModulusFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real output[8];
   Vinet_F_DT_func(rho, temp, output);
   return output[2] * rho;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityTemperature(
-    const Real rho, const Real temp, Real *lambda) const {
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real output[8];
   Vinet_F_DT_func(rho, temp, output);
   return output[7] * output[7] * rho;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Vinet::TemperatureFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real Tref;
   Real output[8];
   Tref = _T0;
   Vinet_F_DT_func(rho, Tref, output);
   return robust::ratio(sie - output[0], _Cv0) + Tref;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real temp;
   Real output[8];
   temp = TemperatureFromDensityInternalEnergy(rho, sie);
   Vinet_F_DT_func(rho, temp, output);
   return output[1];
 }
-PORTABLE_INLINE_FUNCTION Real Vinet::MinInternalEnergyFromDensity(const Real rho,
-                                                                  Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+Vinet::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
   MinInternalEnergyIsNotEnabled("Vinet");
   return 0.0;
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Vinet::EntropyFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real temp;
   Real output[8];
   temp = TemperatureFromDensityInternalEnergy(rho, sie);
   Vinet_F_DT_func(rho, temp, output);
   return output[6];
 }
+template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityInternalEnergy(
-    const Real rho, const Real sie, Real *lambda) const {
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   Real temp;
   Real output[8];
   temp = TemperatureFromDensityInternalEnergy(rho, sie);
@@ -328,18 +370,18 @@ PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityInternalEnergy(
   return output[7] * output[7] * rho;
 }
 // AEM: Give error since function is not well defined
-PORTABLE_INLINE_FUNCTION void
-Vinet::DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho, Real &sie) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void Vinet::DensityEnergyFromPressureTemperature(
+    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   EOS_ERROR("Vinet::DensityEnergyFromPressureTemperature: "
             "Not implemented.\n");
 }
 // AEM: We should add entropy and Gruneissen parameters here so that it is complete
 // If we add also alpha and BT, those should also be in here.
-PORTABLE_INLINE_FUNCTION void Vinet::FillEos(Real &rho, Real &temp, Real &sie,
-                                             Real &press, Real &cv, Real &bmod,
-                                             const unsigned long output,
-                                             Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+Vinet::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
+               const unsigned long output, Indexer_t &&lambda) const {
   const unsigned long input = ~output; // everything that is not output is input
   if (thermalqs::density & output) {
     EOS_ERROR("Vinet FillEos: Density is required input.\n");
@@ -361,10 +403,11 @@ PORTABLE_INLINE_FUNCTION void Vinet::FillEos(Real &rho, Real &temp, Real &sie,
 }
 
 // TODO(JMM): pre-cache these rather than recomputing them each time
-PORTABLE_INLINE_FUNCTION
-void Vinet::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
-                                   Real &cv, Real &bmod, Real &dpde, Real &dvdt,
-                                   Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+Vinet::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                              Real &bmod, Real &dpde, Real &dvdt,
+                              Indexer_t &&lambda) const {
   // AEM: Added all variables I think should be output eventually
   Real tbmod;
   // Real entropy, alpha, Gamma;

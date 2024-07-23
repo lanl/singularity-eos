@@ -16,6 +16,7 @@
 #define _SINGULARITY_EOS_EOS_EOS_MODELS_HPP_
 
 // EOS models
+#include <singularity-eos/eos/eos_carnahan_starling.hpp>
 #include <singularity-eos/eos/eos_davis.hpp>
 #include <singularity-eos/eos/eos_eospac.hpp>
 #include <singularity-eos/eos/eos_gruneisen.hpp>

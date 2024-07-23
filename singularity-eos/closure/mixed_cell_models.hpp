@@ -170,9 +170,9 @@ class PTESolverBase {
   PORTABLE_INLINE_FUNCTION
   virtual void Fixup() const {
     Real vsum = 0;
-    for (int m = 0; m < nmat; ++m)
+    for (int m = 0; m < nmat; ++m) {
       vsum += vfrac[m];
-    PORTABLE_REQUIRE(vsum > 0., "Volume fraction sum is non-positive");
+    }
     for (int m = 0; m < nmat; ++m)
       vfrac[m] *= robust::ratio(vfrac_total, vsum);
   }
@@ -218,8 +218,9 @@ class PTESolverBase {
     // material m averaged over the full PTE volume
     rho_total = 0.0;
     for (int m = 0; m < nmat; ++m) {
-      PORTABLE_REQUIRE(vfrac[m] > 0., "Non-positive volume fraction");
-      PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density");
+      PORTABLE_REQUIRE(vfrac[m] > 0.,
+                       "Non-positive volume fraction provided to PTE solver");
+      PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density provided to PTE solver");
       rhobar[m] = rho[m] * vfrac[m];
       rho_total += rhobar[m];
     }
@@ -352,12 +353,9 @@ class PTESolverBase {
       Asum += vfrac[m] * robust::ratio(press[m], temp[m]);
       rhoBsum += rho[m] * vfrac[m] * robust::ratio(sie[m], temp[m]);
     }
-    PORTABLE_REQUIRE(Tnorm > 0., "Non-positive temperature guess");
     Asum *= uscale / Tnorm;
     rhoBsum /= Tnorm;
-    PORTABLE_REQUIRE(rhoBsum > 0., "Non-positive energy density");
     Tideal = uscale / rhoBsum / Tnorm;
-    PORTABLE_REQUIRE(vfrac_total > 0., "Non-positive volume fraction sum");
     Pideal = robust::ratio(Tnorm * Tideal * Asum, uscale * vfrac_total);
   }
 
@@ -390,7 +388,8 @@ class PTESolverBase {
     const Real alpha = robust::ratio(Pideal, Tideal);
     for (int m = 0; m < nmat; ++m) {
       vfrac[m] *= robust::ratio(press[m], (temp[m] * alpha));
-      if (robust::ratio(rhobar[m], vfrac[m]) < eos[m].RhoPmin(Tnorm * Tideal)) {
+      if (Tnorm * Tideal < 0 ||
+          robust::ratio(rhobar[m], vfrac[m]) < eos[m].RhoPmin(Tnorm * Tideal)) {
         // abort because this is putting this material into a bad state
         for (int n = m; n >= 0; n--)
           vfrac[n] = vtemp[n];
@@ -566,7 +565,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     vtemp = AssignIncrement(scratch, nmat);
     // TODO(JCD): use whatever lambdas are passed in
     /*for (int m = 0; m < nmat; m++) {
-      if (lambda[m] != nullptr) Cache[m] = lambda[m];
+      if (!variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
     }*/
   }
 
@@ -670,6 +669,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   PORTABLE_INLINE_FUNCTION
   Real ScaleDx() const {
     using namespace mix_params;
+    // Each check reduces the scale further if necessary
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
@@ -683,8 +683,15 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
+      if (alpha_max < vfrac[m]) {
+        // Despite our best efforts, we're already in the unstable regime (i.e.
+        // dPdV_T > 0) so we would actually want to *increase* the step instead
+        // of decreasing it. As a result, this code doesn't work as intended and
+        // should be skipped.
+        continue;
+      }
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = robust::ratio(0.5 * alpha_max - vfrac[m], dx[m]);
+        scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
       }
     }
     // control how big of a step toward T = 0 is allowed
@@ -700,8 +707,10 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale) {
-    if (scale == 1.0) {
+  Real TestUpdate(const Real scale, bool const cache_state = false) {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
       Ttemp = Tequil;
       for (int m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
@@ -784,7 +793,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Tnorm = 1.0;
     // TODO(JCD): use whatever lambdas are passed in
     /*for (int m = 0; m < nmat; m++) {
-      if (lambda[m] != nullptr) Cache[m] = lambda[m];
+      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
     }*/
   }
 
@@ -878,6 +887,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PORTABLE_INLINE_FUNCTION
   Real ScaleDx() const {
     using namespace mix_params;
+    // Each check reduces the scale further if necessary
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
@@ -889,6 +899,13 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     for (int m = 0; m < nmat; m++) {
       const Real rho_min = eos[m].RhoPmin(Tequil);
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
+      if (alpha_max < vfrac[m]) {
+        // Despite our best efforts, we're already in the unstable regime (i.e.
+        // dPdV_T > 0) so we would actually want to *increase* the step instead
+        // of decreasing it. As a result, this code doesn't work as intended and
+        // should be skipped.
+        continue;
+      }
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
         scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
       }
@@ -902,8 +919,10 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale) {
-    if (scale == 1.0) {
+  Real TestUpdate(const Real scale, bool const cache_state = false) {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
       for (int m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
     }
@@ -982,7 +1001,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Pequil = P;
     // TODO(JCD): use whatever lambdas are passed in
     /*for (int m = 0; m < nmat; m++) {
-      if (lambda[m] != nullptr) Cache[m] = lambda[m];
+      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
     }*/
   }
 
@@ -1092,6 +1111,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PORTABLE_INLINE_FUNCTION
   Real ScaleDx() const {
     using namespace mix_params;
+    // Each check reduces the scale further if necessary
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
     for (int m = 0; m < nmat; ++m) {
@@ -1105,6 +1125,13 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
+      if (alpha_max < vfrac[m]) {
+        // Despite our best efforts, we're already in the unstable regime (i.e.
+        // dPdV_T > 0) so we would actually want to *increase* the step instead
+        // of decreasing it. As a result, this code doesn't work as intended and
+        // should be skipped.
+        continue;
+      }
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
         scale = 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]);
       }
@@ -1122,8 +1149,10 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale) {
-    if (scale == 1.0) {
+  Real TestUpdate(const Real scale, bool const cache_state = false) {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
       Ttemp = Tequil;
       for (int m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
@@ -1207,7 +1236,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     utemp = AssignIncrement(scratch, nmat);
     // TODO(JCD): use whatever lambdas are passed in
     /*for (int m = 0; m < nmat; m++) {
-      if (lambda[m] != nullptr) Cache[m] = lambda[m];
+      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
     }*/
   }
 
@@ -1331,6 +1360,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   PORTABLE_INLINE_FUNCTION
   Real ScaleDx() const {
     using namespace mix_params;
+    // Each check reduces the scale further if necessary
     Real scale = 1.0;
     for (int m = 0; m < nmat; ++m) {
       // control how big of a step toward vfrac = 0 is allowed
@@ -1347,6 +1377,13 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
           std::max(eos[m].RhoPmin(Tnorm * temp[m]), eos[m].RhoPmin(Tnorm * tt));
       const Real alpha_max = robust::ratio(rhobar[m], rho_min);
       // control how big of a step toward rho = rho(Pmin) is allowed
+      if (alpha_max < vfrac[m]) {
+        // Despite our best efforts, we're already in the unstable regime (i.e.
+        // dPdV_T > 0) so we would actually want to *increase* the step instead
+        // of decreasing it. As a result, this code doesn't work as intended and
+        // should be skipped.
+        continue;
+      }
       if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
         scale = 0.5 * robust::ratio(alpha_max - vfrac[m], dx[m]);
       }
@@ -1360,8 +1397,10 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   // Update the solution and return new residual.  Possibly called repeatedly with
   // different scale factors as part of a line search
   PORTABLE_INLINE_FUNCTION
-  Real TestUpdate(const Real scale) const {
-    if (scale == 1.0) {
+  Real TestUpdate(const Real scale, bool const cache_state = false) const {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
       for (int m = 0; m < nmat; ++m) {
         vtemp[m] = vfrac[m];
         utemp[m] = u[m];
@@ -1416,25 +1455,28 @@ PORTABLE_INLINE_FUNCTION bool PTESolver(System &s) {
 
     // possibly scale the update to stay within reasonable bounds
     Real scale = s.ScaleDx();
-    // const Real scale_save = scale;
+    PORTABLE_REQUIRE(scale <= 1.0, "PTE Solver is attempting to increase the step size");
 
     // Line search
     Real gradfdx = -2.0 * scale * err;
-    scale = 1.0;
+    scale = 1.0; // New scale for line search
     Real err_old = err;
-    err = s.TestUpdate(scale);
+    // Test the update and reset the cache the current state
+    err = s.TestUpdate(scale, true /* cache_state */);
     if (err > err_old + line_search_alpha * gradfdx) {
-      // backtrack
-      Real err_mid = s.TestUpdate(0.5);
+      // backtrack to middle of step
+      scale = 0.5;
+      Real err_mid = s.TestUpdate(scale);
       if (err_mid < err && err_mid < err_old) {
+        // We know the half step is better than both the full step and the
+        // prior result, so try a pseudo parabolic fit to the error and find its
+        // minimum. The `scale` value is bound between 0.75 and 0.25.
         scale = 0.75 + 0.5 * robust::ratio(err_mid - err, err - 2.0 * err_mid + err_old);
-      } else {
-        scale = line_search_fac;
       }
-
       for (int line_iter = 0; line_iter < line_search_max_iter; line_iter++) {
         err = s.TestUpdate(scale);
         if (err < err_old + line_search_alpha * scale * gradfdx) break;
+        // shrink the step if the error isn't reduced enough
         scale *= line_search_fac;
       }
     }

@@ -45,5 +45,4 @@ class Indexer2D {
   const int j_;
   const T &data_;
 };
-
 #endif // _SINGULARITY_EOS_TEST_PTE_TEST_UTILS_

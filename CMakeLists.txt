@@ -238,8 +238,9 @@ if(SINGULARITY_SUBMODULE_MODE)
       CACHE BOOL "" FORCE)
 endif()
 
-# side-projects TODO: hdf5 again if(SINGULARITY_BUILD_EXAMPLES)
-# add_subdirectory(example) endif()
+if(SINGULARITY_BUILD_EXAMPLES)
+  add_subdirectory(example)
+endif()
 
 # add subdirs
 if(SINGULARITY_BUILD_PYTHON)
@@ -258,7 +259,6 @@ if(SINGULARITY_USE_HIGH_RISK_MATH)
   target_compile_definitions(singularity-eos_Interface
                              INTERFACE SINGULARITY_USE_HIGH_RISK_MATH)
 endif()
-
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_TEST_SESAME)
 endif()
@@ -267,6 +267,9 @@ if(SINGULARITY_BUILD_CLOSURE)
 endif()
 if(SINGULARITY_USE_HELMHOLTZ)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_HELMHOLTZ)
+endif()
+if(SINGULARITY_USE_SPINER_WITH_HDF5)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SPINER_WITH_HDF5)
 endif()
 
 # ------------------------------------------------------------------------------#

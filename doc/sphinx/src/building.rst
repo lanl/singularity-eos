@@ -41,17 +41,17 @@ provided below.
 A CMake configuration option is provided that allows developers to
 select a specific mode (``SINGULARITY_FORCE_SUBMODULE_MODE``), however
 this is intended for internal development only. The intended workflow is
-to let ``singularity-eos`` decide that appropriate mode, which it
+to let ``singularity-eos`` decide the appropriate mode, which it
 decides based on inspecting the project directory that the source
 resides in.
 
 Dependencies
 ------------
 
-``singularity-eos`` has a number of required and optional depdencies. 
+``singularity-eos`` has a number of required and optional depdencies.
 
 ====================================== =============================== ===========================================
-  Package Name                          Distribution                    Comment 
+  Package Name                          Distribution                    Comment
 ====================================== =============================== ===========================================
  `ports-of-call`_                       submodule / external             Required
  `mpark_variant`_                       submodule / external             Required
@@ -61,10 +61,10 @@ Dependencies
  `kokkos`_                              submodule / external             Optional; enables GPU offloading.
  `Eigen`_                               submodule / external             Optional; used for linear algebra on the CPU when doing mixed-cell closures.
  `kokkos-kernels`_                      submodule / external             Optional; used for linear algebra on the GPU when doing mixed-cell closures.
- `pybind11`_                            external / fetchable [*]_        Optional 
+ `pybind11`_                            external / fetchable [*]_        Optional
 ====================================== =============================== ===========================================
 
-.. [*] availible as a git submodule for in-tree builds
+.. [*] available as a git submodule for in-tree builds
 .. [*] located outside the build tree and discoverable by CMake
 .. [*] CMake can download and configure this source in-tree
 
@@ -99,7 +99,7 @@ sections detailing those build modes.
 The main CMake options to configure building are in the following table:
 
 ====================================== ======= ===========================================
-  Option                               Default  Comment 
+  Option                               Default  Comment
 ====================================== ======= ===========================================
  ``SINGULARITY_USE_SPINER``              ON       Enables EOS objects that use ``spiner``.
  ``SINGULARITY_USE_FORTRAN``             ON       Enable Fortran API for equation of state.
@@ -108,6 +108,7 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_BUILD_CLOSURE``           OFF      Build the mixed cell closure models
  ``SINGULARITY_BUILD_TESTS``             OFF      Build test infrastructure.
  ``SINGULARITY_BUILD_PYTHON``            OFF      Build Python bindings.
+ ``SINGULARITY_BUILD_EXAMPLES``          OFF      Build examples of ``singularity-eos`` in use.
  ``SINGULARITY_INVERT_AT_SETUP``         OFF      For tests, pre-invert eospac tables.
  ``SINGULARITY_BETTER_DEBUG_FLAGS``      ON       Enables nicer GPU debug flags. May interfere with in-tree builds as a submodule.
  ``SINGULARITY_HIDE_MORE_WARNINGS``      OFF      Makes warnings less verbose. May interfere with in-tree builds as a submodule.
@@ -143,7 +144,7 @@ These options are listed in the following table, along with their
 preconditions:
 
 ============================================== ================================================================================= ===========================================
-  Option                                       Precondition                                                                       Comment 
+  Option                                       Precondition                                                                       Comment
 ============================================== ================================================================================= ===========================================
  ``SINGULARITY_USE_SPINER_WITH_HDF5``           ``SINGULARITY_USE_SPINER=ON``                                                     Requests that ``spiner`` be configured for ``HDF5`` support.
  ``SINGULARITY_USE_CUDA``                       ``SINGULARITY_USE_KOKKOS=ON``                                                     Target nvidia GPUs for ``Kokkos`` offloading.
@@ -180,7 +181,7 @@ presets, see the `cmake documentation on
 presets <https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html>`__
 
 .. warning::
-  CMake presets are only available if ``singularity-eos`` is the 
+  CMake presets are only available if ``singularity-eos`` is the
   top-level project.
 
 Predefined presets
@@ -286,8 +287,8 @@ source should be placed below the top-level of a host project
    # An example directory layout when using singularity-eos in submodule mode
    my_project
    |_CMakeLists.txt
-   |_README.md 
-   |_src 
+   |_README.md
+   |_src
    |_include
    |_tpl/singularity-eos
 
@@ -312,7 +313,7 @@ code, along with the interfaces of the internal dependencies
 
 .. code:: c++
 
-   // in source of my_project 
+   // in source of my_project
 
    #include<singularity-eos/eos/eos.hpp>
    // from the internal ports-of-call submodule
@@ -348,7 +349,7 @@ expected to be discoverable by CMake. This can be done several ways
    invocation to be aware of these installs
 
 *standalone* mode is the mode used to install ``singularity-eos`` to a
-system as a common library. If, for example, you use Spack to to install
+system as a common library. If, for example, you use Spack to install
 packages, ``singularity-eos`` will be built and installed in
 *standalone* mode.
 
@@ -368,7 +369,7 @@ overview of how to use Spack to develop and deploy ``singularigy-eos``,
 but for more in-depth information, please refer to the `official Spack
 documentation <spack.readthedocs.io>`__.
 
-Preperation
+Preparation
 ^^^^^^^^^^^
 
 First, we need to clone the Spack repository. You can place this
@@ -386,7 +387,7 @@ To start using Spack, we use the provided activation script
 
 .. code:: bash
 
-   # equivalent scripts for tcsh, fish are located here as well 
+   # equivalent scripts for tcsh, fish are located here as well
    $> source ~/spack/share/spack/setup-env.sh
 
 You will always need to *activate* spack for each new shell. You may
@@ -494,7 +495,7 @@ You may also manually edit the ``packages.yaml`` file to switch the
 ``buildable`` flag for the troublesome package, but you will need to be
 a least familiar with YAML schema.
 
-First install with spack
+First install with Spack
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Let's walk through a simple Spack workflow for installing. First, we
@@ -522,7 +523,7 @@ library for multigrid methods.
        develop    [git] https://github.com/hypre-space/hypre.git on branch master
        2.28.0     https://github.com/hypre-space/hypre/archive/v2.28.0.tar.gz
 
-   # ... more versions listed 
+   # ... more versions listed
 
    Variants:
        Name [Default]              When       Allowed values          Description
@@ -532,7 +533,7 @@ library for multigrid methods.
                                               gfx1030, gfx90c,
                                               gfx90a, gfx1101,
                                               gfx908, gfx1010,
-   # ... lots of amd targets listed 
+   # ... lots of amd targets listed
        build_system [autotools]    --         autotools               Build systems supported by the package
        caliper [off]               --         on, off                 Enable Caliper support
        complex [off]               --         on, off                 Use complex values
@@ -663,13 +664,13 @@ Installing ``singularity-eos`` using Spack
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 . warning::
-  The spack build is currently experimental. 
+  The spack build is currently experimental.
   Please report problems you havee as github issues.
 
 The spackage is available in the main `Spack`_
 repositories, and we provide a spackage for ``singularity-eos`` witin the
-the singularity-eos source repository. The distributed spackage may be 
-more up-to-date than the one in the main `Spack`_ repository. If you 
+the singularity-eos source repository. The distributed spackage may be
+more up-to-date than the one in the main `Spack`_ repository. If you
 have spack installed, simply call
 
 .. _Spack: https://spack.io/
@@ -724,13 +725,13 @@ supports a number of relevant variants:
 | tests [off]                 | on, off         | Build tests                 |
 +-----------------------------+-----------------+-----------------------------+
 
-Developing ``singularigy-eos`` using Spack
+Developing ``singularity-eos`` using Spack
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Spack is a powerful tool that can help develop ``singularigy-eos`` for a
+Spack is a powerful tool that can help develop ``singularity-eos`` for a
 variety of platforms and hardware.
 
-1. Install the dependencies ``singularigy-eos`` needs using Spack
+1. Install the dependencies ``singularity-eos`` needs using Spack
 
 .. code:: bash
 

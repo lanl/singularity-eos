@@ -39,6 +39,6 @@ for f in $(git grep --untracked -ail res -- :/*.hpp :/*.cpp); do
     if [ ${VERBOSE} -ge 1 ]; then
        echo ${f}
     fi
-    ${CFM} -i ${REPO}/${f}
+    ${CFM} -style=file -i ${REPO}/${f}
 done
 echo "...Done"

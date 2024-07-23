@@ -112,6 +112,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     depends_on("ports-of-call@1.4.2,1.5.2:", when="@:1.7.0")
     depends_on("ports-of-call@1.5.2:", when="@1.7.1:")
+    depends_on("ports-of-call@1.6.0:", when="@1.8.1:")
     # request HEAD of main branch
     depends_on("ports-of-call@main", when="@main")
     
@@ -132,6 +133,7 @@ class SingularityEos(CMakePackage, CudaPackage):
         ),
         when="+cuda",
     )
+    depends_on("binutils@:2.39,2.42:+ld")
 
 
     #TODO: do we need kokkos,kokkoskernels the exact same version?

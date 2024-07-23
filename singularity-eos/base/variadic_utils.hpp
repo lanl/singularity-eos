@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -16,12 +16,42 @@
 #define SINGULARITY_EOS_BASE_VARIADIC_UTILS_HPP_
 
 #include <type_traits>
+#include <utility>
 
 namespace singularity {
 namespace variadic_utils {
 
 // Some generic variatic utilities
 // ======================================================================
+
+// Useful for generating nullptr of a specific pointer type
+template <typename T>
+inline constexpr T *np() {
+  return nullptr;
+}
+
+// C++14 implementation of std::remove_cvref (available since C++20)
+// credit to CJ + Diego
+template <typename T>
+struct remove_cvref {
+  typedef std::remove_cv_t<std::remove_reference_t<T>> type;
+};
+
+// Helper types
+template <typename T>
+using remove_cvref_t = typename remove_cvref<T>::type;
+
+// SFINAE to check if a value is a null ptr
+template <typename T, typename = typename std::enable_if<
+                          std::is_pointer<remove_cvref_t<T>>::value>::type>
+constexpr inline bool is_nullptr(T &&t) {
+  return std::forward<T>(t) == nullptr;
+}
+template <typename T, typename std::enable_if<
+                          !std::is_pointer<remove_cvref_t<T>>::value>::type * = nullptr>
+constexpr inline bool is_nullptr(T &&) {
+  return false;
+}
 
 // Backport of C++17 bool_constant.
 // With C++17, can be replaced with

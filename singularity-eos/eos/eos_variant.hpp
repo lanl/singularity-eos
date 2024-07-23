@@ -98,9 +98,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
@@ -108,9 +109,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
@@ -118,9 +120,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real PressureFromDensityTemperature(const Real rho, const Real temperature,
-                                      Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.PressureFromDensityTemperature(rho, temperature, lambda);
@@ -128,26 +131,29 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                         Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
         },
         eos_);
   }
-  PORTABLE_INLINE_FUNCTION
-  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &lambda](const auto &eos) {
           return eos.MinInternalEnergyFromDensity(rho, lambda);
         },
         eos_);
   }
-  PORTABLE_INLINE_FUNCTION
-  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
-                                     Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.EntropyFromDensityTemperature(rho, temperature, lambda);
@@ -155,9 +161,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                        Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.EntropyFromDensityInternalEnergy(rho, sie, lambda);
@@ -165,9 +172,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
-                                          Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
@@ -175,9 +183,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
-                                             Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
@@ -185,9 +194,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
-                                         Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
@@ -195,9 +205,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
@@ -205,9 +216,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
@@ -215,9 +227,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
-                                               Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
@@ -225,9 +238,11 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
-               const unsigned long output, Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+          const unsigned long output,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &temp, &energy, &press, &cv, &bmod, &output, &lambda](const auto &eos) {
           return eos.FillEos(rho, temp, energy, press, cv, bmod, output, lambda);
@@ -235,8 +250,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  void ReferenceDensityTemperature(Real &rho, Real &T, Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ReferenceDensityTemperature(Real &rho, Real &T,
+                              Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &T, &lambda](const auto &eos) {
           return eos.ReferenceDensityTemperature(rho, T, lambda);
@@ -244,10 +261,11 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return mpark::visit(
         [&rho, &temp, &sie, &press, &cv, &bmod, &dpde, &dvdt, &lambda](const auto &eos) {
           return eos.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt,
@@ -256,9 +274,10 @@ class Variant {
         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho, Real &sie) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
     return mpark::visit(
         [&press, &temp, &lambda, &rho, &sie](const auto &eos) {
           return eos.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);

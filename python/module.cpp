@@ -60,9 +60,9 @@ PYBIND11_MODULE(singularity_eos, m) {
   eos_class<DavisProducts>(m, "DavisProducts")
     .def(py::init())
     .def(
-      py::init<Real, Real, Real, Real, Real, Real, Real, Real>(),
+      py::init<Real, Real, Real, Real, Real, Real, Real>(),
       py::arg("a"), py::arg("b"), py::arg("k"), py::arg("n"), py::arg("vc"),
-      py::arg("pc"), py::arg("Cv"), py::arg("E0")
+      py::arg("pc"), py::arg("Cv")
     );
 
 #ifdef SPINER_USE_HDF
