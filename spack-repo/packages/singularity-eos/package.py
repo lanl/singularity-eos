@@ -90,15 +90,14 @@ class SingularityEos(CMakePackage, CudaPackage):
         default="none",
         validator=plugin_validator,
         description="list of plugins to build",
-        when="@main"
+        when="@1.9.0:"
     )
-    variant("variant", default="default", description="include path used for variant header", when="@main")
+    variant("variant", default="default", description="include path used for variant header", when="@1.9.0:")
 
     # building/testing/docs
     depends_on("cmake@3.19:")
     depends_on("catch2@2.13.7", when="@:1.8.0 +tests")
     depends_on("catch2@3.0.1:", when="@1.9.0: +tests")
-    depends_on("catch2@3.0.1:", when="@main +tests")
     depends_on("python@3:", when="+python")
     depends_on("py-numpy", when="+python+tests")
     depends_on("py-pybind11@2.9.1:", when="+python")
@@ -217,7 +216,7 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define("SINGULARITY_USE_EOSPAC", "^eospac" in self.spec),
         ]
 
-        if self.spec.satisfies("@main"):
+        if self.spec.satisfies("@1.9.0:"):
             if "none" not in self.spec.variants["plugins"].value:
                 pdirs = [join_path(self.stage.source_path, self.plugins[p]) for p in self.spec.variants["plugins"].value]
                 args.append(self.define("SINGULARITY_PLUGINS", ";".join(pdirs)))
