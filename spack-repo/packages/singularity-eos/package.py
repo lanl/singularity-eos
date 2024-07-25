@@ -96,8 +96,9 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # building/testing/docs
     depends_on("cmake@3.19:")
-    depends_on("catch2@3.0.1:", when="@main +tests")
     depends_on("catch2@2.13.7", when="@:1.8.0 +tests")
+    depends_on("catch2@3.0.1:", when="@1.9.0: +tests")
+    depends_on("catch2@3.0.1:", when="@main +tests")
     depends_on("python@3:", when="+python")
     depends_on("py-numpy", when="+python+tests")
     depends_on("py-pybind11@2.9.1:", when="+python")
@@ -112,7 +113,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     depends_on("ports-of-call@1.4.2,1.5.2:", when="@:1.7.0")
     depends_on("ports-of-call@1.5.2:", when="@1.7.1:")
-    depends_on("ports-of-call@1.6.0:", when="@1.8.1:")
+    depends_on("ports-of-call@1.6.0:", when="@1.9.0:")
     # request HEAD of main branch
     depends_on("ports-of-call@main", when="@main")
     
