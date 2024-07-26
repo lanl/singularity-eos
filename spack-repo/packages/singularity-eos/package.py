@@ -11,9 +11,9 @@ from spack.directives import directive
 
 
 @directive("singularity_eos_plugins")
-def singularity_eos_plugin(name, path):
+def singularity_eos_plugin(name, spackage, relpath):
     def _execute_register(pkg):
-        pkg.plugins[name] = path
+        pkg.plugins[name] = (spackage, relpath)
 
     return _execute_register
 
@@ -82,7 +82,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     plugins = {}
 
-    singularity_eos_plugin("dust", "example/plugin")
+    singularity_eos_plugin("dust", "self", "example/plugin")
 
     variant(
         "plugins",
@@ -218,11 +218,23 @@ class SingularityEos(CMakePackage, CudaPackage):
 
         if self.spec.satisfies("@1.9.0:"):
             if "none" not in self.spec.variants["plugins"].value:
-                pdirs = [join_path(self.stage.source_path, self.plugins[p]) for p in self.spec.variants["plugins"].value]
+                pdirs = []
+                for p in self.spec.variants["plugins"].value:
+                  spackage, path = self.plugins[p]
+                  if spackage == "self":
+                      pdirs.append(join_path(self.stage.source_path, path))
+                  else:
+                      pdirs.append(join_path(self.spec[spackage].prefix, path))
                 args.append(self.define("SINGULARITY_PLUGINS", ";".join(pdirs)))
 
-            if self.spec.variants["variant"].value != "default":
-                args.append(self.define_from_variant("SINGULARITY_VARIANT", "variant"))
+            variant_path = self.spec.variants["variant"].value
+            if variant_path != "default":
+                parts = os.path.normpath('variant_path').split(os.sep)
+                if parts[0] in self.plugins.keys():
+                    spackage, path = self.plugins[parts[0]]
+                    parts[0] = self.spec[spackage].prefix
+                    variant_path = join_path(*parts)
+                args.append(self.define("SINGULARITY_VARIANT", variant_path))
 
         #TODO: do we need this?
         if "+kokkos+cuda" in self.spec:
