@@ -289,6 +289,12 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   Real rhoAnchor = metadata.normalDensity;
   Real TAnchor = 298.15;
 
+  // Piecewise grids stuff
+  Real rho_fine_center = rhoAnchor;
+  Real rho_fine_diameter = 0.5;
+  Real T_fine_center = TAnchor;
+  Real T_fine_diameter = 1.0;
+
   // Forces density and temperature to be in a region where an offset
   // is not needed. This improves resolution at low densities and
   // temperatures.
