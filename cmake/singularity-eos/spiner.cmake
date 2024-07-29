@@ -35,9 +35,9 @@ macro(singularity_enable_spiner target)
 
   target_compile_definitions(
     ${target}
-    PUBLIC
+    INTERFACE
       $<$<BOOL:${SINGULARITY_USE_SPINER}>:SINGULARITY_USE_SPINER>
       $<$<BOOL:${SINGULARITY_USE_SPINER_WITH_HDF5}>:SINGULARITY_USE_SPINER_WITH_HDF5>
   )
-  target_link_libraries(${target} PUBLIC spiner::spiner)
+  target_link_libraries(${target} INTERFACE spiner::spiner)
 endmacro()

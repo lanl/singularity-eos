@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -38,6 +38,7 @@
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 // spiner
@@ -104,56 +105,73 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   inline SpinerEOSDependsRhoT GetOnDevice();
 
-  PORTABLE_INLINE_FUNCTION
-  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
+  PressureFromDensityTemperature(const Real rho, const Real temperature,
+                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+          const unsigned long output,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
-  PORTABLE_INLINE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real PressureFromDensityTemperature(const Real rho, const Real temperature,
-                                      Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                         Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
-                                     Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                        Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
-                                          Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
-                                             Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
-                                         Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
-                                               Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho, Real &sie) const;
-  PORTABLE_INLINE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
-               const unsigned long output, Real *lambda = nullptr) const;
-
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const;
@@ -222,18 +240,22 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real T_(const Real lT) const noexcept { return fromLog_(lT, lTOffset_); }
 
-  PORTABLE_INLINE_FUNCTION
-  Real lTFromlRhoSie_(const Real lRho, const Real sie, TableStatus &whereAmI,
-                      Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real lTFromlRhoP_(const Real lRho, const Real press, TableStatus &whereAmI,
-                    Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real lRhoFromPlT_(const Real P, const Real lT, TableStatus &whereAmI,
-                    Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void getLogsRhoT_(const Real rho, const Real temperature, Real &lRho, Real &lT,
-                    Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  lTFromlRhoSie_(const Real lRho, const Real sie, TableStatus &whereAmI,
+                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  lTFromlRhoP_(const Real lRho, const Real press, TableStatus &whereAmI,
+               Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  lRhoFromPlT_(const Real P, const Real lT, TableStatus &whereAmI,
+               Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  getLogsRhoT_(const Real rho, const Real temperature, Real &lRho, Real &lT,
+               Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   PORTABLE_INLINE_FUNCTION
   Real sieFromlRhoTlT_(const Real lRho, const Real T, const Real lT,
                        const TableStatus &whereAmI) const;
@@ -336,57 +358,74 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
                                 bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoSie GetOnDevice();
 
-  PORTABLE_INLINE_FUNCTION
-  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho, const Real T,
-                                            Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
-  PORTABLE_INLINE_FUNCTION
-  Real PressureFromDensityTemperature(const Real rho, const Real T,
-                                      Real *lambda = nullptr) const;
-
-  PORTABLE_INLINE_FUNCTION
-  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                         Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
-  MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const;
+  PressureFromDensityTemperature(const Real rho, const Real T,
+                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
-  PORTABLE_INLINE_FUNCTION
-  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
-                                     Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                        Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho, const Real T,
-                                          Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
-                                             Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real BulkModulusFromDensityTemperature(const Real rho, const Real T,
-                                         Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho, const Real T,
-                                            Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
-                                               Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Real *lambda, Real &rho, Real &sie) const;
-  PORTABLE_INLINE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
-               const unsigned long output, Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+          const unsigned long output,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
@@ -445,14 +484,17 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
     return FastMath::pow10(lx) - offset;
   }
-  PORTABLE_INLINE_FUNCTION
-  Real interpRhoT_(const Real rho, const Real T, const DataBox &db,
-                   Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real interpRhoSie_(const Real rho, const Real sie, const DataBox &db,
-                     Real *lambda = nullptr) const;
-  PORTABLE_INLINE_FUNCTION
-  Real lRhoFromPlT_(const Real P, const Real lT, Real *lambda) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  interpRhoT_(const Real rho, const Real T, const DataBox &db,
+              Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real
+  interpRhoSie_(const Real rho, const Real sie, const DataBox &db,
+                Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real lRhoFromPlT_(const Real P, const Real lT,
+                                             Indexer_t &&lambda) const;
 
   DataBox sie_; // depends on (rho,T)
   DataBox T_;   // depends on (rho, sie)
@@ -828,15 +870,15 @@ inline void SpinerEOSDependsRhoT::fixBulkModulus_() {
     for (int i = 0; i < numT_; i++) {
       Real lT = bMod_.range(0).x(i);
       Real press = P_.interpToReal(lRho, lT);
-      Real DPDR = dPdRho_.interpToReal(lRho, lT);
-      Real DPDE = dPdE_.interpToReal(lRho, lT);
-      Real DEDR = dEdRho_.interpToReal(lRho, lT);
-      Real DTDE = dTdE_.interpToReal(lRho, lT);
+      Real DPDR_E = dPdRho_.interpToReal(lRho, lT);
+      Real DPDE_R = dPdE_.interpToReal(lRho, lT);
+      Real DEDR_T = dEdRho_.interpToReal(lRho, lT);
+      Real DPDR_T = DPDR_E + DPDE_R * DEDR_T;
       Real bMod;
-      if (DPDE > 0.0 && rho > 0.0) {
-        bMod = rho * DPDR + DPDE * (press / rho - rho * DEDR);
+      if (DPDE_R > 0.0 && rho > 0.0) {
+        bMod = rho * DPDR_E + DPDE_R * (press / rho);
       } else if (rho > 0.0) {
-        bMod = std::max(rho * DPDR, 0.0);
+        bMod = std::max(rho * DPDR_T, 0.0);
       } else {
         bMod = 0.0;
       }
@@ -906,40 +948,36 @@ inline void SpinerEOSDependsRhoT::setlTColdCrit_() {
   }
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::TemperatureFromDensityInternalEnergy(const Real rho,
-                                                                const Real sie,
-                                                                Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::TemperatureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   TableStatus whereAmI;
   const Real lRho = lRho_(rho);
   const Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
   return T_(lT);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::InternalEnergyFromDensityTemperature(const Real rho,
-                                                                const Real temperature,
-                                                                Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::InternalEnergyFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   Real lRho, lT;
   getLogsRhoT_(rho, temperature, lRho, lT, lambda);
   TableStatus whereAmI = getLocDependsRhoT_(lRho, lT);
   return sieFromlRhoTlT_(lRho, temperature, lT, whereAmI);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::PressureFromDensityTemperature(const Real rho,
-                                                          const Real temperature,
-                                                          Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::PressureFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   Real lRho, lT;
   getLogsRhoT_(rho, temperature, lRho, lT, lambda);
   TableStatus whereAmI = getLocDependsRhoT_(lRho, lT);
   return PFromRholRhoTlT_(rho, lRho, temperature, lT, whereAmI);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy(const Real rho,
-                                                             const Real sie,
-                                                             Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   TableStatus whereAmI;
   Real lRho = lRho_(rho);
   Real lT = lTFromlRhoSie_(lRho, sie, whereAmI, lambda);
@@ -955,41 +993,37 @@ Real SpinerEOSDependsRhoT::PressureFromDensityInternalEnergy(const Real rho,
   return P;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::MinInternalEnergyFromDensity(const Real rho,
-                                                        Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::MinInternalEnergyFromDensity(
+    const Real rho, Indexer_t &&lambda) const {
   MinInternalEnergyIsNotEnabled("SpinerEOSDependsRhoT");
   return 0.0;
 }
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::EntropyFromDensityTemperature(const Real rho,
-                                                         const Real temperature,
-                                                         Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::EntropyFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   EntropyIsNotEnabled("SpinerEOSDependsRhoT");
   return 1.0;
 }
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::EntropyFromDensityInternalEnergy(const Real rho,
-                                                            const Real sie,
-                                                            Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::EntropyFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   EntropyIsNotEnabled("SpinerEOSDependsRhoT");
   return 1.0;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::SpecificHeatFromDensityTemperature(const Real rho,
-                                                              const Real temperature,
-                                                              Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::SpecificHeatFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   Real lRho, lT;
   getLogsRhoT_(rho, temperature, lRho, lT, lambda);
   TableStatus whereAmI = getLocDependsRhoT_(lRho, lT);
   return CvFromlRholT_(lRho, lT, whereAmI);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::SpecificHeatFromDensityInternalEnergy(const Real rho,
-                                                                 const Real sie,
-                                                                 Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::SpecificHeatFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   TableStatus whereAmI;
   Real Cv;
   const Real lRho = lRho_(rho);
@@ -1006,20 +1040,18 @@ Real SpinerEOSDependsRhoT::SpecificHeatFromDensityInternalEnergy(const Real rho,
   return Cv > robust::EPS() ? Cv : robust::EPS();
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::BulkModulusFromDensityTemperature(const Real rho,
-                                                             const Real temperature,
-                                                             Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::BulkModulusFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   Real lRho, lT;
   getLogsRhoT_(rho, temperature, lRho, lT, lambda);
   TableStatus whereAmI = getLocDependsRhoT_(lRho, lT);
   return bModFromRholRhoTlT_(rho, lRho, temperature, lT, whereAmI);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::GruneisenParamFromDensityTemperature(const Real rho,
-                                                                const Real temp,
-                                                                Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::GruneisenParamFromDensityTemperature(
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
   Real lRho, lT, gm1;
   getLogsRhoT_(rho, temp, lRho, lT, lambda);
 
@@ -1037,10 +1069,9 @@ Real SpinerEOSDependsRhoT::GruneisenParamFromDensityTemperature(const Real rho,
   return gm1;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::BulkModulusFromDensityInternalEnergy(const Real rho,
-                                                                const Real sie,
-                                                                Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::BulkModulusFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   TableStatus whereAmI;
   Real bMod;
   const Real lRho = lRho_(rho);
@@ -1056,10 +1087,11 @@ Real SpinerEOSDependsRhoT::BulkModulusFromDensityInternalEnergy(const Real rho,
   return bMod;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rho,
-                                                                   const Real sie,
-                                                                   Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rho,
+                                                              const Real sie,
+                                                              Indexer_t &&lambda) const {
   TableStatus whereAmI;
   Real gm1;
   const Real lRho = lRho_(rho);
@@ -1077,11 +1109,9 @@ Real SpinerEOSDependsRhoT::GruneisenParamFromDensityInternalEnergy(const Real rh
 }
 
 // TODO(JMM): This would be faster with hand-tuned code
-PORTABLE_INLINE_FUNCTION
-void SpinerEOSDependsRhoT::DensityEnergyFromPressureTemperature(const Real press,
-                                                                const Real temp,
-                                                                Real *lambda, Real &rho,
-                                                                Real &sie) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::DensityEnergyFromPressureTemperature(
+    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   TableStatus whereAmI;
   Real lT = lT_(temp);
   Real lRho = lRhoFromPlT_(press, lT, whereAmI, lambda);
@@ -1089,10 +1119,11 @@ void SpinerEOSDependsRhoT::DensityEnergyFromPressureTemperature(const Real press
   sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
 }
 
-PORTABLE_INLINE_FUNCTION
-void SpinerEOSDependsRhoT::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
-                                   Real &cv, Real &bmod, const unsigned long output,
-                                   Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv,
+                              Real &bmod, const unsigned long output,
+                              Indexer_t &&lambda) const {
   Real lRho, lT;
   TableStatus whereAmI;
   const unsigned long input = ~output;
@@ -1135,17 +1166,16 @@ void SpinerEOSDependsRhoT::FillEos(Real &rho, Real &temp, Real &energy, Real &pr
   if (output & thermalqs::bulk_modulus) {
     bmod = bModFromRholRhoTlT_(rho, lRho, temp, lT, whereAmI);
   }
-  if (lambda != nullptr) {
+  if (!variadic_utils::is_nullptr(lambda)) {
     lambda[Lambda::lRho] = lRho;
     lambda[Lambda::lT] = lT;
   }
 }
 
-PORTABLE_INLINE_FUNCTION
-void SpinerEOSDependsRhoT::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
-                                                  Real &press, Real &cv, Real &bmod,
-                                                  Real &dpde, Real &dvdt,
-                                                  Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoT::ValuesAtReferenceState(
+    Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod, Real &dpde,
+    Real &dvdt, Indexer_t &&lambda) const {
   rho = rhoNormal_;
   temp = TNormal_;
   sie = sieNormal_;
@@ -1164,20 +1194,21 @@ Real SpinerEOSDependsRhoT::RhoPmin(const Real temp) const {
   return rho_at_pmin_.interpToReal(lT);
 }
 
-PORTABLE_INLINE_FUNCTION
-void SpinerEOSDependsRhoT::getLogsRhoT_(const Real rho, const Real temperature,
-                                        Real &lRho, Real &lT, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoT::getLogsRhoT_(const Real rho, const Real temperature, Real &lRho,
+                                   Real &lT, Indexer_t &&lambda) const {
   lRho = lRho_(rho);
   lT = lT_(temperature);
-  if (lambda != nullptr) {
+  if (!variadic_utils::is_nullptr(lambda)) {
     lambda[Lambda::lRho] = lRho;
     lambda[Lambda::lT] = lT;
   }
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
-                                        TableStatus &whereAmI, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lRhoFromPlT_(
+    const Real P, const Real lT, TableStatus &whereAmI, Indexer_t &&lambda) const {
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
 
   Real lRho;
@@ -1185,7 +1216,7 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
   // Real lRhoGuess = lRhoMin_ + 0.9*(lRhoMax_ - lRhoMin_);
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
-  if (lambda != nullptr && lRhoMin_ <= lambda[Lambda::lRho] &&
+  if (!variadic_utils::is_nullptr(lambda) && lRhoMin_ <= lambda[Lambda::lRho] &&
       lambda[Lambda::lRho] <= lRhoMax_) {
     lRhoGuess = lambda[Lambda::lRho];
   }
@@ -1223,7 +1254,7 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
 #endif // SPINER_EOS_VERBOSE
     lRho = reproducible_ ? lRhoMax_ : lRhoGuess;
   }
-  if (lambda != nullptr) {
+  if (!variadic_utils::is_nullptr(lambda)) {
     lambda[Lambda::lRho] = lRho;
     lambda[Lambda::lT] = lT;
   }
@@ -1234,9 +1265,9 @@ Real SpinerEOSDependsRhoT::lRhoFromPlT_(const Real P, const Real lT,
   return lRho;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
-                                          TableStatus &whereAmI, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoSie_(
+    const Real lRho, const Real sie, TableStatus &whereAmI, Indexer_t &&lambda) const {
 
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
@@ -1261,7 +1292,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
     }
   } else {
     Real lTGuess = reproducible_ ? lTMin_ : 0.5 * (lTMin_ + lTMax_);
-    if (lambda != nullptr && lTMin_ <= lambda[Lambda::lT] &&
+    if (!variadic_utils::is_nullptr(lambda) && lTMin_ <= lambda[Lambda::lT] &&
         lambda[Lambda::lT] <= lTMax_) {
       lTGuess = lambda[Lambda::lT];
     }
@@ -1285,7 +1316,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
       lT = reproducible_ ? lTMin_ : lTGuess;
     }
   }
-  if (lambda != nullptr) {
+  if (!variadic_utils::is_nullptr(lambda)) {
     lambda[Lambda::lRho] = lRho;
     lambda[Lambda::lT] = lT;
   }
@@ -1296,9 +1327,9 @@ Real SpinerEOSDependsRhoT::lTFromlRhoSie_(const Real lRho, const Real sie,
   return lT;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
-                                        TableStatus &whereAmI, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoP_(
+    const Real lRho, const Real press, TableStatus &whereAmI, Indexer_t &&lambda) const {
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
@@ -1321,7 +1352,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
     }
   } else {
     whereAmI = TableStatus::OnTable;
-    if (lambda != nullptr && lTMin_ <= lambda[Lambda::lT] &&
+    if (!variadic_utils::is_nullptr(lambda) && lTMin_ <= lambda[Lambda::lT] &&
         lambda[Lambda::lT] <= lTMax_) {
       lTGuess = lambda[Lambda::lT];
     } else {
@@ -1343,7 +1374,7 @@ Real SpinerEOSDependsRhoT::lTFromlRhoP_(const Real lRho, const Real press,
       lT = reproducible_ ? lTMin_ : lTGuess;
     }
   }
-  if (lambda != nullptr) {
+  if (!variadic_utils::is_nullptr(lambda)) {
     lambda[Lambda::lRho] = lRho;
     lambda[Lambda::lT] = lT;
   }
@@ -1606,15 +1637,15 @@ inline void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
     Real rho = fromLog_(lRho, lRhoOffset_);
     for (int i = 0; i < tables.bMod.dim(1); i++) {
       Real press = tables.P(j, i);
-      Real DPDR = tables.dPdRho(j, i);
-      Real DPDE = tables.dPdE(j, i);
-      Real DEDR = tables.dEdRho(j, i);
-      Real DTDE = tables.dTdE(j, i);
+      Real DPDR_E = tables.dPdRho(j, i);
+      Real DPDE_R = tables.dPdE(j, i);
+      Real DEDR_T = tables.dEdRho(j, i);
+      Real DPDR_T = DPDR_E + DPDE_R * DEDR_T;
       Real bMod;
-      if (DPDE > 0.0 && rho > 0.0) {
-        bMod = rho * DPDR + DPDE * (press / rho - rho * DEDR);
+      if (DPDE_R > 0.0 && rho > 0.0) {
+        bMod = rho * DPDR_E + DPDE_R * (press / rho);
       } else if (rho > 0.0) {
-        bMod = std::max(rho * DPDR, 0.0);
+        bMod = std::max(rho * DPDR_T, 0.0);
       } else {
         bMod = 0.0;
       }
@@ -1690,115 +1721,115 @@ void SpinerEOSDependsRhoSie::Finalize() {
   memoryStatus_ = DataStatus::Deallocated;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::TemperatureFromDensityInternalEnergy(const Real rho,
-                                                                  const Real sie,
-                                                                  Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie::TemperatureFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Indexer_t &&lambda) const {
   return interpRhoSie_(rho, sie, T_, lambda);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::InternalEnergyFromDensityTemperature(const Real rho,
-                                                                  const Real T,
-                                                                  Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie::InternalEnergyFromDensityTemperature(const Real rho, const Real T,
+                                                             Indexer_t &&lambda) const {
   return interpRhoT_(rho, T, sie_, lambda);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::PressureFromDensityTemperature(const Real rho, const Real T,
-                                                            Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::PressureFromDensityTemperature(
+    const Real rho, const Real T, Indexer_t &&lambda) const {
   return interpRhoT_(rho, T, dependsRhoT_.P, lambda);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::PressureFromDensityInternalEnergy(const Real rho,
-                                                               const Real sie,
-                                                               Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::PressureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   return interpRhoSie_(rho, sie, dependsRhoSie_.P, lambda);
 }
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::MinInternalEnergyFromDensity(const Real rho,
-                                                          Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::MinInternalEnergyFromDensity(
+    const Real rho, Indexer_t &&lambda) const {
   MinInternalEnergyIsNotEnabled("SpinerEOSDependsRhoSie");
   return 0.0;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::EntropyFromDensityTemperature(const Real rho,
-                                                           const Real temperature,
-                                                           Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::EntropyFromDensityTemperature(
+    const Real rho, const Real temperature, Indexer_t &&lambda) const {
   EntropyIsNotEnabled("SpinerEOSDependsRhoSie");
   return 1.0;
 }
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::EntropyFromDensityInternalEnergy(const Real rho,
-                                                              const Real sie,
-                                                              Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::EntropyFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   EntropyIsNotEnabled("SpinerEOSDependsRhoSie");
   return 1.0;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::SpecificHeatFromDensityTemperature(const Real rho,
-                                                                const Real T,
-                                                                Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::SpecificHeatFromDensityTemperature(
+    const Real rho, const Real T, Indexer_t &&lambda) const {
   return 1. / interpRhoT_(rho, T, dependsRhoT_.dTdE, lambda);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::SpecificHeatFromDensityInternalEnergy(const Real rho,
-                                                                   const Real sie,
-                                                                   Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie::SpecificHeatFromDensityInternalEnergy(const Real rho,
+                                                              const Real sie,
+                                                              Indexer_t &&lambda) const {
   return 1. / interpRhoSie_(rho, sie, dependsRhoSie_.dTdE, lambda);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::BulkModulusFromDensityTemperature(const Real rho,
-                                                               const Real T,
-                                                               Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::BulkModulusFromDensityTemperature(
+    const Real rho, const Real T, Indexer_t &&lambda) const {
   return interpRhoT_(rho, T, dependsRhoT_.bMod, lambda);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::BulkModulusFromDensityInternalEnergy(const Real rho,
-                                                                  const Real sie,
-                                                                  Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie::BulkModulusFromDensityInternalEnergy(const Real rho,
+                                                             const Real sie,
+                                                             Indexer_t &&lambda) const {
   return interpRhoSie_(rho, sie, dependsRhoSie_.bMod, lambda);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::GruneisenParamFromDensityTemperature(const Real rho,
-                                                                  const Real T,
-                                                                  Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie::GruneisenParamFromDensityTemperature(const Real rho, const Real T,
+                                                             Indexer_t &&lambda) const {
   const Real dpde = interpRhoT_(rho, T, dependsRhoT_.dPdE, lambda);
   return dpde / rho;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::GruneisenParamFromDensityInternalEnergy(const Real rho,
-                                                                     const Real sie,
-                                                                     Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie::GruneisenParamFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lE = toLog_(sie, lEOffset_);
   const Real dpde = dependsRhoSie_.dPdE.interpToReal(lRho, lE);
   return dpde / rho;
 }
 
-PORTABLE_INLINE_FUNCTION
-void SpinerEOSDependsRhoSie::DensityEnergyFromPressureTemperature(const Real press,
-                                                                  const Real temp,
-                                                                  Real *lambda, Real &rho,
-                                                                  Real &sie) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoSie::DensityEnergyFromPressureTemperature(const Real press,
+                                                             const Real temp,
+                                                             Indexer_t &&lambda,
+                                                             Real &rho, Real &sie) const {
   Real lT = toLog_(temp, lTOffset_);
   Real lRho = lRhoFromPlT_(press, lT, lambda);
   rho = fromLog_(lRho, lRhoOffset_);
   sie = sie_.interpToReal(lRho, lT);
 }
 
-PORTABLE_INLINE_FUNCTION
-void SpinerEOSDependsRhoSie::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
-                                     Real &cv, Real &bmod, const unsigned long output,
-                                     Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoSie::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                Real &cv, Real &bmod, const unsigned long output,
+                                Indexer_t &&lambda) const {
   Real lRho, lT, lE;
   if (output == thermalqs::none) {
     UNDEFINED_ERROR;
@@ -1816,7 +1847,7 @@ void SpinerEOSDependsRhoSie::FillEos(Real &rho, Real &temp, Real &energy, Real &
     }
   } else {
     lRho = toLog_(rho, lRhoOffset_);
-    if (lambda != nullptr) *lambda = lRho;
+    if (!variadic_utils::is_nullptr(lambda)) lambda[0] = lRho;
   }
   if (output & thermalqs::temperature) {
     lE = toLog_(energy, lEOffset_);
@@ -1846,11 +1877,10 @@ void SpinerEOSDependsRhoSie::FillEos(Real &rho, Real &temp, Real &energy, Real &
   }
 }
 
-PORTABLE_INLINE_FUNCTION
-void SpinerEOSDependsRhoSie::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
-                                                    Real &press, Real &cv, Real &bmod,
-                                                    Real &dpde, Real &dvdt,
-                                                    Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoSie::ValuesAtReferenceState(
+    Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod, Real &dpde,
+    Real &dvdt, Indexer_t &&lambda) const {
   rho = rhoNormal_;
   temp = TNormal_;
   sie = sieNormal_;
@@ -1861,31 +1891,31 @@ void SpinerEOSDependsRhoSie::ValuesAtReferenceState(Real &rho, Real &temp, Real 
   dvdt = dVdTNormal_;
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::interpRhoT_(const Real rho, const Real T, const DataBox &db,
-                                         Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::interpRhoT_(
+    const Real rho, const Real T, const DataBox &db, Indexer_t &&lambda) const {
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lT = toLog_(T, lTOffset_);
-  if (lambda != nullptr) {
-    *lambda = lRho;
+  if (!variadic_utils::is_nullptr(lambda)) {
+    lambda[0] = lRho;
   }
   return db.interpToReal(lRho, lT);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::interpRhoSie_(const Real rho, const Real sie,
-                                           const DataBox &db, Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::interpRhoSie_(
+    const Real rho, const Real sie, const DataBox &db, Indexer_t &&lambda) const {
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lE = toLog_(sie, lEOffset_);
-  if (lambda != nullptr) {
-    *lambda = lRho;
+  if (!variadic_utils::is_nullptr(lambda)) {
+    lambda[0] = lRho;
   }
   return db.interpToReal(lRho, lE);
 }
 
-PORTABLE_INLINE_FUNCTION
-Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
-                                          Real *lambda) const {
+template <typename Indexer_t>
+PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
+    const Real P, const Real lT, Indexer_t &&lambda) const {
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   Real lRho;
@@ -1899,8 +1929,9 @@ Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
     }
   } else {
     Real lRhoGuess = reproducible_ ? lRhoMin_ : 0.5 * (lRhoMin_ + lRhoMax_);
-    if (lambda != nullptr && lRhoMin_ <= *lambda && *lambda <= lRhoMax_) {
-      lRhoGuess = *lambda;
+    if (!variadic_utils::is_nullptr(lambda) && lRhoMin_ <= lambda[0] &&
+        lambda[0] <= lRhoMax_) {
+      lRhoGuess = lambda[0];
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
     auto status = ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
@@ -1921,7 +1952,7 @@ Real SpinerEOSDependsRhoSie::lRhoFromPlT_(const Real P, const Real lT,
       lRho = reproducible_ ? lRhoMin_ : lRhoGuess;
     }
   }
-  if (lambda != nullptr) *lambda = lRho;
+  if (!variadic_utils::is_nullptr(lambda)) lambda[0] = lRho;
   return lRho;
 }
 

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -17,58 +17,9 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 #include <singularity-eos/eos/singularity_eos.hpp>
+#include <singularity-eos/eos/singularity_eos_init_utils.hpp>
 
 using namespace singularity;
-
-// TODO: Replace these with the new Modify method in EOSBuilder.
-// NOTE: The new EOSBuilder machinery will likely be slower than these.
-template <typename T>
-EOS applyShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shift) {
-  if (shifted && scaled) {
-    ShiftedEOS<T> a(std::forward<T>(eos), shift);
-    ScaledEOS<ShiftedEOS<T>> b(std::move(a), scale);
-    return b;
-  }
-  if (shifted) {
-    return ShiftedEOS<T>(std::forward<T>(eos), shift);
-  }
-  if (scaled) {
-    return ScaledEOS<T>(std::forward<T>(eos), scale);
-  }
-  return eos;
-}
-
-template <typename T, template <typename> class W, typename... ARGS>
-EOS applyWrappedShiftAndScale(T &&eos, bool scaled, bool shifted, Real scale, Real shift,
-                              ARGS... args) {
-  if (shifted && scaled) {
-    ShiftedEOS<T> a(std::forward<T>(eos), shift);
-    ScaledEOS<ShiftedEOS<T>> b(std::move(a), scale);
-    W<ScaledEOS<ShiftedEOS<T>>> c(std::move(b), args...);
-    return c;
-  }
-  if (shifted) {
-    ShiftedEOS<T> sh_eos(std::forward<T>(eos), shift);
-    return W<ShiftedEOS<T>>(std::move(sh_eos), args...);
-  }
-  if (scaled) {
-    ScaledEOS<T> sc_eos(std::forward<T>(eos), scale);
-    return W<ScaledEOS<T>>(std::move(sc_eos), args...);
-  }
-  return W<T>(std::forward<T>(eos), args...);
-}
-
-template <typename T>
-EOS applyShiftAndScaleAndBilinearRamp(T &&eos, bool scaled, bool shifted, bool ramped,
-                                      Real scale, Real shift, Real r0, Real a, Real b,
-                                      Real c) {
-  if (ramped) {
-    return applyWrappedShiftAndScale<T, BilinearRampEOS>(
-        std::forward<T>(eos), scaled, shifted, scale, shift, r0, a, b, c);
-  } else {
-    return applyShiftAndScale(std::forward<T>(eos), scaled, shifted, scale, shift);
-  }
-}
 
 int init_sg_eos(const int nmat, EOS *&eos) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -78,19 +29,6 @@ int init_sg_eos(const int nmat, EOS *&eos) {
   eos = eos_p;
   return 0;
 }
-
-// apply everything but ramp in order to possibly calculate the
-// SAP ramp parameters from p-alhpa ramp parameters
-#define SGAPPLYMODSIMPLE(A)                                                              \
-  applyShiftAndScale(A, enabled[0] == 1, enabled[1] == 1, vals[0], vals[1])
-
-#define SGAPPLYMOD(A)                                                                    \
-  applyShiftAndScaleAndBilinearRamp(A, enabled[0] == 1, enabled[1] == 1,                 \
-                                    enabled[2] == 1 || enabled[3] == 1, vals[0],         \
-                                    vals[1], vals[2], vals[3], vals[4], vals[5])
-
-int def_en[4] = {0, 0, 0, 0};
-double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
 int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const double Cv,
                      int const *const enabled, double *const vals) {
@@ -154,23 +92,23 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
 
 int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const double b,
                           const double k, const double n, const double vc,
-                          const double pc, const double Cv, const double E0,
-                          int const *const enabled, double *const vals) {
+                          const double pc, const double Cv, int const *const enabled,
+                          double *const vals) {
   assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(DavisProducts(a, b, k, n, vc, pc, Cv, E0));
+  EOS eosi = SGAPPLYMODSIMPLE(DavisProducts(a, b, k, n, vc, pc, Cv));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
   }
-  EOS eos_ = SGAPPLYMOD(DavisProducts(a, b, k, n, vc, pc, Cv, E0));
+  EOS eos_ = SGAPPLYMOD(DavisProducts(a, b, k, n, vc, pc, Cv));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
 
 int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const double b,
                           const double k, const double n, const double vc,
-                          const double pc, const double Cv, const double E0) {
-  return init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, E0, def_en, def_v);
+                          const double pc, const double Cv) {
+  return init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, def_en, def_v);
 }
 
 int init_sg_DavisReactants(const int matindex, EOS *eos, const double rho0,
@@ -254,6 +192,25 @@ int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const doub
 int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
                       const double bb, const double qq) {
   return init_sg_NobleAbel(matindex, eos, gm1, Cv, bb, qq, def_en, def_v);
+}
+
+int init_sg_CarnahanStarling(const int matindex, EOS *eos, const double gm1,
+                             const double Cv, const double bb, const double qq,
+                             int const *const enabled, double *const vals) {
+  assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(CarnahanStarling(gm1, Cv, bb, qq));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
+  EOS eos_ = SGAPPLYMOD(CarnahanStarling(gm1, Cv, bb, qq));
+  eos[matindex] = eos_.GetOnDevice();
+  return 0;
+}
+
+int init_sg_CarnahanStarling(const int matindex, EOS *eos, const double gm1,
+                             const double Cv, const double bb, const double qq) {
+  return init_sg_CarnahanStarling(matindex, eos, gm1, Cv, bb, qq, def_en, def_v);
 }
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5

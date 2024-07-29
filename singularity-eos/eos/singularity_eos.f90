@@ -1,5 +1,5 @@
 !------------------------------------------------------------------------------
-! © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+! © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 ! program was produced under U.S. Government contract 89233218CNA000001
 ! for Los Alamos National Laboratory (LANL), which is operated by Triad
 ! National Security, LLC for the U.S.  Department of Energy/National
@@ -40,6 +40,7 @@ module singularity_eos
     init_sg_NobleAbel_f,&
     init_sg_SAP_Polynomial_f,&
     init_sg_StiffGas_f,&
+    init_sg_CarnahanStarling_f,&
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
     init_sg_Helmholtz_f,&
@@ -112,13 +113,13 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, E0, &
+      init_sg_DavisProducts(matindex, eos, a, b, k, n, vc, pc, Cv, &
                             sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_DavisProducts')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
-      real(kind=c_double), value, intent(in) :: a, b, k, n, vc, pc, Cv, E0
+      real(kind=c_double), value, intent(in) :: a, b, k, n, vc, pc, Cv
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_DavisProducts
   end interface
@@ -148,6 +149,19 @@ module singularity_eos
       real(kind=c_double), value, intent(in) :: gm1, Cv, bb, qq
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_NobleAbel
+  end interface
+  
+  interface
+    integer(kind=c_int) function &
+      init_sg_CarnahanStarling(matindex, eos, gm1, Cv, bb, qq, sg_mods_enabled, &
+                       sg_mods_values) &
+      bind(C, name='init_sg_CarnahanStarling')
+      import
+      integer(c_int), value, intent(in)      :: matindex
+      type(c_ptr), value, intent(in)         :: eos
+      real(kind=c_double), value, intent(in) :: gm1, Cv, bb, qq
+      type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
+    end function init_sg_CarnahanStarling
   end interface
 
   interface
@@ -284,7 +298,8 @@ module singularity_eos
                  offsets,&
                  press, pmax, vol, spvol, sie, temp, bmod, dpde, cv,&
                  frac_mass, frac_vol, frac_sie,&
-                 frac_bmod, frac_dpde, frac_cv)&
+                 frac_bmod, frac_dpde, frac_cv,&
+                 mass_frac_cutoff)&
       bind(C, name='get_sg_eos')
       import
       integer(kind=c_int), value, intent(in) :: nmat
@@ -311,6 +326,7 @@ module singularity_eos
       type(c_ptr), value, intent(in) :: frac_bmod
       type(c_ptr), value, intent(in) :: frac_dpde
       type(c_ptr), value, intent(in) :: frac_cv
+      real(kind=c_double), value, intent(in) :: mass_frac_cutoff
     end function get_sg_eos
   end interface
 
@@ -336,7 +352,8 @@ contains
                                 press, pmax, vol, spvol, sie, temp, bmod,&
                                 dpde, cv,&
                                 frac_mass, frac_vol, frac_sie,&
-                                frac_bmod, frac_dpde, frac_cv) &
+                                frac_bmod, frac_dpde, frac_cv,&
+                                mass_frac_cutoff) &
     result(err)
     integer(kind=c_int), intent(in) :: nmat
     integer(kind=c_int), intent(in) :: ncell
@@ -361,9 +378,12 @@ contains
     real(kind=8), dimension(:,:), target, optional, intent(inout) :: frac_bmod
     real(kind=8), dimension(:,:), target, optional, intent(inout) :: frac_dpde
     real(kind=8), dimension(:,:), target, optional, intent(inout) :: frac_cv
+    real(kind=8),                         optional, intent(in)    :: mass_frac_cutoff
 
     ! pointers
     type(c_ptr) :: bmod_ptr, dpde_ptr, cv_ptr
+
+    real(kind=c_double) :: mass_frac_cutoff_used
 
     bmod_ptr = C_NULL_PTR
     dpde_ptr = C_NULL_PTR
@@ -377,13 +397,18 @@ contains
     if(present(frac_cv)) then
       cv_ptr = c_loc(frac_cv)
     endif
+    if(present(mass_frac_cutoff)) then
+      mass_frac_cutoff_used = mass_frac_cutoff
+    else
+      mass_frac_cutoff_used = 1.0d-12
+    endif
 
     err = get_sg_eos(nmat, ncell, cell_dim, option, c_loc(eos_offsets),&
                      eos%ptr, c_loc(offsets), c_loc(press), c_loc(pmax),&
                      c_loc(vol), c_loc(spvol), c_loc(sie), c_loc(temp),&
                      c_loc(bmod), c_loc(dpde),c_loc(cv), c_loc(frac_mass),&
                      c_loc(frac_vol),c_loc(frac_sie), bmod_ptr, dpde_ptr,&
-                     cv_ptr)
+                     cv_ptr, mass_frac_cutoff_used)
   end function get_sg_eos_f
 
   integer function init_sg_eos_f(nmat, eos) &
@@ -460,12 +485,12 @@ contains
   end function init_sg_JWL_f
   
   integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc, &
-                                           Cv, E0, sg_mods_enabled, &
+                                           Cv, sg_mods_enabled, &
                                            sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex
     type(sg_eos_ary_t), intent(in)    :: eos
-    real(kind=8), value, intent(in)   :: a, b, k, n, vc, pc, Cv, E0
+    real(kind=8), value, intent(in)   :: a, b, k, n, vc, pc, Cv
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
@@ -478,7 +503,7 @@ contains
     if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
 
     err = init_sg_DavisProducts(matindex-1, eos%ptr, a, b, k, n, vc, pc, Cv, &
-                                E0, c_loc(sg_mods_enabled_use), &
+                                c_loc(sg_mods_enabled_use), &
                                 c_loc(sg_mods_values_use))
   end function init_sg_DavisProducts_f
 
@@ -573,7 +598,20 @@ contains
     err = init_sg_NobleAbel(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
                            c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_NobleAbel_f
-
+  
+  integer function init_sg_CarnahanStarling_f(matindex, eos, gm1, Cv, &
+                                      bb, qq, &
+                                      sg_mods_enabled, sg_mods_values) &
+    result(err)
+    integer(c_int), value, intent(in) :: matindex
+    type(sg_eos_ary_t), intent(in)    :: eos
+    real(kind=8), value, intent(in)   :: gm1, Cv, bb, qq
+    integer(kind=c_int), dimension(:), target, intent(inout) :: sg_mods_enabled
+    real(kind=8), dimension(:), target, intent(inout)        :: sg_mods_values
+    err = init_sg_CarnahanStarling(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
+                           c_loc(sg_mods_enabled), c_loc(sg_mods_values))
+  end function init_sg_CarnahanStarling_f
+  
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
   integer function init_sg_Helmholtz_f(matindex, eos, filename, rad, gas, coul, ion, ele, &

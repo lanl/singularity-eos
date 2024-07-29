@@ -19,5 +19,5 @@ macro(singularity_find_eigen)
 endmacro()
 
 macro(singularity_enable_eigen target)
-  target_link_libraries(${target} PUBLIC Eigen3::Eigen)
+  target_link_libraries(${target} INTERFACE Eigen3::Eigen)
 endmacro()

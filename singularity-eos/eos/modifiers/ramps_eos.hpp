@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -124,19 +124,19 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     return dpdr;
   }
 
-  PORTABLE_FUNCTION
-  Real TemperatureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return t_.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   }
-  PORTABLE_FUNCTION
-  Real InternalEnergyFromDensityTemperature(const Real rho, const Real temperature,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
   }
-  PORTABLE_FUNCTION
-  Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                         Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     // ramp pressure
     const Real p_ramp{get_ramp_pressure(rho)};
     // pressure from eos
@@ -144,68 +144,70 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     // return max(p_ramp, p_eos)
     return p_eos < p_ramp ? p_ramp : p_eos;
   }
-  PORTABLE_FUNCTION
-  Real MinInternalEnergyFromDensity(const Real rho, Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real
+  MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const {
     return t_.MinInternalEnergyFromDensity(rho, lambda);
   }
-  PORTABLE_FUNCTION
-  Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                        Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real EntropyFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return t_.EntropyFromDensityInternalEnergy(rho, sie, lambda);
   }
-  PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityInternalEnergy(const Real rho, const Real sie,
-                                             Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return t_.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
   }
-  PORTABLE_FUNCTION
-  Real BulkModulusFromDensityInternalEnergy(const Real rho, const Real sie,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     const Real p_ramp{get_ramp_pressure(rho)};
     const Real p_eos{t_.PressureFromDensityInternalEnergy(rho, sie, lambda)};
 
     return p_eos < p_ramp ? rho * get_ramp_dpdrho(rho)
                           : t_.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
   }
-  PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityInternalEnergy(const Real rho, const Real sie,
-                                               Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
     return t_.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
   }
-  PORTABLE_FUNCTION
-  Real PressureFromDensityTemperature(const Real rho, const Real temperature,
-                                      Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     const Real p_ramp{get_ramp_pressure(rho)};
     const Real p_eos{t_.PressureFromDensityTemperature(rho, temperature, lambda)};
     return p_eos < p_ramp ? p_ramp : p_eos;
   }
-  PORTABLE_FUNCTION
-  Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
-                                     Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real EntropyFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return t_.EntropyFromDensityTemperature(rho, temperature, lambda);
   }
-  PORTABLE_FUNCTION
-  Real SpecificHeatFromDensityTemperature(const Real rho, const Real temperature,
-                                          Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return t_.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
   }
-  PORTABLE_FUNCTION
-  Real BulkModulusFromDensityTemperature(const Real rho, const Real temperature,
-                                         Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     const Real p_ramp{get_ramp_pressure(rho)};
     const Real p_eos{t_.PressureFromDensityTemperature(rho, temperature, lambda)};
     return p_eos < p_ramp
                ? rho * get_ramp_dpdrho(rho)
                : t_.BulkModulusFromDensityTemperature(rho, temperature, lambda);
   }
-  PORTABLE_FUNCTION
-  Real GruneisenParamFromDensityTemperature(const Real rho, const Real temperature,
-                                            Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
     return t_.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
   }
-  PORTABLE_FUNCTION
-  void FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
-               const unsigned long output, Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
+                                 Real &cv, Real &bmod, const unsigned long output,
+                                 Indexer_t &&lambda = nullptr) const {
     // output passed into internal filleos can't include pressure
     const unsigned long ramp_out = output & ~thermalqs::pressure;
     // if pressure is output, calculate it first
@@ -434,10 +436,11 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     t_.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
   }
 
-  PORTABLE_FUNCTION
-  void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-                              Real &bmod, Real &dpde, Real &dvdt,
-                              Real *lambda = nullptr) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
+                                                Real &press, Real &cv, Real &bmod,
+                                                Real &dpde, Real &dvdt,
+                                                Indexer_t &&lambda = nullptr) const {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 

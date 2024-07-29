@@ -19,6 +19,8 @@
 
 .. _StiffGas: https://doi.org/10.1016/j.ijthermalsci.2003.09.002
 
+.. _PowerMG: https://www.osti.gov/biblio/1762624
+
 
 EOS Models
 ===========
@@ -542,6 +544,92 @@ these values are not set, they will be the same as those returned by the
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
 
+Carnahan-Starling
+`````````````````
+
+The (quasi-exact) Carnahan-Starling model in ``singularity-eos`` takes
+the form
+
+.. math::
+
+    P = Z(\rho) \rho (e-q) (\gamma-1)
+
+.. math::
+
+    Z(\rho) = \frac{1+\eta+\eta^2-\eta^3}{(1-\eta)^3},
+
+where :math:`\eta` is the packing fraction given by
+
+.. math::
+
+    \eta = b\rho.
+
+The energy is related to the temperature through
+
+.. math::
+
+    e = C_V T + q,
+
+where :math:`q` is an energy offset.
+
+As with the Noble-Abel EOS, it should be noted that covolume is physically
+significant as it represents the maximum compressibility of the gas,
+and as a result it should be non-negative.
+
+The Carnahan-Starling EOS is intended to represent a hard sphere fluid, and the
+covolume parameter, :math:`b`, can be related to the hard sphere
+diameter, :math:`\sigma`, through
+
+.. math::
+
+    b = \frac{\pi}{6}\frac{\sigma^3}{M},
+
+where :math:`M` is the molar mass of the gas.
+
+The entropy for the Carnahan-Starling EOS is given by
+
+.. math::
+    
+    S =  C_V \ln\left(\frac{T}{T_0}\right) + C_V (\gamma-1) \left\{ \ln\left(\frac{v}
+     {v_0}\right) - S^{CS} \right\} + q',
+
+.. math::
+   S^{CS} = b\left(4\left(\frac{1}{v-b} - \frac{1}{v_0-b}\right)+
+     b\left(\frac{1}{(v-b)^2} - \frac{1}{(v_0-b)^2}\right)\right)
+
+where :math:`S(\rho_0,T_0)=q'`. By default, :math:`T_0 = 298` K and the
+reference density is given by
+
+.. math::
+
+    P_0 = \rho_0 Z(\rho_0) C_V T_0(\gamma-1),
+
+where :math:`P_0` is by default 1 bar. Denisty is obtained through root finding methods.
+
+The settable parameters for this EOS are :math:`\gamma-1`, specific
+heat capacity (:math:`C_V`), covolume (:math:`b`) and offset internal energy (:math:`q`). Optionally, the reference state for the entropy calculation can
+be provided by setting the reference temperature, pressure, and entropy offset.
+
+The ``CarnahanStarling`` EOS constructor has four arguments: ``gm1``, which is :math:`\gamma-1`; ``Cv``, the
+specific heat :math:`C_V`; :math:`b`, the covolume; and :math:`q`, the internal energy offset.
+
+.. code-block:: cpp
+
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q)
+
+Optionally, the reference state for the entropy calculation,
+can be provided in the constructor via ``qp``, ``T0`` and ``P0``:
+
+.. code-block:: cpp
+
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0)
+
+Note that these parameters are provided solely for the entropy calculation. When
+these values are not set, they will be the same as those returned by the
+:code:`ValuesAtReferenceState()` function. However, if the entropy reference
+conditions are given, the return values of the :code:`ValuesAtReferenceState()`
+function will not be the same.
+
 Gruneisen EOS
 `````````````
 
@@ -580,6 +668,9 @@ Given the inconsisetency in the temperature, we have made the choice **not** to
 expose the entropy for this EOS. **Requesting an entropy value will result in an
 error.**
 
+If a linear :math:`U_s`-:math:`u_p` relation is enough for your problem, we recommend using the MGUsup
+EOS described below. It is a complete EOS with consistent temperature.
+
 Given a reference density, :math:`\rho_0`, we first parameterize the EOS using
 :math:`\eta` as a measure of compression given by
 
@@ -603,6 +694,13 @@ in terms of :math:`\eta` as
 When the unitless user parameter :math:`b=0`, the Gruneisen parameter is of a
 form where :math:`\rho\Gamma =` constant in compression, i.e. when
 :math:`\eta > 0`.
+If the unitless user parameter :math:`b=\Gamma_0`, the Gruneisen parameter is of a
+form where :math:`\Gamma_0 =` constant in compression. These two limitig cases are 
+shown in the figure below.
+
+.. image:: ../SteinbergGammarho.pdf
+  :width: 500
+  :alt: Figure: Demonstration of how the parameter b interpolated between two common approximations for Gamma
 
 The reference pressure along the Hugoniot is determined by
 
@@ -750,6 +848,234 @@ is :math:`S_0`, and ``expconsts`` is a pointer to the constant array of length
 39 containing the expansion coefficients
 :math:`d_2` to :math:`d_{40}`. Expansion coefficients not used should be set to
 0.0.
+
+Mie-Gruneisen linear :math:`U_s`- :math:`u_p` EOS
+`````````````````````````````````````````````````
+
+One of the most commonly-used EOS is the linear :math:`U_s`- :math:`u_p` version of the Mie-Gruneisen EOS. This EOS
+uses the Hugoniot as the reference curve and is extensively used in shock physics.
+This version implements the exact thermodynamic temperature on the Hugoniot and also adds an entropy.
+
+The pressure follows the traditional Mie-Gruneisen form,
+
+.. math::
+
+    P(\rho, e) = P_H(\rho) + \rho\Gamma(\rho) \left(e - e_H(\rho) \right),
+
+Here the subscript :math:`H` is a reminder that the reference curve is a
+Hugoniot. :math:`\Gamma` is the Gruneisen parameter and the first approximation 
+is that :math:`\rho\Gamma(\rho)=\rho_0\Gamma(\rho_0)`
+which is the same assumption as in the Gruneisen EOS when :math:`b=0`.
+
+The above is an incomplete equation of state because it only relates the
+pressure to the density and energy, the minimum required in a solution to the
+Euler equations. To complete the EOS and determine the temperature and entropy, a constant
+heat capacity is assumed so that
+
+.. math::
+
+    T(\rho, e) = \frac{\left(e-e_H(\rho)\right)}{C_V} + T_H(\rho)
+
+Note the difference from the Gruneisen EOS described above. We still use a constant :math:`C_V`, 
+and it is usually taken at the reference temperature, but
+we now extrapolate from the temperature on the Hugoniot, :math:`T_H(\rho)`, and not 
+from the reference temperature, :math:`T_0`.
+
+With this consistent temperature we can derive an entropy in a similar way as for the Vinet EOS. Using
+thermodynamic derivatives we can show that
+
+.. math::
+
+    \Gamma \rho = \frac{\alpha B_T}{C_V} ,
+
+and we arrive at 
+
+.. math::
+
+    S(\rho,T) = S_0 - \Gamma(\rho_0)C_V \eta + {C_V} \ln \frac{T}{T_0} ,
+
+
+where :math:`\eta` is a measure of compression given by
+
+.. math::
+
+    \eta = 1 - \frac{\rho_0}{\rho}.
+
+This is convenient because :math:`\eta = 0` when :math:`\rho = \rho_0`,
+:math:`\eta = 1` at the infinite density limit, and :math:`\eta = -\infty` at
+the zero density limit. 
+
+The pressure, energy, and temperature, on the Hugoniot are derived from the 
+shock jump conditions,
+
+.. math::
+
+  \rho_0 U_s &= \rho (U_s - u_p) \\
+  P_H &= \rho_0 U_s u_p \ , 
+
+assuming a linear :math:`U_s`- :math:`u_p` relation,
+
+.. math::
+
+    U_s = C_s + s u_p . 
+
+Here :math:`U_s` is the shock velocity and :math:`u_p` is the particle
+velocity. As is pointed out in the description of the Gruneisen EOS, 
+for many materials, the :math:`U_s`- :math:`u_p` relationship is roughly linear 
+so only this :math:`s` parameter is needed. The units for :math:`C_s` is velocity while
+:math:`s` is unitless. Note that the parameter :math:`s` is related to the
+fundamental derivative of shock physics as shown by `Mattsson-Wills <WillsThermo_>`_.
+
+Solving the jump equations above gives that the reference pressure along the Hugoniot is determined by
+
+.. math::
+
+    P_H(\rho) = C_s^2 \rho_0 \frac{\eta}{\left(1 - s \eta \right)^2} .
+
+Note the singularity at :math:`s \eta = 1` which limits this model's validity to compressions
+:math:`\eta << 1/s`. If your problem can be expected to have compressions of this order, you should use the PowerMG
+EOS that is explicitely constructed for large compressions. 
+The assumption of linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions.
+
+The energy along the Hugoniot is given by
+
+.. math::
+
+    E_H(\rho) = \frac{P_H \eta }{2 \rho_0} + E_0 .
+
+The temperature on the Hugoniot is hard to derive explicitely but with the help of Mathematica
+we can solve
+
+.. math::
+    :label: TH
+
+    T_H(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{e^{\Gamma(\rho_0) \eta}}{2 C_V \rho_0}
+                \int_0^\eta e^{-\Gamma(\rho_0) z} z^2 \frac{d}{dz} \left( \frac{P_H}{z}\right) dz 
+
+
+into the explicit formula
+
+.. math::
+
+      T_H(\rho) &= T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2} 
+                \left[\frac{- s \eta}{(1 - s \eta)^2} + \left( \frac{\Gamma(\rho_0)}{s} - 3 \right) 
+                                        \left( e^{\Gamma(\rho_0) \eta} - \frac{1}{(1-s \eta)}\right)\right. \\
+           & \ \left. + e^{-\frac{\Gamma(\rho_0)}{s} (1-s \eta)} 
+                        \left( Ei(\frac{\Gamma(\rho_0)}{s}(1-s \eta))-Ei(\frac{\Gamma(\rho_0)}{s}) \right)
+                        \left((\frac{\Gamma(\rho_0)}{s})^2 - 4 \frac{\Gamma(\rho_0)}{s} + 2 \right) \right]                        
+
+where :math:`Ei` is the exponential integral function. We replace the :math:`Ei` difference with a sum with cutoff
+giving an error less than machine precision. For :math:`s \eta` close to :math:`0`, there are 
+severe cancellations in this formula and we use the expansion 
+
+.. math::
+
+    {T_H}_{exp}(\rho) = T_0 e^{\Gamma(\rho_0) \eta} + \frac{C_s^2}{2 C_V s^2}
+                          \left[ -2 \ln ( 1- s \eta) + \frac{s \eta}{(1 - s \eta)^2} ( 3 s \eta - 2) \right] \ .
+
+
+The first omitted term in the expansion inside the square brackets is :math:`\Gamma(\rho_0) \eta^4 / 6`. This expansion is
+in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the 
+isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
+
+.. image:: ../ApproxForTH.pdf
+  :width: 500
+  :alt: Figure: Different approximations for the temperature on the Hugoniot.
+
+The constructor for the ``MGUsup`` EOS has the signature
+
+.. code-block:: cpp
+
+  MGUsup(const Real rho0, const Real T0, const Real Cs, const Real s, const Real G0,
+         const Real Cv0, const Real E0, const Real S0)
+
+where 
+``rho0`` is :math:`\rho_0`, ``T0`` is :math:`T_0`,
+``Cs`` is :math:`C_s`, ``s`` is :math:`s`, 
+``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_V`,
+``E0`` is :math:`E_0`, and ``S0`` is :math:`S_0`. 
+
+Mie-Gruneisen power expansion EOS
+`````````````````````````````````
+As we noted above, the assumption of a linear :math:`U_s`- :math:`u_p` relation is simply not valid at large compressions. At 
+Sandia National Laboratories Z-pinch machine, the compression is routinely so large that a new Mie-Gruneisen EOS was developped,
+by `Robinson <PowerMG_>`_, that could handle these large compressions. The overall structure and motivation for approximations 
+are as described above; in compression it is only the formula for :math:`P_H`, and by extension :math:`T_H`, that differ. This 
+EOS is however modified in expansion to follow an isentrope instead of the invalid-in-expansion Hugoniot.
+
+In the PowerMG model the pressure on the Hugoniot in the compression region, :math:`\eta \geq 0` is expressed as a power series
+
+.. math::
+
+    P_H(\rho) = K_0 \eta \left( 1 + K_1 \eta + K_2 \eta^2 + K_3 \eta^3 + \cdots + K_M \eta^M \right)  
+
+By expanding the MGUsup Hugoniot pressure into a power series in :math:`\eta` we see that we can recover the MGUsup results by setting
+
+.. math::
+    
+    K_0 &=& C_s^2 \rho_0 \ \ \ \ \ \ \ \ & \\
+    K_n &=& (n+1) s^n & \ \ \ \ \ \ n >= 1
+
+In the figure below we have used :math:`M=20` with these coefficients and show how the divergence in the MGUsup pressure at :math:`\eta = \frac{1}{s}` is avoided in the PowerMG, making it more suitable for modeling high pressures.
+
+.. image:: ../PMGvsMGUsupPress.pdf
+  :width: 500
+  :alt: Figure: Comparing Hugoniot pressure for PowerMG and MGUsup
+
+For  :math:`\eta < 0`, that is, in expansion, the isentrope with a single :math:`K_0` is used until a user defined minimum pressure is obtained
+
+.. math::
+
+    P_H &= K_0 \eta& \ \ \ \ \ \ \ \ \ \ & \frac{P_{min}}{K_0} \leq \eta < 0 \\
+    P_H &= P_{min} & \ \ \ \ \ \ \ \ \ \ & \eta <  \frac{P_{min}}{K_0}
+
+If the user have not set :math:`P_{min}` or if a positive value has been given, a default value of :math:`P_{min} = -1000 K_0` is used.
+
+If we now insert the formula for :math:`P_H` in compression into equation :math:numref:`TH`, for :math:`\eta \geq 0` we arrive at
+
+.. math::
+
+    T_H = T_0 e^{\Gamma(\rho_0) \eta} + \frac{e^{\Gamma(\rho_0) \eta}}{2 C_V \rho_0} K_0 \left( K_1 I_2 + 2 K_2 I_3 + 3 K_3 I_4 + \cdots + M K_M I_{M+1} \right)
+
+where 
+
+.. math::
+
+    I_n = \int_0^\eta e^{-\Gamma(\rho_0) z} z^{n-1} dz
+
+that can be rewritten in terms of the lower incomplete gamma function. For :math:`\eta < 0` the isentropic temperature is used,
+
+.. math::
+
+    T_H = T_0 e^{\Gamma(\rho_0) \eta} \ \ \ \ \ \ \ \ \ \  \eta < 0  \, .
+
+It has been verified that this temperature is following the black, true temperature line in the figure late in the MGUsup section in compression and the blue isentropic temperature in expansion. More information about how to implement :math:`T_H` into codes is given in `Robinson <PowerMG_>`_.
+
+For completeness we give :math:`E_H` as well,
+
+.. math::
+
+    E_H &= \frac{P_H \eta}{2 \rho_0} + E_0  & \ \ \ \ \ \ \ \ \ \ & \eta \geq 0 \\
+    E_H &=  \frac{K_0 \eta^2}{2 \rho_0} + E_0 & \ \ \ \ \ \ \ \ \ \ & \frac{P_{min}}{K_0} \leq \eta < 0 \\
+    E_H &= \frac{K_0 \eta_{min}^2}{2 \rho_0} + E_0 + \frac{P_{min}}{\rho_0} (\eta - \eta_{min})& \ \ \ \ \ \ \ \ \ \ & \eta <  \eta_{min} = \frac{P_{min}}{K_0}
+
+The constructor for the ``PowerMG`` EOS has the signature
+
+.. code-block:: cpp
+
+  PowerMG(const Real rho0, const Real T0, const Real G0, const Real Cv0, const Real E0,
+          const Real S0, const Real Pmin, const Real *expconsts)
+
+where
+``rho0`` is :math:`\rho_0`, ``T0`` is :math:`T_0`,
+``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_V`,
+``E0`` is :math:`E_0`, ``S0`` is :math:`S_0`, ``Pmin`` is :math:`P_{min}`, and
+``expconsts`` is a pointer to the constant array of length
+41 containing the expansion coefficients
+:math:`K_0` to :math:`K_{40}`. Expansion coefficients not used should be set to
+:math:`0.0`.
+
+
 
 JWL EOS
 ``````````
@@ -1014,17 +1340,44 @@ Here, there are four dimensionless parameters that are settable by the user,
 :math:`e_\mathrm{C}`, :math:`V_\mathrm{C}` and :math:`T_\mathrm{C}` are tuning
 parameters with units related to their non-subscripted counterparts.
 
+Note that the energy zero (i.e. the reference energy) for the Davis products EOS
+is arbitrary. For the isentrope to properly pass through the CJ state of a
+reacting material, the energy release of the reaction needs to be accounted for
+properly. If done external to the EOS, an energy source term is required in the
+Euler equations. However, a common convention is to specify the reactants and
+product EOS in a consistent way such that the reference energy corresponds to
+the rest state of the material *before* it reacts.
+
+The energy at the CJ state can be calculated as
+
+.. math::
+
+    e_\mathrm{CJ} = \frac{P_0 + P_\mathrm{CJ}}{2(V_0 - V_\mathrm{CJ})},
+
+relative to :math:`e = 0` at the reference state of the *reactants*. Therefore
+the energy offset of the products EOS is given by
+
+.. math::
+
+    e_0 = e_S(V_\mathrm{CJ}) - e_\mathrm{CJ}.
+
+Practically, this means :math:`e_0` should be positive for any energetic material.
+
+To provide the energy offset to the Davis Products EOS, `the energy shift
+modifier<modifiers shifted EOS>`_ should be used. Note that the convention there
+is that the shift is positive, so :math:`-e_0` should be provided to the shift
+modifier.
+
 The constructor for the Davis Products EOS is
 
 .. code-block:: cpp
 
   DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
-                const Real pc, const Real Cv, const Real E0)
+                const Real pc, const Real Cv)
 
 where ``a`` is :math:`a`, ``b`` is :math:`b`, ``k`` is :math:`k`,
 ``n`` is :math:`n`, ``vc`` is :math:`V_\mathrm{C}`, ``pc`` is
-:math:`P_\mathrm{C}`, ``Cv`` is :math:`C_{V,0}`, and ``E0`` is
-:math:`e_\mathrm{C}`.
+:math:`P_\mathrm{C}`, ``Cv`` is :math:`C_{V,0}`.
 
 Spiner EOS
 ````````````
@@ -1153,7 +1506,7 @@ SAP Polynomial EOS
 ``````````````````
 
 This model is specific to the Safety Applications Project (SAP). It is
-an imcomplete EOS, and is a simple analytical form used to fit
+an incomplete EOS, and is a simple analytical form used to fit
 experimental data:
 
 .. math::

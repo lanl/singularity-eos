@@ -11,16 +11,16 @@ At it's most basic, you can download and compile ``singularity-eos`` with:
   cd singularity-eos
   mkdir bin
   cd bin
-  cmake -DSINGULARITY_FORCE_SUBMODULEMODE=ON -DSINGULARITY_USE_FORTRAN=OFF ..
-  make -j 
+  cmake -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_FORTRAN=OFF ..
+  make -j
   make install # optional: install into directory defined via CMAKE_INSTALL_PREFIX
 
-This will downloady singularity-eos with no optional dependencies and
+This will download ``singularity-eos`` with no optional dependencies and
 compile the capabilities available in that form. For more details, see
 :ref:`our build page <building>`.
 
 If the library is in your include and lib paths (or you built it
-in-tree), you can include the eos part of the library with
+in-tree), you can include the ``eos`` part of the library with
 
 .. code-block:: cpp
 
@@ -78,7 +78,7 @@ And that's it!
 Going Deeper
 --------------
 
-* You can find code examples in the ``examples`` source directory.
+* You can find code examples in the ``example`` source directory. We describe them :ref:`here <examples>`.
 * To learn more about the design philosophy, look :ref:`here <philosophy>`.
 * To learn about how to build, look at :ref:`our build document <building>`.
 * To learn more about the equation of state API, look :ref:`here <using-eos>`.

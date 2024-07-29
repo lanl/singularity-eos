@@ -5,7 +5,25 @@
 
 import os
 
+from spack.error import SpackError
 from spack.package import *
+from spack.directives import directive
+
+
+@directive("singularity_eos_plugins")
+def singularity_eos_plugin(name, spackage, relpath):
+    def _execute_register(pkg):
+        pkg.plugins[name] = (spackage, relpath)
+
+    return _execute_register
+
+
+def plugin_validator(pkg_name, variant_name, values):
+    if values == ("none",):
+        return
+    for v in values:
+        if v not in SingularityEos.plugins:
+            raise SpackError(f"Unknown Singularity-EOS plugin '{v}'")
 
 
 class SingularityEos(CMakePackage, CudaPackage):
@@ -30,8 +48,6 @@ class SingularityEos(CMakePackage, CudaPackage):
     variant(
         "kokkos-kernels", default=False, description="Enable kokkos-kernals for linear algebra"
     )
-
-    variant("openmp", default=False, description="Enable openmp")
 
     # for compatibility with downstream projects
     variant("mpi", default=False, description="Build with MPI support")
@@ -62,11 +78,26 @@ class SingularityEos(CMakePackage, CudaPackage):
     variant("spiner", default=True, description="Use Spiner")
 
     variant("closure", default=True, description="Build closure module")
+    variant("shared", default=False, description="Build shared libs")
+
+    plugins = {}
+
+    singularity_eos_plugin("dust", "self", "example/plugin")
+
+    variant(
+        "plugins",
+        multi=True,
+        default="none",
+        validator=plugin_validator,
+        description="list of plugins to build",
+        when="@1.9.0:"
+    )
+    variant("variant", default="default", description="include path used for variant header", when="@1.9.0:")
 
     # building/testing/docs
     depends_on("cmake@3.19:")
-    depends_on("catch2@3.0.1:", when="@main +tests")
     depends_on("catch2@2.13.7", when="@:1.8.0 +tests")
+    depends_on("catch2@3.0.1:", when="@1.9.0: +tests")
     depends_on("python@3:", when="+python")
     depends_on("py-numpy", when="+python+tests")
     depends_on("py-pybind11@2.9.1:", when="+python")
@@ -81,6 +112,7 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     depends_on("ports-of-call@1.4.2,1.5.2:", when="@:1.7.0")
     depends_on("ports-of-call@1.5.2:", when="@1.7.1:")
+    depends_on("ports-of-call@1.6.0:", when="@1.9.0:")
     # request HEAD of main branch
     depends_on("ports-of-call@main", when="@main")
     
@@ -101,6 +133,7 @@ class SingularityEos(CMakePackage, CudaPackage):
         ),
         when="+cuda",
     )
+    depends_on("binutils@:2.39,2.42:+ld")
 
 
     #TODO: do we need kokkos,kokkoskernels the exact same version?
@@ -109,10 +142,11 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("kokkos-kernels" + _kver, when=_myver + '+kokkos-kernels')
 
     # set up kokkos offloading dependencies
-    for _flag in ("~cuda", "+cuda", "~openmp", "+openmp"):
-        depends_on("kokkos ~shared" + _flag, when="+kokkos" + _flag)
+    for _flag in ("~cuda", "+cuda"):
+        depends_on("kokkos" + _flag, when="+kokkos" + _flag)
         depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
-        depends_on("spiner" + _flag, when="+kokkos" + _flag)
+
+    depends_on("kokkos+pic", when="+kokkos-kernels")
 
     # specfic specs when using GPU/cuda offloading
     # TODO remove +wrapper for clang builds
@@ -121,12 +155,11 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # fix for older spacks
     if spack.version.Version(spack.spack_version) >= spack.version.Version("0.17"):
-        depends_on("kokkos-kernels ~shared", when="+kokkos-kernels")
+        depends_on("kokkos-kernels", when="+kokkos-kernels")
 
     for _flag in list(CudaPackage.cuda_arch_values):
         depends_on("kokkos cuda_arch=" + _flag, when="+cuda+kokkos cuda_arch=" + _flag)
         depends_on("kokkos-kernels cuda_arch=" + _flag, when="+cuda+kokkos cuda_arch=" + _flag)
-        depends_on("spiner cuda_arch=" + _flag, when="+cuda+kokkos cuda_arch=" + _flag)
 
     conflicts("cuda_arch=none", when="+cuda", msg="CUDA architecture is required")
 
@@ -134,7 +167,6 @@ class SingularityEos(CMakePackage, CudaPackage):
 
     # these are mirrored in the cmake configuration
     conflicts("+cuda", when="~kokkos")
-    conflicts("+openmp", when="~kokkos")
     conflicts("+kokkos-kernels", when="~kokkos")
     conflicts("+hdf5", when="~spiner")
 
@@ -161,6 +193,7 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define_from_variant("SINGULARITY_BUILD_PYTHON", "python"),
             self.define_from_variant("SINGULARITY_USE_SPINER", "spiner"),
             self.define_from_variant("SINGULARITY_USE_SPINER_WITH_HDF5", "hdf5"),
+            self.define_from_variant("BUILD_SHARED_LIBS", "shared"),
             self.define("SINGULARITY_BUILD_TESTS", self.run_tests),
             self.define(
                 "SINGULARITY_BUILD_SESAME2SPINER", "sesame" in self.spec.variants["build_extra"].value
@@ -183,9 +216,36 @@ class SingularityEos(CMakePackage, CudaPackage):
             self.define("SINGULARITY_USE_EOSPAC", "^eospac" in self.spec),
         ]
 
+        if self.spec.satisfies("@1.9.0:"):
+            if "none" not in self.spec.variants["plugins"].value:
+                pdirs = []
+                for p in self.spec.variants["plugins"].value:
+                  spackage, path = self.plugins[p]
+                  if spackage == "self":
+                      pdirs.append(join_path(self.stage.source_path, path))
+                  else:
+                      pdirs.append(join_path(self.spec[spackage].prefix, path))
+                args.append(self.define("SINGULARITY_PLUGINS", ";".join(pdirs)))
+
+            variant_path = self.spec.variants["variant"].value
+            if variant_path != "default":
+                parts = os.path.normpath('variant_path').split(os.sep)
+                if parts[0] in self.plugins.keys():
+                    spackage, path = self.plugins[parts[0]]
+                    parts[0] = self.spec[spackage].prefix
+                    variant_path = join_path(*parts)
+                args.append(self.define("SINGULARITY_VARIANT", variant_path))
+
         #TODO: do we need this?
         if "+kokkos+cuda" in self.spec:
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
+
+        if "+kokkos" in self.spec:
+            if "cxxstd" in self.spec["kokkos"].variants:
+              cxx_std_variant = "cxxstd" # current spack
+            else:
+              cxx_std_variant = "std" # older spack
+            args.append(self.define("CMAKE_CXX_STANDARD", self.spec["kokkos"].variants[cxx_std_variant].value))
 
         return args
 

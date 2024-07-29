@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,12 +12,12 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_EOS_EOS_HPP_
-#define _SINGULARITY_EOS_EOS_EOS_HPP_
+#ifndef _SINGULARITY_EOS_EOS_EOS_TYPE_LISTS_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_TYPE_LISTS_HPP_
 
-#include "stdio.h"
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
@@ -33,25 +33,7 @@
 #include <singularity-eos/base/variadic_utils.hpp>
 
 // EOS models
-#include <singularity-eos/eos/eos_davis.hpp>
-#include <singularity-eos/eos/eos_eospac.hpp>
-#include <singularity-eos/eos/eos_gruneisen.hpp>
-#include <singularity-eos/eos/eos_helmholtz.hpp>
-#include <singularity-eos/eos/eos_ideal.hpp>
-#include <singularity-eos/eos/eos_jwl.hpp>
-#include <singularity-eos/eos/eos_noble_abel.hpp>
-#include <singularity-eos/eos/eos_sap_polynomial.hpp>
-#include <singularity-eos/eos/eos_spiner.hpp>
-#include <singularity-eos/eos/eos_stellar_collapse.hpp>
-#include <singularity-eos/eos/eos_stiff.hpp>
-#include <singularity-eos/eos/eos_vinet.hpp>
-
-// Modifiers
-#include <singularity-eos/eos/modifiers/eos_unitsystem.hpp>
-#include <singularity-eos/eos/modifiers/ramps_eos.hpp>
-#include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
-#include <singularity-eos/eos/modifiers/scaled_eos.hpp>
-#include <singularity-eos/eos/modifiers/shifted_eos.hpp>
+#include <singularity-eos/eos/eos_models.hpp>
 
 namespace singularity {
 
@@ -67,8 +49,8 @@ using singularity::variadic_utils::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, Vinet, JWL, DavisReactants, DavisProducts, StiffGas,
-       SAP_Polynomial, NobleAbel
+    tl<IdealGas, Gruneisen, Vinet, MGUsup, PowerMG, JWL, DavisReactants, DavisProducts,
+       StiffGas, SAP_Polynomial, NobleAbel, CarnahanStarling
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
        ,
@@ -142,19 +124,7 @@ static constexpr const auto ramped_all =
 // final combined list
 static constexpr const auto combined_list =
     singularity::variadic_utils::concat(combined_list_1, ramped_all);
-// a function that returns a Variant from a typelist
-template <typename... Ts>
-struct tl_to_Variant_struct {
-  using vt = Variant<Ts...>;
-};
 
-template <typename... Ts>
-constexpr auto tl_to_Variant(tl<Ts...>) {
-  return tl_to_Variant_struct<Ts...>{};
-}
-
-// create the alias
-using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
 } // namespace singularity
 
-#endif // _SINGULARITY_EOS_EOS_EOS_HPP_
+#endif // _SINGULARITY_EOS_EOS_EOS_TYPE_LISTS_HPP_

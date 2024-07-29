@@ -61,7 +61,8 @@ class EOS(unittest.TestCase):
                                                thermalqs.pressure      |
                                                thermalqs.temperature   |
                                                thermalqs.specific_heat |
-                                               thermalqs.bulk_modulus)
+                                               thermalqs.bulk_modulus  |
+                                               thermalqs.do_lambda)
 
     def testIdealGas(self):
         eos = singularity_eos.IdealGas(1,1)
@@ -86,7 +87,7 @@ class EOS(unittest.TestCase):
         eos = singularity_eos.DavisReactants(1,1,1,1,1,1,1,1,1,1,1)
 
     def testDavisProducts(self):
-        eos = singularity_eos.DavisProducts(1,1,1,1,1,1,1,1)
+        eos = singularity_eos.DavisProducts(1,1,1,1,1,1,1)
 
 class Modifiers(unittest.TestCase, EOSTestBase):
     def setUp(self):
