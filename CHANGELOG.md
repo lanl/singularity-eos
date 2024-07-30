@@ -3,6 +3,19 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+
+### Fixed (Repair bugs, etc)
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.9.0
+Date: 7/29/2024
+
+### Added (new features/APIs/variables/...)
 - [[PR377]](https://github.com/lanl/singularity-eos/pull/377) Moved much of the variant creating machinery and initialization machinery into separate header files. This is useful for downstream codes that use custom variants and helps with producing plugins.
 - [[PR292]](https://github.com/lanl/singularity-eos/pull/292) Added Carnahan-Starling EoS
 - [[PR#362]](https://github.com/lanl/singularity-eos/pull/362) Add lambda to thermalqs
