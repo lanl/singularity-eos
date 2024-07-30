@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
@@ -31,7 +32,7 @@ namespace singularity {
 
 // For logarithmic interpolation, quantities may be negative.
 // If they are, use offset to ensure negative values make sense.
-template<int NGRIDS = 3>
+template <int NGRIDS = 3>
 class Bounds {
  public:
   using RegularGrid1D = Spiner::RegularGrid1D<Real>;
@@ -60,23 +61,27 @@ class Bounds {
   }
 
   Bounds(Real global_min, Real global_max, Real anchor_point, Real log_fine_diameter,
-         int N_fine, Real N_factor, Real shrinkRange = 0)
+         Real ppd_fine, Real ppd_factor, Real shrinkRange = 0)
       : offset(0), piecewise(true) {
+    const Real ppd_coarse = (ppd_factor > 0) ? ppd_fine / ppd_factor : ppd_fine;
+
     convertBoundsToLog_(global_min, global_max, shrinkRange);
     anchor_point += offset;
     anchor_point = singularity::FastMath::log10(std::abs(anchor_point));
 
-    int N_coarse = ((N_factor >= 1) && (N_fine > N_factor))
-                       ? static_cast<int>(std::ceil(N_fine / N_factor))
-                       : N_fine;
-
     Real mid_min = anchor_point - 0.5 * log_fine_diameter;
     Real mid_max = anchor_point + 0.5 * log_fine_diameter;
-    adjustForAnchor_(mid_min, mid_max, N_fine, anchor_point);
 
+    // add a point just to make sure we have enough points after adjusting for anchor
+    int N_fine = getNumPointsFromPPD(mid_min, mid_max, ppd_fine) + 1;
+    adjustForAnchor_(mid_min, mid_max, N_fine, anchor_point);
     RegularGrid1D grid_middle(mid_min, mid_max, N_fine);
-    RegularGrid1D grid_lower(global_min, mid_min, N_coarse);
-    RegularGrid1D grid_upper(mid_max, mid_max, N_coarse);
+
+    const int N_lower = getNumPointsFromPPD(global_min, mid_min, ppd_coarse);
+    RegularGrid1D grid_lower(global_min, mid_min, N_lower);
+
+    const int N_upper = getNumPointsFromPPD(mid_max, global_max, N_upper);
+    RegularGrid1D grid_upper(mid_max, global_max, N_upper);
 
     grid = Grid_t(std::vector<RegularGrid1D>{grid_lower, grid_middle, grid_upper});
   }
@@ -90,6 +95,13 @@ class Bounds {
        << "[N,dx] = [" << b.grid.nPoints() << ", " << b.grid.dx() << "]"
        << "\n";
     return os;
+  }
+
+  template <typename T>
+  static int getNumPointsFromPPD(Real min, Real max, T ppd) {
+    Bounds b(min, max, 3, true);
+    Real ndecades = b.grid.max() - b.grid.min();
+    return std::max(2, static_cast<int>(std::ceil(ppd * ndecades)));
   }
 
  private:
@@ -115,14 +127,19 @@ class Bounds {
 
   void adjustForAnchor_(Real min, Real &max, int &N, Real anchor_point) {
     if (min < anchor_point && anchor_point < max) {
-      Real dxguess = (max - min) / ((Real)N - 1);
-      int Nmax = static_cast<int>((max - min) / dxguess);
-      int Nanchor = static_cast<int>((anchor_point - min) / dxguess);
-      Real dx = (anchor_point - min) / static_cast<Real>(Nanchor + 1);
+      Real Nfrac = (anchor_point - min) / (max - min);
+      PORTABLE_REQUIRE((0 < Nfrac && Nfrac < 1), "anchor in bounds");
+
+      int Nanchor = static_cast<int>(std::ceil(N * Nfrac));
+      if ((Nanchor < 2) || (Nanchor >= N)) return; // not possible to shift this safely
+
+      Real dx = (anchor_point - min) / static_cast<Real>(Nanchor - 1);
       int Nmax_new = static_cast<int>((max - min) / dx);
-      Nmax_new = std::max(Nmax, Nmax_new);
-      max = dx * (Nmax_new) + min;
+      Real max_new = dx * (Nmax_new - 1) + min;
+      PORTABLE_REQUIRE(max_new <= max, "must not exceed table bounds");
+
       N = Nmax_new;
+      max = max_new;
     }
   }
 

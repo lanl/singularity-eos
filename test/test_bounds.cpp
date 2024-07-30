@@ -12,7 +12,10 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#include <cstdio>
+
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/table_bounds.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
@@ -32,18 +35,73 @@ constexpr Real rho_max = 1e3;
 constexpr Real T_min = 1;
 constexpr Real T_max = 1e9;
 constexpr int N_per_decade_fine = 10;
-constexpr Real N_factor = 5;
+constexpr Real N_factor = 2;
 
-SCENARIO("linear bounds") {
+SCENARIO("Bounds can compute number of points from points per decade", "[Bounds]") {
+  WHEN("We compute the number of points from points per decade") {
+    int np = Bounds::getNumPointsFromPPD(T_min, T_max, N_per_decade_fine);
+    THEN("We get the right number") { REQUIRE(np == 90); }
+  }
+}
+
+SCENARIO("Linear bounds in the bounds object", "[Bounds]") {
   WHEN("We compute linear bounds ") {
     constexpr Real min = -2;
     constexpr Real max = 5;
     constexpr int N = 21;
     Bounds lin_bounds(min, max, N);
     THEN("The min and max and point number correct") {
-      REQUIRE( lin_bounds.grid.min() == min );
-      REQUIRE( lin_bounds.grid.max() == max );
-      REQUIRE( lin_bounds.grid.nPoints() == N );
+      REQUIRE(lin_bounds.grid.min() == min);
+      REQUIRE(lin_bounds.grid.max() == max);
+      REQUIRE(lin_bounds.grid.nPoints() == N);
+    }
+  }
+}
+
+SCENARIO("Logarithmic, single-grid bounds in the bounds object", "[Bounds]") {
+  WHEN("We compute logarithmic single-grid bounds") {
+    int np = Bounds::getNumPointsFromPPD(rho_min, rho_max, N_per_decade_fine);
+    Bounds lRhoBounds(rho_min, rho_max, np, true, 0.0, rho_normal);
+    THEN("The lower and upper bounds are right") {
+      REQUIRE(std::abs(lRhoBounds.grid.min() - singularity::FastMath::log10(rho_min)) <=
+              1e-12);
+      REQUIRE(lRhoBounds.grid.max() <=
+              singularity::FastMath::log10(rho_max)); // shifted due to anchor
+      AND_THEN("The anchor is on the mesh") {
+        Real lanchor = singularity::FastMath::log10(rho_normal);
+        int ianchor;
+        Spiner::weights_t<Real> w;
+        lRhoBounds.grid.weights(lanchor, ianchor, w);
+        REQUIRE(std::abs(w[0] - 1) <= 1e-12);
+        REQUIRE(std::abs(w[1]) <= 1e-12);
+      }
+    }
+  }
+}
+
+SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
+  WHEN("We compute a piecewise bounds object") {
+    Bounds bnds(rho_min, rho_max, rho_normal, 0.5, N_per_decade_fine, N_factor);
+    THEN("The bounds are right") {
+      Real lrmin = singularity::FastMath::log10(rho_min);
+      Real lrmax = singularity::FastMath::log10(rho_max);
+      REQUIRE(std::abs(bnds.grid.min() - lrmin) <= 1e-12);
+      REQUIRE(std::abs(bnds.grid.max() - lrmax) <= 1e-12);
+      REQUIRE(bnds.grid.nGrids() == 3);
+      AND_THEN(
+          "The total number of points is less than a uniform fine spacing woudl imply") {
+        printf("npoints = %ld %e\n", bnds.grid.nPoints(),
+               N_per_decade_fine * (lrmax - lrmin));
+        REQUIRE(bnds.grid.nPoints() < N_per_decade_fine * (lrmax - lrmin));
+        AND_THEN("The anchor is on the mesh") {
+          Real lanchor = singularity::FastMath::log10(rho_normal);
+          int ianchor;
+          Spiner::weights_t<Real> w;
+          bnds.grid.weights(lanchor, ianchor, w);
+          REQUIRE(std::abs(w[0] - 1) <= 1e-12);
+          REQUIRE(std::abs(w[1]) <= 1e-12);
+        }
+      }
     }
   }
 }

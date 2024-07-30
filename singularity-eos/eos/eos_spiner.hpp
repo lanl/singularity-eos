@@ -70,7 +70,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   static constexpr int NGRIDS = 3;
   using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
   using DataBox = Spiner::DataBox<Real, Grid_t>;
-  
+
   // A weakly typed index map for lambdas
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };

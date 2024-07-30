@@ -47,7 +47,7 @@
 
 #include <singularity-eos/eos/eos.hpp>
 
-//using namespace Spiner;
+// using namespace Spiner;
 using namespace singularity;
 using namespace EospacWrapper;
 

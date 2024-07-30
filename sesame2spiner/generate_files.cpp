@@ -274,13 +274,13 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   }
 
   int ppdRho = params.Get("numrho/decade", PPD_DEFAULT);
-  int numRhoDefault = getNumPointsFromPPD(rhoMin, rhoMax, ppdRho);
+  int numRhoDefault = Bounds::getNumPointsFromPPD(rhoMin, rhoMax, ppdRho);
 
   int ppdT = params.Get("numT/decade", PPD_DEFAULT);
-  int numTDefault = getNumPointsFromPPD(TMin, TMax, ppdT);
+  int numTDefault = Bounds::getNumPointsFromPPD(TMin, TMax, ppdT);
 
   int ppdSie = params.Get("numSie/decade", PPD_DEFAULT);
-  int numSieDefault = getNumPointsFromPPD(sieMin, sieMax, ppdSie);
+  int numSieDefault = Bounds::getNumPointsFromPPD(sieMin, sieMax, ppdSie);
 
   int numRho = params.Get("numrho", numRhoDefault);
   int numT = params.Get("numT", numTDefault);
@@ -321,10 +321,4 @@ bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin
     return false;
   }
   return true;
-}
-
-int getNumPointsFromPPD(Real min, Real max, int ppd) {
-  Bounds b(min, max, 3, true);
-  Real ndecades = b.grid.max() - b.grid.min();
-  return static_cast<int>(std::ceil(ppd * ndecades));
 }
