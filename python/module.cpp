@@ -32,6 +32,11 @@ PYBIND11_MODULE(singularity_eos, m) {
       py::arg("gm1"), py::arg("Cv")
     );
 
+  eos_class<StiffGas>(m, "StiffGas")
+  .def(py::init())
+  .def(py::init<Real, Real, Real, Real>(), py::arg("gm1"), py::arg("Cv"), py::arg("q"), py:;arg("Pinf"));
+
+
   eos_class<Gruneisen>(m, "Gruneisen")
     .def(py::init())
     .def(
