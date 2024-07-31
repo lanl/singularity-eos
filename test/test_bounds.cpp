@@ -35,13 +35,13 @@ constexpr Real rho_max = 1e3;
 constexpr Real T_min = 1;
 constexpr Real T_max = 1e9;
 constexpr Real T_split = 1e4;
-constexpr int N_per_decade_fine = 10;
-constexpr Real N_factor = 2;
+constexpr int N_per_decade_fine = 200;
+constexpr Real N_factor = 5;
 
 SCENARIO("Bounds can compute number of points from points per decade", "[Bounds]") {
   WHEN("We compute the number of points from points per decade") {
     int np = Bounds::getNumPointsFromPPD(T_min, T_max, N_per_decade_fine);
-    THEN("We get the right number") { REQUIRE(np == 90); }
+    THEN("We get the right number") { REQUIRE(np == 1800); }
   }
 }
 

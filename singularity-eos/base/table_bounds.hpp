@@ -131,10 +131,22 @@ class Bounds {
     return os;
   }
 
+  // This uses real logs
   template <typename T>
   static int getNumPointsFromPPD(Real min, Real max, T ppd) {
-    Bounds b(min, max, 3, true);
-    Real ndecades = b.grid.max() - b.grid.min();
+    constexpr Real epsilon = std::numeric_limits<float>::epsilon();
+    const Real min_offset = 10 * std::abs(epsilon);
+    // 1.1 so that the y-intercept isn't identically zero
+    // when min < 0.
+    // min_offset to handle the case where min=0
+    Real offset = 0;
+    if (min <= 0) offset = 1.1 * std::abs(min) + min_offset;
+    min += offset;
+    max += offset;
+
+    Real lmin = std::log10(min);
+    Real lmax = std::log10(max);
+    Real ndecades = lmax - lmin;
     return std::max(2, static_cast<int>(std::ceil(ppd * ndecades)));
   }
 
