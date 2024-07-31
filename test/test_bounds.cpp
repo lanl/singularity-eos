@@ -34,6 +34,7 @@ constexpr Real rho_min = 1e-6;
 constexpr Real rho_max = 1e3;
 constexpr Real T_min = 1;
 constexpr Real T_max = 1e9;
+constexpr Real T_split = 1e4;
 constexpr int N_per_decade_fine = 10;
 constexpr Real N_factor = 2;
 
@@ -80,8 +81,9 @@ SCENARIO("Logarithmic, single-grid bounds in the bounds object", "[Bounds]") {
 }
 
 SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
-  WHEN("We compute a piecewise bounds object") {
-    Bounds bnds(rho_min, rho_max, rho_normal, 0.5, N_per_decade_fine, N_factor);
+  WHEN("We compute a piecewise bounds object with three grids") {
+    Bounds bnds(Bounds::ThreeGrids(), rho_min, rho_max, rho_normal, 0.5,
+                N_per_decade_fine, N_factor);
     THEN("The bounds are right") {
       Real lrmin = singularity::FastMath::log10(rho_min);
       Real lrmax = singularity::FastMath::log10(rho_max);
@@ -89,12 +91,33 @@ SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
       REQUIRE(std::abs(bnds.grid.max() - lrmax) <= 1e-12);
       REQUIRE(bnds.grid.nGrids() == 3);
       AND_THEN(
-          "The total number of points is less than a uniform fine spacing woudl imply") {
-        printf("npoints = %ld %e\n", bnds.grid.nPoints(),
-               N_per_decade_fine * (lrmax - lrmin));
+          "The total number of points is less than a uniform fine spacing would imply") {
         REQUIRE(bnds.grid.nPoints() < N_per_decade_fine * (lrmax - lrmin));
         AND_THEN("The anchor is on the mesh") {
           Real lanchor = singularity::FastMath::log10(rho_normal);
+          int ianchor;
+          Spiner::weights_t<Real> w;
+          bnds.grid.weights(lanchor, ianchor, w);
+          REQUIRE(std::abs(w[0] - 1) <= 1e-12);
+          REQUIRE(std::abs(w[1]) <= 1e-12);
+        }
+      }
+    }
+  }
+  WHEN("We compute a piecewise bounds object with two grids") {
+    Bounds bnds(Bounds::TwoGrids(), T_min, T_max, T_normal, T_split, N_per_decade_fine,
+                N_factor);
+    THEN("The bounds are right") {
+      Real ltmin = singularity::FastMath::log10(T_min);
+      Real ltmax = singularity::FastMath::log10(T_max);
+      REQUIRE(std::abs(bnds.grid.min() - ltmin) <= 1e-12);
+      REQUIRE(std::abs(bnds.grid.max() - ltmax) <= 1e-12);
+      REQUIRE(bnds.grid.nGrids() == 2);
+      AND_THEN(
+          "The total number of points is less than a uniform fine spacing would imply") {
+        REQUIRE(bnds.grid.nPoints() < N_per_decade_fine * (ltmax - ltmin));
+        AND_THEN("The anchor is on the mesh") {
+          Real lanchor = singularity::FastMath::log10(T_normal);
           int ianchor;
           Spiner::weights_t<Real> w;
           bnds.grid.weights(lanchor, ianchor, w);

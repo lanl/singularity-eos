@@ -31,6 +31,7 @@
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
@@ -273,27 +274,30 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
               << "shrinkleBounds > 0 and siemin or siemax set" << std::endl;
   }
 
-  int ppdRho = params.Get("numrho/decade", PPD_DEFAULT);
+  int ppdRho = params.Get("numrho/decade", PPD_DEFAULT_RHO);
   int numRhoDefault = Bounds::getNumPointsFromPPD(rhoMin, rhoMax, ppdRho);
 
-  int ppdT = params.Get("numT/decade", PPD_DEFAULT);
+  int ppdT = params.Get("numT/decade", PPD_DEFAULT_T);
   int numTDefault = Bounds::getNumPointsFromPPD(TMin, TMax, ppdT);
 
-  int ppdSie = params.Get("numSie/decade", PPD_DEFAULT);
+  int ppdSie = params.Get("numSie/decade", PPD_DEFAULT_T);
   int numSieDefault = Bounds::getNumPointsFromPPD(sieMin, sieMax, ppdSie);
 
   int numRho = params.Get("numrho", numRhoDefault);
   int numT = params.Get("numT", numTDefault);
   int numSie = params.Get("numsie", numSieDefault);
 
-  Real rhoAnchor = metadata.normalDensity;
-  Real TAnchor = 298.15;
+  const Real rhoAnchor = metadata.normalDensity;
+  constexpr Real TAnchor = 298.15;
 
   // Piecewise grids stuff
+  bool do_piecewise_grids = params.Get("piecewise", true);
+  Real ppd_factor_rho = params.Get("rhoCoarseFactor", COARSE_FACTOR_DEFAULT);
+  Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT);
+  Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT);
+  Real TSplitPoint = params.Get("TSplitPoint", 1e4);
+
   Real rho_fine_center = rhoAnchor;
-  Real rho_fine_diameter = 0.5;
-  Real T_fine_center = TAnchor;
-  Real T_fine_diameter = 1.0;
 
   // Forces density and temperature to be in a region where an offset
   // is not needed. This improves resolution at low densities and
@@ -304,9 +308,37 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   if (rhoMin < STRICTLY_POS_MIN) rhoMin = STRICTLY_POS_MIN;
   if (TMin < STRICTLY_POS_MIN) TMin = STRICTLY_POS_MIN;
 
-  lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
-  lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
-  leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
+  if (do_piecewise_grids) {
+    lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center,
+                        rho_fine_diameter, ppdRho, ppd_factor_rho, shrinklRhoBounds);
+    lTBounds = Bounds(Bounds::TwoGrids(), TMin, TMax, TAnchor, TSplitPoint, ppdT,
+                      ppd_factor_T, shrinklTBounds);
+
+    // compute temperature as a reasonable anchor point
+    constexpr int NT = 1;
+    constexpr EOS_INTEGER nXYPairs = 2;
+    EOS_INTEGER tableHandle[NT];
+    EOS_INTEGER tableType[NT] = {EOS_Ut_DT};
+    EOS_REAL rho[2], T[2], sie[2], dx[2], dy[2];
+    {
+      eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Ut_DT"}, Verbosity::Quiet);
+      EOS_INTEGER eospacEofRT = tableHandle[0];
+      rho[0] = rho[1] = densityToSesame(rhoAnchor);
+      T[0] = temperatureToSesame(TAnchor);
+      T[1] = temperatureToSesame(TSplitPoint);
+      eosSafeInterpolate(&eospacEofRT, nXYPairs, rho, T, sie, dx, dy, "EofRT",
+                         Verbosity::Quiet);
+      eosSafeDestroy(NT, tableHandle, Verbosity::Quiet);
+    }
+    Real sieAnchor = sieFromSesame(sie[0]);
+    Real sieSplitPoint = sieFromSesame(sie[1]);
+    leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
+                      ppdSie, ppd_factor_sie, shrinkleBounds);
+  } else {
+    lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
+    lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
+    leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
+  }
 
   return;
 }

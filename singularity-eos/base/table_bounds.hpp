@@ -20,6 +20,7 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <ports-of-call/portability.hpp>
@@ -37,12 +38,17 @@ class Bounds {
  public:
   using RegularGrid1D = Spiner::RegularGrid1D<Real>;
   using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
+  // for tag dispatch in constructors
+  using OneGrid = std::integral_constant<int, 1>;
+  using TwoGrids = std::integral_constant<int, 2>;
+  using ThreeGrids = std::integral_constant<int, 3>;
 
   Bounds() {}
 
   Bounds(Real min, Real max, int N, Real offset)
       : grid(Grid_t(std::vector<RegularGrid1D>{RegularGrid1D(min, max, N)})),
         offset(offset), piecewise(false) {}
+  Bounds(OneGrid, Real min, Real max, int N, Real offset) : Bounds(min, max, N, offset) {}
 
   Bounds(Real min, Real max, int N, bool convertToLog = false, Real shrinkRange = 0,
          Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
@@ -59,10 +65,35 @@ class Bounds {
     }
     grid = Grid_t(std::vector<RegularGrid1D>{RegularGrid1D(min, max, N)});
   }
+  Bounds(OneGrid, Real min, Real max, int N, bool convertToLog = false,
+         Real shrinkRange = 0,
+         Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
+      : Bounds(min, max, N, convertToLog, shrinkRange, anchor_point) {}
 
-  Bounds(Real global_min, Real global_max, Real anchor_point, Real log_fine_diameter,
+  Bounds(TwoGrids, Real global_min, Real global_max, Real anchor_point, Real splitPoint,
          Real ppd_fine, Real ppd_factor, Real shrinkRange = 0)
       : offset(0), piecewise(true) {
+    const Real ppd_coarse = (ppd_factor > 0) ? ppd_fine / ppd_factor : ppd_fine;
+
+    convertBoundsToLog_(global_min, global_max, shrinkRange);
+    anchor_point += offset;
+    anchor_point = singularity::FastMath::log10(std::abs(anchor_point));
+    splitPoint += offset;
+    splitPoint = singularity::FastMath::log10(std::abs(splitPoint));
+
+    // add a point just to make sure we have enough points after adjusting for anchor
+    int N_fine = getNumPointsFromPPD(global_min, splitPoint, ppd_fine) + 1;
+    adjustForAnchor_(global_min, splitPoint, N_fine, anchor_point);
+    RegularGrid1D grid_lower(global_min, splitPoint, N_fine);
+
+    const int N_upper = getNumPointsFromPPD(splitPoint, global_max, ppd_coarse);
+    RegularGrid1D grid_upper(splitPoint, global_max, N_upper);
+
+    grid = Grid_t(std::vector<RegularGrid1D>{grid_lower, grid_upper});
+  }
+
+  Bounds(ThreeGrids, Real global_min, Real global_max, Real anchor_point,
+         Real log_fine_diameter, Real ppd_fine, Real ppd_factor, Real shrinkRange = 0) {
     const Real ppd_coarse = (ppd_factor > 0) ? ppd_fine / ppd_factor : ppd_fine;
 
     convertBoundsToLog_(global_min, global_max, shrinkRange);
@@ -80,7 +111,7 @@ class Bounds {
     const int N_lower = getNumPointsFromPPD(global_min, mid_min, ppd_coarse);
     RegularGrid1D grid_lower(global_min, mid_min, N_lower);
 
-    const int N_upper = getNumPointsFromPPD(mid_max, global_max, N_upper);
+    const int N_upper = getNumPointsFromPPD(mid_max, global_max, ppd_coarse);
     RegularGrid1D grid_upper(mid_max, global_max, N_upper);
 
     grid = Grid_t(std::vector<RegularGrid1D>{grid_lower, grid_middle, grid_upper});

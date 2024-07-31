@@ -30,7 +30,7 @@ void eosDataOfRhoSie(int matid, const Bounds &lRhoBounds, const Bounds &leBounds
                      DataBox &mask, Verbosity eospacWarn) {
   using namespace EospacWrapper;
 
-  constexpr int NT = 3;
+  constexpr int NT = 4;
   constexpr EOS_INTEGER nXYPairs = 1;
   EOS_INTEGER tableHandle[NT];
   EOS_INTEGER eospacPofRT, eospacTofRE, eospacEofRT;
