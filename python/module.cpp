@@ -36,6 +36,9 @@ PYBIND11_MODULE(singularity_eos, m) {
   .def(py::init())
   .def(py::init<Real, Real, Real, Real>(), py::arg("gm1"), py::arg("Cv"), py::arg("q"), py:;arg("Pinf"));
 
+  eos_class<NobleAble>(m, "NobleAble")
+  .def(py::init())
+  .def(py::init<Real, Real, Real, Real>(), py::arg("gm1"), py::arg("Cv"), py::arg("b"), py::arg("q"))
 
   eos_class<Gruneisen>(m, "Gruneisen")
     .def(py::init())
