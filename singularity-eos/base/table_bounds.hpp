@@ -125,7 +125,8 @@ class Bounds {
        << " + " << b.offset << "\n"
        << "\tN = " << b.grid.nPoints() << "\n";
     for (int ig = 0; ig < b.grid.nGrids(); ++ig) {
-      os << "\t[ig,dx] = [" << ig << ", " << b.grid.dx(ig) << "]" << "\n";
+      os << "\t[ig,dx] = [" << ig << ", " << b.grid.dx(ig) << "]"
+         << "\n";
     }
     return os;
   }
