@@ -295,6 +295,7 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   Real ppd_factor_rho = params.Get("rhoCoarseFactor", COARSE_FACTOR_DEFAULT);
   Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT);
   Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT);
+  Real rho_fine_diameter = params.Get("rhoFineDiameterDecades", 0.5);
   Real TSplitPoint = params.Get("TSplitPoint", 1e4);
 
   Real rho_fine_center = rhoAnchor;

@@ -122,9 +122,11 @@ class Bounds {
 
   friend std::ostream &operator<<(std::ostream &os, const Bounds &b) {
     os << "Bounds: [" << b.grid.min() << ", " << b.grid.max() << "]"
-       << " + " << b.offset << ", "
-       << "[N,dx] = [" << b.grid.nPoints() << ", " << b.grid.dx() << "]"
-       << "\n";
+       << " + " << b.offset << "\n"
+       << "\tN = " << b.grid.nPoints() << "\n";
+    for (int ig = 0; ig < b.grid.nGrids(); ++ig) {
+      os << "\t[ig,dx] = [" << ig << ", " << b.grid.dx(ig) << "]" << "\n";
+    }
     return os;
   }
 
