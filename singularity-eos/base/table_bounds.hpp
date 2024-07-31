@@ -82,11 +82,11 @@ class Bounds {
     splitPoint = singularity::FastMath::log10(std::abs(splitPoint));
 
     // add a point just to make sure we have enough points after adjusting for anchor
-    int N_fine = getNumPointsFromPPD(global_min, splitPoint, ppd_fine) + 1;
+    int N_fine = getNumPointsFromDensity(global_min, splitPoint, ppd_fine) + 1;
     adjustForAnchor_(global_min, splitPoint, N_fine, anchor_point);
     RegularGrid1D grid_lower(global_min, splitPoint, N_fine);
 
-    const int N_upper = getNumPointsFromPPD(splitPoint, global_max, ppd_coarse);
+    const int N_upper = getNumPointsFromDensity(splitPoint, global_max, ppd_coarse);
     RegularGrid1D grid_upper(splitPoint, global_max, N_upper);
 
     grid = Grid_t(std::vector<RegularGrid1D>{grid_lower, grid_upper});
@@ -104,16 +104,16 @@ class Bounds {
     Real mid_max = anchor_point + 0.5 * log_fine_diameter;
 
     // add a point just to make sure we have enough points after adjusting for anchor
-    int N_fine = getNumPointsFromPPD(mid_min, mid_max, ppd_fine) + 1;
+    int N_fine = getNumPointsFromDensity(mid_min, mid_max, ppd_fine) + 1;
     adjustForAnchor_(mid_min, mid_max, N_fine, anchor_point);
     RegularGrid1D grid_middle(mid_min, mid_max, N_fine);
 
-    const int N_lower = getNumPointsFromPPD(global_min, mid_min, ppd_coarse);
+    const int N_lower = getNumPointsFromDensity(global_min, mid_min, ppd_coarse);
     RegularGrid1D grid_lower(global_min, mid_min, N_lower);
 
-    const int N_upper = getNumPointsFromPPD(mid_max, global_max, ppd_coarse);
+    const int N_upper = getNumPointsFromDensity(mid_max, global_max, ppd_coarse);
     RegularGrid1D grid_upper(mid_max, global_max, N_upper);
-
+    printf("N_lower, N_mid, N_upper = %d %d %d\n", N_lower, N_fine, N_upper);
     grid = Grid_t(std::vector<RegularGrid1D>{grid_lower, grid_middle, grid_upper});
   }
 
@@ -146,8 +146,14 @@ class Bounds {
 
     Real lmin = std::log10(min);
     Real lmax = std::log10(max);
-    Real ndecades = lmax - lmin;
-    return std::max(2, static_cast<int>(std::ceil(ppd * ndecades)));
+    int N = getNumPointsFromDensity(lmin, lmax, ppd);
+    return N;
+  }
+  template <typename T>
+  static int getNumPointsFromDensity(Real min, Real max, T density) {
+    Real delta = max - min;
+    int N = std::max(2, static_cast<int>(std::ceil(density * delta)));
+    return N;
   }
 
  private:
