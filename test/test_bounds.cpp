@@ -83,7 +83,7 @@ SCENARIO("Logarithmic, single-grid bounds in the bounds object", "[Bounds]") {
 SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
   WHEN("We compute a piecewise bounds object with three grids") {
     Bounds bnds(Bounds::ThreeGrids(), rho_min, rho_max, rho_normal, 0.5,
-                N_per_decade_fine, N_factor);
+                N_per_decade_fine, N_factor, N_factor);
     THEN("The bounds are right") {
       Real lrmin = singularity::FastMath::log10(rho_min);
       Real lrmax = singularity::FastMath::log10(rho_max);

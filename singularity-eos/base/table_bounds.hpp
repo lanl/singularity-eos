@@ -43,16 +43,16 @@ class Bounds {
   using TwoGrids = std::integral_constant<int, 2>;
   using ThreeGrids = std::integral_constant<int, 3>;
 
-  Bounds() {}
+  Bounds() : offset(0), piecewise(false), linmin_(0), linmax_(0) {}
 
   Bounds(Real min, Real max, int N, Real offset)
       : grid(Grid_t(std::vector<RegularGrid1D>{RegularGrid1D(min, max, N)})),
-        offset(offset), piecewise(false) {}
+        offset(offset), piecewise(false), linmin_(min), linmax_(max) {}
   Bounds(OneGrid, Real min, Real max, int N, Real offset) : Bounds(min, max, N, offset) {}
 
   Bounds(Real min, Real max, int N, bool convertToLog = false, Real shrinkRange = 0,
          Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
-      : offset(0), piecewise(true) {
+    : offset(0), piecewise(true), linmin_(min), linmax_(max) {
     if (convertToLog) {
       convertBoundsToLog_(min, max, shrinkRange);
       if (!(std::isnan(anchor_point))) {
@@ -72,7 +72,7 @@ class Bounds {
 
   Bounds(TwoGrids, Real global_min, Real global_max, Real anchor_point, Real splitPoint,
          Real ppd_fine, Real ppd_factor, Real shrinkRange = 0)
-      : offset(0), piecewise(true) {
+    : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
     const Real ppd_coarse = (ppd_factor > 0) ? ppd_fine / ppd_factor : ppd_fine;
 
     convertBoundsToLog_(global_min, global_max, shrinkRange);
@@ -93,8 +93,10 @@ class Bounds {
   }
 
   Bounds(ThreeGrids, Real global_min, Real global_max, Real anchor_point,
-         Real log_fine_diameter, Real ppd_fine, Real ppd_factor, Real shrinkRange = 0) {
-    const Real ppd_coarse = (ppd_factor > 0) ? ppd_fine / ppd_factor : ppd_fine;
+         Real log_fine_diameter, Real ppd_fine, Real ppd_factor_lo, Real ppd_factor_hi,
+         Real shrinkRange = 0) : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
+    const Real ppd_lo = (ppd_factor_lo > 0) ? ppd_fine / ppd_factor_lo : ppd_fine;
+    const Real ppd_hi = (ppd_factor_hi > 0) ? ppd_fine / ppd_factor_hi : ppd_fine;
 
     convertBoundsToLog_(global_min, global_max, shrinkRange);
     anchor_point += offset;
@@ -108,16 +110,23 @@ class Bounds {
     adjustForAnchor_(mid_min, mid_max, N_fine, anchor_point);
     RegularGrid1D grid_middle(mid_min, mid_max, N_fine);
 
-    const int N_lower = getNumPointsFromDensity(global_min, mid_min, ppd_coarse);
+    const int N_lower = getNumPointsFromDensity(global_min, mid_min, ppd_lo);
     RegularGrid1D grid_lower(global_min, mid_min, N_lower);
 
-    const int N_upper = getNumPointsFromDensity(mid_max, global_max, ppd_coarse);
+    const int N_upper = getNumPointsFromDensity(mid_max, global_max, ppd_hi);
     RegularGrid1D grid_upper(mid_max, global_max, N_upper);
     printf("N_lower, N_mid, N_upper = %d %d %d\n", N_lower, N_fine, N_upper);
     grid = Grid_t(std::vector<RegularGrid1D>{grid_lower, grid_middle, grid_upper});
   }
 
-  inline Real log2lin(Real xl) const { return singularity::FastMath::pow10(xl) - offset; }
+  inline Real log2lin(Real xl) const {
+    // JMM: Need to guard this with the linear bounds passed in. The
+    // reason is that our fast math routines, while completely
+    // invertible at the level of machine epsilon, do introduce error
+    // at machine epsilon, which can bring us out of the interpolation
+    // range of eospac.
+    return std::min(linmax_, std::max(linmin_, singularity::FastMath::pow10(xl) - offset));
+  }
   inline Real i2lin(int i) const { return log2lin(grid.x(i)); }
 
   friend std::ostream &operator<<(std::ostream &os, const Bounds &b) {
@@ -199,6 +208,8 @@ class Bounds {
   Grid_t grid;
   Real offset = 0;
   bool piecewise = false;
+ private:
+  Real linmin_, linmax_;
 };
 
 } // namespace singularity

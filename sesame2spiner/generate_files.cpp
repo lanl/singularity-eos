@@ -242,7 +242,7 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   Real rhoMin = params.Get("rhomin", TinyShift(metadata.rhoMin, 1));
   Real rhoMax = params.Get("rhomax", metadata.rhoMax);
   Real TMin = params.Get("Tmin", TinyShift(metadata.TMin, 1));
-  Real TMax = params.Get("Tmax", metadata.TMax);
+  Real TMax = params.Get("Tmax", metadata.TMax); 
   Real sieMin = params.Get("siemin", TinyShift(metadata.sieMin, 1));
   Real sieMax = params.Get("siemax", metadata.sieMax);
 
@@ -253,9 +253,9 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   checkValInMatBounds(matid, "sieMin", sieMin, metadata.sieMin, metadata.sieMax);
   checkValInMatBounds(matid, "sieMax", sieMax, metadata.sieMin, metadata.sieMax);
 
-  Real shrinklRhoBounds = params.Get("shrinklRhoBounds", 0.0);
-  Real shrinklTBounds = params.Get("shrinklTBounds", 0.0);
-  Real shrinkleBounds = params.Get("shrinkleBounds", 0.0);
+  Real shrinklRhoBounds = params.Get("shrinklRhoBounds", 0.);
+  Real shrinklTBounds = params.Get("shrinklTBounds", 0.);
+  Real shrinkleBounds = params.Get("shrinkleBounds", 0.);
 
   shrinklRhoBounds = std::min(1., std::max(shrinklRhoBounds, 0.));
   shrinklTBounds = std::min(1., std::max(shrinklTBounds, 0.));
@@ -287,16 +287,20 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   int numT = params.Get("numT", numTDefault);
   int numSie = params.Get("numsie", numSieDefault);
 
+  const Real TAnchor = 298.15;
   const Real rhoAnchor = metadata.normalDensity;
-  constexpr Real TAnchor = 298.15;
 
   // Piecewise grids stuff
-  bool do_piecewise_grids = params.Get("piecewise", true);
-  Real ppd_factor_rho = params.Get("rhoCoarseFactor", COARSE_FACTOR_DEFAULT);
-  Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT);
-  Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT);
-  Real rho_fine_diameter = params.Get("rhoFineDiameterDecades", 0.5);
-  Real TSplitPoint = params.Get("TSplitPoint", 1e4);
+  bool piecewiseRho = params.Get("piecewiseRho", true);
+  bool piecewiseT = params.Get("piecewiseT", true);
+  bool piecewiseSie = params.Get("piecewiseSie", true);
+
+  Real ppd_factor_rho_lo = params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
+  Real ppd_factor_rho_hi = params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
+  Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT_T);
+  Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT_T);
+  Real rho_fine_diameter = params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
+  Real TSplitPoint = params.Get("TSplitPoint", T_SPLIT_POINT_DEFAULT);
 
   Real rho_fine_center = rhoAnchor;
 
@@ -306,15 +310,23 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
 
   // Extrapolation and other resolution tricks will be explored in the
   // future.
-  if (rhoMin < STRICTLY_POS_MIN) rhoMin = STRICTLY_POS_MIN;
-  if (TMin < STRICTLY_POS_MIN) TMin = STRICTLY_POS_MIN;
+  if (rhoMin < STRICTLY_POS_MIN_RHO) rhoMin = STRICTLY_POS_MIN_RHO;
+  if (TMin < STRICTLY_POS_MIN_T) TMin = STRICTLY_POS_MIN_T;
 
-  if (do_piecewise_grids) {
+  if (piecewiseRho) {
     lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center,
-                        rho_fine_diameter, ppdRho, ppd_factor_rho, shrinklRhoBounds);
+                        rho_fine_diameter, ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi,
+                        shrinklRhoBounds);
+  } else {
+    lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
+  }
+  if (piecewiseT) {
     lTBounds = Bounds(Bounds::TwoGrids(), TMin, TMax, TAnchor, TSplitPoint, ppdT,
                       ppd_factor_T, shrinklTBounds);
-
+  } else {
+    lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
+  }
+  if (piecewiseSie) {
     // compute temperature as a reasonable anchor point
     constexpr int NT = 1;
     constexpr EOS_INTEGER nXYPairs = 2;
@@ -331,15 +343,21 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
                          Verbosity::Quiet);
       eosSafeDestroy(NT, tableHandle, Verbosity::Quiet);
     }
-    Real sieAnchor = sieFromSesame(sie[0]);
-    Real sieSplitPoint = sieFromSesame(sie[1]);
+    Real sieAnchor = sie[0];
+    Real sieSplitPoint = sie[1];
     leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
                       ppdSie, ppd_factor_sie, shrinkleBounds);
   } else {
-    lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
-    lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
     leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
   }
+
+  std::cout << "lRho bounds are\n"
+            << lRhoBounds
+            << "lT bounds are\n"
+            << lTBounds
+            << "lSie bounds are \n"
+            << leBounds
+            << std::endl;
 
   return;
 }

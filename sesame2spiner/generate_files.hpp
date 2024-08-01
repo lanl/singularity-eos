@@ -30,10 +30,15 @@
 
 using namespace EospacWrapper;
 
-constexpr int PPD_DEFAULT_RHO = 200;
-constexpr int PPD_DEFAULT_T = 140;
-constexpr Real STRICTLY_POS_MIN = 1e-9;
-constexpr Real COARSE_FACTOR_DEFAULT = 20;
+constexpr int PPD_DEFAULT_RHO = 350;
+constexpr int PPD_DEFAULT_T = 100;
+constexpr Real STRICTLY_POS_MIN_RHO = 1e-8;
+constexpr Real STRICTLY_POS_MIN_T = 1e-2;
+constexpr Real COARSE_FACTOR_DEFAULT_RHO_LO = 3;
+constexpr Real COARSE_FACTOR_DEFAULT_RHO_HI = 5;
+constexpr Real COARSE_FACTOR_DEFAULT_T = 1.5;
+constexpr Real RHO_FINE_DIAMETER_DEFAULT = 1.5;
+constexpr Real T_SPLIT_POINT_DEFAULT = 1e4;
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,

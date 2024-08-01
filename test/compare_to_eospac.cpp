@@ -225,6 +225,7 @@ int main(int argc, char *argv[]) {
 
       SesameMetadata metadata;
       eosGetMetadata(matid, metadata, Verbosity::Debug);
+      std::cout << metadata << std::endl;
 
       hid_t idGroup = H5Gcreate(file, std::to_string(matid).c_str(), H5P_DEFAULT,
                                 H5P_DEFAULT, H5P_DEFAULT);
@@ -245,12 +246,12 @@ int main(int argc, char *argv[]) {
       DataBox lambda_h(lambda_hp, nFineRho, nFineT, eos_host.nlambda());
       DataBox lambda_d(lambda_dp, nFineRho, nFineT, eos_host.nlambda());
 
-      Real rhoMin = eosE_host.rhoMin();
-      Real rhoMax = eosE_host.rhoMax();
-      Real TMin = eosE_host.TMin();
-      Real TMax = eosE_host.TMax();
-      Real sieMin = eosE_host.sieMin();
-      Real sieMax = eosE_host.sieMax();
+      Real rhoMin = 1.1*std::max(metadata.rhoMin, 1e-5);
+      Real rhoMax = 0.9*metadata.rhoMax;
+      Real TMin = 1.1*std::max(metadata.TMin, 1.0);
+      Real TMax = 0.9*metadata.TMax;
+      Real sieMin = metadata.sieMin + 0.1*std::abs(metadata.sieMin);
+      Real sieMax = 0.9*metadata.sieMax;
 
       Bounds lRhoBounds(rhoMin, rhoMax, nFineRho);
       Bounds lTBounds(TMin, TMax, nFineT);
@@ -355,10 +356,11 @@ int main(int argc, char *argv[]) {
             const Real p_true = pressureFromSesame(vars(j, i));
             pressEOSPAC(j, i) = p_true;
             const Real diff = pressSpiner_h(j, i) - p_true;
-            pressDiff_h(j, i) = diff;
-            diffL2 += diff * diff;
             const Real mean_p = 0.5 * diff + p_true;
-            L2 += mean_p * mean_p;
+            pressDiff_h(j, i) = diff;
+            const Real reldiff = diff / (1e-10 + std::abs(mean_p));
+            diffL2 += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2 /= L2;
@@ -382,10 +384,11 @@ int main(int argc, char *argv[]) {
             // pressSpiner_d has been copied into pressSpiner_h
             const Real p_true = pressEOSPAC(j, i);
             const Real diff = pressSpiner_hm(j, i) - p_true;
-            pressDiff_d(j, i) = diff;
             const Real mean_p = 0.5 * diff + p_true;
-            diffL2 += diff * diff;
-            L2 += mean_p * mean_p;
+            pressDiff_d(j, i) = diff;
+            const Real reldiff = diff / (1e-10 + std::abs(mean_p));
+            diffL2 += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2 /= L2;
@@ -423,7 +426,7 @@ int main(int argc, char *argv[]) {
         Real rho = lRhoBounds.i2lin(j);
         for (int i = 0; i < nFineT; i++) {
           Real sie = leBounds.i2lin(i);
-          xVals(j, i) = rho;
+          xVals(j, i) = densityToSesame(rho);
           yVals(j, i) = sieToSesame(sie);
         }
       }
@@ -558,8 +561,9 @@ int main(int argc, char *argv[]) {
               diff = 0;
             }
 #endif
-            diffL2 += diff * diff;
-            L2 += mean_t * mean_t;
+            Real reldiff = diff / (1e-10 + std::abs(mean_t));
+            diffL2 += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2 /= L2;
@@ -572,8 +576,9 @@ int main(int argc, char *argv[]) {
             const Real diff = tempSpinerE_h(j, i) - t_true;
             tempDiffE_h(j, i) = diff;
             const Real mean_t = 0.5 * diff + t_true;
-            diffL2E += diff * diff;
-            L2 += mean_t * mean_t;
+            const Real reldiff = diff / (1e-10 + std::abs(mean_t));
+            diffL2E += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2E /= L2;
@@ -612,8 +617,9 @@ int main(int argc, char *argv[]) {
               diff = 0;
             }
 #endif
-            diffL2_d += diff * diff;
-            L2 += mean_t * mean_t;
+            Real reldiff = diff / (1e-10 + std::abs(mean_t));
+            diffL2_d += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2_d /= L2;
@@ -626,8 +632,9 @@ int main(int argc, char *argv[]) {
             const Real diff = tempSpinerE_hm(j, i) - t_true;
             tempDiffE_d(j, i) = diff;
             const Real mean_t = 0.5 * diff + t_true;
-            diffL2E_d += diff * diff;
-            L2 += mean_t * mean_t;
+            Real reldiff = diff / (1e-10 + std::abs(mean_t));
+            diffL2E_d += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2E_d /= L2;
