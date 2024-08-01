@@ -52,7 +52,7 @@ class Bounds {
 
   Bounds(Real min, Real max, int N, bool convertToLog = false, Real shrinkRange = 0,
          Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
-    : offset(0), piecewise(true), linmin_(min), linmax_(max) {
+      : offset(0), piecewise(true), linmin_(min), linmax_(max) {
     if (convertToLog) {
       convertBoundsToLog_(min, max, shrinkRange);
       if (!(std::isnan(anchor_point))) {
@@ -72,7 +72,7 @@ class Bounds {
 
   Bounds(TwoGrids, Real global_min, Real global_max, Real anchor_point, Real splitPoint,
          Real ppd_fine, Real ppd_factor, Real shrinkRange = 0)
-    : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
+      : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
     const Real ppd_coarse = (ppd_factor > 0) ? ppd_fine / ppd_factor : ppd_fine;
 
     convertBoundsToLog_(global_min, global_max, shrinkRange);
@@ -94,7 +94,8 @@ class Bounds {
 
   Bounds(ThreeGrids, Real global_min, Real global_max, Real anchor_point,
          Real log_fine_diameter, Real ppd_fine, Real ppd_factor_lo, Real ppd_factor_hi,
-         Real shrinkRange = 0) : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
+         Real shrinkRange = 0)
+      : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
     const Real ppd_lo = (ppd_factor_lo > 0) ? ppd_fine / ppd_factor_lo : ppd_fine;
     const Real ppd_hi = (ppd_factor_hi > 0) ? ppd_fine / ppd_factor_hi : ppd_fine;
 
@@ -125,7 +126,8 @@ class Bounds {
     // invertible at the level of machine epsilon, do introduce error
     // at machine epsilon, which can bring us out of the interpolation
     // range of eospac.
-    return std::min(linmax_, std::max(linmin_, singularity::FastMath::pow10(xl) - offset));
+    return std::min(linmax_,
+                    std::max(linmin_, singularity::FastMath::pow10(xl) - offset));
   }
   inline Real i2lin(int i) const { return log2lin(grid.x(i)); }
 
@@ -208,6 +210,7 @@ class Bounds {
   Grid_t grid;
   Real offset = 0;
   bool piecewise = false;
+
  private:
   Real linmin_, linmax_;
 };

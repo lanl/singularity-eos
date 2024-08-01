@@ -242,7 +242,7 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   Real rhoMin = params.Get("rhomin", TinyShift(metadata.rhoMin, 1));
   Real rhoMax = params.Get("rhomax", metadata.rhoMax);
   Real TMin = params.Get("Tmin", TinyShift(metadata.TMin, 1));
-  Real TMax = params.Get("Tmax", metadata.TMax); 
+  Real TMax = params.Get("Tmax", metadata.TMax);
   Real sieMin = params.Get("siemin", TinyShift(metadata.sieMin, 1));
   Real sieMax = params.Get("siemax", metadata.sieMax);
 
@@ -299,7 +299,8 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   Real ppd_factor_rho_hi = params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
   Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT_T);
   Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT_T);
-  Real rho_fine_diameter = params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
+  Real rho_fine_diameter =
+      params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
   Real TSplitPoint = params.Get("TSplitPoint", T_SPLIT_POINT_DEFAULT);
 
   Real rho_fine_center = rhoAnchor;
@@ -314,9 +315,9 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   if (TMin < STRICTLY_POS_MIN_T) TMin = STRICTLY_POS_MIN_T;
 
   if (piecewiseRho) {
-    lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center,
-                        rho_fine_diameter, ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi,
-                        shrinklRhoBounds);
+    lRhoBounds =
+        Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center, rho_fine_diameter,
+               ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi, shrinklRhoBounds);
   } else {
     lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
   }
@@ -352,12 +353,9 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   }
 
   std::cout << "lRho bounds are\n"
-            << lRhoBounds
-            << "lT bounds are\n"
-            << lTBounds
-            << "lSie bounds are \n"
-            << leBounds
-            << std::endl;
+            << lRhoBounds << "lT bounds are\n"
+            << lTBounds << "lSie bounds are \n"
+            << leBounds << std::endl;
 
   return;
 }
