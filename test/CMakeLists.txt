@@ -49,6 +49,7 @@ add_executable(
   closure_unit_tests
   catch2_define.cpp
   test_closure_pte.cpp
+  test_kpt_models.cpp
   )
 
 get_property(plugin_tests GLOBAL PROPERTY PLUGIN_TESTS)

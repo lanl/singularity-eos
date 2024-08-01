@@ -33,7 +33,7 @@ inline void set_eos(T *eos) {
   singularity::EOS dr = singularity::DavisReactants(
       1.890, 4.115e10, 1.0e6, 297.0, 1.8e5, 4.6, 0.34, 0.56, 0.0, 0.4265, 0.001074e10);
   singularity::EOS dp = singularity::DavisProducts(0.798311, 0.58, 1.35, 2.66182, 0.75419,
-                                                   3.2e10, 0.001072e10, 0.0);
+                                                   3.2e10, 0.001072e10);
   eos[0] = gr.GetOnDevice();
   eos[1] = dr.GetOnDevice();
   eos[2] = dp.GetOnDevice();

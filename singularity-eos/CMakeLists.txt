@@ -62,6 +62,7 @@ register_headers(
     eos/singularity_eos_init_utils.hpp
     eos/variant_utils.hpp
     eos/eos_carnahan_starling.hpp
+    closure/kinetic_phasetransition_models.hpp
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
