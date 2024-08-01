@@ -115,7 +115,7 @@ class Bounds {
 
     const int N_upper = getNumPointsFromDensity(mid_max, global_max, ppd_hi);
     RegularGrid1D grid_upper(mid_max, global_max, N_upper);
-    printf("N_lower, N_mid, N_upper = %d %d %d\n", N_lower, N_fine, N_upper);
+
     grid = Grid_t(std::vector<RegularGrid1D>{grid_lower, grid_middle, grid_upper});
   }
 
