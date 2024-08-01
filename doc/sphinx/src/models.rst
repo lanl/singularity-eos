@@ -1471,8 +1471,7 @@ key-value pairs. For exampe the following input deck is for air:
 
   matid = 5030
   # These set the number of grid points per decade
-  # for each variable. The default is 50 points
-  # per decade.
+  # for each variable. 
   numrho/decade = 40
   numT/decade = 40
   numSie/decade = 40
@@ -1491,16 +1490,82 @@ key-value pairs. For exampe the following input deck is for air:
   shrinklTBounds = 0.15
   shrinkleBounds = 0.5
 
-The only required value in an input file is the matid, in this
-case 5030. All other values will be inferred from the original sesame
-database if possible and if no value in the input file is
-provided. Comments are prefixed with ``#``.
+Comments are prefixed with ``#``. `eospac`_ uses environment variables
+and files to locate files in the `sesame`_ database, and
+``sesame2spiner`` uses `eospac`_. So the location of the ``sesame``
+database need not be provided by the command line. For how to specify
+`sesame`_ file locations, see the `eospac`_ manual.
 
-`eospac`_ uses environment variables and files to locate files in the
-`sesame`_ database, and ``sesame2spiner`` uses `eospac`_. So the
-location of the ``sesame`` database need not be provided by the
-command line. For how to specify `sesame`_ file locations, see the
-`eospac`_ manual.
+Piecewise Spiner Grids
+````````````````````````
+
+``SpinerEOS`` models and ``sesame2spiner`` also support grids with
+different resolutions in different parts of the table. We call these
+**piecewise** grids. This can be enabled or disabled with the
+parameters
+
+.. code-block::
+
+  piecewiseRho = true
+  piecewiseT = true
+  piecewiseSie = true
+
+These options may be true or false. The default is true. When
+piecewise grids are active, the density grid gets split into three
+pieces, a piece of diameter ``rhoFineDiameterDecades`` (in log space)
+around the material's normal density and a piece above and below. The
+``numrho/decade`` parameter sets the number of points per decade in
+this central refined region. The regions at lower and higher density
+have ``rhoCoarseFactorLo`` and ``rhoCoarseFactorHi`` fewer points per
+decade respectively compared to the finer region.
+
+The temperature grid has two regions, a more finely spaced region at
+low temperatures and a more finely spaced region at high
+temperatures. The regions are spearated by a temperature
+``TSplitPoint``. The default is :math:`10^4`. The energy grid follows
+the temperature grid, with the energy split point corresponding to the
+temperature split point. The coarser high-temperature temperature and
+energy grids are coarsened by a factor of ``TCoarseFactor`` and
+``sieCoarseFactor`` respectively.
+
+Thus the input block for piecewise grid might look like this:
+
+.. code-block::
+
+  # defaults are true
+  piecewiseRho = true
+  piecewiseT = true
+  piecewiseSie = true
+
+  # the fine resolution for rho
+  numrho/decade = 350
+  # width of the fine region for rho
+  rhoFineDiameterDecades = 1.5
+  # the lower density region is 3x less refined
+  rhoCoarseFactorLo = 3
+  # the higher density region is 5x less refined
+  rhoCoarseFactorHi = 5
+
+  # the fine resolution for T
+  numT/decade = 100
+  # the point demarking the coarse and fine regions in temperature
+  TSplitPoint = 1e4
+  # it's usually wise to to not let
+  # temperature get too small in log space if you do this
+  Tmin = 1
+  # The coarser region (above the split point) is 50 percent less refined
+  TCoarseFactor = 1.5
+
+  # energy has the split point sie(rhonormal, TSplitPoint)
+  # but we may still specify the resolution
+  numSie/decade = 100
+  sieCoarseFactor = 1.5
+
+.. note::
+
+  For all grid types, the only required value in an input file is the
+  matid. All other values will be inferred from the original sesame
+  database if possible and if no value in the input file is provided.
 
 SAP Polynomial EOS
 ``````````````````
