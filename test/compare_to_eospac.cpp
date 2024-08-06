@@ -246,12 +246,12 @@ int main(int argc, char *argv[]) {
       DataBox lambda_h(lambda_hp, nFineRho, nFineT, eos_host.nlambda());
       DataBox lambda_d(lambda_dp, nFineRho, nFineT, eos_host.nlambda());
 
-      Real rhoMin = 1.1*std::max(metadata.rhoMin, 1e-5);
-      Real rhoMax = 0.9*metadata.rhoMax;
-      Real TMin = 1.1*std::max(metadata.TMin, 1.0);
-      Real TMax = 0.9*metadata.TMax;
-      Real sieMin = metadata.sieMin + 0.1*std::abs(metadata.sieMin);
-      Real sieMax = 0.9*metadata.sieMax;
+      Real rhoMin = 1.1 * std::max(metadata.rhoMin, 1e-5);
+      Real rhoMax = 0.9 * metadata.rhoMax;
+      Real TMin = 1.1 * std::max(metadata.TMin, 1.0);
+      Real TMax = 0.9 * metadata.TMax;
+      Real sieMin = metadata.sieMin + 0.1 * std::abs(metadata.sieMin);
+      Real sieMax = 0.9 * metadata.sieMax;
 
       Bounds lRhoBounds(rhoMin, rhoMax, nFineRho);
       Bounds lTBounds(TMin, TMax, nFineT);
