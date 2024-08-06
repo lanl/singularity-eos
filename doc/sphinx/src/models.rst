@@ -1364,9 +1364,11 @@ the energy offset of the products EOS is given by
 Practically, this means :math:`e_0` should be positive for any energetic material.
 
 To provide the energy offset to the Davis Products EOS, `the energy shift
-modifier<modifiers shifted EOS>`_ should be used. Note that the convention there
+modifier`_ should be used. Note that the convention there
 is that the shift is positive, so :math:`-e_0` should be provided to the shift
 modifier.
+
+.. _the energy shift modifier: modifiers shifted EOS
 
 The constructor for the Davis Products EOS is
 
@@ -1511,13 +1513,22 @@ default grids are now piecewise. Piecewise grids can be disabled with
   piecewiseSie = dalse
 
 These options may be true or false. The default is true. When
-piecewise grids are active, the density grid gets split into three
-pieces, a piece of diameter ``rhoFineDiameterDecades`` (in log space)
-around the material's normal density and a piece above and below. The
+piecewise grids are active, the density-temperature (or
+density-energy) grid is built as a Cartesian product grid of grids of
+non-uniform resolutions. The density grid gets split into three
+pieces, a region ``[rhoMin, rhoFineMin]``, a region ``[rhoFineMin,
+rhoFineMax]``, and a region ``[rhoFineMin, rhoMax]``. The
 ``numrho/decade`` parameter sets the number of points per decade in
-this central refined region. The regions at lower and higher density
+the central refined region. The regions at lower and higher density
 have ``rhoCoarseFactorLo`` and ``rhoCoarseFactorHi`` fewer points per
 decade respectively compared to the finer region.
+
+Typically the fine region should be roughly centered around the normal
+density for a material, which is usually a challenging region to
+capture. If you neglect to set ``rhoFineMin`` and ``rhoFineMax``,
+``sesame2spiner`` will set the central refined region to be a region
+of diameter ``rhoFineDiameterDecades`` (in log space) around the
+material's normal density.
 
 The temperature grid has two regions, a more finely spaced region at
 low temperatures and a less finely spaced region at high
@@ -1527,6 +1538,16 @@ follows the temperature grid, with the energy split point
 corresponding to the temperature split point. The coarser
 high-temperature temperature and energy grids are coarsened by a
 factor of ``TCoarseFactor`` and ``sieCoarseFactor`` respectively.
+
+A diagram of a density-temperature grid is shown below. The region
+with temperatures below ``TSplitPoint`` is refined in temperature. The
+region between ``rhoFineMin`` and ``rhoFineMax`` is refined in
+density.
+
+.. image:: phase_diagram.png
+  :width: 400
+  :alt: An example piecewise density-temperature grid.
+
 
 Thus the input block for piecewise grid might look like this:
 
