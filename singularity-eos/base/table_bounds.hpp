@@ -83,22 +83,22 @@ class Bounds {
 
     if (splitPoint <= global_min) {
       PORTABLE_ALWAYS_WARN("Split point less than global minimum. Adjusting.");
-      Real eps = 0.1*std::abs(global_min);
+      Real eps = 0.1 * std::abs(global_min);
       splitPoint = global_min + eps;
     }
     if (splitPoint >= global_max) {
       PORTABLE_ALWAYS_WARN("Split point greater than global maximum. Adjusting.");
-      Real eps = 0.1*std::abs(global_max);
+      Real eps = 0.1 * std::abs(global_max);
       splitPoint = global_max - eps;
     }
     if (anchor_point <= global_min) {
       PORTABLE_ALWAYS_WARN("Anchor point less than global minimum. Adjusting.");
-      Real eps = 0.1*std::abs(global_min);
+      Real eps = 0.1 * std::abs(global_min);
       anchor_point = global_min + eps;
     }
     if (anchor_point >= splitPoint) {
       PORTABLE_ALWAYS_WARN("Anchor point greater than split point. Adjusting.");
-      Real eps = 0.1*std::abs(splitPoint);
+      Real eps = 0.1 * std::abs(splitPoint);
       anchor_point = splitPoint - eps;
     }
 
@@ -126,12 +126,12 @@ class Bounds {
 
     if (anchor_point <= global_min) {
       PORTABLE_ALWAYS_WARN("Anchor point less than global minimum. Adjusting.");
-      Real eps = 0.1*std::abs(global_min);
+      Real eps = 0.1 * std::abs(global_min);
       anchor_point = global_min + eps;
     }
     if (anchor_point >= global_max) {
       PORTABLE_ALWAYS_WARN("Anchor point greater than global maximum. Adjusting.");
-      Real eps = 0.1*std::abs(global_max);
+      Real eps = 0.1 * std::abs(global_max);
       anchor_point = global_max - eps;
     }
 
@@ -139,14 +139,16 @@ class Bounds {
     Real mid_max = anchor_point + 0.5 * log_fine_diameter;
 
     if (mid_min <= global_min) {
-      PORTABLE_ALWAYS_WARN("Table bounds refined minimum lower than global minimum. Adjusting.");
+      PORTABLE_ALWAYS_WARN(
+          "Table bounds refined minimum lower than global minimum. Adjusting.");
       Real delta = std::abs(anchor_point - global_min);
-      mid_min = anchor_point - 0.9*delta;
+      mid_min = anchor_point - 0.9 * delta;
     }
     if (mid_max >= global_max) {
-      PORTABLE_ALWAYS_WARN("Table bounds refined maximum greater than global maximum. Adjusting.");
+      PORTABLE_ALWAYS_WARN(
+          "Table bounds refined maximum greater than global maximum. Adjusting.");
       Real delta = std::abs(global_max - anchor_point);
-      mid_max = anchor_point + 0.9*delta;
+      mid_max = anchor_point + 0.9 * delta;
     }
 
     // add a point just to make sure we have enough points after adjusting for anchor
