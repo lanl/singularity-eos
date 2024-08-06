@@ -1585,8 +1585,21 @@ Thus the input block for piecewise grid might look like this:
 .. note::
 
   For all grid types, the only required value in an input file is the
-  matid. All other values will be inferred from the original sesame
-  database if possible and if no value in the input file is provided.
+  matid. Table bounds and normal density will be inferred from teh
+  sesame metadata if possible and if no value in the original input
+  file is provided. Table densities and positions and sizes of refined
+  regions are not inferred from the table, but are chosen with
+  the default values listed in the above code block.
+
+.. note::
+
+  Both the flat and hierarchical grids attempt to align their grids so
+  that there is a grid point in density and temperature exactly at
+  room temperature and normal density. This is because normal density
+  and room temperature is a particularly important point in phase
+  space, as it is the point in phase space a piece of material sitting
+  on your desk would be at. This is called an *anchor* point for the
+  mesh.
 
 SAP Polynomial EOS
 ``````````````````

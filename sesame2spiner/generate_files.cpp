@@ -288,7 +288,7 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   int numSie = params.Get("numsie", numSieDefault);
 
   const Real TAnchor = 298.15;
-  Real rhoAnchor = metadata.normalDensity;
+  Real rhoAnchor = params.Get("rho_fine_center", metadata.normalDensity);
   if (std::isnan(rhoAnchor) || rhoAnchor <= 0 || rhoAnchor > 1e8) {
     std::cerr << "WARNING [" << matid << "] "
               << "normal density ill defined. Setting it to a sensible default."
