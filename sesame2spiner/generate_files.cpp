@@ -311,6 +311,16 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
 
   Real rho_fine_center = rhoAnchor;
 
+  // These override the rho center/diameter settings
+  Real rho_fine_min = params.Get("rhoFineMin", -1);
+  Real rho_fine_max = params.Get("rhoFineMax", -1);
+  if (rho_fine_min * rho_fine_max < 0) {
+    std::cerr << "WARNING [" << matid << "]: "
+              << "Either rhoFineMin or rhoFineMax is set while the other is still unset."
+              << " Both must be set to be sensible. Ignoring." << std::endl;
+    rho_fine_min = rho_fine_max = -1;
+  }
+
   // Forces density and temperature to be in a region where an offset
   // is not needed. This improves resolution at low densities and
   // temperatures.
@@ -321,9 +331,15 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   if (TMin < STRICTLY_POS_MIN_T) TMin = STRICTLY_POS_MIN_T;
 
   if (piecewiseRho) {
-    lRhoBounds =
-        Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center, rho_fine_diameter,
-               ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi, shrinklRhoBounds);
+    if (rho_fine_min > 0) {
+      lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center,
+                          rho_fine_min, rho_fine_max, ppdRho, ppd_factor_rho_lo,
+                          ppd_factor_rho_hi, shrinklRhoBounds, true);
+    } else {
+      lRhoBounds =
+          Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center, rho_fine_diameter,
+                 ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi, shrinklRhoBounds);
+    }
   } else {
     lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
   }
