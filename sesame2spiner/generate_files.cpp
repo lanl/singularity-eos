@@ -288,7 +288,13 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   int numSie = params.Get("numsie", numSieDefault);
 
   const Real TAnchor = 298.15;
-  const Real rhoAnchor = metadata.normalDensity;
+  Real rhoAnchor = metadata.normalDensity;
+  if (std::isnan(rhoAnchor) || rhoAnchor <= 0 || rhoAnchor > 1e8) {
+    std::cerr << "WARNING [" << matid << "] "
+              << "normal density ill defined. Setting it to a sensible default."
+              << std::endl;
+    rhoAnchor = 1;
+  }
 
   // Piecewise grids stuff
   bool piecewiseRho = params.Get("piecewiseRho", true);
