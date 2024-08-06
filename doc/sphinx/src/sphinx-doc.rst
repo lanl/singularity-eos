@@ -27,7 +27,7 @@ Building documentation locally
 
 While you can rely on the CI to build the documentation associated with your
 branch, you can also very easily build sphinx documentation locally through
-python. These instructions also _do not_ require admin access and are usable
+python. These instructions also **do not** require admin access and are usable
 with shared machines or python distributions.
 
 First, ensure that you are running a modern version of python (i.e. python 3 of

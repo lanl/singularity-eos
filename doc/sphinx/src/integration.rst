@@ -8,7 +8,7 @@ or setting ``CMAKE_PREFIX_PATH`` manually, a CMake project can integrate
 Singularity-EOS via ``find_package(singularity-eos)`` and using the provided
 targets to link to it.
 
-.. code:: cmake
+.. code::
 
    find_package(singularity-eos)
    ...
@@ -40,7 +40,7 @@ dependencies, but only the compiled Fortran bindings provided by
 Singularity-EOS. To avoid unnecessary dependency checks by CMake, a Fortran
 project would integrate Singularity-EOS as follows:
 
-.. code:: cmake
+.. code::
 
    find_package(singularity-eos COMPONENTS Library)
    ...

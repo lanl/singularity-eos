@@ -404,13 +404,17 @@ A modified equation of state can be built up iteratively. To check if
 the equation of state currently stored in the variant can modified,
 you may call
 
-.. cpp:function:: bool ModifiedInVariant<Mod>() const;
+.. code-block:: cpp
+
+  bool ModifiedInVariant<Mod>() const;
 
 where ``Mod`` is the type of the modifier you want to apply, for
 example ``ShiftedEOS``. If this function returns true, then you can
 apply a modifier with the function
 
-.. cpp:function:: Variant Modify<Mod>(Args &&..args) const;
+.. code-block:: cpp
+
+  Variant Modify<Mod>(Args &&..args) const;
 
 where again ``Mod`` is the modifier you wish to apply, and ``args``
 are the arguments to the constructor for that modifier, e.g., the

@@ -17,4 +17,6 @@
 
 matid=3337
 name=copper
-rhomin=0.
+
+piecewiseRho = false
+numrho/decade = 50
