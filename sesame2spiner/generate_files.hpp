@@ -32,8 +32,8 @@ using namespace EospacWrapper;
 
 constexpr int PPD_DEFAULT_RHO = 350;
 constexpr int PPD_DEFAULT_T = 100;
-constexpr Real STRICTLY_POS_MIN_RHO = 1e-8;
-constexpr Real STRICTLY_POS_MIN_T = 1e-2;
+constexpr Real STRICTLY_POS_MIN_RHO = 1e-9;
+constexpr Real STRICTLY_POS_MIN_T = 1e-9;
 constexpr Real COARSE_FACTOR_DEFAULT_RHO_LO = 3;
 constexpr Real COARSE_FACTOR_DEFAULT_RHO_HI = 5;
 constexpr Real COARSE_FACTOR_DEFAULT_T = 1.5;
