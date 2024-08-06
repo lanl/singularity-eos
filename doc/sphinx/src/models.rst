@@ -1499,16 +1499,16 @@ database need not be provided by the command line. For how to specify
 Piecewise Spiner Grids
 ````````````````````````
 
-``SpinerEOS`` models and ``sesame2spiner`` also support grids with
-different resolutions in different parts of the table. We call these
-**piecewise** grids. This can be enabled or disabled with the
-parameters
+``sesame2spiner`` also supports grids with different resolutions in
+different parts of the table. We call these **piecewise** grids. By
+default grids are now piecewise. Piecewise grids can be disabled with
 
 .. code-block::
 
-  piecewiseRho = true
-  piecewiseT = true
-  piecewiseSie = true
+  # defaults are true
+  piecewiseRho = false
+  piecewiseT = false
+  piecewiseSie = dalse
 
 These options may be true or false. The default is true. When
 piecewise grids are active, the density grid gets split into three
@@ -1520,24 +1520,24 @@ have ``rhoCoarseFactorLo`` and ``rhoCoarseFactorHi`` fewer points per
 decade respectively compared to the finer region.
 
 The temperature grid has two regions, a more finely spaced region at
-low temperatures and a more finely spaced region at high
+low temperatures and a less finely spaced region at high
 temperatures. The regions are spearated by a temperature
-``TSplitPoint``. The default is :math:`10^4`. The energy grid follows
-the temperature grid, with the energy split point corresponding to the
-temperature split point. The coarser high-temperature temperature and
-energy grids are coarsened by a factor of ``TCoarseFactor`` and
-``sieCoarseFactor`` respectively.
+``TSplitPoint``. The default is :math:`10^4` Kelvin. The energy grid
+follows the temperature grid, with the energy split point
+corresponding to the temperature split point. The coarser
+high-temperature temperature and energy grids are coarsened by a
+factor of ``TCoarseFactor`` and ``sieCoarseFactor`` respectively.
 
 Thus the input block for piecewise grid might look like this:
 
 .. code-block::
 
-  # defaults are true
+  # Below, all right-hand-sides are set to their default values.
   piecewiseRho = true
   piecewiseT = true
   piecewiseSie = true
 
-  # the fine resolution for rho
+  # the fine resolution for rho.
   numrho/decade = 350
   # width of the fine region for rho
   rhoFineDiameterDecades = 1.5
