@@ -334,18 +334,18 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
     if (rho_fine_min > 0) {
       lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center,
                           rho_fine_min, rho_fine_max, ppdRho, ppd_factor_rho_lo,
-                          ppd_factor_rho_hi, shrinklRhoBounds, true);
+                          ppd_factor_rho_hi, true, shrinklRhoBounds);
     } else {
       lRhoBounds =
           Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center, rho_fine_diameter,
-                 ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi, shrinklRhoBounds);
+                 ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi, true, shrinklRhoBounds);
     }
   } else {
     lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
   }
   if (piecewiseT) {
     lTBounds = Bounds(Bounds::TwoGrids(), TMin, TMax, TAnchor, TSplitPoint, ppdT,
-                      ppd_factor_T, shrinklTBounds);
+                      ppd_factor_T, true, shrinklTBounds);
   } else {
     lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
   }
@@ -369,7 +369,7 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
     Real sieAnchor = sie[0];
     Real sieSplitPoint = sie[1];
     leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
-                      ppdSie, ppd_factor_sie, shrinkleBounds);
+                      ppdSie, ppd_factor_sie, true, shrinkleBounds);
   } else {
     leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
   }

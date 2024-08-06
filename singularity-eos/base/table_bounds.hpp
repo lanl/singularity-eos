@@ -71,14 +71,14 @@ class Bounds {
       : Bounds(min, max, N, convertToLog, shrinkRange, anchor_point) {}
 
   Bounds(TwoGrids, Real global_min, Real global_max, Real anchor_point, Real splitPoint,
-         Real ppd_fine, Real ppd_factor, Real shrinkRange = 0, bool convertToLog = true)
+         Real ppd_fine, Real ppd_factor, bool convertToLog, Real shrinkRange = 0)
       : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
     const Real ppd_coarse = (ppd_factor > 0) ? ppd_fine / ppd_factor : ppd_fine;
 
     if (convertToLog) {
       convertBoundsToLog_(global_min, global_max, shrinkRange);
-      toLog_(anchor_point, offset);
-      toLog_(splitPoint, offset);
+      anchor_point = toLog_(anchor_point, offset);
+      splitPoint = toLog_(splitPoint, offset);
     }
 
     checkInterval_(splitPoint, global_min, global_max, "Split point");
@@ -97,36 +97,36 @@ class Bounds {
 
   Bounds(ThreeGrids, Real global_min, Real global_max, Real anchor_point, Real fine_min,
          Real fine_max, Real ppd_fine, Real ppd_factor_lo, Real ppd_factor_hi,
-         Real shrinkRange = 0, bool convertToLog = true)
+         bool convertToLog, Real shrinkRange = 0)
       : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
 
     if (convertToLog) {
       convertBoundsToLog_(global_min, global_max, shrinkRange);
-      toLog_(anchor_point, offset);
-      toLog_(fine_min, offset);
-      toLog_(fine_max, offset);
+      anchor_point = toLog_(anchor_point, offset);
+      fine_min = toLog_(fine_min, offset);
+      fine_max = toLog_(fine_max, offset);
     }
     checkInterval_(anchor_point, global_min, global_max, "Anchor point");
 
-    grid = gridFromIntervals_(ThreeGrids, global_min, global_max, anchor_point, fine_min,
-                              fine_max, ppd_fine, pdd_factor_lo, ppd_factor_hi);
+    grid = gridFromIntervals_(ThreeGrids(), global_min, global_max, anchor_point, fine_min,
+                              fine_max, ppd_fine, ppd_factor_lo, ppd_factor_hi);
   }
 
   Bounds(ThreeGrids, Real global_min, Real global_max, Real anchor_point,
          Real log_fine_diameter, Real ppd_fine, Real ppd_factor_lo, Real ppd_factor_hi,
-         Real shrinkRange = 0, bool convertToLog = true)
+         bool convertToLog, Real shrinkRange = 0)
       : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
 
     if (convertToLog) {
       convertBoundsToLog_(global_min, global_max, shrinkRange);
-      toLog_(anchor_point, offset);
+      anchor_point = toLog_(anchor_point, offset);
     }
 
     checkInterval_(anchor_point, global_min, global_max, "Anchor point");
     Real mid_min = anchor_point - 0.5 * log_fine_diameter;
     Real mid_max = anchor_point + 0.5 * log_fine_diameter;
 
-    grid = gridFromIntervals_(ThreeGrids, global_min, global_max, anchor_point, mid_min,
+    grid = gridFromIntervals_(ThreeGrids(), global_min, global_max, anchor_point, mid_min,
                               mid_max, ppd_fine, ppd_factor_lo, ppd_factor_hi);
   }
 
@@ -193,8 +193,8 @@ class Bounds {
     // min_offset to handle the case where min=0
     if (min <= 0) offset = 1.1 * std::abs(min) + min_offset;
 
-    toLog_(min, offset);
-    toLog_(max, offset);
+    min = toLog_(min, offset);
+    max = toLog_(max, offset);
 
     Real delta = max - min;
     min += 0.5 * shrinkRange * delta;
@@ -232,7 +232,7 @@ class Bounds {
     }
   }
 
-  static Grid_t gridFromIntervals_(ThreeGRids, Real global_min, Real global_max,
+  static Grid_t gridFromIntervals_(ThreeGrids, Real global_min, Real global_max,
                                    Real anchor_point, Real mid_min, Real mid_max,
                                    Real ppd_fine, Real ppd_factor_lo,
                                    Real ppd_factor_hi) {
