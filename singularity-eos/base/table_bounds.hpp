@@ -108,8 +108,8 @@ class Bounds {
     }
     checkInterval_(anchor_point, global_min, global_max, "Anchor point");
 
-    grid = gridFromIntervals_(ThreeGrids(), global_min, global_max, anchor_point, fine_min,
-                              fine_max, ppd_fine, ppd_factor_lo, ppd_factor_hi);
+    grid = gridFromIntervals_(ThreeGrids(), global_min, global_max, anchor_point,
+                              fine_min, fine_max, ppd_fine, ppd_factor_lo, ppd_factor_hi);
   }
 
   Bounds(ThreeGrids, Real global_min, Real global_max, Real anchor_point,
