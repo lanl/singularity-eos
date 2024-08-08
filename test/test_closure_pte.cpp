@@ -15,6 +15,7 @@
 
 #include <array>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,7 @@
 #endif
 
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
@@ -43,6 +45,8 @@ using singularity::PTESolverRhoTRequiredScratch;
 using singularity::ShiftedEOS;
 using singularity::SpinerEOSDependsRhoT;
 using singularity::mix_impl::CacheAccessor;
+using singularity::mix_params::pte_rel_tolerance_e;
+using singularity::robust::ratio;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
                                  DavisReactants, SpinerEOSDependsRhoT>;
@@ -67,7 +71,7 @@ void finalize_eos_arr(EOSArrT eos_arr) {
 
 template <typename ArrT>
 bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
-                        const Real sie_bulk, ArrT mass_frac) {
+                        const Real sie_bulk, ArrT mass_frac, Real &u_bulk_out) {
   // Calculate material densities (and corresponding energies) and the total
   // volume fraction
   std::vector<Real> vol_frac(num_pte);
@@ -114,14 +118,21 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   bool pte_converged;
   constexpr size_t bool_bytes = 1 * sizeof(bool);
   bool *pte_converged_d = (bool *)PORTABLE_MALLOC(bool_bytes);
+  constexpr size_t real_bytes = 1 * sizeof(Real);
+  Real *pte_u_out_d = (Real *)PORTABLE_MALLOC(real_bytes);
   portableFor(
       "Device execution of PTE Test", 0, 1, PORTABLE_LAMBDA(int i) {
         PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
             num_pte, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
             v_temperatures, v_pressures, lambdas, scratch);
         pte_converged_d[0] = PTESolver(method);
+        pte_u_out_d[0] = v_densities[0] * v_vol_frac[0] * v_sies[0];
+        for (int m = 1; m < num_pte; ++m) {
+          pte_u_out_d[0] += v_densities[m] * v_vol_frac[m] * v_sies[m];
+        }
       });
   portableCopyToHost(&pte_converged, pte_converged_d, bool_bytes);
+  portableCopyToHost(&u_bulk_out, pte_u_out_d, real_bytes);
 
   // Free temp memory
   PORTABLE_FREE(lambda_memory); // Free entire lambda array
@@ -189,9 +200,18 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
 
       THEN("The PTE solver should converge") {
         EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
-        const bool pte_converged =
-            run_PTE_from_state(num_pte, v_EOS, spvol_bulk, sie_bulk, mass_frac);
+        Real u_bulk_out = std::numeric_limits<Real>::max();
+        const bool pte_converged = run_PTE_from_state(num_pte, v_EOS, spvol_bulk,
+                                                      sie_bulk, mass_frac, u_bulk_out);
+        // Check that PTE converged
         CHECK(pte_converged);
+        // Check that PTE obeys the bulk internal energy constraint
+        // NOTE(@pdmullen): The following fails prior to PR401
+        const Real u_bulk = ratio(sie_bulk, spvol_bulk);
+        const Real u_scale = std::abs(u_bulk);
+        const Real u_bulk_scale = ratio(u_bulk, u_scale);
+        const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
+        CHECK(residual < pte_rel_tolerance_e);
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
       }
@@ -209,9 +229,18 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
                                           copper_eos.GetOnDevice()};
       THEN("The PTE solver should converge") {
         EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
-        const bool pte_converged =
-            run_PTE_from_state(num_pte, v_EOS, spvol_bulk, sie_bulk, mass_frac);
+        Real u_bulk_out = std::numeric_limits<Real>::max();
+        const bool pte_converged = run_PTE_from_state(num_pte, v_EOS, spvol_bulk,
+                                                      sie_bulk, mass_frac, u_bulk_out);
+        // // Check that PTE converged
         // CHECK(pte_converged);
+        // // Check that PTE obeys the bulk internal energy constraint
+        // // NOTE(@pdmullen): The following fails prior to PR401
+        // const Real u_bulk = ratio(sie_bulk, spvol_bulk);
+        // const Real u_scale = std::abs(u_bulk);
+        // const Real u_bulk_scale = ratio(u_bulk, u_scale);
+        // const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
+        // CHECK(residual < pte_rel_tolerance_e);
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
       }
