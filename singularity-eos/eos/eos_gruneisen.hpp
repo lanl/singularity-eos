@@ -400,19 +400,20 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityTemperature(
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
-  sie = _Cv * (temp - _T0);
+  // Energy is not a function of density
+  sie = InternalEnergyFromDensityTemperature(rho0, temp)
   // We have a branch at rho0, so we need to decide, based on our pressure, whether we
   // should be above or below rho0
   Real Pref = PressureFromDensityInternalEnergy(_rho0, sie);
   if (press < Pref) {
     rho = (press - _P0 + _C0 * _C0 * _rho0) / (_C0 * _C0 + _G0 * sie);
   } else { // We are in compression; iterate
-    auto PofRatE = [&](const Real r) {
-      return PressureFromDensityInternalEnergy(r, sie);
-    };
+    auto P_residual = PORTABLE_LAMBDA(const Real r) {
+      return press - PressureFromDensityInternalEnergy(r, sie);
+    }
     using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
-    auto status = regula_falsi(PofRatE, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
+    auto status = regula_falsi(P_residual, press, _rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
     if (status != Status::SUCCESS) {
       // Root finder failed even though the solution was bracketed... this is an error
       EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: "
