@@ -256,22 +256,26 @@ SCENARIO("Aluminum Gruneisen EOS", "[GruneisenEOS]") {
           REQUIRE(isClose(sound_speed, true_sound_speed, REAL_TOL));
         }
       }
-      WHEN("A pressure-temperature lookup is performed") {
+      WHEN("A the pressure and temperature are determined from the density and energy") {
         const Real temperature =
             eos.TemperatureFromDensityInternalEnergy(density, energy);
-        Real test_density;
-        Real test_energy;
-        Real *lambda;
-        eos.DensityEnergyFromPressureTemperature(true_pres, temperature, lambda,
-                                                 test_density, test_energy);
-        THEN("The correct energy and density should be returned") {
-          INFO("Pressure:           " << true_pres
-                                      << "  Temperature:      " << temperature);
-          INFO("Density:            " << density << "  Energy:            " << energy);
-          INFO("Calculated Density: " << test_density
-                                      << "  Calculated Energy:" << test_energy);
-          CHECK(isClose(density, test_density, REAL_TOL));
-          CHECK(isClose(energy, test_energy, REAL_TOL));
+        const Real pressure = eos.PressureFromDensityInternalEnergy(density, energy);
+        AND_WHEN("A DensityEnergyFromPressureTemperature() lookup is performed") {
+          Real test_density;
+          Real test_energy;
+          Real *lambda;
+          eos.DensityEnergyFromPressureTemperature(pressure, temperature, lambda,
+                                                   test_density, test_energy);
+          THEN("The correct energy and density should be returned") {
+            INFO("Pressure:     " << pressure << " microbar"
+                                  << "  Temperature: " << temperature << " K       ");
+            INFO("Density:      " << density << " g/cm^3      "
+                                  << "  Energy:      " << energy << " erg/g   ");
+            INFO("Calc Density: " << test_density << " g/cm^3      "
+                                  << "  Calc Energy: " << test_energy << " erg/g   ");
+            CHECK(isClose(density, test_density, REAL_TOL));
+            CHECK(isClose(energy, test_energy, REAL_TOL));
+          }
         }
       }
       WHEN("A finite difference approximation is used for the bulk modulus") {
