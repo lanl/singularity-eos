@@ -203,15 +203,15 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state(num_pte, v_EOS, spvol_bulk,
                                                       sie_bulk, mass_frac, u_bulk_out);
-        // Check that PTE converged
         CHECK(pte_converged);
-        // Check that PTE obeys the bulk internal energy constraint
-        // NOTE(@pdmullen): The following fails prior to PR401
-        const Real u_bulk = ratio(sie_bulk, spvol_bulk);
-        const Real u_scale = std::abs(u_bulk);
-        const Real u_bulk_scale = ratio(u_bulk, u_scale);
-        const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-        CHECK(residual < pte_rel_tolerance_e);
+        AND_THEN("The solution satisfies the bulk internal energy constraint") {
+          // NOTE(@pdmullen): The following fails prior to PR401
+          const Real u_bulk = ratio(sie_bulk, spvol_bulk);
+          const Real u_scale = std::abs(u_bulk);
+          const Real u_bulk_scale = ratio(u_bulk, u_scale);
+          const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
+          CHECK(residual < pte_rel_tolerance_e);
+        }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
       }
@@ -232,15 +232,15 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state(num_pte, v_EOS, spvol_bulk,
                                                       sie_bulk, mass_frac, u_bulk_out);
-        // // Check that PTE converged
         // CHECK(pte_converged);
-        // // Check that PTE obeys the bulk internal energy constraint
-        // // NOTE(@pdmullen): The following fails prior to PR401
-        // const Real u_bulk = ratio(sie_bulk, spvol_bulk);
-        // const Real u_scale = std::abs(u_bulk);
-        // const Real u_bulk_scale = ratio(u_bulk, u_scale);
-        // const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-        // CHECK(residual < pte_rel_tolerance_e);
+        // AND_THEN("The solution satisfies the bulk internal energy constraint") {
+        //   // NOTE(@pdmullen): The following fails prior to PR401
+        //   const Real u_bulk = ratio(sie_bulk, spvol_bulk);
+        //   const Real u_scale = std::abs(u_bulk);
+        //   const Real u_bulk_scale = ratio(u_bulk, u_scale);
+        //   const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
+        //   CHECK(residual < pte_rel_tolerance_e);
+        // }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
       }
