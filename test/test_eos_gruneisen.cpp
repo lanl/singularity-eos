@@ -257,15 +257,19 @@ SCENARIO("Aluminum Gruneisen EOS", "[GruneisenEOS]") {
         }
       }
       WHEN("A pressure-temperature lookup is performed") {
-        const Real temperature = eos.TemperatureFromDensityInternalEnergy(density, energy);
+        const Real temperature =
+            eos.TemperatureFromDensityInternalEnergy(density, energy);
         Real test_density;
         Real test_energy;
-        Real* lambda;
-        eos.DensityEnergyFromPressureTemperature(true_pres, temperature, lambda, test_density, test_energy);
+        Real *lambda;
+        eos.DensityEnergyFromPressureTemperature(true_pres, temperature, lambda,
+                                                 test_density, test_energy);
         THEN("The correct energy and density should be returned") {
-          INFO("Pressure:           " << true_pres << "  Temperature:      " << temperature);
+          INFO("Pressure:           " << true_pres
+                                      << "  Temperature:      " << temperature);
           INFO("Density:            " << density << "  Energy:            " << energy);
-          INFO("Calculated Density: " << test_density << "  Calculated Energy:" << test_energy);
+          INFO("Calculated Density: " << test_density
+                                      << "  Calculated Energy:" << test_energy);
           CHECK(isClose(density, test_density, REAL_TOL));
           CHECK(isClose(energy, test_energy, REAL_TOL));
         }
