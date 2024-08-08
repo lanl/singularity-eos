@@ -401,7 +401,7 @@ template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   // Energy is not a function of density
-  sie = InternalEnergyFromDensityTemperature(rho0, temp)
+  sie = InternalEnergyFromDensityTemperature(_rho0, temp);
       // We have a branch at rho0, so we need to decide, based on our pressure, whether we
       // should be above or below rho0
       Real Pref = PressureFromDensityInternalEnergy(_rho0, sie);
@@ -410,7 +410,7 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
   } else { // We are in compression; iterate
     auto P_residual = PORTABLE_LAMBDA(const Real r) {
       return press - PressureFromDensityInternalEnergy(r, sie);
-    }
+    };
     using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
     auto status =
