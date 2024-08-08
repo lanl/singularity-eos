@@ -5,6 +5,7 @@
 ### Added (new features/APIs/variables/...)
 
 ### Fixed (Repair bugs, etc)
+- [[PR401]](https://github.com/lanl/singularity-eos/pull/401) Fix for internal energy scaling in PTE closure
 
 ### Changed (changing behavior/API/variables/...)
 
@@ -44,7 +45,7 @@ Date: 7/29/2024
 ### Changed (changing behavior/API/variables/...)
 - [[PR363]](https://github.com/lanl/singularity-eos/pull/363) Template lambda values for scalar calls
 - [[PR372]](https://github.com/lanl/singularity-eos/pull/372) Removed E0 from Davis Products EOS in favor of using the shifted EOS modifier. CHANGES API!
-- [[PR#382]](https://github.com/lanl/singularity-eos/pull/382) Changed `get_sg_eos()` API to allow optionally specifying the mass fraction cutoff for materials to participate in the PTE solver 
+- [[PR#382]](https://github.com/lanl/singularity-eos/pull/382) Changed `get_sg_eos()` API to allow optionally specifying the mass fraction cutoff for materials to participate in the PTE solver
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR329]](https://github.com/lanl/singularity-eos/pull/329) Move vinet tests into analytic test suite
