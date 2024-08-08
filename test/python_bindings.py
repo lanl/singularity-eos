@@ -68,7 +68,7 @@ class EOS(unittest.TestCase):
         eos = singularity_eos.IdealGas(1,1)
 
     def testStiffGas(self):
-        eos = singularity_eos.StiffGas(1,1,1)
+        eos = singularity_eos.StiffGas(1,1,1,1)
 
     def testShiftedIdealGas(self):
         eos = singularity_eos.Shifted(singularity_eos.IdealGas(1,1),1)
