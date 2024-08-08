@@ -6,6 +6,7 @@
 
 ### Fixed (Repair bugs, etc)
 - [[PR401]](https://github.com/lanl/singularity-eos/pull/401) Fix for internal energy scaling in PTE closure
+- [[PR403]](https://github.com/lanl/singularity-eos/pull/403) Fix Gruneisen EOS DensityEnergyFromPressureTemperature function
 
 ### Changed (changing behavior/API/variables/...)
 
