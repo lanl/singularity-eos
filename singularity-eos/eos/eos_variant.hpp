@@ -120,6 +120,36 @@ class Variant {
         eos_);
   }
 
+  /////////////////////////////
+  /// NEW SGERBERDING STUFF ///
+  /////////////////////////////
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
+      const Real rho, const Real pressure,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return mpark::visit(
+        [&rho, &pressure, &lambda](const auto &eos) {
+          return eos.InternalEnergyFromDensityPressure(rho, pressure, lambda);
+        },
+        eos_);
+  }
+
+    template <typename Indexer_t = Real *>
+      PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityPressure(
+          const Real rho, const Real pressure,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+        return mpark::visit(
+            [&rho, &pressure, &lambda](const auto &eos) {
+              return eos.TemperatureFromDensityPressure(rho, pressure, lambda);
+            },
+            eos_);
+      }
+
+//////////////////////////////////////
+//////////////////////////////////////
+//////////////////////////////////////
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature,
