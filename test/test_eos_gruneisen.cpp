@@ -33,6 +33,8 @@ PORTABLE_INLINE_FUNCTION Real QuadFormulaMinus(Real a, Real b, Real c) {
   return (-b - std::sqrt(b * b - 4 * a * c)) / (2 * a);
 }
 
+constexpr Real REAL_TOL = std::numeric_limits<Real>::epsilon() * 1e4; // 1e-12 for double
+
 // Only run exception checking when we aren't offloading to the GPUs
 #ifdef PORTABILITY_STRATEGY_NONE
 SCENARIO("Gruneisen EOS entropy is disabled", "[GruneisenEOS][Entropy]") {
@@ -206,8 +208,8 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
   }
 }
 
-SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[GruneisenEOS]") {
-  GIVEN("Parameters for a Gruneisen EOS") {
+SCENARIO("Aluminum Gruneisen EOS", "[GruneisenEOS]") {
+  GIVEN("Parameters for an aluminum Gruneisen EOS") {
     // Unit conversions
     // constexpr Real mm = 10.;
     constexpr Real cm = 1.;
@@ -239,7 +241,7 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[Gruneis
           pres = pres / Mbar;
           INFO("Density: " << density << "  Energy: " << energy << "  Pressure: " << pres
                            << " Mbar  True pressure: " << true_pres << " Mbar");
-          REQUIRE(isClose(pres, true_pres, 1e-12));
+          REQUIRE(isClose(pres, true_pres, REAL_TOL));
         }
       }
       WHEN("A B_S(rho, e) lookup is performed") {
@@ -251,7 +253,21 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[Gruneis
                            << "  Sound speed: " << sound_speed
                            << " cm/us  True sound speed: " << true_sound_speed
                            << " cm/us");
-          REQUIRE(isClose(sound_speed, true_sound_speed, 1e-12));
+          REQUIRE(isClose(sound_speed, true_sound_speed, REAL_TOL));
+        }
+      }
+      WHEN("A pressure-temperature lookup is performed") {
+        const Real temperature = eos.TemperatureFromDensityInternalEnergy(density, energy);
+        Real test_density;
+        Real test_energy;
+        Real* lambda;
+        eos.DensityEnergyFromPressureTemperature(true_pres, temperature, lambda, test_density, test_energy);
+        THEN("The correct energy and density should be returned") {
+          INFO("Pressure:           " << true_pres << "  Temperature:      " << temperature);
+          INFO("Density:            " << density << "  Energy:            " << energy);
+          INFO("Calculated Density: " << test_density << "  Calculated Energy:" << test_energy);
+          CHECK(isClose(density, test_density, REAL_TOL));
+          CHECK(isClose(energy, test_energy, REAL_TOL));
         }
       }
       WHEN("A finite difference approximation is used for the bulk modulus") {
@@ -294,7 +310,7 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[Gruneis
             INFO("Density: " << density << "  Energy: " << energy
                              << "  Pressure: " << pres / Mbar
                              << " Mbar  True pressure: " << true_pres / Mbar << " Mbar");
-            REQUIRE(isClose(pres, true_pres, 1e-12));
+            REQUIRE(isClose(pres, true_pres, REAL_TOL));
           }
         }
       }
@@ -399,7 +415,7 @@ SCENARIO("Gruneisen EOS density limit") {
         THEN("The generated rho_max parameter should be properly set") {
           const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
           INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-          REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+          REQUIRE(isClose(rho_max, rho_max_true, REAL_TOL));
         }
         WHEN("Lookups are performed beyond the maximum density") {
           // Note: there is a small safety factor to prevent us from hitting the
@@ -495,7 +511,7 @@ SCENARIO("Gruneisen EOS density limit") {
             const Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+            REQUIRE(isClose(rho_max, rho_max_true, REAL_TOL));
           }
         }
         WHEN("The quadratic oot multiplicity is 2") {
@@ -511,7 +527,7 @@ SCENARIO("Gruneisen EOS density limit") {
             const Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+            REQUIRE(isClose(rho_max, rho_max_true, REAL_TOL));
           }
         }
         WHEN("No root exists") {
