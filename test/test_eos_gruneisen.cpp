@@ -276,7 +276,7 @@ SCENARIO("Aluminum Gruneisen EOS", "[GruneisenEOS]") {
       WHEN("The pressure and temperature are determined from the density and energy") {
         const Real temperature =
             eos.TemperatureFromDensityInternalEnergy(density, energy);
-        const Real pressure = eos.PressureFromDensityInternalEnergy(density, energy); 
+        const Real pressure = eos.PressureFromDensityInternalEnergy(density, energy);
         AND_WHEN("A DensityEnergyFromPressureTemperature() lookup is performed") {
           Real test_density;
           Real test_energy;
