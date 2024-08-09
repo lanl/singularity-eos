@@ -10,6 +10,7 @@
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR402]](https://github.com/lanl/singularity-eos/pull/402) Added stiff gas to python interface
 
 ### Removed (removing behavior/API/varaibles/...)
 
