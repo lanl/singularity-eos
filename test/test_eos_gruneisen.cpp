@@ -216,25 +216,42 @@ SCENARIO("Aluminum Gruneisen EOS", "[GruneisenEOS]") {
     constexpr Real us = 1.e-06;
     constexpr Real Mbar = 1.e12;
     constexpr Real Mbcc_per_g = 1e12;
-    // Gruneisen parameters for copper
-    constexpr Real C0 = 0.535 * cm / us;
-    constexpr Real S1 = 1.34;
+    // Gruneisen parameters for aluminum
+    constexpr Real C0 = 0.524 * cm / us;
+    constexpr Real S1 = 1.4;
     constexpr Real S2 = 0.;
     constexpr Real S3 = 0.;
     constexpr Real Gamma0 = 1.97;
-    constexpr Real b = 0.;
-    constexpr Real rho0 = 2.714000;
+    constexpr Real b = 0.48;
+    constexpr Real rho0 = 2.703;
     constexpr Real T0 = 298.;
-    constexpr Real P0 = 1e-06 * Mbar;
+    constexpr Real P0 = 0. * Mbar;
     constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
     // Create the EOS
     EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
     EOS eos = host_eos.GetOnDevice();
+    GIVEN("Ambient pressure and temperature") {
+      constexpr Real P_ambient = 1.0e-06 * Mbar;
+      constexpr Real T_ambient = 298.;
+      WHEN("A DensityEnergyFromPressureTemperature() lookup is performed") {
+        Real test_density;
+        Real test_energy;
+        Real *lambda;
+        THEN("The root find should converge") {
+          eos.DensityEnergyFromPressureTemperature(P_ambient, T_ambient, lambda,
+                                                   test_density, test_energy);
+        }
+      }
+    }
     GIVEN("Density and energy") {
-      constexpr Real density = 5.92418956756592;            // g/cm^3
-      constexpr Real energy = 792486007.804619;             // erg/g
-      constexpr Real true_pres = 2.620656373250729;         // Mbar
-      constexpr Real true_sound_speed = 1.5247992468363685; // cm/us
+      constexpr Real density = 5.92418956756592;          // g/cm^3
+      constexpr Real energy = 792486007.804619;           // erg/g
+      constexpr Real true_pres = 2.19200396047868;        // Mbar
+      constexpr Real true_sound_speed = 1.29592658233752; // cm/us
+      THEN("The density should not exceeed the computed rho_max") {
+        const Real density_max = Gruneisen::ComputeRhoMax(S1, S2, S3, rho0);
+        REQUIRE(density < density_max);
+      }
       WHEN("A P(rho, e) lookup is performed") {
         Real pres = eos.PressureFromDensityInternalEnergy(density, energy);
         THEN("The correct pressure should be returned") {
@@ -256,17 +273,17 @@ SCENARIO("Aluminum Gruneisen EOS", "[GruneisenEOS]") {
           REQUIRE(isClose(sound_speed, true_sound_speed, REAL_TOL));
         }
       }
-      WHEN("A the pressure and temperature are determined from the density and energy") {
+      WHEN("The pressure and temperature are determined from the density and energy") {
         const Real temperature =
             eos.TemperatureFromDensityInternalEnergy(density, energy);
-        const Real pressure = eos.PressureFromDensityInternalEnergy(density, energy);
+        const Real pressure = eos.PressureFromDensityInternalEnergy(density, energy); 
         AND_WHEN("A DensityEnergyFromPressureTemperature() lookup is performed") {
           Real test_density;
           Real test_energy;
           Real *lambda;
           eos.DensityEnergyFromPressureTemperature(pressure, temperature, lambda,
                                                    test_density, test_energy);
-          THEN("The correct energy and density should be returned") {
+          THEN("The consistent energy and density should be returned") {
             INFO("Pressure:     " << pressure << " microbar"
                                   << "  Temperature: " << temperature << " K       ");
             INFO("Density:      " << density << " g/cm^3      "
