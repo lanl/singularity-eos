@@ -63,6 +63,8 @@ class Gruneisen : public EosBase<Gruneisen> {
         _Cv(Cv), _rho_max(RHOMAX_SAFETY * ComputeRhoMax(s1, s2, s3, rho0)) {}
   static PORTABLE_INLINE_FUNCTION Real ComputeRhoMax(const Real s1, const Real s2,
                                                      const Real s3, const Real rho0);
+  PORTABLE_INLINE_FUNCTION Real
+  MaxStableDensityAtTemperature(const Real temperature) const;
   Gruneisen GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -397,6 +399,48 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::BulkModulusFromDensityTemperature(
   return BulkModulusFromDensityInternalEnergy(
       rho, InternalEnergyFromDensityTemperature(rho, temp));
 }
+PORTABLE_INLINE_FUNCTION Real
+Gruneisen::MaxStableDensityAtTemperature(const Real temperature) const {
+  // Because of the constant cold curve assumption, this EOS is thermodynamically
+  // inconsistent, and leads to states that are effectively off the EOS surface even
+  // though the temperature is positive. Mathematically, this means that the \Gamma\rho(e
+  // - e_H) term becomes highly negative and dominates the positive P_H term at some
+  // density. This results in a local maximum in the pressure as a function of density for
+  // a given temperature. Beyond this point, the pressure decreases with increasing
+  // density, which is thermodynamcially unstable. In a thermodynamically consistent EOS,
+  // the cold curve energy would increase with density, leading an appropriate bounding at
+  // T=0.
+
+  // Since E_H and P_H are monotonic up to the singularity given by _rho_max, if the
+  // derivative of the pressure is negative at _rho_max, a maximum exists and this should
+  // be the highest density for the isotherm. If this maximum doesn't exist, then the EOS
+  // is thermodynamically consistent up to the maximum density for this isotherm.
+  Real slope_at_max_density =
+      dPres_drho_e(_rho_max, InternalEnergyFromDensityTemperature(_rho_max, temperature));
+  if (slope_at_max_density >= 0) {
+    // No maximum pressure before _rho_max
+    return _rho_max;
+  }
+
+  // Maximum pressure should exist... do a root find to locate where the derivative is
+  // zero
+  auto dPdrho_T = PORTABLE_LAMBDA(const Real r) {
+    return dPres_drho_e(r, InternalEnergyFromDensityTemperature(r, temperature));
+  };
+  Real rho_lower = 0.9 * _rho0;
+  Real rho_upper = std::min(_rho_max, 1.0e4);
+  Real rho_at_max_P;
+  using RootFinding1D::regula_falsi;
+  using RootFinding1D::Status;
+  auto status = regula_falsi(dPdrho_T, 0., _rho0, rho_lower, rho_upper, 1.0e-8, 1.0e-8,
+                             rho_at_max_P);
+  if (status != Status::SUCCESS) {
+    // Root finder failed even though the solution should be bracketed
+    EOS_ERROR("Gruneisen::MaxStableDensityAtTemperature: "
+              "Root find failed to find maximum P at T despite aparent bracket\n");
+  }
+  return rho_at_max_P;
+}
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
@@ -411,15 +455,25 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     rho_upper = 1.1 * _rho0;
   } else {
     rho_lower = 0.9 * _rho0;
-    rho_upper = std::min(_rho_max, 1.0e4);
+    // Find maximum thermodynamically _stable_ density at this temperature. Use this to
+    // check if we're actually on the EOS surface or not
+    rho_upper = MaxStableDensityAtTemperature(temp);
+    auto pres_max = PressureFromDensityTemperature(rho_upper, temp);
+    if (press > pres_max) {
+      // We're off the EOS surface
+      using PortsOfCall::printf;
+      printf("Requested pressure, %.15g, exceeds maximum, %.15g, for temperature, %.15g",
+             press, pres_max, temp);
+      PORTABLE_ALWAYS_THROW_OR_ABORT("Input pressure is off EOS surface");
+    }
   }
   auto PofRatT = PORTABLE_LAMBDA(const Real r) {
     return PressureFromDensityTemperature(r, temp);
   };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
-  auto status = regula_falsi(PofRatT, press, _rho0, 0.9 * _rho0,
-                             std::min(_rho_max, 1.0e4), 1.0e-8, 1.0e-8, rho);
+  auto status =
+      regula_falsi(PofRatT, press, _rho0, rho_lower, rho_upper, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: "
