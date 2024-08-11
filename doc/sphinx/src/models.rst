@@ -1510,7 +1510,7 @@ default grids are now piecewise. Piecewise grids can be disabled with
   # defaults are true
   piecewiseRho = false
   piecewiseT = false
-  piecewiseSie = dalse
+  piecewiseSie = false
 
 These options may be true or false. The default is true. When
 piecewise grids are active, the density-temperature (or
