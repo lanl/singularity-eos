@@ -39,7 +39,7 @@ constexpr Real T_split = 1e4;
 constexpr int N_per_decade_fine = 200;
 constexpr Real N_factor = 5;
 
-constexpr REAL_TOL =
+constexpr Real REAL_TOL =
     std::numeric_limits<Real>::epsilon * 1e3
 
     SCENARIO("Bounds can compute number of points from points per decade", "[Bounds]") {
