@@ -1585,7 +1585,7 @@ Thus the input block for piecewise grid might look like this:
 .. note::
 
   For all grid types, the only required value in an input file is the
-  matid. Table bounds and normal density will be inferred from teh
+  matid. Table bounds and normal density will be inferred from the
   sesame metadata if possible and if no value in the original input
   file is provided. Table densities and positions and sizes of refined
   regions are not inferred from the table, but are chosen with
