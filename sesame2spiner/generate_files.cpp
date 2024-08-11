@@ -301,15 +301,16 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   const bool piecewiseT = params.Get("piecewiseT", true);
   const bool piecewiseSie = params.Get("piecewiseSie", true);
 
-  Real ppd_factor_rho_lo = params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
-  Real ppd_factor_rho_hi = params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
-  Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT_T);
-  Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT_T);
-  Real rho_fine_diameter =
+  const Real ppd_factor_rho_lo =
+      params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
+  const Real ppd_factor_rho_hi =
+      params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
+  const Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT_T);
+  const Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT_T);
+  const Real rho_fine_diameter =
       params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
-  Real TSplitPoint = params.Get("TSplitPoint", T_SPLIT_POINT_DEFAULT);
-
-  Real rho_fine_center = rhoAnchor;
+  const Real TSplitPoint = params.Get("TSplitPoint", T_SPLIT_POINT_DEFAULT);
+  const Real rho_fine_center = rhoAnchor;
 
   // These override the rho center/diameter settings
   Real rho_fine_min = params.Get("rhoFineMin", -1);
@@ -366,8 +367,8 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
                          Verbosity::Quiet);
       eosSafeDestroy(NT, tableHandle, Verbosity::Quiet);
     }
-    Real sieAnchor = sie[0];
-    Real sieSplitPoint = sie[1];
+    const Real sieAnchor = sie[0];
+    const Real sieSplitPoint = sie[1];
     leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
                       ppdSie, ppd_factor_sie, true, shrinkleBounds);
   } else {
