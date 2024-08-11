@@ -34,7 +34,7 @@
 
 using EospacWrapper::Verbosity;
 constexpr int NGRIDS = 3;
-using Bounds = singularity::Bounds<NGRIDS>;
+using Bounds = singularity::table_utils::Bounds<NGRIDS>;
 using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
 using DataBox = Spiner::DataBox<Real, Grid_t>;
 

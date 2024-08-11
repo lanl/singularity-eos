@@ -26,11 +26,10 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
-#include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 
 namespace singularity {
-
+namespace table_utils {
 // For logarithmic interpolation, quantities may be negative.
 // If they are, use offset to ensure negative values make sense.
 template <int NGRIDS = 3>
@@ -45,12 +44,14 @@ class Bounds {
 
   Bounds() : offset(0), piecewise(false), linmin_(0), linmax_(0) {}
 
-  Bounds(Real min, Real max, int N, Real offset)
+  Bounds(const Real min, const Real max, const int N, const Real offset)
       : grid(Grid_t(std::vector<RegularGrid1D>{RegularGrid1D(min, max, N)})),
         offset(offset), piecewise(false), linmin_(min), linmax_(max) {}
-  Bounds(OneGrid, Real min, Real max, int N, Real offset) : Bounds(min, max, N, offset) {}
+  Bounds(OneGrid, const Real min, const Real max, const int N, const Real offset)
+      : Bounds(min, max, N, offset) {}
 
-  Bounds(Real min, Real max, int N, bool convertToLog = false, Real shrinkRange = 0,
+  Bounds(Real min, Real max, int N, const bool convertToLog = false,
+         const Real shrinkRange = 0,
          Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
       : offset(0), piecewise(true), linmin_(min), linmax_(max) {
     if (convertToLog) {
@@ -65,13 +66,14 @@ class Bounds {
     }
     grid = Grid_t(std::vector<RegularGrid1D>{RegularGrid1D(min, max, N)});
   }
-  Bounds(OneGrid, Real min, Real max, int N, bool convertToLog = false,
-         Real shrinkRange = 0,
+  Bounds(OneGrid, Real min, Real max, int N, const bool convertToLog = false,
+         const Real shrinkRange = 0,
          Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
       : Bounds(min, max, N, convertToLog, shrinkRange, anchor_point) {}
 
   Bounds(TwoGrids, Real global_min, Real global_max, Real anchor_point, Real splitPoint,
-         Real ppd_fine, Real ppd_factor, bool convertToLog, Real shrinkRange = 0)
+         const Real ppd_fine, const Real ppd_factor, const bool convertToLog,
+         const Real shrinkRange = 0)
       : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
     const Real ppd_coarse = (ppd_factor > 0) ? ppd_fine / ppd_factor : ppd_fine;
 
@@ -96,8 +98,8 @@ class Bounds {
   }
 
   Bounds(ThreeGrids, Real global_min, Real global_max, Real anchor_point, Real fine_min,
-         Real fine_max, Real ppd_fine, Real ppd_factor_lo, Real ppd_factor_hi,
-         bool convertToLog, Real shrinkRange = 0)
+         Real fine_max, const Real ppd_fine, const Real ppd_factor_lo,
+         const Real ppd_factor_hi, const bool convertToLog, const Real shrinkRange = 0)
       : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
 
     if (convertToLog) {
@@ -113,8 +115,8 @@ class Bounds {
   }
 
   Bounds(ThreeGrids, Real global_min, Real global_max, Real anchor_point,
-         Real log_fine_diameter, Real ppd_fine, Real ppd_factor_lo, Real ppd_factor_hi,
-         bool convertToLog, Real shrinkRange = 0)
+         Real log_fine_diameter, const Real ppd_fine, const Real ppd_factor_lo,
+         const Real ppd_factor_hi, const bool convertToLog, const Real shrinkRange = 0)
       : offset(0), piecewise(true), linmin_(global_min), linmax_(global_max) {
 
     if (convertToLog) {
@@ -130,7 +132,7 @@ class Bounds {
                               mid_max, ppd_fine, ppd_factor_lo, ppd_factor_hi);
   }
 
-  inline Real log2lin(Real xl) const {
+  inline Real log2lin(const Real xl) const {
     // JMM: Need to guard this with the linear bounds passed in. The
     // reason is that our fast math routines, while completely
     // invertible at the level of machine epsilon, do introduce error
@@ -139,7 +141,7 @@ class Bounds {
     return std::min(linmax_,
                     std::max(linmin_, singularity::FastMath::pow10(xl) - offset));
   }
-  inline Real i2lin(int i) const { return log2lin(grid.x(i)); }
+  inline Real i2lin(const int i) const { return log2lin(grid.x(i)); }
 
   friend std::ostream &operator<<(std::ostream &os, const Bounds &b) {
     os << "Bounds: [" << b.grid.min() << ", " << b.grid.max() << "]"
@@ -154,7 +156,7 @@ class Bounds {
 
   // This uses real logs
   template <typename T>
-  static int getNumPointsFromPPD(Real min, Real max, T ppd) {
+  static int getNumPointsFromPPD(Real min, Real max, const T ppd) {
     constexpr Real epsilon = std::numeric_limits<float>::epsilon();
     const Real min_offset = 10 * std::abs(epsilon);
     // 1.1 so that the y-intercept isn't identically zero
@@ -171,19 +173,19 @@ class Bounds {
     return N;
   }
   template <typename T>
-  static int getNumPointsFromDensity(Real min, Real max, T density) {
+  static int getNumPointsFromDensity(const Real min, const Real max, const T density) {
     Real delta = max - min;
     int N = std::max(2, static_cast<int>(std::ceil(density * delta)));
     return N;
   }
 
  private:
-  Real toLog_(Real val, Real offset) {
+  Real toLog_(Real val, const Real offset) {
     val += offset;
     return singularity::FastMath::log10(std::abs(val));
   }
 
-  void convertBoundsToLog_(Real &min, Real &max, Real shrinkRange = 0) {
+  void convertBoundsToLog_(Real &min, Real &max, const Real shrinkRange = 0) {
     // Log scales can't handle negative numbers or exactly zero. To
     // deal with that, we offset.
     constexpr Real epsilon = std::numeric_limits<float>::epsilon();
@@ -201,7 +203,8 @@ class Bounds {
     max -= 0.5 * shrinkRange * delta;
   }
 
-  static void adjustForAnchor_(Real min, Real &max, int &N, Real anchor_point) {
+  static void adjustForAnchor_(const Real min, Real &max, int &N,
+                               const Real anchor_point) {
     if (min < anchor_point && anchor_point < max) {
       Real Nfrac = (anchor_point - min) / (max - min);
       PORTABLE_REQUIRE((0 < Nfrac && Nfrac < 1), "anchor in bounds");
@@ -219,7 +222,8 @@ class Bounds {
     }
   }
 
-  static void checkInterval_(Real &p, Real min, Real max, const std::string &name) {
+  static void checkInterval_(Real &p, const Real min, const Real max,
+                             const std::string &name) {
     if (p <= min) {
       PORTABLE_ALWAYS_WARN(name + " less than minimum. Adjusting.");
       Real eps = 0.1 * std::abs(min);
@@ -234,8 +238,8 @@ class Bounds {
 
   static Grid_t gridFromIntervals_(ThreeGrids, Real global_min, Real global_max,
                                    Real anchor_point, Real mid_min, Real mid_max,
-                                   Real ppd_fine, Real ppd_factor_lo,
-                                   Real ppd_factor_hi) {
+                                   const Real ppd_fine, const Real ppd_factor_lo,
+                                   const Real ppd_factor_hi) {
     const Real ppd_lo = (ppd_factor_lo > 0) ? ppd_fine / ppd_factor_lo : ppd_fine;
     const Real ppd_hi = (ppd_factor_hi > 0) ? ppd_fine / ppd_factor_hi : ppd_fine;
 
@@ -274,7 +278,7 @@ class Bounds {
  private:
   Real linmin_, linmax_;
 };
-
+} // namespace table_utils
 } // namespace singularity
 
 #endif // SINGULARITY_USE_SPINER

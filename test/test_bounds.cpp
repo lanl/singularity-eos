@@ -13,6 +13,7 @@
 //------------------------------------------------------------------------------
 
 #include <cstdio>
+#include <limits>
 
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
@@ -24,7 +25,7 @@
 #endif
 
 constexpr int NGRIDS = 3;
-using Bounds = singularity::Bounds<NGRIDS>;
+using Bounds = singularity::table_utils::Bounds<NGRIDS>;
 using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 using Grid_t = Bounds::Grid_t;
 
@@ -38,10 +39,14 @@ constexpr Real T_split = 1e4;
 constexpr int N_per_decade_fine = 200;
 constexpr Real N_factor = 5;
 
-SCENARIO("Bounds can compute number of points from points per decade", "[Bounds]") {
+constexpr REAL_TOL =
+    std::numeric_limits<Real>::epsilon * 1e3
+
+    SCENARIO("Bounds can compute number of points from points per decade", "[Bounds]") {
   WHEN("We compute the number of points from points per decade") {
     int np = Bounds::getNumPointsFromPPD(T_min, T_max, N_per_decade_fine);
-    THEN("We get the right number") { REQUIRE(np == 1800); }
+    constexpr int NDECADES = 9;
+    THEN("We get the right number") { REQUIRE(np == NDECADES * N_PER_DECADE_FINE); }
   }
 }
 
@@ -65,7 +70,7 @@ SCENARIO("Logarithmic, single-grid bounds in the bounds object", "[Bounds]") {
     Bounds lRhoBounds(rho_min, rho_max, np, true, 0.0, rho_normal);
     THEN("The lower and upper bounds are right") {
       REQUIRE(std::abs(lRhoBounds.grid.min() - singularity::FastMath::log10(rho_min)) <=
-              1e-12);
+              REAL_TOL);
       REQUIRE(lRhoBounds.grid.max() <=
               singularity::FastMath::log10(rho_max)); // shifted due to anchor
       AND_THEN("The anchor is on the mesh") {
@@ -73,8 +78,8 @@ SCENARIO("Logarithmic, single-grid bounds in the bounds object", "[Bounds]") {
         int ianchor;
         Spiner::weights_t<Real> w;
         lRhoBounds.grid.weights(lanchor, ianchor, w);
-        REQUIRE(std::abs(w[0] - 1) <= 1e-12);
-        REQUIRE(std::abs(w[1]) <= 1e-12);
+        REQUIRE(std::abs(w[0] - 1) <= REAL_TOL);
+        REQUIRE(std::abs(w[1]) <= REAL_TOL);
       }
     }
   }
@@ -87,8 +92,8 @@ SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
     THEN("The bounds are right") {
       Real lrmin = singularity::FastMath::log10(rho_min);
       Real lrmax = singularity::FastMath::log10(rho_max);
-      REQUIRE(std::abs(bnds.grid.min() - lrmin) <= 1e-12);
-      REQUIRE(std::abs(bnds.grid.max() - lrmax) <= 1e-12);
+      REQUIRE(std::abs(bnds.grid.min() - lrmin) <= REAL_TOL);
+      REQUIRE(std::abs(bnds.grid.max() - lrmax) <= REAL_TOL);
       REQUIRE(bnds.grid.nGrids() == 3);
       AND_THEN(
           "The total number of points is less than a uniform fine spacing would imply") {
@@ -98,8 +103,8 @@ SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
           int ianchor;
           Spiner::weights_t<Real> w;
           bnds.grid.weights(lanchor, ianchor, w);
-          REQUIRE(std::abs(w[0] - 1) <= 1e-12);
-          REQUIRE(std::abs(w[1]) <= 1e-12);
+          REQUIRE(std::abs(w[0] - 1) <= REAL_TOL);
+          REQUIRE(std::abs(w[1]) <= REAL_TOL);
         }
       }
     }
@@ -110,8 +115,8 @@ SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
     THEN("The bounds are right") {
       Real ltmin = singularity::FastMath::log10(T_min);
       Real ltmax = singularity::FastMath::log10(T_max);
-      REQUIRE(std::abs(bnds.grid.min() - ltmin) <= 1e-12);
-      REQUIRE(std::abs(bnds.grid.max() - ltmax) <= 1e-12);
+      REQUIRE(std::abs(bnds.grid.min() - ltmin) <= REAL_TOL);
+      REQUIRE(std::abs(bnds.grid.max() - ltmax) <= REAL_TOL);
       REQUIRE(bnds.grid.nGrids() == 2);
       AND_THEN(
           "The total number of points is less than a uniform fine spacing would imply") {
@@ -121,8 +126,8 @@ SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
           int ianchor;
           Spiner::weights_t<Real> w;
           bnds.grid.weights(lanchor, ianchor, w);
-          REQUIRE(std::abs(w[0] - 1) <= 1e-12);
-          REQUIRE(std::abs(w[1]) <= 1e-12);
+          REQUIRE(std::abs(w[0] - 1) <= REAL_TOL);
+          REQUIRE(std::abs(w[1]) <= REAL_TOL);
         }
       }
     }
