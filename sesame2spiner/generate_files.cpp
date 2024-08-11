@@ -297,9 +297,9 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   }
 
   // Piecewise grids stuff
-  bool piecewiseRho = params.Get("piecewiseRho", true);
-  bool piecewiseT = params.Get("piecewiseT", true);
-  bool piecewiseSie = params.Get("piecewiseSie", true);
+  const bool piecewiseRho = params.Get("piecewiseRho", true);
+  const bool piecewiseT = params.Get("piecewiseT", true);
+  const bool piecewiseSie = params.Get("piecewiseSie", true);
 
   Real ppd_factor_rho_lo = params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
   Real ppd_factor_rho_hi = params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
