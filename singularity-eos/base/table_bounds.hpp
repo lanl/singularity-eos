@@ -57,7 +57,6 @@ class Bounds {
     if (convertToLog) {
       convertBoundsToLog_(min, max, shrinkRange);
       if (!(std::isnan(anchor_point))) {
-        anchor_point += offset;
         anchor_point = singularity::FastMath::log10(std::abs(anchor_point));
       }
     }
@@ -157,7 +156,7 @@ class Bounds {
   // This uses real logs
   template <typename T>
   static int getNumPointsFromPPD(Real min, Real max, const T ppd) {
-    constexpr Real epsilon = std::numeric_limits<float>::epsilon();
+    constexpr Real epsilon = std::numeric_limits<Real>::epsilon();
     const Real min_offset = 10 * std::abs(epsilon);
     // 1.1 so that the y-intercept isn't identically zero
     // when min < 0.
@@ -188,7 +187,7 @@ class Bounds {
   void convertBoundsToLog_(Real &min, Real &max, const Real shrinkRange = 0) {
     // Log scales can't handle negative numbers or exactly zero. To
     // deal with that, we offset.
-    constexpr Real epsilon = std::numeric_limits<float>::epsilon();
+    constexpr Real epsilon = std::numeric_limits<Real>::epsilon();
     const Real min_offset = 10 * std::abs(epsilon);
     // 1.1 so that the y-intercept isn't identically zero
     // when min < 0.
@@ -219,6 +218,8 @@ class Bounds {
 
       N = Nmax_new;
       max = max_new;
+    } else {
+      PORTABLE_ALWAYS_WARN("Anchor point out of bounds. Ignoring it.");
     }
   }
 

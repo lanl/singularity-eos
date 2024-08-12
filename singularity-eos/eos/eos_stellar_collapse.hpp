@@ -230,8 +230,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     }
 
    private:
-    const DataBox &field_;
-    const Real Ye_, lRho_;
+    DataBox &field_;
+    Real Ye_, lRho_;
   };
 
   inline void LoadFromSP5File_(const std::string &filename);
