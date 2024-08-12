@@ -45,7 +45,7 @@ SCENARIO("Bounds can compute number of points from points per decade", "[Bounds]
   WHEN("We compute the number of points from points per decade") {
     int np = Bounds::getNumPointsFromPPD(T_min, T_max, N_per_decade_fine);
     constexpr int NDECADES = 9;
-    THEN("We get the right number") { REQUIRE(np == NDECADES * N_PER_DECADE_FINE); }
+    THEN("We get the right number") { REQUIRE(np == NDECADES * N_per_decade_fine); }
   }
 }
 
