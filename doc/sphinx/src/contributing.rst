@@ -256,19 +256,19 @@ instantiated when ``singularity-eos`` is compiled.  Therefore to
 exercise all code paths, it is best to create an ``EOS`` type
 instantiated as
 
-.. code-block:: c++
+.. code-block:: cpp
 
-    #include <singularity-eos/eos/eos.hpp>
-    using EOS = singularity::Variant<MyNewEOS>;``.
-    EOS my_eos = MyNewEOS(parameter1, parameter2, ...)
+  #include <singularity-eos/eos/eos.hpp>
+  using EOS = singularity::Variant<MyNewEOS, ...>;
+  EOS my_eos = MyNewEOS(parameter1, parameter2, ...)
 
 in order to properly test the functionality of a new EOS. Simply using the
 new class as the type such as
 
-.. code-block:: c++
+.. code-block:: cpp
 
-    #include <singularity-eos/eos/eos.hpp>
-    auto my_eos = my_new_eos(parameter1, parameter2, ...)
+  #include <singularity-eos/eos/eos.hpp>
+  auto my_eos = my_new_eos(parameter1, parameter2, ...)
 
 won't ensure that the new EOS is working correctly in singularity with the
 static polymorphism of the ``EOS`` type.

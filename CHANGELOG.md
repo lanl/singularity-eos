@@ -3,8 +3,10 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Piecewise grids for Spiner EOS.
 
 ### Fixed (Repair bugs, etc)
+- [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Includes a fix for extrapolation of specific internal energy in SpinerEOS.
 - [[PR401]](https://github.com/lanl/singularity-eos/pull/401) Fix for internal energy scaling in PTE closure
 
 ### Changed (changing behavior/API/variables/...)
