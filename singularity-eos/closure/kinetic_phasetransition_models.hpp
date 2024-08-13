@@ -60,6 +60,28 @@ PORTABLE_INLINE_FUNCTION void LogRatesCGModel(const Real *w, const Real *b,
   return;
 }
 
+PORTABLE_INLINE_FUNCTION Real LogMaxTimeStep(const int num_phases, const Real *mfs,
+                                             const int *gibbsorder, const Real *logRjk) {
+
+  Real minmassfraction = 1.e-10;
+  Real logtimestep = 1.;
+  int jk = 0;
+  for (int j = 0; j < num_phases - 1; j++) {
+    // from high Gibb phase to low
+    for (int k = num_phases - 1; k > j; k--) {
+      // First is highest level to levels below, largest gibbs energy diff first. Then
+      // follows 2nd highest to levels below.
+      // But largest deltaGibbs does not mean max rate.
+      if (mfs[gibbsorder[j]] > minmassfraction) {
+        logtimestep = std::min(logtimestep, -logRjk[jk++]);
+      } else {
+        jk++;
+      }
+    }
+  }
+  return logtimestep;
+}
+
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_CLOSURE_KINETIC_PHSETRANSITION_MODELS_

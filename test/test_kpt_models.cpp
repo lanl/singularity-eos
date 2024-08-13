@@ -29,6 +29,7 @@
 #include <singularity-eos/closure/kinetic_phasetransition_models.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
+using singularity::LogMaxTimeStep;
 using singularity::LogRatesCGModel;
 using singularity::SortGibbs;
 
@@ -44,7 +45,7 @@ SCENARIO("First log rate test") {
                             0.1000E-05, 0.1000E-05, 0.1000E-05, 0.,         0.1000E-05,
                             0.1000E-05, 0.1000E-05, 0.1000E-05, 0.1000E-05, 0.};
 
-    GIVEN("Gibbs free energy and order") {
+    GIVEN("Gibbs free energy") {
       constexpr int num = 5;
       constexpr int mnum = num * (num - 1) / 2;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -63,7 +64,7 @@ SCENARIO("First log rate test") {
 
       // Populate the input arrays
       portableFor(
-          "Initialize gibbs and order", 0, 1, PORTABLE_LAMBDA(int i) {
+          "Initialize gibbs", 0, 1, PORTABLE_LAMBDA(int i) {
             v_gibbs[0] = 0.0292971;
             v_gibbs[1] = 0.0286937;
             v_gibbs[2] = 0.0287409;
@@ -147,7 +148,7 @@ SCENARIO("First log rate test") {
 
         std::cout << "LogRates obtained with LogRatesCGModel: " << std::endl;
         for (int l = 0; l < mnum; l++) {
-          std::cout << "From phase i to phase k, ik: " << v_fromto[l]
+          std::cout << "From phase i to phase k, ik ( x means 0x): " << v_fromto[l]
                     << "   LogRik: " << v_logrates[l] << std::endl;
         }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -157,6 +158,56 @@ SCENARIO("First log rate test") {
         THEN("The returned LogRij(w,b,gibbs,order) should be equal to the true value") {
           array_compare(mnum, dgibbs, fromto, h_logrates, logrates_true, "DeltaGibbs",
                         "FromTo");
+        }
+      }
+
+      constexpr Real logmts_true = -2234.69;
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create Kokkos views on device for the input arrays
+      Kokkos::View<Real[num]> v_massfractions("massfractions");
+#else
+      // Otherwise just create arrays to contain values and create pointers to
+      // be passed to the functions in place of the Kokkos views
+      std::array<Real, num> massfractions;
+      auto v_massfractions = massfractions.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      // Populate the input arrays
+      portableFor(
+          "Initialize mass fractions", 0, 1, PORTABLE_LAMBDA(int i) {
+            v_massfractions[0] = 0.0;
+            v_massfractions[1] = 0.5;
+            v_massfractions[2] = 0.5;
+            v_massfractions[3] = 0.0;
+            v_massfractions[4] = 0.0;
+          });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create host-side mirrors of the inputs and copy the inputs. These are
+      // just used for the comparisons
+      auto massfractions = Kokkos::create_mirror_view(v_massfractions);
+      Kokkos::deep_copy(massfractions, v_massfractions);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      WHEN("A LogMaxTimeStep(num,order,logrates) lookup is performed") {
+        Real logmts = LogMaxTimeStep(num, v_massfractions, v_order, v_logrates);
+        for (int l = 0; l < num; l++) {
+          std::cout << "Phase: " << l
+                    << "  initial mass fractions: " << v_massfractions[l] << std::endl;
+        }
+        std::cout << "Log(MaxTimeStep) from Rates obtained with CGModel: " << logmts
+                  << std::endl;
+        for (int l = 0; l < mnum; l++) {
+          std::cout << "From phase i to phase k, ik ( x means 0x): " << v_fromto[l]
+                    << "   Max mass fraction transfer: "
+                    << std::exp(logmts + v_logrates[l]) << std::endl;
+        }
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(h_logrates, v_logrates);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The returned Log(MaxTimeStep) should be equal to the true value") {
+          CHECK(isClose(logmts, logmts_true));
         }
       }
     }
