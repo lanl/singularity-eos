@@ -223,7 +223,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   class LogT {
    public:
     PORTABLE_INLINE_FUNCTION
-    LogT(const DataBox &field, const Real Ye, const Real lRho)
+    LogT(DataBox &field, const Real Ye, const Real lRho)
         : field_(field), Ye_(Ye), lRho_(lRho) {}
     PORTABLE_INLINE_FUNCTION Real operator()(const Real lT) const {
       return field_.interpToReal(Ye_, lT, lRho_);
