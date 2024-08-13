@@ -223,15 +223,15 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   class LogT {
    public:
     PORTABLE_INLINE_FUNCTION
-    LogT(DataBox &field, const Real Ye, const Real lRho)
+    LogT(const DataBox &field, const Real Ye, const Real lRho)
         : field_(field), Ye_(Ye), lRho_(lRho) {}
     PORTABLE_INLINE_FUNCTION Real operator()(const Real lT) const {
       return field_.interpToReal(Ye_, lT, lRho_);
     }
 
    private:
-    DataBox &field_;
-    Real Ye_, lRho_;
+    const DataBox &field_;
+    const Real Ye_, lRho_;
   };
 
   inline void LoadFromSP5File_(const std::string &filename);
