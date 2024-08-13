@@ -427,13 +427,14 @@ Gruneisen::MaxStableDensityAtTemperature(const Real temperature) const {
   auto dPdrho_T = PORTABLE_LAMBDA(const Real r) {
     return dPres_drho_e(r, InternalEnergyFromDensityTemperature(r, temperature));
   };
-  Real rho_lower = 0.9 * _rho0;
-  Real rho_upper = std::min(_rho_max, 1.0e4);
+  const Real rho_lower = _rho0;
+  const Real rho_upper = std::min(_rho_max, 1.0e4);
+  const Real rho_guess = (rho_lower + rho_upper) / 2.;
   Real rho_at_max_P;
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
-  auto status = regula_falsi(dPdrho_T, 0., _rho0, rho_lower, rho_upper, 1.0e-8, 1.0e-8,
-                             rho_at_max_P);
+  auto status = regula_falsi(dPdrho_T, 0., rho_guess, rho_lower, rho_upper, 1.0e-8,
+                             1.0e-8, rho_at_max_P);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution should be bracketed
     EOS_ERROR("Gruneisen::MaxStableDensityAtTemperature: "
@@ -449,16 +450,20 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
   Real Pref = PressureFromDensityTemperature(_rho0, temp);
   Real rho_lower;
   Real rho_upper;
+  Real rho_guess;
   // Pick bounds appropriate depending on whether in compression or expansion
   if (press < Pref) {
     rho_lower = 0.;
     rho_upper = 1.1 * _rho0;
+    rho_guess = _rho0;
   } else {
     rho_lower = 0.9 * _rho0;
     // Find maximum thermodynamically _stable_ density at this temperature. Use this to
     // check if we're actually on the EOS surface or not
     rho_upper = MaxStableDensityAtTemperature(temp);
     auto pres_max = PressureFromDensityTemperature(rho_upper, temp);
+    const Real slope = (rho_upper - _rho0) / (pres_max - Pref);
+    rho_guess = _rho0 + slope * (press - Pref);
     if (press > pres_max) {
       // We're off the EOS surface
       using PortsOfCall::printf;
@@ -473,7 +478,7 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
   auto status =
-      regula_falsi(PofRatT, press, _rho0, rho_lower, rho_upper, 1.0e-8, 1.0e-8, rho);
+      regula_falsi(PofRatT, press, rho_guess, rho_lower, rho_upper, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: "
