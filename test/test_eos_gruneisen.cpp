@@ -216,6 +216,7 @@ SCENARIO("Aluminum Gruneisen EOS", "[GruneisenEOS]") {
     constexpr Real us = 1.e-06;
     constexpr Real Mbar = 1.e12;
     constexpr Real Mbcc_per_g = 1e12;
+    constexpr Real K_per_eV = 1.602176565E-19 / 1.380648800E-23;
     // Gruneisen parameters for aluminum
     constexpr Real C0 = 0.524 * cm / us;
     constexpr Real S1 = 1.4;
@@ -231,8 +232,8 @@ SCENARIO("Aluminum Gruneisen EOS", "[GruneisenEOS]") {
     EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
     EOS eos = host_eos.GetOnDevice();
     GIVEN("Ambient pressure and temperature") {
-      constexpr Real P_ambient = 1.0e-06 * Mbar;
-      constexpr Real T_ambient = 298.;
+      constexpr Real P_ambient = 1.0e6;            // 1 bar
+      constexpr Real T_ambient = 0.025 * K_per_eV; // approximately 290 K
       WHEN("A DensityEnergyFromPressureTemperature() lookup is performed") {
         Real test_density;
         Real test_energy;
