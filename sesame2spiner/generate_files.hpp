@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -30,8 +30,15 @@
 
 using namespace EospacWrapper;
 
-constexpr int PPD_DEFAULT = 50;
-constexpr Real STRICTLY_POS_MIN = 1e-9;
+constexpr int PPD_DEFAULT_RHO = 350;
+constexpr int PPD_DEFAULT_T = 100;
+constexpr Real STRICTLY_POS_MIN_RHO = 1e-8;
+constexpr Real STRICTLY_POS_MIN_T = 1e-2;
+constexpr Real COARSE_FACTOR_DEFAULT_RHO_LO = 3;
+constexpr Real COARSE_FACTOR_DEFAULT_RHO_HI = 5;
+constexpr Real COARSE_FACTOR_DEFAULT_T = 1.5;
+constexpr Real RHO_FINE_DIAMETER_DEFAULT = 1.5;
+constexpr Real T_SPLIT_POINT_DEFAULT = 1e4;
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,
