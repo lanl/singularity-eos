@@ -1364,9 +1364,11 @@ the energy offset of the products EOS is given by
 Practically, this means :math:`e_0` should be positive for any energetic material.
 
 To provide the energy offset to the Davis Products EOS, `the energy shift
-modifier<modifiers shifted EOS>`_ should be used. Note that the convention there
+modifier`_ should be used. Note that the convention there
 is that the shift is positive, so :math:`-e_0` should be provided to the shift
 modifier.
+
+.. _the energy shift modifier: modifiers shifted EOS
 
 The constructor for the Davis Products EOS is
 
@@ -1471,8 +1473,7 @@ key-value pairs. For exampe the following input deck is for air:
 
   matid = 5030
   # These set the number of grid points per decade
-  # for each variable. The default is 50 points
-  # per decade.
+  # for each variable. 
   numrho/decade = 40
   numT/decade = 40
   numSie/decade = 40
@@ -1491,16 +1492,114 @@ key-value pairs. For exampe the following input deck is for air:
   shrinklTBounds = 0.15
   shrinkleBounds = 0.5
 
-The only required value in an input file is the matid, in this
-case 5030. All other values will be inferred from the original sesame
-database if possible and if no value in the input file is
-provided. Comments are prefixed with ``#``.
+Comments are prefixed with ``#``. `eospac`_ uses environment variables
+and files to locate files in the `sesame`_ database, and
+``sesame2spiner`` uses `eospac`_. So the location of the ``sesame``
+database need not be provided by the command line. For how to specify
+`sesame`_ file locations, see the `eospac`_ manual.
 
-`eospac`_ uses environment variables and files to locate files in the
-`sesame`_ database, and ``sesame2spiner`` uses `eospac`_. So the
-location of the ``sesame`` database need not be provided by the
-command line. For how to specify `sesame`_ file locations, see the
-`eospac`_ manual.
+Piecewise Spiner Grids
+````````````````````````
+
+``sesame2spiner`` also supports grids with different resolutions in
+different parts of the table. We call these **piecewise** grids. By
+default grids are now piecewise. Piecewise grids can be disabled with
+
+.. code-block::
+
+  # defaults are true
+  piecewiseRho = false
+  piecewiseT = false
+  piecewiseSie = false
+
+These options may be true or false. The default is true. When
+piecewise grids are active, the density-temperature (or
+density-energy) grid is built as a Cartesian product grid of grids of
+non-uniform resolutions. The density grid gets split into three
+pieces, a region ``[rhoMin, rhoFineMin]``, a region ``[rhoFineMin,
+rhoFineMax]``, and a region ``[rhoFineMin, rhoMax]``. The
+``numrho/decade`` parameter sets the number of points per decade in
+the central refined region. The regions at lower and higher density
+have ``rhoCoarseFactorLo`` and ``rhoCoarseFactorHi`` fewer points per
+decade respectively compared to the finer region.
+
+Typically the fine region should be roughly centered around the normal
+density for a material, which is usually a challenging region to
+capture. If you neglect to set ``rhoFineMin`` and ``rhoFineMax``,
+``sesame2spiner`` will set the central refined region to be a region
+of diameter ``rhoFineDiameterDecades`` (in log space) around the
+material's normal density.
+
+The temperature grid has two regions, a more finely spaced region at
+low temperatures and a less finely spaced region at high
+temperatures. The regions are spearated by a temperature
+``TSplitPoint``. The default is :math:`10^4` Kelvin. The energy grid
+follows the temperature grid, with the energy split point
+corresponding to the temperature split point. The coarser
+high-temperature temperature and energy grids are coarsened by a
+factor of ``TCoarseFactor`` and ``sieCoarseFactor`` respectively.
+
+A diagram of a density-temperature grid is shown below. The region
+with temperatures below ``TSplitPoint`` is refined in temperature. The
+region between ``rhoFineMin`` and ``rhoFineMax`` is refined in
+density.
+
+.. image:: phase_diagram.png
+  :width: 400
+  :alt: An example piecewise density-temperature grid.
+
+
+Thus the input block for piecewise grid might look like this:
+
+.. code-block::
+
+  # Below, all right-hand-sides are set to their default values.
+  piecewiseRho = true
+  piecewiseT = true
+  piecewiseSie = true
+
+  # the fine resolution for rho.
+  numrho/decade = 350
+  # width of the fine region for rho
+  rhoFineDiameterDecades = 1.5
+  # the lower density region is 3x less refined
+  rhoCoarseFactorLo = 3
+  # the higher density region is 5x less refined
+  rhoCoarseFactorHi = 5
+
+  # the fine resolution for T
+  numT/decade = 100
+  # the point demarking the coarse and fine regions in temperature
+  TSplitPoint = 1e4
+  # it's usually wise to to not let
+  # temperature get too small in log space if you do this
+  Tmin = 1
+  # The coarser region (above the split point) is 50 percent less refined
+  TCoarseFactor = 1.5
+
+  # energy has the split point sie(rhonormal, TSplitPoint)
+  # but we may still specify the resolution
+  numSie/decade = 100
+  sieCoarseFactor = 1.5
+
+.. note::
+
+  For all grid types, the only required value in an input file is the
+  matid. Table bounds and normal density will be inferred from the
+  sesame metadata if possible and if no value in the original input
+  file is provided. Table densities and positions and sizes of refined
+  regions are not inferred from the table, but are chosen with
+  the default values listed in the above code block.
+
+.. note::
+
+  Both the flat and hierarchical grids attempt to align their grids so
+  that there is a grid point in density and temperature exactly at
+  room temperature and normal density. This is because normal density
+  and room temperature is a particularly important point in phase
+  space, as it is the point in phase space a piece of material sitting
+  on your desk would be at. This is called an *anchor* point for the
+  mesh.
 
 SAP Polynomial EOS
 ``````````````````

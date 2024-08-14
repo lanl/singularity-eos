@@ -39,8 +39,8 @@
 #include "io_eospac.hpp"
 #include "parser.hpp"
 
-using Spiner::DataBox;
-using Spiner::RegularGrid1D;
+using DataBox = Spiner::DataBox<Real>;
+using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 
 constexpr int matid = 5030;  // dry air
 constexpr int matid2 = 4272; // stainless steel

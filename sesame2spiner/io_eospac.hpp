@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -17,10 +17,6 @@
 #ifndef _SESAME2SPINER_IO_EOSPAC_HPP_
 #define _SESAME2SPINER_IO_EOSPAC_HPP_
 
-#include <cmath>
-#include <iostream>
-#include <limits>
-#include <string>
 #include <vector>
 
 #include <eos_Interface.h> // eospac API
@@ -31,83 +27,16 @@
 
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/spiner_table_bounds.hpp>
 #include <spiner/databox.hpp>
-#include <spiner/interpolation.hpp>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 
 using EospacWrapper::Verbosity;
-using DataBox = Spiner::DataBox<Real>;
-using RegularGrid1D = Spiner::RegularGrid1D<Real>;
-
-// For logarithmic interpolation, quantities may be negative.
-// If they are, use offset to ensure negative values make sense.
-class Bounds {
- public:
-  Bounds() {}
-
-  Bounds(Real min, Real max, int N, Real offset)
-      : grid(RegularGrid1D(min, max, N)), offset(offset) {}
-
-  Bounds(Real min, Real max, int N, bool convertToLog = false, Real shrinkRange = 0,
-         Real anchor_point = std::numeric_limits<Real>::signaling_NaN())
-      : offset(0) {
-    if (convertToLog) {
-      // Log scales can't handle negative numbers or exactly zero. To
-      // deal with that, we offset.
-      constexpr Real epsilon = std::numeric_limits<float>::epsilon();
-      const Real min_offset = 10 * std::abs(epsilon);
-      // 1.1 so that the y-intercept isn't identically zero
-      // when min < 0.
-      // min_offset to handle the case where min=0
-      if (min <= 0) offset = 1.1 * std::abs(min) + min_offset;
-
-      min += offset;
-      max += offset;
-
-      min = singularity::FastMath::log10(std::abs(min));
-      max = singularity::FastMath::log10(std::abs(max));
-      Real delta = max - min;
-      min += 0.5 * shrinkRange * delta;
-      max -= 0.5 * shrinkRange * delta;
-
-      if (!(std::isnan(anchor_point))) {
-        anchor_point += offset;
-        anchor_point = singularity::FastMath::log10(std::abs(anchor_point));
-      }
-    }
-
-    if (!(std::isnan(anchor_point))) {
-      if (min < anchor_point && anchor_point < max) {
-        Real dxguess = (max - min) / ((Real)N - 1);
-        int Nmax = static_cast<int>((max - min) / dxguess);
-        int Nanchor = static_cast<int>((anchor_point - min) / dxguess);
-        Real dx = (anchor_point - min) / static_cast<Real>(Nanchor + 1);
-        int Nmax_new = static_cast<int>((max - min) / dx);
-        Nmax_new = std::max(Nmax, Nmax_new);
-        max = dx * (Nmax_new) + min;
-        N = Nmax_new;
-      }
-    }
-
-    grid = RegularGrid1D(min, max, N);
-  }
-
-  inline Real log2lin(Real xl) const { return singularity::FastMath::pow10(xl) - offset; }
-  inline Real i2lin(int i) const { return log2lin(grid.x(i)); }
-
-  friend std::ostream &operator<<(std::ostream &os, const Bounds &b) {
-    os << "Bounds: [" << b.grid.min() << ", " << b.grid.max() << "]"
-       << " + " << b.offset << ", "
-       << "[N,dx] = [" << b.grid.nPoints() << ", " << b.grid.dx() << "]"
-       << "\n";
-    return os;
-  }
-
- public:
-  RegularGrid1D grid;
-  Real offset;
-};
+constexpr int NGRIDS = 3;
+using Bounds = singularity::table_utils::Bounds<NGRIDS>;
+using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
+using DataBox = Spiner::DataBox<Real, Grid_t>;
 
 void eosDataOfRhoSie(int matid, const Bounds &lRhoBounds, const Bounds &leBounds,
                      DataBox &P, DataBox &T, DataBox &bMods, DataBox &dPdRho,

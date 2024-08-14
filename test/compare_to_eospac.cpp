@@ -47,9 +47,11 @@
 
 #include <singularity-eos/eos/eos.hpp>
 
-using namespace Spiner;
 using namespace singularity;
 using namespace EospacWrapper;
+
+using DataBox = Spiner::DataBox<Real>;
+using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 
 using duration = std::chrono::microseconds;
 constexpr char diffFileName[] = "diffs.sp5";
@@ -61,7 +63,7 @@ class Bounds {
   Bounds() {}
 
   Bounds(Real min, Real max, int N, Real offset)
-      : grid(RegularGrid1D<Real>(min, max, N)), offset(offset) {}
+      : grid(RegularGrid1D(min, max, N)), offset(offset) {}
 
   Bounds(Real min, Real max, int N) : offset(0) {
     constexpr Real epsilon = std::numeric_limits<float>::epsilon();
@@ -71,7 +73,7 @@ class Bounds {
     max += offset;
     min = std::log10(std::abs(min));
     max = std::log10(std::abs(max));
-    grid = RegularGrid1D<Real>(min, max, N);
+    grid = RegularGrid1D(min, max, N);
   }
 
   PORTABLE_INLINE_FUNCTION Real log2lin(Real xl) const { return pow(10., xl) - offset; }
@@ -86,7 +88,7 @@ class Bounds {
   }
 
  public:
-  RegularGrid1D<Real> grid;
+  RegularGrid1D grid;
   Real offset;
 };
 
@@ -146,59 +148,59 @@ int main(int argc, char *argv[]) {
 
     constexpr int NT = 3;
     EOS_INTEGER nXYPairs = (nFineRho) * (nFineT);
-    DataBox<Real> xVals(nFineRho, nFineT);
-    DataBox<Real> yVals(nFineRho, nFineT);
-    DataBox<Real> vars(nFineRho, nFineT);
-    DataBox<Real> dx(nFineRho, nFineT);
-    DataBox<Real> dy(nFineRho, nFineT);
-    DataBox<Real> pressEOSPAC(nFineRho, nFineT);
-    DataBox<Real> pressDiff_h(nFineRho, nFineT);
-    DataBox<Real> pressDiff_d(nFineRho, nFineT);
+    DataBox xVals(nFineRho, nFineT);
+    DataBox yVals(nFineRho, nFineT);
+    DataBox vars(nFineRho, nFineT);
+    DataBox dx(nFineRho, nFineT);
+    DataBox dy(nFineRho, nFineT);
+    DataBox pressEOSPAC(nFineRho, nFineT);
+    DataBox pressDiff_h(nFineRho, nFineT);
+    DataBox pressDiff_d(nFineRho, nFineT);
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     using RView = Kokkos::View<Real *>;
     RView pressSpinerDView("pressSpinerDevice", nFineRho * nFineT);
     typename RView::HostMirror pressSpinerHView =
         Kokkos::create_mirror_view(pressSpinerDView);
-    DataBox<Real> pressSpiner_d(pressSpinerDView.data(), nFineRho, nFineT);
-    DataBox<Real> pressSpiner_hm(pressSpinerHView.data(), nFineRho, nFineT);
+    DataBox pressSpiner_d(pressSpinerDView.data(), nFineRho, nFineT);
+    DataBox pressSpiner_hm(pressSpinerHView.data(), nFineRho, nFineT);
 #else
-    DataBox<Real> pressSpiner_d(nFineRho, nFineT);
-    DataBox<Real> pressSpiner_hm = pressSpiner_d.slice(2, 0, nFineRho);
+    DataBox pressSpiner_d(nFineRho, nFineT);
+    DataBox pressSpiner_hm = pressSpiner_d.slice(2, 0, nFineRho);
 #endif
 
-    DataBox<Real> pressSpiner_h(nFineRho, nFineT);
-    DataBox<Real> tempSpiner_h(nFineRho, nFineT);
-    DataBox<Real> tempSpinerE_h(nFineRho, nFineT);
-    DataBox<Real> tempEOSPAC(nFineRho, nFineT);
-    DataBox<Real> tempDiff_h(nFineRho, nFineT);
-    DataBox<Real> tempDiff_d(nFineRho, nFineT);
-    DataBox<Real> tempDiffE_h(nFineRho, nFineT);
-    DataBox<Real> tempDiffE_d(nFineRho, nFineT);
+    DataBox pressSpiner_h(nFineRho, nFineT);
+    DataBox tempSpiner_h(nFineRho, nFineT);
+    DataBox tempSpinerE_h(nFineRho, nFineT);
+    DataBox tempEOSPAC(nFineRho, nFineT);
+    DataBox tempDiff_h(nFineRho, nFineT);
+    DataBox tempDiff_d(nFineRho, nFineT);
+    DataBox tempDiffE_h(nFineRho, nFineT);
+    DataBox tempDiffE_d(nFineRho, nFineT);
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     RView tempSpinerDView("tempSpinerDevice", nFineRho * nFineT);
     RView tempSpinerDViewE("tempSpinerSieDevice", nFineRho * nFineT);
     RView::HostMirror tempSpinerHView = Kokkos::create_mirror_view(tempSpinerDView);
     RView::HostMirror tempSpinerHViewE = Kokkos::create_mirror_view(tempSpinerDViewE);
-    DataBox<Real> tempSpiner_d(tempSpinerDView.data(), nFineRho, nFineT);
-    DataBox<Real> tempSpiner_hm(tempSpinerHView.data(), nFineRho, nFineT);
-    DataBox<Real> tempSpinerE_d(tempSpinerDViewE.data(), nFineRho, nFineT);
-    DataBox<Real> tempSpinerE_hm(tempSpinerHViewE.data(), nFineRho, nFineT);
+    DataBox tempSpiner_d(tempSpinerDView.data(), nFineRho, nFineT);
+    DataBox tempSpiner_hm(tempSpinerHView.data(), nFineRho, nFineT);
+    DataBox tempSpinerE_d(tempSpinerDViewE.data(), nFineRho, nFineT);
+    DataBox tempSpinerE_hm(tempSpinerHViewE.data(), nFineRho, nFineT);
     RView rhos_v("rhos", nFineRho);
     RView Ts_v("Ts", nFineT);
     RView sies_v("sies", nFineT);
-    DataBox<Real> rhos(rhos_v.data(), nFineRho);
-    DataBox<Real> Ts(Ts_v.data(), nFineT);
-    DataBox<Real> sies(sies_v.data(), nFineT);
+    DataBox rhos(rhos_v.data(), nFineRho);
+    DataBox Ts(Ts_v.data(), nFineT);
+    DataBox sies(sies_v.data(), nFineT);
 #else
-    DataBox<Real> tempSpiner_d(nFineRho, nFineT);
-    DataBox<Real> tempSpiner_hm = tempSpiner_d.slice(2, 0, nFineRho);
-    DataBox<Real> tempSpinerE_d(nFineRho, nFineT);
-    DataBox<Real> tempSpinerE_hm = tempSpiner_h.slice(2, 0, nFineRho);
-    DataBox<Real> rhos(nFineRho);
-    DataBox<Real> Ts(nFineT);
-    DataBox<Real> sies(nFineT);
+    DataBox tempSpiner_d(nFineRho, nFineT);
+    DataBox tempSpiner_hm = tempSpiner_d.slice(2, 0, nFineRho);
+    DataBox tempSpinerE_d(nFineRho, nFineT);
+    DataBox tempSpinerE_hm = tempSpiner_h.slice(2, 0, nFineRho);
+    DataBox rhos(nFineRho);
+    DataBox Ts(nFineT);
+    DataBox sies(nFineT);
 #endif
 
     std::cout << "Comparing to EOSPAC for materials..." << std::endl;
@@ -222,6 +224,7 @@ int main(int argc, char *argv[]) {
 
       SesameMetadata metadata;
       eosGetMetadata(matid, metadata, Verbosity::Debug);
+      std::cout << metadata << std::endl;
 
       hid_t idGroup = H5Gcreate(file, std::to_string(matid).c_str(), H5P_DEFAULT,
                                 H5P_DEFAULT, H5P_DEFAULT);
@@ -239,15 +242,15 @@ int main(int argc, char *argv[]) {
           (Real *)PORTABLE_MALLOC(sizeof(Real) * nFineRho * nFineT * eos_host.nlambda());
       Real *lambda_hp =
           (Real *)malloc(sizeof(Real) * nFineRho * nFineT * eos_host.nlambda());
-      DataBox<Real> lambda_h(lambda_hp, nFineRho, nFineT, eos_host.nlambda());
-      DataBox<Real> lambda_d(lambda_dp, nFineRho, nFineT, eos_host.nlambda());
+      DataBox lambda_h(lambda_hp, nFineRho, nFineT, eos_host.nlambda());
+      DataBox lambda_d(lambda_dp, nFineRho, nFineT, eos_host.nlambda());
 
-      Real rhoMin = eosE_host.rhoMin();
-      Real rhoMax = eosE_host.rhoMax();
-      Real TMin = eosE_host.TMin();
-      Real TMax = eosE_host.TMax();
-      Real sieMin = eosE_host.sieMin();
-      Real sieMax = eosE_host.sieMax();
+      Real rhoMin = 1.1 * std::max(metadata.rhoMin, 1e-5);
+      Real rhoMax = 0.9 * metadata.rhoMax;
+      Real TMin = 1.1 * std::max(metadata.TMin, 1.0);
+      Real TMax = 0.9 * metadata.TMax;
+      Real sieMin = metadata.sieMin + 0.1 * std::abs(metadata.sieMin);
+      Real sieMax = 0.9 * metadata.sieMax;
 
       Bounds lRhoBounds(rhoMin, rhoMax, nFineRho);
       Bounds lTBounds(TMin, TMax, nFineT);
@@ -352,10 +355,11 @@ int main(int argc, char *argv[]) {
             const Real p_true = pressureFromSesame(vars(j, i));
             pressEOSPAC(j, i) = p_true;
             const Real diff = pressSpiner_h(j, i) - p_true;
-            pressDiff_h(j, i) = diff;
-            diffL2 += diff * diff;
             const Real mean_p = 0.5 * diff + p_true;
-            L2 += mean_p * mean_p;
+            pressDiff_h(j, i) = diff;
+            const Real reldiff = diff / (1e-10 + std::abs(mean_p));
+            diffL2 += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2 /= L2;
@@ -379,10 +383,11 @@ int main(int argc, char *argv[]) {
             // pressSpiner_d has been copied into pressSpiner_h
             const Real p_true = pressEOSPAC(j, i);
             const Real diff = pressSpiner_hm(j, i) - p_true;
-            pressDiff_d(j, i) = diff;
             const Real mean_p = 0.5 * diff + p_true;
-            diffL2 += diff * diff;
-            L2 += mean_p * mean_p;
+            pressDiff_d(j, i) = diff;
+            const Real reldiff = diff / (1e-10 + std::abs(mean_p));
+            diffL2 += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2 /= L2;
@@ -420,7 +425,7 @@ int main(int argc, char *argv[]) {
         Real rho = lRhoBounds.i2lin(j);
         for (int i = 0; i < nFineT; i++) {
           Real sie = leBounds.i2lin(i);
-          xVals(j, i) = rho;
+          xVals(j, i) = densityToSesame(rho);
           yVals(j, i) = sieToSesame(sie);
         }
       }
@@ -461,10 +466,10 @@ int main(int argc, char *argv[]) {
         for (int n = 0; n < NTIMES; n++) {
           for (int j = 0; j < nFineRho; j++) {
             Real rho = lRhoBounds.i2lin(j);
-            DataBox<Real> lambda_hj = lambda_h.slice(j);
+            DataBox lambda_hj = lambda_h.slice(j);
             for (int i = 0; i < nFineT; i++) {
               Real sie = leBounds.i2lin(i);
-              DataBox<Real> lambda = lambda_hj.slice(i);
+              DataBox lambda = lambda_hj.slice(i);
               tempSpiner_h(j, i) =
                   eos_host.TemperatureFromDensityInternalEnergy(rho, sie, lambda.data());
             }
@@ -484,7 +489,7 @@ int main(int argc, char *argv[]) {
               PORTABLE_LAMBDA(const int &j, const int &i) {
                 Real rho = rhos(j);
                 Real sie = sies(i);
-                DataBox<Real> lambda = lambda_d.slice(j).slice(i);
+                DataBox lambda = lambda_d.slice(j).slice(i);
                 tempSpiner_d(j, i) = eos_device.TemperatureFromDensityInternalEnergy(
                     rho, sie, lambda.data());
               });
@@ -555,8 +560,9 @@ int main(int argc, char *argv[]) {
               diff = 0;
             }
 #endif
-            diffL2 += diff * diff;
-            L2 += mean_t * mean_t;
+            Real reldiff = diff / (1e-10 + std::abs(mean_t));
+            diffL2 += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2 /= L2;
@@ -569,8 +575,9 @@ int main(int argc, char *argv[]) {
             const Real diff = tempSpinerE_h(j, i) - t_true;
             tempDiffE_h(j, i) = diff;
             const Real mean_t = 0.5 * diff + t_true;
-            diffL2E += diff * diff;
-            L2 += mean_t * mean_t;
+            const Real reldiff = diff / (1e-10 + std::abs(mean_t));
+            diffL2E += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2E /= L2;
@@ -609,8 +616,9 @@ int main(int argc, char *argv[]) {
               diff = 0;
             }
 #endif
-            diffL2_d += diff * diff;
-            L2 += mean_t * mean_t;
+            Real reldiff = diff / (1e-10 + std::abs(mean_t));
+            diffL2_d += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2_d /= L2;
@@ -623,8 +631,9 @@ int main(int argc, char *argv[]) {
             const Real diff = tempSpinerE_hm(j, i) - t_true;
             tempDiffE_d(j, i) = diff;
             const Real mean_t = 0.5 * diff + t_true;
-            diffL2E_d += diff * diff;
-            L2 += mean_t * mean_t;
+            Real reldiff = diff / (1e-10 + std::abs(mean_t));
+            diffL2E_d += reldiff * reldiff;
+            L2 += 1;
           }
         }
         diffL2E_d /= L2;

@@ -220,6 +220,20 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                                        bool dependent_var_log);
 
  private:
+  class LogT {
+   public:
+    PORTABLE_INLINE_FUNCTION
+    LogT(const DataBox &field, const Real Ye, const Real lRho)
+        : field_(field), Ye_(Ye), lRho_(lRho) {}
+    PORTABLE_INLINE_FUNCTION Real operator()(const Real lT) const {
+      return field_.interpToReal(Ye_, lT, lRho_);
+    }
+
+   private:
+    const DataBox &field_;
+    const Real Ye_, lRho_;
+  };
+
   inline void LoadFromSP5File_(const std::string &filename);
   inline void LoadFromStellarCollapseFile_(const std::string &filename, bool filter_bmod);
   inline int readSCInt_(const hid_t &file_id, const std::string &name);
@@ -378,25 +392,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 // ======================================================================
 // Implementation details below
 // ======================================================================
-
-namespace callable_interp {
-
-class LogT {
- public:
-  using DataBox = Spiner::DataBox<Real>;
-  PORTABLE_INLINE_FUNCTION
-  LogT(const DataBox &field, const Real Ye, const Real lRho)
-      : field_(field), Ye_(Ye), lRho_(lRho) {}
-  PORTABLE_INLINE_FUNCTION Real operator()(const Real lT) const {
-    return field_.interpToReal(Ye_, lT, lRho_);
-  }
-
- private:
-  const DataBox &field_;
-  const Real Ye_, lRho_;
-};
-
-} // namespace callable_interp
 
 // For some reason, the linker doesn't like this being a member field
 // of StellarCollapse.  So we'll make it a global variable.
@@ -1164,7 +1159,7 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::lTFromlRhoSie_(
     }
     // Get log(sie)
     Real lE = e2le_(sie);
-    const callable_interp::LogT lEFunc(lE_, Ye, lRho);
+    const LogT lEFunc(lE_, Ye, lRho);
     status = regula_falsi(lEFunc, lE, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
                           lT, pcounts);
     if (status != RootFinding1D::Status::SUCCESS) {

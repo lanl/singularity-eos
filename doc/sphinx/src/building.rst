@@ -643,11 +643,11 @@ packages. This can save lots of time! Note, however, that external
 packages are loosely constrained and may not be correctly configured for
 the requested package.
 
-*NB*: By default, Spack will try to download the package source from the
-repository associated with the package. This behavior can be overrided
-with Spack *mirrors* , but that is beyond the scope of this doc.
+.. note::
 
-.. code:: bash
+  By default, Spack will try to download the package source from the
+  repository associated with the package. This behavior can be overrided
+  with Spack *mirrors* , but that is beyond the scope of this doc.
 
 Now, we can use Spack similarly to ``module load``,
 
