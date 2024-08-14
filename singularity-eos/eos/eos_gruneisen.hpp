@@ -417,9 +417,20 @@ Gruneisen::MaxStableDensityAtTemperature(const Real temperature) const {
   // is thermodynamically consistent up to the maximum density for this isotherm.
   Real slope_at_max_density =
       dPres_drho_e(_rho_max, InternalEnergyFromDensityTemperature(_rho_max, temperature));
+  Real slope_at_ref_density =
+      dPres_drho_e(_rho0, InternalEnergyFromDensityTemperature(_rho0, temperature));
   if (slope_at_max_density >= 0) {
     // No maximum pressure before _rho_max
     return _rho_max;
+  }
+  if (slope_at_ref_density < 0) {
+    // Something is very wrong in the construction of this EOS... just error out
+    using PortsOfCall::printf;
+    printf("ERROR: The pressure is decreasing as density increases at the reference\n"
+           "       density, %.15g, for temperature, %.15g. Check that the reference\n"
+           "       temperature is set correctly. This is an unstable state." _rho0,
+           temp);
+    PORTABLE_ALWAYS_THROW_OR_ABORT("Input pressure is off EOS surface");
   }
 
   // Maximum pressure should exist... do a root find to locate where the derivative is
@@ -462,15 +473,17 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     // check if we're actually on the EOS surface or not
     rho_upper = MaxStableDensityAtTemperature(temp);
     auto pres_max = PressureFromDensityTemperature(rho_upper, temp);
-    const Real slope = (rho_upper - _rho0) / (pres_max - Pref);
-    rho_guess = _rho0 + slope * (press - Pref);
     if (press > pres_max) {
       // We're off the EOS surface
       using PortsOfCall::printf;
-      printf("Requested pressure, %.15g, exceeds maximum, %.15g, for temperature, %.15g",
+      printf("ERROR: Requested pressure, %.15g, exceeds maximum, %.15g, for \n"
+             "       temperature, %.15g",
              press, pres_max, temp);
       PORTABLE_ALWAYS_THROW_OR_ABORT("Input pressure is off EOS surface");
     }
+    // Construct a reasonable guess for the density
+    const Real slope = (rho_upper - _rho0) / (pres_max - Pref);
+    rho_guess = _rho0 + slope * (press - Pref);
   }
   auto PofRatT = PORTABLE_LAMBDA(const Real r) {
     return PressureFromDensityTemperature(r, temp);
