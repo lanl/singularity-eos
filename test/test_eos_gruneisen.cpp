@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -32,6 +32,8 @@ using EOS = singularity::Variant<Gruneisen>;
 PORTABLE_INLINE_FUNCTION Real QuadFormulaMinus(Real a, Real b, Real c) {
   return (-b - std::sqrt(b * b - 4 * a * c)) / (2 * a);
 }
+
+constexpr Real REAL_TOL = std::numeric_limits<Real>::epsilon() * 1e4; // 1e-12 for double
 
 // Only run exception checking when we aren't offloading to the GPUs
 #ifdef PORTABILITY_STRATEGY_NONE
@@ -206,40 +208,58 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
   }
 }
 
-SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[GruneisenEOS]") {
-  GIVEN("Parameters for a Gruneisen EOS") {
+SCENARIO("Aluminum Gruneisen EOS", "[GruneisenEOS]") {
+  GIVEN("Parameters for an aluminum Gruneisen EOS") {
     // Unit conversions
     // constexpr Real mm = 10.;
     constexpr Real cm = 1.;
     constexpr Real us = 1.e-06;
     constexpr Real Mbar = 1.e12;
     constexpr Real Mbcc_per_g = 1e12;
-    // Gruneisen parameters for copper
-    constexpr Real C0 = 0.535 * cm / us;
-    constexpr Real S1 = 1.34;
+    constexpr Real K_per_eV = 1.602176565E-19 / 1.380648800E-23;
+    // Gruneisen parameters for aluminum
+    constexpr Real C0 = 0.524 * cm / us;
+    constexpr Real S1 = 1.4;
     constexpr Real S2 = 0.;
     constexpr Real S3 = 0.;
     constexpr Real Gamma0 = 1.97;
-    constexpr Real b = 0.;
-    constexpr Real rho0 = 2.714000;
+    constexpr Real b = 0.48;
+    constexpr Real rho0 = 2.703;
     constexpr Real T0 = 298.;
-    constexpr Real P0 = 1e-06 * Mbar;
+    constexpr Real P0 = 0. * Mbar;
     constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
     // Create the EOS
     EOS host_eos = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
     EOS eos = host_eos.GetOnDevice();
+    GIVEN("Ambient pressure and temperature") {
+      constexpr Real P_ambient = 1.0e6;            // 1 bar
+      constexpr Real T_ambient = 0.025 * K_per_eV; // approximately 290 K
+      WHEN("A DensityEnergyFromPressureTemperature() lookup is performed") {
+        Real test_density;
+        Real test_energy;
+        Real *lambda;
+        THEN("The root find should converge") {
+          eos.DensityEnergyFromPressureTemperature(P_ambient, T_ambient, lambda,
+                                                   test_density, test_energy);
+        }
+      }
+    }
     GIVEN("Density and energy") {
-      constexpr Real density = 5.92418956756592;            // g/cm^3
-      constexpr Real energy = 792486007.804619;             // erg/g
-      constexpr Real true_pres = 2.620656373250729;         // Mbar
-      constexpr Real true_sound_speed = 1.5247992468363685; // cm/us
+      constexpr Real density = 5.92418956756592;          // g/cm^3
+      constexpr Real energy = 792486007.804619;           // erg/g
+      constexpr Real true_pres = 2.19200396047868;        // Mbar
+      constexpr Real true_sound_speed = 1.29592658233752; // cm/us
+      THEN("The density should not exceeed the computed rho_max") {
+        const Real density_max = Gruneisen::ComputeRhoMax(S1, S2, S3, rho0);
+        REQUIRE(density < density_max);
+      }
       WHEN("A P(rho, e) lookup is performed") {
         Real pres = eos.PressureFromDensityInternalEnergy(density, energy);
         THEN("The correct pressure should be returned") {
           pres = pres / Mbar;
           INFO("Density: " << density << "  Energy: " << energy << "  Pressure: " << pres
                            << " Mbar  True pressure: " << true_pres << " Mbar");
-          REQUIRE(isClose(pres, true_pres, 1e-12));
+          REQUIRE(isClose(pres, true_pres, REAL_TOL));
         }
       }
       WHEN("A B_S(rho, e) lookup is performed") {
@@ -251,7 +271,29 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[Gruneis
                            << "  Sound speed: " << sound_speed
                            << " cm/us  True sound speed: " << true_sound_speed
                            << " cm/us");
-          REQUIRE(isClose(sound_speed, true_sound_speed, 1e-12));
+          REQUIRE(isClose(sound_speed, true_sound_speed, REAL_TOL));
+        }
+      }
+      WHEN("The pressure and temperature are determined from the density and energy") {
+        const Real temperature =
+            eos.TemperatureFromDensityInternalEnergy(density, energy);
+        const Real pressure = eos.PressureFromDensityInternalEnergy(density, energy);
+        AND_WHEN("A DensityEnergyFromPressureTemperature() lookup is performed") {
+          Real test_density;
+          Real test_energy;
+          Real *lambda;
+          eos.DensityEnergyFromPressureTemperature(pressure, temperature, lambda,
+                                                   test_density, test_energy);
+          THEN("The consistent energy and density should be returned") {
+            INFO("Pressure:     " << pressure << " microbar"
+                                  << "  Temperature: " << temperature << " K       ");
+            INFO("Density:      " << density << " g/cm^3      "
+                                  << "  Energy:      " << energy << " erg/g   ");
+            INFO("Calc Density: " << test_density << " g/cm^3      "
+                                  << "  Calc Energy: " << test_energy << " erg/g   ");
+            CHECK(isClose(density, test_density, REAL_TOL));
+            CHECK(isClose(energy, test_energy, REAL_TOL));
+          }
         }
       }
       WHEN("A finite difference approximation is used for the bulk modulus") {
@@ -294,7 +336,7 @@ SCENARIO("Aluminum Gruneisen EOS Sound Speed and Pressure Comparison", "[Gruneis
             INFO("Density: " << density << "  Energy: " << energy
                              << "  Pressure: " << pres / Mbar
                              << " Mbar  True pressure: " << true_pres / Mbar << " Mbar");
-            REQUIRE(isClose(pres, true_pres, 1e-12));
+            REQUIRE(isClose(pres, true_pres, REAL_TOL));
           }
         }
       }
@@ -399,7 +441,7 @@ SCENARIO("Gruneisen EOS density limit") {
         THEN("The generated rho_max parameter should be properly set") {
           const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
           INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-          REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+          REQUIRE(isClose(rho_max, rho_max_true, REAL_TOL));
         }
         WHEN("Lookups are performed beyond the maximum density") {
           // Note: there is a small safety factor to prevent us from hitting the
@@ -495,7 +537,7 @@ SCENARIO("Gruneisen EOS density limit") {
             const Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+            REQUIRE(isClose(rho_max, rho_max_true, REAL_TOL));
           }
         }
         WHEN("The quadratic oot multiplicity is 2") {
@@ -511,7 +553,7 @@ SCENARIO("Gruneisen EOS density limit") {
             const Real rho_max_true = rho0 / (1 - eta_max);
             const Real rho_max = eos.ComputeRhoMax(S1, S2, S3, rho0);
             INFO("True rho_max: " << rho_max_true << ", Calculated rho_max:" << rho_max);
-            REQUIRE(isClose(rho_max, rho_max_true, 1e-12));
+            REQUIRE(isClose(rho_max, rho_max_true, REAL_TOL));
           }
         }
         WHEN("No root exists") {
