@@ -428,8 +428,8 @@ Gruneisen::MaxStableDensityAtTemperature(const Real temperature) const {
     using PortsOfCall::printf;
     printf("ERROR: The pressure is decreasing as density increases at the reference\n"
            "       density, %.15g, for temperature, %.15g. Check that the reference\n"
-           "       temperature is set correctly. This is an unstable state." _rho0,
-           temp);
+           "       temperature is set correctly. This is an unstable state.",
+           _rho0, temperature);
     PORTABLE_ALWAYS_THROW_OR_ABORT("Input pressure is off EOS surface");
   }
 
