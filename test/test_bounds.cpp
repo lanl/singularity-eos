@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#ifdef SINGULARITY_USE_SPINER
+
 #include <cstdio>
 #include <limits>
 
@@ -132,3 +134,4 @@ SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
     }
   }
 }
+#endif // SINGULARITY_USE_SPINER
