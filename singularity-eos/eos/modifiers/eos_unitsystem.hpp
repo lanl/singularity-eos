@@ -65,6 +65,9 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   using EosBase<UnitSystem<T>>::GruneisenParamFromDensityTemperature;
   using EosBase<UnitSystem<T>>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<UnitSystem<T>>::FillEos;
+  using EosBase<UnitSystem<T>>::SerializedSizeInBytes;
+  using EosBase<UnitSystem<T>>::Serialize;
+  using EosBase<UnitSystem<T>>::DeSerialize;
 
   using BaseType = T;
 
@@ -444,6 +447,10 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   inline constexpr decltype(auto) GetUnmodifiedObject() {
     return t_.GetUnmodifiedObject();
   }
+
+  std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
+  std::size_t DumpDynamicMemory(char *dst) const { return t_.DumpDynamicMemory(dst); }
+  std::size_t SetDynamicMemory(char *src) { return t_.SetDynamicMemory(src); }
 
  private:
   T t_;

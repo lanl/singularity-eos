@@ -57,6 +57,9 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityTemperature;
   using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<ScaledEOS<T>>::FillEos;
+  using EosBase<ScaledEOS<T>>::SerializedSizeInBytes;
+  using EosBase<ScaledEOS<T>>::Serialize;
+  using EosBase<ScaledEOS<T>>::DeSerialize;
 
   using BaseType = T;
 
@@ -360,6 +363,10 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   inline constexpr decltype(auto) GetUnmodifiedObject() {
     return t_.GetUnmodifiedObject();
   }
+
+  std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
+  std::size_t DumpDynamicMemory(char *dst) const { return t_.DumpDynamicMemory(dst); }
+  std::size_t SetDynamicMemory(char *src) { return t_.SetDynamicMemory(src); }
 
  private:
   T t_;

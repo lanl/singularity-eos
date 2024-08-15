@@ -1013,6 +1013,47 @@ class Variant {
         eos_);
   }
 
+  // Serialization
+  // JMM: This must be implemented separately for Variant vs the base
+  // class/individual EOS's so that the variant state is properly
+  // carried. Otherwise de-serialization would need to specify a type.
+  std::size_t DynamicMemorySizeInBytes() const {
+    return mpark::visit([](const auto &eos) { return eos.DynamicMemorySizeInBytes(); },
+                        eos_);
+  }
+  std::size_t DumpDynamicMemory(char *dst) const {
+    return mpark::visit([dst](const auto &eos) { return eos.DumpDynamicMemory(dst); },
+                        eos_);
+  }
+  std::size_t SetDynamicMemory(char *src) {
+    return mpark::visit([src](auto &eos) { return eos.SetDynamicMemory(src); }, eos_);
+  }
+  std::size_t SerializedSizeInBytes() const {
+    return sizeof(*this) + DynamicMemorySizeInBytes();
+  }
+  std::size_t Serialize(char *dst) const {
+    memcpy(dst, this, sizeof(*this));
+    std::size_t offst = sizeof(*this);
+    if (DynamicMemorySizeInBytes() > 0) {
+      offst += DumpDynamicMemory(dst + offst);
+    }
+    return offst;
+  }
+  auto Serialize() const {
+    std::size_t size = SerializedSizeInBytes();
+    char *dst = (char *)malloc(size);
+    Serialize(dst);
+    return std::make_pair(size, dst);
+  }
+  std::size_t DeSerialize(char *src) {
+    memcpy(this, src, sizeof(*this));
+    std::size_t offst = sizeof(*this);
+    if (DynamicMemorySizeInBytes() > 0) {
+      offst += SetDynamicMemory(src + sizeof(*this));
+    }
+    return offst;
+  }
+
   // Tooling for modifiers
   inline constexpr bool IsModified() const {
     return mpark::visit([](const auto &eos) { return eos.IsModified(); }, eos_);

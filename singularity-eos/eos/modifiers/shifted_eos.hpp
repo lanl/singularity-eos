@@ -57,6 +57,9 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityTemperature;
   using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<ShiftedEOS<T>>::FillEos;
+  using EosBase<ShiftedEOS<T>>::SerializedSizeInBytes;
+  using EosBase<ShiftedEOS<T>>::Serialize;
+  using EosBase<ShiftedEOS<T>>::DeSerialize;
 
   using BaseType = T;
 
@@ -373,6 +376,10 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   inline constexpr decltype(auto) GetUnmodifiedObject() {
     return t_.GetUnmodifiedObject();
   }
+
+  std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
+  std::size_t DumpDynamicMemory(char *dst) const { return t_.DumpDynamicMemory(dst); }
+  std::size_t SetDynamicMemory(char *src) { return t_.SetDynamicMemory(src); }
 
  private:
   T t_;

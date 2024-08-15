@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#include <limits>
+
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
@@ -290,13 +292,57 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
         eos = Modify<UnitSystem>(eos, eos_units_init::length_time_units_init_tag,
                                  time_unit, mass_unit, length_unit, temp_unit);
         THEN("Units cancel out for an ideal gas") {
-          Real rho = 1e3;
-          Real sie = 1e3;
+          constexpr Real rho = 1e3;
+          constexpr Real sie = 1e3;
+          constexpr Real Ptrue = gm1 * rho * sie;
           Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
-          Real Ptrue = gm1 * rho * sie;
           REQUIRE(std::abs(P - Ptrue) / Ptrue < 1e-3);
         }
       }
     }
+  }
+}
+
+SCENARIO("Serialization of modified EOSs preserves their properties",
+         "[ScaledEOS][IdealGas][Serialization]") {
+  GIVEN("A scaled ideal gas object") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    constexpr Real scale = 2.0;
+
+    constexpr Real rho_test = 1.0;
+    constexpr Real sie_test = 1.0;
+    constexpr Real temp_test = sie_test / (Cv * scale); // = 1./4.
+    constexpr Real EPS = 10 * std::numeric_limits<Real>::epsilon();
+
+    ScaledEOS<IdealGas> eos(IdealGas(gm1, Cv), scale);
+    REQUIRE(isClose(eos.TemperatureFromDensityInternalEnergy(rho_test, sie_test),
+                    temp_test, EPS));
+
+    THEN("The size of the object is larger than just the ideal gas by itself") {
+      REQUIRE(eos.SerializedSizeInBytes() > sizeof(IdealGas));
+    }
+
+    WHEN("We serialize the EOS") {
+      auto [size, data] = eos.Serialize();
+      REQUIRE(size == eos.SerializedSizeInBytes());
+      REQUIRE(size > 0);
+      REQUIRE(data != nullptr);
+
+      THEN("We can de-serialize the EOS") {
+        ScaledEOS<IdealGas> eos_new;
+        eos_new.DeSerialize(data);
+
+        AND_THEN("The de-serialized EOS still evaluates properly") {
+          REQUIRE(
+              isClose(eos_new.TemperatureFromDensityInternalEnergy(rho_test, sie_test),
+                      temp_test, EPS));
+        }
+      }
+
+      free(data);
+    }
+
+    eos.Finalize();
   }
 }

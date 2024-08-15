@@ -452,6 +452,10 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     return t_.GetUnmodifiedObject();
   }
 
+  std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
+  std::size_t DumpDynamicMemory(char *dst) const { return t_.DumpDynamicMemory(dst); }
+  std::size_t SetDynamicMemory(char *src) { return t_.SetDynamicMemory(src); }
+
  private:
   T t_;
   Real r0_;

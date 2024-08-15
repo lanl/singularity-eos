@@ -83,6 +83,12 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
   using EosBase<EOSDERIVED>::EntropyIsNotEnabled;                                        \
   using EosBase<EOSDERIVED>::MinInternalEnergyIsNotEnabled;                              \
+  using EosBase<EOSDERIVED>::DynamicMemorySizeInBytes;                                   \
+  using EosBase<EOSDERIVED>::DumpDynamicMemory;                                          \
+  using EosBase<EOSDERIVED>::SetDynamicMemory;                                           \
+  using EosBase<EOSDERIVED>::SerializedSizeInBytes;                                      \
+  using EosBase<EOSDERIVED>::Serialize;                                                  \
+  using EosBase<EOSDERIVED>::DeSerialize;                                                \
   using EosBase<EOSDERIVED>::IsModified;                                                 \
   using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
   using EosBase<EOSDERIVED>::GetUnmodifiedObject;
@@ -655,6 +661,44 @@ class EosBase {
     impl::StrCat(msg, eosname);
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
+  }
+
+  // Serialization
+  // JMM: These must be special-cased.
+  std::size_t DynamicMemorySizeInBytes() const { return 0; }
+  std::size_t DumpDynamicMemory(char *dst) const { return 0; }
+  std::size_t SetDynamicMemory(char *src) { return 0; }
+  // JMM: These are generic and do not need to be special-cased.
+  // TODO(JMM): Should this machinery actually be available for "bare"
+  // EOS's outside the variant?
+  // TODO(JMM): Should I try to reduce the amount of duplicated code
+  // between here and the variant?  Is this a rare case where multiple
+  // inheritence or mixins would be useful? Probably more trouble than
+  // its work for ~20 LOC...
+  std::size_t SerializedSizeInBytes() const {
+    // sizeof(*this) apparently returns the size of JUST the base
+    // class.
+    return DynamicMemorySizeInBytes() + sizeof(CRTP);
+  }
+  std::size_t Serialize(char *dst) const {
+    memcpy(dst, this, sizeof(CRTP));
+    if (DynamicMemorySizeInBytes() > 0) {
+      DumpDynamicMemory(dst + sizeof(CRTP));
+    }
+    return SerializedSizeInBytes();
+  }
+  auto Serialize() const {
+    std::size_t size = SerializedSizeInBytes();
+    char *dst = (char *)malloc(size);
+    Serialize(dst);
+    return std::make_pair(size, dst);
+  }
+  std::size_t DeSerialize(char *src) {
+    memcpy(this, src, sizeof(CRTP));
+    if (DynamicMemorySizeInBytes() > 0) {
+      SetDynamicMemory(src + sizeof(CRTP));
+    }
+    return SerializedSizeInBytes();
   }
 
   // Tooling for modifiers

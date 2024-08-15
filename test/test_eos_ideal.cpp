@@ -137,3 +137,65 @@ SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
     PORTABLE_FREE(sie);
   }
 }
+
+struct Dummy {};
+SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
+  GIVEN("An ideal gas object on host and a variant on host") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    IdealGas eos_bare(gm1, Cv);
+    EOS eos_variant = IdealGas(gm1, Cv);
+
+    THEN("They both report zero dynamic memory size") {
+      REQUIRE(eos_bare.DynamicMemorySizeInBytes() == 0);
+      REQUIRE(eos_variant.DynamicMemorySizeInBytes() == 0);
+    }
+
+    THEN("They both report sizes larger than a trivial struct, such that the eos variant "
+         "size >= eos_bare size") {
+      REQUIRE(eos_bare.SerializedSizeInBytes() > sizeof(Dummy));
+      REQUIRE(eos_variant.SerializedSizeInBytes() > sizeof(Dummy));
+      REQUIRE(eos_variant.SerializedSizeInBytes() >= eos_bare.SerializedSizeInBytes());
+    }
+
+    WHEN("We serialize each") {
+      auto [size_bare, data_bare] = eos_bare.Serialize();
+      auto [size_var, data_var] = eos_variant.Serialize();
+
+      THEN("The reported sizes are what we expect") {
+        REQUIRE(size_bare == eos_bare.SerializedSizeInBytes());
+        REQUIRE(size_var == eos_variant.SerializedSizeInBytes());
+      }
+
+      THEN("We can de-serialize new objects from them") {
+        IdealGas new_bare;
+        new_bare.DeSerialize(data_bare);
+
+        EOS new_variant;
+        new_variant.DeSerialize(data_var);
+
+        AND_THEN("The bare eos has the right Cv and Gruneisen params") {
+          REQUIRE(new_bare.SpecificHeatFromDensityTemperature(1.0, 1.0) == Cv);
+          REQUIRE(new_bare.GruneisenParamFromDensityTemperature(1.0, 1.0) == gm1);
+        }
+
+        AND_THEN("The variant has the right type") {
+          REQUIRE(new_variant.IsType<IdealGas>());
+        }
+
+        AND_THEN("The bare eos has the right Cv and Gruneisen params") {
+          REQUIRE(new_variant.SpecificHeatFromDensityTemperature(1.0, 1.0) == Cv);
+          REQUIRE(new_variant.GruneisenParamFromDensityTemperature(1.0, 1.0) == gm1);
+        }
+      }
+
+      // cleanup
+      free(data_bare);
+      free(data_var);
+    }
+
+    // cleanup
+    eos_bare.Finalize();
+    eos_variant.Finalize();
+  }
+}

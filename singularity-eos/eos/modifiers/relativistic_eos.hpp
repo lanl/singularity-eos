@@ -57,6 +57,9 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityTemperature;
   using EosBase<RelativisticEOS<T>>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<RelativisticEOS<T>>::FillEos;
+  using EosBase<RelativisticEOS<T>>::SerializedSizeInBytes;
+  using EosBase<RelativisticEOS<T>>::Serialize;
+  using EosBase<RelativisticEOS<T>>::DeSerialize;
 
   using BaseType = T;
 
@@ -200,6 +203,10 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   inline constexpr decltype(auto) GetUnmodifiedObject() {
     return t_.GetUnmodifiedObject();
   }
+
+  std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
+  std::size_t DumpDynamicMemory(char *dst) const { return t_.DumpDynamicMemory(dst); }
+  std::size_t SetDynamicMemory(char *src) { return t_.SetDynamicMemory(src); }
 
  private:
   T t_;
