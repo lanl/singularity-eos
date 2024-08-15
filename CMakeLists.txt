@@ -172,7 +172,7 @@ endif()
 if(CMAKE_CXX_STANDARD)
   target_compile_features(singularity-eos_Interface INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 else()
-  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_14)
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_17)
 endif()
 
 # checks if this is our build, or we've been imported via `add_subdirectory` NB:
