@@ -11,6 +11,7 @@
 - [[PR403]](https://github.com/lanl/singularity-eos/pull/403) Fix Gruneisen EOS DensityEnergyFromPressureTemperature function
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR407]](https://github.com/lanl/singularity-eos/pull/407) Update C++ standard to C++17
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR402]](https://github.com/lanl/singularity-eos/pull/402) Added stiff gas to python interface
