@@ -125,6 +125,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
     PORTABLE_ALWAYS_REQUIRE(TMax_ > 0, "Max temperature must be positive");
   }
 
+  std::size_t DynamicMemorySizeInBytes() const;
+  std::size_t DumpDynamicMemory(char *dst) const;
+  std::size_t SetDynamicMemory(char *src);
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
@@ -297,13 +301,25 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] {"SpinerEOSDependsRhoT"};
-  static constexpr const int numDataBoxes_ = 12;
+
+  // TODO(JMM): Could unify declarations and macro below by using
+  // reference_wrapper instead of pointers... worth it?
   DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
   DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
   DataBox lTColdCrit_;
   DataBox PCold_, sieCold_, bModCold_;
   DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
   DataBox rho_at_pmin_;
+
+  // TODO(JMM): Pointers here? or reference_wrapper? IMO the pointers are more clear
+#define DBLIST                                                                           \
+  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &PMax_,      \
+      &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_, &bModCold_,     \
+      &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_, &rho_at_pmin_;
+  auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
+  auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
+#undef DBLIST
+
   int numRho_, numT_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lRhoMinSearch_;
@@ -634,6 +650,8 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsRHoT: HDF5 error\n"); // TODO: make this better
   }
+
+  CheckParams();
 }
 
 inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
@@ -665,83 +683,30 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsRhoT: HDF5 error\n");
   }
+
+  CheckParams();
 }
 
 inline SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
-  SpinerEOSDependsRhoT other;
-  other.P_ = Spiner::getOnDeviceDataBox<Real>(P_);
-  other.sie_ = Spiner::getOnDeviceDataBox<Real>(sie_);
-  other.bMod_ = Spiner::getOnDeviceDataBox<Real>(bMod_);
-  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real>(dPdRho_);
-  other.dPdE_ = Spiner::getOnDeviceDataBox<Real>(dPdE_);
-  other.dTdRho_ = Spiner::getOnDeviceDataBox<Real>(dTdRho_);
-  other.dTdE_ = Spiner::getOnDeviceDataBox<Real>(dTdE_);
-  other.dEdRho_ = Spiner::getOnDeviceDataBox<Real>(dEdRho_);
-  other.dEdT_ = Spiner::getOnDeviceDataBox<Real>(dEdT_);
-  other.PMax_ = Spiner::getOnDeviceDataBox<Real>(PMax_);
-  other.sielTMax_ = Spiner::getOnDeviceDataBox<Real>(sielTMax_);
-  other.dEdTMax_ = Spiner::getOnDeviceDataBox<Real>(dEdTMax_);
-  other.gm1Max_ = Spiner::getOnDeviceDataBox<Real>(gm1Max_);
-  other.PCold_ = Spiner::getOnDeviceDataBox<Real>(PCold_);
-  other.sieCold_ = Spiner::getOnDeviceDataBox<Real>(sieCold_);
-  other.bModCold_ = Spiner::getOnDeviceDataBox<Real>(bModCold_);
-  other.dPdRhoCold_ = Spiner::getOnDeviceDataBox<Real>(dPdRhoCold_);
-  other.dPdECold_ = Spiner::getOnDeviceDataBox<Real>(dPdECold_);
-  other.dTdRhoCold_ = Spiner::getOnDeviceDataBox<Real>(dTdRhoCold_);
-  other.dTdECold_ = Spiner::getOnDeviceDataBox<Real>(dTdECold_);
-  other.dEdTCold_ = Spiner::getOnDeviceDataBox<Real>(dEdTCold_);
-  other.lTColdCrit_ = Spiner::getOnDeviceDataBox<Real>(lTColdCrit_);
-  other.rho_at_pmin_ = Spiner::getOnDeviceDataBox<Real>(rho_at_pmin_);
-  other.lRhoMin_ = lRhoMin_;
-  other.lRhoMax_ = lRhoMax_;
-  other.rhoMax_ = rhoMax_;
-  other.lRhoMinSearch_ = lRhoMinSearch_;
-  other.lTMin_ = lTMin_;
-  other.lTMax_ = lTMax_;
-  other.TMax_ = TMax_;
-  other.lRhoOffset_ = lRhoOffset_;
-  other.lTOffset_ = lTOffset_;
-  other.rhoNormal_ = rhoNormal_;
-  other.TNormal_ = TNormal_;
-  other.sieNormal_ = sieNormal_;
-  other.PNormal_ = PNormal_;
-  other.CvNormal_ = CvNormal_;
-  other.bModNormal_ = bModNormal_;
-  other.dPdENormal_ = dPdENormal_;
-  other.dVdTNormal_ = dVdTNormal_;
-  other.numRho_ = numRho_;
-  other.numT_ = numT_;
-  other.matid_ = matid_;
-  other.reproducible_ = reproducible_;
-  other.status_ = status_;
+  SpinerEOSDependsRhoT other = *this; // trivial copy
+  // now do databoxes
+  int idb = 0;
+  auto pmy_dbs = GetDataBoxPointers_();
+  for (DataBox *pother_db : other.GetDataBoxPointers_()) {
+    DataBox *pmy_db = pmy_dbs[idb++];
+    *pother_db = Spiner::getOnDeviceDataBox<Real>(*pmy_db);
+  }
+  // and memory status
   other.memoryStatus_ = DataStatus::OnDevice;
   return other;
 }
 
 void SpinerEOSDependsRhoT::Finalize() {
-  P_.finalize();
-  sie_.finalize();
-  bMod_.finalize();
-  dPdRho_.finalize();
-  dPdE_.finalize();
-  dTdRho_.finalize();
-  dTdE_.finalize();
-  dEdRho_.finalize();
-  dEdT_.finalize();
-  PMax_.finalize();
-  sielTMax_.finalize();
-  dEdTMax_.finalize();
-  gm1Max_.finalize();
-  PCold_.finalize();
-  sieCold_.finalize();
-  bModCold_.finalize();
-  dPdRhoCold_.finalize();
-  dPdECold_.finalize();
-  dTdRhoCold_.finalize();
-  dEdTCold_.finalize();
-  dTdECold_.finalize();
-  lTColdCrit_.finalize();
-  rho_at_pmin_.finalize();
+  if (memoryStatus_ != DataStatus::UnManaged) {
+    for (DataBox *pdb : GetDataBoxPointers_()) {
+      pdb->finalize();
+    }
+  }
   memoryStatus_ = DataStatus::Deallocated;
 }
 

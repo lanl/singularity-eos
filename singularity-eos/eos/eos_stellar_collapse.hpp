@@ -445,6 +445,7 @@ inline StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp
     LoadFromStellarCollapseFile_(filename, filter_bmod);
   }
   setNormalValues_();
+  CheckParams();
 }
 
 // Saves to an SP5 file
@@ -505,8 +506,10 @@ inline StellarCollapse StellarCollapse::GetOnDevice() {
 }
 
 inline void StellarCollapse::Finalize() {
-  for (DataBox *pdb : GetDataBoxPointers_()) {
-    pdb->finalize();
+  if (memoryStatus_ != DataStatus::UnManaged) {
+    for (DataBox *pdb : GetDataBoxPointers_()) {
+      pdb->finalize();
+    }
   }
   memoryStatus_ = DataStatus::Deallocated;
 }
