@@ -86,6 +86,12 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   using EosBase<StellarCollapse>::GruneisenParamFromDensityTemperature;
   using EosBase<StellarCollapse>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<StellarCollapse>::FillEos;
+  using EosBase<StellarCollapse>::SerializedSizeInBytes;
+  using EosBase<StellarCollapse>::Serialize;
+  using EosBase<StellarCollapse>::DeSerialize;
+  using EosBase<StellarCollapse>::IsModified;
+  using EosBase<StellarCollapse>::UnmodifyOnce;
+  using EosBase<StellarCollapse>::GetUnmodifiedObject;
 
   inline StellarCollapse(const std::string &filename, bool use_sp5 = false,
                          bool filter_bmod = true);
@@ -223,6 +229,10 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   inline static void dataBoxToFastLogs(DataBox &db, DataBox &scratch,
                                        bool dependent_var_log);
 
+  std::size_t DynamicMemorySizeInBytes() const;
+  std::size_t DumpDynamicMemory(char *dst) const;
+  std::size_t SetDynamicMemory(char *src);
+
  private:
   class LogT {
    public:
@@ -356,6 +366,14 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // Bounds of dependent variables. Needed for root finding.
   DataBox eCold_, eHot_;
 
+  // TODO(JMM): Pointers here? or reference_wrapper? IMO the pointers are more clear
+#define DBLIST                                                                           \
+  &lP_, &lE_, &dPdRho_, &dPdE_, &dEdT_, &lBMod_, &entropy_, &Xa_, &Xh_, &Xn_, &Xp_,      \
+      &Abar_, &Zbar_, &mu_e_, &mu_n_, &mu_p_, &muhat_, &munu_, &eCold_, &eHot_
+  auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
+  auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
+#undef DBLIST
+
   // Independent variable bounds
   int numRho_, numT_, numYe_;
   Real lRhoMin_, lRhoMax_;
@@ -453,71 +471,52 @@ inline void StellarCollapse::Save(const std::string &filename) {
 }
 
 inline StellarCollapse StellarCollapse::GetOnDevice() {
-  StellarCollapse other;
-  other.lP_ = Spiner::getOnDeviceDataBox<Real>(lP_);
-  other.lE_ = Spiner::getOnDeviceDataBox<Real>(lE_);
-  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real>(dPdRho_);
-  other.dPdE_ = Spiner::getOnDeviceDataBox<Real>(dPdE_);
-  other.dEdT_ = Spiner::getOnDeviceDataBox<Real>(dEdT_);
-  other.entropy_ = Spiner::getOnDeviceDataBox<Real>(entropy_);
-  other.Xa_ = Spiner::getOnDeviceDataBox<Real>(Xa_);
-  other.Xh_ = Spiner::getOnDeviceDataBox<Real>(Xh_);
-  other.Xn_ = Spiner::getOnDeviceDataBox<Real>(Xn_);
-  other.Xp_ = Spiner::getOnDeviceDataBox<Real>(Xp_);
-  other.Abar_ = Spiner::getOnDeviceDataBox<Real>(Abar_);
-  other.Zbar_ = Spiner::getOnDeviceDataBox<Real>(Zbar_);
-  other.lBMod_ = Spiner::getOnDeviceDataBox<Real>(lBMod_);
-  other.eCold_ = Spiner::getOnDeviceDataBox<Real>(eCold_);
-  other.eHot_ = Spiner::getOnDeviceDataBox<Real>(eHot_);
-  other.mu_e_ = Spiner::getOnDeviceDataBox<Real>(mu_e_);
-  other.mu_n_ = Spiner::getOnDeviceDataBox<Real>(mu_n_);
-  other.mu_p_ = Spiner::getOnDeviceDataBox<Real>(mu_p_);
-  other.muhat_ = Spiner::getOnDeviceDataBox<Real>(muhat_);
-  other.munu_ = Spiner::getOnDeviceDataBox<Real>(munu_);
+  // trivially copy all but dynamic memory
+  StellarCollapse other = *this;
+  // set dynamic memory
+  auto other_dbs = other.GetDataBoxPointers_();
+  auto my_dbs = GetDataBoxPointers_();
+  int idb = 0;
+  for (DataBox *pother_db : other_dbs) {
+    DataBox *pmy_db = my_dbs[idb++];
+    *pother_db = Spiner::getOnDeviceDataBox<Real>(*pmy_db);
+  }
+  // set memory status
   other.memoryStatus_ = DataStatus::OnDevice;
-  other.numRho_ = numRho_;
-  other.numT_ = numT_;
-  other.numYe_ = numYe_;
-  other.lTMin_ = lTMin_;
-  other.lTMax_ = lTMax_;
-  other.YeMin_ = YeMin_;
-  other.YeMax_ = YeMax_;
-  other.sieMin_ = sieMin_;
-  other.sieMax_ = sieMax_;
-  other.lEOffset_ = lEOffset_;
-  other.sieNormal_ = sieNormal_;
-  other.PNormal_ = PNormal_;
-  other.SNormal_ = SNormal_;
-  other.CvNormal_ = CvNormal_;
-  other.bModNormal_ = bModNormal_;
-  other.dPdENormal_ = dPdENormal_;
-  other.dVdTNormal_ = dVdTNormal_;
-  other.status_ = status_;
   return other;
 }
 
 inline void StellarCollapse::Finalize() {
-  lP_.finalize();
-  lE_.finalize();
-  dPdRho_.finalize();
-  dPdE_.finalize();
-  dEdT_.finalize();
-  entropy_.finalize();
-  Xa_.finalize();
-  Xh_.finalize();
-  Xn_.finalize();
-  Xp_.finalize();
-  Abar_.finalize();
-  Zbar_.finalize();
-  lBMod_.finalize();
-  eCold_.finalize();
-  eHot_.finalize();
-  mu_e_.finalize();
-  mu_n_.finalize();
-  mu_p_.finalize();
-  muhat_.finalize();
-  munu_.finalize();
+  for (DataBox *pdb : GetDataBoxPointers_()) {
+    pdb->finalize();
+  }
   memoryStatus_ = DataStatus::Deallocated;
+}
+
+inline std::size_t StellarCollapse::DynamicMemorySizeInBytes() const {
+  std::size_t out = 0;
+  for (const DataBox *pdb : GetDataBoxPointers_()) {
+    out += pdb->sizeBytes();
+  }
+  return out;
+}
+
+inline std::size_t StellarCollapse::DumpDynamicMemory(char *dst) const {
+  std::size_t offst = 0;
+  for (const DataBox *pdb : GetDataBoxPointers_()) {
+    std::size_t size = pdb->sizeBytes();
+    memcpy(dst + offst, pdb->data(), size);
+    offst += size;
+  }
+  return offst;
+}
+
+inline std::size_t StellarCollapse::SetDynamicMemory(char *src) {
+  std::size_t offst = 0;
+  for (DataBox *pdb : GetDataBoxPointers_()) {
+    offst += pdb->setPointer(src + offst);
+  }
+  return offst;
 }
 
 template <typename Indexer_t>
