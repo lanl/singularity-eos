@@ -552,6 +552,18 @@ might look something like this:
 
 .. _eos methods reference section:
 
+CheckParams
+------------
+
+You may check whether or not an equation of state object is
+constructed self-consistently and ready for use by calling
+
+.. cpp:function:: void CheckParams() const;
+
+which raise an error and/or print an equation of state specific error
+message if something has gone wrong. Most EOS constructors and ways of
+building an EOS call ``CheckParams`` by default.
+
 Equation of State Methods Reference
 ------------------------------------
 
