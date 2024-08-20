@@ -710,6 +710,34 @@ void SpinerEOSDependsRhoT::Finalize() {
   memoryStatus_ = DataStatus::Deallocated;
 }
 
+inline std::size_t SpinerEOSDependsRhoT::DynamicMemorySizeInBytes() const {
+  std::size_t out = 0;
+  for (const DataBox *pdb : GetDataBoxPointers_()) {
+    out += pdb->sizeBytes();
+  }
+  return out;
+}
+
+inline std::size_t SpinerEOSDependsRhoT::DumpDynamicMemory(char *dst) const {
+  std::size_t offst = 0;
+  for (const DataBox *pdb : GetDataBoxPointers_()) {
+    std::size_t size = pdb->sizeBytes();
+    memcpy(dst + offst, pdb->data(), size);
+    offst += size;
+  }
+  return offst;
+}
+
+inline std::size_t SpinerEOSDependsRhoT::SetDynamicMemory(char *src) {
+  std::size_t offst = 0;
+  for (DataBox *pdb : GetDataBoxPointers_()) {
+    offst += pdb->setPointer(src + offst);
+  }
+  memoryStatus_ = DataStatus::UnManaged;
+  return offst;
+}
+
+
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
                                                    hid_t file, hid_t lTGroup,
                                                    hid_t coldGroup) {
