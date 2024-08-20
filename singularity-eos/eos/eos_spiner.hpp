@@ -76,32 +76,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };
   };
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-  using EosBase<SpinerEOSDependsRhoT>::TemperatureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::InternalEnergyFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::MinInternalEnergyFromDensity;
-  using EosBase<SpinerEOSDependsRhoT>::EntropyFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::EntropyFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::FillEos;
-  using EosBase<SpinerEOSDependsRhoT>::EntropyIsNotEnabled;
-  using EosBase<SpinerEOSDependsRhoT>::SerializedSizeInBytes;
-  using EosBase<SpinerEOSDependsRhoT>::Serialize;
-  using EosBase<SpinerEOSDependsRhoT>::DeSerialize;
-  using EosBase<SpinerEOSDependsRhoT>::IsModified;
-  using EosBase<SpinerEOSDependsRhoT>::UnmodifyOnce;
-  using EosBase<SpinerEOSDependsRhoT>::GetUnmodifiedObject;
-
+  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT);
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
                               bool reproduciblity_mode = false);
   inline SpinerEOSDependsRhoT(const std::string &filename,
@@ -113,8 +88,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   inline SpinerEOSDependsRhoT GetOnDevice();
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
-    PORTAbLE_ALWAYS_REQUIRE(numRho_ > 0, "Finite number of density points");
-    PORTAbLE_ALWAYS_REQUIRE(numT_ > 0, "Finite number of temperature points");
+    PORTABLE_ALWAYS_REQUIRE(numRho_ > 0, "Finite number of density points");
+    PORTABLE_ALWAYS_REQUIRE(numT_ > 0, "Finite number of temperature points");
     PORTABLE_ALWAYS_REQUIRE(!(std::isnan(lRhoMin_) || std::isnan(lRhoMax_)),
                             "Density bounds well defined");
     PORTABLE_ALWAYS_REQUIRE(lRhoMax_ > lRhoMin_, "Density bounds ordered");
@@ -315,7 +290,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 #define DBLIST                                                                           \
   &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &PMax_,      \
       &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_, &bModCold_,     \
-      &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_, &rho_at_pmin_;
+      &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_, &rho_at_pmin_
   auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
   auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
 #undef DBLIST
