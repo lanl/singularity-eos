@@ -30,6 +30,7 @@
 
 // ports-of-call
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
@@ -103,7 +104,24 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   StellarCollapse() : memoryStatus_(DataStatus::Deallocated) {}
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
-    // TODO(JMM): STUB
+    PORTABLE_ALWAYS_REQUIRE(numRho_ > 0, "Table must be finite");
+    PORTABLE_ALWAYS_REQUIRE(numT_ > 0, "Table must be finite");
+    PORTABLE_ALWAYS_REQUIRE(numYe_ > 0, "Table must be finite");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(lRhoMin_) && !std::isnan(lRhoMax_),
+                            "Density bounds must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(lRhoMax_ > lRhoMin_, "Density bounds must be ordered");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(lTMin_) && !std::isnan(lTMax_),
+                            "Density bounds must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(lTMax_ > lTMin_, "Temperature bounds must be ordered");
+    PORTABLE_ALWAYS_REQUIRE(!(std::isnan(YeMin_) || std::isnan(YeMax_)),
+                            "Ye bounds must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(YeMin_ >= 0.0, "Ye must be positive");
+    PORTABLE_ALWAYS_REQUIRE(YeMax_ <= 1.0, "Ye must be a fraction");
+    PORTABLE_ALWAYS_REQUIRE(YeMax_ > YeMin_, "Ye bounds must be ordered");
+    PORTABLE_ALWAYS_REQUIRE(!(std::isnan(sieMin_) || std::isnan(sieMax_)),
+                            "Energy bounds must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(sieMax_ > sieMin_, "Energy bounds must be ordered");
+    return;
   }
 
   inline StellarCollapse GetOnDevice();
@@ -516,6 +534,7 @@ inline std::size_t StellarCollapse::SetDynamicMemory(char *src) {
   for (DataBox *pdb : GetDataBoxPointers_()) {
     offst += pdb->setPointer(src + offst);
   }
+  memoryStatus_ = DataStatus::UnManaged;
   return offst;
 }
 

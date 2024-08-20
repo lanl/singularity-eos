@@ -76,7 +76,7 @@ class Variant {
   // Place member functions here
   PORTABLE_INLINE_FUNCTION
   void CheckParams() const {
-    mpark::visit([](auto &eos) { return eos.CheckParams(); });
+    return mpark::visit([](auto &eos) { return eos.CheckParams(); }, eos_);
   }
 
   template <typename Functor_t>

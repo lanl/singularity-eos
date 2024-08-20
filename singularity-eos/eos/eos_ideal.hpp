@@ -67,6 +67,7 @@ class IdealGas : public EosBase<IdealGas> {
                             "Entropy reference temperature must be positive");
     PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 >= 0,
                             "Entropy reference density must be positive");
+    return;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
