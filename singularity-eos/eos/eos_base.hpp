@@ -678,11 +678,15 @@ class EosBase {
   std::size_t SerializedSizeInBytes() const {
     // sizeof(*this) apparently returns the size of JUST the base
     // class.
-    return DynamicMemorySizeInBytes() + sizeof(CRTP);
+    const CRTP *pcrtp = static_cast<const CRTP *>(this);
+    std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    return dyn_size + sizeof(CRTP);
   }
   std::size_t Serialize(char *dst) const {
-    memcpy(dst, this, sizeof(CRTP));
-    if (DynamicMemorySizeInBytes() > 0) {
+    const CRTP *pcrtp = static_cast<const CRTP *>(this);
+    memcpy(dst, pcrtp, sizeof(CRTP));
+    std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    if (dyn_size > 0) {
       DumpDynamicMemory(dst + sizeof(CRTP));
     }
     return SerializedSizeInBytes();
@@ -694,7 +698,7 @@ class EosBase {
     return std::make_pair(size, dst);
   }
   std::size_t DeSerialize(char *src) {
-    memcpy(this, src, sizeof(CRTP));
+    memcpy(static_cast<CRTP *>(this), src, sizeof(CRTP));
     if (DynamicMemorySizeInBytes() > 0) {
       SetDynamicMemory(src + sizeof(CRTP));
     }
