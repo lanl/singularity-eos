@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -71,8 +72,15 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   static std::string EosPyType() { return std::string("Shifted") + T::EosPyType(); }
 
   // move semantics ensures dynamic memory comes along for the ride
-  ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
+  ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {
+    CheckParams();
+  }
   ShiftedEOS() = default;
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(shift_), "Shift must be a number");
+    t_.CheckParams();
+  }
 
   auto GetOnDevice() { return ShiftedEOS<T>(t_.GetOnDevice(), shift_); }
   inline void Finalize() { t_.Finalize(); }

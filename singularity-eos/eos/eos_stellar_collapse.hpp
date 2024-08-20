@@ -96,6 +96,10 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_INLINE_FUNCTION
   StellarCollapse() : memoryStatus_(DataStatus::Deallocated) {}
 
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    // TODO(JMM): STUB
+  }
+
   inline StellarCollapse GetOnDevice();
 
   template <typename Indexer_t = Real *>

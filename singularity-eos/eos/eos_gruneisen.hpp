@@ -63,6 +63,11 @@ class Gruneisen : public EosBase<Gruneisen> {
         _Cv(Cv), _rho_max(RHOMAX_SAFETY * ComputeRhoMax(s1, s2, s3, rho0)) {}
   static PORTABLE_INLINE_FUNCTION Real ComputeRhoMax(const Real s1, const Real s2,
                                                      const Real s3, const Real rho0);
+  PORTABLE_INLINE_FUNCTION
+  void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(_T0 >= 0, "Non-negative reference temperature");
+    PORTABLE_ALWAYS_REQUIRE(_rho0 >= 0, "Non-negative reference density");
+  }
   PORTABLE_INLINE_FUNCTION Real
   MaxStableDensityAtTemperature(const Real temperature) const;
   Gruneisen GetOnDevice() { return *this; }

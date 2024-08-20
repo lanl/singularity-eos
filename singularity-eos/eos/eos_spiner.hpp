@@ -105,6 +105,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   inline SpinerEOSDependsRhoT GetOnDevice();
 
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    // TODO(JMM): STUB
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
@@ -357,6 +361,10 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
                                 const std::string &materialName,
                                 bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoSie GetOnDevice();
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    // TODO(JMM): STUB
+  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(

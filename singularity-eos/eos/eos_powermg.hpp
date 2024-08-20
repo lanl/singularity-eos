@@ -41,9 +41,15 @@ class PowerMG : public EosBase<PowerMG> {
           const Real S0, const Real Pmin, const Real *expconsts)
       : _rho0(rho0), _T0(T0), _G0(G0), _Cv0(Cv0), _E0(E0), _S0(S0), _Pmin(Pmin) {
     _InitializePowerMG(expconsts);
-    _CheckPowerMG();
+    CheckParams();
+    if (_Pmin >= 0.0) {
+      _Pmin = -1000 * _K0toK40[0];
+      PORTABLE_WARN("PowerMG model parameter Pmin not set or positive. Reset to default "
+                    "(-1000*K0)");
+    }
   }
 
+  PORTABLE_INLINE_FUNCTION void CheckParams() const;
   PowerMG GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -164,7 +170,6 @@ class PowerMG : public EosBase<PowerMG> {
   static constexpr const int PressureCoeffsK0toK40Size = 41;
   int _M;
   Real _K0toK40[PressureCoeffsK0toK40Size];
-  void _CheckPowerMG();
   void _InitializePowerMG(const Real *expcoeffs);
   PORTABLE_INLINE_FUNCTION Real _HugPressureFromDensity(const Real rho) const;
   PORTABLE_INLINE_FUNCTION Real _HugTemperatureFromDensity(const Real rho) const;
@@ -175,7 +180,7 @@ class PowerMG : public EosBase<PowerMG> {
   _compBulkModulusFromDensityInternalEnergy(const Real rho, const Real sie) const;
 };
 
-inline void PowerMG::_CheckPowerMG() {
+PORTABLE_INLINE_FUNCTION void PowerMG::CheckParams() const {
 
   if (_rho0 < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required PowerMG model parameter rho0 < 0");
@@ -188,13 +193,6 @@ inline void PowerMG::_CheckPowerMG() {
   }
   if (_K0toK40[0] < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required PowerMG model parameter K0 < 0");
-  }
-  if (_Pmin >= 0.0) {
-    _Pmin = -1000 * _K0toK40[0];
-#ifndef NDEBUG
-    PORTABLE_WARN(
-        "PowerMG model parameter Pmin not set or positive. Reset to default (-1000*K0)");
-#endif // NDEBUG
   }
 }
 

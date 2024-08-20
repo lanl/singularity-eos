@@ -140,6 +140,9 @@ class EOSPAC : public EosBase<EOSPAC> {
                 bool apply_smoothing = false,
                 eospacSplit apply_splitting = eospacSplit::none,
                 bool linear_interp = false);
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    // TODO(JMM): STUB
+  }
   inline EOSPAC GetOnDevice() { return *this; }
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>

@@ -42,7 +42,7 @@ class Vinet : public EosBase<Vinet> {
   Vinet(const Real rho0, const Real T0, const Real B0, const Real BP0, const Real A0,
         const Real Cv0, const Real E0, const Real S0, const Real *expconsts)
       : _rho0(rho0), _T0(T0), _B0(B0), _BP0(BP0), _A0(A0), _Cv0(Cv0), _E0(E0), _S0(S0) {
-    CheckVinet();
+    CheckParams();
     InitializeVinet(expconsts);
   }
 
@@ -163,13 +163,13 @@ class Vinet : public EosBase<Vinet> {
   static constexpr const int PressureCoeffsd2tod40Size = 39;
   static constexpr const int VinetInternalParametersSize = PressureCoeffsd2tod40Size + 4;
   Real _VIP[VinetInternalParametersSize], _d2tod40[PressureCoeffsd2tod40Size];
-  void CheckVinet();
+  PORTABLE_INLINE_FUNCTION void CheckParams() const;
   void InitializeVinet(const Real *expcoeffs);
   PORTABLE_INLINE_FUNCTION void Vinet_F_DT_func(const Real rho, const Real T,
                                                 Real *output) const;
 };
 
-inline void Vinet::CheckVinet() {
+PORTABLE_INLINE_FUNCTION void Vinet::CheckParams() const {
 
   if (_rho0 < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter rho0 < 0");

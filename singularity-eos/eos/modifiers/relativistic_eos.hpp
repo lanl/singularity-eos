@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -75,8 +76,18 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
       : t_(std::forward<T>(t)), cl_(cl) // speed of light, units arbitrary
         ,
         cl2_(cl * cl) // speed of light squared
-  {}
+  {
+    CheckParams();
+  }
   RelativisticEOS() = default;
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(cl_ > 0, "Positive speed of light");
+    PORTABLE_ALWAYS_REQUIRE(cl2_ > 0, "Positive speed of light squared");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(cl_), "Well defined speed of light");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(cl2_), "Well defined speed of light squared");
+    t_.CheckParams();
+  }
 
   auto GetOnDevice() { return RelativisticEOS<T>(t_.GetOnDevice(), cl_); }
   inline void Finalize() { t_.Finalize(); }

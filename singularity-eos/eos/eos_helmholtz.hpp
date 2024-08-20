@@ -416,6 +416,10 @@ class Helmholtz : public EosBase<Helmholtz> {
       : electrons_(filename),
         options_(rad, gas, coul, ion, ele, verbose, newton_raphson) {}
 
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    // TODO(JMM): Stub
+  }
+
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
   static constexpr unsigned long PreferredInput() {
     return thermalqs::density | thermalqs::temperature;

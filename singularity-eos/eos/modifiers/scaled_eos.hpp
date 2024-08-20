@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -72,9 +73,19 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
 
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
-      : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {}
+      : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {
+    CheckParams();
+  }
   ScaledEOS() = default;
 
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(std::abs(scale_) > 0, "Scale must not be zero.");
+    PORTABLE_ALWAYS_REQUIRE(std::abs(inv_scale_) > 0, "Inverse scale must not be zero.");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(scale_), "Scale must be well defined.");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(inv_scale_),
+                            "Inverse scale must be well defined.");
+    t_.CheckParams();
+  }
   auto GetOnDevice() { return ScaledEOS<T>(t_.GetOnDevice(), scale_); }
   inline void Finalize() { t_.Finalize(); }
 
