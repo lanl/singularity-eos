@@ -31,6 +31,7 @@
 
 // ports-of-call
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 
 // base
 #include <singularity-eos/base/constants.hpp>
@@ -94,6 +95,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
   using EosBase<SpinerEOSDependsRhoT>::FillEos;
   using EosBase<SpinerEOSDependsRhoT>::EntropyIsNotEnabled;
+  using EosBase<SpinerEOSDependsRhoT>::SerializedSizeInBytes;
+  using EosBase<SpinerEOSDependsRhoT>::Serialize;
+  using EosBase<SpinerEOSDependsRhoT>::DeSerialize;
+  using EosBase<SpinerEOSDependsRhoT>::IsModified;
+  using EosBase<SpinerEOSDependsRhoT>::UnmodifyOnce;
+  using EosBase<SpinerEOSDependsRhoT>::GetUnmodifiedObject;
 
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
                               bool reproduciblity_mode = false);
@@ -106,7 +113,16 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   inline SpinerEOSDependsRhoT GetOnDevice();
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
-    // TODO(JMM): STUB
+    PORTAbLE_ALWAYS_REQUIRE(numRho_ > 0, "Finite number of density points");
+    PORTAbLE_ALWAYS_REQUIRE(numT_ > 0, "Finite number of temperature points");
+    PORTABLE_ALWAYS_REQUIRE(!(std::isnan(lRhoMin_) || std::isnan(lRhoMax_)),
+                            "Density bounds well defined");
+    PORTABLE_ALWAYS_REQUIRE(lRhoMax_ > lRhoMin_, "Density bounds ordered");
+    PORTABLE_ALWAYS_REQUIRE(rhoMax_ > 0, "Max density must be positive");
+    PORTABLE_ALWAYS_REQUIRE(!(std::isnan(lTMin_) || std::isnan(lTMax_)),
+                            "Temperature bounds well defined");
+    PORTABLE_ALWAYS_REQUIRE(lTMax_ > lTMin_, "Temperature bounds ordered");
+    PORTABLE_ALWAYS_REQUIRE(TMax_ > 0, "Max temperature must be positive");
   }
 
   template <typename Indexer_t = Real *>
