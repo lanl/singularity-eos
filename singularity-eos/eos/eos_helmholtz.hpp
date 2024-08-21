@@ -214,10 +214,18 @@ class HelmElectrons {
   static constexpr std::size_t NDERIV = HelmUtils::NDERIV;
 
   HelmElectrons() = default;
-  inline HelmElectrons(const std::string &filename) { InitDataFile_(filename); }
+  inline HelmElectrons(const std::string &filename) {
+    InitDataFile_(filename);
+    CheckParams();
+  }
 
   inline HelmElectrons GetOnDevice();
   inline void Finalize();
+  inline void CheckParams() const {
+    // better than nothing...
+    PORTABLE_ALWAYS_REQUIRE(rho_.size() == NRHO, "Density grid correct");
+    PORTABLE_ALWAYS_REQUIRE(T_.size() == NTEMP, "Temperature grid correct");
+  }
 
   std::size_t DynamicMemorySizeInBytes() const {
     return SpinerTricks::DynamicMemorySizeInBytes(this);
@@ -440,9 +448,7 @@ class Helmholtz : public EosBase<Helmholtz> {
       : electrons_(filename),
         options_(rad, gas, coul, ion, ele, verbose, newton_raphson) {}
 
-  PORTABLE_INLINE_FUNCTION void CheckParams() const {
-    // TODO(JMM): Stub
-  }
+  PORTABLE_INLINE_FUNCTION void CheckParams() const { electrons_.CheckParams(); }
 
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
   static constexpr unsigned long PreferredInput() {
