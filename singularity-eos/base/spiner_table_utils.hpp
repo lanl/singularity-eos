@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_BASE_TABLE_BOUNDS_HPP_
-#define SINGULARITY_EOS_BASE_TABLE_BOUNDS_HPP_
+#ifndef SINGULARITY_EOS_BASE_TABLE_UTILS_HPP_
+#define SINGULARITY_EOS_BASE_TABLE_UTILS_HPP_
 #ifdef SINGULARITY_USE_SPINER
 
 #include <cmath>
@@ -279,8 +279,9 @@ class Bounds {
  private:
   Real linmin_, linmax_;
 };
+
 } // namespace table_utils
 } // namespace singularity
 
 #endif // SINGULARITY_USE_SPINER
-#endif // SINGULARITY_EOS_BASE_TABLE_BOUNDS_HPP_
+#endif // SINGULARITY_EOS_BASE_TABLE_UTILS_HPP_
