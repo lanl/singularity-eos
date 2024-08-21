@@ -333,6 +333,20 @@ struct SpinerTricks {
     peos->memoryStatus_ = DataStatus::UnManaged;
     return offst;
   }
+  static bool DataBoxesPointToSameMemory(const EOS &eos_a, const EOS &eos_b) {
+    const auto pdbs_a = eos_a.GetDataBoxPointers_();
+    const auto pdbs_b = eos_b.GetDataBoxPointers_();
+    int idb = 0;
+    for (const auto *pdb_a : pdbs_a) {
+      const auto &db_a = *pdb_a;
+      const auto &db_b = *(pdbs_b[idb++]);
+      if (&(db_a(0)) != &(db_b(0))) return false;
+    }
+    return true;
+  }
+  static bool DataBoxesPointToDifferentMemory(const EOS &eos_a, const EOS &eos_b) {
+    return !DataBoxesPointToSameMemory(eos_a, eos_b);
+  }
 };
 } // namespace table_utils
 } // namespace singularity
