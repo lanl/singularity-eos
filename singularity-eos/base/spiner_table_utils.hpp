@@ -25,7 +25,10 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
+
+#include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 
 namespace singularity {
@@ -280,6 +283,57 @@ class Bounds {
   Real linmin_, linmax_;
 };
 
+// JMM: Making this a struct with static methods, rather than a
+// namespace, saves a few "friend" declarations
+template <typename EOS>
+struct SpinerTricks {
+  static auto GetOnDevice(EOS *peos_h) {
+    // trivially copy all but dynamic memory
+    EOS eos_d = *peos_h;
+    auto pdbs_d = eos_d.GetDataBoxPointers_();
+    auto pdbs_h = peos_h->GetDataBoxPointers_();
+    int idb = 0;
+    for (auto *pdb_d : pdbs_d) {
+      auto *pdb_h = pdbs_h[idb++];
+      *pdb_d = pdb_h->getOnDevice();
+    }
+    // set memory status
+    eos_d.memoryStatus_ = DataStatus::OnDevice;
+    return eos_d;
+  }
+  static void Finalize(EOS *peos) {
+    if (peos->memoryStatus_ != DataStatus::UnManaged) {
+      for (auto *pdb : peos->GetDataBoxPointers_()) {
+        pdb->finalize();
+      }
+    }
+    peos->memoryStatus_ = DataStatus::Deallocated;
+  }
+  static std::size_t DynamicMemorySizeInBytes(const EOS *peos) {
+    std::size_t out = 0;
+    for (const auto *pdb : peos->GetDataBoxPointers_()) {
+      out += pdb->sizeBytes();
+    }
+    return out;
+  }
+  static std::size_t DumpDynamicMemory(char *dst, const EOS *peos) {
+    std::size_t offst = 0;
+    for (const auto *pdb : peos->GetDataBoxPointers_()) {
+      std::size_t size = pdb->sizeBytes();
+      memcpy(dst + offst, pdb->data(), size);
+      offst += size;
+    }
+    return offst;
+  }
+  static std::size_t SetDynamicMemory(char *src, EOS *peos) {
+    std::size_t offst = 0;
+    for (auto *pdb : peos->GetDataBoxPointers_()) {
+      offst += pdb->setPointer(src + offst);
+    }
+    peos->memoryStatus_ = DataStatus::UnManaged;
+    return offst;
+  }
+};
 } // namespace table_utils
 } // namespace singularity
 

@@ -39,6 +39,7 @@
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -67,6 +68,9 @@ using namespace eos_base;
   we use log-linear extrapolation.
 */
 class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
+  friend class table_utils::SpinerTricks<SpinerEOSDependsRhoT>;
+  using SpinerTricks = table_utils::SpinerTricks<SpinerEOSDependsRhoT>;
+
  public:
   static constexpr int NGRIDS = 3;
   using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
@@ -644,53 +648,21 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
 }
 
 inline SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
-  SpinerEOSDependsRhoT other = *this; // trivial copy
-  // now do databoxes
-  int idb = 0;
-  auto pmy_dbs = GetDataBoxPointers_();
-  for (DataBox *pother_db : other.GetDataBoxPointers_()) {
-    DataBox *pmy_db = pmy_dbs[idb++];
-    *pother_db = Spiner::getOnDeviceDataBox<Real>(*pmy_db);
-  }
-  // and memory status
-  other.memoryStatus_ = DataStatus::OnDevice;
-  return other;
+  return SpinerTricks::GetOnDevice(this);
 }
 
-void SpinerEOSDependsRhoT::Finalize() {
-  if (memoryStatus_ != DataStatus::UnManaged) {
-    for (DataBox *pdb : GetDataBoxPointers_()) {
-      pdb->finalize();
-    }
-  }
-  memoryStatus_ = DataStatus::Deallocated;
-}
+void SpinerEOSDependsRhoT::Finalize() { SpinerTricks::Finalize(this); }
 
 inline std::size_t SpinerEOSDependsRhoT::DynamicMemorySizeInBytes() const {
-  std::size_t out = 0;
-  for (const DataBox *pdb : GetDataBoxPointers_()) {
-    out += pdb->sizeBytes();
-  }
-  return out;
+  return SpinerTricks::DynamicMemorySizeInBytes(this);
 }
 
 inline std::size_t SpinerEOSDependsRhoT::DumpDynamicMemory(char *dst) const {
-  std::size_t offst = 0;
-  for (const DataBox *pdb : GetDataBoxPointers_()) {
-    std::size_t size = pdb->sizeBytes();
-    memcpy(dst + offst, pdb->data(), size);
-    offst += size;
-  }
-  return offst;
+  return SpinerTricks::DumpDynamicMemory(dst, this);
 }
 
 inline std::size_t SpinerEOSDependsRhoT::SetDynamicMemory(char *src) {
-  std::size_t offst = 0;
-  for (DataBox *pdb : GetDataBoxPointers_()) {
-    offst += pdb->setPointer(src + offst);
-  }
-  memoryStatus_ = DataStatus::UnManaged;
-  return offst;
+  return SpinerTricks::SetDynamicMemory(src, this);
 }
 
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,

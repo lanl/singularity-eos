@@ -34,6 +34,7 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 // ports of call
 #include <ports-of-call/portability.hpp>
@@ -45,6 +46,7 @@
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 // spiner
@@ -203,6 +205,9 @@ inline void SetTablesFromFile(std::ifstream &file, int n1, Real r1min, Real r1ma
 } // namespace HelmUtils
 
 class HelmElectrons {
+  friend class table_utils::SpinerTricks<HelmElectrons>;
+  using SpinerTricks = table_utils::SpinerTricks<HelmElectrons>;
+
  public:
   // may change with time
   using DataBox = HelmUtils::DataBox;
@@ -213,6 +218,16 @@ class HelmElectrons {
 
   inline HelmElectrons GetOnDevice();
   inline void Finalize();
+
+  std::size_t DynamicMemorySizeInBytes() const {
+    return SpinerTricks::DynamicMemorySizeInBytes(this);
+  }
+  std::size_t DumpDynamicMemory(char *dst) const {
+    return SpinerTricks::DumpDynamicMemory(dst, this);
+  }
+  std::size_t SetDynamicMemory(char *src) {
+    return SpinerTricks::SetDynamicMemory(src, this);
+  }
 
   PORTABLE_INLINE_FUNCTION
   void GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Ytot, Real De, Real lDe,
@@ -258,6 +273,15 @@ class HelmElectrons {
   DataBox ef_, efd_, eft_, efdt_;
   // number density
   DataBox xf_, xfd_, xft_, xfdt_;
+
+#define DBLIST                                                                           \
+  &rho_, &T_, &f_, &fd_, &ft_, &fdd_, &ftt_, &fdt_, &fddt_, &fdtt_, &fddtt_, &dpdf_,     \
+      &dpdfd_, &dpdft_, &dpdfdt_, &ef_, &efd_, &eft_, &efdt_, &xf_, &xfd_, &xft_, &xfdt_
+  auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
+  auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
+#undef DBLIST
+
+  DataStatus memoryStatus_ = DataStatus::Deallocated;
 
   static constexpr std::size_t NTEMP = 101;
   static constexpr std::size_t NRHO = 271;
@@ -455,6 +479,13 @@ class Helmholtz : public EosBase<Helmholtz> {
     coul_.Finalize();
     electrons_.Finalize();
   }
+  std::size_t DynamicMemorySizeInBytes() const {
+    return electrons_.DynamicMemorySizeInBytes();
+  }
+  std::size_t DumpDynamicMemory(char *dst) const {
+    return electrons_.DumpDynamicMemory(dst);
+  }
+  std::size_t SetDynamicMemory(char *src) { return electrons_.SetDynamicMemory(src); }
 
   PORTABLE_INLINE_FUNCTION
   void GetMassFractions(const Real rho, const Real temp, const Real ytot, Real &xni,
@@ -884,63 +915,15 @@ inline void HelmElectrons::InitDataFile_(const std::string &filename) {
   for (int i = 0; i < NTEMP; ++i) {
     T_(i) = math_utils::pow10(lTRange.x(i));
   }
+
+  memoryStatus_ = DataStatus::OnHost;
 }
 
 inline HelmElectrons HelmElectrons::GetOnDevice() {
-  HelmElectrons other;
-  other.rho_ = Spiner::getOnDeviceDataBox(rho_);
-  other.T_ = Spiner::getOnDeviceDataBox(T_);
-  other.f_ = Spiner::getOnDeviceDataBox(f_);
-  other.fd_ = Spiner::getOnDeviceDataBox(fd_);
-  other.ft_ = Spiner::getOnDeviceDataBox(ft_);
-  other.fdd_ = Spiner::getOnDeviceDataBox(fdd_);
-  other.ftt_ = Spiner::getOnDeviceDataBox(ftt_);
-  other.fdt_ = Spiner::getOnDeviceDataBox(fdt_);
-  other.fdd_ = Spiner::getOnDeviceDataBox(fdd_);
-  other.fddt_ = Spiner::getOnDeviceDataBox(fddt_);
-  other.fdtt_ = Spiner::getOnDeviceDataBox(fdtt_);
-  other.fddtt_ = Spiner::getOnDeviceDataBox(fddtt_);
-  other.dpdf_ = Spiner::getOnDeviceDataBox(dpdf_);
-  other.dpdfd_ = Spiner::getOnDeviceDataBox(dpdfd_);
-  other.dpdft_ = Spiner::getOnDeviceDataBox(dpdft_);
-  other.dpdfdt_ = Spiner::getOnDeviceDataBox(dpdfdt_);
-  other.ef_ = Spiner::getOnDeviceDataBox(ef_);
-  other.efd_ = Spiner::getOnDeviceDataBox(efd_);
-  other.eft_ = Spiner::getOnDeviceDataBox(eft_);
-  other.efdt_ = Spiner::getOnDeviceDataBox(efdt_);
-  other.xf_ = Spiner::getOnDeviceDataBox(xf_);
-  other.xfd_ = Spiner::getOnDeviceDataBox(xfd_);
-  other.xft_ = Spiner::getOnDeviceDataBox(xft_);
-  other.xfdt_ = Spiner::getOnDeviceDataBox(xfdt_);
-  return other;
+  return SpinerTricks::GetOnDevice(this);
 }
 
-inline void HelmElectrons::Finalize() {
-  rho_.finalize();
-  T_.finalize();
-  f_.finalize();
-  fd_.finalize();
-  ft_.finalize();
-  fdd_.finalize();
-  ftt_.finalize();
-  fdt_.finalize();
-  fdd_.finalize();
-  fddt_.finalize();
-  fdtt_.finalize();
-  fddtt_.finalize();
-  dpdf_.finalize();
-  dpdfd_.finalize();
-  dpdft_.finalize();
-  dpdfdt_.finalize();
-  ef_.finalize();
-  efd_.finalize();
-  eft_.finalize();
-  efdt_.finalize();
-  xf_.finalize();
-  xfd_.finalize();
-  xft_.finalize();
-  xfdt_.finalize();
-}
+inline void HelmElectrons::Finalize() { SpinerTricks::Finalize(this); }
 
 PORTABLE_INLINE_FUNCTION
 void HelmElectrons::GetFromDensityTemperature(Real rho, Real lT, Real Ye, Real Ytot,
