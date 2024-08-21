@@ -37,6 +37,9 @@
 
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_STELLAR_COLLAPSE
+
+#include <singularity-eos/base/spiner_table_utils.hpp>
+
 template <typename EOS_t>
 void CompareStellarCollapse(EOS_t sc, EOS_t sc2) {
   Real yemin = sc.YeMin();
@@ -294,15 +297,29 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
       }
 
       WHEN("We serialize the StellarCollapse EOS") {
+        using Tricks = singularity::table_utils::SpinerTricks<StellarCollapse>;
         auto [size, data] = sc.Serialize();
         REQUIRE(size > 0);
         THEN("We can de-serialize it into a new object") {
           StellarCollapse sc2;
           std::size_t read_size = sc2.DeSerialize(data);
           REQUIRE(read_size == size);
+          REQUIRE(size > sizeof(StellarCollapse));
           sc2.CheckParams();
+          AND_THEN("The new eos uses different memory than the original") {
+            REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc, sc2));
+          }
           AND_THEN("The two stellar collapse EOS's agree") {
             CompareStellarCollapse(sc, sc2);
+          }
+          AND_THEN("We can de-serialize into two objects") {
+            StellarCollapse sc3;
+            std::size_t read_size_2 = sc3.DeSerialize(data);
+            REQUIRE(read_size_2 == size);
+            sc3.CheckParams();
+            AND_THEN("The two de-serialized objects use the same memory") {
+              REQUIRE(Tricks::DataBoxesPointToSameMemory(sc2, sc3));
+            }
           }
         }
         free(data);
@@ -310,6 +327,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
 
       WHEN("We serialize a variant that owns a StellarCollapse EOS") {
         using EOS = singularity::Variant<StellarCollapse, IdealGas>;
+        using Tricks = singularity::table_utils::SpinerTricks<StellarCollapse>;
         EOS e1 = sc;
         auto [size, data] = e1.Serialize();
         REQUIRE(size > 0);
@@ -321,6 +339,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
           AND_THEN("The two stellar collapse EOS's agree") {
             StellarCollapse sc2 = e2.get<StellarCollapse>();
             CompareStellarCollapse(sc, sc2);
+            REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc, sc2));
           }
         }
         free(data);

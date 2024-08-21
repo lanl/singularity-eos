@@ -671,25 +671,33 @@ class EosBase {
   }
   std::size_t Serialize(char *dst) const {
     const CRTP *pcrtp = static_cast<const CRTP *>(this);
+    std::size_t offst = 0;
     memcpy(dst, pcrtp, sizeof(CRTP));
+    offst += sizeof(CRTP);
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
     if (dyn_size > 0) {
-      DumpDynamicMemory(dst + sizeof(CRTP));
+      offst += pcrtp->DumpDynamicMemory(dst + sizeof(CRTP));
     }
-    return SerializedSizeInBytes();
+    PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "Serialization succesful");
+    return offst;
   }
   auto Serialize() const {
     std::size_t size = SerializedSizeInBytes();
     char *dst = (char *)malloc(size);
-    Serialize(dst);
+    std::size_t size_new = Serialize(dst);
+    PORTABLE_REQUIRE(size_new == size, "Serialization succesful");
     return std::make_pair(size, dst);
   }
   std::size_t DeSerialize(char *src) {
-    memcpy(static_cast<CRTP *>(this), src, sizeof(CRTP));
-    if (DynamicMemorySizeInBytes() > 0) {
-      SetDynamicMemory(src + sizeof(CRTP));
+    CRTP *pcrtp = static_cast<CRTP *>(this);
+    std::size_t offst = 0;
+    memcpy(pcrtp, src, sizeof(CRTP));
+    offst += sizeof(CRTP);
+    if (pcrtp->DynamicMemorySizeInBytes() > 0) {
+      offst += pcrtp->SetDynamicMemory(src + sizeof(CRTP));
     }
-    return SerializedSizeInBytes();
+    PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "Deserialization succesful");
+    return offst;
   }
 
   // Tooling for modifiers
