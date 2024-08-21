@@ -111,22 +111,26 @@ openmpi_fortran_gcc:
   variables:
     SPACK_ENV_NAME: openmpi-fortran-gcc
 
-#test_x86_volta_gpu:
-#  needs: [download_prereq]
-#  extends: .test
-#  variables:
-#    <<: *x86volta
-#    <<: *buildtype_release
-#    <<: *gpu
-#
-#test_x86_ampere_gpu:
-#  needs: [download_prereq]
-#  extends: .test
-#  variables:
-#    <<: *a100
-#    <<: *buildtype_release
-#    <<: *gpu
-#
+openmpi_cuda_gcc_ampere:
+  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: openmpi-cuda-gcc-ampere
+    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
+
+openmpi_cuda_gcc_volta:
+  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: openmpi-cuda-gcc-volta
+    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+
+openmpi_fortran_kokkos_static_openmp_gcc:
+  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-gcc
+
 #install_gnu_skylake_fort:
 #  needs: [download_prereq]
 #  extends: .test
@@ -144,6 +148,7 @@ openmpi_fortran_gcc:
 #    <<: *fort
 #    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+python+mpi+tests+kokkos+spiner+hdf5+kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=${SINGULARITY_EOS_CXX_STANDARD} +openmp ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 #
+#
 #install_gnu_skylake_fort_kokkos_cxx17:
 #  needs: [download_prereq]
 #  extends: .test
@@ -153,15 +158,6 @@ openmpi_fortran_gcc:
 #    <<: *fort
 #    SINGULARITY_EOS_CXX_STANDARD: 17
 #    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+python+mpi+tests+kokkos+spiner+hdf5+kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=${SINGULARITY_EOS_CXX_STANDARD} +openmp ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
-#
-#install_gnu_skylake_fort_static_kokkos:
-#  needs: [download_prereq]
-#  extends: .test
-#  variables:
-#    <<: *skylake
-#    <<: *python
-#    <<: *fort
-#    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+python+mpi+tests+kokkos+spiner+hdf5+kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=${SINGULARITY_EOS_CXX_STANDARD} ~shared +openmp ^kokkos-kernels~shared ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
 #
 #install_gnu_skylake_nofort:
 #  needs: [download_prereq]
