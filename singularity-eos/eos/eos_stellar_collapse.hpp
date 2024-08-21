@@ -69,30 +69,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     enum Index { Ye = 0, lT = 1 };
   };
 
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-  using EosBase<StellarCollapse>::TemperatureFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
-  using EosBase<StellarCollapse>::PressureFromDensityTemperature;
-  using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::MinInternalEnergyFromDensity;
-  using EosBase<StellarCollapse>::EntropyFromDensityTemperature;
-  using EosBase<StellarCollapse>::EntropyFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
-  using EosBase<StellarCollapse>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::BulkModulusFromDensityTemperature;
-  using EosBase<StellarCollapse>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::GruneisenParamFromDensityTemperature;
-  using EosBase<StellarCollapse>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::FillEos;
-  using EosBase<StellarCollapse>::SerializedSizeInBytes;
-  using EosBase<StellarCollapse>::Serialize;
-  using EosBase<StellarCollapse>::DeSerialize;
-  using EosBase<StellarCollapse>::IsModified;
-  using EosBase<StellarCollapse>::UnmodifyOnce;
-  using EosBase<StellarCollapse>::GetUnmodifiedObject;
+  SG_ADD_BASE_CLASS_USINGS(StellarCollapse);
 
   inline StellarCollapse(const std::string &filename, bool use_sp5 = false,
                          bool filter_bmod = true);

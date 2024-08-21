@@ -44,32 +44,7 @@ static struct LengthTimeUnitsInit {
 template <typename T>
 class UnitSystem : public EosBase<UnitSystem<T>> {
  public:
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-
-  // TODO(JMM): The modifier EOS's should probably call the specific
-  // sub-functions of the class they modify so that they can leverage,
-  // e.g., an especially performant or special version of these
-  using EosBase<UnitSystem<T>>::TemperatureFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::InternalEnergyFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::PressureFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::PressureFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::MinInternalEnergyFromDensity;
-  using EosBase<UnitSystem<T>>::EntropyFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::EntropyFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::SpecificHeatFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::BulkModulusFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::GruneisenParamFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::FillEos;
-  using EosBase<UnitSystem<T>>::SerializedSizeInBytes;
-  using EosBase<UnitSystem<T>>::Serialize;
-  using EosBase<UnitSystem<T>>::DeSerialize;
-
+  SG_ADD_BASE_CLASS_USINGS(UnitSystem<T>);
   using BaseType = T;
 
   // give me std::format or fmt::format...
@@ -450,13 +425,8 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     printf("Units = %e %e %e %e\n", rho_unit_, sie_unit_, temp_unit_, press_unit_);
   }
 
-  inline constexpr bool IsModified() const { return true; }
-
+  static inline constexpr bool IsModified() { return true; }
   inline constexpr T UnmodifyOnce() { return t_; }
-
-  inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return t_.GetUnmodifiedObject();
-  }
 
   std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
   std::size_t DumpDynamicMemory(char *dst) const { return t_.DumpDynamicMemory(dst); }

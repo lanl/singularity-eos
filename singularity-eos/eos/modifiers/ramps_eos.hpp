@@ -452,13 +452,8 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 
-  inline constexpr bool IsModified() const { return true; }
-
+  static inline constexpr bool IsModified() { return true; }
   inline constexpr T UnmodifyOnce() { return t_; }
-
-  inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return t_.GetUnmodifiedObject();
-  }
 
   std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
   std::size_t DumpDynamicMemory(char *dst) const { return t_.DumpDynamicMemory(dst); }

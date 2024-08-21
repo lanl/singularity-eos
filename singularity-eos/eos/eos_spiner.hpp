@@ -340,26 +340,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   struct SP5Tables {
     DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
   };
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-  using EosBase<SpinerEOSDependsRhoSie>::TemperatureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::InternalEnergyFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::MinInternalEnergyFromDensity;
-  using EosBase<SpinerEOSDependsRhoSie>::EntropyFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::EntropyFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::FillEos;
-  using EosBase<SpinerEOSDependsRhoSie>::EntropyIsNotEnabled;
-
+  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie);
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
   inline SpinerEOSDependsRhoSie(const std::string &filename, int matid,
@@ -711,7 +692,6 @@ inline std::size_t SpinerEOSDependsRhoT::SetDynamicMemory(char *src) {
   memoryStatus_ = DataStatus::UnManaged;
   return offst;
 }
-
 
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
                                                    hid_t file, hid_t lTGroup,

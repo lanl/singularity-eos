@@ -61,8 +61,8 @@ char *StrCat(char *destination, const char *source) {
 } // namespace impl
 
 // This Macro adds the `using` statements that allow for the base class
-// vector functionality to overload the scalar implementations in the derived
-// classes
+// VECTOR functionality to overload the scalar implementations in the derived
+// classes. Do not add functions here that are not overloads of derived class features.
 // TODO(JMM): Should we have more macros that capture just some of these?
 #define SG_ADD_BASE_CLASS_USINGS(EOSDERIVED)                                             \
   using EosBase<EOSDERIVED>::TemperatureFromDensityInternalEnergy;                       \
@@ -76,22 +76,9 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::BulkModulusFromDensityInternalEnergy;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityTemperature;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;                    \
-  using EosBase<EOSDERIVED>::MinimumDensity;                                             \
-  using EosBase<EOSDERIVED>::MinimumTemperature;                                         \
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
-  using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
-  using EosBase<EOSDERIVED>::EntropyIsNotEnabled;                                        \
-  using EosBase<EOSDERIVED>::MinInternalEnergyIsNotEnabled;                              \
-  using EosBase<EOSDERIVED>::DynamicMemorySizeInBytes;                                   \
-  using EosBase<EOSDERIVED>::DumpDynamicMemory;                                          \
-  using EosBase<EOSDERIVED>::SetDynamicMemory;                                           \
-  using EosBase<EOSDERIVED>::SerializedSizeInBytes;                                      \
-  using EosBase<EOSDERIVED>::Serialize;                                                  \
-  using EosBase<EOSDERIVED>::DeSerialize;                                                \
-  using EosBase<EOSDERIVED>::IsModified;                                                 \
-  using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
-  using EosBase<EOSDERIVED>::GetUnmodifiedObject;
+  using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;
 
 class Factor {
   Real value_ = 1.0;
@@ -706,12 +693,16 @@ class EosBase {
   }
 
   // Tooling for modifiers
-  inline constexpr bool IsModified() const { return false; }
+  static inline constexpr bool IsModified() { return false; }
 
   inline constexpr decltype(auto) UnmodifyOnce() { return *static_cast<CRTP *>(this); }
 
   inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return *static_cast<CRTP *>(this);
+    if constexpr (CRTP::IsModified()) {
+      return static_cast<CRTP *>(this)->UnmodifyOnce().GetUnmodifiedObject();
+    } else {
+      return *static_cast<CRTP *>(this);
+    }
   }
 };
 } // namespace eos_base
