@@ -310,7 +310,10 @@ class PTESolverBase {
 
     // intialize rhobar array and final density
     InitRhoBarandRho();
-    uscale = rho_total * abs(sie_total);
+    const Real utotal = rho_total * sie_total;
+    uscale = std::abs(utotal);
+    // TODO(): Consider edge case when utotal \simeq 0
+    utotal_scale = robust::ratio(utotal, uscale);
 
     // guess some non-zero temperature to start
     const Real Tguess = GetTguess();
@@ -452,7 +455,7 @@ class PTESolverBase {
   const RealIndexer &press;
   Real *jacobian, *dx, *sol_scratch, *residual, *u, *rhobar;
   CacheAccessor Cache;
-  Real rho_total, uscale, Tnorm;
+  Real rho_total, uscale, utotal_scale, Tnorm;
 };
 
 } // namespace mix_impl
@@ -539,6 +542,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::press;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho_total;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::uscale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::utotal_scale;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::MatIndex;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::TryIdealPTE;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::jacobian;
@@ -590,8 +594,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       esum += u[m];
     }
     residual[0] = vfrac_total - vsum;
-    // the 1 here is the scaled total internal energy density
-    residual[1] = 1.0 - esum;
+    residual[1] = utotal_scale - esum;
     for (int m = 0; m < nmat - 1; ++m) {
       residual[2 + m] = press[m + 1] - press[m];
     }
@@ -831,7 +834,6 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     for (int m = 0; m < nmat; ++m) {
       vsum += vfrac[m];
     }
-    // the 1 here is the scaled volume fraction
     residual[0] = vfrac_total - vsum;
     for (int m = 0; m < nmat - 1; ++m) {
       residual[1 + m] = press[m] - press[m + 1];
@@ -1207,6 +1209,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::press;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho_total;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::uscale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::utotal_scale;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::TryIdealPTE;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::MatIndex;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::jacobian;
@@ -1257,8 +1260,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       esum += u[m];
     }
     residual[0] = vfrac_total - vsum;
-    // the 1 here is the scaled total internal energy density
-    residual[1] = 1.0 - esum;
+    residual[1] = utotal_scale - esum;
     for (int m = 0; m < nmat - 1; ++m) {
       residual[2 + m] = press[m + 1] - press[m];
     }

@@ -3,6 +3,25 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Piecewise grids for Spiner EOS.
+
+### Fixed (Repair bugs, etc)
+- [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Includes a fix for extrapolation of specific internal energy in SpinerEOS.
+- [[PR401]](https://github.com/lanl/singularity-eos/pull/401) Fix for internal energy scaling in PTE closure
+- [[PR403]](https://github.com/lanl/singularity-eos/pull/403) Fix Gruneisen EOS DensityEnergyFromPressureTemperature function
+
+### Changed (changing behavior/API/variables/...)
+- [[PR407]](https://github.com/lanl/singularity-eos/pull/407) Update C++ standard to C++17
+
+### Infrastructure (changes irrelevant to downstream codes)
+- [[PR402]](https://github.com/lanl/singularity-eos/pull/402) Added stiff gas to python interface
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.9.0
+Date: 7/29/2024
+
+### Added (new features/APIs/variables/...)
 - [[PR377]](https://github.com/lanl/singularity-eos/pull/377) Moved much of the variant creating machinery and initialization machinery into separate header files. This is useful for downstream codes that use custom variants and helps with producing plugins.
 - [[PR292]](https://github.com/lanl/singularity-eos/pull/292) Added Carnahan-Starling EoS
 - [[PR#362]](https://github.com/lanl/singularity-eos/pull/362) Add lambda to thermalqs
@@ -31,7 +50,7 @@
 ### Changed (changing behavior/API/variables/...)
 - [[PR363]](https://github.com/lanl/singularity-eos/pull/363) Template lambda values for scalar calls
 - [[PR372]](https://github.com/lanl/singularity-eos/pull/372) Removed E0 from Davis Products EOS in favor of using the shifted EOS modifier. CHANGES API!
-- [[PR#382]](https://github.com/lanl/singularity-eos/pull/382) Changed `get_sg_eos()` API to allow optionally specifying the mass fraction cutoff for materials to participate in the PTE solver 
+- [[PR#382]](https://github.com/lanl/singularity-eos/pull/382) Changed `get_sg_eos()` API to allow optionally specifying the mass fraction cutoff for materials to participate in the PTE solver
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR329]](https://github.com/lanl/singularity-eos/pull/329) Move vinet tests into analytic test suite

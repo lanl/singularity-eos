@@ -24,7 +24,7 @@ endif()
 # declare the project name
 project(
   singularity-eos
-  VERSION 1.8.0
+  VERSION 1.9.0
   LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -172,7 +172,7 @@ endif()
 if(CMAKE_CXX_STANDARD)
   target_compile_features(singularity-eos_Interface INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 else()
-  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_14)
+  target_compile_features(singularity-eos_Interface INTERFACE cxx_std_17)
 endif()
 
 # checks if this is our build, or we've been imported via `add_subdirectory` NB:

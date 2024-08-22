@@ -34,6 +34,7 @@ add_executable(
   test_eos_vector.cpp
   test_math_utils.cpp
   test_variadic_utils.cpp
+  test_bounds.cpp
   )
 
 add_executable(
