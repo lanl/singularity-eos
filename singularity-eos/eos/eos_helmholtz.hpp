@@ -491,7 +491,9 @@ class Helmholtz : public EosBase<Helmholtz> {
   std::size_t DumpDynamicMemory(char *dst) const {
     return electrons_.DumpDynamicMemory(dst);
   }
-  std::size_t SetDynamicMemory(char *src) { return electrons_.SetDynamicMemory(src); }
+  std::size_t SetDynamicMemory(char *src, bool node_root = true) {
+    return electrons_.SetDynamicMemory(src);
+  }
 
   PORTABLE_INLINE_FUNCTION
   void GetMassFractions(const Real rho, const Real temp, const Real ytot, Real &xni,

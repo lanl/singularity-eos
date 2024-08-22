@@ -141,9 +141,14 @@ class EOSPAC : public EosBase<EOSPAC> {
                 eospacSplit apply_splitting = eospacSplit::none,
                 bool linear_interp = false);
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
-    // TODO(JMM): STUB
+    // TODO(JMM): I really don't know what to put here...
   }
   inline EOSPAC GetOnDevice() { return *this; }
+
+  std::size_t DynamicMemorySizeInBytes() const;
+  std::size_t DumpDynamicMemory(char *dst) const;
+  std::size_t SetDynamicMemory(char *src, bool node_root = true);
+
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -1122,7 +1127,6 @@ class EOSPAC : public EosBase<EOSPAC> {
   EOS_INTEGER PofRE_table_;
   EOS_INTEGER EcofD_table_;
   EOS_INTEGER tablehandle[NT];
-  EOS_INTEGER EOS_Info_table_;
   static constexpr Real temp_ref_ = 293;
   Real rho_ref_ = 1;
   Real sie_ref_ = 1;
@@ -1133,6 +1137,9 @@ class EOSPAC : public EosBase<EOSPAC> {
   Real dvdt_ref_ = 1;
   Real rho_min_ = 0;
   Real temp_min_ = 0;
+  // TODO(JMM): Is the fact that EOS_INTEGER isn't a size_t a
+  // problem? Could it ever realistically overflow?
+  EOS_INTEGER shared_size_, packed_size_;
 
   static inline std::map<std::string, unsigned int> &scratch_nbuffers() {
     static std::map<std::string, unsigned int> nbuffers = {
@@ -1169,7 +1176,7 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
       NT, matid, tableType, tablehandle,
       std::vector<std::string>({"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT",
                                 "EOS_T_DPt", "EOS_Pt_DUt", "EOS_Uc_D"}),
-      Verbosity::Quiet, invert_at_setup = invert_at_setup, insert_data = insert_data,
+      Verbosity::Debug, invert_at_setup = invert_at_setup, insert_data = insert_data,
       monotonicity = monotonicity, apply_smoothing = apply_smoothing,
       apply_splitting = apply_splitting, linear_interp = linear_interp);
   PofRT_table_ = tablehandle[0];
@@ -1180,9 +1187,23 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
   PofRE_table_ = tablehandle[5];
   EcofD_table_ = tablehandle[6];
 
+  // Shared memory info
+  {
+    EOS_INTEGER NTABLES[] = {NT};
+    EOS_INTEGER error_code = EOS_OK;
+#ifdef SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
+    eos_GetSharedPackedTablesSize(NTABLES, tablehandle, &packed_size_, &shared_size_,
+                                  &error_code);
+#else
+    eos_GetPackedTablesSize(NTABLES, tablehandle, &packed_size_, &error_code);
+    shared_size_ = 0;
+#endif // SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
+    eosCheckError(error_code, "Get shared memory info", Verbosity::Debug);
+  }
+
   // Set reference states and table bounds
   SesameMetadata m;
-  eosGetMetadata(matid, m, Verbosity::Quiet);
+  eosGetMetadata(matid, m, Verbosity::Debug);
   rho_ref_ = m.normalDensity;
   rho_min_ = m.rhoMin;
   temp_min_ = m.TMin;
@@ -1209,6 +1230,50 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
   dpde_ref_ = pressureFromSesame(sieToSesame(DPDE));
   dvdt_ref_ =
       robust::ratio(dpde_ref_ * cv_ref_, rho_ref_ * rho_ref_ * pressureFromSesame(DPDR));
+}
+
+std::size_t EOSPAC::DynamicMemorySizeInBytes() const {
+  // JMM: We need both of these because EOSPAC allows the size in
+  // shared memory to differ from the size required to reconstruct
+  // an object. This is generically true for spiner too, but we just
+  // deliberately waste a little space.
+  return std::max(shared_size_, packed_size_);
+}
+
+std::size_t EOSPAC::DumpDynamicMemory(char *dst) const {
+  static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
+  EOS_INTEGER NTABLES[] = {NT};
+  EOS_INTEGER error_code = EOS_OK;
+  // TODO(JMM): Is casting to EOS_CHAR* safe here? I really hope so.
+  eos_GetPackedTables(NTABLES, tablehandle, (EOS_CHAR *)dst, &error_code);
+  eosCheckError(error_code, "eos_GetPackedTables", Verbosity::Debug);
+  return DynamicMemorySizeInBytes();
+}
+
+std::size_t EOSPAC::SetDynamicMemory(char *src, bool node_root) {
+  static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
+  EOS_INTEGER NTABLES[] = {NT};
+  EOS_INTEGER error_code = EOS_OK;
+#ifdef SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
+  // Because EOSPAC uses BOTH packed and shared pointers, reads from
+  // one, and writes to the other, we need to do an additional
+  // internal memcopy
+  std::vector<EOS_CHAR *> packed_data(packed_size);
+  memcpy(packed_data.data(), src, packed_size);
+  // JMM: EOS_BOOLEAN is an enum with EOS_FALSE=0 and EOS_TRUE=1.
+  eos_SetSharedPackedTables(NTABLES, &packed_size, packed_data.data(), (EOS_CHAR *)src,
+                            node_root, tablehandle, &error_code);
+#else
+  eos_SetPackedTables(NTABLES, &packed_size, (EOS_CHAR *)src, tablehandle, &error_code);
+#endif // SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
+  eosCheckError(error_code, "eos_SetSharedPackedTables", Verbosity::Debug);
+  PofRT_table_ = tablehandle[0]; // these get re-set
+  TofRE_table_ = tablehandle[1];
+  EofRT_table_ = tablehandle[2];
+  RofPT_table_ = tablehandle[3];
+  TofRP_table_ = tablehandle[4];
+  PofRE_table_ = tablehandle[5];
+  EcofD_table_ = tablehandle[6];
 }
 
 SG_PIF_NOWARN

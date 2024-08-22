@@ -1030,8 +1030,10 @@ class Variant {
     return mpark::visit([dst](const auto &eos) { return eos.DumpDynamicMemory(dst); },
                         eos_);
   }
-  std::size_t SetDynamicMemory(char *src) {
-    return mpark::visit([src](auto &eos) { return eos.SetDynamicMemory(src); }, eos_);
+  std::size_t SetDynamicMemory(char *src, bool node_root = true) {
+    return mpark::visit(
+        [src, node_root](auto &eos) { return eos.SetDynamicMemory(src, node_root); },
+        eos_);
   }
   std::size_t SerializedSizeInBytes() const {
     return sizeof(*this) + DynamicMemorySizeInBytes();
@@ -1050,11 +1052,11 @@ class Variant {
     Serialize(dst);
     return std::make_pair(size, dst);
   }
-  std::size_t DeSerialize(char *src) {
+  std::size_t DeSerialize(char *src, bool node_root = true) {
     memcpy(this, src, sizeof(*this));
     std::size_t offst = sizeof(*this);
     if (DynamicMemorySizeInBytes() > 0) {
-      offst += SetDynamicMemory(src + sizeof(*this));
+      offst += SetDynamicMemory(src + sizeof(*this), node_root);
     }
     return offst;
   }

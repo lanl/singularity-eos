@@ -430,7 +430,9 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
 
   std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
   std::size_t DumpDynamicMemory(char *dst) const { return t_.DumpDynamicMemory(dst); }
-  std::size_t SetDynamicMemory(char *src) { return t_.SetDynamicMemory(src); }
+  std::size_t SetDynamicMemory(char *src, bool node_root = true) {
+    return t_.SetDynamicMemory(src, node_root);
+  }
 
  private:
   T t_;

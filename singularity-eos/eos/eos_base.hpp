@@ -654,7 +654,7 @@ class EosBase {
   // JMM: These must be special-cased.
   std::size_t DynamicMemorySizeInBytes() const { return 0; }
   std::size_t DumpDynamicMemory(char *dst) const { return 0; }
-  std::size_t SetDynamicMemory(char *src) { return 0; }
+  std::size_t SetDynamicMemory(char *src, bool node_root = true) { return 0; }
   // JMM: These are generic and do not need to be special-cased.
   // TODO(JMM): Should this machinery actually be available for "bare"
   // EOS's outside the variant?
@@ -688,13 +688,13 @@ class EosBase {
     PORTABLE_REQUIRE(size_new == size, "Serialization succesful");
     return std::make_pair(size, dst);
   }
-  std::size_t DeSerialize(char *src) {
+  std::size_t DeSerialize(char *src, bool node_root = true) {
     CRTP *pcrtp = static_cast<CRTP *>(this);
     std::size_t offst = 0;
     memcpy(pcrtp, src, sizeof(CRTP));
     offst += sizeof(CRTP);
     if (pcrtp->DynamicMemorySizeInBytes() > 0) {
-      offst += pcrtp->SetDynamicMemory(src + sizeof(CRTP));
+      offst += pcrtp->SetDynamicMemory(src + sizeof(CRTP), node_root);
     }
     PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "Deserialization succesful");
     return offst;

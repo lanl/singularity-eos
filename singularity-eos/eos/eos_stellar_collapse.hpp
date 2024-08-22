@@ -228,7 +228,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 
   std::size_t DynamicMemorySizeInBytes() const;
   std::size_t DumpDynamicMemory(char *dst) const;
-  std::size_t SetDynamicMemory(char *src);
+  std::size_t SetDynamicMemory(char *src, bool node_root = true);
 
  private:
   class LogT {
@@ -484,7 +484,7 @@ inline std::size_t StellarCollapse::DumpDynamicMemory(char *dst) const {
   return table_utils::SpinerTricks<StellarCollapse>::DumpDynamicMemory(dst, this);
 }
 
-inline std::size_t StellarCollapse::SetDynamicMemory(char *src) {
+inline std::size_t StellarCollapse::SetDynamicMemory(char *src, bool node_root) {
   return table_utils::SpinerTricks<StellarCollapse>::SetDynamicMemory(src, this);
 }
 
