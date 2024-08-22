@@ -27,10 +27,12 @@
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/closure/kinetic_phasetransition_methods.hpp>
 #include <singularity-eos/closure/kinetic_phasetransition_models.hpp>
+#include <singularity-eos/closure/kinetic_phasetransition_utils.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::LogMaxTimeStep;
 using singularity::LogRatesCGModel;
+using singularity::SmallStepMFUpdate;
 using singularity::SortGibbs;
 
 SCENARIO("First log rate test") {
@@ -50,9 +52,12 @@ SCENARIO("First log rate test") {
       constexpr int mnum = num * (num - 1) / 2;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create Kokkos views on device for the input arrays
+      // Create host-side mirrors of the inputs
       Kokkos::View<Real[num]> v_gibbs("gibbs");
+      auto gibbs = Kokkos::create_mirror_view(v_gibbs);
       // order phases from high to low gibbs
       Kokkos::View<int[num]> v_order("order");
+      auto order = Kokkos::create_mirror_view(v_order);
 #else
       // Otherwise just create arrays to contain values and create pointers to
       // be passed to the functions in place of the Kokkos views
@@ -72,12 +77,8 @@ SCENARIO("First log rate test") {
             v_gibbs[4] = 0.02940076;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-      // Create host-side mirrors of the inputs and copy the inputs. These are
-      // just used for the comparisons
-      auto gibbs = Kokkos::create_mirror_view(v_gibbs);
-      auto order = Kokkos::create_mirror_view(v_order);
+      // copy the inputs
       Kokkos::deep_copy(gibbs, v_gibbs);
-      Kokkos::deep_copy(order, v_order);
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       // Gold standard values for a subset of lookups
@@ -103,6 +104,7 @@ SCENARIO("First log rate test") {
         Kokkos::fence();
         Kokkos::deep_copy(order, v_order);
 #endif // PORTABILITY_STRATEGY_KOKKOS
+
         THEN("The returned order should be equal to the true order") {
           array_compare(num, gibbs, phaseorder, order, order_true, "Gibbs", "phase");
         }
@@ -110,7 +112,9 @@ SCENARIO("First log rate test") {
       // create deltagibbs and fromphasetophase
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::View<Real[mnum]> v_dgibbs("dgibbs");
+      auto dgibbs = Kokkos::create_mirror_view(v_dgibbs);
       Kokkos::View<int[mnum]> v_fromto("fromto");
+      auto fromto = Kokkos::create_mirror_view(v_fromto);
 #else
       std::array<Real, mnum> dgibbs;
       std::array<int, mnum> fromto;
@@ -125,10 +129,7 @@ SCENARIO("First log rate test") {
         }
       }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-      auto dgibbs = Kokkos::create_mirror_view(v_dgibbs);
-      auto fromto = Kokkos::create_mirror_view(v_fromto);
       Kokkos::deep_copy(dgibbs, v_dgibbs);
-      Kokkos::deep_copy(fromto, v_fromto);
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -153,8 +154,10 @@ SCENARIO("First log rate test") {
         }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::fence();
+        Kokkos::deep_copy(fromto, v_fromto);
         Kokkos::deep_copy(h_logrates, v_logrates);
 #endif // PORTABILITY_STRATEGY_KOKKOS
+
         THEN("The returned LogRij(w,b,gibbs,order) should be equal to the true value") {
           array_compare(mnum, dgibbs, fromto, h_logrates, logrates_true, "DeltaGibbs",
                         "FromTo");
@@ -165,7 +168,9 @@ SCENARIO("First log rate test") {
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create Kokkos views on device for the input arrays
+      // Create host-side mirrors of the inputs
       Kokkos::View<Real[num]> v_massfractions("massfractions");
+      auto massfractions = Kokkos::create_mirror_view(v_massfractions);
 #else
       // Otherwise just create arrays to contain values and create pointers to
       // be passed to the functions in place of the Kokkos views
@@ -183,14 +188,14 @@ SCENARIO("First log rate test") {
             v_massfractions[4] = 0.0;
           });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-      // Create host-side mirrors of the inputs and copy the inputs. These are
-      // just used for the comparisons
-      auto massfractions = Kokkos::create_mirror_view(v_massfractions);
+      // copy the inputs
       Kokkos::deep_copy(massfractions, v_massfractions);
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
+      Real logmts;
+
       WHEN("A LogMaxTimeStep(num,order,logrates) lookup is performed") {
-        Real logmts = LogMaxTimeStep(num, v_massfractions, v_order, v_logrates);
+        logmts = LogMaxTimeStep(num, v_massfractions, v_order, v_logrates);
         for (int l = 0; l < num; l++) {
           std::cout << "Phase: " << l
                     << "  initial mass fractions: " << v_massfractions[l] << std::endl;
@@ -202,12 +207,67 @@ SCENARIO("First log rate test") {
                     << "   Max mass fraction transfer: "
                     << std::exp(logmts + v_logrates[l]) << std::endl;
         }
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-        Kokkos::fence();
-        Kokkos::deep_copy(h_logrates, v_logrates);
-#endif // PORTABILITY_STRATEGY_KOKKOS
+
         THEN("The returned Log(MaxTimeStep) should be equal to the true value") {
           CHECK(isClose(logmts, logmts_true));
+        }
+      }
+
+      // reset the input massfractions arrays
+      portableFor(
+          "Initialize mass fractions", 0, 1, PORTABLE_LAMBDA(int i) {
+            v_massfractions[0] = 0.2;
+            v_massfractions[1] = 0.0;
+            v_massfractions[2] = 0.1;
+            v_massfractions[3] = 0.3;
+            v_massfractions[4] = 0.4;
+          });
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create Kokkos views on device for the input arrays
+      // Create host-side mirrors
+      Kokkos::View<Real[num]> v_newmfs("newmassfractions");
+      auto newmassfractions = Kokkos::create_mirror_view(v_newmfs);
+      Kokkos::View<Real[mnum]> v_deltamfs("massfractiontransfers");
+      auto h_deltamfs = Kokkos::create_mirror_view(v_deltamfs);
+#else
+      // Otherwise just create arrays to contain values and create pointers to
+      // be passed to the functions in place of the Kokkos views
+      std::array<Real, num> newmassfractions;
+      auto v_newmfs = newmassfractions.data();
+      std::array<Real, mnum> h_deltamfs;
+      auto v_deltamfs = h_deltamfs.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      constexpr std::array<Real, num> newmassfractions_true{0., 0.800012617417208613,
+                                                            0.1999873825827914, 0., 0.};
+      constexpr std::array<Real, mnum> deltamfs_true{
+          0.3, 0., 0., 0., 0.4, 0., 0., 0., 0.2, 0.100012617417208613};
+
+      WHEN("A massfraction update with SmallStepMFUpdate is performed") {
+        SmallStepMFUpdate(logmts_true, num, v_massfractions, v_order, v_logrates,
+                          v_deltamfs, v_newmfs);
+        for (int l = 0; l < num; l++) {
+          std::cout << "Phase: " << v_order[l]
+                    << "  initial mass fractions: " << v_massfractions[v_order[l]]
+                    << std::endl;
+          std::cout << "         "
+                    << "   final mass fractions: " << v_newmfs[v_order[l]] << std::endl;
+        }
+        for (int l = 0; l < mnum; l++) {
+          std::cout << "From phase i to phase k, ik ( x means 0x): " << v_fromto[l]
+                    << "   Mass fraction transfer: " << v_deltamfs[l] << std::endl;
+        }
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+        Kokkos::fence();
+        Kokkos::deep_copy(newmassfractions, v_newmfs);
+        Kokkos::deep_copy(h_deltamfs, v_deltamfs);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+        THEN("The new mass fractions should be equal to the true values") {
+          array_compare(num, phaseorder, massfractions, newmassfractions,
+                        newmassfractions_true, "Phase", "old massfractions");
+          array_compare(mnum, dgibbs, fromto, h_deltamfs, deltamfs_true, "DeltaGibbs",
+                        "FromTo");
         }
       }
     }

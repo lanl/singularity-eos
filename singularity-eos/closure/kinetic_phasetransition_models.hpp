@@ -57,6 +57,10 @@ PORTABLE_INLINE_FUNCTION void LogRatesCGModel(const Real *w, const Real *b,
       jk++;
     }
   }
+  // logRjk[jk], with jk = (j+1)(num_phases-1) - (j-1)j/2 - k, contains rate for phase j+1
+  // to k+1 where j=0 is highest gibbs free energy state, and j=num_phases-1 is lowest
+  // gibbs free energy state. jk=0 is rate from highest (j=0) to lowest (k=num_phases-1)
+  // gibbs energy states.
   return;
 }
 

@@ -63,6 +63,7 @@ register_headers(
     eos/variant_utils.hpp
     eos/eos_carnahan_starling.hpp
     closure/kinetic_phasetransition_models.hpp
+    closure/kinetic_phasetransition_utils.hpp
     closure/kinetic_phasetransition_methods.hpp
 )
 
