@@ -357,8 +357,9 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
 
   std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
   std::size_t DumpDynamicMemory(char *dst) const { return t_.DumpDynamicMemory(dst); }
-  std::size_t SetDynamicMemory(char *src, bool node_root = true) {
-    return t_.SetDynamicMemory(src, node_root);
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
+    return t_.SetDynamicMemory(src, stngs);
   }
 
  private:

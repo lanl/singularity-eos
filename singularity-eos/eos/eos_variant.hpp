@@ -18,6 +18,7 @@
 #include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -1030,10 +1031,10 @@ class Variant {
     return mpark::visit([dst](const auto &eos) { return eos.DumpDynamicMemory(dst); },
                         eos_);
   }
-  std::size_t SetDynamicMemory(char *src, bool node_root = true) {
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     return mpark::visit(
-        [src, node_root](auto &eos) { return eos.SetDynamicMemory(src, node_root); },
-        eos_);
+        [src, stngs](auto &eos) { return eos.SetDynamicMemory(src, stngs); }, eos_);
   }
   std::size_t SerializedSizeInBytes() const {
     return sizeof(*this) + DynamicMemorySizeInBytes();
@@ -1052,11 +1053,16 @@ class Variant {
     Serialize(dst);
     return std::make_pair(size, dst);
   }
-  std::size_t DeSerialize(char *src, bool node_root = true) {
+  std::size_t DeSerialize(char *src,
+                          const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     memcpy(this, src, sizeof(*this));
     std::size_t offst = sizeof(*this);
-    if (DynamicMemorySizeInBytes() > 0) {
-      offst += SetDynamicMemory(src + sizeof(*this), node_root);
+    std::size_t dyn_size = DynamicMemorySizeInBytes();
+    if (dyn_size > 0) {
+      if (stngs.CopyNeeded()) {
+        memcpy(stngs.data, src + offst, dyn_size);
+      }
+      offst += SetDynamicMemory(src + offst, stngs);
     }
     return offst;
   }

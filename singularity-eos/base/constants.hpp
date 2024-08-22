@@ -37,6 +37,16 @@ enum class TableStatus { OnTable = 0, OffBottom = 1, OffTop = 2 };
 constexpr Real ROOM_TEMPERATURE = 293; // K
 constexpr Real ATMOSPHERIC_PRESSURE = 1e6;
 
+struct SharedMemSettings {
+  SharedMemSettings() = default;
+  SharedMemSettings(char *data_, bool is_root_node_)
+      : data(data_), is_root_node(is_root_node_) {}
+  bool CopyNeeded() const { return (data != nullptr) && is_root_node; }
+  char *data = nullptr;
+  bool is_root_node = false; // default true or false?
+};
+const SharedMemSettings DEFAULT_SHMEM_STNGS = SharedMemSettings();
+
 } // namespace singularity
 
 #endif // SINGULARITY_EOS_BASE_CONSTANTS_HPP_

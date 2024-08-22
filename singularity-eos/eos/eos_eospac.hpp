@@ -147,7 +147,8 @@ class EOSPAC : public EosBase<EOSPAC> {
 
   std::size_t DynamicMemorySizeInBytes() const;
   std::size_t DumpDynamicMemory(char *dst) const;
-  std::size_t SetDynamicMemory(char *src, bool node_root = true);
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
 
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
@@ -1233,6 +1234,7 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
 }
 
 std::size_t EOSPAC::DynamicMemorySizeInBytes() const {
+  printf("Shared size, packed size = %ld, %ld\n", shared_size_, packed_size_); // DEBUG
   // JMM: We need both of these because EOSPAC allows the size in
   // shared memory to differ from the size required to reconstruct
   // an object. This is generically true for spiner too, but we just
@@ -1250,19 +1252,18 @@ std::size_t EOSPAC::DumpDynamicMemory(char *dst) const {
   return DynamicMemorySizeInBytes();
 }
 
-std::size_t EOSPAC::SetDynamicMemory(char *src, bool node_root) {
+std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
   EOS_INTEGER NTABLES[] = {NT};
   EOS_INTEGER error_code = EOS_OK;
 #ifdef SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
-  // Because EOSPAC uses BOTH packed and shared pointers, reads from
-  // one, and writes to the other, we need to do an additional
-  // internal memcopy
-  std::vector<EOS_CHAR *> packed_data(packed_size);
-  memcpy(packed_data.data(), src, packed_size);
+  PORTABLE_ALWAYS_REQUIRE(
+      stngs.data != nullptr,
+      "EOSPAC with shared memory active requires a shared memory pointer");
   // JMM: EOS_BOOLEAN is an enum with EOS_FALSE=0 and EOS_TRUE=1.
-  eos_SetSharedPackedTables(NTABLES, &packed_size, packed_data.data(), (EOS_CHAR *)src,
-                            node_root, tablehandle, &error_code);
+  eos_SetSharedPackedTables(NTABLES, &packed_size, (EOS_CHAR *)src,
+                            (EOS_CHAR *)stngs.data, stngs.is_node_root, tablehandle,
+                            &error_code);
 #else
   eos_SetPackedTables(NTABLES, &packed_size, (EOS_CHAR *)src, tablehandle, &error_code);
 #endif // SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY

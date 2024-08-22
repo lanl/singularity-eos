@@ -106,7 +106,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   std::size_t DynamicMemorySizeInBytes() const;
   std::size_t DumpDynamicMemory(char *dst) const;
-  std::size_t SetDynamicMemory(char *src, bool node_root = true);
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -377,7 +378,8 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
   std::size_t DynamicMemorySizeInBytes() const;
   std::size_t DumpDynamicMemory(char *dst) const;
-  std::size_t SetDynamicMemory(char *src, bool node_root = true);
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -682,8 +684,9 @@ inline std::size_t SpinerEOSDependsRhoT::DumpDynamicMemory(char *dst) const {
   return SpinerTricks::DumpDynamicMemory(dst, this);
 }
 
-inline std::size_t SpinerEOSDependsRhoT::SetDynamicMemory(char *src, bool node_root) {
-  return SpinerTricks::SetDynamicMemory(src, this);
+inline std::size_t
+SpinerEOSDependsRhoT::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
+  return SpinerTricks::SetDynamicMemory((stngs.data == nullptr) ? src : stngs.data, this);
 }
 
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
@@ -1673,7 +1676,9 @@ inline std::size_t SpinerEOSDependsRhoSie::DumpDynamicMemory(char *dst) const {
   return offst;
 }
 
-inline std::size_t SpinerEOSDependsRhoSie::SetDynamicMemory(char *src, bool node_root) {
+inline std::size_t
+SpinerEOSDependsRhoSie::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
+  if (stngs.data != nullptr) src = stngs.data;
   std::size_t offst = 0;
   // sie, T
   offst += sie_.setPointer(src + offst);

@@ -233,8 +233,10 @@ class HelmElectrons {
   std::size_t DumpDynamicMemory(char *dst) const {
     return SpinerTricks::DumpDynamicMemory(dst, this);
   }
-  std::size_t SetDynamicMemory(char *src) {
-    return SpinerTricks::SetDynamicMemory(src, this);
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
+    return SpinerTricks::SetDynamicMemory((stngs.data == nullptr) ? src : stngs.data,
+                                          this);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -491,7 +493,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   std::size_t DumpDynamicMemory(char *dst) const {
     return electrons_.DumpDynamicMemory(dst);
   }
-  std::size_t SetDynamicMemory(char *src, bool node_root = true) {
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     return electrons_.SetDynamicMemory(src);
   }
 
