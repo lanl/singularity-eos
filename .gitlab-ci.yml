@@ -125,47 +125,24 @@ openmpi_cuda_gcc_volta:
     SPACK_ENV_NAME: openmpi-cuda-gcc-volta
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
 
+openmpi_fortran_kokkos_openmp_gcc:
+  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: openmpi-fortran-kokkos-openmp-gcc
+
 openmpi_fortran_kokkos_static_openmp_gcc:
   extends: [.ascgit_job, .darwin_job, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-gcc
 
-#install_gnu_skylake_fort:
-#  needs: [download_prereq]
-#  extends: .test
-#  variables:
-#    <<: *skylake
-#    <<: *python
-#    <<: *fort
-#
-#install_gnu_skylake_fort_kokkos:
-#  needs: [download_prereq]
-#  extends: .test
-#  variables:
-#    <<: *skylake
-#    <<: *python
-#    <<: *fort
-#    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+python+mpi+tests+kokkos+spiner+hdf5+kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=${SINGULARITY_EOS_CXX_STANDARD} +openmp ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
-#
-#
-#install_gnu_skylake_fort_kokkos_cxx17:
-#  needs: [download_prereq]
-#  extends: .test
-#  variables:
-#    <<: *skylake
-#    <<: *python
-#    <<: *fort
-#    SINGULARITY_EOS_CXX_STANDARD: 17
-#    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+python+mpi+tests+kokkos+spiner+hdf5+kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=${SINGULARITY_EOS_CXX_STANDARD} +openmp ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
-#
-#install_gnu_skylake_nofort:
-#  needs: [download_prereq]
-#  extends: .test
-#  variables:
-#    <<: *skylake
-#    <<: *python
-#    <<: *nofort
+openmpi_rocm_gcc:
+  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: openmpi-rocm-gcc
+    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-amd-mi250"
 
 #test_gnu_rocinante:
 #  needs: [download_prereq]
