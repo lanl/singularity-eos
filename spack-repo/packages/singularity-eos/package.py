@@ -253,7 +253,9 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
                     variant_path = join_path(*parts)
                 args.append(self.define("SINGULARITY_VARIANT", variant_path))
 
-        #TODO: do we need this?
+        if "+rocm" in self.spec:
+            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
+            args.append(self.define("CMAKE_C_COMPILER", self.spec["hip"].hipcc))
         if "+kokkos+cuda" in self.spec:
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
 
