@@ -659,6 +659,7 @@ class EosBase {
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     return 0;
   }
+  constexpr bool StaticMemoryIsThis() const { return true; }
   // JMM: These are generic and do not need to be special-cased.
   // TODO(JMM): Should this machinery actually be available for "bare"
   // EOS's outside the variant?
@@ -682,7 +683,7 @@ class EosBase {
     if (dyn_size > 0) {
       offst += pcrtp->DumpDynamicMemory(dst + sizeof(CRTP));
     }
-    PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "Serialization succesful");
+    PORTABLE_REQUIRE((offst == SerializedSizeInBytes()), "Serialization succesful");
     return offst;
   }
   auto Serialize() const {
@@ -700,7 +701,8 @@ class EosBase {
     offst += sizeof(CRTP);
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
     if (dyn_size > 0) {
-      if (stngs.CopyNeeded()) {
+      const bool sizes_same = pcrtp->StaticMemoryIsThis();
+      if (stngs.CopyNeeded() && sizes_same) {
         memcpy(stngs.data, src + offst, dyn_size);
       }
       offst += pcrtp->SetDynamicMemory(src + offst, stngs);

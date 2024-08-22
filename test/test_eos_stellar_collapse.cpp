@@ -321,6 +321,43 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
               REQUIRE(Tricks::DataBoxesPointToSameMemory(sc2, sc3));
             }
           }
+          THEN("We can de-serialize it into a new object AROUND a new allocation") {
+            using singularity::SharedMemSettings;
+            // mockup of shared data
+            char *shared_data = (char *)malloc(size);
+            SharedMemSettings settings(shared_data, true);
+            StellarCollapse sc3;
+            std::size_t read_size = sc3.DeSerialize(data, settings);
+            REQUIRE(read_size == size);
+            REQUIRE(read_size > sizeof(StellarCollapse));
+            sc3.CheckParams();
+            AND_THEN("The new eos uses different memory than the original") {
+              REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc, sc3));
+            }
+            AND_THEN(
+                "The new eos uses different memory than the one de-serialized aorund "
+                "the non-shared memory") {
+              REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc2, sc3));
+            }
+            AND_THEN("The two stellar collapse EOS's agree") {
+              CompareStellarCollapse(sc, sc3);
+            }
+            AND_THEN("We can de-serialize from shared memory around one more object") {
+              SharedMemSettings settings2(shared_data, false);
+              StellarCollapse sc4;
+              std::size_t read_size_2 = sc4.DeSerialize(data, settings);
+              REQUIRE(read_size_2 == size);
+              REQUIRE(read_size_2 > sizeof(StellarCollapse));
+              sc4.CheckParams();
+              AND_THEN("The two shared-mem objects use the same memory") {
+                REQUIRE(Tricks::DataBoxesPointToSameMemory(sc3, sc4));
+              }
+              AND_THEN("The two stellar collapse EOS's agree") {
+                CompareStellarCollapse(sc, sc4);
+              }
+            }
+            free(shared_data);
+          }
         }
         free(data);
       }
@@ -341,10 +378,39 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
             CompareStellarCollapse(sc, sc2);
             REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc, sc2));
           }
+          AND_THEN("We can de-serialize it twice into shared memory") {
+            using singularity::SharedMemSettings;
+
+            std::size_t dyn_size = e1.DynamicMemorySizeInBytes();
+            char *shared_data = (char *)malloc(dyn_size);
+            EOS e3, e4;
+
+            std::size_t read_size_e3 =
+                e3.DeSerialize(data, SharedMemSettings(shared_data, true));
+            REQUIRE(read_size_e3 == size);
+            e3.CheckParams();
+
+            std::size_t read_size_e4 =
+                e4.DeSerialize(data, SharedMemSettings(shared_data, false));
+            REQUIRE(read_size_e4 == size);
+            e4.CheckParams();
+
+            AND_THEN("They all agree") {
+              StellarCollapse sc2 = e2.get<StellarCollapse>();
+              StellarCollapse sc3 = e3.get<StellarCollapse>();
+              StellarCollapse sc4 = e4.get<StellarCollapse>();
+              CompareStellarCollapse(sc, sc3);
+              CompareStellarCollapse(sc, sc4);
+              REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc, sc3));
+              REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc2, sc3));
+              REQUIRE(Tricks::DataBoxesPointToSameMemory(sc3, sc4));
+            }
+
+            free(shared_data);
+          }
         }
         free(data);
       }
-
       sc.Finalize();
     }
   }

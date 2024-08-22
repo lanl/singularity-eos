@@ -1039,6 +1039,9 @@ class Variant {
   std::size_t SerializedSizeInBytes() const {
     return sizeof(*this) + DynamicMemorySizeInBytes();
   }
+  constexpr std::size_t StaticMemoryIsThis() const {
+    return mpark::visit([](auto &eos) { return eos.StaticMemoryIsThis(); }, eos_);
+  }
   std::size_t Serialize(char *dst) const {
     memcpy(dst, this, sizeof(*this));
     std::size_t offst = sizeof(*this);
@@ -1059,7 +1062,8 @@ class Variant {
     std::size_t offst = sizeof(*this);
     std::size_t dyn_size = DynamicMemorySizeInBytes();
     if (dyn_size > 0) {
-      if (stngs.CopyNeeded()) {
+      const bool sizes_same = StaticMemoryIsThis();
+      if (stngs.CopyNeeded() && sizes_same) {
         memcpy(stngs.data, src + offst, dyn_size);
       }
       offst += SetDynamicMemory(src + offst, stngs);

@@ -191,6 +191,7 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     return t_.SetDynamicMemory(src, stngs);
   }
+  constexpr bool StaticMemoryIsThis() const { return t_.StaticMemoryIsThis(); }
 
  private:
   T t_;
