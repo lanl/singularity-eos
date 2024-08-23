@@ -683,7 +683,8 @@ class EosBase {
     memcpy(dst, pcrtp, sizeof(CRTP));
     offst += sizeof(CRTP);
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
-    if (dyn_size > 0) {
+    std::size_t hidden_size = HiddenStaticSizeInBytes();
+    if (dyn_size + hidden_size > 0) {
       offst += pcrtp->DumpDynamicMemory(dst + sizeof(CRTP));
     }
     PORTABLE_REQUIRE((offst == SerializedSizeInBytes()), "Serialization succesful");
@@ -704,8 +705,9 @@ class EosBase {
     memcpy(pcrtp, src, sizeof(CRTP));
     offst += sizeof(CRTP);
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    std::size_t hidden_size = HiddenStaticSizeInBytes();
     std::size_t tot_size = pcrtp->SerializedSizeInBytes();
-    if (dyn_size > 0) {
+    if (dyn_size + hidden_size > 0) {
       const bool sizes_same = pcrtp->StaticMemoryIsThis();
       if (stngs.CopyNeeded() && sizes_same) {
         memcpy(stngs.data, src + offst, dyn_size);

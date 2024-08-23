@@ -1048,7 +1048,9 @@ class Variant {
   std::size_t Serialize(char *dst) {
     memcpy(dst, this, sizeof(*this));
     std::size_t offst = sizeof(*this);
-    if (DynamicMemorySizeInBytes() > 0) {
+    std::size_t dyn_size = DynamicMemorySizeInBytes();
+    std::size_t hidden_size = HiddenStaticSizeInBytes();
+    if (dyn_size + hidden_size > 0) {
       offst += DumpDynamicMemory(dst + offst);
     }
     return offst;
@@ -1064,7 +1066,8 @@ class Variant {
     memcpy(this, src, sizeof(*this));
     std::size_t offst = sizeof(*this);
     std::size_t dyn_size = DynamicMemorySizeInBytes();
-    if (dyn_size > 0) {
+    std::size_t hidden_size = HiddenStaticSizeInBytes();
+    if (dyn_size + hidden_size > 0) {
       const bool sizes_same = StaticMemoryIsThis();
       if (stngs.CopyNeeded() && sizes_same) {
         memcpy(stngs.data, src + offst, dyn_size);
