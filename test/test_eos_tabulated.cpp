@@ -263,7 +263,7 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
   }
 }
 
-SCENARIO("SpinerEOS and EOSPA Serialization",
+SCENARIO("SpinerEOS and EOSPAC Serialization",
          "[SpinerEOS][DependsRhoT][DependsRhoSie][EOSPAC][Serialization]") {
   GIVEN("Eoses initialized with matid") {
     SpinerEOSDependsRhoT rhoT_orig = SpinerEOSDependsRhoT(eosName, steelID);

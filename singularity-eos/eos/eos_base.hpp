@@ -676,6 +676,7 @@ class EosBase {
   }
   std::size_t Serialize(char *dst) {
     CRTP *pcrtp = static_cast<CRTP *>(this);
+    std::size_t tot_size = pcrtp->SerializedSizeInBytes();
     std::size_t offst = 0;
     memcpy(dst, pcrtp, sizeof(CRTP));
     offst += sizeof(CRTP);
@@ -687,7 +688,8 @@ class EosBase {
     return offst;
   }
   auto Serialize() {
-    std::size_t size = SerializedSizeInBytes();
+    CRTP *pcrtp = static_cast<CRTP *>(this);
+    std::size_t size = pcrtp->SerializedSizeInBytes();
     char *dst = (char *)malloc(size);
     std::size_t size_new = Serialize(dst);
     PORTABLE_REQUIRE(size_new == size, "Serialization succesful");
@@ -700,6 +702,7 @@ class EosBase {
     memcpy(pcrtp, src, sizeof(CRTP));
     offst += sizeof(CRTP);
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    std::size_t tot_size = pcrtp->SerializedSizeInBytes();
     if (dyn_size > 0) {
       const bool sizes_same = pcrtp->StaticMemoryIsThis();
       if (stngs.CopyNeeded() && sizes_same) {
@@ -707,7 +710,7 @@ class EosBase {
       }
       offst += pcrtp->SetDynamicMemory(src + offst, stngs);
     }
-    PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "Deserialization succesful");
+    PORTABLE_REQUIRE(offst == tot_size, "Deserialization succesful");
     return offst;
   }
 
