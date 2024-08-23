@@ -355,6 +355,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   static inline constexpr bool IsModified() { return true; }
   inline constexpr T UnmodifyOnce() { return t_; }
 
+  std::size_t HiddenStaticSizeInBytes() const { return t_.HiddenStaticSizeInBytes(); }
   std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
   std::size_t DumpDynamicMemory(char *dst) { return t_.DumpDynamicMemory(dst); }
   std::size_t SetDynamicMemory(char *src,

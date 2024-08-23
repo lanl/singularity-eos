@@ -1027,6 +1027,10 @@ class Variant {
     return mpark::visit([](const auto &eos) { return eos.DynamicMemorySizeInBytes(); },
                         eos_);
   }
+  std::size_t HiddenStaticSizeInBytes() const {
+    return mpark::visit([](const auto &eos) { return eos.HiddenStaticSizeInBytes(); },
+                        eos_);
+  }
   std::size_t DumpDynamicMemory(char *dst) {
     return mpark::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); }, eos_);
   }
@@ -1036,7 +1040,7 @@ class Variant {
         [src, stngs](auto &eos) { return eos.SetDynamicMemory(src, stngs); }, eos_);
   }
   std::size_t SerializedSizeInBytes() const {
-    return sizeof(*this) + DynamicMemorySizeInBytes();
+    return sizeof(*this) + DynamicMemorySizeInBytes() + HiddenStaticSizeInBytes();
   }
   constexpr std::size_t StaticMemoryIsThis() const {
     return mpark::visit([](auto &eos) { return eos.StaticMemoryIsThis(); }, eos_);

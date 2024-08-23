@@ -145,7 +145,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
   inline EOSPAC GetOnDevice() { return *this; }
 
-  std::size_t SerializedSizeInBytes() const; // shadow/overload base class
+  std::size_t HiddenStaticSizeInBytes() const;
   std::size_t DynamicMemorySizeInBytes() const;
   std::size_t DumpDynamicMemory(char *dst);
   std::size_t SetDynamicMemory(char *src,
@@ -1236,13 +1236,13 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
 }
 
 // shadow/overload base class
-inline std::size_t EOSPAC::SerializedSizeInBytes() const {
+inline std::size_t EOSPAC::HiddenStaticSizeInBytes() const {
   printf("Shared size, packed size = %ld, %ld\n", shared_size_, packed_size_); // DEBUG
   // JMM: We need both of these because EOSPAC allows the size in
   // shared memory to differ from the size required to reconstruct
   // an object. This is generically true for spiner too, but we just
   // deliberately waste a little space.
-  return sizeof(this) + std::max(shared_size_, packed_size_);
+  return std::max(shared_size_, packed_size_);
 }
 inline std::size_t EOSPAC::DynamicMemorySizeInBytes() const { return shared_size_; }
 

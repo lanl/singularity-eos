@@ -659,6 +659,7 @@ class EosBase {
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     return 0;
   }
+  std::size_t HiddenStaticSizeInBytes() const { return 0; }
   constexpr bool StaticMemoryIsThis() const { return true; }
   // JMM: These are generic and do not need to be special-cased.
   // TODO(JMM): Should this machinery actually be available for "bare"
@@ -672,7 +673,8 @@ class EosBase {
     // class.
     const CRTP *pcrtp = static_cast<const CRTP *>(this);
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
-    return dyn_size + sizeof(CRTP);
+    std::size_t implicit_size = pcrtp->HiddenStaticSizeInBytes();
+    return dyn_size + implicit_size + sizeof(CRTP);
   }
   std::size_t Serialize(char *dst) {
     CRTP *pcrtp = static_cast<CRTP *>(this);
