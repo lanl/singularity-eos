@@ -339,24 +339,15 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
 class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
+  friend class table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
+
  public:
   using Grid_t = SpinerEOSDependsRhoT::Grid_t;
   using DataBox = SpinerEOSDependsRhoT::DataBox;
   struct SP5Tables {
     DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
-
-#define DBLIST &P, &bMod, &dPdRho, &dPdE, &dTdRho, &dTdE, &dEdRho
-    std::vector<const DataBox *> GetDataBoxPointers_() const {
-      return std::vector<const DataBox *>{DBLIST};
-    }
-    std::vector<DataBox *> GetDataBoxPointers_() {
-      return std::vector<DataBox *>{DBLIST};
-    }
-#undef DBLIST
-    DataStatus memoryStatus_ = DataStatus::Deallocated;
-    ;
   };
-  using STricks = table_utils::SpinerTricks<SP5Tables>;
+  using STricks = table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
 
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie);
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
@@ -530,6 +521,18 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   DataBox PlRhoMax_, dPdRhoMax_;
 
   Real lRhoOffset_, lTOffset_, lEOffset_; // offsets must be non-negative
+
+#define DBLIST                                                                           \
+  &sie_, &T_, &(dependsRhoT_.P), &(dependsRhoT_.bMod), &(dependsRhoT_.dPdRho),           \
+      &(dependsRhoT_.dPdE), &(dependsRhoT_.dTdRho), &(dependsRhoT_.dTdE),                \
+      &(dependsRhoT_.dEdRho), &(dependsRhoSie_.P), &(dependsRhoSie_.bMod),               \
+      &(dependsRhoSie_.dPdRho), &(dependsRhoSie_.dPdE), &(dependsRhoSie_.dTdRho),        \
+      &(dependsRhoSie_.dTdE), &(dependsRhoSie_.dEdRho), &PlRhoMax_, &dPdRhoMax_
+  std::vector<const DataBox *> GetDataBoxPointers_() const {
+    return std::vector<const DataBox *>{DBLIST};
+  }
+  std::vector<DataBox *> GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
+#undef DBLIST
 
   static constexpr unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
@@ -1623,75 +1626,23 @@ inline void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
 }
 
 inline SpinerEOSDependsRhoSie SpinerEOSDependsRhoSie::GetOnDevice() {
-  SpinerEOSDependsRhoSie other = *this; // static memory
-  // dynamic memory
-  other.sie_ = sie_.getOnDevice();
-  other.T_ = T_.getOnDevice();
-  other.PlRhoMax_ = PlRhoMax_.getOnDevice();
-  other.dPdRhoMax_ = dPdRhoMax_.getOnDevice();
-  other.dependsRhoT_ = STricks::GetOnDevice(&dependsRhoT_);
-  other.dependsRhoSie_ = STricks::GetOnDevice(&dependsRhoSie_);
-  // memory status
-  other.memoryStatus_ = DataStatus::OnDevice;
-  return other;
+  return STricks::GetOnDevice(this);
 }
 
-void SpinerEOSDependsRhoSie::Finalize() {
-  if (memoryStatus_ != DataStatus::UnManaged) {
-    sie_.finalize();
-    T_.finalize();
-    STricks::Finalize(&dependsRhoT_);
-    STricks::Finalize(&dependsRhoSie_);
-    if (memoryStatus_ == DataStatus::OnDevice) { // these are slices on host
-      PlRhoMax_.finalize();
-      dPdRhoMax_.finalize();
-    }
-    memoryStatus_ = DataStatus::Deallocated;
-  }
-}
+void SpinerEOSDependsRhoSie::Finalize() { STricks::Finalize(this); }
 
 inline std::size_t SpinerEOSDependsRhoSie::DynamicMemorySizeInBytes() const {
-  return (sie_.sizeBytes() + T_.sizeBytes() +
-          STricks::DynamicMemorySizeInBytes(&dependsRhoT_) +
-          STricks::DynamicMemorySizeInBytes(&dependsRhoSie_) + PlRhoMax_.sizeBytes() +
-          dPdRhoMax_.sizeBytes());
+  return STricks::DynamicMemorySizeInBytes(this);
 }
 
 inline std::size_t SpinerEOSDependsRhoSie::DumpDynamicMemory(char *dst) const {
-  std::size_t offst = 0;
-  // sie, T
-  memcpy(dst + offst, sie_.data(), sie_.sizeBytes());
-  offst += sie_.sizeBytes();
-  memcpy(dst + offst, T_.data(), T_.sizeBytes());
-  offst += T_.sizeBytes();
-  // dependsRhoT, dependsRhoSie
-  offst += STricks::DumpDynamicMemory(dst + offst, &dependsRhoT_);
-  offst += STricks::DumpDynamicMemory(dst + offst, &dependsRhoSie_);
-  // maxima
-  memcpy(dst + offst, PlRhoMax_.data(), PlRhoMax_.sizeBytes());
-  offst += PlRhoMax_.sizeBytes();
-  memcpy(dst + offst, dPdRhoMax_.data(), dPdRhoMax_.sizeBytes());
-  offst += dPdRhoMax_.sizeBytes();
-  PORTABLE_REQUIRE(offst == DynamicMemorySizeInBytes(), "all dynamic memory covered");
-  return offst;
+  return STricks::DumpDynamicMemory(dst, this);
 }
 
 inline std::size_t
 SpinerEOSDependsRhoSie::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
   if (stngs.data != nullptr) src = stngs.data;
-  std::size_t offst = 0;
-  // sie, T
-  offst += sie_.setPointer(src + offst);
-  offst += T_.setPointer(src + offst);
-  // dependsRhoT, dependsRhoSie
-  offst += STricks::SetDynamicMemory(src + offst, &dependsRhoT_);
-  offst += STricks::SetDynamicMemory(src + offst, &dependsRhoSie_);
-  // maxima
-  offst += PlRhoMax_.setPointer(src + offst);
-  offst += dPdRhoMax_.setPointer(src + offst);
-  memoryStatus_ = DataStatus::UnManaged;
-  PORTABLE_REQUIRE(offst == DynamicMemorySizeInBytes(), "all dynamic memory covered");
-  return offst;
+  return STricks::SetDynamicMemory(src, this);
 }
 
 template <typename Indexer_t>
