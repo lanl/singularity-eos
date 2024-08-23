@@ -147,7 +147,7 @@ class EOSPAC : public EosBase<EOSPAC> {
 
   std::size_t SerializedSizeInBytes() const; // shadow/overload base class
   std::size_t DynamicMemorySizeInBytes() const;
-  std::size_t DumpDynamicMemory(char *dst) const;
+  std::size_t DumpDynamicMemory(char *dst);
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
   constexpr bool StaticMemoryIsThis() const { return false; }
@@ -1236,7 +1236,7 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
 }
 
 // shadow/overload base class
-std::size_t EOSPAC::SerializedSizeInBytes() const {
+inline std::size_t EOSPAC::SerializedSizeInBytes() const {
   printf("Shared size, packed size = %ld, %ld\n", shared_size_, packed_size_); // DEBUG
   // JMM: We need both of these because EOSPAC allows the size in
   // shared memory to differ from the size required to reconstruct
@@ -1244,9 +1244,9 @@ std::size_t EOSPAC::SerializedSizeInBytes() const {
   // deliberately waste a little space.
   return sizeof(this) + std::max(shared_size_, packed_size_);
 }
-std::size_t EOSPAC::DynamicMemorySizeInBytes() const { return shared_size_; }
+inline std::size_t EOSPAC::DynamicMemorySizeInBytes() const { return shared_size_; }
 
-std::size_t EOSPAC::DumpDynamicMemory(char *dst) const {
+inline std::size_t EOSPAC::DumpDynamicMemory(char *dst) {
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
   EOS_INTEGER NTABLES[] = {NT};
   EOS_INTEGER error_code = EOS_OK;
@@ -1255,7 +1255,7 @@ std::size_t EOSPAC::DumpDynamicMemory(char *dst) const {
   return packed_size_; // JMM: Note this is NOT shared memory size
 }
 
-std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
+inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
   EOS_INTEGER NTABLES[] = {NT};
   EOS_INTEGER error_code = EOS_OK;
@@ -1264,11 +1264,11 @@ std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &stngs) 
       stngs.data != nullptr,
       "EOSPAC with shared memory active requires a shared memory pointer");
   // JMM: EOS_BOOLEAN is an enum with EOS_FALSE=0 and EOS_TRUE=1.
-  eos_SetSharedPackedTables(NTABLES, &packed_size, (EOS_CHAR *)src,
+  eos_SetSharedPackedTables(NTABLES, &packed_size_, (EOS_CHAR *)src,
                             (EOS_CHAR *)stngs.data, stngs.is_node_root, tablehandle,
                             &error_code);
 #else
-  eos_SetPackedTables(NTABLES, &packed_size, (EOS_CHAR *)src, tablehandle, &error_code);
+  eos_SetPackedTables(NTABLES, &packed_size_, (EOS_CHAR *)src, tablehandle, &error_code);
 #endif // SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
   eosCheckError(error_code, "eos_SetSharedPackedTables", Verbosity::Debug);
   PofRT_table_ = tablehandle[0]; // these get re-set

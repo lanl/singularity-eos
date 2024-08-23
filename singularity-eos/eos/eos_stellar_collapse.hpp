@@ -227,7 +227,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                                        bool dependent_var_log);
 
   std::size_t DynamicMemorySizeInBytes() const;
-  std::size_t DumpDynamicMemory(char *dst) const;
+  std::size_t DumpDynamicMemory(char *dst);
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
 
@@ -481,7 +481,7 @@ inline std::size_t StellarCollapse::DynamicMemorySizeInBytes() const {
   return table_utils::SpinerTricks<StellarCollapse>::DynamicMemorySizeInBytes(this);
 }
 
-inline std::size_t StellarCollapse::DumpDynamicMemory(char *dst) const {
+inline std::size_t StellarCollapse::DumpDynamicMemory(char *dst) {
   return table_utils::SpinerTricks<StellarCollapse>::DumpDynamicMemory(dst, this);
 }
 

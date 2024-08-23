@@ -221,7 +221,7 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
       REQUIRE(isClose(rho, rho_pac));
     }
     eos_spiner.Finalize();
-    eos_eospac.FInalize();
+    eos_eospac.Finalize();
   }
 }
 
@@ -277,7 +277,7 @@ SCENARIO("SpinerEOS and EOSPA Serialization",
               eospac_orig.DynamicMemorySizeInBytes());
     }
     WHEN("We serialize") {
-      auto [rhoT_size, rhotT_data] = rhoT_orig.Serialize();
+      auto [rhoT_size, rhoT_data] = rhoT_orig.Serialize();
       REQUIRE(rhoT_size == rhoT_orig.SerializedSizeInBytes());
 
       auto [rhoSie_size, rhoSie_data] = rhoSie_orig.Serialize();
@@ -302,9 +302,9 @@ SCENARIO("SpinerEOS and EOSPA Serialization",
         using RhoSieTricks =
             singularity::table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
 
-        rhoT_shared_data = (char *)malloc(rhoT_shared_size);
-        rhoSie_shared_data = (char *)malloc(rhoSie_shared_size);
-        eospac_shared_data = (char *)malloc(eospac_shared_size);
+        char *rhoT_shared_data = (char *)malloc(rhoT_shared_size);
+        char *rhoSie_shared_data = (char *)malloc(rhoSie_shared_size);
+        char *eospac_shared_data = (char *)malloc(eospac_shared_size);
 
         SpinerEOSDependsRhoT eos_rhoT;
         std::size_t read_size_rhoT =
@@ -321,19 +321,19 @@ SCENARIO("SpinerEOS and EOSPA Serialization",
         EOS eos_eospac = EOSPAC();
         std::size_t read_size_eospac = eos_rhoSie.DeSerialize(
             rhoSie_data, SharedMemSettings(rhoSie_shared_data, true));
-        REQUIRE(read_size_eospac = eospac_size);
+        REQUIRE(read_size_eospac == eospac_size);
 
         AND_THEN("EOS lookups work") {
           constexpr Real rho_trial = 1;
           constexpr Real sie_trial = 1e12;
           const Real P_eospac =
-              eos_eospac.InternalEnergyFromDensityPressure(rho_trial, sie_trial);
+              eos_eospac.PressureFromDensityInternalEnergy(rho_trial, sie_trial);
           const Real P_spiner_orig =
-              rhoT_orig.InternalEnergyFromDensityPressure(rho_trial, sie_trial);
+              rhoT_orig.PressureFromDensityInternalEnergy(rho_trial, sie_trial);
           const Real P_spiner_rhoT =
-              eos_rhoT.InternalEnergyFromDensityPressure(rho_trial, sie_trial);
+              eos_rhoT.PressureFromDensityInternalEnergy(rho_trial, sie_trial);
           const Real P_spiner_rhoSie =
-              eos_rhoSie.InternalEnergyFromDensityPressure(rho_trial, sie_trial);
+              eos_rhoSie.PressureFromDensityInternalEnergy(rho_trial, sie_trial);
           REQUIRE(isClose(P_eospac, P_spiner_orig));
           REQUIRE(isClose(P_eospac, P_spiner_rhoT));
           REQUIRE(isClose(P_eospac, P_spiner_rhoSie));
@@ -346,7 +346,7 @@ SCENARIO("SpinerEOS and EOSPA Serialization",
       }
       free(rhoT_data);
       free(rhoSie_data);
-      free(eospac_data)
+      free(eospac_data);
     }
 
     rhoT_orig.Finalize();

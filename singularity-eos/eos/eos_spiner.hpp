@@ -105,7 +105,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   }
 
   std::size_t DynamicMemorySizeInBytes() const;
-  std::size_t DumpDynamicMemory(char *dst) const;
+  std::size_t DumpDynamicMemory(char *dst);
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
 
@@ -368,7 +368,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   }
 
   std::size_t DynamicMemorySizeInBytes() const;
-  std::size_t DumpDynamicMemory(char *dst) const;
+  std::size_t DumpDynamicMemory(char *dst);
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
 
@@ -683,7 +683,7 @@ inline std::size_t SpinerEOSDependsRhoT::DynamicMemorySizeInBytes() const {
   return SpinerTricks::DynamicMemorySizeInBytes(this);
 }
 
-inline std::size_t SpinerEOSDependsRhoT::DumpDynamicMemory(char *dst) const {
+inline std::size_t SpinerEOSDependsRhoT::DumpDynamicMemory(char *dst) {
   return SpinerTricks::DumpDynamicMemory(dst, this);
 }
 
@@ -1635,7 +1635,7 @@ inline std::size_t SpinerEOSDependsRhoSie::DynamicMemorySizeInBytes() const {
   return STricks::DynamicMemorySizeInBytes(this);
 }
 
-inline std::size_t SpinerEOSDependsRhoSie::DumpDynamicMemory(char *dst) const {
+inline std::size_t SpinerEOSDependsRhoSie::DumpDynamicMemory(char *dst) {
   return STricks::DumpDynamicMemory(dst, this);
 }
 

@@ -230,7 +230,7 @@ class HelmElectrons {
   std::size_t DynamicMemorySizeInBytes() const {
     return SpinerTricks::DynamicMemorySizeInBytes(this);
   }
-  std::size_t DumpDynamicMemory(char *dst) const {
+  std::size_t DumpDynamicMemory(char *dst) {
     return SpinerTricks::DumpDynamicMemory(dst, this);
   }
   std::size_t SetDynamicMemory(char *src,
@@ -490,7 +490,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   std::size_t DynamicMemorySizeInBytes() const {
     return electrons_.DynamicMemorySizeInBytes();
   }
-  std::size_t DumpDynamicMemory(char *dst) const {
+  std::size_t DumpDynamicMemory(char *dst) {
     return electrons_.DumpDynamicMemory(dst);
   }
   std::size_t SetDynamicMemory(char *src,

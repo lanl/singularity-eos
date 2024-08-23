@@ -45,6 +45,7 @@ class Vinet : public EosBase<Vinet> {
     CheckParams();
     InitializeVinet(expconsts);
   }
+  PORTABLE_INLINE_FUNCTION void CheckParams() const;
 
   Vinet GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
@@ -163,7 +164,6 @@ class Vinet : public EosBase<Vinet> {
   static constexpr const int PressureCoeffsd2tod40Size = 39;
   static constexpr const int VinetInternalParametersSize = PressureCoeffsd2tod40Size + 4;
   Real _VIP[VinetInternalParametersSize], _d2tod40[PressureCoeffsd2tod40Size];
-  PORTABLE_INLINE_FUNCTION void CheckParams() const;
   void InitializeVinet(const Real *expcoeffs);
   PORTABLE_INLINE_FUNCTION void Vinet_F_DT_func(const Real rho, const Real T,
                                                 Real *output) const;

@@ -654,7 +654,7 @@ class EosBase {
   // Serialization
   // JMM: These must be special-cased.
   std::size_t DynamicMemorySizeInBytes() const { return 0; }
-  std::size_t DumpDynamicMemory(char *dst) const { return 0; }
+  std::size_t DumpDynamicMemory(char *dst) { return 0; }
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     return 0;
@@ -674,8 +674,8 @@ class EosBase {
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
     return dyn_size + sizeof(CRTP);
   }
-  std::size_t Serialize(char *dst) const {
-    const CRTP *pcrtp = static_cast<const CRTP *>(this);
+  std::size_t Serialize(char *dst) {
+    CRTP *pcrtp = static_cast<CRTP *>(this);
     std::size_t offst = 0;
     memcpy(dst, pcrtp, sizeof(CRTP));
     offst += sizeof(CRTP);
@@ -686,7 +686,7 @@ class EosBase {
     PORTABLE_REQUIRE((offst == SerializedSizeInBytes()), "Serialization succesful");
     return offst;
   }
-  auto Serialize() const {
+  auto Serialize() {
     std::size_t size = SerializedSizeInBytes();
     char *dst = (char *)malloc(size);
     std::size_t size_new = Serialize(dst);
@@ -718,7 +718,7 @@ class EosBase {
 
   inline constexpr decltype(auto) GetUnmodifiedObject() {
     if constexpr (CRTP::IsModified()) {
-      return static_cast<CRTP *>(this)->UnmodifyOnce().GetUnmodifiedObject();
+      return ((static_cast<CRTP *>(this))->UnmodifyOnce()).GetUnmodifiedObject();
     } else {
       return *static_cast<CRTP *>(this);
     }

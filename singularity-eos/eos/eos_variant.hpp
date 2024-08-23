@@ -50,7 +50,7 @@ class Variant {
   PORTABLE_FUNCTION Variant(EOSChoice &&choice)
       : eos_(std::move(std::forward<EOSChoice>(choice))) {}
 
-  Variant() noexcept = default;
+  Variant() = default;
 
   template <typename EOSChoice,
             typename std::enable_if<
@@ -1027,8 +1027,8 @@ class Variant {
     return mpark::visit([](const auto &eos) { return eos.DynamicMemorySizeInBytes(); },
                         eos_);
   }
-  std::size_t DumpDynamicMemory(char *dst) const {
-    return mpark::visit([dst](const auto &eos) { return eos.DumpDynamicMemory(dst); },
+  std::size_t DumpDynamicMemory(char *dst) {
+    return mpark::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); },
                         eos_);
   }
   std::size_t SetDynamicMemory(char *src,
@@ -1042,7 +1042,7 @@ class Variant {
   constexpr std::size_t StaticMemoryIsThis() const {
     return mpark::visit([](auto &eos) { return eos.StaticMemoryIsThis(); }, eos_);
   }
-  std::size_t Serialize(char *dst) const {
+  std::size_t Serialize(char *dst) {
     memcpy(dst, this, sizeof(*this));
     std::size_t offst = sizeof(*this);
     if (DynamicMemorySizeInBytes() > 0) {
@@ -1050,7 +1050,7 @@ class Variant {
     }
     return offst;
   }
-  auto Serialize() const {
+  auto Serialize() {
     std::size_t size = SerializedSizeInBytes();
     char *dst = (char *)malloc(size);
     Serialize(dst);
