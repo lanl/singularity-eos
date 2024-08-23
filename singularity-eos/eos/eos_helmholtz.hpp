@@ -490,9 +490,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   std::size_t DynamicMemorySizeInBytes() const {
     return electrons_.DynamicMemorySizeInBytes();
   }
-  std::size_t DumpDynamicMemory(char *dst) {
-    return electrons_.DumpDynamicMemory(dst);
-  }
+  std::size_t DumpDynamicMemory(char *dst) { return electrons_.DumpDynamicMemory(dst); }
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     return electrons_.SetDynamicMemory(src);
