@@ -1028,8 +1028,7 @@ class Variant {
                         eos_);
   }
   std::size_t DumpDynamicMemory(char *dst) {
-    return mpark::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); },
-                        eos_);
+    return mpark::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); }, eos_);
   }
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
