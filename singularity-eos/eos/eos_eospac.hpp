@@ -1235,9 +1235,10 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
       robust::ratio(dpde_ref_ * cv_ref_, rho_ref_ * rho_ref_ * pressureFromSesame(DPDR));
 }
 
-inline std::size_t EOSPAC::DynamicMemorySizeInBytes() const { return packed_size_; }
+inline std::size_t EOSPAC::DynamicMemorySizeInBytes() const {
+	return packed_size_;
+}
 inline std::size_t EOSPAC::DumpDynamicMemory(char *dst) {
-  printf("Shared size, packed size = %ld, %ld\n", shared_size_, packed_size_); // DEBUG
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
   EOS_INTEGER NTABLES[] = {NT};
   EOS_INTEGER error_code = EOS_OK;
@@ -1247,9 +1248,10 @@ inline std::size_t EOSPAC::DumpDynamicMemory(char *dst) {
 }
 inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
-  printf("Shared size, packed size = %ld, %ld\n", shared_size_, packed_size_); // DEBUG
   EOS_INTEGER NTABLES[] = {NT};
   EOS_INTEGER error_code = EOS_OK;
+  eos_DestroyAll(&error_code);
+  eosCheckError(error_code, "eos_DestroyAll", Verbosity::Debug);
 #ifdef SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
   PORTABLE_ALWAYS_REQUIRE(
       stngs.data != nullptr,

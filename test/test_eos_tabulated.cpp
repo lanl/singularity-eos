@@ -270,9 +270,9 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
     SpinerEOSDependsRhoSie rhoSie_orig = SpinerEOSDependsRhoSie(eosName, steelID);
     EOS eospac_orig = EOSPAC(steelID);
     THEN("They report dynamic vs static memory correctly") {
-      REQUIRE(rhoT_orig.StaticMemoryIsThis());
-      REQUIRE(rhoSie_orig.StaticMemoryIsThis());
-      REQUIRE(!eospac_orig.StaticMemoryIsThis());
+      REQUIRE(rhoT_orig.AllDynamicMemoryIsShareable());
+      REQUIRE(rhoSie_orig.AllDynamicMemoryIsShareable());
+      REQUIRE(!eospac_orig.AllDynamicMemoryIsShareable());
       REQUIRE(eospac_orig.SerializedSizeInBytes() >
               eospac_orig.DynamicMemorySizeInBytes());
     }
@@ -295,7 +295,6 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
       const std::size_t eospac_shared_size = eospac_orig.DynamicMemorySizeInBytes();
       REQUIRE(eospac_size > eospac_shared_size);
 
-      eospac_orig.Finalize();
       THEN("We can deserialize into shared memory") {
         using singularity::SharedMemSettings;
         using RhoTTricks = singularity::table_utils::SpinerTricks<SpinerEOSDependsRhoT>;
@@ -318,9 +317,10 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
         REQUIRE(read_size_rhoSie == rhoSie_size);
         REQUIRE(RhoSieTricks::DataBoxesPointToDifferentMemory(rhoSie_orig, eos_rhoSie));
 
+        eospac_orig.Finalize();
         EOS eos_eospac = EOSPAC();
-        std::size_t read_size_eospac = eos_rhoSie.DeSerialize(
-            rhoSie_data, SharedMemSettings(rhoSie_shared_data, true));
+        std::size_t read_size_eospac = eos_eospac.DeSerialize(
+            eospac_data, SharedMemSettings(eospac_shared_data, true));
         REQUIRE(read_size_eospac == eospac_size);
 
         AND_THEN("EOS lookups work") {
