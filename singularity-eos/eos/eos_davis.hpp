@@ -43,8 +43,8 @@ class DavisReactants : public EosBase<DavisReactants> {
   DavisReactants GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION
   void CheckParams() const {
-    PORTABLE_REQUIRE(rho0 >= 0, "Density must be positive");
-    PORTABLE_REQUIRE(T0 >= 0, "Temperature must be positive");
+    PORTABLE_REQUIRE(_rho0 >= 0, "Density must be positive");
+    PORTABLE_REQUIRE(_T0 >= 0, "Temperature must be positive");
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
