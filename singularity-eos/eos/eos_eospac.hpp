@@ -1235,9 +1235,7 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
       robust::ratio(dpde_ref_ * cv_ref_, rho_ref_ * rho_ref_ * pressureFromSesame(DPDR));
 }
 
-inline std::size_t EOSPAC::DynamicMemorySizeInBytes() const {
-	return packed_size_;
-}
+inline std::size_t EOSPAC::DynamicMemorySizeInBytes() const { return packed_size_; }
 inline std::size_t EOSPAC::DumpDynamicMemory(char *dst) {
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
   EOS_INTEGER NTABLES[] = {NT};
