@@ -19,13 +19,14 @@ The parallelism model
 ----------------------
 
 For the most part, ``singularity-eos`` tries to be agnostic to how you
-parallelize your code on-node. (It knows nothing at all about
-distributed memory parallelism.) An ``EOS`` object can be copied into
-any parallel code block by value (see below) and scalar calls do not
-attempt any internal multi-threading, meaning ``EOS`` objects are not
-thread-safe, but are compatible with thread safety, assuming the user
-calls them appropriately. The main complication is ``lambda`` arrays,
-which are discussed below.
+parallelize your code on-node. It knows nothing at all about
+distributed memory parallelism, with one exception, discussed
+below. An ``EOS`` object can be copied into any parallel code block by
+value (see below) and scalar calls do not attempt any internal
+multi-threading, meaning ``EOS`` objects are not thread-safe, but are
+compatible with thread safety, assuming the user calls them
+appropriately. The main complication is ``lambda`` arrays, which are
+discussed below.
 
 The vector ``EOS`` method overloads are a bit different. These are
 thread-parallel operations launched by ``singularity-EOS``. They run
@@ -38,6 +39,164 @@ any parallel dispatch supported by ``Kokkos`` is supported.
 A more generic version of the vector calls exists in the ``Evaluate``
 method, which allows the user to specify arbitrary parallel dispatch
 models by writing their own loops. See the relevant section below.
+
+Serialization and shared memory
+--------------------------------
+
+While ``singularity-eos`` makes a best effort to be agnostic to
+parallelism, it exposes several methods that are useful in a
+distributed memory environment. In particular, there are two use-cases
+the library seeks to support:
+
+#. To avoid stressing a filesystem, it may desirable to load a table from one thread (e.g., MPI rank) and broadcast this data to all other ranks.
+#. To save memory it may be desirable to place tabulated data, which is read-only after it has been loaded from file, into shared memory on a given node, even if al other data is thread local in a distributed-memory environment. This is possible via, e.g., `MPI Windows`_.
+
+Therefore exposes several methods that can be used in this
+context. The function
+
+.. cpp:function:: std::size_t EOS::SerializedSizeInBytes() const;
+
+returns the amount of memory required in bytes to hold a serialized
+EOS object. The return value will depend on the underlying equation of
+state model currently contained in the object. The function
+
+.. cpp:function:: std::size_t EOS::SharedMemorySizeInBytes() const;
+
+returns the amount of data (in bytes) that a given object can place into shared memory. Again, the return value depends on the model the object currently represents.
+
+.. note::
+
+  Many models may not be able to utilize shared memory at all. This
+  holds for most analytic models, for example. The ``EOSPAC`` backend
+  will only utilize shared memory if ``EOSPAC`` is sufficiently recent
+  to support it and if ``singularity-eos`` is built with serialization
+  support for ``EOSPAC`` (enabled with
+  ``-DSINGULARITY_EOSPAC_ENABLE_SHMEM=ON``).
+
+The function
+
+.. cpp:function:: std::size_t EOS::Serialize(char *dst);
+
+fills the ``dst`` pointer with the memory required for serialization
+and returns the number of bytes written to ``dst``. The function
+
+.. cpp:function:: std::pair<std::size_t, char*> EOS::Serialize();
+
+allocates a ``char*`` pointer to contain serialized data and fills
+it. The pair is the pointer and its size. The function
+
+.. code-block:: cpp
+
+  std::size_t EOS::DeSerialize(char *src,
+                const SharedMemSettings &stngs = DEFAULT_SHMEM_SETTINGS)
+
+Sets an EOS object based on the serialized representation contained in
+``src``. It returns the number of bytes read from ``src``. Optionally,
+``DeSerialize`` may also write the data that can be shared to a
+pointer contained in ``SharedMemSettings``. If you do this, you must
+pass this pointer in, but designate only one thread per shared memory
+domain (frequently a node or socket) to actually write to this
+data. ``SharedMemSettings`` is a struct containing a ``data`` pointer
+and a ``is_domain_root`` boolean:
+
+.. code-block:: cpp
+
+  struct SharedMemSettings {
+    SharedMemSettings();
+    SharedMemSettings(char *data_, bool is_domain_root_)
+        : data(data_), is_domain_root(is_domain_root_) {}
+    char *data;
+    bool is_domain_root;
+  };
+
+The ``data`` pointer should point to a shared memory allocation. The
+``is_domain_root`` boolean should be true for exactly one thread per
+shared memory domain.
+
+For example you might call ``DeSerialize`` as
+
+.. code-block:: cpp
+
+  std::size_t read_size = eos.DeSerialize(packed_data,
+                singularity::SharedMemSettings(shared_data,
+                                               my_rank % NTHREADS == 0));
+  assert(read_size == write_size); // for safety
+
+.. warning::
+
+  Note that for equation of state models that have dynamically
+  allocated memory, ``singularity-eos`` reserves the right to point
+  directly at data in ``src``, so it **cannot** be freed until you
+  would call ``eos.Finalize()``. If the ``SharedMemSettings`` are
+  utilized to request data be written to a shared memory pointer,
+  however, you can free the ``src`` pointer, so long as you don't free
+  the shared memory pointer.
+
+Putting everything together, a full sequence with MPI might look like this:
+
+.. code-block:: cpp
+
+  singularity::EOS eos;
+  std::size_t packed_size, shared_size;
+  char *packed_data;
+  if (rank == 0) { // load eos object
+    eos = singularity::StellarCollapse(filename);
+    packed_size = eos.SerializedSizeInBytes();
+    shared_size = eos.SharedMemorySizeInBytes();
+  }
+
+  // Send sizes
+  MPI_Bcast(&packed_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&shared_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  // Allocate data needed
+  packed_data = (char*)malloc(packed_size);
+  if (rank == 0) {
+    eos.Serialize(packed_data);
+    eos.Finalize(); // Clean up this EOS object so it can be reused.
+  }
+  MPI_Bcast(packed_data, packed_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+  
+  singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_SETTINGS;
+  char *shared_data;
+  char *mpi_base_pointer;
+  int mpi_unit;
+  MPI_Aint query_size;
+  MPI_Win window;
+  MPI_Comm shared_memory_comm;
+  if (use_mpi_shared_memory) {
+    // Create the MPI shared memory object and get a pointer to shared data
+    MPI_Win_allocate_shared((island_rank == 0) ? shared_size : 0,
+                            1, MPI_INFO_NULL, shared_memory_comm, &mpi_base_pointer,
+                            &window);
+    MPI_Win_shared_query(window, MPI_PROC_NULL, &query_size, &mpi_unit, &shared_data);
+    // Mutex for MPI window
+    MPI_Win_lock_all(MPI_MODE_NOCHECK, window);
+    // Set SharedMemSettings
+    settings.data = shared_data;
+    settings.is_domain_root = (island_rank == 0);
+  }
+  eos.DeSerialize(packed_data, settings);
+  if (use_mpi_shared_memory) {
+    MPI_Win_unlock_all(window);
+    MPI_Barrier(shared_memory_comm);
+    free(packed_data);
+  }
+
+.. note::
+
+  In the case where many EOS objects may be active at once, you can
+  combine serialization and comm steps. You may wish to, for example,
+  have a single pointer containing all serialized EOS's. Same for the
+  shared memory.
+
+.. warning::
+
+  Since EOSPAC is a library, DeSerialization is destructive for EOSPAC
+  and may have side-effects. DeSerializing an EOSPAC object will
+  *completely* reset the EOSPAC backend.
+
+.. _`MPI Windows`: https://www.mpi-forum.org/docs/mpi-4.1/mpi41-report/node311.htm
 
 .. _variant section:
 
@@ -445,6 +604,23 @@ unmodified EOS model, call
 
 The return value here will be either the type of the ``EOS`` variant
 type or the unmodified model (for example ``IdealGas``) or, depending
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 on whether this method was callled within a variant or on a standalone
 model outside a variant.
 

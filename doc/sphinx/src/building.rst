@@ -105,6 +105,7 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_USE_FORTRAN``             ON       Enable Fortran API for equation of state.
  ``SINGULARITY_USE_KOKKOS``              OFF      Uses Kokkos as the portability backend. Currently only Kokkos is supported for GPUs.
  ``SINGULARITY_USE_EOSPAC``              OFF      Link against EOSPAC. Needed for sesame2spiner and some tests.
+ ``SINGULARITY_EOSPAC_ENABLE_SHMEM``     OFF      Enable shared memory support in EOSPAC backend.
  ``SINGULARITY_BUILD_CLOSURE``           OFF      Build the mixed cell closure models
  ``SINGULARITY_BUILD_TESTS``             OFF      Build test infrastructure.
  ``SINGULARITY_BUILD_PYTHON``            OFF      Build Python bindings.
