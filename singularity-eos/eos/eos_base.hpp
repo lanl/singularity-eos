@@ -81,6 +81,25 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;
 
+// This macro adds several methods that most modifiers will
+// want. Not ALL modifiers will want these methods as written here,
+// so use this macro with care.
+// TODO(JMM): Find a better solution. Multiple inheritence and mixins
+// dont' seem to work as desired here.
+#define SG_ADD_MODIFIER_METHODS(T, t_)                                                   \
+  static inline constexpr bool IsModified() { return true; }                             \
+  inline constexpr T UnmodifyOnce() { return t_; }                                       \
+  std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); } \
+  std::size_t SharedMemorySizeInBytes() const { return t_.SharedMemorySizeInBytes(); }   \
+  std::size_t DumpDynamicMemory(char *dst) { return t_.DumpDynamicMemory(dst); }         \
+  std::size_t SetDynamicMemory(char *src,                                                \
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {   \
+    return t_.SetDynamicMemory(src, stngs);                                              \
+  }                                                                                      \
+  constexpr bool AllDynamicMemoryIsShareable() const {                                   \
+    return t_.AllDynamicMemoryIsShareable();                                             \
+  }
+
 class Factor {
   Real value_ = 1.0;
   bool is_set_ = false;
@@ -652,42 +671,36 @@ class EosBase {
   }
 
   // Serialization
-  // JMM: These must be special-cased.
+  // JMM: These must frequently be special-cased.
   std::size_t DynamicMemorySizeInBytes() const { return 0; }
   std::size_t DumpDynamicMemory(char *dst) { return 0; }
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     return 0;
   }
-  std::size_t HiddenStaticSizeInBytes() const { return 0; }
-  constexpr bool StaticMemoryIsThis() const { return true; }
-  // JMM: These are generic and do not need to be special-cased.
-  // TODO(JMM): Should this machinery actually be available for "bare"
-  // EOS's outside the variant?
-  // TODO(JMM): Should I try to reduce the amount of duplicated code
-  // between here and the variant?  Is this a rare case where multiple
-  // inheritence or mixins would be useful? Probably more trouble than
-  // its work for ~20 LOC...
+  // JMM: These usually don't need to be special cased.
+  std::size_t SharedMemorySizeInBytes() const {
+    const CRTP *pcrtp = static_cast<const CRTP *>(this);
+    return pcrtp->DynamicMemorySizeInBytes();
+  }
+  constexpr bool AllDynamicMemoryIsShareable() const { return true; }
+  // JMM: These are generic and never need to be special-cased.
   std::size_t SerializedSizeInBytes() const {
-    // sizeof(*this) apparently returns the size of JUST the base
-    // class.
+    // sizeof(*this) returns the size of JUST the base class.
     const CRTP *pcrtp = static_cast<const CRTP *>(this);
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
-    std::size_t implicit_size = pcrtp->HiddenStaticSizeInBytes();
-    return dyn_size + implicit_size + sizeof(CRTP);
+    return dyn_size + sizeof(CRTP);
   }
   std::size_t Serialize(char *dst) {
     CRTP *pcrtp = static_cast<CRTP *>(this);
-    std::size_t tot_size = pcrtp->SerializedSizeInBytes();
-    std::size_t offst = 0;
     memcpy(dst, pcrtp, sizeof(CRTP));
-    offst += sizeof(CRTP);
+    std::size_t offst = sizeof(CRTP);
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
-    std::size_t hidden_size = HiddenStaticSizeInBytes();
-    if (dyn_size + hidden_size > 0) {
+    if (dyn_size > 0) {
       offst += pcrtp->DumpDynamicMemory(dst + sizeof(CRTP));
     }
-    PORTABLE_REQUIRE((offst == SerializedSizeInBytes()), "Serialization succesful");
+    const std::size_t tot_size = pcrtp->SerializedSizeInBytes();
+    PORTABLE_REQUIRE(offst == tot_size, "Serialization succesful");
     return offst;
   }
   auto Serialize() {
@@ -701,19 +714,17 @@ class EosBase {
   std::size_t DeSerialize(char *src,
                           const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     CRTP *pcrtp = static_cast<CRTP *>(this);
-    std::size_t offst = 0;
     memcpy(pcrtp, src, sizeof(CRTP));
-    offst += sizeof(CRTP);
+    std::size_t offst = sizeof(CRTP);
     std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
-    std::size_t hidden_size = HiddenStaticSizeInBytes();
-    std::size_t tot_size = pcrtp->SerializedSizeInBytes();
-    if (dyn_size + hidden_size > 0) {
-      const bool sizes_same = pcrtp->StaticMemoryIsThis();
+    if (dyn_size > 0) {
+      const bool sizes_same = pcrtp->AllDynamicMemoryIsShareable();
       if (stngs.CopyNeeded() && sizes_same) {
         memcpy(stngs.data, src + offst, dyn_size);
       }
       offst += pcrtp->SetDynamicMemory(src + offst, stngs);
     }
+    const std::size_t tot_size = pcrtp->SerializedSizeInBytes();
     PORTABLE_REQUIRE(offst == tot_size, "Deserialization succesful");
     return offst;
   }

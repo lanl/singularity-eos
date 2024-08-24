@@ -145,12 +145,12 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
   inline EOSPAC GetOnDevice() { return *this; }
 
-  std::size_t HiddenStaticSizeInBytes() const;
   std::size_t DynamicMemorySizeInBytes() const;
   std::size_t DumpDynamicMemory(char *dst);
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
-  constexpr bool StaticMemoryIsThis() const { return false; }
+  std::size_t SharedMemorySizeInBytes() const;
+  constexpr bool AllDynamicMemoryIsShareable() const { return false; }
 
   SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
@@ -1235,18 +1235,9 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
       robust::ratio(dpde_ref_ * cv_ref_, rho_ref_ * rho_ref_ * pressureFromSesame(DPDR));
 }
 
-// shadow/overload base class
-inline std::size_t EOSPAC::HiddenStaticSizeInBytes() const {
-  printf("Shared size, packed size = %ld, %ld\n", shared_size_, packed_size_); // DEBUG
-  // JMM: We need both of these because EOSPAC allows the size in
-  // shared memory to differ from the size required to reconstruct
-  // an object. This is generically true for spiner too, but we just
-  // deliberately waste a little space.
-  return std::max(shared_size_, packed_size_);
-}
-inline std::size_t EOSPAC::DynamicMemorySizeInBytes() const { return shared_size_; }
-
+inline std::size_t EOSPAC::DynamicMemorySizeInBytes() const { return packed_size_; }
 inline std::size_t EOSPAC::DumpDynamicMemory(char *dst) {
+  printf("Shared size, packed size = %ld, %ld\n", shared_size_, packed_size_); // DEBUG
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
   EOS_INTEGER NTABLES[] = {NT};
   EOS_INTEGER error_code = EOS_OK;
@@ -1254,9 +1245,9 @@ inline std::size_t EOSPAC::DumpDynamicMemory(char *dst) {
   eosCheckError(error_code, "eos_GetPackedTables", Verbosity::Debug);
   return packed_size_; // JMM: Note this is NOT shared memory size
 }
-
 inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
+  printf("Shared size, packed size = %ld, %ld\n", shared_size_, packed_size_); // DEBUG
   EOS_INTEGER NTABLES[] = {NT};
   EOS_INTEGER error_code = EOS_OK;
 #ifdef SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
@@ -1278,8 +1269,9 @@ inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &
   TofRP_table_ = tablehandle[4];
   PofRE_table_ = tablehandle[5];
   EcofD_table_ = tablehandle[6];
-  return std::max(shared_size_, packed_size_);
+  return packed_size_;
 }
+inline std::size_t EOSPAC::SharedMemorySizeInBytes() const { return shared_size_; }
 
 SG_PIF_NOWARN
 template <typename Indexer_t>

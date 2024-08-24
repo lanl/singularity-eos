@@ -1027,10 +1027,6 @@ class Variant {
     return mpark::visit([](const auto &eos) { return eos.DynamicMemorySizeInBytes(); },
                         eos_);
   }
-  std::size_t HiddenStaticSizeInBytes() const {
-    return mpark::visit([](const auto &eos) { return eos.HiddenStaticSizeInBytes(); },
-                        eos_);
-  }
   std::size_t DumpDynamicMemory(char *dst) {
     return mpark::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); }, eos_);
   }
@@ -1039,26 +1035,32 @@ class Variant {
     return mpark::visit(
         [src, stngs](auto &eos) { return eos.SetDynamicMemory(src, stngs); }, eos_);
   }
-  std::size_t SerializedSizeInBytes() const {
-    return sizeof(*this) + DynamicMemorySizeInBytes() + HiddenStaticSizeInBytes();
+  std::size_t SharedMemorySizeInBytes() const {
+    return mpark::visit([](const auto &eos) { return eos.SharedMemorySizeInBytes(); },
+                        eos_);
   }
-  constexpr std::size_t StaticMemoryIsThis() const {
-    return mpark::visit([](auto &eos) { return eos.StaticMemoryIsThis(); }, eos_);
+  constexpr bool AllDynamicMemoryIsShareable() const {
+    return mpark::visit([](const auto &eos) { return eos.AllDynamicMemoryIsShareable(); },
+                        eos_);
+  }
+  std::size_t SerializedSizeInBytes() const {
+    return sizeof(*this) + DynamicMemorySizeInBytes();
   }
   std::size_t Serialize(char *dst) {
     memcpy(dst, this, sizeof(*this));
     std::size_t offst = sizeof(*this);
     std::size_t dyn_size = DynamicMemorySizeInBytes();
-    std::size_t hidden_size = HiddenStaticSizeInBytes();
-    if (dyn_size + hidden_size > 0) {
+    if (dyn_size > 0) {
       offst += DumpDynamicMemory(dst + offst);
     }
+    PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "Serialization succesful");
     return offst;
   }
   auto Serialize() {
     std::size_t size = SerializedSizeInBytes();
     char *dst = (char *)malloc(size);
-    Serialize(dst);
+    std::size_t new_size = Serialize(dst);
+    PORTABLE_REQUIRE(size == new_size, "Serialization succesful");
     return std::make_pair(size, dst);
   }
   std::size_t DeSerialize(char *src,
@@ -1066,9 +1068,8 @@ class Variant {
     memcpy(this, src, sizeof(*this));
     std::size_t offst = sizeof(*this);
     std::size_t dyn_size = DynamicMemorySizeInBytes();
-    std::size_t hidden_size = HiddenStaticSizeInBytes();
-    if (dyn_size + hidden_size > 0) {
-      const bool sizes_same = StaticMemoryIsThis();
+    if (dyn_size > 0) {
+      const bool sizes_same = AllDynamicMemoryIsShareable();
       if (stngs.CopyNeeded() && sizes_same) {
         memcpy(stngs.data, src + offst, dyn_size);
       }

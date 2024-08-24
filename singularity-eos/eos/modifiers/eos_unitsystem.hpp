@@ -425,17 +425,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     printf("Units = %e %e %e %e\n", rho_unit_, sie_unit_, temp_unit_, press_unit_);
   }
 
-  static inline constexpr bool IsModified() { return true; }
-  inline constexpr T UnmodifyOnce() { return t_; }
-
-  std::size_t HiddenStaticSizeInBytes() const { return t_.HiddenStaticSizeInBytes(); }
-  std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); }
-  std::size_t DumpDynamicMemory(char *dst) { return t_.DumpDynamicMemory(dst); }
-  std::size_t SetDynamicMemory(char *src,
-                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
-    return t_.SetDynamicMemory(src, stngs);
-  }
-  constexpr bool StaticMemoryIsThis() const { return t_.StaticMemoryIsThis(); }
+  SG_ADD_MODIFIER_METHODS(T, t_);
 
  private:
   T t_;

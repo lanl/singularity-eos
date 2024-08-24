@@ -324,7 +324,9 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
           THEN("We can de-serialize it into a new object AROUND a new allocation") {
             using singularity::SharedMemSettings;
             // mockup of shared data
-            char *shared_data = (char *)malloc(size);
+            std::size_t shared_size = sc.SharedMemorySizeInBytes();
+            REQUIRE(shared_size == sc.DynamicMemorySizeInBytes());
+            char *shared_data = (char *)malloc(shared_size);
             SharedMemSettings settings(shared_data, true);
             StellarCollapse sc3;
             std::size_t read_size = sc3.DeSerialize(data, settings);
