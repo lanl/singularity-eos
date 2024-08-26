@@ -32,6 +32,14 @@ variables:
   tags:
     - darwin-slurm-shared
 
+.rocinante_job:
+  variables:
+    CLUSTER: rocinante
+    SCHEDULER_PARAMETERS: "-N 1 -A asc-ci -p ci --reservation ci --time=00:45:00"
+  tags:
+    - rocinante
+    - batch
+
 .prepare_spack:
   script: &prepare_spack
     - umask 0007
@@ -144,28 +152,14 @@ openmpi_rocm_gcc:
     SPACK_ENV_NAME: openmpi-rocm-gcc
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-amd-mi250"
 
-#test_gnu_rocinante:
-#  needs: [download_prereq]
-#  extends:
-#   - .rocinante_batch
-#   - .test
-#  variables:
-#    <<: *python
-#
-#install_gnu_rocinante_fort:
-#  needs: [download_prereq]
-#  extends:
-#   - .rocinante_batch
-#   - .test
-#  variables:
-#    <<: *python
-#    <<: *fort
-#
-#install_gnu_rocinante_nofort:
-#  needs: [download_prereq]
-#  extends:
-#   - .rocinante_batch
-#   - .test
-#  variables:
-#    <<: *python
-#    <<: *nofort
+craympich_gcc:
+  extends: [.ascgit_job, .rocinante_job, .build_and_test]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: craympich-gcc
+
+craympich_fortran_gcc:
+  extends: [.ascgit_job, .rocinante_job, .build_and_test]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: craympich-fortran-gcc
