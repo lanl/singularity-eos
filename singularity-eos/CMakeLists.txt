@@ -27,6 +27,7 @@ register_headers(
     base/fast-math/logs.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
+    base/serialization_utils.hpp
     base/spiner_table_utils.hpp
     base/variadic_utils.hpp
     base/math_utils.hpp

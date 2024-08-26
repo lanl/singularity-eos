@@ -83,7 +83,17 @@ and returns the number of bytes written to ``dst``. The function
 .. cpp:function:: std::pair<std::size_t, char*> EOS::Serialize();
 
 allocates a ``char*`` pointer to contain serialized data and fills
-it. The pair is the pointer and its size. The function
+it.
+
+.. warning::
+
+  Serialization and de-serialization may only be performed on objects
+  that live in host memory, before you have called
+  ``eos.GetOnDevice()``. Attempting to serialize device-initialized
+  objects is undefined behavior, but will likely result in a
+  segmentation fault.
+
+The pair is the pointer and its size. The function
 
 .. code-block:: cpp
 
@@ -183,12 +193,85 @@ Putting everything together, a full sequence with MPI might look like this:
     free(packed_data);
   }
 
-.. note::
+In the case where many EOS objects may be active at once, you can
+combine serialization and comm steps. You may wish to, for example,
+have a single pointer containing all serialized EOS's. Same for the
+shared memory. ``singularity-eos`` provides machinery to do this in
+the ``singularity-eos/base/serialization_utils.hpp`` header. This
+provides a helper struct, ``BulkSerializer``:
 
-  In the case where many EOS objects may be active at once, you can
-  combine serialization and comm steps. You may wish to, for example,
-  have a single pointer containing all serialized EOS's. Same for the
-  shared memory.
+.. code-block:: cpp
+
+  template<typename EOS>
+  singularity::BulkSerializer
+
+which may be initialized by an initializer list of ``EOS`` objects or
+a ``std::vector`` of them. It then provides all the above-described
+functions: ``SerializedSizeInBytes``, ``SharedMemorySizeInBytes``,
+``Serialize``, and ``DeSerialize``, but it operates on all ``EOS``
+objects it was initialized with, not just one. Example usage might
+look like this:
+
+.. code-block:: cpp
+
+  int packed_size, shared_size;
+  if (rank == 0) { // load eos object
+    // Code to initialize a bunch of EOS objects into a std::vector<EOS>
+    /*
+       Initialization code goes here
+     */
+    singularity::BulkSerializer<EOS> serializer(eos_vec);
+    packed_size = serializer.SerializedSizeInBytes();
+    shared_size = serializer.SharedMemorySizeInBytes();
+  }
+
+  // Send sizes
+  MPI_Bcast(&packed_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&packed_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  // Allocate data needed
+  packed_data = (char*)malloc(packed_size);
+  if (rank == 0) {
+    serializer.Serialize(packed_data);
+    serializer.Finalize(); // Clean up all EOSs owned by the serializer
+  }
+  MPI_Bcast(packed_data, packed_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+  
+  singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_SETTINGS;
+  char *shared_data;
+  char *mpi_base_pointer;
+  int mpi_unit;
+  MPI_Aint query_size;
+  MPI_Win window;
+  MPI_Comm shared_memory_comm;
+  if (use_mpi_shared_memory) {
+    // Create the MPI shared memory object and get a pointer to shared data
+    MPI_Win_allocate_shared((island_rank == 0) ? shared_size : 0,
+                            1, MPI_INFO_NULL, shared_memory_comm, &mpi_base_pointer,
+                            &window);
+    MPI_Win_shared_query(window, MPI_PROC_NULL, &query_size, &mpi_unit, &shared_data);
+    // Mutex for MPI window
+    MPI_Win_lock_all(MPI_MODE_NOCHECK, window);
+    // Set SharedMemSettings
+    settings.data = shared_data;
+    settings.is_domain_root = (island_rank == 0);
+  }
+  // note the number of EOSes to deserialize is required.
+  singularity::BulkSerializer<EOS> deserializer;
+  deserializer.DeSerialize(packed_data, settings);
+  if (use_mpi_shared_memory) {
+    MPI_Win_unlock_all(window);
+    MPI_Barrier(shared_memory_comm);
+    free(packed_data);
+  }
+  // extract each individual EOS and do something with it
+  std::vector<EOS> eos_host_vec = deserializer.eos_objects;
+  // get on device if you want
+  for (auto EOS : eos_host_vec) {
+    EOS eos_device = eos.GetOnDevice();
+    // ...
+  }
+
 
 .. warning::
 

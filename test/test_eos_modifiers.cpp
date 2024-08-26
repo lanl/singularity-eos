@@ -19,6 +19,7 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/serialization_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 
@@ -312,28 +313,37 @@ SCENARIO("Serialization of modified EOSs preserves their properties",
 
     constexpr Real rho_test = 1.0;
     constexpr Real sie_test = 1.0;
+    constexpr Real temp_trivial = sie_test / (Cv);      // = 1./2.
     constexpr Real temp_test = sie_test / (Cv * scale); // = 1./4.
     constexpr Real EPS = 10 * std::numeric_limits<Real>::epsilon();
 
     ScaledEOS<IdealGas> eos(IdealGas(gm1, Cv), scale);
     REQUIRE(isClose(eos.TemperatureFromDensityInternalEnergy(rho_test, sie_test),
                     temp_test, EPS));
+    EOS eos_scaled = eos;
+
+    EOS eos_trivial = ScaledEOS<IdealGas>(IdealGas(gm1, Cv), 1.0);
+    REQUIRE(isClose(eos_trivial.TemperatureFromDensityInternalEnergy(rho_test, sie_test),
+                    temp_trivial, EPS));
 
     THEN("The size of the object is larger than just the ideal gas by itself") {
       REQUIRE(eos.SerializedSizeInBytes() > sizeof(IdealGas));
     }
 
     WHEN("We serialize the EOS") {
-      auto [size, data] = eos.Serialize();
-      REQUIRE(size == eos.SerializedSizeInBytes());
+      singularity::BulkSerializer<EOS> serializer({eos_scaled, eos_trivial});
+      auto [size, data] = serializer.Serialize();
+      REQUIRE(size == serializer.SerializedSizeInBytes());
       REQUIRE(size > 0);
       REQUIRE(data != nullptr);
 
       THEN("We can de-serialize the EOS") {
-        ScaledEOS<IdealGas> eos_new;
-        eos_new.DeSerialize(data);
+        singularity::BulkSerializer<EOS> deserializer;
+        deserializer.DeSerialize(data);
+        REQUIRE(deserializer.Size() == serializer.Size());
 
         AND_THEN("The de-serialized EOS still evaluates properly") {
+          auto eos_new = deserializer.Get(0);
           REQUIRE(
               isClose(eos_new.TemperatureFromDensityInternalEnergy(rho_test, sie_test),
                       temp_test, EPS));
