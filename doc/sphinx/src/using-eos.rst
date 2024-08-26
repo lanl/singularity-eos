@@ -49,10 +49,10 @@ distributed memory environment. In particular, there are two use-cases
 the library seeks to support:
 
 #. To avoid stressing a filesystem, it may desirable to load a table from one thread (e.g., MPI rank) and broadcast this data to all other ranks.
-#. To save memory it may be desirable to place tabulated data, which is read-only after it has been loaded from file, into shared memory on a given node, even if al other data is thread local in a distributed-memory environment. This is possible via, e.g., `MPI Windows`_.
+#. To save memory it may be desirable to place tabulated data, which is read-only after it has been loaded from file, into shared memory on a given node, even if all other data is thread local in a distributed-memory environment. This is possible via, e.g., `MPI Windows`_.
 
-Therefore exposes several methods that can be used in this
-context. The function
+Therefore ``singularity-eos`` exposes several methods that can be used
+in this context. The function
 
 .. cpp:function:: std::size_t EOS::SerializedSizeInBytes() const;
 
