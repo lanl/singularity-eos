@@ -8,14 +8,9 @@ stages:
 
 default:
   interruptible: true
-  before_script:
-   - echo "Running on $(hostname)"
-   - section() { echo $'\e[0K'"section_$1:$(date +%s):$2"$'\r\e[0K'"${3+${COLOR_CYAN}$3${COLOR_PLAIN}}"; }
 
 variables:
   ENABLED_CLUSTERS: "darwin"
-  PROJECT_SPACK_ENV: /usr/projects/xcap/spack-env/oss/2024-08-01
-  SINGULARITY_GOLDFILES_VERSION: "goldfiles-1.8.0"
   GIT_SUBMODULE_STRATEGY: normal
 
 .ascgit_job:
@@ -40,51 +35,11 @@ variables:
     - rocinante
     - batch
 
-.prepare_spack:
-  script: &prepare_spack
-    - umask 0007
-    - export CI_SPACK_ENV=$TMPDIR/ci-env
-    - source $PROJECT_SPACK_ENV/replicate.sh $CI_SPACK_ENV
-    - source ${CI_SPACK_ENV}/activate.sh
-    
-.prepare_spack_env:
-  script: &prepare_spack_env
-    - source ${CI_SPACK_ENV}/systems/${CLUSTER}/activate.sh oss/singularity-eos/${SPACK_ENV_NAME}
 
 .build_and_test:
   stage: build_n_test
-  script: &build_and_test
-    - section start "prepare_spack[collapsed=true]" "Prepare Spack"
-    - *prepare_spack
-    - *prepare_spack_env
-    - section end "prepare_spack"
-    - section start "prepare_env[collapsed=true]" "Create environment"
-    - spack repo add spack-repo
-    - spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/spiner spiner@main
-    - spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/ports-of-call ports-of-call@main
-    - spack develop -b build -p $PWD --no-clone singularity-eos@main
-    - spack install --only dependencies -j $(nproc)
-    - section end "prepare_env"
-    - section start "spack_cmake_configure[collapsed=true]" "Initial Spack CMake Configure"
-    - spack install --test root --include-build-deps -u cmake -v singularity-eos
-    - section end "spack_cmake_configure"
-    - section start "cmake_build[collapsed=false]" "CMake Build"
-    - spack build-env --dump ci_env.sh singularity-eos
-    - source ci_env.sh
-    - cmake -DCMAKE_VERBOSE_MAKEFILE=off -DCMAKE_INSTALL_PREFIX=$PWD/build/install build
-    - cmake --build build --parallel
-    - section end "cmake_build"
-    - section start "testing[collapsed=false]" "Tests"
-    - pushd build
-    - ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat;
-    - ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat;
-    - popd
-    - export CTEST_OUTPUT_ON_FAILURE=1
-    - ctest --test-dir build --output-junit tests.xml
-    - section end "testing"
-    - section start install "Install"
-    - cmake --build build --target install
-    - section end install
+  script:
+    - source .gitlab/build_and_test.sh ${CLUSTER} ${SPACK_ENV_NAME}
   artifacts:
     expire_in: 2 weeks
     paths:
@@ -102,7 +57,7 @@ download_prereq:
   variables:
     GIT_SUBMODULE_STRATEGY: none
   script:
-   - wget https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/goldfiles.tar.gz
+   - .gitlab/download_prereq.sh
   artifacts:
     paths:
       - goldfiles.tar.gz
