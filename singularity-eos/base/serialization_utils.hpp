@@ -84,8 +84,8 @@ struct BulkSerializer {
       stngs_loc.data += shared_bytes;
       shared_offst += shared_bytes;
     }
-    PORTABLE_REQUIRE(offst = SerializedSizeInBytes(), "De-Serialization successful");
-    PORTABLE_REQUIRE(shared_offst = SharedMemorySizeInBytes(),
+    PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "De-Serialization successful");
+    PORTABLE_REQUIRE(shared_offst == SharedMemorySizeInBytes(),
                      "De-Serialization into shared memory successful");
     return offst;
   }
