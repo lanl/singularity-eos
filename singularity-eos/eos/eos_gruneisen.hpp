@@ -65,8 +65,11 @@ class Gruneisen : public EosBase<Gruneisen> {
                                                      const Real s3, const Real rho0);
   PORTABLE_INLINE_FUNCTION
   void CheckParams() const {
-    PORTABLE_ALWAYS_REQUIRE(_T0 >= 0, "Non-negative reference temperature");
-    PORTABLE_ALWAYS_REQUIRE(_rho0 >= 0, "Non-negative reference density");
+    PORTABLE_ALWAYS_REQUIRE(_T0 >= 0, "Non-negative reference temperature required");
+    PORTABLE_ALWAYS_REQUIRE(_rho0 >= 0, "Non-negative reference density required");
+    PORTABLE_ALWAYS_REQUIRE(_C0 >= 0, "Non-negative Hugoniot intercept required");
+    PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Non-negative heat capacity required");
+    PORTABLE_ALWAYS_REQUIRE(_rho_max > _rho0, "Maximum density must be greater than reference");
   }
   PORTABLE_INLINE_FUNCTION Real
   MaxStableDensityAtTemperature(const Real temperature) const;
