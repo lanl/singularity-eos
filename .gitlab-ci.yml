@@ -71,7 +71,7 @@ variables:
     - section start "cmake_build[collapsed=false]" "CMake Build"
     - spack build-env --dump ci_env.sh singularity-eos
     - source ci_env.sh
-    - cmake -DCMAKE_VERBOSE_MAKEFILE=off -DCMAKE_INSTALL_PREFIX=$PWD/build/install -DSINGULARITY_GOLDFILE_URL=file://${CI_PROJECT_DIR}/goldfiles.tar.gz build
+    - cmake -DCMAKE_VERBOSE_MAKEFILE=off -DCMAKE_INSTALL_PREFIX=$PWD/build/install build
     - cmake --build build --parallel
     - section end "cmake_build"
     - section start "testing[collapsed=false]" "Tests"

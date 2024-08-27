@@ -224,7 +224,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
                 "stellarcollapse" in self.spec.variants["build_extra"].value,
             ),
             self.define(
-                "SINGULARITY_TEST_STELLARCOLLAPSE2SPINER",
+                "SINGULARITY_TEST_STELLAR_COLLAPSE",
                 ("stellarcollapse" in self.spec.variants["build_extra"].value and self.run_tests),
             ),
             self.define("SINGULARITY_TEST_PYTHON", ("+python" in self.spec and self.run_tests)),
@@ -265,6 +265,11 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
             else:
               cxx_std_variant = "std" # older spack
             args.append(self.define("CMAKE_CXX_STANDARD", self.spec["kokkos"].variants[cxx_std_variant].value))
+
+        # goldfiles were downloaded into source folder
+        goldfiles = os.path.join(self.stage.source_path, "goldfiles.tar.gz")
+        if self.spec.satisfies("+tests build_extra=stellarcollapse") and self.run_tests and os.path.exists(goldfiles):
+            args.append(self.define("SINGULARITY_GOLDFILE_URL", f"file://{goldfiles}"))
 
         return args
 
