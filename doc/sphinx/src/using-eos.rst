@@ -225,12 +225,10 @@ provides a helper struct, ``BulkSerializer``:
 which may be initialized by a collection of ``EOS`` objects or by
 simply assigning (or constructing) its member field, ``eos_objects``
 appropriately. An example ``Container_t`` might be
-``Kokkos::View<EOS*>`` or ``std::vector<EOS>``. A specialization for
-``vector`` is provided as ``VectorSerializer`` and, if ``Kokkos`` is
-enabled through ``ports-of-call``, a ``ViewSerializer`` is also
-provided. The ``Resizer_t`` is a functor that knows how to resize a
-collection. For example, the ``MemberResizor`` functor used for
-``std::vector``s
+``std::vector<EOS>``. A specialization for ``vector`` is provided as
+``VectorSerializer``. The ``Resizer_t`` is a functor that knows how to
+resize a collection. For example, the ``MemberResizor`` functor used
+for ``std::vector``s
 
 .. code-block:: cpp
 
@@ -297,8 +295,8 @@ wraps, not just one. Example usage might look like this:
 
 It is also possible to (with care) mix serializers... i.e., you might
 serialize with a ``VectorSerializer`` and de-serialize with a
-``ViewSerializer``, as all that is required is that a container have a
-``size``, provide iterators, and be capable of being resized.
+different container, as all that is required is that a container have
+a ``size``, provide iterators, and be capable of being resized.
 
 .. warning::
 

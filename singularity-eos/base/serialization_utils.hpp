@@ -103,17 +103,5 @@ struct MemberResizer {
 template <typename EOS>
 using VectorSerializer = BulkSerializer<std::vector<EOS>, MemberResizer>;
 
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-struct ViewResizer {
-  template <typename Collection_t>
-  void operator()(Collection_t &collection, std::size_t count) {
-    Kokkos::resize(collection, count);
-  }
-};
-template <typename EOS>
-using ViewSerializer =
-    BulkSerializer<typename Kokkos::View<EOS *>::HostMirror, ViewResizer>;
-#endif // PORTABILITY_STRATEGY_KOKKOS
-
 } // namespace singularity
 #endif // SINGULARITY_EOS_BASE_SERIALIZATION_UTILS_
