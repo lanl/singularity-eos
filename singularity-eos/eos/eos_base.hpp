@@ -81,6 +81,8 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
+  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityTemperature;                      \
+  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityInternalEnergy                    \
   using EosBase<EOSDERIVED>::EntropyIsNotEnabled;                                        \
   using EosBase<EOSDERIVED>::MinInternalEnergyIsNotEnabled;                              \
   using EosBase<EOSDERIVED>::IsModified;                                                 \
@@ -169,6 +171,29 @@ class EosBase {
     constexpr bool do_mod = variadic_utils::contains_v<Mod<CRTP>, Ts...>();
     return ConditionallyModify<Mod>(variadic_utils::bool_constant<do_mod>(),
                                     std::forward<Args>(args)...);
+  }
+
+  // Scalar member functions that get shared
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GibbsFreeEnergyFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const CRTP copy = *(static_cast<CRTP const *>(this));
+    Real sie = copy.InternalEnergyFromDensityTemperature(rho, T, lambda);
+    Real P = copy.PressureFromDensityTemperature(rho, T, lambda);
+    Real S = copy.EntropyFromDensityTemperature(rho, T, lambda);
+    return sie + (P / rho) - T * S;
+  }
+  // Scalar member functions that get shared
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GibbsFreeEnergyFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const CRTP copy = *(static_cast<CRTP const *>(this));
+    Real T = copy.TemperatureFromDensityInternalEnergy(rho, T, lambda);
+    Real P = copy.PressureFromDensityTemperature(rho, T, lambda);
+    Real S = copy.EntropyFromDensityTemperature(rho, T, lambda);
+    return sie + (P / rho) - T * S;
   }
 
   // Vector member functions
@@ -605,6 +630,73 @@ class EosBase {
     GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
                                             std::forward<LambdaIndexer>(lambdas));
   }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GibbsFreeEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                    ConstRealIndexer &&Ts,
+                                                    RealIndexer &&Gs, const int num,
+                                                    LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          Gs[i] = copy.GibbsFreeEnergyFromDensityTemperature(rhos[i], T[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  GibbsFreeEnergyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&Ts,
+                                        RealIndexer &&Gs, Real * /*scratch*/,
+                                        const int num, LambdaIndexer &&lambdas) const {
+    GibbsFreeEnergyFromDensityTemperature(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(Ts),
+        std::forward<RealIndexer>(Gs), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void GibbsFreeEnergyFromDensityTemperature(const Real *rhos, const Real *sieTs,
+                                                    Real *Gs, Real * /*scratch*/,
+                                                    const int num,
+                                                    LambdaIndexer &&lambdas,
+                                                    Transform && = Transform()) const {
+    GibbsFreeEnergyFromDensityTemperature(rhos, Ts, Gs, num,
+                                          std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GibbsFreeEnergyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                       ConstRealIndexer &&sies,
+                                                       RealIndexer &&Gs, const int num,
+                                                       LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          Gs[i] =
+              copy.GibbsFreeEnergyFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void GibbsFreeEnergyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                       ConstRealIndexer &&sies,
+                                                       RealIndexer &&Gs,
+                                                       Real * /*scratch*/, const int num,
+                                                       LambdaIndexer &&lambdas) const {
+    GibbsFreeEnergyFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(Gs), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void GibbsFreeEnergyFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                       Real *Gs, Real * /*scratch*/,
+                                                       const int num,
+                                                       LambdaIndexer &&lambdas,
+                                                       Transform && = Transform()) const {
+    GibbsFreeEnergyFromDensityInternalEnergy(rhos, sies, Gs, num,
+                                             std::forward<LambdaIndexer>(lambdas));
+  }
+
   template <typename RealIndexer, typename LambdaIndexer>
   inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                       RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
@@ -619,6 +711,7 @@ class EosBase {
                        output, lambdas[i]);
         });
   }
+
   // Report minimum values of density and temperature
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const { return 0; }
