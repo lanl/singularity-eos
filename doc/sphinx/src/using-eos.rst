@@ -115,8 +115,8 @@ and a ``is_domain_root`` boolean:
     SharedMemSettings();
     SharedMemSettings(char *data_, bool is_domain_root_)
         : data(data_), is_domain_root(is_domain_root_) {}
-    char *data;
-    bool is_domain_root;
+    char *data = nullptr; // defaults
+    bool is_domain_root = false;
   };
 
 The ``data`` pointer should point to a shared memory allocation. The
@@ -276,8 +276,7 @@ look like this:
 .. warning::
 
   Since EOSPAC is a library, DeSerialization is destructive for EOSPAC
-  and may have side-effects. DeSerializing an EOSPAC object will
-  *completely* reset the EOSPAC backend.
+  and may have side-effects.
 
 .. _`MPI Windows`: https://www.mpi-forum.org/docs/mpi-4.1/mpi41-report/node311.htm
 
