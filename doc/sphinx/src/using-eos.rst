@@ -167,20 +167,37 @@ Putting everything together, a full sequence with MPI might look like this:
   }
   MPI_Bcast(packed_data, packed_size, MPI_BYTE, 0, MPI_COMM_WORLD);
   
+  // the default doesn't do shared memory.
+  // we will change it below if shared memory is enabled.
   singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_SETTINGS;
+
   char *shared_data;
   char *mpi_base_pointer;
   int mpi_unit;
   MPI_Aint query_size;
   MPI_Win window;
   MPI_Comm shared_memory_comm;
+  int island_rank, island_size; // rank in, size of shared memory region
   if (use_mpi_shared_memory) {
+    // Generate shared memory comms
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shared_memory_comm);
+    // rank on a region that shares memory
+    MPI_Comm_rank(shared_memory_comm, &island_rank);
+    // size on a region that shares memory
+    MPI_COMM_size(shared_memory_comm, &island_size);
+
     // Create the MPI shared memory object and get a pointer to shared data
+    // this allocation is a collective and must be called on every rank.
+    // the total size of the allocation is the sum over ranks in the shared memory comm
+    // of requested memory. So it's valid to request all you want on rank 0 and nothing
+    // on the remaining ranks.
     MPI_Win_allocate_shared((island_rank == 0) ? shared_size : 0,
                             1, MPI_INFO_NULL, shared_memory_comm, &mpi_base_pointer,
                             &window);
+    // This gets a pointer to the shared memory allocation valid in local address space
+    // on every rank
     MPI_Win_shared_query(window, MPI_PROC_NULL, &query_size, &mpi_unit, &shared_data);
-    // Mutex for MPI window
+    // Mutex for MPI window. Writing to shared memory currently allowed.
     MPI_Win_lock_all(MPI_MODE_NOCHECK, window);
     // Set SharedMemSettings
     settings.data = shared_data;
@@ -188,7 +205,7 @@ Putting everything together, a full sequence with MPI might look like this:
   }
   eos.DeSerialize(packed_data, settings);
   if (use_mpi_shared_memory) {
-    MPI_Win_unlock_all(window);
+    MPI_Win_unlock_all(window); // Writing to shared memory disabled.
     MPI_Barrier(shared_memory_comm);
     free(packed_data);
   }
