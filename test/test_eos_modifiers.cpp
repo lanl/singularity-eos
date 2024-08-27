@@ -331,19 +331,19 @@ SCENARIO("Serialization of modified EOSs preserves their properties",
     }
 
     WHEN("We serialize the EOS") {
-      singularity::BulkSerializer<EOS> serializer({eos_scaled, eos_trivial});
+      singularity::VectorSerializer<EOS> serializer({eos_scaled, eos_trivial});
       auto [size, data] = serializer.Serialize();
       REQUIRE(size == serializer.SerializedSizeInBytes());
       REQUIRE(size > 0);
       REQUIRE(data != nullptr);
 
       THEN("We can de-serialize the EOS") {
-        singularity::BulkSerializer<EOS> deserializer;
+        singularity::VectorSerializer<EOS> deserializer;
         deserializer.DeSerialize(data);
         REQUIRE(deserializer.Size() == serializer.Size());
 
         AND_THEN("The de-serialized EOS still evaluates properly") {
-          auto eos_new = deserializer.Get(0);
+          auto eos_new = deserializer.eos_objects[0];
           REQUIRE(
               isClose(eos_new.TemperatureFromDensityInternalEnergy(rho_test, sie_test),
                       temp_test, EPS));

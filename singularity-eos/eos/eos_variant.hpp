@@ -1053,14 +1053,14 @@ class Variant {
     if (dyn_size > 0) {
       offst += DumpDynamicMemory(dst + offst);
     }
-    PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "Serialization successful");
+    PORTABLE_ALWAYS_REQUIRE(offst == SerializedSizeInBytes(), "Serialization failed!");
     return offst;
   }
   auto Serialize() {
     std::size_t size = SerializedSizeInBytes();
     char *dst = (char *)malloc(size);
     std::size_t new_size = Serialize(dst);
-    PORTABLE_REQUIRE(size == new_size, "Serialization successful");
+    PORTABLE_ALWAYS_REQUIRE(size == new_size, "Serialization failed!");
     return std::make_pair(size, dst);
   }
   std::size_t DeSerialize(char *src,

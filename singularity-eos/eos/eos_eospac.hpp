@@ -141,7 +141,9 @@ class EOSPAC : public EosBase<EOSPAC> {
                 eospacSplit apply_splitting = eospacSplit::none,
                 bool linear_interp = false);
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
-    // TODO(JMM): I really don't know what to put here...
+    // TODO(JMM): More validation checks?
+    PORTABLE_ALWAYS_REQUIRE(rho_min_ >= 0, "Non-negative minimum density");
+    PORTABLE_ALWAYS_REQUIRE(temp_min_ >= 0, "Non-negative minimum temperature");
   }
   inline EOSPAC GetOnDevice() { return *this; }
 
@@ -1248,7 +1250,6 @@ inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
   EOS_INTEGER NTABLES[] = {NT};
   EOS_INTEGER error_code = EOS_OK;
-  eos_DestroyAll(&error_code);
   eosCheckError(error_code, "eos_DestroyAll", Verbosity::Debug);
 #ifdef SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
   PORTABLE_ALWAYS_REQUIRE(

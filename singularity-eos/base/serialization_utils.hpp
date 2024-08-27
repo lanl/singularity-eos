@@ -15,7 +15,6 @@
 #ifndef SINGULARITY_EOS_BASE_SERIALIZATION_UTILS_
 #define SINGULARITY_EOS_BASE_SERIALIZATION_UTILS_
 
-#include <initializer_list>
 #include <numeric>
 #include <utility>
 #include <vector>
@@ -27,16 +26,12 @@
 
 namespace singularity {
 
-template <typename EOS>
+template <typename Container_t, typename Resizer_t>
 struct BulkSerializer {
+  Container_t eos_objects;
+
   BulkSerializer() = default;
-  explicit BulkSerializer(const std::initializer_list<EOS> &eos_objects_)
-      : eos_objects(eos_objects_) {}
-  explicit BulkSerializer(const std::vector<EOS> &eos_objects_)
-      : eos_objects(eos_objects_) {}
-  explicit BulkSerializer(const int N) : eos_objects(N) {}
-  const EOS &Get(std::size_t i) const { return eos_objects[i]; }
-  EOS &Get(std::size_t i) { return eos_objects[i]; }
+  BulkSerializer(const Container_t &eos_objects_) : eos_objects(eos_objects_) {}
   void Finalize() {
     for (auto &eos : eos_objects) {
       eos.Finalize();
@@ -44,12 +39,12 @@ struct BulkSerializer {
   }
   const auto Size() const { return eos_objects.size(); }
   std::size_t SerializedSizeInBytes() const {
-    return sizeof(std::size_t) + accumulate_([](std::size_t tot, const EOS &eos) {
+    return sizeof(std::size_t) + accumulate_([](std::size_t tot, const auto &eos) {
              return tot + eos.SerializedSizeInBytes();
            });
   }
   std::size_t SharedMemorySizeInBytes() const {
-    return accumulate_([](std::size_t tot, const EOS &eos) {
+    return accumulate_([](std::size_t tot, const auto &eos) {
       return tot + eos.SharedMemorySizeInBytes();
     });
   }
@@ -60,21 +55,21 @@ struct BulkSerializer {
     for (auto &eos : eos_objects) {
       offst += eos.Serialize(dst + offst);
     }
-    PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "Serialization successful");
+    PORTABLE_ALWAYS_REQUIRE(offst == SerializedSizeInBytes(), "Serialization failed!");
     return offst;
   }
   auto Serialize() {
     std::size_t size = SerializedSizeInBytes();
     char *dst = (char *)malloc(size);
     std::size_t new_size = Serialize(dst);
-    PORTABLE_REQUIRE(size == new_size, "Serialization successful");
+    PORTABLE_ALWAYS_REQUIRE(size == new_size, "Serialization failed!");
     return std::make_pair(size, dst);
   }
   std::size_t DeSerialize(char *src,
                           const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
     std::size_t vsize;
     memcpy(&vsize, src, sizeof(std::size_t));
-    eos_objects.resize(vsize);
+    Resizer_t()(eos_objects, vsize);
     SharedMemSettings stngs_loc = stngs; // non-const
     std::size_t offst = sizeof(std::size_t);
     std::size_t shared_offst = 0;
@@ -84,9 +79,9 @@ struct BulkSerializer {
       stngs_loc.data += shared_bytes;
       shared_offst += shared_bytes;
     }
-    PORTABLE_REQUIRE(offst == SerializedSizeInBytes(), "De-Serialization successful");
-    PORTABLE_REQUIRE(shared_offst == SharedMemorySizeInBytes(),
-                     "De-Serialization into shared memory successful");
+    PORTABLE_ALWAYS_REQUIRE(offst == SerializedSizeInBytes(), "De-Serialization failed!");
+    PORTABLE_ALWAYS_REQUIRE(shared_offst == SharedMemorySizeInBytes(),
+                            "De-Serialization into shared memory failed!");
     return offst;
   }
 
@@ -96,10 +91,29 @@ struct BulkSerializer {
     std::size_t init = 0;
     return std::accumulate(eos_objects.cbegin(), eos_objects.cend(), init, f);
   }
-
- public:
-  std::vector<EOS> eos_objects;
 };
+
+struct MemberResizer {
+  template <typename Collection_t>
+  void operator()(Collection_t &collection, std::size_t count) {
+    collection.resize(count);
+  }
+};
+
+template <typename EOS>
+using VectorSerializer = BulkSerializer<std::vector<EOS>, MemberResizer>;
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+struct ViewResizer {
+  template <typename Collection_t>
+  void operator()(Collection_t &collection, std::size_t count) {
+    Kokkos::resize(collection, count);
+  }
+};
+template <typename EOS>
+using ViewSerializer =
+    BulkSerializer<typename Kokkos::View<EOS *>::HostMirror, ViewResizer>;
+#endif // PORTABILITY_STRATEGY_KOKKOS
 
 } // namespace singularity
 #endif // SINGULARITY_EOS_BASE_SERIALIZATION_UTILS_

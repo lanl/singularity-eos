@@ -202,15 +202,35 @@ provides a helper struct, ``BulkSerializer``:
 
 .. code-block:: cpp
 
-  template<typename EOS>
+  template<typename Container_t, Resizer_t>
   singularity::BulkSerializer
 
-which may be initialized by an initializer list of ``EOS`` objects or
-a ``std::vector`` of them. It then provides all the above-described
-functions: ``SerializedSizeInBytes``, ``SharedMemorySizeInBytes``,
-``Serialize``, and ``DeSerialize``, but it operates on all ``EOS``
-objects it was initialized with, not just one. Example usage might
-look like this:
+which may be initialized by a collection of ``EOS`` objects or by
+simply assigning (or constructing) its member field, ``eos_objects``
+appropriately. An example ``Container_t`` might be
+``Kokkos::View<EOS*>`` or ``std::vector<EOS>``. A specialization for
+``vector`` is provided as ``VectorSerializer`` and, if ``Kokkos`` is
+enabled through ``ports-of-call``, a ``ViewSerializer`` is also
+provided. The ``Resizer_t`` is a functor that knows how to resize a
+collection. For example, the ``MemberResizor`` functor used for
+``std::vector``s
+
+.. code-block:: cpp
+
+  struct MemberResizer {
+    template<typename Collection_t>
+    void operator()(Collection_t &collection, std::size_t count) {
+      collection.resize(count);
+    }
+  };
+
+which will work for any ``stl`` container with a ``resize`` method.
+
+The ``BulkSerializer`` provides all the above-described serialization
+functions for ``EOS`` objects: ``SerializedSizeInBytes``,
+``SharedMemorySizeInBytes``, ``Serialize``, and ``DeSerialize``, but
+it operates on all ``EOS`` objects contained in the container it
+wraps, not just one. Example usage might look like this:
 
 .. code-block:: cpp
 
@@ -220,7 +240,7 @@ look like this:
     /*
        Initialization code goes here
      */
-    singularity::BulkSerializer<EOS> serializer(eos_vec);
+    singularity::VectorSerializer<EOS> serializer(eos_vec);
     packed_size = serializer.SerializedSizeInBytes();
     shared_size = serializer.SharedMemorySizeInBytes();
   }
@@ -257,7 +277,7 @@ look like this:
     settings.is_domain_root = (island_rank == 0);
   }
   // note the number of EOSes to deserialize is required.
-  singularity::BulkSerializer<EOS> deserializer;
+  singularity::VectorSerializer<EOS> deserializer;
   deserializer.DeSerialize(packed_data, settings);
   if (use_mpi_shared_memory) {
     MPI_Win_unlock_all(window);
@@ -272,6 +292,10 @@ look like this:
     // ...
   }
 
+It is also possible to (with care) mix serializers... i.e., you might
+serialize with a ``VectorSerializer`` and de-serialize with a
+``ViewSerializer``, as all that is required is that a container have a
+``size``, provide iterators, and be capable of being resized.
 
 .. warning::
 
