@@ -252,12 +252,13 @@ wraps, not just one. Example usage might look like this:
 .. code-block:: cpp
 
   int packed_size, shared_size;
+  singularity::VectorSerializer<EOS> serializer;
   if (rank == 0) { // load eos object
     // Code to initialize a bunch of EOS objects into a std::vector<EOS>
     /*
        Initialization code goes here
      */
-    singularity::VectorSerializer<EOS> serializer(eos_vec);
+    serializer = singularity::VectorSerializer<EOS>(eos_vec);
     packed_size = serializer.SerializedSizeInBytes();
     shared_size = serializer.SharedMemorySizeInBytes();
   }
