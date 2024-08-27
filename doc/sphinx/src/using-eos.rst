@@ -219,7 +219,7 @@ provides a helper struct, ``BulkSerializer``:
 
 .. code-block:: cpp
 
-  template<typename Container_t, Resizer_t>
+  template<typename Container_t, Resizer_t = MemberResizer>
   singularity::BulkSerializer
 
 which may be initialized by a collection of ``EOS`` objects or by

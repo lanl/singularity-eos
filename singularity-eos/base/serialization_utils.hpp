@@ -26,7 +26,14 @@
 
 namespace singularity {
 
-template <typename Container_t, typename Resizer_t>
+struct MemberResizer {
+  template <typename Collection_t>
+  void operator()(Collection_t &collection, std::size_t count) {
+    collection.resize(count);
+  }
+};
+
+template <typename Container_t, typename Resizer_t = MemberResizer>
 struct BulkSerializer {
   Container_t eos_objects;
 
@@ -90,13 +97,6 @@ struct BulkSerializer {
   std::size_t accumulate_(const F &f) const {
     std::size_t init = 0;
     return std::accumulate(eos_objects.cbegin(), eos_objects.cend(), init, f);
-  }
-};
-
-struct MemberResizer {
-  template <typename Collection_t>
-  void operator()(Collection_t &collection, std::size_t count) {
-    collection.resize(count);
   }
 };
 
