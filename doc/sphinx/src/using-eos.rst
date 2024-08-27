@@ -275,31 +275,16 @@ wraps, not just one. Example usage might look like this:
   MPI_Bcast(packed_data, packed_size, MPI_BYTE, 0, MPI_COMM_WORLD);
   
   singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_SETTINGS;
-  char *shared_data;
-  char *mpi_base_pointer;
-  int mpi_unit;
-  MPI_Aint query_size;
-  MPI_Win window;
-  MPI_Comm shared_memory_comm;
+  // same MPI declarations as above
   if (use_mpi_shared_memory) {
-    // Create the MPI shared memory object and get a pointer to shared data
-    MPI_Win_allocate_shared((island_rank == 0) ? shared_size : 0,
-                            1, MPI_INFO_NULL, shared_memory_comm, &mpi_base_pointer,
-                            &window);
-    MPI_Win_shared_query(window, MPI_PROC_NULL, &query_size, &mpi_unit, &shared_data);
-    // Mutex for MPI window
-    MPI_Win_lock_all(MPI_MODE_NOCHECK, window);
-    // Set SharedMemSettings
+    // same MPI code as above including setting the settings
     settings.data = shared_data;
     settings.is_domain_root = (island_rank == 0);
   }
-  // note the number of EOSes to deserialize is required.
   singularity::VectorSerializer<EOS> deserializer;
   deserializer.DeSerialize(packed_data, settings);
   if (use_mpi_shared_memory) {
-    MPI_Win_unlock_all(window);
-    MPI_Barrier(shared_memory_comm);
-    free(packed_data);
+    // same MPI code as above
   }
   // extract each individual EOS and do something with it
   std::vector<EOS> eos_host_vec = deserializer.eos_objects;
