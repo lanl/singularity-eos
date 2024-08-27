@@ -68,7 +68,7 @@ returns the amount of data (in bytes) that a given object can place into shared 
 
   Many models may not be able to utilize shared memory at all. This
   holds for most analytic models, for example. The ``EOSPAC`` backend
-  will only utilize shared memory if ``EOSPAC`` is sufficiently recent
+  will only utilize shared memory if the ``EOSPAC`` version is sufficiently recent
   to support it and if ``singularity-eos`` is built with serialization
   support for ``EOSPAC`` (enabled with
   ``-DSINGULARITY_EOSPAC_ENABLE_SHMEM=ON``).
