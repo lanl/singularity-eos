@@ -1176,9 +1176,11 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::lTFromlRhoSie_(
       lT = lTGuess;
     }
   }
+#ifdef PORTABILITY_STRATEGY_NONE
   if (memoryStatus_ != DataStatus::OnDevice) {
     status_ = status;
   }
+#endif // PORTABILITY_STRATEGY_NONE
   lambda[Lambda::lT] = lT;
   return lT;
 }
