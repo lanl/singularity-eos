@@ -100,22 +100,38 @@ openmpi_cuda_gcc_volta:
     SPACK_ENV_NAME: openmpi-cuda-gcc-volta
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
 
-openmpi_cuda_gcc_volta_noclosure:
-  stage: build_n_test
-  extends: [.ascgit_job, .darwin_job, .report_tests,]
-  needs: [download_prereq]
-  variables:
-    SPACK_ENV_NAME: openmpi-cuda-gcc-volta
-    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
-    SINGULARITY_EOS_SPEC: "%gcc@=12.2.0 +mpi+cuda+kokkos+spiner+hdf5+kokkos-kernels+tests~closure~fortran build_extra=sesame,stellarcollapse cuda_arch=70"
-  script:
-   - source .gitlab/build_and_test.sh --until env ${CLUSTER} ${SPACK_ENV_NAME}
-   - spack config add "packages:singularity-eos:require:'${SINGULARITY_EOS_SPEC}'"
-   - spack concretize -f --fresh
-   - spack_cmake_configure
-   - cmake_build -DSINGULARITY_BUILD_CLOSURE=off -DSINGULARITY_USE_FORTRAN=off
-   - cmake_test
-   - cmake_install
+# currently disabled due to very long compilation times
+#openmpi_fortran_cuda_gcc_ampere:
+#  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+#  needs: [download_prereq]
+#  variables:
+#    SPACK_ENV_NAME: openmpi-fortran-cuda-gcc-ampere
+#    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
+#
+#openmpi_fortran_cuda_gcc_volta:
+#  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+#  needs: [download_prereq]
+#  variables:
+#    SPACK_ENV_NAME: openmpi-fortran-cuda-gcc-volta
+#    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+
+# EXAMPLE of how to modify an existing Spack environment and/or set CMake options
+#openmpi_cuda_gcc_volta_noclosure:
+#  stage: build_n_test
+#  extends: [.ascgit_job, .darwin_job, .report_tests,]
+#  needs: [download_prereq]
+#  variables:
+#    SPACK_ENV_NAME: openmpi-cuda-gcc-volta
+#    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+#    SINGULARITY_EOS_SPEC: "%gcc@=12.2.0 +mpi+cuda+kokkos+spiner+hdf5+kokkos-kernels+tests~closure~fortran build_extra=sesame,stellarcollapse cuda_arch=70"
+#  script:
+#   - source .gitlab/build_and_test.sh --until env ${CLUSTER} ${SPACK_ENV_NAME}
+#   - spack config add "packages:singularity-eos:require:'${SINGULARITY_EOS_SPEC}'"
+#   - spack concretize -f --fresh
+#   - spack_cmake_configure
+#   - cmake_build -DSINGULARITY_BUILD_CLOSURE=off -DSINGULARITY_USE_FORTRAN=off
+#   - cmake_test
+#   - cmake_install
 
 openmpi_fortran_kokkos_openmp_gcc:
   extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
@@ -133,8 +149,15 @@ openmpi_fortran_kokkos_static_openmp_gcc:
 #  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
 #  needs: [download_prereq]
 #  variables:
-#    SPACK_ENV_NAME: openmpi-rocm-gcc
-#    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-amd-mi250"
+#    spack_env_name: openmpi-rocm-gcc
+#    scheduler_parameters: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
+
+#openmpi_fortran_rocm_gcc:
+#  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+#  needs: [download_prereq]
+#  variables:
+#    spack_env_name: openmpi-fortran-rocm-gcc
+#    scheduler_parameters: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
 
 craympich_gcc:
   extends: [.ascgit_job, .rocinante_job, .report_tests, .build_and_test]
