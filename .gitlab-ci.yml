@@ -10,7 +10,7 @@ default:
   interruptible: true
 
 variables:
-  ENABLED_CLUSTERS: "darwin"
+  ENABLED_CLUSTERS: "darwin,rocinante"
   GIT_SUBMODULE_STRATEGY: normal
 
 .ascgit_job:
@@ -20,7 +20,11 @@ variables:
 
 .darwin_job:
   rules:
-    - if: $ENABLED_CLUSTERS =~ /darwin/
+    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "pipeline"
+    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_COMMIT_TAG
   variables:
     CLUSTER: darwin
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p general,skylake-gold,skylake-platinum --constraint=\"(cpu_family:skylake)&ib:edr\""
@@ -28,6 +32,12 @@ variables:
     - darwin-slurm-shared
 
 .rocinante_job:
+  rules:
+    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "pipeline"
+    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_COMMIT_TAG
   variables:
     CLUSTER: rocinante
     SCHEDULER_PARAMETERS: "-N 1 -A asc-ci -p ci --reservation ci --time=00:45:00"
