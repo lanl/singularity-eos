@@ -100,12 +100,12 @@ openmpi_fortran_kokkos_static_openmp_gcc:
   variables:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-gcc
 
-openmpi_rocm_gcc:
-  extends: [.ascgit_job, .darwin_job, .build_and_test]
-  needs: [download_prereq]
-  variables:
-    SPACK_ENV_NAME: openmpi-rocm-gcc
-    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-amd-mi250"
+#openmpi_rocm_gcc:
+#  extends: [.ascgit_job, .darwin_job, .build_and_test]
+#  needs: [download_prereq]
+#  variables:
+#    SPACK_ENV_NAME: openmpi-rocm-gcc
+#    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-amd-mi250"
 
 craympich_gcc:
   extends: [.ascgit_job, .rocinante_job, .build_and_test]
