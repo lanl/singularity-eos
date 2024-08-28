@@ -63,13 +63,15 @@ register_headers(
     eos/singularity_eos_init_utils.hpp
     eos/variant_utils.hpp
     eos/eos_carnahan_starling.hpp
-    closure/kinetic_phasetransition_models.hpp
-    closure/kinetic_phasetransition_utils.hpp
-    closure/kinetic_phasetransition_methods.hpp
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
-  register_headers(closure/mixed_cell_models.hpp)
+  register_headers(
+    closure/mixed_cell_models.hpp
+    closure/kinetic_phasetransition_models.hpp
+    closure/kinetic_phasetransition_utils.hpp
+    closure/kinetic_phasetransition_methods.hpp
+  )
   if (SINGULARITY_USE_FORTRAN OR SINGULARITY_BUILD_TESTS)
     # while these are C++ files, they
     # are only needed for the fortran backend or unit testing

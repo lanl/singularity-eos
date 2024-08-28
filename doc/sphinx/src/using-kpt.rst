@@ -186,7 +186,7 @@ in ``fromto``, "ij", is composed from the ``gibbs`` index of the "from" phase, :
 
 where ``num_phases`` is :math:`N`, ``gibbs`` is an array with length :math:`N`, with Gibbs free energy for each phase.
 ``gibbsorder`` gives the indices of ``gibbs``, the phase indices, in order from highest Gibbs free energy to lowest Gibbs free energy (see figure above). This means
-that ``gibbs[gibbsorder[0]]`` is the highest Gibbs free energy and ``gibbs[gibbsorder[N]]`` is the lowest, that is, the Gibbs free energy of the equilibrium phase.
+that ``gibbs[gibbsorder[0]]`` is the highest Gibbs free energy and ``gibbs[gibbsorder[N-1]]`` is the lowest, that is, the Gibbs free energy of the equilibrium phase.
                                         
                                         
 The time step
@@ -240,5 +240,9 @@ the phase transition indices :math:`jk` is
  jk = (j+1)(N-1) - (j-1)j/2 - k
 
 as can be verified by hand in the figure above.
+
+Note that this method depleats phases in order of mass transfer to the lowest Gibbs free energy first, then the next lowest, and so on (see figure above), 
+but stops once the originating phase is depleated. If this is reflecting the physical reality, is up to the user to decide. The size of the time step 
+problem is taken care of by never transfering more that the existing mass in a phase to any other phase.
 
 

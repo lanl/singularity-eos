@@ -19,6 +19,7 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/closure/kinetic_phasetransition_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #include <cmath>
@@ -53,6 +54,11 @@ PORTABLE_INLINE_FUNCTION void LogRatesCGModel(const Real *w, const Real *b,
       // follows 2nd highest to levels below.
       logRjk[jk] =
           log(w[gibbsorder[j] * num_phases + gibbsorder[k]] * dgdb) + dgdb * dgdb;
+      // The fromto is just a way of labeling what gibbs (user/host) indexed phases
+      // (assuming max 10 phases) the phase transition index (jk), used in logRjk, are
+      // refering to. Internally the gibbsorder indexing (0 for highest Gibbs phase and
+      // N-1 for lowest Gibbs phase) is always used.
+      // x should be interpreted as 0x
       fromto[jk] = gibbsorder[j] * 10 + gibbsorder[k];
       jk++;
     }
@@ -67,7 +73,6 @@ PORTABLE_INLINE_FUNCTION void LogRatesCGModel(const Real *w, const Real *b,
 PORTABLE_INLINE_FUNCTION Real LogMaxTimeStep(const int num_phases, const Real *mfs,
                                              const int *gibbsorder, const Real *logRjk) {
 
-  Real minmassfraction = 1.e-10;
   Real logtimestep = 1.;
   int jk = 0;
   for (int j = 0; j < num_phases - 1; j++) {
@@ -76,7 +81,7 @@ PORTABLE_INLINE_FUNCTION Real LogMaxTimeStep(const int num_phases, const Real *m
       // First is highest level to levels below, largest gibbs energy diff first. Then
       // follows 2nd highest to levels below.
       // But largest deltaGibbs does not mean max rate.
-      if (mfs[gibbsorder[j]] > minmassfraction) {
+      if (mfs[gibbsorder[j]] > KPT_MIN_MASS_FRACTION) {
         logtimestep = std::min(logtimestep, -logRjk[jk++]);
       } else {
         jk++;

@@ -111,7 +111,7 @@ if(SINGULARITY_BUILD_CLOSURE)
                                          singularity-eos::singularity-eos)
     target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(pte test_pte)
-##### 
+
     add_executable(test_pte_2phase test_pte_2phase.cpp)
     target_link_libraries(test_pte_2phase PRIVATE Catch2::Catch2
                                          singularity-eos::singularity-eos)

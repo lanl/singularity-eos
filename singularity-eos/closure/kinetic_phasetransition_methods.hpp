@@ -19,6 +19,7 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/closure/kinetic_phasetransition_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #include <cmath>
@@ -38,8 +39,6 @@ PORTABLE_INLINE_FUNCTION void SmallStepMFUpdate(const Real logdt, const int num_
                                                 const int *gibbsorder, const Real *logRjk,
                                                 Real *dmfs, Real *newmfs) {
 
-  Real minmassfraction = 1.e-10;
-
   // In logRjk: First is highest level to levels below, largest gibbs energy diff first.
   // Then follows 2nd highest to levels below. logRjk[jk], with jk = (j+1)(num_phases-1) -
   // (j-1)j/2 - k, contains rate for phase j+1 to k+1 where j=0 is highest gibbs free
@@ -49,51 +48,49 @@ PORTABLE_INLINE_FUNCTION void SmallStepMFUpdate(const Real logdt, const int num_
   // when origin level is exhausted. This will allow for jumping phases if needed. I also
   // think it is most physical.
   int jk = 0;
-  Real dx = 0.;
-  Real test = 0.;
-  Real newtest = 0.;
-  int offset = 0;
   for (int j = 0; j < num_phases - 1; j++) {
     // from high Gibb phase to low
-    test = massfractions[gibbsorder[j]];
+    Real new_massfrac = massfractions[gibbsorder[j]];
     // all phases except the higest gibbs free energy one (j=0) can get contributions from
-    // phases with higher gibbs free energy.
+    // phases with higher gibbs free energy (lower gibbsorder index)
     for (int k = 0; k < j; k++) {
-      offset = (k + 1) * (num_phases - 1) - (k - 1) * k / 2;
-      test = test + dmfs[offset - j];
+      int offset = (k + 1) * (num_phases - 1) - (k - 1) * k / 2;
+      new_massfrac = new_massfrac + dmfs[offset - j];
     }
     for (int k = num_phases - 1; k > j; k--) {
       // from low Gibb phase to high, k>j always, gibbs_j > gibbs_k always
       // always mass transport from j->k
-      if (test < minmassfraction) {
-        dx = 0.;
+      if (new_massfrac < KPT_MIN_MASS_FRACTION) {
+        // Phase depleated, nothing more to transfer
+        Real dx = 0.;
         dmfs[jk++] = dx;
       } else {
-        dx = std::exp(logdt + logRjk[jk] + std::log(massfractions[gibbsorder[j]]));
-        newtest = test - dx;
-        if (newtest < minmassfraction) {
-          dmfs[jk++] = test;
+        Real dx = std::exp(logdt + logRjk[jk] + std::log(massfractions[gibbsorder[j]]));
+        Real new_trial_massfrac = new_massfrac - dx;
+        if (new_trial_massfrac < KPT_MIN_MASS_FRACTION) {
+          // Phase will be depleated, only take away what is left
+          dmfs[jk++] = new_massfrac;
         } else {
           dmfs[jk++] = dx;
         }
-        test = newtest;
+        new_massfrac = new_trial_massfrac;
       }
     }
-    if (test < minmassfraction) {
+    if (new_massfrac < KPT_MIN_MASS_FRACTION) {
       newmfs[gibbsorder[j]] = 0.;
     } else {
-      newmfs[gibbsorder[j]] = test;
+      newmfs[gibbsorder[j]] = new_massfrac;
     }
   }
   // lowest gibbs free energy phase update
   // lowest gibbs free energy phase (j=num_phases-1) can only amass what is coming from
-  // larger gibbs free energy levels
-  test = massfractions[gibbsorder[num_phases - 1]];
+  // larger gibbs free energy levels (lower gibbsorder indices)
+  Real new_massfrac = massfractions[gibbsorder[num_phases - 1]];
   for (int k = 0; k < num_phases - 1; k++) {
-    offset = (k + 1) * (num_phases - 1) - (k - 1) * k / 2;
-    test = test + dmfs[offset - num_phases + 1];
+    int offset = (k + 1) * (num_phases - 1) - (k - 1) * k / 2;
+    new_massfrac = new_massfrac + dmfs[offset - num_phases + 1];
   }
-  newmfs[gibbsorder[num_phases - 1]] = test;
+  newmfs[gibbsorder[num_phases - 1]] = new_massfrac;
   return;
 }
 

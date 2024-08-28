@@ -33,6 +33,8 @@
 
 namespace singularity {
 
+constexpr Real KPT_MIN_MASS_FRACTION = 1.0e-10;
+
 PORTABLE_INLINE_FUNCTION void SortGibbs(const int num_phases, const Real *gibbs,
                                         int *gibbsorder) {
   int itmp = 0;
