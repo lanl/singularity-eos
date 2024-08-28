@@ -35,17 +35,18 @@ variables:
     - rocinante
     - batch
 
-
-.build_and_test:
-  stage: build_n_test
-  script:
-    - source .gitlab/build_and_test.sh ${CLUSTER} ${SPACK_ENV_NAME}
+.report_tests:
   artifacts:
     expire_in: 2 weeks
     paths:
       - ${CI_PROJECT_DIR}/build/tests.xml
     reports:
       junit: ${CI_PROJECT_DIR}/build/tests.xml
+
+.build_and_test:
+  stage: build_n_test
+  script:
+    - source .gitlab/build_and_test.sh ${CLUSTER} ${SPACK_ENV_NAME}
 
 
 ########
@@ -54,6 +55,7 @@ variables:
 
 download_prereq:
   stage: prepare
+  extends: [.ascgit_job, .darwin_job]
   variables:
     GIT_SUBMODULE_STRATEGY: none
   script:
@@ -63,58 +65,75 @@ download_prereq:
       - goldfiles.tar.gz
 
 openmpi_gcc:
-  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-gcc
 
 openmpi_fortran_gcc:
-  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-fortran-gcc
 
 openmpi_cuda_gcc_ampere:
-  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-cuda-gcc-ampere
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
 
 openmpi_cuda_gcc_volta:
-  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-cuda-gcc-volta
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
 
+openmpi_cuda_gcc_volta_noclosure:
+  stage: build_n_test
+  extends: [.ascgit_job, .darwin_job, .report_tests,]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: openmpi-cuda-gcc-volta
+    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+    SINGULARITY_EOS_SPEC: "%gcc@=12.2.0 +mpi+cuda+kokkos+spiner+hdf5+kokkos-kernels+tests~closure~fortran build_extra=sesame,stellarcollapse cuda_arch=70"
+  script:
+   - source .gitlab/build_and_test.sh --until env ${CLUSTER} ${SPACK_ENV_NAME}
+   - spack config add "packages:singularity-eos:require:'${SINGULARITY_EOS_SPEC}'"
+   - spack concretize -f --fresh
+   - spack_cmake_configure
+   - cmake_build -DSINGULARITY_BUILD_CLOSURE=off -DSINGULARITY_USE_FORTRAN=off
+   - cmake_test
+   - cmake_install
+
 openmpi_fortran_kokkos_openmp_gcc:
-  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-openmp-gcc
 
 openmpi_fortran_kokkos_static_openmp_gcc:
-  extends: [.ascgit_job, .darwin_job, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-gcc
 
 #openmpi_rocm_gcc:
-#  extends: [.ascgit_job, .darwin_job, .build_and_test]
+#  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
 #  needs: [download_prereq]
 #  variables:
 #    SPACK_ENV_NAME: openmpi-rocm-gcc
 #    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-amd-mi250"
 
 craympich_gcc:
-  extends: [.ascgit_job, .rocinante_job, .build_and_test]
+  extends: [.ascgit_job, .rocinante_job, .report_tests, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: craympich-gcc
 
 craympich_fortran_gcc:
-  extends: [.ascgit_job, .rocinante_job, .build_and_test]
+  extends: [.ascgit_job, .rocinante_job, .report_tests, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: craympich-fortran-gcc

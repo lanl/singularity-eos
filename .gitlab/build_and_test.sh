@@ -140,7 +140,7 @@ cmake_build() {
   section start "cmake_build[collapsed=false]" "CMake Build"
   (
   source ${BUILD_ENV}
-  cmake -DCMAKE_VERBOSE_MAKEFILE=off -DCMAKE_INSTALL_PREFIX=$PWD/build/install build
+  cmake -DCMAKE_VERBOSE_MAKEFILE=off -DCMAKE_INSTALL_PREFIX=$PWD/build/install $@ build
   cmake --build ${BUILD_DIR} --parallel
   )
   section end "cmake_build"
