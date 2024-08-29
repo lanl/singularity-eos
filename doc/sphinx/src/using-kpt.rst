@@ -150,7 +150,8 @@ Carl Greeff formulated an empirical mass fraction update model as
 
  R_{ij} = \nu_{ij} \theta(G_i-G_j) \frac{G_i-G_j}{B_{ij}} \exp\left[ \left( \frac{G_i-G_j}{B_{ij}}\right)^2 \right]
 
-where :math:`\nu_{ij}` and :math:`B_{ij}` are material dependent fitting constants. 
+where :math:`\nu_{ij}` and :math:`B_{ij}` are material dependent fitting constants, and :math:`\theta` is the Heaviside step function that is
+:math:`0` for a negative argument and :math:`1` for a positive argument. 
 Mattsson-Wills performed a `parameter study <WillsParameterstudy_>`_ of this model, 
 which can be used as a guide for how to choose these parameters for a specific material and a specific phase transition.
 
@@ -162,14 +163,22 @@ This model is included in ``singularity-eos`` and its signature is
                   const int *gibbsorder, Real *logRij, int *fromto)
 
 where ``w`` is :math:`\nu_{ij}`, ``b`` is :math:`B_{ij}`, ``num_phases`` is
-:math:`N`, the number of phases, ``gibbs`` is :math:`G_i`, ``gibbsorder`` is an array of length :math:`N`, where the ``gibbs`` phase indices are ordered 
+:math:`N`, the number of phases, and ``gibbs`` is :math:`G_i`. 
+``gibbsorder`` is an array of length :math:`N`, where the ``gibbs`` phase indices are ordered 
 from the largest Gibbs free energy phase to the lowest Gibbs free energy phase (see figure below),
 ``logRij`` is :math:`\log(R_{ij})`, and ``fromto`` is a map between the phase indices :math:`i` and :math:`j` and the :math:`ij` phase transition indices in :math:`R_{ij}`. 
+
 The ``gibbs`` and ``gibbsorder`` arrays are of length :math:`N` while ``w`` and ``b`` are arrays of length :math:`N^2` representing the :math:`N \times N` matrices, row by row. 
 Note that it is *NOT* assumed that the phase transition parameters are the same when going from :math:`i \rightarrow j` and  :math:`j \rightarrow i`, that is, :math:`\{\nu,B\}_{ij} \neq \{\nu,B\}_{ji}`.
 Also note that :math:`R_{ii} = 0`.
-``logRij`` is an array of length :math:`N (N-1)/2` giving the logarithm of the non-zero mass transportation rates between phases. The ``fromto`` array 
-gives to which two phases in the ``gibbs`` array, each rate in ``logRij`` is associated: ``logRij[k]`` is the logarithm of the mass 
+
+``logRij`` is an array of length :math:`N (N-1)/2` giving the logarithm of the non-zero mass transportation rates between phases.  
+Using ``gibbsorder`` indices, :math:`j` and :math:`k`, we see that all :math:`R_{jk}` with :math:`j \geq k` are :math:`0` because of 
+:math:`\theta(G_j - G_k) = 0` (since :math:`G_k > G_j`). Writing :math:`R_{jk}` on matrix form would give that only the upper triangular part is non-zero, 
+giving :math:`N (N-1)/2` non-zero elements.
+
+The ``fromto`` array 
+gives which two phases in the ``gibbs`` array, each rate in ``logRij`` is associated with: ``logRij[k]`` is the logarithm of the mass 
 transportation rate from/to phases ``fromto[k]``, with ``k`` a phase transition index according to the figure below. The integer
 in ``fromto``, "ij", is composed from the ``gibbs`` index of the "from" phase, :math:`i`, and the ``gibbs`` index of the "to" phase, 
 :math:`j`, as :math:`i*10+j`, and with a single digit integer, "x", interpreted as "0x".

@@ -12,6 +12,9 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// TODO: Need to make this working on GPUs
+#ifdef PORTABILITY_STRATEGY_NONE
+
 #include <array>
 #include <cmath>
 #include <cstdio>
@@ -273,3 +276,4 @@ SCENARIO("First log rate test") {
     }
   }
 }
+#endif // PORTABILITY_STRATEGY_NONE

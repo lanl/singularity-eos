@@ -59,6 +59,7 @@ PORTABLE_INLINE_FUNCTION void LogRatesCGModel(const Real *w, const Real *b,
       // refering to. Internally the gibbsorder indexing (0 for highest Gibbs phase and
       // N-1 for lowest Gibbs phase) is always used.
       // x should be interpreted as 0x
+      // TODO: Change to struct or some more generalizable form
       fromto[jk] = gibbsorder[j] * 10 + gibbsorder[k];
       jk++;
     }

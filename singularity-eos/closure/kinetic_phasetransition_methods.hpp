@@ -65,6 +65,7 @@ PORTABLE_INLINE_FUNCTION void SmallStepMFUpdate(const Real logdt, const int num_
         Real dx = 0.;
         dmfs[jk++] = dx;
       } else {
+        // we do this multiplication in log space to avoid overflow
         Real dx = std::exp(logdt + logRjk[jk] + std::log(massfractions[gibbsorder[j]]));
         Real new_trial_massfrac = new_massfrac - dx;
         if (new_trial_massfrac < KPT_MIN_MASS_FRACTION) {
