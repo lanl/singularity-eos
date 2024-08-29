@@ -157,7 +157,7 @@ Putting everything together, a full sequence with MPI might look like this:
 
   // Send sizes
   MPI_Bcast(&packed_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&shared_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&spacked_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   // Allocate data needed
   packed_data = (char*)malloc(packed_size);
