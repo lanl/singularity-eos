@@ -13,7 +13,8 @@
 //------------------------------------------------------------------------------
 
 // TODO: Need to make this working on GPUs
-#ifdef PORTABILITY_STRATEGY_NONE
+//#ifdef PORTABILITY_STRATEGY_NONE
+#ifndef PORTABILITY_STRATEGY_KOKKOS
 
 #include <array>
 #include <cmath>
@@ -38,7 +39,7 @@ using singularity::LogRatesCGModel;
 using singularity::SmallStepMFUpdate;
 using singularity::SortGibbs;
 
-SCENARIO("First log rate test") {
+SCENARIO("Testing the KPT framework") {
   GIVEN("Parameters for a 5 phase system") {
     constexpr Real w[25] = {0.,  0.8510E+01, 20., 20., 20., 0.8510E+01, 0.,  20., 20.,
                             20., 20.,        20., 0.,  20., 20.,        20., 20., 20.,
@@ -276,4 +277,5 @@ SCENARIO("First log rate test") {
     }
   }
 }
-#endif // PORTABILITY_STRATEGY_NONE
+//#endif // PORTABILITY_STRATEGY_NONE
+#endif // PORTABILITY_STRATEGY_KOKKOS
