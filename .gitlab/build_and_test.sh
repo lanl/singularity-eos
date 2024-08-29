@@ -84,8 +84,10 @@ pre_test_steps() {
   (
   source ${BUILD_ENV}
   pushd ${BUILD_DIR}
+  if [[ -f ./sesame2spiner/sesame2spiner ]]; then
   ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat;
   ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat;
+  fi
   popd
   )
 }
