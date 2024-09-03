@@ -98,7 +98,7 @@ The pair is the pointer and its size. The function
 .. code-block:: cpp
 
   std::size_t EOS::DeSerialize(char *src,
-                const SharedMemSettings &stngs = DEFAULT_SHMEM_SETTINGS)
+                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS)
 
 Sets an EOS object based on the serialized representation contained in
 ``src``. It returns the number of bytes read from ``src``. Optionally,
@@ -156,8 +156,8 @@ Putting everything together, a full sequence with MPI might look like this:
   }
 
   // Send sizes
-  MPI_Bcast(&packed_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&spacked_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&packed_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&spacked_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
   // Allocate data needed
   packed_data = (char*)malloc(packed_size);
@@ -169,7 +169,7 @@ Putting everything together, a full sequence with MPI might look like this:
   
   // the default doesn't do shared memory.
   // we will change it below if shared memory is enabled.
-  singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_SETTINGS;
+  singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_STNGS;
 
   char *shared_data;
   char *mpi_base_pointer;
@@ -262,8 +262,8 @@ wraps, not just one. Example usage might look like this:
   }
 
   // Send sizes
-  MPI_Bcast(&packed_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&packed_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&packed_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&packed_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
   // Allocate data needed
   packed_data = (char*)malloc(packed_size);
@@ -273,7 +273,7 @@ wraps, not just one. Example usage might look like this:
   }
   MPI_Bcast(packed_data, packed_size, MPI_BYTE, 0, MPI_COMM_WORLD);
   
-  singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_SETTINGS;
+  singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_STNGS;
   // same MPI declarations as above
   if (use_mpi_shared_memory) {
     // same MPI code as above including setting the settings
@@ -710,24 +710,7 @@ unmodified EOS model, call
 .. cpp:function:: auto GetUnmodifiedObject();
 
 The return value here will be either the type of the ``EOS`` variant
-type or the unmodified model (for example ``IdealGas``) or, depending
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+type or the unmodified model (for example ``IdealGas``), depending
 on whether this method was callled within a variant or on a standalone
 model outside a variant.
 

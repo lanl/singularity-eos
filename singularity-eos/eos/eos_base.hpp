@@ -671,6 +671,21 @@ class EosBase {
   }
 
   // Serialization
+  /*
+    The methodology here is there are *three* size methods all EOS's provide:
+    - `SharedMemorySizeInBytes()` which is the amount of memory a class can share
+    - `DynamicMemorySizeInBytes()` which is the amount of memory not covered by
+    `sizeof(this)`
+    - `SerializedSizeInBytes()` which is the total size of the object.
+
+    I wanted serialization machinery to work if you use a standalone
+    class or if you use the variant. To make that possible, each class
+    provides its own implementation of `SharedMemorySizeInBytes` and
+    `DynamicMemorySizeInBytes()`. But then there is a separate
+    implementation for the variant and for the base class for
+    `SerializedSizeInBytes`, `Serialize`, and `DeSerialize`.
+   */
+
   // JMM: These must frequently be special-cased.
   std::size_t DynamicMemorySizeInBytes() const { return 0; }
   std::size_t DumpDynamicMemory(char *dst) { return 0; }
@@ -685,6 +700,8 @@ class EosBase {
   }
   constexpr bool AllDynamicMemoryIsShareable() const { return true; }
   // JMM: These are generic and never need to be special-cased.
+  // However, there must be a separate implementation for these
+  // separately in the base class and in the variant.
   std::size_t SerializedSizeInBytes() const {
     // sizeof(*this) returns the size of JUST the base class.
     const CRTP *pcrtp = static_cast<const CRTP *>(this);

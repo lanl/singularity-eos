@@ -284,7 +284,13 @@ class Bounds {
 };
 
 // JMM: Making this a struct with static methods, rather than a
-// namespace, saves a few "friend" declarations
+// namespace, saves a few "friend" declarations. Broadly these methods
+// rely on the EOS providing a `GetDataBoxPointers_` method and
+// declaring this class a friend. Doing so lets us loop over each data
+// box member of a spiner-based EOS ond operate on it. For example, by
+// calling `finalize` or `getOnDevice`. The intent here is that the
+// static methods of `SpinerTricks` are called from class methods of
+// spiner-based EOS's.
 template <typename EOS>
 struct SpinerTricks {
   static auto GetOnDevice(EOS *peos_h) {
