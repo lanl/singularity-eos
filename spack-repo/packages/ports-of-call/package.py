@@ -41,11 +41,15 @@ class PortsOfCall(CMakePackage):
         default="None",
         when="@:1.2.0",
     )
+    variant("test", default=False, description="Build tests")
 
     depends_on("cmake@3.12:")
+    depends_on("catch2@3.0.1:", when"+test")
 
     def cmake_args(self):
-        args = []
+        args = [
+            self.define_from_variant("PORTS_OF_CALL_BUILD_TESTING", "test"),
+        ]
         if self.spec.satisfies("@:1.2.0"):
             args.append(self.define_from_variant("PORTABILITY_STRATEGY", "portability_strategy"))
         return args
