@@ -144,7 +144,6 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
       // test out the c interface
       int enabled[4] = {0, 0, 1, 0};
       Real vals[6] = {0.0, 0.0, 1.e9, 1.0, 2.0, 1.0};
-      Real rho0 = 1.e6 / (gm1 * Cv * 293.0);
       init_sg_IdealGas(0, &igra, gm1, Cv, enabled, vals);
       THEN("The modified EOS should produce equivalent results") {
         compare_two_eoss(igsh, ig);
