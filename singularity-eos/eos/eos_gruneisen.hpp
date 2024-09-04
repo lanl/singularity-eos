@@ -435,7 +435,8 @@ Gruneisen::MaxStableDensityAtTemperature(const Real temperature) const {
 
   // Maximum pressure should exist... do a root find to locate where the derivative is
   // zero
-  auto dPdrho_T = PORTABLE_LAMBDA(const Real r) {
+  // JMM: called inside a device kernel so does not need device annotation
+  auto dPdrho_T = [this, temperature](const Real r) {
     return dPres_drho_e(r, InternalEnergyFromDensityTemperature(r, temperature));
   };
   const Real rho_lower = _rho0;
@@ -485,7 +486,8 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
     const Real slope = (rho_upper - _rho0) / (pres_max - Pref);
     rho_guess = _rho0 + slope * (press - Pref);
   }
-  auto PofRatT = PORTABLE_LAMBDA(const Real r) {
+  // JMM: called inside a device kernel so does not need device annotation
+  auto PofRatT = [this, temp](const Real r) {
     return PressureFromDensityTemperature(r, temp);
   };
   using RootFinding1D::regula_falsi;

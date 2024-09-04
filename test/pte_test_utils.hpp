@@ -23,8 +23,8 @@
 template <typename T>
 class LinearIndexer {
  public:
-  PORTABLE_FUNCTION LinearIndexer() = default;
-  LinearIndexer(const T &t) : data_(t) {}
+  LinearIndexer() = default;
+  PORTABLE_INLINE_FUNCTION LinearIndexer(const T &t) : data_(t) {}
   PORTABLE_INLINE_FUNCTION
   auto &operator[](const int i) const { return data_(i); }
 
@@ -35,8 +35,8 @@ class LinearIndexer {
 template <typename T>
 class Indexer2D {
  public:
-  PORTABLE_FUNCTION Indexer2D() = default;
-  PORTABLE_FUNCTION Indexer2D(const int j, const T &t) : j_(j), data_(t) {}
+  Indexer2D() = default;
+  PORTABLE_INLINE_FUNCTION Indexer2D(const int j, const T &t) : j_(j), data_(t) {}
   Indexer2D(const int j, const T &&t) = delete; // prevents r-value binding
   PORTABLE_INLINE_FUNCTION
   auto &operator[](const int i) const { return data_(j_, i); }
