@@ -4,7 +4,7 @@ PROJECT_DEFAULT_BRANCH=main
 PROJECT_GROUP=oss
 BUILD_DIR=${BUILD_DIR:-build}
 SOURCE_DIR=${CI_PROJECT_DIR:-$PWD}
-PROJECT_SPACK_ENV=${PROJECT_SPACK_ENV:-/usr/projects/xcap/spack-env/oss/2024-08-01}
+PROJECT_SPACK_ENV=${PROJECT_SPACK_ENV:-/usr/projects/xcap/spack-env/oss/current}
 CI_SPACK_ENV=${CI_SPACK_ENV:-$TMPDIR/$USER-ci-env}
 UNTIL=${UNTIL:-install}
 
@@ -25,9 +25,22 @@ section() {
 print_usage() {
   echo "usage: build_and_test [-h] [-u {spack,env,cmake,build,test,install}] system environment"
   echo
+  echo "This script allows you to active a Spack environment on a given system,"
+  echo "configure your project's CMake based on its Spack variants, and then build, test and"
+  echo "install it. Use the -u/--until option to stop the script early at a given phase."
+  echo
   echo "After the 'env' phase has run, you will be in an active Spack environment."
   echo "You can then use the 'activate_build_env' command to enter a sub-shell"
   echo "with the Spack build environment for your project."
+  echo
+  echo "You can also make use of the following commands to manually run each phase and customize"
+  echo "the environment in between:"
+  echo " - prepare_spack"
+  echo " - prepare_env"
+  echo " - spack_cmake_configure"
+  echo " - cmake_build [EXTRA_CMAKE_ARGS]"
+  echo " - cmake_test [EXTRA_CTEST_ARGS]"
+  echo " - cmake_install"
   echo
   echo "positional arguments:"
   echo "  system         name of the system"
@@ -142,7 +155,7 @@ cmake_build() {
   section start "cmake_build[collapsed=false]" "CMake Build"
   (
   source ${BUILD_ENV}
-  cmake -DCMAKE_VERBOSE_MAKEFILE=off -DCMAKE_INSTALL_PREFIX=$PWD/build/install $@ build
+  cmake -DCMAKE_VERBOSE_MAKEFILE=off -DCMAKE_INSTALL_PREFIX=$PWD/${BUILD_DIR}/install $@ ${BUILD_DIR}
   cmake --build ${BUILD_DIR} --parallel
   )
   section end "cmake_build"
@@ -157,7 +170,7 @@ cmake_test() {
   (
   source ${BUILD_ENV}
   export CTEST_OUTPUT_ON_FAILURE=1
-  ctest --test-dir ${BUILD_DIR} --output-junit tests.xml
+  ctest --test-dir ${BUILD_DIR} --output-junit tests.xml $@
   )
   section end "testing"
 }
