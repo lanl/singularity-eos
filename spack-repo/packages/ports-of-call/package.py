@@ -44,7 +44,7 @@ class PortsOfCall(CMakePackage):
     variant("test", default=False, description="Build tests")
 
     depends_on("cmake@3.12:")
-    depends_on("catch2@3.0.1:", when"+test")
+    depends_on("catch2@3.0.1:", when="+test")
 
     def cmake_args(self):
         args = [

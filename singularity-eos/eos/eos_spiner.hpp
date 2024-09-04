@@ -1320,10 +1320,12 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoSie_(
     lambda[Lambda::lRho] = lRho;
     lambda[Lambda::lT] = lT;
   }
+#ifdef PORTABILITY_STRATEGY_NONE
   if (memoryStatus_ != DataStatus::OnDevice) {
     status_ = status;
     whereAmI_ = whereAmI;
   }
+#endif // PORTABILITY_STRATEGY_NONE
   return lT;
 }
 
@@ -1469,9 +1471,11 @@ TableStatus SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho,
   } else {
     whereAmI = TableStatus::OnTable;
   }
+#ifdef PORTABILITY_STRATEGY_NONE
   if (memoryStatus_ != DataStatus::OnDevice) {
     whereAmI_ = whereAmI;
   }
+#endif // PORTABILITY_STRATEGY_NONE
   return whereAmI;
 }
 
@@ -1484,9 +1488,11 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
     whereAmI = TableStatus::OffTop;
   else
     whereAmI = TableStatus::OnTable;
+#ifdef PORTABILITY_STRATEGY_NONE
   if (memoryStatus_ != DataStatus::OnDevice) {
     whereAmI_ = whereAmI;
   }
+#endif // PORTABILITY_STRATEGY_NONE
   return whereAmI;
 }
 

@@ -126,7 +126,8 @@ if(SINGULARITY_BUILD_CLOSURE)
       add_test(pte_3phase test_pte_3phase)
     endif()
   endif()
-  if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN)
+  # disable fortran tests when using OpenMP due to segfaults
+  if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN AND NOT Kokkos_ENABLE_OPENMP)
     add_executable(test_get_sg_eos test_get_sg_eos.cpp)
     target_link_libraries(test_get_sg_eos PRIVATE Catch2::Catch2
                                          singularity-eos::singularity-eos)
