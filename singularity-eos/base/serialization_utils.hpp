@@ -81,8 +81,9 @@ struct BulkSerializer {
     std::size_t offst = sizeof(std::size_t);
     std::size_t shared_offst = 0;
     for (auto &eos : eos_objects) {
-      std::size_t shared_bytes = eos.SharedMemorySizeInBytes();
       offst += eos.DeSerialize(src + offst, stngs_loc);
+      // needs to be after eos.Deserialize so type/size are unpacked
+      std::size_t shared_bytes = eos.SharedMemorySizeInBytes();
       stngs_loc.data += shared_bytes;
       shared_offst += shared_bytes;
     }
