@@ -85,7 +85,9 @@ class RootCounts {
   }
   PORTABLE_INLINE_FUNCTION void increment(int i) const {
     assert(i < nbins_ && i >= 0);
+#ifdef PORTABILITY_STRATEGY_NONE
     counts_[i] += 1;
+#endif // PORTABILITY_STRATEGY_NONE
   }
   PORTABLE_INLINE_FUNCTION Real total() const {
     Real tot{1.e-20};
