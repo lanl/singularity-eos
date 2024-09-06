@@ -31,6 +31,7 @@
 
 // ports-of-call
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 
 // base
 #include <singularity-eos/base/constants.hpp>
@@ -38,6 +39,7 @@
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -66,6 +68,9 @@ using namespace eos_base;
   we use log-linear extrapolation.
 */
 class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
+  friend class table_utils::SpinerTricks<SpinerEOSDependsRhoT>;
+  using SpinerTricks = table_utils::SpinerTricks<SpinerEOSDependsRhoT>;
+
  public:
   static constexpr int NGRIDS = 3;
   using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
@@ -75,26 +80,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };
   };
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-  using EosBase<SpinerEOSDependsRhoT>::TemperatureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::InternalEnergyFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::PressureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::MinInternalEnergyFromDensity;
-  using EosBase<SpinerEOSDependsRhoT>::EntropyFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::EntropyFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoT>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoT>::FillEos;
-  using EosBase<SpinerEOSDependsRhoT>::EntropyIsNotEnabled;
-
+  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT);
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
                               bool reproduciblity_mode = false);
   inline SpinerEOSDependsRhoT(const std::string &filename,
@@ -104,6 +90,24 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   SpinerEOSDependsRhoT() : memoryStatus_(DataStatus::Deallocated) {}
 
   inline SpinerEOSDependsRhoT GetOnDevice();
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(numRho_ > 0, "Finite number of density points");
+    PORTABLE_ALWAYS_REQUIRE(numT_ > 0, "Finite number of temperature points");
+    PORTABLE_ALWAYS_REQUIRE(!(std::isnan(lRhoMin_) || std::isnan(lRhoMax_)),
+                            "Density bounds well defined");
+    PORTABLE_ALWAYS_REQUIRE(lRhoMax_ > lRhoMin_, "Density bounds ordered");
+    PORTABLE_ALWAYS_REQUIRE(rhoMax_ > 0, "Max density must be positive");
+    PORTABLE_ALWAYS_REQUIRE(!(std::isnan(lTMin_) || std::isnan(lTMax_)),
+                            "Temperature bounds well defined");
+    PORTABLE_ALWAYS_REQUIRE(lTMax_ > lTMin_, "Temperature bounds ordered");
+    PORTABLE_ALWAYS_REQUIRE(TMax_ > 0, "Max temperature must be positive");
+  }
+
+  std::size_t DynamicMemorySizeInBytes() const;
+  std::size_t DumpDynamicMemory(char *dst);
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -277,13 +281,25 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] {"SpinerEOSDependsRhoT"};
-  static constexpr const int numDataBoxes_ = 12;
+
+  // TODO(JMM): Could unify declarations and macro below by using
+  // reference_wrapper instead of pointers... worth it?
   DataBox P_, sie_, bMod_, dPdRho_, dPdE_, dTdRho_, dTdE_, dEdRho_, dEdT_;
   DataBox PMax_, sielTMax_, dEdTMax_, gm1Max_;
   DataBox lTColdCrit_;
   DataBox PCold_, sieCold_, bModCold_;
   DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
   DataBox rho_at_pmin_;
+
+  // TODO(JMM): Pointers here? or reference_wrapper? IMO the pointers are more clear
+#define DBLIST                                                                           \
+  &P_, &sie_, &bMod_, &dPdRho_, &dPdE_, &dTdRho_, &dTdE_, &dEdRho_, &dEdT_, &PMax_,      \
+      &sielTMax_, &dEdTMax_, &gm1Max_, &lTColdCrit_, &PCold_, &sieCold_, &bModCold_,     \
+      &dPdRhoCold_, &dPdECold_, &dTdRhoCold_, &dTdECold_, &dEdTCold_, &rho_at_pmin_
+  auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
+  auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
+#undef DBLIST
+
   int numRho_, numT_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lRhoMinSearch_;
@@ -323,32 +339,17 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
 class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
+  friend class table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
+
  public:
   using Grid_t = SpinerEOSDependsRhoT::Grid_t;
   using DataBox = SpinerEOSDependsRhoT::DataBox;
   struct SP5Tables {
     DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
   };
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-  using EosBase<SpinerEOSDependsRhoSie>::TemperatureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::InternalEnergyFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::PressureFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::MinInternalEnergyFromDensity;
-  using EosBase<SpinerEOSDependsRhoSie>::EntropyFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::EntropyFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityTemperature;
-  using EosBase<SpinerEOSDependsRhoSie>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<SpinerEOSDependsRhoSie>::FillEos;
-  using EosBase<SpinerEOSDependsRhoSie>::EntropyIsNotEnabled;
+  using STricks = table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
 
+  SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie);
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
   inline SpinerEOSDependsRhoSie(const std::string &filename, int matid,
@@ -357,6 +358,19 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
                                 const std::string &materialName,
                                 bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoSie GetOnDevice();
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(numRho_ > 0, "Finite number of density points");
+    PORTABLE_ALWAYS_REQUIRE(!(std::isnan(lRhoMin_) || std::isnan(lRhoMax_)),
+                            "Density bounds well defined");
+    PORTABLE_ALWAYS_REQUIRE(lRhoMax_ > lRhoMin_, "Density bounds ordered");
+    PORTABLE_ALWAYS_REQUIRE(rhoMax_ > 0, "Max density must be positive");
+  }
+
+  std::size_t DynamicMemorySizeInBytes() const;
+  std::size_t DumpDynamicMemory(char *dst);
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -508,6 +522,18 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
   Real lRhoOffset_, lTOffset_, lEOffset_; // offsets must be non-negative
 
+#define DBLIST                                                                           \
+  &sie_, &T_, &(dependsRhoT_.P), &(dependsRhoT_.bMod), &(dependsRhoT_.dPdRho),           \
+      &(dependsRhoT_.dPdE), &(dependsRhoT_.dTdRho), &(dependsRhoT_.dTdE),                \
+      &(dependsRhoT_.dEdRho), &(dependsRhoSie_.P), &(dependsRhoSie_.bMod),               \
+      &(dependsRhoSie_.dPdRho), &(dependsRhoSie_.dPdE), &(dependsRhoSie_.dTdRho),        \
+      &(dependsRhoSie_.dTdE), &(dependsRhoSie_.dEdRho), &PlRhoMax_, &dPdRhoMax_
+  std::vector<const DataBox *> GetDataBoxPointers_() const {
+    return std::vector<const DataBox *>{DBLIST};
+  }
+  std::vector<DataBox *> GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
+#undef DBLIST
+
   static constexpr unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] = "SpinerEOSDependsRhoSie";
@@ -610,6 +636,8 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsRHoT: HDF5 error\n"); // TODO: make this better
   }
+
+  CheckParams();
 }
 
 inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
@@ -641,84 +669,27 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsRhoT: HDF5 error\n");
   }
+
+  CheckParams();
 }
 
 inline SpinerEOSDependsRhoT SpinerEOSDependsRhoT::GetOnDevice() {
-  SpinerEOSDependsRhoT other;
-  other.P_ = Spiner::getOnDeviceDataBox<Real>(P_);
-  other.sie_ = Spiner::getOnDeviceDataBox<Real>(sie_);
-  other.bMod_ = Spiner::getOnDeviceDataBox<Real>(bMod_);
-  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real>(dPdRho_);
-  other.dPdE_ = Spiner::getOnDeviceDataBox<Real>(dPdE_);
-  other.dTdRho_ = Spiner::getOnDeviceDataBox<Real>(dTdRho_);
-  other.dTdE_ = Spiner::getOnDeviceDataBox<Real>(dTdE_);
-  other.dEdRho_ = Spiner::getOnDeviceDataBox<Real>(dEdRho_);
-  other.dEdT_ = Spiner::getOnDeviceDataBox<Real>(dEdT_);
-  other.PMax_ = Spiner::getOnDeviceDataBox<Real>(PMax_);
-  other.sielTMax_ = Spiner::getOnDeviceDataBox<Real>(sielTMax_);
-  other.dEdTMax_ = Spiner::getOnDeviceDataBox<Real>(dEdTMax_);
-  other.gm1Max_ = Spiner::getOnDeviceDataBox<Real>(gm1Max_);
-  other.PCold_ = Spiner::getOnDeviceDataBox<Real>(PCold_);
-  other.sieCold_ = Spiner::getOnDeviceDataBox<Real>(sieCold_);
-  other.bModCold_ = Spiner::getOnDeviceDataBox<Real>(bModCold_);
-  other.dPdRhoCold_ = Spiner::getOnDeviceDataBox<Real>(dPdRhoCold_);
-  other.dPdECold_ = Spiner::getOnDeviceDataBox<Real>(dPdECold_);
-  other.dTdRhoCold_ = Spiner::getOnDeviceDataBox<Real>(dTdRhoCold_);
-  other.dTdECold_ = Spiner::getOnDeviceDataBox<Real>(dTdECold_);
-  other.dEdTCold_ = Spiner::getOnDeviceDataBox<Real>(dEdTCold_);
-  other.lTColdCrit_ = Spiner::getOnDeviceDataBox<Real>(lTColdCrit_);
-  other.rho_at_pmin_ = Spiner::getOnDeviceDataBox<Real>(rho_at_pmin_);
-  other.lRhoMin_ = lRhoMin_;
-  other.lRhoMax_ = lRhoMax_;
-  other.rhoMax_ = rhoMax_;
-  other.lRhoMinSearch_ = lRhoMinSearch_;
-  other.lTMin_ = lTMin_;
-  other.lTMax_ = lTMax_;
-  other.TMax_ = TMax_;
-  other.lRhoOffset_ = lRhoOffset_;
-  other.lTOffset_ = lTOffset_;
-  other.rhoNormal_ = rhoNormal_;
-  other.TNormal_ = TNormal_;
-  other.sieNormal_ = sieNormal_;
-  other.PNormal_ = PNormal_;
-  other.CvNormal_ = CvNormal_;
-  other.bModNormal_ = bModNormal_;
-  other.dPdENormal_ = dPdENormal_;
-  other.dVdTNormal_ = dVdTNormal_;
-  other.numRho_ = numRho_;
-  other.numT_ = numT_;
-  other.matid_ = matid_;
-  other.reproducible_ = reproducible_;
-  other.status_ = status_;
-  other.memoryStatus_ = DataStatus::OnDevice;
-  return other;
+  return SpinerTricks::GetOnDevice(this);
 }
 
-void SpinerEOSDependsRhoT::Finalize() {
-  P_.finalize();
-  sie_.finalize();
-  bMod_.finalize();
-  dPdRho_.finalize();
-  dPdE_.finalize();
-  dTdRho_.finalize();
-  dTdE_.finalize();
-  dEdRho_.finalize();
-  dEdT_.finalize();
-  PMax_.finalize();
-  sielTMax_.finalize();
-  dEdTMax_.finalize();
-  gm1Max_.finalize();
-  PCold_.finalize();
-  sieCold_.finalize();
-  bModCold_.finalize();
-  dPdRhoCold_.finalize();
-  dPdECold_.finalize();
-  dTdRhoCold_.finalize();
-  dEdTCold_.finalize();
-  dTdECold_.finalize();
-  lTColdCrit_.finalize();
-  rho_at_pmin_.finalize();
-  memoryStatus_ = DataStatus::Deallocated;
+void SpinerEOSDependsRhoT::Finalize() { SpinerTricks::Finalize(this); }
+
+inline std::size_t SpinerEOSDependsRhoT::DynamicMemorySizeInBytes() const {
+  return SpinerTricks::DynamicMemorySizeInBytes(this);
+}
+
+inline std::size_t SpinerEOSDependsRhoT::DumpDynamicMemory(char *dst) {
+  return SpinerTricks::DumpDynamicMemory(dst, this);
+}
+
+inline std::size_t
+SpinerEOSDependsRhoT::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
+  return SpinerTricks::SetDynamicMemory((stngs.data == nullptr) ? src : stngs.data, this);
 }
 
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
@@ -1661,70 +1632,23 @@ inline void SpinerEOSDependsRhoSie::calcBMod_(SP5Tables &tables) {
 }
 
 inline SpinerEOSDependsRhoSie SpinerEOSDependsRhoSie::GetOnDevice() {
-  SpinerEOSDependsRhoSie other;
-  using Spiner::getOnDeviceDataBox;
-  other.sie_ = getOnDeviceDataBox<Real>(sie_);
-  other.T_ = getOnDeviceDataBox<Real>(T_);
-  other.dependsRhoT_.P = getOnDeviceDataBox<Real>(dependsRhoT_.P);
-  other.dependsRhoT_.bMod = getOnDeviceDataBox<Real>(dependsRhoT_.bMod);
-  other.dependsRhoT_.dPdRho = getOnDeviceDataBox<Real>(dependsRhoT_.dPdRho);
-  other.dependsRhoT_.dPdE = getOnDeviceDataBox<Real>(dependsRhoT_.dPdE);
-  other.dependsRhoT_.dTdRho = getOnDeviceDataBox<Real>(dependsRhoT_.dTdRho);
-  other.dependsRhoT_.dTdE = getOnDeviceDataBox<Real>(dependsRhoT_.dTdE);
-  other.dependsRhoT_.dEdRho = getOnDeviceDataBox<Real>(dependsRhoT_.dEdRho);
-  other.dependsRhoSie_.P = getOnDeviceDataBox<Real>(dependsRhoSie_.P);
-  other.dependsRhoSie_.bMod = getOnDeviceDataBox<Real>(dependsRhoSie_.bMod);
-  other.dependsRhoSie_.dPdRho = getOnDeviceDataBox<Real>(dependsRhoSie_.dPdRho);
-  other.dependsRhoSie_.dPdE = getOnDeviceDataBox<Real>(dependsRhoSie_.dPdE);
-  other.dependsRhoSie_.dTdRho = getOnDeviceDataBox<Real>(dependsRhoSie_.dTdRho);
-  other.dependsRhoSie_.dTdE = getOnDeviceDataBox<Real>(dependsRhoSie_.dTdE);
-  other.dependsRhoSie_.dEdRho = getOnDeviceDataBox<Real>(dependsRhoSie_.dEdRho);
-  other.numRho_ = numRho_;
-  other.lRhoMin_ = lRhoMin_;
-  other.lRhoMax_ = lRhoMax_;
-  other.rhoMax_ = rhoMax_;
-  other.PlRhoMax_ = getOnDeviceDataBox<Real>(PlRhoMax_);
-  other.dPdRhoMax_ = getOnDeviceDataBox<Real>(dPdRhoMax_);
-  other.lRhoOffset_ = lRhoOffset_;
-  other.lTOffset_ = lTOffset_;
-  other.lEOffset_ = lEOffset_;
-  other.rhoNormal_ = rhoNormal_;
-  other.TNormal_ = TNormal_;
-  other.sieNormal_ = sieNormal_;
-  other.PNormal_ = PNormal_;
-  other.CvNormal_ = CvNormal_;
-  other.bModNormal_ = bModNormal_;
-  other.dPdENormal_ = dPdENormal_;
-  other.dVdTNormal_ = dVdTNormal_;
-  other.matid_ = matid_;
-  other.reproducible_ = reproducible_;
-  other.status_ = status_;
-  other.memoryStatus_ = DataStatus::OnDevice;
-  return other;
+  return STricks::GetOnDevice(this);
 }
 
-void SpinerEOSDependsRhoSie::Finalize() {
-  sie_.finalize();
-  T_.finalize();
-  dependsRhoT_.P.finalize();
-  dependsRhoT_.bMod.finalize();
-  dependsRhoT_.dPdRho.finalize();
-  dependsRhoT_.dPdE.finalize();
-  dependsRhoT_.dTdRho.finalize();
-  dependsRhoT_.dTdE.finalize();
-  dependsRhoT_.dEdRho.finalize();
-  dependsRhoSie_.P.finalize();
-  dependsRhoSie_.bMod.finalize();
-  dependsRhoSie_.dPdRho.finalize();
-  dependsRhoSie_.dPdE.finalize();
-  dependsRhoSie_.dTdRho.finalize();
-  dependsRhoSie_.dTdE.finalize();
-  dependsRhoSie_.dEdRho.finalize();
-  if (memoryStatus_ == DataStatus::OnDevice) { // these are slices on host
-    PlRhoMax_.finalize();
-    dPdRhoMax_.finalize();
-  }
-  memoryStatus_ = DataStatus::Deallocated;
+void SpinerEOSDependsRhoSie::Finalize() { STricks::Finalize(this); }
+
+inline std::size_t SpinerEOSDependsRhoSie::DynamicMemorySizeInBytes() const {
+  return STricks::DynamicMemorySizeInBytes(this);
+}
+
+inline std::size_t SpinerEOSDependsRhoSie::DumpDynamicMemory(char *dst) {
+  return STricks::DumpDynamicMemory(dst, this);
+}
+
+inline std::size_t
+SpinerEOSDependsRhoSie::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
+  if (stngs.data != nullptr) src = stngs.data;
+  return STricks::SetDynamicMemory(src, this);
 }
 
 template <typename Indexer_t>

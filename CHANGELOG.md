@@ -4,6 +4,7 @@
 
 ### Added (new features/APIs/variables/...)
 - [[PR361]](https://github.com/lanl/singularity-eos/pull/361) Added tests for PTEsolver and added a strawman kinetic phase transition framework
+- [[PR410]](https://github.com/lanl/singularity-eos/pull/410) Enable serialization and de-serialization
 - [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Piecewise grids for Spiner EOS.
 
 ### Fixed (Repair bugs, etc)

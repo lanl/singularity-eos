@@ -42,13 +42,13 @@ class IdealGas : public EosBase<IdealGas> {
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
         _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(_T0), _EntropyRho0(_rho0) {
-    checkParams();
+    CheckParams();
   }
   PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0)
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
         _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(EntropyT0), _EntropyRho0(EntropyRho0) {
-    checkParams();
+    CheckParams();
   }
 
   IdealGas GetOnDevice() { return *this; }
@@ -58,7 +58,7 @@ class IdealGas : public EosBase<IdealGas> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return MYMAX(0.0, sie / _Cv);
   }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
     // Portable_require seems to do the opposite of what it should. Conditions
     // reflect this and the code should be changed when ports-of-call changes
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
@@ -67,6 +67,7 @@ class IdealGas : public EosBase<IdealGas> {
                             "Entropy reference temperature must be positive");
     PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 >= 0,
                             "Entropy reference density must be positive");
+    return;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(

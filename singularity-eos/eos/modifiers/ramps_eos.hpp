@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
@@ -83,14 +84,21 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
       : t_(std::forward<T>(t)), r0_(r0), a_(a), b_(b), c_(c),
         rmid_(r0 * (a - b * c) / (a - b)), Pmid_(a * (rmid_ / r0 - 1.0)) {
     // add input parameter checks to ensure validity of the ramp
-    assert(r0 > 0.0);
-    assert(a > 0.0);
-    assert(b >= 0);
-    assert(a != b);
+    CheckParams();
   }
   BilinearRampEOS() = default;
 
   using BaseType = T;
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(r0_ > 0.0, "Reference density > 0");
+    PORTABLE_ALWAYS_REQUIRE(a_ > 0.0, "Ramp a coefficient > 0");
+    PORTABLE_ALWAYS_REQUIRE(b_ >= 0, "Non-negative ramp b coefficient");
+    PORTABLE_ALWAYS_REQUIRE(a_ != b_, "Ramp a and b coefficients may not be the same");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(rmid_), "Mid density must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(Pmid_), "Mid pressure must be well defined");
+    t_.CheckParams();
+  }
 
   // give me std::format or fmt::format...
   static std::string EosType() {
@@ -444,13 +452,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 
-  inline constexpr bool IsModified() const { return true; }
-
-  inline constexpr T UnmodifyOnce() { return t_; }
-
-  inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return t_.GetUnmodifiedObject();
-  }
+  SG_ADD_MODIFIER_METHODS(T, t_);
 
  private:
   T t_;
