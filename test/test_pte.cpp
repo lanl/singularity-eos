@@ -24,12 +24,14 @@
 #include <pte_test_first.hpp>
 #include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
-#include <singularity-eos/eos/eos.hpp>
 #include <spiner/databox.hpp>
 
-using namespace singularity;
+#include <singularity-eos/eos/eos_models.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
+using singularity::PTESolverRhoTRequiredScratch;
+using singularity::PTESolverRhoT;
 
 int main(int argc, char *argv[]) {
 

@@ -21,7 +21,8 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_models.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
 
 // This data is taken from the .ult file for a test case in Flag,
 // MPMat_KPT_3phases.ult.std in MPMat_KPT_3phases_NW. Note that 3 phases appear by mistake
@@ -61,6 +62,10 @@ constexpr Real out_sie1[NTRIAL] = {1.93716882e09, 1.93864981e09, 1.93994981e09,
 constexpr Real out_sie2[NTRIAL] = {2.01473728e09, 2.01621655e09, 2.01751522e09,
                                    2.01840528e09, 2.01875845e09};
 
+using singularity::EOSPAC;
+using singularity::Variant;
+using EOS = Variant<EOSPAC>;
+
 template <typename T>
 inline void set_eos(T *eos) {
 
@@ -70,17 +75,17 @@ inline void set_eos(T *eos) {
 
   int SnbetaID = 2102;
   int SngammaID = 2103;
-  int SndeltaID = 2104;
+  // int SndeltaID = 2104;
   int SnhcpID = 2105;
-  int SnliquidID = 2106;
+  // int SnliquidID = 2106;
 
-  bool invert_at_setup = true;
+  // bool invert_at_setup = true;
 
-  singularity::EOS Snbeta = singularity::EOSPAC(SnbetaID);
-  singularity::EOS Sngamma = singularity::EOSPAC(SngammaID);
-  //  singularity::EOS Sndelta = singularity::EOSPAC(SndeltaID);
-  singularity::EOS Snhcp = singularity::EOSPAC(SnhcpID);
-  //  singularity::EOS Snliquid = singularity::EOSPAC(SnliquidID);
+  EOS Snbeta = singularity::EOSPAC(SnbetaID);
+  EOS Sngamma = singularity::EOSPAC(SngammaID);
+  //  EOS Sndelta = singularity::EOSPAC(SndeltaID);
+  EOS Snhcp = singularity::EOSPAC(SnhcpID);
+  //  EOS Snliquid = singularity::EOSPAC(SnliquidID);
 
   eos[0] = Snbeta.GetOnDevice();
   eos[1] = Sngamma.GetOnDevice();

@@ -21,15 +21,19 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <pte_test_5phaseSesameSn.hpp>
 #include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
-#include <singularity-eos/eos/eos.hpp>
 #include <spiner/databox.hpp>
 
-using namespace singularity;
+#include <singularity-eos/eos/eos_models.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
+
+using EOS = singularity::Variant<singularity::EOSPAC>;
+#include <pte_test_5phaseSesameSn.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
+using singularity::PTESolverRhoTRequiredScratch;
+using singularity::PTESolverRhoT;
 
 int main(int argc, char *argv[]) {
 
@@ -37,7 +41,8 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::initialize();
 #endif
-  {
+// JMM: EOSPAC tests do not work on device.
+if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
     // EOS
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<EOS *> eos_v("eos", NMAT);
@@ -54,7 +59,6 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(eos_v, eos_hv);
 #endif
-
     using EOSAccessor = LinearIndexer<decltype(eos_v)>;
     EOSAccessor eos(eos_v);
 
@@ -109,6 +113,8 @@ int main(int argc, char *argv[]) {
 #endif
 
     // setup state
+	  printf("pte_3phase setup state\n");
+
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
@@ -127,6 +133,7 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(press_v, press_vh);
     Kokkos::deep_copy(hist_d, hist_vh);
 #endif
+	  printf("pte_3phase state set\n");
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<int, atomic_view> nsuccess_d("n successes");
@@ -177,8 +184,9 @@ int main(int argc, char *argv[]) {
 
           const Real Tguess =
               ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
-
-          std::cout << "Tguess " << Tguess << std::endl;
+	  if (t == 0) {
+		  printf("Tguess %.14e\n", Tguess);
+	  }
 
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
@@ -253,5 +261,9 @@ int main(int argc, char *argv[]) {
 #endif
 
   // poor-man's ctest integration
+  if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
   return (nsuccess >= 0.5 * NTRIAL) ? 0 : 1;
+  } else {
+	  return 0;
+  }
 }

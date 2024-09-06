@@ -19,12 +19,13 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <singularity-eos/eos/eos.hpp>
+
+#include <singularity-eos/eos/eos_models.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
 
 // This data is taken from the .ult file for a test case in Flag, MPMat_KPT_PTsolv.ult.std
 // Note that at this point in time (April 2024) the global and phase times are not alinged
 // in .ult but they will be in the near future.
-
 namespace pte_test_2phaseVinetSn {
 
 constexpr int NMAT = 2;
@@ -58,10 +59,10 @@ inline void set_eos(T *eos) {
                                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
                                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
 
-  singularity::EOS Snbeta =
+  EOS Snbeta =
       singularity::Vinet(7.285, 298.0, 0.529e12, 5.3345, 0.000072977, 0.2149e07, 0.658e09,
                          0.4419e07, d2to40);
-  singularity::EOS Sngamma =
+  EOS Sngamma =
       singularity::Vinet(7.271, 298.0, 0.3878e12, 6.0532, 0.0001085405, 0.2161e07,
                          1.025e09, 0.5051e07, d2to40);
   eos[0] = Snbeta.GetOnDevice();

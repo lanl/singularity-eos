@@ -21,16 +21,21 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <pte_longtest_2phaseVinetSn.hpp>
-#include <pte_test_2phaseVinetSn.hpp>
 #include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
-#include <singularity-eos/eos/eos.hpp>
 #include <spiner/databox.hpp>
 
-using namespace singularity;
+#include <singularity-eos/eos/eos_models.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
+
+// these two headers share a variant
+using EOS = singularity::Variant<singularity::Vinet>;
+#include <pte_longtest_2phaseVinetSn.hpp>
+#include <pte_test_2phaseVinetSn.hpp>
 
 using namespace pte_longtest_2phaseVinetSn;
+using singularity::PTESolverRhoTRequiredScratch;
+using singularity::PTESolverRhoT;
 
 using DataBox = Spiner::DataBox<Real>;
 
@@ -180,8 +185,9 @@ int main(int argc, char *argv[]) {
 
           const Real Tguess =
               ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
-
-          std::cout << "Tguess " << Tguess << std::endl;
+	  if (t == 0) {
+		  printf("Tguess %.14e\n", Tguess);
+	  }
 
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
