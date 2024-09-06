@@ -47,6 +47,9 @@ cmake_dependent_option(
 option(SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
+option(SINGULARITY_EOSPAC_ENABLE_SHMEM
+  "Support shared memory with EOSPAC backend. Requires EOSPAC version 6.5.7."
+  OFF)
 
 # TODO This should be dependent option (or fortran option)
 option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON)
@@ -270,6 +273,9 @@ if(SINGULARITY_USE_HELMHOLTZ)
 endif()
 if(SINGULARITY_USE_SPINER_WITH_HDF5)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SPINER_WITH_HDF5)
+endif()
+if (SINGULARITY_USE_EOSPAC AND SINGULARITY_EOSPAC_ENABLE_SHMEM)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY)
 endif()
 
 # ------------------------------------------------------------------------------#

@@ -47,7 +47,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
                (PartialRhoZedFromDensity(_rho0) +
                 ZedFromDensity(_rho0) * ZedFromDensity(_rho0) * gm1)),
         _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1) {
-    checkParams();
+    CheckParams();
   }
   PORTABLE_INLINE_FUNCTION CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq, Real qp,
                                             Real T0, Real P0)
@@ -58,7 +58,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
                (PartialRhoZedFromDensity(_rho0) +
                 ZedFromDensity(_rho0) * ZedFromDensity(_rho0) * gm1)),
         _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1) {
-    checkParams();
+    CheckParams();
   }
   CarnahanStarling GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
@@ -67,7 +67,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(), (sie - _qq) / _Cv);
   }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
     PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");

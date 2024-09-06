@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -43,29 +44,7 @@ static struct LengthTimeUnitsInit {
 template <typename T>
 class UnitSystem : public EosBase<UnitSystem<T>> {
  public:
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-
-  // TODO(JMM): The modifier EOS's should probably call the specific
-  // sub-functions of the class they modify so that they can leverage,
-  // e.g., an especially performant or special version of these
-  using EosBase<UnitSystem<T>>::TemperatureFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::InternalEnergyFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::PressureFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::PressureFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::MinInternalEnergyFromDensity;
-  using EosBase<UnitSystem<T>>::EntropyFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::EntropyFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::SpecificHeatFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::BulkModulusFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::GruneisenParamFromDensityTemperature;
-  using EosBase<UnitSystem<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<UnitSystem<T>>::FillEos;
-
+  SG_ADD_BASE_CLASS_USINGS(UnitSystem<T>);
   using BaseType = T;
 
   // give me std::format or fmt::format...
@@ -93,7 +72,9 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
         inv_dpdr_unit_(rho_unit / press_unit_), inv_dtdr_unit_(rho_unit / temp_unit),
         inv_dtde_unit_(sie_unit / temp_unit) // obviously this is also Cv
         ,
-        inv_cv_unit_(temp_unit / sie_unit), inv_bmod_unit_(1 / press_unit_) {}
+        inv_cv_unit_(temp_unit / sie_unit), inv_bmod_unit_(1 / press_unit_) {
+    CheckParams();
+  }
   UnitSystem(T &&t, eos_units_init::LengthTimeUnitsInit, const Real time_unit,
              const Real mass_unit, const Real length_unit, const Real temp_unit)
       : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag,
@@ -103,6 +84,13 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
       : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag, rho_unit,
                    sie_unit, temp_unit) {}
   UnitSystem() = default;
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(rho_unit_ > 0, "Nonzero density unit");
+    PORTABLE_ALWAYS_REQUIRE(sie_unit_ > 0, "Nonzero energy unit");
+    PORTABLE_ALWAYS_REQUIRE(temp_unit_ > 0, "Nonzero temperature unit");
+    t_.CheckParams();
+  }
 
   auto GetOnDevice() {
     return UnitSystem<T>(t_.GetOnDevice(), eos_units_init::thermal_units_init_tag,
@@ -437,13 +425,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     printf("Units = %e %e %e %e\n", rho_unit_, sie_unit_, temp_unit_, press_unit_);
   }
 
-  inline constexpr bool IsModified() const { return true; }
-
-  inline constexpr T UnmodifyOnce() { return t_; }
-
-  inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return t_.GetUnmodifiedObject();
-  }
+  SG_ADD_MODIFIER_METHODS(T, t_);
 
  private:
   T t_;

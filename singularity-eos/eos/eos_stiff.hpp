@@ -44,7 +44,7 @@ class StiffGas : public EosBase<StiffGas> {
         _sie0(robust::ratio(_P0 + (gm1 + 1.0) * Pinf, _P0 + Pinf) * Cv * _T0 + qq),
         _bmod0(gm1 * (gm1 + 1.0) * robust::ratio(_P0 + Pinf, gm1 * Cv * _T0) * Cv * _T0),
         _dpde0(_rho0 * _gm1) {
-    checkParams();
+    CheckParams();
   }
   PORTABLE_INLINE_FUNCTION StiffGas(Real gm1, Real Cv, Real Pinf, Real qq, Real qp,
                                     Real T0, Real P0)
@@ -54,7 +54,7 @@ class StiffGas : public EosBase<StiffGas> {
         _sie0(robust::ratio(P0 + (gm1 + 1.0) * Pinf, P0 + Pinf) * Cv * T0 + qq),
         _bmod0(gm1 * (gm1 + 1.0) * robust::ratio(P0 + Pinf, gm1 * Cv * T0) * Cv * T0),
         _dpde0(_rho0 * _gm1) {
-    checkParams();
+    CheckParams();
   }
   StiffGas GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
@@ -63,7 +63,7 @@ class StiffGas : public EosBase<StiffGas> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(), robust::ratio(rho * (sie - _qq) - _Pinf, rho * _Cv));
   }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
   }

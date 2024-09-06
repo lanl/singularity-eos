@@ -45,9 +45,12 @@ class JWL : public EosBase<JWL> {
         _c1(robust::ratio(A, rho0 * R1)), _c2(robust::ratio(B, rho0 * R2)) {
     assert(R1 > 0.0);
     assert(R2 > 0.0);
-    assert(w > 0.0);
-    assert(rho0 > 0.0);
-    assert(Cv > 0.0);
+    CheckParams();
+  }
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(_w > 0.0, "w > 0");
+    PORTABLE_ALWAYS_REQUIRE(_rho0 > 0.0, "Positive reference density");
+    PORTABLE_ALWAYS_REQUIRE(_Cv > 0.0, "Positive specific heat");
   }
   JWL GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>

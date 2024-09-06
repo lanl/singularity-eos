@@ -37,8 +37,15 @@ class DavisReactants : public EosBase<DavisReactants> {
                  const Real A, const Real B, const Real C, const Real G0, const Real Z,
                  const Real alpha, const Real Cv0)
       : _rho0(rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C), _G0(G0), _Z(Z),
-        _alpha(alpha), _Cv0(Cv0) {}
+        _alpha(alpha), _Cv0(Cv0) {
+    CheckParams();
+  }
   DavisReactants GetOnDevice() { return *this; }
+  PORTABLE_INLINE_FUNCTION
+  void CheckParams() const {
+    PORTABLE_REQUIRE(_rho0 >= 0, "Density must be positive");
+    PORTABLE_REQUIRE(_T0 >= 0, "Temperature must be positive");
+  }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
@@ -193,6 +200,10 @@ class DavisProducts : public EosBase<DavisProducts> {
   DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
                 const Real pc, const Real Cv)
       : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv) {}
+  PORTABLE_INLINE_FUNCTION
+  void CheckParams() const {
+    // TODO(JMM): Stub.
+  }
   DavisProducts GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
