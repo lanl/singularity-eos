@@ -32,8 +32,8 @@ using EOS = singularity::Variant<singularity::EOSPAC>;
 #include <pte_test_5phaseSesameSn.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
-using singularity::PTESolverRhoTRequiredScratch;
 using singularity::PTESolverRhoT;
+using singularity::PTESolverRhoTRequiredScratch;
 
 int main(int argc, char *argv[]) {
 
@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::initialize();
 #endif
-// JMM: EOSPAC tests do not work on device.
-if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
+  // JMM: EOSPAC tests do not work on device.
+  if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
     // EOS
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<EOS *> eos_v("eos", NMAT);
@@ -113,7 +113,7 @@ if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
 #endif
 
     // setup state
-	  printf("pte_3phase setup state\n");
+    printf("pte_3phase setup state\n");
 
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
@@ -133,7 +133,7 @@ if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
     Kokkos::deep_copy(press_v, press_vh);
     Kokkos::deep_copy(hist_d, hist_vh);
 #endif
-	  printf("pte_3phase state set\n");
+    printf("pte_3phase state set\n");
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<int, atomic_view> nsuccess_d("n successes");
@@ -184,9 +184,9 @@ if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
 
           const Real Tguess =
               ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
-	  if (t == 0) {
-		  printf("Tguess %.14e\n", Tguess);
-	  }
+          if (t == 0) {
+            printf("Tguess %.14e\n", Tguess);
+          }
 
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
@@ -262,8 +262,8 @@ if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
 
   // poor-man's ctest integration
   if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
-  return (nsuccess >= 0.5 * NTRIAL) ? 0 : 1;
+    return (nsuccess >= 0.5 * NTRIAL) ? 0 : 1;
   } else {
-	  return 0;
+    return 0;
   }
 }

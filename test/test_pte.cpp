@@ -30,8 +30,8 @@
 #include <singularity-eos/eos/eos_variant.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
-using singularity::PTESolverRhoTRequiredScratch;
 using singularity::PTESolverRhoT;
+using singularity::PTESolverRhoTRequiredScratch;
 
 int main(int argc, char *argv[]) {
 

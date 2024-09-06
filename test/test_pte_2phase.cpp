@@ -34,8 +34,8 @@ using EOS = singularity::Variant<singularity::Vinet>;
 #include <pte_test_2phaseVinetSn.hpp>
 
 using namespace pte_longtest_2phaseVinetSn;
-using singularity::PTESolverRhoTRequiredScratch;
 using singularity::PTESolverRhoT;
+using singularity::PTESolverRhoTRequiredScratch;
 
 using DataBox = Spiner::DataBox<Real>;
 
@@ -185,9 +185,9 @@ int main(int argc, char *argv[]) {
 
           const Real Tguess =
               ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
-	  if (t == 0) {
-		  printf("Tguess %.14e\n", Tguess);
-	  }
+          if (t == 0) {
+            printf("Tguess %.14e\n", Tguess);
+          }
 
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
