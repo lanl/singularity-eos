@@ -197,7 +197,6 @@ class EosBase {
     Real S = copy.EntropyFromDensityTemperature(rho, T, lambda);
     return sie + (P / rho) - T * S;
   }
-  // Scalar member functions that get shared
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GibbsFreeEnergyFromDensityInternalEnergy(
       const Real rho, const Real sie,
@@ -653,7 +652,7 @@ class EosBase {
     CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
-          Gs[i] = copy.GibbsFreeEnergyFromDensityTemperature(rhos[i], T[i], lambdas[i]);
+          Gs[i] = copy.GibbsFreeEnergyFromDensityTemperature(rhos[i], Ts[i], lambdas[i]);
         });
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
@@ -667,7 +666,7 @@ class EosBase {
         std::forward<RealIndexer>(Gs), num, std::forward<LambdaIndexer>(lambdas));
   }
   template <typename LambdaIndexer>
-  inline void GibbsFreeEnergyFromDensityTemperature(const Real *rhos, const Real *sieTs,
+  inline void GibbsFreeEnergyFromDensityTemperature(const Real *rhos, const Real *Ts,
                                                     Real *Gs, Real * /*scratch*/,
                                                     const int num,
                                                     LambdaIndexer &&lambdas,
