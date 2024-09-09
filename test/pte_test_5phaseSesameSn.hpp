@@ -69,9 +69,8 @@ using EOS = Variant<EOSPAC>;
 template <typename T>
 inline void set_eos(T *eos) {
 
-  int sl =
-      symlink("/projects/shavano/dev/aematts/SEOS/PTEsolver_test_cases/sn2162-v01.bin",
-              "sesameu");
+  int sl = symlink("/usr/projects/data/eos/eos-developmental/Sn2162/v01/sn2162-v01.bin",
+                   "sesameu");
 
   int SnbetaID = 2102;
   int SngammaID = 2103;
