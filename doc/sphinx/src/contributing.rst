@@ -746,3 +746,76 @@ Finally, the new ``package.py`` file needs to be synchronized with
 the new ``package.py`` file.
 
 .. _Spack upstream: https://github.com/spack/spack
+
+Continuous Integration
+----------------------
+
+``singularity-eos`` has two continuous integration (CI) systems. A public
+facing one via GitHub actions and an LANL internal one through a GitLab
+instance.
+
+The GitHub actions are configured via the files located in the
+``.github/workflows`` subdirectory.
+
+Our GitLab CI is configured via the ``.gitlab-ci.yml`` file and scripts located
+in the ``.gitlab`` subdirectory. To trigger the GitLab CI runs, you need to
+have access to our internal GitLab instance, push your branch to this second
+Git repository, and create a GitLab merge request (MR).
+
+Each GitLab MR will launch a pipeline with multiple jobs on various
+clusters. These jobs will build and tests specific configurations of
+``singularity-eos`` via Spack environments.
+
+These environments are defined in the internal XCAP deployment repository,
+which contains project and cluster specific Spack configurations, such as
+available compilers, system packages, preinstalled modules, etc.
+
+The XCAP deployment repository is used to create a XCAP-wide shared Spack
+installation with all the necessary dependencies for these Spack environments
+pre-built.
+
+Each GitLab CI job uses the ``.gitlab/build_and_test.sh`` script to create a
+temporary local Spack instance that is connected to an XCAP deployment on a
+specified cluster and selects one of the available environments to build.
+Internally it uses ``spack develop`` and ``spack build-env``  to prepare the
+CMake build folder and its Spack build environment. This avoids duplicating
+CMake logic in ``.gitlab-ci.yml``, since all CMake configurations are
+already encoded in the project's Spack ``package.py``. The
+``build_and_test.sh`` script has the following signature.
+
+.. code-block:: bash
+
+   source .gitlab/build_and_test.sh [--until PHASE] <SYSTEM_NAME> <ENV_NAME>
+
+By default, all phases defined in this script will be executed. With the
+``-u``/``--until`` optional argument you can specify the name of a phase where
+the script should stop. See the output of ``source .gitlab/build_and_test.sh -h``
+for more details.
+
+Reproducing a GitLab CI run
+```````````````````````````
+
+To simplify reproducability of CI runs, each GitLab job prints out a message on
+how to recreate the CI run by manually allocating a cluster node on a given
+system and executing the ``build_and_test.sh`` script.
+
+.. code-block:: 
+
+   #####################################################################
+ 
+   To recreate this CI run, follow these steps:
+ 
+   ssh darwin
+   cd /your/singularity-eos/checkout
+   .gitlab/download_prereq.sh
+   salloc -N 1 --qos=debug -p general,skylake-gold,skylake-platinum --constraint="(cpu_family:skylake)&ib:edr"
+   source .gitlab/build_and_test.sh --until install darwin openmpi-gcc
+ 
+   See 'source .gitlab/build_and_test.sh -h' for more options.
+ 
+   ######################################################################
+
+After the ``env`` phase, you can use ``activate_build_env`` to enable the Spack
+build environment. See ``source .gitlab/build_and_test.sh`` for a list of
+commands to trigger the remaining phases or use regular CMake commands to drive
+your build and testing.

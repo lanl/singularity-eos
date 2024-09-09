@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -20,6 +20,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
@@ -61,8 +62,8 @@ char *StrCat(char *destination, const char *source) {
 } // namespace impl
 
 // This Macro adds the `using` statements that allow for the base class
-// vector functionality to overload the scalar implementations in the derived
-// classes
+// VECTOR functionality to overload the scalar implementations in the derived
+// classes. Do not add functions here that are not overloads of derived class features.
 // TODO(JMM): Should we have more macros that capture just some of these?
 #define SG_ADD_BASE_CLASS_USINGS(EOSDERIVED)                                             \
   using EosBase<EOSDERIVED>::TemperatureFromDensityInternalEnergy;                       \
@@ -76,18 +77,30 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::BulkModulusFromDensityInternalEnergy;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityTemperature;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;                    \
-  using EosBase<EOSDERIVED>::MinimumDensity;                                             \
-  using EosBase<EOSDERIVED>::MinimumTemperature;                                         \
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
   using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityTemperature;                      \
-  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityInternalEnergy                    \
-  using EosBase<EOSDERIVED>::EntropyIsNotEnabled;                                        \
-  using EosBase<EOSDERIVED>::MinInternalEnergyIsNotEnabled;                              \
-  using EosBase<EOSDERIVED>::IsModified;                                                 \
-  using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
-  using EosBase<EOSDERIVED>::GetUnmodifiedObject;
+  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityInternalEnergy;
+
+// This macro adds several methods that most modifiers will
+// want. Not ALL modifiers will want these methods as written here,
+// so use this macro with care.
+// TODO(JMM): Find a better solution. Multiple inheritence and mixins
+// dont' seem to work as desired here.
+#define SG_ADD_MODIFIER_METHODS(T, t_)                                                   \
+  static inline constexpr bool IsModified() { return true; }                             \
+  inline constexpr T UnmodifyOnce() { return t_; }                                       \
+  std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); } \
+  std::size_t SharedMemorySizeInBytes() const { return t_.SharedMemorySizeInBytes(); }   \
+  std::size_t DumpDynamicMemory(char *dst) { return t_.DumpDynamicMemory(dst); }         \
+  std::size_t SetDynamicMemory(char *src,                                                \
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {   \
+    return t_.SetDynamicMemory(src, stngs);                                              \
+  }                                                                                      \
+  constexpr bool AllDynamicMemoryIsShareable() const {                                   \
+    return t_.AllDynamicMemoryIsShareable();                                             \
+  }
 
 class Factor {
   Real value_ = 1.0;
@@ -750,13 +763,93 @@ class EosBase {
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 
+  // Serialization
+  /*
+    The methodology here is there are *three* size methods all EOS's provide:
+    - `SharedMemorySizeInBytes()` which is the amount of memory a class can share
+    - `DynamicMemorySizeInBytes()` which is the amount of memory not covered by
+    `sizeof(this)`
+    - `SerializedSizeInBytes()` which is the total size of the object.
+
+    I wanted serialization machinery to work if you use a standalone
+    class or if you use the variant. To make that possible, each class
+    provides its own implementation of `SharedMemorySizeInBytes` and
+    `DynamicMemorySizeInBytes()`. But then there is a separate
+    implementation for the variant and for the base class for
+    `SerializedSizeInBytes`, `Serialize`, and `DeSerialize`.
+   */
+
+  // JMM: These must frequently be special-cased.
+  std::size_t DynamicMemorySizeInBytes() const { return 0; }
+  std::size_t DumpDynamicMemory(char *dst) { return 0; }
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
+    return 0;
+  }
+  // JMM: These usually don't need to be special cased.
+  std::size_t SharedMemorySizeInBytes() const {
+    const CRTP *pcrtp = static_cast<const CRTP *>(this);
+    return pcrtp->DynamicMemorySizeInBytes();
+  }
+  constexpr bool AllDynamicMemoryIsShareable() const { return true; }
+  // JMM: These are generic and never need to be special-cased.
+  // However, there must be a separate implementation for these
+  // separately in the base class and in the variant.
+  std::size_t SerializedSizeInBytes() const {
+    // sizeof(*this) returns the size of JUST the base class.
+    const CRTP *pcrtp = static_cast<const CRTP *>(this);
+    std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    return dyn_size + sizeof(CRTP);
+  }
+  std::size_t Serialize(char *dst) {
+    CRTP *pcrtp = static_cast<CRTP *>(this);
+    memcpy(dst, pcrtp, sizeof(CRTP));
+    std::size_t offst = sizeof(CRTP);
+    std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    if (dyn_size > 0) {
+      offst += pcrtp->DumpDynamicMemory(dst + sizeof(CRTP));
+    }
+    const std::size_t tot_size = pcrtp->SerializedSizeInBytes();
+    PORTABLE_ALWAYS_REQUIRE(offst == tot_size, "Serialization failed!");
+    return offst;
+  }
+  auto Serialize() {
+    CRTP *pcrtp = static_cast<CRTP *>(this);
+    std::size_t size = pcrtp->SerializedSizeInBytes();
+    char *dst = (char *)malloc(size);
+    std::size_t size_new = Serialize(dst);
+    PORTABLE_ALWAYS_REQUIRE(size_new == size, "Serialization failed!");
+    return std::make_pair(size, dst);
+  }
+  std::size_t DeSerialize(char *src,
+                          const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
+    CRTP *pcrtp = static_cast<CRTP *>(this);
+    memcpy(pcrtp, src, sizeof(CRTP));
+    std::size_t offst = sizeof(CRTP);
+    std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    if (dyn_size > 0) {
+      const bool sizes_same = pcrtp->AllDynamicMemoryIsShareable();
+      if (stngs.CopyNeeded() && sizes_same) {
+        memcpy(stngs.data, src + offst, dyn_size);
+      }
+      offst += pcrtp->SetDynamicMemory(src + offst, stngs);
+    }
+    const std::size_t tot_size = pcrtp->SerializedSizeInBytes();
+    PORTABLE_ALWAYS_REQUIRE(offst == tot_size, "Deserialization failed!");
+    return offst;
+  }
+
   // Tooling for modifiers
-  inline constexpr bool IsModified() const { return false; }
+  static inline constexpr bool IsModified() { return false; }
 
   inline constexpr decltype(auto) UnmodifyOnce() { return *static_cast<CRTP *>(this); }
 
   inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return *static_cast<CRTP *>(this);
+    if constexpr (CRTP::IsModified()) {
+      return ((static_cast<CRTP *>(this))->UnmodifyOnce()).GetUnmodifiedObject();
+    } else {
+      return *static_cast<CRTP *>(this);
+    }
   }
 };
 } // namespace eos_base

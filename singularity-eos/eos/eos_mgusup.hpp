@@ -40,8 +40,9 @@ class MGUsup : public EosBase<MGUsup> {
   MGUsup(const Real rho0, const Real T0, const Real Cs, const Real s, const Real G0,
          const Real Cv0, const Real E0, const Real S0)
       : _rho0(rho0), _T0(T0), _Cs(Cs), _s(s), _G0(G0), _Cv0(Cv0), _E0(E0), _S0(S0) {
-    _CheckMGUsup();
+    CheckParams();
   }
+  PORTABLE_INLINE_FUNCTION void CheckParams() const;
 
   MGUsup GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
@@ -156,11 +157,9 @@ class MGUsup : public EosBase<MGUsup> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
   Real _rho0, _T0, _Cs, _s, _G0, _Cv0, _E0, _S0;
-  void _CheckMGUsup();
 };
 
-inline void MGUsup::_CheckMGUsup() {
-
+PORTABLE_INLINE_FUNCTION void MGUsup::CheckParams() const {
   if (_rho0 < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter rho0 < 0");
   }

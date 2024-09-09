@@ -41,6 +41,7 @@ add_executable(
   eos_tabulated_unit_tests
   catch2_define.cpp
   eos_unit_test_helpers.hpp
+  test_spiner_tricks.cpp
   test_eos_helmholtz.cpp
   test_eos_tabulated.cpp
   test_eos_stellar_collapse.cpp
@@ -111,7 +112,8 @@ if(SINGULARITY_BUILD_CLOSURE)
     target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(pte test_pte)
   endif()
-  if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN)
+  # disable fortran tests when using OpenMP due to segfaults
+  if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN AND NOT Kokkos_ENABLE_OPENMP)
     add_executable(test_get_sg_eos test_get_sg_eos.cpp)
     target_link_libraries(test_get_sg_eos PRIVATE Catch2::Catch2
                                          singularity-eos::singularity-eos)

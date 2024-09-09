@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,11 +12,14 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#include <limits>
+
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/serialization_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 
@@ -144,7 +147,6 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
       // test out the c interface
       int enabled[4] = {0, 0, 1, 0};
       Real vals[6] = {0.0, 0.0, 1.e9, 1.0, 2.0, 1.0};
-      Real rho0 = 1.e6 / (gm1 * Cv * 293.0);
       init_sg_IdealGas(0, &igra, gm1, Cv, enabled, vals);
       THEN("The modified EOS should produce equivalent results") {
         compare_two_eoss(igsh, ig);
@@ -290,13 +292,66 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
         eos = Modify<UnitSystem>(eos, eos_units_init::length_time_units_init_tag,
                                  time_unit, mass_unit, length_unit, temp_unit);
         THEN("Units cancel out for an ideal gas") {
-          Real rho = 1e3;
-          Real sie = 1e3;
+          constexpr Real rho = 1e3;
+          constexpr Real sie = 1e3;
+          constexpr Real Ptrue = gm1 * rho * sie;
           Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
-          Real Ptrue = gm1 * rho * sie;
           REQUIRE(std::abs(P - Ptrue) / Ptrue < 1e-3);
         }
       }
     }
+  }
+}
+
+SCENARIO("Serialization of modified EOSs preserves their properties",
+         "[ScaledEOS][IdealGas][Serialization]") {
+  GIVEN("A scaled ideal gas object") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    constexpr Real scale = 2.0;
+
+    constexpr Real rho_test = 1.0;
+    constexpr Real sie_test = 1.0;
+    constexpr Real temp_trivial = sie_test / (Cv);      // = 1./2.
+    constexpr Real temp_test = sie_test / (Cv * scale); // = 1./4.
+    constexpr Real EPS = 10 * std::numeric_limits<Real>::epsilon();
+
+    ScaledEOS<IdealGas> eos(IdealGas(gm1, Cv), scale);
+    REQUIRE(isClose(eos.TemperatureFromDensityInternalEnergy(rho_test, sie_test),
+                    temp_test, EPS));
+    EOS eos_scaled = eos;
+
+    EOS eos_trivial = ScaledEOS<IdealGas>(IdealGas(gm1, Cv), 1.0);
+    REQUIRE(isClose(eos_trivial.TemperatureFromDensityInternalEnergy(rho_test, sie_test),
+                    temp_trivial, EPS));
+
+    THEN("The size of the object is larger than just the ideal gas by itself") {
+      REQUIRE(eos.SerializedSizeInBytes() > sizeof(IdealGas));
+    }
+
+    WHEN("We serialize the EOS") {
+      singularity::VectorSerializer<EOS> serializer({eos_scaled, eos_trivial});
+      auto [size, data] = serializer.Serialize();
+      REQUIRE(size == serializer.SerializedSizeInBytes());
+      REQUIRE(size > 0);
+      REQUIRE(data != nullptr);
+
+      THEN("We can de-serialize the EOS") {
+        singularity::VectorSerializer<EOS> deserializer;
+        deserializer.DeSerialize(data);
+        REQUIRE(deserializer.Size() == serializer.Size());
+
+        AND_THEN("The de-serialized EOS still evaluates properly") {
+          auto eos_new = deserializer.eos_objects[0];
+          REQUIRE(
+              isClose(eos_new.TemperatureFromDensityInternalEnergy(rho_test, sie_test),
+                      temp_test, EPS));
+        }
+      }
+
+      free(data);
+    }
+
+    eos.Finalize();
   }
 }

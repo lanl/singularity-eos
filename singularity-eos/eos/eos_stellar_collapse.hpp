@@ -30,6 +30,7 @@
 
 // ports-of-call
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
@@ -37,6 +38,7 @@
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -60,6 +62,7 @@ using namespace eos_base;
 // and introduce extrapolation as needed.
 class StellarCollapse : public EosBase<StellarCollapse> {
  public:
+  friend class table_utils::SpinerTricks<StellarCollapse>;
   using DataBox = Spiner::DataBox<Real>;
   using Grid_t = Spiner::RegularGrid1D<Real>;
 
@@ -68,24 +71,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     enum Index { Ye = 0, lT = 1 };
   };
 
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-  using EosBase<StellarCollapse>::TemperatureFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::InternalEnergyFromDensityTemperature;
-  using EosBase<StellarCollapse>::PressureFromDensityTemperature;
-  using EosBase<StellarCollapse>::PressureFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::MinInternalEnergyFromDensity;
-  using EosBase<StellarCollapse>::EntropyFromDensityTemperature;
-  using EosBase<StellarCollapse>::EntropyFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::SpecificHeatFromDensityTemperature;
-  using EosBase<StellarCollapse>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::BulkModulusFromDensityTemperature;
-  using EosBase<StellarCollapse>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::GruneisenParamFromDensityTemperature;
-  using EosBase<StellarCollapse>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<StellarCollapse>::FillEos;
+  SG_ADD_BASE_CLASS_USINGS(StellarCollapse);
 
   inline StellarCollapse(const std::string &filename, bool use_sp5 = false,
                          bool filter_bmod = true);
@@ -95,6 +81,27 @@ class StellarCollapse : public EosBase<StellarCollapse> {
 
   PORTABLE_INLINE_FUNCTION
   StellarCollapse() : memoryStatus_(DataStatus::Deallocated) {}
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(numRho_ > 0, "Table must be finite");
+    PORTABLE_ALWAYS_REQUIRE(numT_ > 0, "Table must be finite");
+    PORTABLE_ALWAYS_REQUIRE(numYe_ > 0, "Table must be finite");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(lRhoMin_) && !std::isnan(lRhoMax_),
+                            "Density bounds must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(lRhoMax_ > lRhoMin_, "Density bounds must be ordered");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(lTMin_) && !std::isnan(lTMax_),
+                            "Density bounds must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(lTMax_ > lTMin_, "Temperature bounds must be ordered");
+    PORTABLE_ALWAYS_REQUIRE(!(std::isnan(YeMin_) || std::isnan(YeMax_)),
+                            "Ye bounds must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(YeMin_ >= 0.0, "Ye must be positive");
+    PORTABLE_ALWAYS_REQUIRE(YeMax_ <= 1.0, "Ye must be a fraction");
+    PORTABLE_ALWAYS_REQUIRE(YeMax_ > YeMin_, "Ye bounds must be ordered");
+    PORTABLE_ALWAYS_REQUIRE(!(std::isnan(sieMin_) || std::isnan(sieMax_)),
+                            "Energy bounds must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(sieMax_ > sieMin_, "Energy bounds must be ordered");
+    return;
+  }
 
   inline StellarCollapse GetOnDevice();
 
@@ -218,6 +225,11 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // Collapse, so I think we can leave it here for now?
   inline static void dataBoxToFastLogs(DataBox &db, DataBox &scratch,
                                        bool dependent_var_log);
+
+  std::size_t DynamicMemorySizeInBytes() const;
+  std::size_t DumpDynamicMemory(char *dst);
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
 
  private:
   class LogT {
@@ -352,6 +364,14 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // Bounds of dependent variables. Needed for root finding.
   DataBox eCold_, eHot_;
 
+  // TODO(JMM): Pointers here? or reference_wrapper? IMO the pointers are more clear
+#define DBLIST                                                                           \
+  &lP_, &lE_, &dPdRho_, &dPdE_, &dEdT_, &lBMod_, &entropy_, &Xa_, &Xh_, &Xn_, &Xp_,      \
+      &Abar_, &Zbar_, &mu_e_, &mu_n_, &mu_p_, &muhat_, &munu_, &eCold_, &eHot_
+  auto GetDataBoxPointers_() const { return std::vector<const DataBox *>{DBLIST}; }
+  auto GetDataBoxPointers_() { return std::vector<DataBox *>{DBLIST}; }
+#undef DBLIST
+
   // Independent variable bounds
   int numRho_, numT_, numYe_;
   Real lRhoMin_, lRhoMax_;
@@ -405,6 +425,7 @@ inline StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp
     LoadFromStellarCollapseFile_(filename, filter_bmod);
   }
   setNormalValues_();
+  CheckParams();
 }
 
 // Saves to an SP5 file
@@ -449,71 +470,25 @@ inline void StellarCollapse::Save(const std::string &filename) {
 }
 
 inline StellarCollapse StellarCollapse::GetOnDevice() {
-  StellarCollapse other;
-  other.lP_ = Spiner::getOnDeviceDataBox<Real>(lP_);
-  other.lE_ = Spiner::getOnDeviceDataBox<Real>(lE_);
-  other.dPdRho_ = Spiner::getOnDeviceDataBox<Real>(dPdRho_);
-  other.dPdE_ = Spiner::getOnDeviceDataBox<Real>(dPdE_);
-  other.dEdT_ = Spiner::getOnDeviceDataBox<Real>(dEdT_);
-  other.entropy_ = Spiner::getOnDeviceDataBox<Real>(entropy_);
-  other.Xa_ = Spiner::getOnDeviceDataBox<Real>(Xa_);
-  other.Xh_ = Spiner::getOnDeviceDataBox<Real>(Xh_);
-  other.Xn_ = Spiner::getOnDeviceDataBox<Real>(Xn_);
-  other.Xp_ = Spiner::getOnDeviceDataBox<Real>(Xp_);
-  other.Abar_ = Spiner::getOnDeviceDataBox<Real>(Abar_);
-  other.Zbar_ = Spiner::getOnDeviceDataBox<Real>(Zbar_);
-  other.lBMod_ = Spiner::getOnDeviceDataBox<Real>(lBMod_);
-  other.eCold_ = Spiner::getOnDeviceDataBox<Real>(eCold_);
-  other.eHot_ = Spiner::getOnDeviceDataBox<Real>(eHot_);
-  other.mu_e_ = Spiner::getOnDeviceDataBox<Real>(mu_e_);
-  other.mu_n_ = Spiner::getOnDeviceDataBox<Real>(mu_n_);
-  other.mu_p_ = Spiner::getOnDeviceDataBox<Real>(mu_p_);
-  other.muhat_ = Spiner::getOnDeviceDataBox<Real>(muhat_);
-  other.munu_ = Spiner::getOnDeviceDataBox<Real>(munu_);
-  other.memoryStatus_ = DataStatus::OnDevice;
-  other.numRho_ = numRho_;
-  other.numT_ = numT_;
-  other.numYe_ = numYe_;
-  other.lTMin_ = lTMin_;
-  other.lTMax_ = lTMax_;
-  other.YeMin_ = YeMin_;
-  other.YeMax_ = YeMax_;
-  other.sieMin_ = sieMin_;
-  other.sieMax_ = sieMax_;
-  other.lEOffset_ = lEOffset_;
-  other.sieNormal_ = sieNormal_;
-  other.PNormal_ = PNormal_;
-  other.SNormal_ = SNormal_;
-  other.CvNormal_ = CvNormal_;
-  other.bModNormal_ = bModNormal_;
-  other.dPdENormal_ = dPdENormal_;
-  other.dVdTNormal_ = dVdTNormal_;
-  other.status_ = status_;
-  return other;
+  return table_utils::SpinerTricks<StellarCollapse>::GetOnDevice(this);
 }
 
 inline void StellarCollapse::Finalize() {
-  lP_.finalize();
-  lE_.finalize();
-  dPdRho_.finalize();
-  dPdE_.finalize();
-  dEdT_.finalize();
-  entropy_.finalize();
-  Xa_.finalize();
-  Xh_.finalize();
-  Xn_.finalize();
-  Xp_.finalize();
-  Abar_.finalize();
-  Zbar_.finalize();
-  lBMod_.finalize();
-  eCold_.finalize();
-  eHot_.finalize();
-  mu_e_.finalize();
-  mu_n_.finalize();
-  mu_p_.finalize();
-  muhat_.finalize();
-  munu_.finalize();
-  memoryStatus_ = DataStatus::Deallocated;
+  table_utils::SpinerTricks<StellarCollapse>::Finalize(this);
+}
+
+inline std::size_t StellarCollapse::DynamicMemorySizeInBytes() const {
+  return table_utils::SpinerTricks<StellarCollapse>::DynamicMemorySizeInBytes(this);
+}
+
+inline std::size_t StellarCollapse::DumpDynamicMemory(char *dst) {
+  return table_utils::SpinerTricks<StellarCollapse>::DumpDynamicMemory(dst, this);
+}
+
+inline std::size_t StellarCollapse::SetDynamicMemory(char *src,
+                                                     const SharedMemSettings &stngs) {
+  if (stngs.data != nullptr) src = stngs.data;
+  return table_utils::SpinerTricks<StellarCollapse>::SetDynamicMemory(src, this);
 }
 
 template <typename Indexer_t>
@@ -1176,9 +1151,11 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::lTFromlRhoSie_(
       lT = lTGuess;
     }
   }
+#ifdef PORTABILITY_STRATEGY_NONE
   if (memoryStatus_ != DataStatus::OnDevice) {
     status_ = status;
   }
+#endif // PORTABILITY_STRATEGY_NONE
   lambda[Lambda::lT] = lT;
   return lT;
 }

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -18,6 +18,7 @@
 #include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -49,7 +50,7 @@ class Variant {
   PORTABLE_FUNCTION Variant(EOSChoice &&choice)
       : eos_(std::move(std::forward<EOSChoice>(choice))) {}
 
-  Variant() noexcept = default;
+  Variant() = default;
 
   template <typename EOSChoice,
             typename std::enable_if<
@@ -74,6 +75,11 @@ class Variant {
   }
 
   // Place member functions here
+  PORTABLE_INLINE_FUNCTION
+  void CheckParams() const {
+    return mpark::visit([](auto &eos) { return eos.CheckParams(); }, eos_);
+  }
+
   template <typename Functor_t>
   constexpr void Evaluate(Functor_t &f) const {
     return mpark::visit([&f](const auto &eos) { return eos.Evaluate(f); }, eos_);
@@ -1117,6 +1123,79 @@ class Variant {
               output, std::forward<LambdaIndexer>(lambdas));
         },
         eos_);
+  }
+
+  // Serialization
+  /*
+    The methodology here is there are *three* size methods all EOS's provide:
+    - `SharedMemorySizeInBytes()` which is the amount of memory a class can share
+    - `DynamicMemorySizeInBytes()` which is the amount of memory not covered by
+    `sizeof(this)`
+    - `SerializedSizeInBytes()` which is the total size of the object.
+
+    I wanted serialization machinery to work if you use a standalone
+    class or if you use the variant. To make that possible, each class
+    provides its own implementation of `SharedMemorySizeInBytes` and
+    `DynamicMemorySizeInBytes()`. But then there is a separate
+    implementation for the variant and for the base class for
+    `SerializedSizeInBytes`, `Serialize`, and `DeSerialize`.
+   */
+  // JMM: This must be implemented separately for Variant vs the base
+  // class/individual EOS's so that the variant state is properly
+  // carried. Otherwise de-serialization would need to specify a type.
+  std::size_t DynamicMemorySizeInBytes() const {
+    return mpark::visit([](const auto &eos) { return eos.DynamicMemorySizeInBytes(); },
+                        eos_);
+  }
+  std::size_t DumpDynamicMemory(char *dst) {
+    return mpark::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); }, eos_);
+  }
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
+    return mpark::visit(
+        [src, stngs](auto &eos) { return eos.SetDynamicMemory(src, stngs); }, eos_);
+  }
+  std::size_t SharedMemorySizeInBytes() const {
+    return mpark::visit([](const auto &eos) { return eos.SharedMemorySizeInBytes(); },
+                        eos_);
+  }
+  constexpr bool AllDynamicMemoryIsShareable() const {
+    return mpark::visit([](const auto &eos) { return eos.AllDynamicMemoryIsShareable(); },
+                        eos_);
+  }
+  std::size_t SerializedSizeInBytes() const {
+    return sizeof(*this) + DynamicMemorySizeInBytes();
+  }
+  std::size_t Serialize(char *dst) {
+    memcpy(dst, this, sizeof(*this));
+    std::size_t offst = sizeof(*this);
+    std::size_t dyn_size = DynamicMemorySizeInBytes();
+    if (dyn_size > 0) {
+      offst += DumpDynamicMemory(dst + offst);
+    }
+    PORTABLE_ALWAYS_REQUIRE(offst == SerializedSizeInBytes(), "Serialization failed!");
+    return offst;
+  }
+  auto Serialize() {
+    std::size_t size = SerializedSizeInBytes();
+    char *dst = (char *)malloc(size);
+    std::size_t new_size = Serialize(dst);
+    PORTABLE_ALWAYS_REQUIRE(size == new_size, "Serialization failed!");
+    return std::make_pair(size, dst);
+  }
+  std::size_t DeSerialize(char *src,
+                          const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
+    memcpy(this, src, sizeof(*this));
+    std::size_t offst = sizeof(*this);
+    std::size_t dyn_size = DynamicMemorySizeInBytes();
+    if (dyn_size > 0) {
+      const bool sizes_same = AllDynamicMemoryIsShareable();
+      if (stngs.CopyNeeded() && sizes_same) {
+        memcpy(stngs.data, src + offst, dyn_size);
+      }
+      offst += SetDynamicMemory(src + offst, stngs);
+    }
+    return offst;
   }
 
   // Tooling for modifiers
