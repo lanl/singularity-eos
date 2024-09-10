@@ -202,7 +202,7 @@ class EosBase {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const CRTP copy = *(static_cast<CRTP const *>(this));
-    Real T = copy.TemperatureFromDensityInternalEnergy(rho, T, lambda);
+    Real T = copy.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
     Real P = copy.PressureFromDensityTemperature(rho, T, lambda);
     Real S = copy.EntropyFromDensityTemperature(rho, T, lambda);
     return sie + (P / rho) - T * S;
