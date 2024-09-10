@@ -981,6 +981,50 @@ given density in :math:`g/cm^3` and temperature in Kelvin.
 returns the unitless Gruneisen parameter given density in
 :math:`g/cm^3` and specific internal energy in :math:`erg/g`.
 
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                      Indexer_t &&lambda = nullptr) const;
+
+returns the entropy as a function of density in :math:`g/cm^3` and
+temperature in Kelvin.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Indexer_t &&lambda = nullptr) const;
+
+returns the entropy as a function of density in :math:`g/cm^3` and
+specific internal energy in :math:`erg/g`.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real GibssFreeEnergyFromDensityTemperature(const Real rho, const Real temperature,
+                                              Indexer_t &&lambda = nullptr) const;
+
+returns the Gibbs free energy as a function of density in :math:`g/cm^3` and
+temperature in Kelvin.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real GibbsFreeEnergyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                 Indexer_t &&lambda = nullptr) const;
+
+
+returns the Gibbs free energy as a function of density in :math:`g/cm^3` and
+specific internal energy in :math:`erg/g`.
+
+.. warning::
+
+  Not all equations of state provide entropy and Gibbs free
+  energy. These are coupled, however, so if one is provided, the other
+  will be too. If you call an entropy for a model that does not
+  provide it, ``singularity-eos`` will return an error.
+
 The function
 
 .. code-block:: cpp

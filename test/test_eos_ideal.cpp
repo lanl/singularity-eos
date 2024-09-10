@@ -32,7 +32,7 @@
 using singularity::IdealGas;
 using EOS = singularity::Variant<IdealGas>;
 
-SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
+SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
   GIVEN("Parameters for an ideal gas with entropy reference states") {
     // Create ideal gas EOS ojbect
     constexpr Real Cv = 5.0;
@@ -54,6 +54,16 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
         auto entropy = host_eos.EntropyFromDensityTemperature(rho, T);
         INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
         CHECK(isClose(entropy, entropy_true, 1e-12));
+
+        AND_THEN("The free energy agrees") {
+          const Real sie = host_eos.InternalEnergyFromDensityTemperature(rho, T);
+          const Real P = host_eos.PressureFromDensityTemperature(rho, T);
+          const Real G_true = sie + (P / rho) - T * entropy;
+          const Real GT = host_eos.GibbsFreeEnergyFromDensityTemperature(rho, T);
+          CHECK(isClose(GT, G_true, 1e-12));
+          const Real Gsie = host_eos.GibbsFreeEnergyFromDensityInternalEnergy(rho, sie);
+          CHECK(isClose(Gsie, G_true, 1e-12));
+        }
       }
     }
     GIVEN("A state at the reference density and a temperature whose square is the "

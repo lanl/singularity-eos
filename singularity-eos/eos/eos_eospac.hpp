@@ -472,6 +472,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                              lambdas);
   }
 
+  // TODO(JMM): Add performant entropy and Gibbs Free Energy
   using EosBase<EOSPAC>::FillEos;
   using EosBase<EOSPAC>::EntropyIsNotEnabled;
 
