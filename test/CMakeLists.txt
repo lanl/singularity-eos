@@ -51,6 +51,7 @@ add_executable(
   closure_unit_tests
   catch2_define.cpp
   test_closure_pte.cpp
+  test_kpt_models.cpp
   )
 
 get_property(plugin_tests GLOBAL PROPERTY PLUGIN_TESTS)
@@ -111,6 +112,20 @@ if(SINGULARITY_BUILD_CLOSURE)
                                          singularity-eos::singularity-eos)
     target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(pte test_pte)
+
+    add_executable(test_pte_2phase test_pte_2phase.cpp)
+    target_link_libraries(test_pte_2phase PRIVATE Catch2::Catch2
+                                         singularity-eos::singularity-eos)
+    target_include_directories(test_pte_2phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(pte_2phase test_pte_2phase)
+
+    if(SINGULARITY_USE_EOSPAC)
+      add_executable(test_pte_3phase test_pte_3phase.cpp)
+      target_link_libraries(test_pte_3phase PRIVATE Catch2::Catch2
+                                           singularity-eos::singularity-eos)
+      target_include_directories(test_pte_3phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+      add_test(pte_3phase test_pte_3phase)
+    endif()
   endif()
   # disable fortran tests when using OpenMP due to segfaults
   if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN AND NOT Kokkos_ENABLE_OPENMP)

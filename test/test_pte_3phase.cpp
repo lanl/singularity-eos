@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -21,13 +21,15 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <pte_test_first.hpp>
 #include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <spiner/databox.hpp>
 
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
+
+using EOS = singularity::Variant<singularity::EOSPAC>;
+#include <pte_test_5phaseSesameSn.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
 using singularity::PTESolverRhoT;
@@ -39,7 +41,8 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::initialize();
 #endif
-  {
+  // JMM: EOSPAC tests do not work on device.
+  if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
     // EOS
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<EOS *> eos_v("eos", NMAT);
@@ -56,7 +59,6 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(eos_v, eos_hv);
 #endif
-
     using EOSAccessor = LinearIndexer<decltype(eos_v)>;
     EOSAccessor eos(eos_v);
 
@@ -111,13 +113,14 @@ int main(int argc, char *argv[]) {
 #endif
 
     // setup state
+    printf("pte_3phase setup state\n");
+
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
       Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
       Indexer2D<decltype(sie_hm)> e(n, sie_hm);
-      Indexer2D<decltype(temp_hm)> t(n, temp_hm);
-      set_state(r, vf, e, t, eos_h);
+      set_trial_3state(n, r, vf, e, eos_h);
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;
@@ -130,6 +133,7 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(press_v, press_vh);
     Kokkos::deep_copy(hist_d, hist_vh);
 #endif
+    printf("pte_3phase state set\n");
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<int, atomic_view> nsuccess_d("n successes");
@@ -141,7 +145,22 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif
-    std::cout << "Starting PTE with " << NTRIAL << " trials." << std::endl;
+    std::cout << "Starting PTE with " << NTRIAL << " trials." << std::endl << std::endl;
+    std::cout << "The trials have input set to: " << std::endl;
+
+    for (int n = 0; n < NTRIAL; n++) {
+      std::cout << "Trial number: " << n << std::endl;
+      std::cout << "Total Specific Internal energy: \t\t\t" << in_sie_tot[n] << std::endl;
+      std::cout << "Total density: \t\t\t\t\t\t" << in_rho_tot[n] << std::endl;
+      std::cout << "Mass fractions: beta, gamma, hcp: \t\t\t" << in_lambda[0][n] << ", "
+                << in_lambda[1][n] << ", " << in_lambda[2][n] << std::endl;
+      std::cout << "Assuming volume fractions: beta, gamma, hcp: \t\t" << vfrac_hm(n, 0)
+                << ", " << vfrac_hm(n, 1) << ", " << vfrac_hm(n, 2) << std::endl;
+      std::cout << "gives starting phase densities: beta, gamma, hcp: \t" << rho_hm(n, 0)
+                << ", " << rho_hm(n, 1) << ", " << rho_hm(n, 2) << std::endl
+                << std::endl;
+    }
+
     portableFor(
         "PTE!", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
           Real *lambda[NMAT];
@@ -165,6 +184,9 @@ int main(int argc, char *argv[]) {
 
           const Real Tguess =
               ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
+          if (t == 0) {
+            printf("Tguess %.14e\n", Tguess);
+          }
 
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
@@ -189,9 +211,41 @@ int main(int argc, char *argv[]) {
 
     Real milliseconds = sum_time.count() / 1e3;
 
+    std::cout << std::endl;
     std::cout << "Finished " << NTRIAL << " solves in " << milliseconds << " milliseconds"
               << std::endl;
-    std::cout << "Solves/ms = " << NTRIAL / milliseconds << std::endl;
+    std::cout << "Solves/ms = " << NTRIAL / milliseconds << std::endl << std::endl;
+
+    std::cout << "Results are: " << std::endl;
+
+    for (int n = 0; n < NTRIAL; n++) {
+      std::cout << "Trial number: " << n << std::endl;
+      std::cout << "Total Specific Internal energy: \t"
+                << sie_hm(n, 0) * in_lambda[0][n] + sie_hm(n, 1) * in_lambda[1][n] +
+                       sie_hm(n, 2) * in_lambda[2][n]
+                << ", (" << in_sie_tot[n] << ")" << std::endl;
+      std::cout << "Total density: \t\t\t\t"
+                << 1.0 / (1.0 / rho_hm(n, 0) * in_lambda[0][n] +
+                          1.0 / rho_hm(n, 1) * in_lambda[1][n] +
+                          1.0 / rho_hm(n, 2) * in_lambda[2][n])
+                << ", (" << in_rho_tot[n] << ")" << std::endl;
+      std::cout << "Volume fractions: beta, gamma, hcp: \t" << vfrac_hm(n, 0) << ", "
+                << vfrac_hm(n, 1) << ", " << vfrac_hm(n, 2) << std::endl;
+      std::cout << "Density: beta, gamma, hcp: \t\t" << rho_hm(n, 0) << ", "
+                << rho_hm(n, 1) << ", " << rho_hm(n, 2) << ", (" << out_rho0[n] << ", "
+                << out_rho1[n] << ", " << out_rho2[n] << ")" << std::endl;
+      std::cout << "Pressure: beta, gamma, hcp: \t\t" << press_hm(n, 0) << ", "
+                << press_hm(n, 1) << ", " << press_hm(n, 2) << ", (" << out_press[n]
+                << ")" << std::endl;
+      std::cout << "Temperature: beta, gamma, hcp: \t\t" << temp_hm(n, 0) << ", "
+                << temp_hm(n, 1) << ", " << temp_hm(n, 2) << ", (" << out_temp[n] << ")"
+                << std::endl;
+      std::cout << "Internal energy: beta, gamma, hcp: \t" << sie_hm(n, 0) << ", "
+                << sie_hm(n, 1) << ", " << sie_hm(n, 2) << ", (" << out_sie0[n] << ", "
+                << out_sie1[n] << ", " << out_sie2[n] << ")" << std::endl
+                << std::endl;
+    }
+
     std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess
               << std::endl;
     std::cout << "Histogram:\n"
@@ -207,5 +261,9 @@ int main(int argc, char *argv[]) {
 #endif
 
   // poor-man's ctest integration
-  return (nsuccess >= 0.5 * NTRIAL) ? 0 : 1;
+  if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
+    return (nsuccess >= 0.5 * NTRIAL) ? 0 : 1;
+  } else {
+    return 0;
+  }
 }

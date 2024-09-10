@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -21,7 +21,6 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <pte_test_first.hpp>
 #include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <spiner/databox.hpp>
@@ -29,9 +28,16 @@
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
-using DataBox = Spiner::DataBox<Real>;
+// these two headers share a variant
+using EOS = singularity::Variant<singularity::Vinet>;
+#include <pte_longtest_2phaseVinetSn.hpp>
+#include <pte_test_2phaseVinetSn.hpp>
+
+using namespace pte_longtest_2phaseVinetSn;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
+
+using DataBox = Spiner::DataBox<Real>;
 
 int main(int argc, char *argv[]) {
 
@@ -116,8 +122,7 @@ int main(int argc, char *argv[]) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
       Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
       Indexer2D<decltype(sie_hm)> e(n, sie_hm);
-      Indexer2D<decltype(temp_hm)> t(n, temp_hm);
-      set_state(r, vf, e, t, eos_h);
+      set_trial_state(n, r, vf, e, eos_h);
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;
@@ -141,7 +146,22 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif
-    std::cout << "Starting PTE with " << NTRIAL << " trials." << std::endl;
+    std::cout << "Starting PTE with " << NTRIAL << " trials." << std::endl << std::endl;
+    std::cout << "The trials have input set to: " << std::endl;
+
+    for (int n = 0; n < NTRIAL; n++) {
+      std::cout << "Trial number: " << n << std::endl;
+      std::cout << "Total Specific Internal energy: \t\t" << in_sie_tot[n] << std::endl;
+      std::cout << "Total density: \t\t\t\t\t" << in_rho_tot[n] << std::endl;
+      std::cout << "Mass fractions: beta, gamma: \t\t\t" << in_lambda[0] << ", "
+                << in_lambda[1] << std::endl;
+      std::cout << "Assuming volume fractions: beta, gamma: \t" << vfrac_hm(n, 0) << ", "
+                << vfrac_hm(n, 1) << std::endl;
+      std::cout << "gives starting phase densities: beta, gamma: \t" << rho_hm(n, 0)
+                << ", " << rho_hm(n, 1) << std::endl
+                << std::endl;
+    }
+
     portableFor(
         "PTE!", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
           Real *lambda[NMAT];
@@ -165,6 +185,9 @@ int main(int argc, char *argv[]) {
 
           const Real Tguess =
               ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
+          if (t == 0) {
+            printf("Tguess %.14e\n", Tguess);
+          }
 
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
@@ -189,9 +212,33 @@ int main(int argc, char *argv[]) {
 
     Real milliseconds = sum_time.count() / 1e3;
 
+    std::cout << std::endl;
     std::cout << "Finished " << NTRIAL << " solves in " << milliseconds << " milliseconds"
               << std::endl;
-    std::cout << "Solves/ms = " << NTRIAL / milliseconds << std::endl;
+    std::cout << "Solves/ms = " << NTRIAL / milliseconds << std::endl << std::endl;
+
+    std::cout << "Results are: " << std::endl;
+
+    for (int n = 0; n < NTRIAL; n++) {
+      std::cout << "Trial number: " << n << std::endl;
+      std::cout << "Total Specific Internal energy: \t"
+                << sie_hm(n, 0) * in_lambda[0] + sie_hm(n, 1) * in_lambda[1] << ", ("
+                << in_sie_tot[n] << ")" << std::endl;
+      std::cout << "Total density: \t\t\t\t"
+                << 1.0 / (1.0 / rho_hm(n, 0) * in_lambda[0] +
+                          1.0 / rho_hm(n, 1) * in_lambda[1])
+                << ", (" << in_rho_tot[n] << ")" << std::endl;
+      std::cout << "Volume fractions: beta, gamma: \t\t" << vfrac_hm(n, 0) << ", "
+                << vfrac_hm(n, 1) << std::endl;
+      std::cout << "Density: beta, gamma: \t\t\t" << rho_hm(n, 0) << ", " << rho_hm(n, 1)
+                << ", (" << out_rho0[n] << ", " << out_rho1[n] << ")" << std::endl;
+      std::cout << "Pressure: beta, gamma: \t\t\t" << press_hm(n, 0) << ", "
+                << press_hm(n, 1) << ", (" << out_press[n] << ")" << std::endl;
+      std::cout << "Temperature: beta, gamma: \t\t" << temp_hm(n, 0) << ", "
+                << temp_hm(n, 1) << ", (" << out_temp[n] << ")" << std::endl
+                << std::endl;
+    }
+
     std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess
               << std::endl;
     std::cout << "Histogram:\n"

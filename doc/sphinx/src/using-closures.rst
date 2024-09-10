@@ -115,6 +115,8 @@ closure state.
 
     \rho = \sum_{i=0}^{N - 1} \overline{\rho}_i = \sum_{i=0}^{N-1} \rho_i f_i
 
+
+.. _massandvolumefractions:
 .. note::
 
   Since mass fraction information is encoded in the specification of the
@@ -276,6 +278,7 @@ choice of the second independent variable is discussed below and has
 implications for both the number of additional unknowns and the stability of the
 method.
 
+.. _density-energy-formalism:
 The Density-Energy Formulation
 ''''''''''''''''''''''''''''''
 

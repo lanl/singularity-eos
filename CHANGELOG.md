@@ -4,6 +4,7 @@
 
 ### Added (new features/APIs/variables/...)
 - [[PR416]](https://github.com/lanl/singularity-eos/pull/416) Gibbs free energy
+- [[PR361]](https://github.com/lanl/singularity-eos/pull/361) Added tests for PTEsolver and added a strawman kinetic phase transition framework
 - [[PR410]](https://github.com/lanl/singularity-eos/pull/410) Enable serialization and de-serialization
 - [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Piecewise grids for Spiner EOS.
 
@@ -185,7 +186,7 @@ Date: 07/07/2022
 
 This is the start of changelog
 
-© 2021-2023. Triad National Security, LLC. All rights reserved.  This
+© 2021-2024. Triad National Security, LLC. All rights reserved.  This
 program was produced under U.S. Government contract 89233218CNA000001
 for Los Alamos National Laboratory (LANL), which is operated by Triad
 National Security, LLC for the U.S.  Department of Energy/National
