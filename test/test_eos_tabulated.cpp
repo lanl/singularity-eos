@@ -304,7 +304,7 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
       REQUIRE(eospac_size > eospac_shared_size);
 
       const std::size_t air_shared_size = eospac_air.DynamicMemorySizeInBytes();
-      REQUIRE(air_size > eospac_shared_size);
+      REQUIRE(air_size > air_shared_size);
 
       THEN("We can deserialize into shared memory") {
         using singularity::SharedMemSettings;
