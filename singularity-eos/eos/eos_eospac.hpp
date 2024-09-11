@@ -1251,14 +1251,14 @@ inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &
   static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
   EOS_INTEGER NTABLES[] = {NT};
   EOS_INTEGER error_code = EOS_OK;
-  eosCheckError(error_code, "eos_DestroyAll", Verbosity::Debug);
 #ifdef SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
   PORTABLE_ALWAYS_REQUIRE(
       stngs.data != nullptr,
       "EOSPAC with shared memory active requires a shared memory pointer");
-  // JMM: EOS_BOOLEAN is an enum with EOS_FALSE=0 and EOS_TRUE=1.
+  // EOS_BOOLEAN is not a type alias
+  EOS_BOOLEAN root = stngs.is_domain_root ? EOS_TRUE : EOS_FALSE;
   eos_SetSharedPackedTables(NTABLES, &packed_size_, (EOS_CHAR *)src,
-                            (EOS_CHAR *)stngs.data, stngs.is_node_root, tablehandle,
+                            (EOS_CHAR *)stngs.data, root, tablehandle,
                             &error_code);
 #else
   eos_SetPackedTables(NTABLES, &packed_size_, (EOS_CHAR *)src, tablehandle, &error_code);

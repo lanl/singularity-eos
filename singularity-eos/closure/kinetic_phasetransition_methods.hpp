@@ -14,6 +14,7 @@
 
 #ifndef _SINGULARITY_EOS_CLOSURE_KINETIC_PHSETRANSITION_METHODS_
 #define _SINGULARITY_EOS_CLOSURE_KINETIC_PHSETRANSITION_METHODS_
+#ifdef SINGULARITY_BUILD_CLOSURE
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
@@ -97,4 +98,5 @@ PORTABLE_INLINE_FUNCTION void SmallStepMFUpdate(const Real logdt, const int num_
 
 } // namespace singularity
 
+#endif // SINGULARITY_BUILD_CLOSURE
 #endif // _SINGULARITY_EOS_CLOSURE_KINETIC_PHSETRANSITION_METHODS_
