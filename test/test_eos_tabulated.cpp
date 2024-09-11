@@ -271,15 +271,14 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
     EOS eospac_orig = EOSPAC(steelID);
     // not actually used but we want to stress test that we can serialize
     // and deserialize multiple EOSPAC objects
-    EOS eospac_air = EOSPAC(airID); 
+    EOS eospac_air = EOSPAC(airID);
     THEN("They report dynamic vs static memory correctly") {
       REQUIRE(rhoT_orig.AllDynamicMemoryIsShareable());
       REQUIRE(rhoSie_orig.AllDynamicMemoryIsShareable());
       REQUIRE(!eospac_orig.AllDynamicMemoryIsShareable());
       REQUIRE(eospac_orig.SerializedSizeInBytes() >
               eospac_orig.DynamicMemorySizeInBytes());
-      REQUIRE(eospac_air.SerializedSizeInBytes() >
-              eospac_air.DynamicMemorySizeInBytes());
+      REQUIRE(eospac_air.SerializedSizeInBytes() > eospac_air.DynamicMemorySizeInBytes());
     }
     WHEN("We serialize") {
       auto [rhoT_size, rhoT_data] = rhoT_orig.Serialize();
@@ -290,10 +289,10 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
 
       auto [eospac_size, eospac_data] = eospac_orig.Serialize();
       REQUIRE(eospac_size == eospac_orig.SerializedSizeInBytes());
-      
+
       auto [air_size, air_data] = eospac_air.Serialize();
       REQUIRE(air_size == eospac_air.SerializedSizeInBytes());
-     
+
       const std::size_t rhoT_shared_size = rhoT_orig.DynamicMemorySizeInBytes();
       REQUIRE(rhoT_size > rhoT_shared_size);
 
@@ -337,8 +336,8 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
 
         eospac_air.Finalize();
         EOS eos_air_2 = EOSPAC();
-        std::size_t read_size_air = eos_air_2.DeSerialize(
-            air_data, SharedMemSettings(air_shared_data, true));
+        std::size_t read_size_air =
+            eos_air_2.DeSerialize(air_data, SharedMemSettings(air_shared_data, true));
         REQUIRE(read_size_air == air_size);
 
         AND_THEN("EOS lookups work") {

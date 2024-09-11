@@ -1258,8 +1258,7 @@ inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &
   // EOS_BOOLEAN is not a type alias
   EOS_BOOLEAN root = stngs.is_domain_root ? EOS_TRUE : EOS_FALSE;
   eos_SetSharedPackedTables(NTABLES, &packed_size_, (EOS_CHAR *)src,
-                            (EOS_CHAR *)stngs.data, root, tablehandle,
-                            &error_code);
+                            (EOS_CHAR *)stngs.data, root, tablehandle, &error_code);
 #else
   eos_SetPackedTables(NTABLES, &packed_size_, (EOS_CHAR *)src, tablehandle, &error_code);
 #endif // SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
