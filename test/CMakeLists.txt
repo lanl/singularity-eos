@@ -47,12 +47,14 @@ add_executable(
   test_eos_stellar_collapse.cpp
   )
 
-add_executable(
-  closure_unit_tests
-  catch2_define.cpp
-  test_closure_pte.cpp
-  test_kpt_models.cpp
-  )
+if (SINGULARITY_BUILD_CLOSURE)
+  add_executable(
+    closure_unit_tests
+    catch2_define.cpp
+    test_closure_pte.cpp
+    test_kpt_models.cpp
+    )
+endif()
 
 get_property(plugin_tests GLOBAL PROPERTY PLUGIN_TESTS)
 if (plugin_tests)
@@ -71,7 +73,6 @@ endif()
 
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(eos_tabulated_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
-  target_compile_definitions(closure_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_tabulated_unit_tests
@@ -84,8 +85,6 @@ target_link_libraries(eos_infrastructure_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
 target_link_libraries(eos_tabulated_unit_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
-target_link_libraries(closure_unit_tests PRIVATE Catch2::Catch2
-  singularity-eos::singularity-eos)
 if (plugin_tests)
   target_link_libraries(eos_plugin_tests PRIVATE Catch2::Catch2
     singularity-eos::singularity-eos)
@@ -94,7 +93,6 @@ include(Catch)
 catch_discover_tests(eos_analytic_unit_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_infrastructure_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_tabulated_unit_tests PROPERTIES TIMEOUT 60)
-catch_discover_tests(closure_unit_tests PROPERTIES TIMEOUT 120)
 if (plugin_tests)
   catch_discover_tests(eos_plugin_tests PROPERTIES TIMEOUT 60)
 endif()
@@ -106,6 +104,13 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
 endif()
 
 if(SINGULARITY_BUILD_CLOSURE)
+  if (SINGULARITY_TEST_SESAME)
+    target_compile_definitions(closure_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+  endif()
+  target_link_libraries(closure_unit_tests PRIVATE Catch2::Catch2
+    singularity-eos::singularity-eos)
+  catch_discover_tests(closure_unit_tests PROPERTIES TIMEOUT 120)
+
   if(SINGULARITY_USE_SPINER)
     add_executable(test_pte test_pte.cpp)
     target_link_libraries(test_pte PRIVATE Catch2::Catch2
