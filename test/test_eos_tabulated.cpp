@@ -269,8 +269,8 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
     SpinerEOSDependsRhoT rhoT_orig = SpinerEOSDependsRhoT(eosName, steelID);
     SpinerEOSDependsRhoSie rhoSie_orig = SpinerEOSDependsRhoSie(eosName, steelID);
     EOS eospac_orig = EOSPAC(steelID);
-    // not actually used but we want to stress test that we can serialize
-    // and deserialize multiple EOSPAC objects
+    // we want to stress test that we can serialize and deserialize
+    // multiple EOSPAC objects
     EOS eospac_air = EOSPAC(airID);
     THEN("They report dynamic vs static memory correctly") {
       REQUIRE(rhoT_orig.AllDynamicMemoryIsShareable());
