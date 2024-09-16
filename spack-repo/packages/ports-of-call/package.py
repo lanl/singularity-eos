@@ -53,6 +53,7 @@ class PortsOfCall(CMakePackage):
 
     depends_on("cmake@3.12:")
     depends_on("catch2@3.0.1:", when="+test")
+    depends_on("kokkos", when="+test test_portability_strategy=Kokkos")
 
     def cmake_args(self):
         args = [
