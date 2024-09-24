@@ -130,16 +130,16 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on(
         "mpark-variant",
         patches=patch(
-            "https://raw.githubusercontent.com/lanl/singularity-eos/main/utils/cuda_compatibility.patch",
-            sha256="7b3eaa52b5ab23dc45fbfb456528e36742e04b838a5df859eca96c4e8274bb38",
+            "https://raw.githubusercontent.com/lanl/singularity-eos/refs/heads/rberger/ats4/utils/gpu_compatibility.patch",
+            sha256="c803670cbd95f9b97458fb4ef403de30229ec81566a5b8e5ccb75ad9d0b22541"
         ),
         when="+cuda",
     )
     depends_on(
         "mpark-variant",
         patches=patch(
-            "https://raw.githubusercontent.com/lanl/singularity-eos/main/utils/cuda_compatibility.patch",
-            sha256="7b3eaa52b5ab23dc45fbfb456528e36742e04b838a5df859eca96c4e8274bb38",
+            "https://raw.githubusercontent.com/lanl/singularity-eos/refs/heads/rberger/ats4/utils/gpu_compatibility.patch",
+            sha256="c803670cbd95f9b97458fb4ef403de30229ec81566a5b8e5ccb75ad9d0b22541",
         ),
         when="+rocm",
     )
