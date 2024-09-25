@@ -129,14 +129,14 @@ rocinante_craympich_fortran_gcc:
   variables:
     SPACK_ENV_NAME: craympich-fortran-gcc
 
-rzvernal_craympich_rocm_mi250_gcc:
+rzvernal_craympich_rocm_mi250_cce:
   extends: [.ascgit_job, .rzadams_job, .rzvernal_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
-    SPACK_ENV_NAME: craympich-rocm-gfx90a-gcc
+    SPACK_ENV_NAME: craympich-rocm-gfx90a-cce
 
-rzadams_craympich_rocm_mi300_gcc:
+rzadams_craympich_rocm_mi300_cce:
   extends: [.ascgit_job, .rzadams_job, .rzadams_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
-    SPACK_ENV_NAME: craympich-rocm-gfx942-gcc
+    SPACK_ENV_NAME: craympich-rocm-gfx942-cce
