@@ -264,7 +264,7 @@ if(SINGULARITY_USE_HIGH_RISK_MATH)
 endif()
 if (SINGULARITY_USE_TRUE_LOG_GRIDDING)
   target_compile_definitions(singularity-eos_Interface
-    SINGULARITY_USE_TRUE_LOG_GRIDDING)
+    INTERFACE SINGULARITY_USE_TRUE_LOG_GRIDDING)
 endif()
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_TEST_SESAME)
