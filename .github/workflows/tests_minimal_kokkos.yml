@@ -1,4 +1,4 @@
-name: Tests Minimal No Kokkos
+name: Tests Minimal With Kokkos
 
 on:
   push:
@@ -32,7 +32,7 @@ jobs:
                   -DSINGULARITY_USE_SPINER_WITH_HDF5=OFF \
                   -DSINGULARITY_BUILD_TESTS=ON \
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
-                  -DSINGULARITY_USE_KOKKOS=OFF \
+                  -DSINGULARITY_USE_KOKKOS=ON \
                   ..
             make
             make install
