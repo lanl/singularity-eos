@@ -83,10 +83,10 @@ inline void set_eos(T *eos) {
                                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
                                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
 
-  EOS Snbeta = singularity::Vinet(7.285, 298.0, 0.529e12, 5.3345, 0.000072977, 0.2149e07,
-                                  0.658e09, 0.4419e07, d2to40);
-  EOS Sngamma = singularity::Vinet(7.271, 298.0, 0.3878e12, 6.0532, 0.0001085405,
-                                   0.2161e07, 1.025e09, 0.5051e07, d2to40);
+  T Snbeta = singularity::Vinet(7.285, 298.0, 0.529e12, 5.3345, 0.000072977, 0.2149e07,
+                                0.658e09, 0.4419e07, d2to40);
+  T Sngamma = singularity::Vinet(7.271, 298.0, 0.3878e12, 6.0532, 0.0001085405, 0.2161e07,
+                                 1.025e09, 0.5051e07, d2to40);
   eos[0] = Snbeta.GetOnDevice();
   eos[1] = Sngamma.GetOnDevice();
   return;

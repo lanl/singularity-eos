@@ -28,12 +28,12 @@
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
-using EOS = singularity::Variant<singularity::EOSPAC>;
 #include <pte_test_5phaseSesameSn.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
+using EOS = singularity::Variant<singularity::EOSPAC>;
 
 int main(int argc, char *argv[]) {
 
