@@ -21,7 +21,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <pte_test_first.hpp>
+#include <pte_test_3mat_analytic.hpp>
 #include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <spiner/databox.hpp>
@@ -32,6 +32,8 @@
 using DataBox = Spiner::DataBox<Real>;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
+using singularity::Variant;
+using EOS = Variant<Gruneisen, DavisReactants, DavisProducts>;
 
 int main(int argc, char *argv[]) {
 

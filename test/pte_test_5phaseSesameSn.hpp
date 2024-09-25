@@ -80,10 +80,10 @@ inline void set_eos(T *eos) {
 
   // bool invert_at_setup = true;
 
-  EOS Snbeta = singularity::EOSPAC(SnbetaID);
-  EOS Sngamma = singularity::EOSPAC(SngammaID);
+  T Snbeta = singularity::EOSPAC(SnbetaID);
+  T Sngamma = singularity::EOSPAC(SngammaID);
   //  EOS Sndelta = singularity::EOSPAC(SndeltaID);
-  EOS Snhcp = singularity::EOSPAC(SnhcpID);
+  T Snhcp = singularity::EOSPAC(SnhcpID);
   //  EOS Snliquid = singularity::EOSPAC(SnliquidID);
 
   eos[0] = Snbeta.GetOnDevice();
