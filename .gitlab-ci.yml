@@ -1,62 +1,14 @@
-###################
-# Global Settings #
-###################
-
 stages:
   - prepare
   - build_n_test
 
-default:
-  interruptible: true
-
 variables:
-  ENABLED_CLUSTERS: "darwin,rocinante"
+  PROJECT_NAME: singularity-eos
+  ENABLE_CDASH: false
   GIT_SUBMODULE_STRATEGY: normal
 
-.ascgit_job:
-  id_tokens:
-    SITE_ID_TOKEN:
-      aud: https://asc-git.lanl.gov
-
-.darwin_job:
-  rules:
-    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "pipeline"
-    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "schedule"
-    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_COMMIT_TAG
-  variables:
-    CLUSTER: darwin
-    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p general,skylake-gold,skylake-platinum --constraint=\"(cpu_family:skylake)&ib:edr\""
-  tags:
-    - darwin-slurm-shared
-
-.rocinante_job:
-  rules:
-    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "pipeline"
-    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "schedule"
-    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_COMMIT_TAG
-  variables:
-    CLUSTER: rocinante
-    SCHEDULER_PARAMETERS: "-N 1 -A asc-ci -p ci --reservation ci --time=00:45:00"
-  tags:
-    - rocinante
-    - batch
-
-.report_tests:
-  artifacts:
-    expire_in: 2 weeks
-    paths:
-      - ${CI_PROJECT_DIR}/build/tests.xml
-    reports:
-      junit: ${CI_PROJECT_DIR}/build/tests.xml
-
-.build_and_test:
-  stage: build_n_test
-  script:
-    - source .gitlab/build_and_test.sh ${CLUSTER} ${SPACK_ENV_NAME}
+include:
+ - .gitlab/common.yml
 
 
 ########
@@ -65,7 +17,13 @@ variables:
 
 download_prereq:
   stage: prepare
-  extends: [.ascgit_job, .darwin_job]
+  extends: [.ascgit_job]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "push"
+  needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: none
   script:
@@ -75,26 +33,26 @@ download_prereq:
       - goldfiles.tar.gz
 
 openmpi_gcc:
-  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-gcc
 
 openmpi_fortran_gcc:
-  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-fortran-gcc
 
 openmpi_cuda_gcc_ampere:
-  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-cuda-gcc-ampere
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
 
 openmpi_cuda_gcc_volta:
-  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-cuda-gcc-volta
@@ -102,14 +60,14 @@ openmpi_cuda_gcc_volta:
 
 # currently disabled due to very long compilation times
 #openmpi_fortran_cuda_gcc_ampere:
-#  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
 #  needs: [download_prereq]
 #  variables:
 #    SPACK_ENV_NAME: openmpi-fortran-cuda-gcc-ampere
 #    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
 #
 #openmpi_fortran_cuda_gcc_volta:
-#  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
 #  needs: [download_prereq]
 #  variables:
 #    SPACK_ENV_NAME: openmpi-fortran-cuda-gcc-volta
@@ -118,7 +76,7 @@ openmpi_cuda_gcc_volta:
 # EXAMPLE of how to modify an existing Spack environment and/or set CMake options
 #openmpi_cuda_gcc_volta_noclosure:
 #  stage: build_n_test
-#  extends: [.ascgit_job, .darwin_job, .report_tests,]
+#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job,]
 #  needs: [download_prereq]
 #  variables:
 #    SPACK_ENV_NAME: openmpi-cuda-gcc-volta
@@ -134,39 +92,51 @@ openmpi_cuda_gcc_volta:
 #   - cmake_install
 
 openmpi_fortran_kokkos_openmp_gcc:
-  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-openmp-gcc
 
 openmpi_fortran_kokkos_static_openmp_gcc:
-  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-gcc
 
 #openmpi_rocm_gcc:
-#  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
 #  needs: [download_prereq]
 #  variables:
 #    spack_env_name: openmpi-rocm-gcc
 #    scheduler_parameters: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
-
+#
 #openmpi_fortran_rocm_gcc:
-#  extends: [.ascgit_job, .darwin_job, .report_tests, .build_and_test]
+#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
 #  needs: [download_prereq]
 #  variables:
 #    spack_env_name: openmpi-fortran-rocm-gcc
 #    scheduler_parameters: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
 
-craympich_gcc:
-  extends: [.ascgit_job, .rocinante_job, .report_tests, .build_and_test]
+rocinante_craympich_gcc:
+  extends: [.ascgit_job, .rocinante_job, .rocinante_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: craympich-gcc
 
-craympich_fortran_gcc:
-  extends: [.ascgit_job, .rocinante_job, .report_tests, .build_and_test]
+rocinante_craympich_fortran_gcc:
+  extends: [.ascgit_job, .rocinante_job, .rocinante_regular_job, .build_and_test]
   needs: [download_prereq]
   variables:
     SPACK_ENV_NAME: craympich-fortran-gcc
+
+rzvernal_craympich_rocm_mi250_cce:
+  extends: [.ascgit_job, .rzadams_job, .rzvernal_regular_job, .build_and_test]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: craympich-rocm-gfx90a-cce
+
+rzadams_craympich_rocm_mi300_cce:
+  extends: [.ascgit_job, .rzadams_job, .rzadams_regular_job, .build_and_test]
+  needs: [download_prereq]
+  variables:
+    SPACK_ENV_NAME: craympich-rocm-gfx942-cce
