@@ -805,6 +805,16 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real Init() {
     InitBase();
     Residual();
+    // calculate an initil equilibrium pressure
+    Real psum = 0.0;
+    Real vsum = 0.0;
+    for (int m = 0; m < nmat; ++m) {
+      psum += vfrac[m]*press[m];
+      vsum += vfrac[m];
+    }
+    // all normalized temps set to 1 so no averaging necessary here.
+    Tequil = temp[0];
+    Pequil = psum / (vsum * uscale); 
     // Leave this in for now, but comment out because I'm not sure it's a good idea
     // TryIdealPTE(this);
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -816,12 +826,14 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   void Residual() const {
     Real tsum = 0.0;
     Real psum = 0.0;
+    Real vsum = 0.0;
     for (int m = 0; m < nmat; ++m) {
-      tsum += temp[m];
-      psum += press[m];
+      tsum += vfrac[m]*temp[m];
+      psum += vfrac[m]*press[m];
+      vsum += vfrac[m];
     }
-    residual[0] = psum/nmat;
-    residual[1] = 
+    residual[0] = Tequil - tsum/vsum;
+    residual[1] = Pequil - psum/vsum; 
   }
 
   PORTABLE_INLINE_FUNCTION
