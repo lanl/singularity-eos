@@ -746,7 +746,7 @@ inline int PTESolverPTRequiredScratch(const int nmat) {
   int neq = 2;
   return neq * neq                 // jacobian
          + 4 * neq                 // dx, residual, and sol_scratch
-         + 6 * nmat                // all the nmat sized arrays
+         + 3 * nmat                // all the nmat sized arrays
          + MAX_NUM_LAMBDAS * nmat; // the cache
 }
 inline size_t PTESolverPTRequiredScratchInBytes(const int nmat) {
@@ -791,9 +791,6 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat + 1, eos, vfrac_tot,
                                                          sie_tot, rho, vfrac, sie, temp,
                                                          press, scratch, Tguess) {
-    dpdv = AssignIncrement(scratch, nmat);
-    dedv = AssignIncrement(scratch, nmat);
-    dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     // TODO(JCD): use whatever lambdas are passed in
     /*for (int m = 0; m < nmat; m++) {
@@ -814,7 +811,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     }
     // all normalized temps set to 1 so no averaging necessary here.
     Tequil = temp[0];
-    Pequil = psum / (vsum * uscale); 
+    Pequil = psum / vsum; 
     // Leave this in for now, but comment out because I'm not sure it's a good idea
     // TryIdealPTE(this);
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -827,6 +824,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     Real tsum = 0.0;
     Real psum = 0.0;
     Real vsum = 0.0;
+    // is volume averaging the right thing here? 
     for (int m = 0; m < nmat; ++m) {
       tsum += vfrac[m]*temp[m];
       psum += vfrac[m]*press[m];
@@ -857,7 +855,15 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   PORTABLE_INLINE_FUNCTION
   void Jacobian() const {
     using namespace mix_params;
-    Real dedT_sum = 0.0;
+    // sum_m d e_m / dT )_P
+    Real dedT_P_sum = 0.0;
+    // sum_m d e_m / dP )_T
+    Real dedP_T_sum = 0.0;
+    // - sum_m rho_tot / rho_m^2 * d rho_m / dT )_P
+    Real rtor2_dr_dT_p_sum = 0.0;
+    // - sum_m rho_tot / rho_m^2 d rho_m / dP )_T
+    Real rtor2_dr_dP_T_sum = 0.0;
+    
     for (int m = 0; m < nmat; m++) {
       //////////////////////////////
       // perturb volume fractions
@@ -873,8 +879,8 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
                                                        e_pert, Cache[m], false),
                         uscale);
-      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
-      dedv[m] = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dv);
+      Real dpdv = robust::ratio((p_pert - press[m]), dv);
+      Real dedv = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dv);
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
@@ -885,24 +891,18 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
                                                             Tnorm * (Tequil + dT), e_pert,
                                                             Cache[m], false),
                              uscale);
-      dpdT[m] = robust::ratio((p_pert - press[m]), dT);
+      Real dpdT = robust::ratio((p_pert - press[m]), dT);
+      rtor2_dr_dT_p_sum += rho_tot / (rho[m]*rho[m]) * dpdT / dpdv;
       dedT_sum += robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dT);
     }
 
     // Fill in the Jacobian
     for (int i = 0; i < neq * neq; ++i)
       jacobian[i] = 0.0;
-    for (int m = 0; m < nmat; ++m) {
-      jacobian[m] = 1.0;
-      jacobian[neq + m] = dedv[m];
-    }
-    jacobian[neq + nmat] = dedT_sum;
-    for (int m = 0; m < nmat - 1; m++) {
-      const int ind = MatIndex(2 + m, m);
-      jacobian[ind] = dpdv[m];
-      jacobian[ind + 1] = -dpdv[m + 1];
-      jacobian[MatIndex(2 + m, nmat)] = dpdT[m] - dpdT[m + 1];
-    }
+    jacobian[0] = rtor2_dr_dT_p_sum;
+    jacobian[1] = rtor2_dr_dP_T_sum;
+    jacobian[2] = dedT_P_sum;
+    jacobian[3] = dedP_T_sum;
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -973,7 +973,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   }
 
  private:
-  Real *dpdv, *dedv, *dpdT, *vtemp;
+  Real *vtemp;
   Real Tequil, Ttemp, Pequil;
 };
 
