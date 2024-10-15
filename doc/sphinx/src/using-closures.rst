@@ -450,9 +450,11 @@ The constructor for the ``PTESolverRhoT`` is of the form
 .. code-block:: cpp
 
   template <typename EOS_t, typename Real_t, typename Lambda_t>
-  PTESolverRhoT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
+  PORTABLE_INLINE_FUNCTION
+  PTESolverRhoT(const std::size_t nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
                 Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
-                Lambda_t &&lambda, Real *scratch, const Real Tguess = 0);
+                Lambda_t &&lambda, Real *scratch, const Real Tnorm = 0.0,
+                const MixParams &params = MixParams())
 
 where ``nmat`` is the number of materials, ``eos`` is an indexer over
 equation of state objects, one per material, and ``vfrac_tot`` is a
@@ -466,9 +468,64 @@ one per material. ``press`` is an indexer over pressures, one per
 material. ``lambda`` is an indexer over lambda arrays, one per
 material. ``scratch`` is a pointer to pre-allocated scratch memory, as
 described above. It is assumed enough scratch has been allocated.
-Finally, the optional argument ``Tguess`` allows for host codes to
-pass in an initial temperature guess for the solver.  For more
-information on initial guesses, see the section below.
+The optional argument ``Tnorm`` allows for host codes to pass in a
+normalization for the temperature scale. Initial guesses for density
+and temperature may be passed in through the ``rho`` and ``sie`` input
+parameters.
+
+The optional ``MixParams`` input contains a struct of runtime
+parameters that may be used by the various PTE solvers. This struct
+contains the following member fields, with default values:
+
+.. code-block:: cpp
+
+  struct MixParams {
+    bool verbose = false; // verbosity
+    Real derivative_eps = 3.0e-6;
+    Real pte_rel_tolerance_p = 1.e-6;
+    Real pte_rel_tolerance_e = 1.e-6;
+    Real pte_rel_tolerance_t = 1.e-4;
+    Real pte_abs_tolerance_p = 0.0;
+    Real pte_abs_tolerance_e = 1.e-4;
+    Real pte_abs_tolerance_t = 0.0;
+    Real pte_residual_tolerance = 1.e-8;
+    std::size_t pte_max_iter_per_mat = 128;
+    Real line_search_alpha = 1.e-2;
+    std::size_t line_search_max_iter = 6;
+    Real line_search_fac = 0.5;
+    Real vfrac_safety_fac = 0.95;
+    Real temperature_limit = 1.0e15;
+    Real default_tguess = 300.;
+    Real min_dtde = 1.0e-16;
+  };
+
+where here ``verbose`` specifies how erbose PTE output is,
+``derivative_eps`` is the spacing used for finite differences
+evaluations of equations of state when building a jacobian. The
+``pte_rel_tolerance_p``, ``pte_rel_tolerance_e``, and
+``pte_rel_tolerance_t`` variables are relative tolerances for the
+error in the pressure, energy, temperature respectively. The
+``pte_abs_tolerance_*`` variables are the same but are absolute,
+rather than relative tolerances. ``pte_residual_tolerance`` is the
+absolute tolerance for the residual.
+
+The maximum number of iterations the solver is allowed to take before
+giving up is ``pte_max_iter_per_mat`` multiplied by the number of
+materials used. ``line_search_alpha`` is used as a safety factor in
+the line search. ``line_search_max_iter`` is the maximum number of
+iterations the solver is allowed to take in the line
+search. ``line_search_fac`` is the step size in the line
+search. ``vfrac_safety_fac`` limites the relative amount the volume
+fraction can take in a given iteration. ``temperature_limit`` is the
+maximum temperature allowed by the solver. ``default_tguess`` is used
+as an initial guess for temperature if a better guess is not passed in
+or cannot be inferred. ``min_dtde`` is the minmum that temperature is
+allowed to change with respect to energy when computing Jacobians.
+
+.. note::
+
+  If ``MixParams`` are not provided, the default values are used. Not
+  all ``MixParams`` are used by every solver.
 
 The constructor for the ``PTESolverRhoU`` has the same structure:
 
@@ -478,7 +535,7 @@ The constructor for the ``PTESolverRhoU`` has the same structure:
   PTESolverRhoU(const int nmat, const EOS_t &&eos, const Real vfrac_tot,
                 const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
-                const Real Tguess = 0);
+                const Real Tnorm = 0, const MixParams &params = MixParams());
 
 Both constructors are callable on host or device. In gerneral,
 densities and internal energies are the required inputs. However, all
@@ -489,16 +546,31 @@ thermodynamically consistent with the equilibrium solution.
 
 Once a PTE solver has been constructed, one performs the solve with
 the ``PTESolver`` function, which takes a ``PTESolver`` object as
-input and returns a boolean status of either success or failure. For
-example:
+input and returns a ``SolverStatus`` struct:
 
 .. code-block:: cpp
 
   auto method = PTESolverRhoT<decltype(eos), decltype(rho), decltype(lambda)>(NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda, scratch);
-  bool success = PTESolver(method);
+  auto status = PTESolver(method);
 
-For an example of the PTE solver machinery in use, see the
-``test_pte.cpp`` file in the tests directory.
+The status struct is of the form:
+
+.. code-block:: cpp
+
+  struct SolverStatus {
+    bool converged;
+    std::size_t max_niter;
+    std::size_t max_line_niter;
+    Real residual;
+  };
+
+where ``converged`` will report whether or not the solver successfully
+converged, ``residual`` will report the final value of the residual,
+``max_niter`` will report the total number of iterations that the
+solver performed and ``max_line_niter`` will report the maximum number
+of iterations within a line search that the solver performed. For an
+example of the PTE solver machinery in use, see the ``test_pte.cpp``
+file in the tests directory.
 
 Initial Guesses for PTE Solvers
 '''''''''''''''''''''''''''''''
@@ -531,12 +603,14 @@ used to provide an initial guess.  This function takes the form
 where ``nmat`` is the number of materials, ``eos`` is an indexer over
 equation of state objects, ``u_tot`` is the total material internal
 energy density (energy per unit volume), ``rho`` is an indexer over
-material density, ``vfrac`` is an indexer over material volume fractions,
-and the optional argument ``Tguess`` allows for callers to pass in a guess
-that could accelerate finding a solution.  This function does a 1-D root find
-to find the temperature at which the material internal energies sum to the
-total.  The root find does not have a tight tolerance -- instead the
-hard-coded tolerance was selected to balance performance with the accuracy
-desired for an initial guess in a PTE solve.  If a previous temperature value
-is unavailable or some other process may have significantly modified the
-temperature since it was last updated, this function can be quite effective.
+material density, ``vfrac`` is an indexer over material volume
+fractions, and the optional argument ``Tguess`` allows for callers to
+pass in an initial guess that could accelerate finding a solution.
+This function does a 1-D root find to find the temperature at which
+the material internal energies sum to the total.  The root find does
+not have a tight tolerance -- instead the hard-coded tolerance was
+selected to balance performance with the accuracy desired for an
+initial guess in a PTE solve.  If a previous temperature value is
+unavailable or some other process may have significantly modified the
+temperature since it was last updated, this function can be quite
+effective.
