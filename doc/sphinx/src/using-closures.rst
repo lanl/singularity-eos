@@ -470,7 +470,7 @@ material. ``scratch`` is a pointer to pre-allocated scratch memory, as
 described above. It is assumed enough scratch has been allocated.
 The optional argument ``Tnorm`` allows for host codes to pass in a
 normalization for the temperature scale. Initial guesses for density
-and temperature may be passed in through the ``rho`` and ``sie`` input
+and temperature may be passed in through the ``rho`` and ``temp`` input
 parameters.
 
 The optional ``MixParams`` input contains a struct of runtime
