@@ -59,7 +59,7 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
               &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0),
               cache[0], &solver_scratch(tid, 0));
           auto status = PTESolver(method);
-          pte_converged = pte_status.converged;
+          pte_converged = status.converged;
           // calculate total sie
           for (int mp = 0; mp < npte; ++mp) {
             const int m = pte_mats(tid, mp);
