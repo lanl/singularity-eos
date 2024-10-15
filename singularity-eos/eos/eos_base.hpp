@@ -845,7 +845,9 @@ class EosBase {
 
   inline constexpr decltype(auto) GetUnmodifiedObject() {
     if constexpr (CRTP::IsModified()) {
-      return ((static_cast<CRTP *>(this))->UnmodifyOnce()).GetUnmodifiedObject();
+      auto unmodified =
+          ((static_cast<CRTP *>(this))->UnmodifyOnce()).GetUnmodifiedObject();
+      return unmodified;
     } else {
       return *static_cast<CRTP *>(this);
     }

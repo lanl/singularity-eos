@@ -125,7 +125,8 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
         PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
             num_pte, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
             v_temperatures, v_pressures, lambdas, scratch);
-        pte_converged_d[0] = PTESolver(method);
+        auto status = PTESolver(method);
+        pte_converged_d[0] = status.converged;
         pte_u_out_d[0] = v_densities[0] * v_vol_frac[0] * v_sies[0];
         for (int m = 1; m < num_pte; ++m) {
           pte_u_out_d[0] += v_densities[m] * v_vol_frac[m] * v_sies[m];

@@ -31,6 +31,7 @@ add_executable(
   catch2_define.cpp
   eos_unit_test_helpers.hpp
   test_eos_modifiers.cpp
+  test_eos_modifiers_minimal.cpp
   test_eos_vector.cpp
   test_math_utils.cpp
   test_variadic_utils.cpp
