@@ -499,7 +499,7 @@ contains the following member fields, with default values:
     Real min_dtde = 1.0e-16;
   };
 
-where here ``verbose`` specifies how erbose PTE output is,
+where here ``verbose`` enables verbose output in the PTE solve is,
 ``derivative_eps`` is the spacing used for finite differences
 evaluations of equations of state when building a jacobian. The
 ``pte_rel_tolerance_p``, ``pte_rel_tolerance_e``, and
