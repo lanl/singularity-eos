@@ -172,8 +172,8 @@ int main(int argc, char *argv[]) {
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
                   NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
                   &scratch_d(t * nscratch_vars), Tguess);
-          bool success = PTESolver(method);
-          if (success) {
+          auto status = PTESolver(method);
+          if (status.converged) {
             nsuccess_d() += 1;
           }
           hist_d[method.Niter()] += 1;
