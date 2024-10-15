@@ -58,7 +58,8 @@ void get_sg_eos_rho_e(const char *name, int ncell, indirection_v &offsets_v,
               npte, eos_inx, vfrac_sum, sie_v(i), &rho_pte(tid, 0), &vfrac_pte(tid, 0),
               &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), cache,
               &solver_scratch(tid, 0));
-          pte_converged = PTESolver(method);
+          auto status = PTESolver(method);
+          pte_converged = status.converged;
         } else {
           // pure cell (nmat = 1)
           temp_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
