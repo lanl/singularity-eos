@@ -31,6 +31,7 @@ add_executable(
   catch2_define.cpp
   eos_unit_test_helpers.hpp
   test_eos_modifiers.cpp
+  test_eos_modifiers_minimal.cpp
   test_eos_vector.cpp
   test_math_utils.cpp
   test_variadic_utils.cpp
@@ -41,16 +42,20 @@ add_executable(
   eos_tabulated_unit_tests
   catch2_define.cpp
   eos_unit_test_helpers.hpp
+  test_spiner_tricks.cpp
   test_eos_helmholtz.cpp
   test_eos_tabulated.cpp
   test_eos_stellar_collapse.cpp
   )
 
-add_executable(
-  closure_unit_tests
-  catch2_define.cpp
-  test_closure_pte.cpp
-  )
+if (SINGULARITY_BUILD_CLOSURE)
+  add_executable(
+    closure_unit_tests
+    catch2_define.cpp
+    test_closure_pte.cpp
+    test_kpt_models.cpp
+    )
+endif()
 
 get_property(plugin_tests GLOBAL PROPERTY PLUGIN_TESTS)
 if (plugin_tests)
@@ -69,7 +74,6 @@ endif()
 
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(eos_tabulated_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
-  target_compile_definitions(closure_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_tabulated_unit_tests
@@ -82,8 +86,6 @@ target_link_libraries(eos_infrastructure_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
 target_link_libraries(eos_tabulated_unit_tests PRIVATE Catch2::Catch2
   singularity-eos::singularity-eos)
-target_link_libraries(closure_unit_tests PRIVATE Catch2::Catch2
-  singularity-eos::singularity-eos)
 if (plugin_tests)
   target_link_libraries(eos_plugin_tests PRIVATE Catch2::Catch2
     singularity-eos::singularity-eos)
@@ -92,7 +94,6 @@ include(Catch)
 catch_discover_tests(eos_analytic_unit_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_infrastructure_tests PROPERTIES TIMEOUT 60)
 catch_discover_tests(eos_tabulated_unit_tests PROPERTIES TIMEOUT 60)
-catch_discover_tests(closure_unit_tests PROPERTIES TIMEOUT 120)
 if (plugin_tests)
   catch_discover_tests(eos_plugin_tests PROPERTIES TIMEOUT 60)
 endif()
@@ -104,14 +105,36 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_TEST_SESAME)
 endif()
 
 if(SINGULARITY_BUILD_CLOSURE)
+  if (SINGULARITY_TEST_SESAME)
+    target_compile_definitions(closure_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+  endif()
+  target_link_libraries(closure_unit_tests PRIVATE Catch2::Catch2
+    singularity-eos::singularity-eos)
+  catch_discover_tests(closure_unit_tests PROPERTIES TIMEOUT 120)
+
   if(SINGULARITY_USE_SPINER)
     add_executable(test_pte test_pte.cpp)
     target_link_libraries(test_pte PRIVATE Catch2::Catch2
                                          singularity-eos::singularity-eos)
     target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(pte test_pte)
+
+    add_executable(test_pte_2phase test_pte_2phase.cpp)
+    target_link_libraries(test_pte_2phase PRIVATE Catch2::Catch2
+                                         singularity-eos::singularity-eos)
+    target_include_directories(test_pte_2phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+    add_test(pte_2phase test_pte_2phase)
+
+    if(SINGULARITY_USE_EOSPAC)
+      add_executable(test_pte_3phase test_pte_3phase.cpp)
+      target_link_libraries(test_pte_3phase PRIVATE Catch2::Catch2
+                                           singularity-eos::singularity-eos)
+      target_include_directories(test_pte_3phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+      add_test(pte_3phase test_pte_3phase)
+    endif()
   endif()
-  if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN)
+  # disable fortran tests when using OpenMP due to segfaults
+  if(SINGULARITY_USE_KOKKOS AND SINGULARITY_USE_FORTRAN AND NOT Kokkos_ENABLE_OPENMP)
     add_executable(test_get_sg_eos test_get_sg_eos.cpp)
     target_link_libraries(test_get_sg_eos PRIVATE Catch2::Catch2
                                          singularity-eos::singularity-eos)

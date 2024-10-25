@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -32,7 +32,7 @@
 using singularity::IdealGas;
 using EOS = singularity::Variant<IdealGas>;
 
-SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
+SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
   GIVEN("Parameters for an ideal gas with entropy reference states") {
     // Create ideal gas EOS ojbect
     constexpr Real Cv = 5.0;
@@ -54,6 +54,16 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
         auto entropy = host_eos.EntropyFromDensityTemperature(rho, T);
         INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
         CHECK(isClose(entropy, entropy_true, 1e-12));
+
+        AND_THEN("The free energy agrees") {
+          const Real sie = host_eos.InternalEnergyFromDensityTemperature(rho, T);
+          const Real P = host_eos.PressureFromDensityTemperature(rho, T);
+          const Real G_true = sie + (P / rho) - T * entropy;
+          const Real GT = host_eos.GibbsFreeEnergyFromDensityTemperature(rho, T);
+          CHECK(isClose(GT, G_true, 1e-12));
+          const Real Gsie = host_eos.GibbsFreeEnergyFromDensityInternalEnergy(rho, sie);
+          CHECK(isClose(Gsie, G_true, 1e-12));
+        }
       }
     }
     GIVEN("A state at the reference density and a temperature whose square is the "
@@ -135,5 +145,67 @@ SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
     PORTABLE_FREE(P);
     PORTABLE_FREE(rho);
     PORTABLE_FREE(sie);
+  }
+}
+
+struct Dummy {};
+SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
+  GIVEN("An ideal gas object on host and a variant on host") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    IdealGas eos_bare(gm1, Cv);
+    EOS eos_variant = IdealGas(gm1, Cv);
+
+    THEN("They both report zero dynamic memory size") {
+      REQUIRE(eos_bare.DynamicMemorySizeInBytes() == 0);
+      REQUIRE(eos_variant.DynamicMemorySizeInBytes() == 0);
+    }
+
+    THEN("They both report sizes larger than a trivial struct, such that the eos variant "
+         "size >= eos_bare size") {
+      REQUIRE(eos_bare.SerializedSizeInBytes() > sizeof(Dummy));
+      REQUIRE(eos_variant.SerializedSizeInBytes() > sizeof(Dummy));
+      REQUIRE(eos_variant.SerializedSizeInBytes() >= eos_bare.SerializedSizeInBytes());
+    }
+
+    WHEN("We serialize each") {
+      auto [size_bare, data_bare] = eos_bare.Serialize();
+      auto [size_var, data_var] = eos_variant.Serialize();
+
+      THEN("The reported sizes are what we expect") {
+        REQUIRE(size_bare == eos_bare.SerializedSizeInBytes());
+        REQUIRE(size_var == eos_variant.SerializedSizeInBytes());
+      }
+
+      THEN("We can de-serialize new objects from them") {
+        IdealGas new_bare;
+        new_bare.DeSerialize(data_bare);
+
+        EOS new_variant;
+        new_variant.DeSerialize(data_var);
+
+        AND_THEN("The bare eos has the right Cv and Gruneisen params") {
+          REQUIRE(new_bare.SpecificHeatFromDensityTemperature(1.0, 1.0) == Cv);
+          REQUIRE(new_bare.GruneisenParamFromDensityTemperature(1.0, 1.0) == gm1);
+        }
+
+        AND_THEN("The variant has the right type") {
+          REQUIRE(new_variant.IsType<IdealGas>());
+        }
+
+        AND_THEN("The bare eos has the right Cv and Gruneisen params") {
+          REQUIRE(new_variant.SpecificHeatFromDensityTemperature(1.0, 1.0) == Cv);
+          REQUIRE(new_variant.GruneisenParamFromDensityTemperature(1.0, 1.0) == gm1);
+        }
+      }
+
+      // cleanup
+      free(data_bare);
+      free(data_var);
+    }
+
+    // cleanup
+    eos_bare.Finalize();
+    eos_variant.Finalize();
   }
 }

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 
 #include <ports-of-call/portability.hpp>
+#include <pte_test_3mat_analytic.hpp>
 #include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
@@ -82,7 +83,8 @@ int run_sg_get_eos_tests() {
   }
   // obtain converged and consistent PTE solution
   // do rho-T input solve
-  Real p_check, vfrac_check[NMAT], ie_check[NMAT];
+  Real p_check = 1; // sanitize pressure guess
+  Real vfrac_check[NMAT], ie_check[NMAT];
   get_sg_eos(NMAT, 1, 1, -3, eos_offset, eoss, &cell_offset, &p_check, &pmax, &v_true,
              &spvol, &sie_tot_check, &T_true_ev, &bmod, &dpde, &cv, mfrac, vfrac_check,
              ie_check, nullptr, nullptr, nullptr, 1.0e-12);

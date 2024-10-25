@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,11 +12,14 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#include <limits>
+
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/serialization_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
 
@@ -144,7 +147,6 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
       // test out the c interface
       int enabled[4] = {0, 0, 1, 0};
       Real vals[6] = {0.0, 0.0, 1.e9, 1.0, 2.0, 1.0};
-      Real rho0 = 1.e6 / (gm1 * Cv * 293.0);
       init_sg_IdealGas(0, &igra, gm1, Cv, enabled, vals);
       THEN("The modified EOS should produce equivalent results") {
         compare_two_eoss(igsh, ig);
@@ -238,65 +240,5 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
       }
     }
 #endif // SINGULARITY_BUILD_CLOSURE
-  }
-}
-
-SCENARIO("Relativistic EOS", "[EOSBuilder][RelativisticEOS][IdealGas]") {
-  GIVEN("Parameters for an ideal gas") {
-    constexpr Real Cv = 2.0;
-    constexpr Real gm1 = 0.5;
-    WHEN("We construct a relativistic IdealGas with EOSBuilder") {
-      constexpr Real cl = 1;
-      EOS eos = IdealGas(gm1, Cv);
-      eos = Modify<RelativisticEOS>(eos, cl);
-      THEN("The EOS has finite sound speeds") {
-        constexpr Real rho = 1e3;
-        constexpr Real sie = 1e3;
-        Real bmod = eos.BulkModulusFromDensityInternalEnergy(rho, sie);
-        Real cs2 = bmod / rho;
-        REQUIRE(cs2 < 1);
-      }
-    }
-  }
-}
-
-SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
-  GIVEN("Parameters for an ideal gas") {
-    constexpr Real Cv = 2.0;
-    constexpr Real gm1 = 0.5;
-    GIVEN("Units with a thermal unit system") {
-      constexpr Real rho_unit = 1e1;
-      constexpr Real sie_unit = 1e-1;
-      constexpr Real temp_unit = 123;
-      WHEN("We construct an IdealGas with EOSBuilder") {
-        EOS eos = IdealGas(gm1, Cv);
-        eos = Modify<UnitSystem>(eos, rho_unit, sie_unit, temp_unit);
-        THEN("Units cancel out for an ideal gas") {
-          Real rho = 1e3;
-          Real sie = 1e3;
-          Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
-          Real Ptrue = gm1 * rho * sie;
-          REQUIRE(std::abs(P - Ptrue) / Ptrue < 1e-3);
-        }
-      }
-    }
-    GIVEN("Units with length and time units") {
-      constexpr Real time_unit = 456;
-      constexpr Real length_unit = 1e2;
-      constexpr Real mass_unit = 1e6;
-      constexpr Real temp_unit = 789;
-      WHEN("We construct an IdealGas with EOSBuilder") {
-        EOS eos = IdealGas(gm1, Cv);
-        eos = Modify<UnitSystem>(eos, eos_units_init::length_time_units_init_tag,
-                                 time_unit, mass_unit, length_unit, temp_unit);
-        THEN("Units cancel out for an ideal gas") {
-          Real rho = 1e3;
-          Real sie = 1e3;
-          Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
-          Real Ptrue = gm1 * rho * sie;
-          REQUIRE(std::abs(P - Ptrue) / Ptrue < 1e-3);
-        }
-      }
-    }
   }
 }

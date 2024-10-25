@@ -41,11 +41,30 @@ class PortsOfCall(CMakePackage):
         default="None",
         when="@:1.2.0",
     )
+    variant("test", default=False, description="Build tests")
+    variant(
+        "test_portability_strategy",
+        description="Portability strategy used by tests",
+        values=("Kokkos", "Cuda", "None"),
+        multi=False,
+        default="None",
+        when="@1.6.1: +test",
+    )
 
     depends_on("cmake@3.12:")
+    depends_on("catch2@3.0.1:", when="+test")
+    depends_on("kokkos", when="+test test_portability_strategy=Kokkos")
 
     def cmake_args(self):
-        args = []
+        args = [
+            self.define_from_variant("PORTS_OF_CALL_BUILD_TESTING", "test"),
+            self.define_from_variant("PORTS_OF_CALL_TEST_PORTABILITY_STRATEGY", "test_portability_strategy"),
+        ]
         if self.spec.satisfies("@:1.2.0"):
             args.append(self.define_from_variant("PORTABILITY_STRATEGY", "portability_strategy"))
+        if self.spec.satisfies("test_portability_strategy=Kokkos ^kokkos+rocm"):
+            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
+            args.append(self.define("CMAKE_C_COMPILER", self.spec["hip"].hipcc))
+        if self.spec.satisfies("test_portability_strategy=Kokkos ^kokkos+cuda"):
+            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
         return args

@@ -44,7 +44,7 @@ class NobleAbel : public EosBase<NobleAbel> {
         _bmod0(robust::ratio(_rho0 * Cv * _T0 * gm1 * (gm1 + 1.0),
                              (1.0 - bb * _rho0) * (1.0 - bb * _rho0))),
         _dpde0(robust::ratio(_rho0 * gm1, 1.0 - bb * _rho0)) {
-    checkParams();
+    CheckParams();
   }
   PORTABLE_INLINE_FUNCTION NobleAbel(Real gm1, Real Cv, Real bb, Real qq, Real qp,
                                      Real T0, Real P0)
@@ -54,7 +54,7 @@ class NobleAbel : public EosBase<NobleAbel> {
         _bmod0(robust::ratio(_rho0 * Cv * T0 * gm1 * (gm1 + 1.0),
                              (1.0 - bb * _rho0) * (1.0 - bb * _rho0))),
         _dpde0(robust::ratio(_rho0 * gm1, 1.0 - bb * _rho0)) {
-    checkParams();
+    CheckParams();
   }
   NobleAbel GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
@@ -63,7 +63,7 @@ class NobleAbel : public EosBase<NobleAbel> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(), (sie - _qq) / _Cv);
   }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_Cv > 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
     PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");

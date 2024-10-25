@@ -47,6 +47,9 @@ cmake_dependent_option(
 option(SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
+option(SINGULARITY_EOSPAC_ENABLE_SHMEM
+  "Support shared memory with EOSPAC backend. Requires EOSPAC version 6.5.7."
+  OFF)
 
 # TODO This should be dependent option (or fortran option)
 option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON)
@@ -67,7 +70,7 @@ cmake_dependent_option(
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5;SINGULARITY_USE_EOSPAC"
   OFF)
 cmake_dependent_option(
-  SINGUALRITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" ON
+  SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" ON
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
 cmake_dependent_option(
   SINGULARITY_USE_HELMHOLTZ "Include Helmholtz equation of state" OFF
@@ -81,7 +84,7 @@ cmake_dependent_option(
   "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_SESAME2SPINER" OFF)
 cmake_dependent_option(
   SINGULARITY_TEST_STELLAR_COLLAPSE "Test stellar collapse table readers" ON
-  "SINGULARITY_BUILD_TESTS;SINGUALRITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
+  "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
 cmake_dependent_option(SINGULARITY_TEST_PYTHON "Test the Python bindings" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_PYTHON" OFF)
 cmake_dependent_option(
@@ -259,6 +262,10 @@ if(SINGULARITY_USE_HIGH_RISK_MATH)
   target_compile_definitions(singularity-eos_Interface
                              INTERFACE SINGULARITY_USE_HIGH_RISK_MATH)
 endif()
+if (SINGULARITY_USE_TRUE_LOG_GRIDDING)
+  target_compile_definitions(singularity-eos_Interface
+    INTERFACE SINGULARITY_USE_TRUE_LOG_GRIDDING)
+endif()
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_TEST_SESAME)
 endif()
@@ -270,6 +277,9 @@ if(SINGULARITY_USE_HELMHOLTZ)
 endif()
 if(SINGULARITY_USE_SPINER_WITH_HDF5)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SPINER_WITH_HDF5)
+endif()
+if (SINGULARITY_USE_EOSPAC AND SINGULARITY_EOSPAC_ENABLE_SHMEM)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY)
 endif()
 
 # ------------------------------------------------------------------------------#

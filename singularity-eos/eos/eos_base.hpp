@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -20,6 +20,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
@@ -61,8 +62,8 @@ char *StrCat(char *destination, const char *source) {
 } // namespace impl
 
 // This Macro adds the `using` statements that allow for the base class
-// vector functionality to overload the scalar implementations in the derived
-// classes
+// VECTOR functionality to overload the scalar implementations in the derived
+// classes. Do not add functions here that are not overloads of derived class features.
 // TODO(JMM): Should we have more macros that capture just some of these?
 #define SG_ADD_BASE_CLASS_USINGS(EOSDERIVED)                                             \
   using EosBase<EOSDERIVED>::TemperatureFromDensityInternalEnergy;                       \
@@ -76,16 +77,30 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::BulkModulusFromDensityInternalEnergy;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityTemperature;                       \
   using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;                    \
-  using EosBase<EOSDERIVED>::MinimumDensity;                                             \
-  using EosBase<EOSDERIVED>::MinimumTemperature;                                         \
   using EosBase<EOSDERIVED>::FillEos;                                                    \
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
-  using EosBase<EOSDERIVED>::EntropyIsNotEnabled;                                        \
-  using EosBase<EOSDERIVED>::MinInternalEnergyIsNotEnabled;                              \
-  using EosBase<EOSDERIVED>::IsModified;                                                 \
-  using EosBase<EOSDERIVED>::UnmodifyOnce;                                               \
-  using EosBase<EOSDERIVED>::GetUnmodifiedObject;
+  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityTemperature;                      \
+  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityInternalEnergy;
+
+// This macro adds several methods that most modifiers will
+// want. Not ALL modifiers will want these methods as written here,
+// so use this macro with care.
+// TODO(JMM): Find a better solution. Multiple inheritence and mixins
+// dont' seem to work as desired here.
+#define SG_ADD_MODIFIER_METHODS(T, t_)                                                   \
+  static inline constexpr bool IsModified() { return true; }                             \
+  inline constexpr T UnmodifyOnce() { return t_; }                                       \
+  std::size_t DynamicMemorySizeInBytes() const { return t_.DynamicMemorySizeInBytes(); } \
+  std::size_t SharedMemorySizeInBytes() const { return t_.SharedMemorySizeInBytes(); }   \
+  std::size_t DumpDynamicMemory(char *dst) { return t_.DumpDynamicMemory(dst); }         \
+  std::size_t SetDynamicMemory(char *src,                                                \
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {   \
+    return t_.SetDynamicMemory(src, stngs);                                              \
+  }                                                                                      \
+  constexpr bool AllDynamicMemoryIsShareable() const {                                   \
+    return t_.AllDynamicMemoryIsShareable();                                             \
+  }
 
 class Factor {
   Real value_ = 1.0;
@@ -169,6 +184,28 @@ class EosBase {
     constexpr bool do_mod = variadic_utils::contains_v<Mod<CRTP>, Ts...>();
     return ConditionallyModify<Mod>(variadic_utils::bool_constant<do_mod>(),
                                     std::forward<Args>(args)...);
+  }
+
+  // Scalar member functions that get shared
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GibbsFreeEnergyFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const CRTP copy = *(static_cast<CRTP const *>(this));
+    Real sie = copy.InternalEnergyFromDensityTemperature(rho, T, lambda);
+    Real P = copy.PressureFromDensityTemperature(rho, T, lambda);
+    Real S = copy.EntropyFromDensityTemperature(rho, T, lambda);
+    return sie + (P / rho) - T * S;
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GibbsFreeEnergyFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const CRTP copy = *(static_cast<CRTP const *>(this));
+    Real T = copy.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
+    Real P = copy.PressureFromDensityTemperature(rho, T, lambda);
+    Real S = copy.EntropyFromDensityTemperature(rho, T, lambda);
+    return sie + (P / rho) - T * S;
   }
 
   // Vector member functions
@@ -605,6 +642,73 @@ class EosBase {
     GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
                                             std::forward<LambdaIndexer>(lambdas));
   }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GibbsFreeEnergyFromDensityTemperature(ConstRealIndexer &&rhos,
+                                                    ConstRealIndexer &&Ts,
+                                                    RealIndexer &&Gs, const int num,
+                                                    LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          Gs[i] = copy.GibbsFreeEnergyFromDensityTemperature(rhos[i], Ts[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void
+  GibbsFreeEnergyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&Ts,
+                                        RealIndexer &&Gs, Real * /*scratch*/,
+                                        const int num, LambdaIndexer &&lambdas) const {
+    GibbsFreeEnergyFromDensityTemperature(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(Ts),
+        std::forward<RealIndexer>(Gs), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void GibbsFreeEnergyFromDensityTemperature(const Real *rhos, const Real *Ts,
+                                                    Real *Gs, Real * /*scratch*/,
+                                                    const int num,
+                                                    LambdaIndexer &&lambdas,
+                                                    Transform && = Transform()) const {
+    GibbsFreeEnergyFromDensityTemperature(rhos, Ts, Gs, num,
+                                          std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void GibbsFreeEnergyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                       ConstRealIndexer &&sies,
+                                                       RealIndexer &&Gs, const int num,
+                                                       LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          Gs[i] =
+              copy.GibbsFreeEnergyFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
+            typename = std::enable_if_t<!is_raw_pointer<RealIndexer, Real>::value>>
+  inline void GibbsFreeEnergyFromDensityInternalEnergy(ConstRealIndexer &&rhos,
+                                                       ConstRealIndexer &&sies,
+                                                       RealIndexer &&Gs,
+                                                       Real * /*scratch*/, const int num,
+                                                       LambdaIndexer &&lambdas) const {
+    GibbsFreeEnergyFromDensityInternalEnergy(
+        std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
+        std::forward<RealIndexer>(Gs), num, std::forward<LambdaIndexer>(lambdas));
+  }
+  template <typename LambdaIndexer>
+  inline void GibbsFreeEnergyFromDensityInternalEnergy(const Real *rhos, const Real *sies,
+                                                       Real *Gs, Real * /*scratch*/,
+                                                       const int num,
+                                                       LambdaIndexer &&lambdas,
+                                                       Transform && = Transform()) const {
+    GibbsFreeEnergyFromDensityInternalEnergy(rhos, sies, Gs, num,
+                                             std::forward<LambdaIndexer>(lambdas));
+  }
+
   template <typename RealIndexer, typename LambdaIndexer>
   inline void FillEos(RealIndexer &&rhos, RealIndexer &&temps, RealIndexer &&energies,
                       RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
@@ -619,6 +723,7 @@ class EosBase {
                        output, lambdas[i]);
         });
   }
+
   // Report minimum values of density and temperature
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const { return 0; }
@@ -657,13 +762,95 @@ class EosBase {
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 
+  // Serialization
+  /*
+    The methodology here is there are *three* size methods all EOS's provide:
+    - `SharedMemorySizeInBytes()` which is the amount of memory a class can share
+    - `DynamicMemorySizeInBytes()` which is the amount of memory not covered by
+    `sizeof(this)`
+    - `SerializedSizeInBytes()` which is the total size of the object.
+
+    I wanted serialization machinery to work if you use a standalone
+    class or if you use the variant. To make that possible, each class
+    provides its own implementation of `SharedMemorySizeInBytes` and
+    `DynamicMemorySizeInBytes()`. But then there is a separate
+    implementation for the variant and for the base class for
+    `SerializedSizeInBytes`, `Serialize`, and `DeSerialize`.
+   */
+
+  // JMM: These must frequently be special-cased.
+  std::size_t DynamicMemorySizeInBytes() const { return 0; }
+  std::size_t DumpDynamicMemory(char *dst) { return 0; }
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
+    return 0;
+  }
+  // JMM: These usually don't need to be special cased.
+  std::size_t SharedMemorySizeInBytes() const {
+    const CRTP *pcrtp = static_cast<const CRTP *>(this);
+    return pcrtp->DynamicMemorySizeInBytes();
+  }
+  constexpr bool AllDynamicMemoryIsShareable() const { return true; }
+  // JMM: These are generic and never need to be special-cased.
+  // However, there must be a separate implementation for these
+  // separately in the base class and in the variant.
+  std::size_t SerializedSizeInBytes() const {
+    // sizeof(*this) returns the size of JUST the base class.
+    const CRTP *pcrtp = static_cast<const CRTP *>(this);
+    std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    return dyn_size + sizeof(CRTP);
+  }
+  std::size_t Serialize(char *dst) {
+    CRTP *pcrtp = static_cast<CRTP *>(this);
+    memcpy(dst, pcrtp, sizeof(CRTP));
+    std::size_t offst = sizeof(CRTP);
+    std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    if (dyn_size > 0) {
+      offst += pcrtp->DumpDynamicMemory(dst + sizeof(CRTP));
+    }
+    const std::size_t tot_size = pcrtp->SerializedSizeInBytes();
+    PORTABLE_ALWAYS_REQUIRE(offst == tot_size, "Serialization failed!");
+    return offst;
+  }
+  auto Serialize() {
+    CRTP *pcrtp = static_cast<CRTP *>(this);
+    std::size_t size = pcrtp->SerializedSizeInBytes();
+    char *dst = (char *)malloc(size);
+    std::size_t size_new = Serialize(dst);
+    PORTABLE_ALWAYS_REQUIRE(size_new == size, "Serialization failed!");
+    return std::make_pair(size, dst);
+  }
+  std::size_t DeSerialize(char *src,
+                          const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
+    CRTP *pcrtp = static_cast<CRTP *>(this);
+    memcpy(pcrtp, src, sizeof(CRTP));
+    std::size_t offst = sizeof(CRTP);
+    std::size_t dyn_size = pcrtp->DynamicMemorySizeInBytes();
+    if (dyn_size > 0) {
+      const bool sizes_same = pcrtp->AllDynamicMemoryIsShareable();
+      if (stngs.CopyNeeded() && sizes_same) {
+        memcpy(stngs.data, src + offst, dyn_size);
+      }
+      offst += pcrtp->SetDynamicMemory(src + offst, stngs);
+    }
+    const std::size_t tot_size = pcrtp->SerializedSizeInBytes();
+    PORTABLE_ALWAYS_REQUIRE(offst == tot_size, "Deserialization failed!");
+    return offst;
+  }
+
   // Tooling for modifiers
-  inline constexpr bool IsModified() const { return false; }
+  static inline constexpr bool IsModified() { return false; }
 
   inline constexpr decltype(auto) UnmodifyOnce() { return *static_cast<CRTP *>(this); }
 
   inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return *static_cast<CRTP *>(this);
+    if constexpr (CRTP::IsModified()) {
+      auto unmodified =
+          ((static_cast<CRTP *>(this))->UnmodifyOnce()).GetUnmodifiedObject();
+      return unmodified;
+    } else {
+      return *static_cast<CRTP *>(this);
+    }
   }
 };
 } // namespace eos_base

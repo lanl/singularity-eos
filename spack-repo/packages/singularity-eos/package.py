@@ -26,7 +26,7 @@ def plugin_validator(pkg_name, variant_name, values):
             raise SpackError(f"Unknown Singularity-EOS plugin '{v}'")
 
 
-class SingularityEos(CMakePackage, CudaPackage):
+class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     """Singularity-EOS: A collection of closure models and tools useful for
     multiphysics codes."""
 
@@ -34,7 +34,7 @@ class SingularityEos(CMakePackage, CudaPackage):
     git = "https://github.com/lanl/singularity-eos.git"
     url = "https://github.com/lanl/singularity-eos/archive/refs/tags/release-1.6.1.tar.gz"
 
-    maintainers = ["rbberger"]
+    maintainers("rbberger")
 
     # allow `main` version for development
     version("main", branch="main")
@@ -105,7 +105,9 @@ class SingularityEos(CMakePackage, CudaPackage):
     # linear algebra when not using GPUs
     # TODO we can do LA with +kokkos+kokkos-kernels~cuda,
     # so maybe this should be `when="~kokkos-kernels~cuda"`
-    depends_on("eigen@3.3.8", when="~cuda")
+    depends_on("eigen@3.3.8:", when="~kokkos-kernels")
+    requires("+kokkos-kernels", when="+cuda")
+    requires("+kokkos-kernels", when="+rocm")
 
     # eospac when asked for 
     depends_on("eospac", when="+eospac")
@@ -128,10 +130,18 @@ class SingularityEos(CMakePackage, CudaPackage):
     depends_on(
         "mpark-variant",
         patches=patch(
-            "https://raw.githubusercontent.com/lanl/singularity-eos/main/utils/cuda_compatibility.patch",
-            sha256="7b3eaa52b5ab23dc45fbfb456528e36742e04b838a5df859eca96c4e8274bb38",
+            "https://raw.githubusercontent.com/lanl/singularity-eos/refs/heads/main/utils/gpu_compatibility.patch",
+            sha256="c803670cbd95f9b97458fb4ef403de30229ec81566a5b8e5ccb75ad9d0b22541"
         ),
         when="+cuda",
+    )
+    depends_on(
+        "mpark-variant",
+        patches=patch(
+            "https://raw.githubusercontent.com/lanl/singularity-eos/refs/heads/main/utils/gpu_compatibility.patch",
+            sha256="c803670cbd95f9b97458fb4ef403de30229ec81566a5b8e5ccb75ad9d0b22541",
+        ),
+        when="+rocm",
     )
     depends_on("binutils@:2.39,2.42:+ld")
 
@@ -142,8 +152,10 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("kokkos-kernels" + _kver, when=_myver + '+kokkos-kernels')
 
     # set up kokkos offloading dependencies
-    for _flag in ("~cuda", "+cuda"):
+    for _flag in ("~cuda", "+cuda", "~rocm", "+rocm"):
         depends_on("kokkos" + _flag, when="+kokkos" + _flag)
+
+    for _flag in ("~cuda", "+cuda"):
         depends_on("kokkos-kernels" + _flag, when="+kokkos-kernels" + _flag)
 
     depends_on("kokkos+pic", when="+kokkos-kernels")
@@ -161,12 +173,17 @@ class SingularityEos(CMakePackage, CudaPackage):
         depends_on("kokkos cuda_arch=" + _flag, when="+cuda+kokkos cuda_arch=" + _flag)
         depends_on("kokkos-kernels cuda_arch=" + _flag, when="+cuda+kokkos cuda_arch=" + _flag)
 
+    for _flag in ROCmPackage.amdgpu_targets:
+        depends_on("kokkos amdgpu_target=" + _flag, when="+rocm+kokkos amdgpu_target=" + _flag)
+
     conflicts("cuda_arch=none", when="+cuda", msg="CUDA architecture is required")
+    conflicts("amdgpu_target=none", when="+rocm", msg="ROCm architecture is required")
 
     # NOTE: we can do depends_on("libfoo cppflags='-fPIC -O2'") for compiler options
 
     # these are mirrored in the cmake configuration
     conflicts("+cuda", when="~kokkos")
+    conflicts("+rocm", when="~kokkos")
     conflicts("+kokkos-kernels", when="~kokkos")
     conflicts("+hdf5", when="~spiner")
 
@@ -207,7 +224,7 @@ class SingularityEos(CMakePackage, CudaPackage):
                 "stellarcollapse" in self.spec.variants["build_extra"].value,
             ),
             self.define(
-                "SINGULARITY_TEST_STELLARCOLLAPSE2SPINER",
+                "SINGULARITY_TEST_STELLAR_COLLAPSE",
                 ("stellarcollapse" in self.spec.variants["build_extra"].value and self.run_tests),
             ),
             self.define("SINGULARITY_TEST_PYTHON", ("+python" in self.spec and self.run_tests)),
@@ -236,7 +253,9 @@ class SingularityEos(CMakePackage, CudaPackage):
                     variant_path = join_path(*parts)
                 args.append(self.define("SINGULARITY_VARIANT", variant_path))
 
-        #TODO: do we need this?
+        if "+rocm" in self.spec:
+            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
+            args.append(self.define("CMAKE_C_COMPILER", self.spec["hip"].hipcc))
         if "+kokkos+cuda" in self.spec:
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
 
@@ -246,6 +265,11 @@ class SingularityEos(CMakePackage, CudaPackage):
             else:
               cxx_std_variant = "std" # older spack
             args.append(self.define("CMAKE_CXX_STANDARD", self.spec["kokkos"].variants[cxx_std_variant].value))
+
+        # goldfiles were downloaded into source folder
+        goldfiles = os.path.join(self.stage.source_path, "goldfiles.tar.gz")
+        if self.spec.satisfies("+tests build_extra=stellarcollapse") and self.run_tests and os.path.exists(goldfiles):
+            args.append(self.define("SINGULARITY_GOLDFILE_URL", f"file://{goldfiles}"))
 
         return args
 

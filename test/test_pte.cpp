@@ -21,14 +21,19 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
+#include <pte_test_3mat_analytic.hpp>
 #include <pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
-#include <singularity-eos/eos/eos.hpp>
 #include <spiner/databox.hpp>
 
-using namespace singularity;
+#include <singularity-eos/eos/eos_models.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
+using singularity::PTESolverRhoT;
+using singularity::PTESolverRhoTRequiredScratch;
+using singularity::Variant;
+using EOS = Variant<Gruneisen, DavisReactants, DavisProducts>;
 
 int main(int argc, char *argv[]) {
 
@@ -167,8 +172,8 @@ int main(int argc, char *argv[]) {
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
                   NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
                   &scratch_d(t * nscratch_vars), Tguess);
-          bool success = PTESolver(method);
-          if (success) {
+          auto status = PTESolver(method);
+          if (status.converged) {
             nsuccess_d() += 1;
           }
           hist_d[method.Niter()] += 1;

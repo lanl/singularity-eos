@@ -27,7 +27,8 @@ register_headers(
     base/fast-math/logs.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
-    base/spiner_table_bounds.hpp
+    base/serialization_utils.hpp
+    base/spiner_table_utils.hpp
     base/variadic_utils.hpp
     base/math_utils.hpp
     base/constants.hpp
@@ -66,7 +67,12 @@ register_headers(
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
-  register_headers(closure/mixed_cell_models.hpp)
+  register_headers(
+    closure/mixed_cell_models.hpp
+    closure/kinetic_phasetransition_models.hpp
+    closure/kinetic_phasetransition_utils.hpp
+    closure/kinetic_phasetransition_methods.hpp
+  )
   if (SINGULARITY_USE_FORTRAN OR SINGULARITY_BUILD_TESTS)
     # while these are C++ files, they
     # are only needed for the fortran backend or unit testing

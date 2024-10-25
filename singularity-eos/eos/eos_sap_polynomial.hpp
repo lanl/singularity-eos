@@ -42,11 +42,11 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
                  const Real b2c, const Real b2e, const Real b3)
       : _rho0(rho0), _a0(a0), _a1(a1), _a2c(a2c), _a2e(a2e), _a3(a3), _b0(b0), _b1(b1),
         _b2c(b2c), _b2e(b2e), _b3(b3) {
-    checkParams();
+    CheckParams();
   }
 
   SAP_Polynomial GetOnDevice() { return *this; }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_rho0 >= 0, "Reference density must be non-negative");
   }
   template <typename Indexer_t = Real *>

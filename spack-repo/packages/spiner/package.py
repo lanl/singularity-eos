@@ -63,8 +63,9 @@ class Spiner(CMakePackage):
     # Currently the raw cuda backend of ports-of-call is not supported.
     depends_on("ports-of-call portability_strategy=Kokkos", when="@:1.5.1 +kokkos")
     depends_on("ports-of-call portability_strategy=None", when="@:1.5.1 ~kokkos")
+    depends_on("kokkos@3.3.00:", when="+kokkos")
     depends_on(
-        "kokkos@3.3.00: ~shared+cuda_lambda+cuda_constexpr",
+        "kokkos ~shared+cuda_lambda+cuda_constexpr",
         when="+kokkos ^kokkos+cuda",
     )
 
@@ -85,6 +86,8 @@ class Spiner(CMakePackage):
 
         args = [
             self.define("BUILD_TESTING", self.run_tests),
+            self.define("SPINER_BUILD_TESTS", self.run_tests),
+            self.define("SPINER_TEST_USE_KOKKOS", self.run_tests and self.spec.satisfies("+kokkos")),
             self.define_from_variant(use_kokkos_option, "kokkos"),
             self.define_from_variant("SPINER_USE_HDF", "hdf5"),
         ]
@@ -92,4 +95,9 @@ class Spiner(CMakePackage):
             args.append(
                 self.define("CMAKE_CUDA_ARCHITECTURES", self.spec["kokkos"].variants["cuda_arch"].value)
             )
+        if self.spec.satisfies("^kokkos+rocm"):
+            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
+            args.append(self.define("CMAKE_C_COMPILER", self.spec["hip"].hipcc))
+        if self.spec.satisfies("^kokkos+cuda"):
+            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
         return args
