@@ -788,7 +788,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   PTESolverPT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
                 Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
                 Lambda_t &&lambda, Real *scratch, const Real Tguess = 0.0)
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat + 1, eos, vfrac_tot,
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2, eos, vfrac_tot,
                                                          sie_tot, rho, vfrac, sie, temp,
                                                          press, scratch, Tguess) {
     vtemp = AssignIncrement(scratch, nmat);
@@ -821,17 +821,16 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real tsum = 0.0;
-    Real psum = 0.0;
     Real vsum = 0.0;
+    Real esum = 0.0;
     // is volume averaging the right thing here? 
     for (int m = 0; m < nmat; ++m) {
-      tsum += vfrac[m]*temp[m];
-      psum += vfrac[m]*press[m];
       vsum += vfrac[m];
+      esum += sie[m];
     }
-    residual[0] = Tequil - tsum/vsum;
-    residual[1] = Pequil - psum/vsum; 
+    // do we have an initial vfrac_sum
+    residual[0] = vfrac_tot - vsum;
+    residual[1] = sie_tot - esum;
   }
 
   PORTABLE_INLINE_FUNCTION
