@@ -698,7 +698,7 @@ If the unitless user parameter :math:`b=\Gamma_0`, the Gruneisen parameter is of
 form where :math:`\Gamma_0 =` constant in compression. These two limitig cases are 
 shown in the figure below.
 
-.. image:: ../SteinbergGammarho.pdf
+.. image:: ../SteinbergGammarho.png
   :width: 500
   :alt: Figure: Demonstration of how the parameter b interpolated between two common approximations for Gamma
 
@@ -978,7 +978,7 @@ The first omitted term in the expansion inside the square brackets is :math:`\Ga
 in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the 
 isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
 
-.. image:: ../ApproxForTH.pdf
+.. image:: ../ApproxForTH.png
   :width: 500
   :alt: Figure: Different approximations for the temperature on the Hugoniot.
 
@@ -1018,7 +1018,7 @@ By expanding the MGUsup Hugoniot pressure into a power series in :math:`\eta` we
 
 In the figure below we have used :math:`M=20` with these coefficients and show how the divergence in the MGUsup pressure at :math:`\eta = \frac{1}{s}` is avoided in the PowerMG, making it more suitable for modeling high pressures.
 
-.. image:: ../PMGvsMGUsupPress.pdf
+.. image:: ../PMGvsMGUsupPress.png
   :width: 500
   :alt: Figure: Comparing Hugoniot pressure for PowerMG and MGUsup
 

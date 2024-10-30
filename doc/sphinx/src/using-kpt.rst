@@ -183,7 +183,7 @@ transportation rate from/to phases ``fromto[k]``, with ``k`` a phase transition 
 in ``fromto``, "ij", is composed from the ``gibbs`` index of the "from" phase, :math:`i`, and the ``gibbs`` index of the "to" phase, 
 :math:`j`, as :math:`i*10+j`, and with a single digit integer, "x", interpreted as "0x".
 
-.. image:: ../GibbsOrder.pdf
+.. image:: ../GibbsOrder.png
   :width: 500
   :alt: Figure: How the phase transition index used in several arrays relate to the phase index in the  gibbsorder array.
 
