@@ -9,10 +9,9 @@ At it's most basic, you can download and compile ``singularity-eos`` with:
 
   git clone --recursive git@github.com:lanl/singularity-eos.git
   cd singularity-eos
-  mkdir -p build && cd build
-  cmake -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_FORTRAN=OFF -DSINGULARITY_BUILD_EXAMPLES=ON -DSINGULARITY_BUILD_TESTS=ON ..
-  make -j
-  make install # optional: install into directory defined via CMAKE_INSTALL_PREFIX
+  cmake -B builddir -S . -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_FORTRAN=OFF -DSINGULARITY_BUILD_EXAMPLES=ON -DSINGULARITY_BUILD_TESTS=ON 
+  cmake --build builddir --parallel
+  cmake --install builddir # optional: install into directory defined via CMAKE_INSTALL_PREFIX
 
 This will download ``singularity-eos`` with no optional dependencies and
 compile the capabilities available in that form. For more details, see
