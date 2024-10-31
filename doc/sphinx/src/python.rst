@@ -9,7 +9,7 @@ types and give access to both scalar and vector functions.
 
 Where you build or install your python bindings to must be included in
 your python module search path. For example, if you do not install,
-this may be ``singularity-eos/build/python``.
+this may be ``singularity-eos/builddir/python``.
 
 .. note::
 

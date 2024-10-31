@@ -9,25 +9,16 @@ At it's most basic, you can download and compile ``singularity-eos`` with:
 
   git clone --recursive git@github.com:lanl/singularity-eos.git
   cd singularity-eos
-  cmake -B builddir -S . -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_FORTRAN=OFF -DSINGULARITY_BUILD_EXAMPLES=ON -DSINGULARITY_BUILD_TESTS=ON 
-  cmake --build build --parallel
-  cmake --install build # optional: install into directory defined via CMAKE_INSTALL_PREFIX
+  cmake -B builddir -S . -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_FORTRAN=OFF -DSINGULARITY_BUILD_EXAMPLES=ON
+  cmake --build builddir --parallel
+  cmake --install builddir # optional: install into directory defined via CMAKE_INSTALL_PREFIX
 
 This will download ``singularity-eos`` with no optional dependencies and
 compile the capabilities available in that form. For more details, see
 :ref:`our build page <building>`.
 
-You can also run unit tests by calling
-
-.. code-block::
-
-  make test
-
-in the ``build`` directory, which should produce output confirming that
-several tests pass.
-
-Once compiled, you can quickly check your build/install by going to
-``build/example`` and running ``./get_sound_speed_press``. You should be
+Once compiled, you can quickly check your builddir/install by going to
+``builddir/example`` and running ``./get_sound_speed_press``. You should be
 able to see the following output:
 
 .. code-block::

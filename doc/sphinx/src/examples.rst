@@ -11,7 +11,7 @@ time. For example:
 .. code-block:: bash
 
    # from singularity-eos repo
-   mkdir -p build && cd build
+   mkdir -p builddir && cd builddir
    cmake .. -DSINGULARITY_BUILD_EXAMPLES=ON ..
    make -j
 
