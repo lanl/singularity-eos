@@ -7,6 +7,10 @@ Singularity EOS provides Python bindings which can be enabled with the CMake
 ``SINGULARITY_BUILD_PYTHON`` option. They provide a 1:1 mapping of the C++ EOS
 types and give access to both scalar and vector functions.
 
+Where you build or install your python bindings to must be included in
+your python module search path. For example, if you do not install,
+this may be ``singularity-eos/builddir/python``.
+
 .. note::
 
    At this time, all Python bindings are host-only.
