@@ -3,6 +3,22 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+
+### Fixed (Repair bugs, etc)
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+
+## Release 1.9.1
+Date: 11/7/2024
+
+Release is in preparation for JOSS publication.
+
+### Added (new features/APIs/variables/...)
 - [[PR416]](https://github.com/lanl/singularity-eos/pull/416) Gibbs free energy
 - [[PR361]](https://github.com/lanl/singularity-eos/pull/361) Added tests for PTEsolver and added a strawman kinetic phase transition framework
 - [[PR410]](https://github.com/lanl/singularity-eos/pull/410) Enable serialization and de-serialization
