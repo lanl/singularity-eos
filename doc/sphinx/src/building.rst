@@ -114,8 +114,10 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_BETTER_DEBUG_FLAGS``      ON       Enables nicer GPU debug flags. May interfere with in-tree builds as a submodule.
  ``SINGULARITY_HIDE_MORE_WARNINGS``      OFF      Makes warnings less verbose. May interfere with in-tree builds as a submodule.
  ``SINGULARITY_FORCE_SUBMODULE_MODE``    OFF      Force build in _submodule_ mode.
- ``SINGULARITY_USE_SINGLE_LOGS``         OFF      Use single precision logarithms (may degrade accuracy).
  ``SINGULARITY_USE_TRUE_LOG_GRIDDING``   OFF      Use grids that conform to logarithmic spacing.
+ ``SINGULARITY_USE_SINGLE_LOGS``         OFF      Use single precision logarithms (may degrade accuracy).
+ ``SINGULARITY_NQT_ORDER_1``             OFF      For fast logs, use the less accurate but faster 1st-order version.
+ ``SINGULARITY_NQT_PORTABLE``            OFF      For fast logs, use the slower but endianness-independent implementation.
 ====================================== ======= ===========================================
 
 More options are available to modify only if certain other options or

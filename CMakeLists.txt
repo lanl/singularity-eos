@@ -96,16 +96,17 @@ option(SINGULARITY_BETTER_DEBUG_FLAGS "Better debug flags for singularity" ON)
 option(SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
 
 # toggle code options
-option(SINGULARITY_USE_SINGLE_LOGS
-       "Use single precision logs. Can harm accuracy." OFF)
 option(SINGULARITY_USE_TRUE_LOG_GRIDDING
-       "Use grids that conform to log spacing." OFF)
-# TODO(JMM): Should this automatically be activated when true log gridding is
-# off?
-cmake_dependent_option(
-  SINGULARITY_USE_HIGH_RISK_MATH
-  "Use integer aliased logs, may not be portable" OFF
-  "NOT SINGULARITY_USE_TRUE_LOG_GRIDDING" OFF)
+  "Use grids that conform to log spacing." OFF)
+cmake_dependent_option(SINGULARITY_USE_SINGLE_LOGS
+  "Use single precision logs. Only available for true log gridding. Can harm accuracy."
+  OFF "SINGULARITY_USE_TRUE_LOG_GRIDDING" OFF)
+option(SINGULARITY_NQT_ORDER_1
+  "In NQT logs, use first order. Faster but less accurate."
+  OFF)
+option(SINGULARITY_NQT_PORTABLE
+  "In NQT logs, use portable, rather than bithacked implementation. Slower, but more likely to function on exotic architectures."
+  OFF)
 
 # misc options
 option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
@@ -125,6 +126,26 @@ option(SINGULARITY_PATCH_MPARK_VARIANT
 set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
 set(SINGULARITY_VARIANT "singularity-eos/eos/default_variant.hpp" CACHE STRING
   "The include path for the file containing the definition of singularity::EOS.")
+
+# Detect ARM architecture
+set(SINGULARITY_ON_ARM OFF CACHE BOOL "We are running on an ARM system")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+    if (NOT SINGULARITY_USE_CUDA)
+      message(STATUS
+        "ARM architecture detected: ${CMAKE_SYSTEM_PROCESSOR}")
+      set(SINGULARITY_ON_ARM ON CACHE BOOL
+        "We are running on an ARM system")
+    endif()
+endif()
+
+if (SINGULAIRTY_ON_ARM)
+  if (NOT SINGULARITY_USE_TRUE_LOG_GRIDDING)
+    message(WARNING
+      "Fast logs not necessarily better on ARM CPU systems. "
+      "You may wish to build with "
+      "-DSINGULARITY_USE_TRUE_LOG_GRIDDING=ON.")
+  endif()
+endif()
 
 # ------------------------------------------------------------------------------#
 # singularity-eos Library
@@ -161,6 +182,15 @@ include(CMakeDetermineCCompiler)
 if(SINGULARITY_USE_FORTRAN)
   enable_language(Fortran)
   include(CMakeDetermineFortranCompiler)
+endif()
+
+# Big endianness
+include(TestBigEndian)
+TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
+if (BIG_ENDIAN)
+  message(WARNING "Big endian detected! "
+    "Integer aliasing as currently implemented will not function. "
+    "Please set -DSINGULARITY_NQT_PORTABLE=ON.")
 endif()
 
 include(GNUInstallDirs)
@@ -255,16 +285,21 @@ if(SINGULARITY_BUILD_SESAME2SPINER)
 endif()
 
 # defines
-if(SINGULARITY_USE_SINGLE_LOGS)
-  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SINGLE_LOGS)
-endif()
-if(SINGULARITY_USE_HIGH_RISK_MATH)
-  target_compile_definitions(singularity-eos_Interface
-                             INTERFACE SINGULARITY_USE_HIGH_RISK_MATH)
-endif()
 if (SINGULARITY_USE_TRUE_LOG_GRIDDING)
   target_compile_definitions(singularity-eos_Interface
     INTERFACE SINGULARITY_USE_TRUE_LOG_GRIDDING)
+endif()
+if(SINGULARITY_USE_SINGLE_LOGS)
+  target_compile_definitions(singularity-eos_Interface
+    INTERFACE SINGULARITY_USE_SINGLE_LOGS)
+endif()
+if(SINGULARITY_NQT_ORDER_1)
+  target_compile_definitions(singularity-eos_Interface
+    INTERFACE SINGULARITY_NQT_ORDER_1)
+endif()
+if(SINGULARITY_NQT_PORTABLE)
+  target_compile_definitions(singularity-eos_Interface
+    INTERFACE SINGULARITY_NQT_PORTABLE)
 endif()
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_TEST_SESAME)
