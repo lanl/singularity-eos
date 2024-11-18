@@ -41,7 +41,7 @@ constexpr Real T_split = 1e4;
 constexpr int N_per_decade_fine = 200;
 constexpr Real N_factor = 5;
 
-constexpr Real REAL_TOL = std::numeric_limits<Real>::epsilon() * 1e3;
+constexpr Real REAL_TOL = std::numeric_limits<Real>::epsilon() * 1e4;
 
 SCENARIO("Bounds can compute number of points from points per decade", "[Bounds]") {
   WHEN("We compute the number of points from points per decade") {
@@ -79,7 +79,6 @@ SCENARIO("Logarithmic, single-grid bounds in the bounds object", "[Bounds]") {
         int ianchor;
         Spiner::weights_t<Real> w;
         lRhoBounds.grid.weights(lanchor, ianchor, w);
-        printf("%.14e, %.14e, %.14e\n", std::abs(w[0] - 1), std::abs(w[1]), REAL_TOL);
         REQUIRE(std::abs(w[0] - 1) <= REAL_TOL);
         REQUIRE(std::abs(w[1]) <= REAL_TOL);
       }
