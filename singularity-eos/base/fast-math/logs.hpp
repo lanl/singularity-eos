@@ -62,6 +62,35 @@
 namespace singularity {
 namespace FastMath {
 
+// TODO(JMM): switch from preprocessor macros to CMake generated C++
+namespace Settings {
+#ifdef SINGULARITY_USE_TRUE_LOG_GRIDDING
+constexpr bool TRUE_LOGS = true;
+#else
+constexpr bool TRUE_LOGS = false;
+#endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
+constexpr bool NQT_LOGS = !TRUE_LOGS;
+
+#ifdef SINGULARITY_USE_SINGLE_LOGS
+constexpr bool FP32 = true;
+#else
+constexpr bool FP32 = false;
+#endif // SINGULARITY_USE_SINGLE_LOGS
+constexpr bool FP64 = !FP32;
+
+#ifdef SINGULARITY_NQT_PORTABLE
+constexpr bool NQT_PORTABLE = true;
+#else
+constexpr bool NQT_PORTABLE = false;
+#endif // SINGULARITY_NQT_PORTABLE
+
+#ifdef SINGULARITY_NQT_ORDER_1
+constexpr bool NQT_O1 = true;
+#else
+constexpr bool NQT_O1 = false;
+#endif // SINGULARITY_NQT_O1
+} // namespace Settings
+
 template <typename T>
 PORTABLE_FORCEINLINE_FUNCTION auto sgn(const T &x) {
   return (T(0) < x) - (x < T(0));
@@ -217,32 +246,32 @@ double fastpow2(const double x) {
 PORTABLE_FORCEINLINE_FUNCTION
 double lg(const double x) {
   PORTABLE_REQUIRE(x > 0, "log divergent for x <= 0");
-#ifndef SINGULARITY_USE_TRUE_LOG_GRIDDING
-  // Default expression
-  return fastlg(x);
-#else
-#ifndef SINGULARITY_USE_SINGLE_LOGS
-  // double precision is default
-  return std::log2(x);
-#else
-  return std::log2f(x);
-#endif // SINGULARITY_USE_SINGLE_LOGS
-#endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
+  if constexpr (Settings::NQT_LOGS) {
+    // Default expression
+    return fastlg(x);
+  } else {
+    if constexpr (Settings::FP64) {
+      // double precision is default
+      return std::log2(x);
+    } else {
+      return std::log2f(x);
+    }
+  }
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
 double pow2(const double x) {
-#ifndef SINGULARITY_USE_TRUE_LOG_GRIDDING
-  // Default expression
-  return fastpow2(x);
-#else
-#ifndef SINGULARITY_USE_SINGLE_LOGS
-  // double precision is default
-  return std::exp2(x);
-#else
-  return std::exp2f(x);
-#endif // SINGULARITY_USE_SINGLE_LOGS
-#endif // SINGULARITY_USE_TRUE_LOG_GRIDDING
+  if constexpr (Settings::NQT_LOGS) {
+    // Default expression
+    return fastpow2(x);
+  } else {
+    if constexpr (Settings::FP64) {
+      // double precision is default
+      return std::exp2(x);
+    } else {
+      return std::exp2f(x);
+    }
+  }
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
