@@ -45,7 +45,7 @@ using singularity::PTESolverRhoTRequiredScratch;
 using singularity::ShiftedEOS;
 using singularity::SpinerEOSDependsRhoT;
 using singularity::mix_impl::CacheAccessor;
-using singularity::mix_params::pte_rel_tolerance_e;
+using singularity::MixParams::pte_rel_tolerance_e;
 using singularity::robust::ratio;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
