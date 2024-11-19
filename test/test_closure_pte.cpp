@@ -40,12 +40,12 @@ using singularity::DavisProducts;
 using singularity::DavisReactants;
 using singularity::IdealGas;
 using singularity::MAX_NUM_LAMBDAS;
+using singularity::MixParams;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
 using singularity::ShiftedEOS;
 using singularity::SpinerEOSDependsRhoT;
 using singularity::mix_impl::CacheAccessor;
-using singularity::MixParams;
 using singularity::robust::ratio;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
