@@ -45,7 +45,7 @@ using singularity::PTESolverRhoTRequiredScratch;
 using singularity::ShiftedEOS;
 using singularity::SpinerEOSDependsRhoT;
 using singularity::mix_impl::CacheAccessor;
-using singularity::MixParams::pte_rel_tolerance_e;
+using singularity::MixParams;
 using singularity::robust::ratio;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
@@ -188,6 +188,8 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     constexpr Real Cv = 0.001072 * MJ_per_kg; // erg / g / K
     constexpr Real Q = 4.115 * MJ_per_kg;
     EOS davis_p_eos = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
+    // PTE parameters
+    auto default_PTE_params = MixParams{};
 
     GIVEN("A difficult three-material state") {
       // Define the state
@@ -211,7 +213,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
           const Real u_scale = std::abs(u_bulk);
           const Real u_bulk_scale = ratio(u_bulk, u_scale);
           const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-          CHECK(residual < pte_rel_tolerance_e);
+          CHECK(residual < default_PTE_params.pte_rel_tolerance_e);
         }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
@@ -240,7 +242,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         //   const Real u_scale = std::abs(u_bulk);
         //   const Real u_bulk_scale = ratio(u_bulk, u_scale);
         //   const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-        //   CHECK(residual < pte_rel_tolerance_e);
+        //   CHECK(residual < default_PTE_params.pte_rel_tolerance_e);
         // }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
