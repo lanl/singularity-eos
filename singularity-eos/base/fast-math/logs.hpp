@@ -67,10 +67,28 @@ PORTABLE_FORCEINLINE_FUNCTION auto sgn(const T &x) {
   return (T(0) < x) - (x < T(0));
 }
 
+// TODO(JMM): Add templating and concepts to enforce bit width
+// equivalence in input/output types.
 PORTABLE_FORCEINLINE_FUNCTION
 auto as_int(double f) { return *reinterpret_cast<std::int64_t *>(&f); }
 PORTABLE_FORCEINLINE_FUNCTION
 auto as_double(std::int64_t i) { return *reinterpret_cast<double *>(&i); }
+
+// Magic numbers constexpr because C++ doesn't constexpr reinterpret casts
+// These numbers will be different for different precisions and endianness.
+namespace FP64LE { // 64 bit, little endian
+constexpr std::int64_t one = 1;
+// as_int(1.0) == 2^62 - 2^52
+constexpr std::int64_t one_as_int = (one << 62) - (one << 52);
+// 1./static_cast<double>(as_int(2.0) - as_int(1.0)) == 2^-52
+constexpr double scale_down = 2.22044604925031e-16;
+// as_int(2.0) - as_int(1.0) = 2^52, but note the type
+constexpr double scale_up = (one << 52);
+// 2^52 - 1
+constexpr std::int64_t mantissa_mask = (one << 52) - one;
+// 2^26 - 1
+constexpr std::int64_t low_mask = (one << 26) - 1;
+} // namespace FP64LE
 
 // First order interpolation based NQTs
 // ----------------------------------------------------------------------
@@ -96,24 +114,14 @@ double pow2_o1_portable(const double x) {
 // Integer aliased versions
 PORTABLE_FORCEINLINE_FUNCTION
 double lg_o1_aliased(const double x) {
+  using namespace FP64LE;
   PORTABLE_REQUIRE(x > 0, "log divergent for x <= 0");
-  // Magic numbers constexpr because C++ doesn't constexpr reinterpret casts
-  // these are floating point numbers as reinterpreted as integers.
-  // as_int(1.0)
-  constexpr std::int64_t one_as_int = 4607182418800017408;
-  // 1./static_cast<double>(as_int(2.0) - as_int(1.0))
-  constexpr double scale_down = 2.22044604925031e-16;
   return static_cast<double>(as_int(x) - one_as_int) * scale_down;
 }
 
 PORTABLE_FORCEINLINE_FUNCTION
 double pow2_o1_aliased(const double x) {
-  // Magic numbers constexpr because C++ doesn't constexpr reinterpret casts
-  // these are floating point numbers as reinterpreted as integers.
-  // as_int(1.0)
-  constexpr std::int64_t one_as_int = 4607182418800017408;
-  // as_int(2.0) - as_int(1.0)
-  constexpr double scale_up = 4503599627370496;
+  using namespace FP64LE;
   return as_double(static_cast<std::int64_t>(x * scale_up) + one_as_int);
 }
 // ----------------------------------------------------------------------
@@ -145,16 +153,8 @@ double pow2_o2_portable(const double x) {
 // Integer aliased/bithacked versions
 PORTABLE_FORCEINLINE_FUNCTION
 double lg_o2_aliased(const double x) {
+  using namespace FP64LE;
   PORTABLE_REQUIRE(x > 0, "log divergent for x <= 0");
-  // as_int(1.0) == 2^62 - 2^52
-  constexpr std::int64_t one_as_int = 4607182418800017408;
-  // 1/(as_int(2.0) - as_int(1.0)) == 2^-52
-  constexpr double scale_down = 2.220446049250313e-16;
-  // 2^52 - 1
-  constexpr std::int64_t mantissa_mask = 4503599627370495;
-  // 2^26 - 1
-  constexpr std::int64_t low_mask = 67108863;
-
   const std::int64_t x_as_int = as_int(x) - one_as_int;
   const std::int64_t frac_as_int = x_as_int & mantissa_mask;
   const std::int64_t frac_high = frac_as_int >> 26;
@@ -167,15 +167,10 @@ double lg_o2_aliased(const double x) {
 
 PORTABLE_FORCEINLINE_FUNCTION
 double pow2_o2_aliased(const double x) {
-  // as_int(1.0) == 2^62 - 2^52
-  constexpr std::int64_t one_as_int = 4607182418800017408;
-  // as_int(2.0) - as_int(1.0) == 2^52
-  constexpr double scale_up = 4503599627370496;
-  constexpr std::int64_t mantissa_mask = 4503599627370495; // 2^52 - 1
-  constexpr std::int64_t a = 9007199254740992;             // 2 * 2^52
-  constexpr double b = 67108864;                           // 2^26
-  constexpr std::int64_t c = 18014398509481984;            // 4 * 2^52
-
+  using namespace FP64LE;
+  constexpr std::int64_t a = 9007199254740992;  // 2 * 2^52
+  constexpr double b = 67108864;                // 2^26
+  constexpr std::int64_t c = 18014398509481984; // 4 * 2^52
   const std::int64_t x_as_int = static_cast<std::int64_t>(x * scale_up);
   const std::int64_t frac_as_int = x_as_int & mantissa_mask;
   const std::int64_t frac_sqrt =

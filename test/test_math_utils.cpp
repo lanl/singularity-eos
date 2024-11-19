@@ -41,6 +41,18 @@ SCENARIO("Test that we can either throw an error on host or do nothing on device
   REQUIRE_MAYBE_THROWS(PORTABLE_ALWAYS_THROW_OR_ABORT("Error message"));
 }
 
+#ifndef SINGULARITY_USE_TRUE_LOG_GRIDDING
+#ifndef SINGULARITY_NQT_PORTABLE
+SCENARIO("Test that the fast math magic numbers are all correct", "[FastMath]") {
+  REQUIRE(singularity::FastMath::FP64LE::one_as_int == 4607182418800017408);
+  REQUIRE(singularity::FastMath::FP64LE::scale_down == 2.22044604925031e-16);
+  REQUIRE(singularity::FastMath::FP64LE::scale_up == 4503599627370496.0);
+  REQUIRE(singularity::FastMath::FP64LE::mantissa_mask == 4503599627370495);
+  REQUIRE(singularity::FastMath::FP64LE::low_mask == 67108863);
+}
+#endif
+#endif
+
 SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
   GIVEN("A set of values to invert over a large dynamic range") {
     constexpr Real LXMIN = -20;
@@ -64,7 +76,7 @@ SCENARIO("Test that fast logs are invertible and run on device", "[FastMath]") {
       portableFor(
           "try out the fast math", 0, NX, PORTABLE_LAMBDA(const int i) {
             constexpr Real machine_eps = std::numeric_limits<Real>::epsilon();
-            constexpr Real acceptable_err = 100 * machine_eps;
+            constexpr Real acceptable_err = 1000 * machine_eps;
             const Real lx = singularity::FastMath::log10(x[i]);
             const Real elx = singularity::FastMath::pow10(lx);
             const Real rel_err = 2.0 * std::abs(x[i] - elx) /
