@@ -79,6 +79,7 @@ SCENARIO("Logarithmic, single-grid bounds in the bounds object", "[Bounds]") {
         int ianchor;
         Spiner::weights_t<Real> w;
         lRhoBounds.grid.weights(lanchor, ianchor, w);
+        printf("%.14e %.14e\n", w[0], w[1]);
         REQUIRE(std::abs(w[0] - 1) <= REAL_TOL);
         REQUIRE(std::abs(w[1]) <= REAL_TOL);
       }
