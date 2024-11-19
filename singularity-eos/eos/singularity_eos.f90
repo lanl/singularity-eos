@@ -13,7 +13,7 @@
 !------------------------------------------------------------------------------
 
 module singularity_eos_types
-  use iso_c_binding
+  use, intrinsic :: iso_c_binding
   implicit none
 
   ! data types
@@ -25,7 +25,7 @@ module singularity_eos_types
 end module singularity_eos_types
 
 module singularity_eos
-  use iso_c_binding
+  use, intrinsic :: iso_c_binding
   use singularity_eos_types
   implicit none
 
