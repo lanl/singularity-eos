@@ -653,7 +653,7 @@ number :math:`x` is represented as a mantissa and an exponent in base
 
    x = m 2^e
 
-for mantissa :math:`m` and exponent :math:`e`. The mantiss is
+for mantissa :math:`m` and exponent :math:`e`. The mantissa is
 guaranteed to be on the interval :math:`[1/2, 1)`. The standard
 library of most low-level languages provides a performant and portable
 routine to pick apart this represnetation, ``frexp``, which given a
