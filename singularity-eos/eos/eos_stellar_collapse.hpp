@@ -1050,7 +1050,7 @@ inline void StellarCollapse::computeBulkModulus_() {
         // assume table is hardened
         Real bMod = rho * dPdRho_(iY, iT, irho) + PoR * dPdE_(iY, iT, irho);
         if (bMod < robust::EPS()) bMod = robust::EPS();
-        lBMod_(iY, iT, irho) = std::log10(bMod); //B2lB_(bMod);
+        lBMod_(iY, iT, irho) = std::log10(bMod); // B2lB_(bMod);
       }
     }
   }
