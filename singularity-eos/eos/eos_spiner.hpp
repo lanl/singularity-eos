@@ -622,6 +622,14 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   herr_t status = H5_SUCCESS;
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  int log_type = FastMath::LogType::NQT1;
+  if (H5LTfind_attribute(file, SP5::logType)) {
+    H5LTget_attribute_int(file, "/", SP5::logType, &log_type);
+  }
+  PORTABLE_ALWAYS_REQUIRE(
+      log_type == FastMath::Settings::log_type,
+      "Log mode used at runtime must be identical to the one used to generate the file!");
+
   matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
   lTGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT);
   coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);

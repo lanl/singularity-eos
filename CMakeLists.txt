@@ -284,6 +284,18 @@ if(SINGULARITY_BUILD_SESAME2SPINER)
   add_subdirectory(sesame2spiner)
 endif()
 
+# Define the full version as a string macro
+target_compile_definitions(singularity-eos_Interface INTERFACE
+    SINGULARITY_VERSION=\"${PROJECT_VERSION}\"
+)
+
+# Optionally, define major, minor, and patch versions separately
+target_compile_definitions(singularity-eos_Interface INTERFACE
+    SINGULARITY_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    SINGULARITY_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    SINGULARITY_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+)
+
 # defines
 if (SINGULARITY_USE_TRUE_LOG_GRIDDING)
   target_compile_definitions(singularity-eos_Interface
