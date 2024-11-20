@@ -225,6 +225,17 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // Collapse, so I think we can leave it here for now?
   inline static void dataBoxToFastLogs(DataBox &db, DataBox &scratch,
                                        bool dependent_var_log);
+  inline static Real log10toNQT(const Real x) {
+    return FastMath::log10(std::pow(10, x));
+  };
+  inline static Real NQTtolog10(const Real x) { return std::log10(FastMath::pow10(x)); };
+  inline static auto gridToNQT(const Grid_t &g, const int n) {
+    const Real l10min = g.min();
+    const Real l10max = g.max();
+    const Real lmin = log10toNQT(l10min);
+    const Real lmax = log10toNQT(l10max);
+    return Grid_t(lmin, lmax, n);
+  };
 
   std::size_t DynamicMemorySizeInBytes() const;
   std::size_t DumpDynamicMemory(char *dst);
@@ -407,6 +418,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   static constexpr Real DELTASMOOTH = 10.0;
   static constexpr int MF_W = 3;
   static constexpr int MF_S = (2 * MF_W + 1) * (2 * MF_W + 1) * (2 * MF_W + 1);
+
+  static constexpr Real DENSE_FACTOR = 1.25;
 };
 
 // ======================================================================
@@ -839,7 +852,16 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   computeBulkModulus_();
 
   // Re-interpolate tables in case we want fast-log gridding
-  DataBox scratch(numYe_, numT_, numRho_);
+  int nT_new = static_cast<int>(numT_ * DENSE_FACTOR);
+  int nR_new = static_cast<int>(numRho_ * DENSE_FACTOR);
+  DataBox scratch(numYe_, nT_new, nR_new);
+
+  Grid_t gT_new = gridToNQT(lP_.range(1), nT_new);
+  Grid_t gR_new = gridToNQT(lP_.range(0), nR_new);
+  scratch.setRange(2, lP_.range(2));
+  scratch.setRange(1, gT_new);
+  scratch.setRange(0, gR_new);
+
   // logged quantities
   dataBoxToFastLogs(lP_, scratch, true);
   dataBoxToFastLogs(lE_, scratch, true);
@@ -859,6 +881,8 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   dataBoxToFastLogs(lBMod_, scratch, false);
 
   // Generate bounds
+  numT_ = nT_new;
+  numRho_ = nR_new;
   Ye_grid = lP_.range(2);
   lT_grid = lP_.range(1);
   lRho_grid = lP_.range(0);
@@ -944,30 +968,17 @@ inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string
 // Assume index 3 is linear, indexes 2 and 1 are logarithmic
 inline void StellarCollapse::dataBoxToFastLogs(DataBox &db, DataBox &scratch,
                                                bool dependent_var_log) {
-  auto log10toNQT = [](const Real x) { return FastMath::log10(std::pow(10, x)); };
-  auto NQTtolog10 = [](const Real x) { return std::log10(FastMath::pow10(x)); };
-  auto gridToNQT = [&](const Grid_t &g) {
-    const Real l10min = g.min();
-    const Real l10max = g.max();
-    const Real lmin = log10toNQT(l10min);
-    const Real lmax = log10toNQT(l10max);
-    return Grid_t(lmin, lmax, g.nPoints());
-  };
-
-  auto &r2 = db.range(2);
-  auto &r1 = db.range(1);
-  auto &r0 = db.range(0);
-
-  Grid_t newr1 = gridToNQT(r1);
-  Grid_t newr0 = gridToNQT(r0);
+  auto &r2 = scratch.range(2);
+  auto &r1 = scratch.range(1);
+  auto &r0 = scratch.range(0);
 
   for (int i2 = 0; i2 < r2.nPoints(); ++i2) {
     Real x2 = r2.x(i2);
-    for (int i1 = 0; i1 < newr1.nPoints(); ++i1) {
-      Real lx1 = newr1.x(i1);
+    for (int i1 = 0; i1 < r1.nPoints(); ++i1) {
+      Real lx1 = r1.x(i1);
       Real l10x1 = NQTtolog10(lx1);
-      for (int i0 = 0; i0 < newr0.nPoints(); ++i0) {
-        Real lx0 = newr0.x(i0);
+      for (int i0 = 0; i0 < r0.nPoints(); ++i0) {
+        Real lx0 = r0.x(i0);
         Real l10x0 = NQTtolog10(lx0);
         Real val = db.interpToReal(x2, l10x1, l10x0);
         if (dependent_var_log) {
@@ -977,12 +988,10 @@ inline void StellarCollapse::dataBoxToFastLogs(DataBox &db, DataBox &scratch,
       }
     }
   }
+  db.copyMetadata(scratch);
   for (int i = 0; i < db.size(); ++i) {
     db(i) = scratch(i);
   }
-  // range(2) is already ok
-  db.setRange(1, newr1);
-  db.setRange(0, newr0);
 }
 
 inline void StellarCollapse::medianFilter_(DataBox &db) {
