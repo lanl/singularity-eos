@@ -836,6 +836,7 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
     medianFilter_(dPdE_);
     medianFilter_(dEdT_);
   }
+  computeBulkModulus_();
 
   // Re-interpolate tables in case we want fast-log gridding
   DataBox scratch(numYe_, numT_, numRho_);
@@ -854,6 +855,8 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   dataBoxToFastLogs(Xp_, scratch, false);
   dataBoxToFastLogs(Abar_, scratch, false);
   dataBoxToFastLogs(Zbar_, scratch, false);
+  // And bulk modulus
+  dataBoxToFastLogs(lBMod_, scratch, false);
 
   // Generate bounds
   Ye_grid = lP_.range(2);
@@ -866,9 +869,8 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   lRhoMin_ = lRho_grid.min();
   lRhoMax_ = lRho_grid.max();
 
-  // Finally, compute bulk modulus, hot and cold curves from
+  // Finally compute hot and cold curves from
   // re-interpolated data.
-  computeBulkModulus_();
   computeColdAndHotCurves_();
 }
 
@@ -1041,14 +1043,14 @@ inline void StellarCollapse::computeBulkModulus_() {
       Real lT = lBMod_.range(1).x(iT);
       for (int irho = 0; irho < numRho_; ++irho) {
         Real lRho = lBMod_.range(0).x(irho);
-        Real rho = rho_(lRho);
+        Real rho = std::pow(10., lRho); // rho_(lRho);
         Real lP = lP_(iY, iT, irho);
-        Real P = lP2P_(lP);
+        Real P = std::pow(10., lP); // lP2P_(lP) ;
         Real PoR = robust::ratio(P, rho);
         // assume table is hardened
         Real bMod = rho * dPdRho_(iY, iT, irho) + PoR * dPdE_(iY, iT, irho);
         if (bMod < robust::EPS()) bMod = robust::EPS();
-        lBMod_(iY, iT, irho) = B2lB_(bMod);
+        lBMod_(iY, iT, irho) = std::log10(bMod); //B2lB_(bMod);
       }
     }
   }
