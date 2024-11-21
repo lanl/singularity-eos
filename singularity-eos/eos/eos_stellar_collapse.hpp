@@ -878,7 +878,7 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   dataBoxToFastLogs(Abar_, scratch, false);
   dataBoxToFastLogs(Zbar_, scratch, false);
   // And bulk modulus
-  dataBoxToFastLogs(lBMod_, scratch, false);
+  dataBoxToFastLogs(lBMod_, scratch, true);
 
   // Generate bounds
   numT_ = nT_new;
