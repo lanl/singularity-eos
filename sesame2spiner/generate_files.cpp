@@ -173,6 +173,12 @@ herr_t saveAllMaterials(const std::string &savename,
   std::cout << "Saving to file " << savename << std::endl;
   file = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
+  // singularity version
+  H5LTset_attribute_string(file, "/", "singularity_version", SINGULARITY_VERSION);
+  // log type. 0 for true, 1 for NQT1, 2 for NQT2, -1 for single precision true
+  int log_type = singularity::FastMath::Settings::log_type;
+  H5LTset_attribute_int(file, "/", SP5::LogType, &log_type, 1);
+
   std::cout << "Processing " << matids.size() << " materials..." << std::endl;
 
   for (size_t i = 0; i < matids.size(); i++) {

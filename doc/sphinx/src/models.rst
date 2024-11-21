@@ -1736,19 +1736,23 @@ return a ``Real`` number.
 .. warning::
     As with the SpinerEOS models, the stellar collapse models use fast
     logs. You can switch the logs to true logs with the
-    ``SINGULARITY_USE_TRUE_LOG_GRIDDING`` cmake option.
+    ``SINGULARITY_USE_TRUE_LOG_GRIDDING`` cmake option. This may be
+    desirable on ARM-based architectures (e.g., ``aarch64``), where
+    a hardware log intrinsic is available.
+    
 
 .. note::
-    A more performant implementation of fast logs is available, but it
-    might not be portable. Enable it with the
-    ``SINGULARITY_USE_HIGH_RISK_MATH`` cmake option.
+   The default implementation of our fast logs assumes little endian
+   numbers. If you are on a big-endian machine, they will not work
+   properly. If you encounter a big-endian machine, please report it
+   to us in the issues and (for now) enable the portable
+   implementation of fast logs with ``-DSINGULARITY_NQT_PORTABLE=ON``.
 
 .. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
 
 .. _OConnor and Ott: https://doi.org/10.1088/0264-9381/27/11/114103
 
 .. _median filter: https://en.wikipedia.org/wiki/Median_filter
-
 
 
 Helmholtz EOS
