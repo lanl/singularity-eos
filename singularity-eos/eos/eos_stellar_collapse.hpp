@@ -401,7 +401,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
 
   // offsets must be non-negative
-  Real lEOffset_;
+  Real lEOffset_ = 0;                      // defaults to zero
   static constexpr Real lRhoOffset_ = 0.0; // TODO(JMM): Address if this ever changes
   static constexpr Real lTOffset_ = 0.0;
   static constexpr Real lPOffset_ = 0.0;
