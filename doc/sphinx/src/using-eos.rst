@@ -539,7 +539,9 @@ e.g.,
   with GPUs it can produce very unintuitive behaviour. We recommend
   you only make the ``operator()`` non-const if you really know what
   you're doing. And in the anonymous function case, we recommend you
-  capture by value, not reference.
+  capture by value, not reference. ``EvaluateDevice`` does not support
+  side effects at all and you must pass your functors in by value in
+  that case.
 
 To see the utlity of the ``Evaluate`` function, it's probably just
 easiest to provide an example. The following code evaluates the EOS on
