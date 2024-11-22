@@ -25,6 +25,7 @@ Release is in preparation for JOSS publication.
 - [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Piecewise grids for Spiner EOS.
 
 ### Fixed (Repair bugs, etc)
+- [[PR434]](https://github.com/lanl/singularity-eos/pull/434) Fix failure of eospac to build on HIP and segfaults with Evalaute
 - [[PR424]](https://github.com/lanl/singularity-eos/pull/424) Fix for variant patch: point to correct patch file
 - [[PR420]](https://github.com/lanl/singularity-eos/pull/420) Fix broken test_get_sg_eos
 - [[PR417]](https://github.com/lanl/singularity-eos/pull/417) Bugs in shared memory related to eospac resolved
