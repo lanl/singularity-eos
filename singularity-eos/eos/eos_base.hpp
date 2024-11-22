@@ -147,11 +147,19 @@ class EosBase {
       : std::is_same<std::remove_reference_t<std::remove_cv_t<T>>, R *> {};
 
   // Generic evaluator
+#if defined(__CUDACC__) || defined(__HIPCC__)
   template <typename Functor_t>
-  constexpr void Evaluate(Functor_t &f) const {
-    CRTP copy = *(static_cast<CRTP const *>(this));
+  PORTABLE_INLINE_FUNCTION void Evaluate(Functor_t &f) const {
+    const CRTP copy = *(static_cast<CRTP const *>(this));
     f(copy);
   }
+#else
+  template <typename Functor_t>
+  void Evaluate(Functor_t &f) const {
+    const CRTP copy = *(static_cast<CRTP const *>(this));
+    f(copy);
+  }
+#endif // ON _DEVICE
 
   // EOS builder helpers
   // Checks if an EOS can be modified

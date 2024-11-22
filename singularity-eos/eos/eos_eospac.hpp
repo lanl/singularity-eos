@@ -1274,31 +1274,38 @@ inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &
 }
 inline std::size_t EOSPAC::SharedMemorySizeInBytes() const { return shared_size_; }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, E[1] = {sieToSesame(sie)}, T[1], dTdr[1], dTde[1];
   EOS_INTEGER nxypairs = 1;
   EOS_INTEGER table = TofRE_table_;
   eosSafeInterpolate(&table, nxypairs, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet);
   return Real(temperatureFromSesame(T[0]));
+#endif // ON_DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, P[1], T[1] = {temperatureToSesame(temp)}, dPdr[1], dPdT[1];
   EOS_INTEGER nxypairs = 1;
   EOS_INTEGER table = PofRT_table_;
   eosSafeInterpolate(&table, nxypairs, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet);
   return Real(pressureFromSesame(P[0]));
+#endif // ON DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
     const Real rho, const Real temperature, Indexer_t &&lambda) const {
@@ -1306,11 +1313,13 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
   return 1.0;
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
 EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
                 const unsigned long output, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+#else
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, T[1] = {temperatureToSesame(temp)};
   EOS_REAL E[1] = {sieToSesame(sie)}, P[1] = {pressureToSesame(press)};
@@ -1388,42 +1397,61 @@ EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &b
     }
     bmod = bulkModulusFromSesame(std::max(BMOD, 0.0));
   }
+#endif // ON DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::InternalEnergyFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
   const unsigned long output = thermalqs::specific_internal_energy;
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return sie;
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
   const unsigned long output = thermalqs::bulk_modulus;
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return bmod;
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
   const unsigned long output = thermalqs::specific_heat;
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return cv;
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
   EOS_REAL values[]{sieFromSesame(1.0), pressureFromSesame(1.0)};
@@ -1435,11 +1463,16 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
                      options, values, nopts);
 
   return Real(P[0]);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 EOSPAC::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_INTEGER options[]{EOS_F_CONVERT};
   EOS_REAL values[]{sieFromSesame(1.0)};
@@ -1451,36 +1484,55 @@ EOSPAC::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
                      options, values, nopts);
 
   return Real(S[0]);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return EntropyFromDensityTemperature(rho, temp, lambda);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return SpecificHeatFromDensityTemperature(rho, temp, lambda);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return BulkModulusFromDensityTemperature(rho, temp, lambda);
+#endif // ON DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityTemperature(
     const Real rho, const Real temperature, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, T[1] = {temperatureToSesame(temperature)};
   EOS_REAL E[1], P[1], dx[1], dy[1];
@@ -1494,19 +1546,28 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityTemperature(
   DPDT = dy[0];
   DPDE = DPDT / DEDT;
   return robust::ratio(pressureFromSesame(sieToSesame(DPDE)), rho);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   Real temperature = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return GruneisenParamFromDensityTemperature(rho, temperature, lambda);
+#endif // ON DEVICE
 }
 
 SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+#else
   using namespace EospacWrapper;
   EOS_REAL P[1] = {pressureToSesame(press)};
   EOS_REAL T[1] = {temperatureToSesame(temp)};
@@ -1521,14 +1582,17 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
   table = EofRT_table_;
   eosSafeInterpolate(&table, nxypairs, R, T, E, dx, dy, "EofPRT", Verbosity::Quiet);
   sie = sieFromSesame(E[0]);
+#endif // ON DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
 EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                                Real &bmod, Real &dpde, Real &dvdt,
                                Indexer_t &&lambda) const {
+#if defined(__CUDACC__) || defined(__HIPCC__)
+  EOS_ERROR("EOSPAC calls not supported on device\n");
+#else
   using namespace EospacWrapper;
   rho = rho_ref_;
   temp = temp_ref_;
@@ -1538,6 +1602,7 @@ EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Re
   bmod = bmod_ref_;
   dpde = dpde_ref_;
   dvdt = dvdt_ref_;
+#endif // ON DEVICE
 }
 
 } // namespace singularity
