@@ -81,7 +81,7 @@ class Variant {
   }
 
   template <typename Functor_t>
-  PORTABLE_INLINE_FUNCTION void EvaluateDevice(Functor_t &f) const {
+  PORTABLE_INLINE_FUNCTION void EvaluateDevice(const Functor_t f) const {
     return mpark::visit([&f](const auto &eos) { return eos.EvaluateDevice(f); }, eos_);
   }
 
