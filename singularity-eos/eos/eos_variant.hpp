@@ -80,17 +80,15 @@ class Variant {
     return mpark::visit([](auto &eos) { return eos.CheckParams(); }, eos_);
   }
 
-#if defined(__CUDACC__) || defined(__HIPCC__)
   template <typename Functor_t>
-  PORTABLE_INLINE_FUNCTION void Evaluate(Functor_t &f) const {
-    return mpark::visit([&f](const auto &eos) { return eos.Evaluate(f); }, eos_);
+  PORTABLE_INLINE_FUNCTION void EvaluateDevice(Functor_t &f) const {
+    return mpark::visit([&f](const auto &eos) { return eos.EvaluateDevice(f); }, eos_);
   }
-#else
+
   template <typename Functor_t>
-  void Evaluate(Functor_t &f) const {
-    return mpark::visit([&f](const auto &eos) { return eos.Evaluate(f); }, eos_);
+  void EvaluateHost(Functor_t &f) const {
+    return mpark::visit([&f](const auto &eos) { return eos.EvaluateHost(f); }, eos_);
   }
-#endif
 
   // EOS modifier object-oriented API
   template <template <class> typename Mod>
