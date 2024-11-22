@@ -212,7 +212,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
           const Real u_scale = std::abs(u_bulk);
           const Real u_bulk_scale = ratio(u_bulk, u_scale);
           const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-          CHECK(residual < params.pte_rel_tolerance_e);
+          CHECK(residual < default_PTE_params.pte_rel_tolerance_e);
         }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);

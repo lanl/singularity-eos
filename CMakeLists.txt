@@ -588,7 +588,7 @@ endif()
 # ----------------------------------------------------------------------------#
 
 if(SINGULARITY_BUILD_TESTS)
-  enable_testing()
+  include(CTest)
   add_subdirectory(test)
 endif()
 
