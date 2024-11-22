@@ -1,28 +1,47 @@
 stages:
-  - prepare
   - build_n_test
 
 variables:
   PROJECT_NAME: singularity-eos
-  ENABLE_CDASH: false
+  ENABLE_CDASH: true
   GIT_SUBMODULE_STRATEGY: normal
+  # use this variable if there is a xcap/deployment MR you want to use instead
+  # PROJECT_SPACK_ENV_VERSION: mr/62/2024-10-15
 
 include:
  - .gitlab/common.yml
 
+# Spack environments are defined in
+# https://re-git.lanl.gov/xcap/deployment/-/tree/xcap-spack-env/systems
+# for each system and for each XCAP project.
+#
+# The project configuration can be found at the top of
+# .gitlab/build_and_test.sh.
+#
+# Each environment is uniquely identified by
+# ${SYSTEM_NAME}/${PROJECT_GROUP}/${PROJECT_NAME}/${SPACK_ENV_NAME}
+#
+# For creating a new custom environment for testing use the special
+# 'custom-spec' or 'custom-file` environments.
+#
+# The 'custom-spec` environment allows you specify an arbitrary Spack spec to
+# be added to a system-specific empty Spack environment. Use the SPACK_ENV_SPEC
+# environment variable to define the spec you want to add.
 
-########
-# Jobs #
-########
+# The 'custom-file` environment allows you to manually define an environment
+# from scratch.  Use the SPACK_ENV_FILE environment variable to specify the
+# path to the YAML file you want to use. Note, the environment will be placed
+# in ${SYSTEM_NAME}/${PROJECT_GROUP}/${PROJECT_NAME}/custom-file/spack.yaml and
+# can therefore make relative includes to common configuration files.
 
-download_prereq:
-  stage: prepare
+prereq_offline_deps:
+  stage: build_n_test
   extends: [.ascgit_job]
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: none
@@ -34,54 +53,68 @@ download_prereq:
 
 openmpi_gcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-  needs: [download_prereq]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: openmpi-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
 openmpi_fortran_gcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-  needs: [download_prereq]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: openmpi-fortran-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
 openmpi_cuda_gcc_ampere:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-  needs: [download_prereq]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: openmpi-cuda-gcc-ampere
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
 openmpi_cuda_gcc_volta:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-  needs: [download_prereq]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: openmpi-cuda-gcc-volta
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
 # currently disabled due to very long compilation times
 #openmpi_fortran_cuda_gcc_ampere:
 #  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-#  needs: [download_prereq]
+#  needs:
+#   - prereq_offline_deps
 #  variables:
 #    SPACK_ENV_NAME: openmpi-fortran-cuda-gcc-ampere
 #    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
+#    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 #
 #openmpi_fortran_cuda_gcc_volta:
 #  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-#  needs: [download_prereq]
+#  needs:
+#   - prereq_offline_deps
 #  variables:
 #    SPACK_ENV_NAME: openmpi-fortran-cuda-gcc-volta
 #    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+#    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
 # EXAMPLE of how to modify an existing Spack environment and/or set CMake options
 #openmpi_cuda_gcc_volta_noclosure:
 #  stage: build_n_test
 #  extends: [.ascgit_job, .darwin_job, .darwin_regular_job,]
-#  needs: [download_prereq]
+#  needs:
+#   - prereq_offline_deps
 #  variables:
 #    SPACK_ENV_NAME: openmpi-cuda-gcc-volta
 #    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
 #    SINGULARITY_EOS_SPEC: "%gcc@=12.2.0 +mpi+cuda+kokkos+spiner+hdf5+kokkos-kernels+tests~closure~fortran build_extra=sesame,stellarcollapse cuda_arch=70"
+#    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 #  script:
 #   - source .gitlab/build_and_test.sh --until env ${CLUSTER} ${SPACK_ENV_NAME}
 #   - spack config add "packages:singularity-eos:require:'${SINGULARITY_EOS_SPEC}'"
@@ -93,50 +126,153 @@ openmpi_cuda_gcc_volta:
 
 openmpi_fortran_kokkos_openmp_gcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-  needs: [download_prereq]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-openmp-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
 openmpi_fortran_kokkos_static_openmp_gcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-  needs: [download_prereq]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-#openmpi_rocm_gcc:
-#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-#  needs: [download_prereq]
-#  variables:
-#    spack_env_name: openmpi-rocm-gcc
-#    scheduler_parameters: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
-#
-#openmpi_fortran_rocm_gcc:
-#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
-#  needs: [download_prereq]
-#  variables:
-#    spack_env_name: openmpi-fortran-rocm-gcc
-#    scheduler_parameters: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
+openmpi_rocm_gcc:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: openmpi-rocm-gcc
+    SCHEDULER_PARAMETERS: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
+
+openmpi_fortran_rocm_gcc:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: openmpi-fortran-rocm-gcc
+    SCHEDULER_PARAMETERS: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
 rocinante_craympich_gcc:
   extends: [.ascgit_job, .rocinante_job, .rocinante_regular_job, .build_and_test]
-  needs: [download_prereq]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: craympich-gcc
+    SUBMIT_TO_CDASH: false
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}"
+    SUBMIT_ON_ERROR: false          # Venado nodes don't have network access, don't try to send from compute node
+    SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
 
 rocinante_craympich_fortran_gcc:
   extends: [.ascgit_job, .rocinante_job, .rocinante_regular_job, .build_and_test]
-  needs: [download_prereq]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: craympich-fortran-gcc
+    SUBMIT_TO_CDASH: false
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}"
+    SUBMIT_ON_ERROR: false          # Venado nodes don't have network access, don't try to send from compute node
+    SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
+
+rzansel_spectrummpi_cuda_volta_gcc:
+  extends: [.ascgit_job, .rzansel_job, .rzansel_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: spectrummpi-cuda-volta-gcc
+    SUBMIT_TO_CDASH: false              # disable CDash submission, since LLNL systems can't reach them
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}" # but do build with CTest to create the necessary files
+    SUBMIT_ON_ERROR: false              # no network access, don't try to send from compute node
+    SUBMIT_AFTER: false                 # submit host also doesn't have access to CDash server
+    CREATE_SUBMIT_ARTIFACT: "${ENABLE_CDASH}" # archive results
+
+rzansel_spectrummpi_cuda_volta_xl:
+  extends: [.ascgit_job, .rzansel_job, .rzansel_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: spectrummpi-cuda-volta-xl
+    SUBMIT_TO_CDASH: false              # disable CDash submission, since LLNL systems can't reach them
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}" # but do build with CTest to create the necessary files
+    SUBMIT_ON_ERROR: false              # no network access, don't try to send from compute node
+    SUBMIT_AFTER: false                 # submit host also doesn't have access to CDash server
+    CREATE_SUBMIT_ARTIFACT: "${ENABLE_CDASH}" # archive results
 
 rzvernal_craympich_rocm_mi250_cce:
-  extends: [.ascgit_job, .rzadams_job, .rzvernal_regular_job, .build_and_test]
-  needs: [download_prereq]
+  extends: [.ascgit_job, .rzvernal_job, .rzvernal_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: craympich-rocm-gfx90a-cce
+    SUBMIT_TO_CDASH: false              # disable CDash submission, since LLNL systems can't reach them
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}" # but do build with CTest to create the necessary files
+    SUBMIT_ON_ERROR: false              # no network access, don't try to send from compute node
+    SUBMIT_AFTER: false                 # submit host also doesn't have access to CDash server
+    CREATE_SUBMIT_ARTIFACT: "${ENABLE_CDASH}" # archive results
 
 rzadams_craympich_rocm_mi300_cce:
   extends: [.ascgit_job, .rzadams_job, .rzadams_regular_job, .build_and_test]
-  needs: [download_prereq]
+  needs:
+   - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: craympich-rocm-gfx942-cce
+    SUBMIT_TO_CDASH: false              # disable CDash submission, since LLNL systems can't reach them
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}" # but do build with CTest to create the necessary files
+    SUBMIT_ON_ERROR: false              # no network access, don't try to send from compute node
+    SUBMIT_AFTER: false                 # submit host also doesn't have access to CDash server
+    CREATE_SUBMIT_ARTIFACT: "${ENABLE_CDASH}" # archive results
+
+# collect job results from RZansel and submit them to CDash
+post_rzansel_results_to_cdash:
+  extends: [.post_results_to_cdash]
+  allow_failure: true
+  rules:
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "web"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+  needs:
+    - rzansel_spectrummpi_cuda_volta_gcc
+    - rzansel_spectrummpi_cuda_volta_xl
+
+# collect job results from RZvernal and submit them to CDash
+post_rzvernal_results_to_cdash:
+  extends: [.post_results_to_cdash]
+  allow_failure: true
+  rules:
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "web"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+  needs:
+    - rzvernal_craympich_rocm_mi250_cce
+
+# collect job results from RZadams and submit them to CDash
+post_rzadams_results_to_cdash:
+  extends: [.post_results_to_cdash]
+  allow_failure: true
+  rules:
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "web"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+  needs:
+    - rzadams_craympich_rocm_mi300_cce
