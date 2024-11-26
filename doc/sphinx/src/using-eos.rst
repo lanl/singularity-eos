@@ -37,7 +37,7 @@ conditions. The type of parallelism used depends on how
 any parallel dispatch supported by ``Kokkos`` is supported.
 
 A more generic version of the vector calls exists in the
-``EvaluateHost`` and ``EvaluateDevice`` methods, which allows the user
+``EvaluateHost`` and ``EvaluateDevice`` methods, which allow the user
 to specify arbitrary parallel dispatch models by writing their own
 loops. See the relevant section below.
 
