@@ -188,9 +188,8 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     constexpr Real Cv = 0.001072 * MJ_per_kg; // erg / g / K
     constexpr Real Q = 4.115 * MJ_per_kg;
     EOS davis_p_eos = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
-    // PTE parameters
-    auto default_PTE_params = MixParams{};
 
+    const MixParams params;
     GIVEN("A difficult three-material state") {
       // Define the state
       constexpr Real spvol_bulk = 6.256037280402093e-01;
@@ -213,7 +212,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
           const Real u_scale = std::abs(u_bulk);
           const Real u_bulk_scale = ratio(u_bulk, u_scale);
           const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-          CHECK(residual < default_PTE_params.pte_rel_tolerance_e);
+          CHECK(residual < params.pte_rel_tolerance_e);
         }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
@@ -235,6 +234,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state(num_pte, v_EOS, spvol_bulk,
                                                       sie_bulk, mass_frac, u_bulk_out);
+        const MixParams params;
         // CHECK(pte_converged);
         // AND_THEN("The solution satisfies the bulk internal energy constraint") {
         //   // NOTE(@pdmullen): The following fails prior to PR401
@@ -242,7 +242,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         //   const Real u_scale = std::abs(u_bulk);
         //   const Real u_bulk_scale = ratio(u_bulk, u_scale);
         //   const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-        //   CHECK(residual < default_PTE_params.pte_rel_tolerance_e);
+        //   CHECK(residual < params.pte_rel_tolerance_e);
         // }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);

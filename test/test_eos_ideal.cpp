@@ -136,7 +136,7 @@ SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
           });
       THEN("The vector Evaluate API can be used to compare") {
         CheckPofRE my_op(P, rho, sie, N);
-        eos_device.Evaluate(my_op);
+        eos_device.EvaluateHost(my_op);
         REQUIRE(my_op.nwrong == 0);
       }
     }

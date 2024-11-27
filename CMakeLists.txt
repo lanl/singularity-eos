@@ -32,6 +32,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.8.0")
 set(SINGULARITY_GOLDFILE_HASH
     249772f3314c4b6b9386aa08895280698ae905ef188f4383b819f28c1484603b)
+set(DOWNLOAD_EXTRACT_TIMESTAMP ON)
 
 # ------------------------------------------------------------------------------#
 # Options

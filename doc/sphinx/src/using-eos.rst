@@ -36,9 +36,10 @@ conditions. The type of parallelism used depends on how
 ``singularity-eos`` is compiled. If the ``Kokkos`` backend is used,
 any parallel dispatch supported by ``Kokkos`` is supported.
 
-A more generic version of the vector calls exists in the ``Evaluate``
-method, which allows the user to specify arbitrary parallel dispatch
-models by writing their own loops. See the relevant section below.
+A more generic version of the vector calls exists in the
+``EvaluateHost`` and ``EvaluateDevice`` methods, which allow the user
+to specify arbitrary parallel dispatch models by writing their own
+loops. See the relevant section below.
 
 Serialization and shared memory
 --------------------------------
@@ -494,19 +495,26 @@ available member function.
    eos.TemperatureFromDensityInternalEnergy(density.data(), energy.data(), temperature.data(),
                                             scratch.data(), density.size());
 
-The Evaluate Method
-~~~~~~~~~~~~~~~~~~~
+The Evaluate Methods
+~~~~~~~~~~~~~~~~~~~~~~
 
-A special call related to the vector calls is the ``Evaluate``
-method. The ``Evaluate`` method requests the EOS object to evaluate
-almost arbitrary code, but in a way where the type of the underlying
-EOS object is resolved *before* this arbitrary code is evaluated. This
-means the code required to resolve the type of the variant is only
-executed *once* per ``Evaluate`` call. This can enable composite EOS
-calls, non-standard vector calls, and vector calls with non-standard
-loop structure.
+A pair of special call related to the vector calls are the
+``EvaluateHost`` and ``EvaluateDevice`` methods. These methods request
+the EOS object to evaluate almost arbitrary code, but in a way where
+the type of the underlying EOS object is resolved *before* this
+arbitrary code is evaluated. This means the code required to resolve
+the type of the variant is only executed *once* per ``Evaluate``
+call. This can enable composite EOS calls, non-standard vector calls,
+and vector calls with non-standard loop structure.
 
-The ``Evaluate`` call has the signature
+The ``EvaluateHost`` call has the signature
+
+.. code-block:: cpp
+
+  template<typename Functor_t>
+  void Evaluate(Functor_t f);
+
+and the ``EvaluateDevice`` method has the signature
 
 .. code-block:: cpp
 
@@ -514,11 +522,11 @@ The ``Evaluate`` call has the signature
   PORTABLE_INLINE_FUNCTION
   void Evaluate(Functor_t f);
 
+
 where a ``Functor_t`` is a class that *must* provide a ``void
-operator() const`` method templated on EOS type. ``Evaluate`` is
-decorated so that it may be evaluated on either host or device,
-depending on desired use-case. Alternatively, you may use an anonymous
-function with an `auto` argument as the input, e.g.,
+operator() const`` method templated on EOS type. Alternatively, you
+may use an anonymous function with an `auto` argument as the input,
+e.g.,
 
 .. code-block:: cpp
 
@@ -531,7 +539,9 @@ function with an `auto` argument as the input, e.g.,
   with GPUs it can produce very unintuitive behaviour. We recommend
   you only make the ``operator()`` non-const if you really know what
   you're doing. And in the anonymous function case, we recommend you
-  capture by value, not reference.
+  capture by value, not reference. ``EvaluateDevice`` does not support
+  side effects at all and you must pass your functors in by value in
+  that case.
 
 To see the utlity of the ``Evaluate`` function, it's probably just
 easiest to provide an example. The following code evaluates the EOS on
@@ -583,17 +593,17 @@ is summed using the ``Kokkos::parallel_reduce`` functionality in the
   CheckPofRE my_op(P, rho, sie, N);
 
   // Here we call the evaluate function
-  eos.Evaluate(my_op);
+  eos.EvaluateHost(my_op);
 
   // The above two lines could have been called "in-one" with:
-  // eos.Evaluate(CheckPofRE(P, rho, sie, N));
+  // eos.EvaluateHost(CheckPofRE(P, rho, sie, N));
 
 Alternatively, you could eliminate the functor and use an anonymous
 function with:
 
 .. code-block:: cpp
 
-  eos.Evaluate([=](auto eos) {
+  eos.EvaluateHost([=](auto eos) {
     Real tot_diff;
     Kokkos::parallel_reduce(
         "MyCheckPofRE", N_,
