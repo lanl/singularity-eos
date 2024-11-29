@@ -34,15 +34,12 @@ namespace singularity {
 using namespace eos_base;
 
 // tag dispatch for constructors for UnitSystem
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
 namespace eos_units_init {
-static struct ThermalUnitsInit {
+[[maybe_unused]] static struct ThermalUnitsInit {
 } thermal_units_init_tag;
-static struct LengthTimeUnitsInit {
+[[maybe_unused]] static struct LengthTimeUnitsInit {
 } length_time_units_init_tag;
 } // namespace eos_units_init
-#pragma GCC diagnostic pop
 
 template <typename T>
 class UnitSystem : public EosBase<UnitSystem<T>> {
