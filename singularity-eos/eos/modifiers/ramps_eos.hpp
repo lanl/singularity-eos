@@ -210,6 +210,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+    // TODO(JMM): This doesn't seem right. dpdrho relevant.
     return t_.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
   }
   template <typename Indexer_t = Real *>
@@ -240,6 +241,23 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     // bulk modulus
     bmod = BulkModulusFromDensityInternalEnergy(rho, energy, lambda);
     return;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicMassFromDensityTemperature(rho, T, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(rho, T, lambda);
   }
 
   // vector implementations

@@ -182,6 +182,23 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicMassFromDensityTemperature(rho, T, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(rho, T, lambda);
+  }
+
   SG_ADD_MODIFIER_METHODS(T, t_);
 
  private:

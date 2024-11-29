@@ -342,6 +342,23 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
     return t_.MinimumTemperature();
   }
 
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicMassFromDensityTemperature(scale_ * rho, T, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(scale_ * rho, T, lambda);
+  }
+
   SG_ADD_MODIFIER_METHODS(T, t_);
 
  private:

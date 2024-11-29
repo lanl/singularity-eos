@@ -82,7 +82,9 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
   using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
   using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityTemperature;                      \
-  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityInternalEnergy;
+  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityInternalEnergy;                   \
+  using EosBase<EOSDERIVED>::MeanAtomicMass;                                             \
+  using EosBase<EOSDERIVED>::MeanAtomicNumber;
 
 // This macro adds several methods that most modifiers will
 // want. Not ALL modifiers will want these methods as written here,
@@ -738,6 +740,35 @@ class EosBase {
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
+
+  // Defaults. Likely not accurate. You should almost always
+  // overwrite. For a given atom, always an integer, but this is a
+  // mean.
+  // JMM: EOS's which encapsulate a mix or reactions may wish to vary
+  // this.  For example, Helmholtz and StellarCollapse. This isn't the
+  // default, so by default the base class provides a specialization.
+  // for models where density and temperature are required, the EOS
+  // developer is in charge of either throwing an error or choosing
+  // reasonable defaults.
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return 1.0; }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return 1.0; }
+  // TODO(JMM): Should we provide vector implementations if we depend on rho, T, etc?
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    return copy.MeanAtomicMass(rho, T, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Rela T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    return copy.MeanAtomicNumber(rho, T, lambda);
+  }
 
   // Default entropy behavior is to cause an error
   PORTABLE_FORCEINLINE_FUNCTION
