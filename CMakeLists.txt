@@ -46,6 +46,14 @@ cmake_dependent_option(
   "SINGULARITY_USE_SPINER" OFF)
 
 option(SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
+# Optionally build these if you want to build/test the fortran
+# infrastructure without invoking a fortran compiler If fortran is
+# off, you can set this. If fortran is on, it's forced to ON and is
+# not set-able.
+cmake_dependent_option(SINGULARITY_BUILD_FORTRAN_BACKEND
+  "Build the C++ code to which the fortran bindings bind"
+  OFF "NOT SINGULARITY_USE_FORTRAN" ON)
+
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
 option(SINGULARITY_EOSPAC_ENABLE_SHMEM
@@ -95,6 +103,7 @@ cmake_dependent_option(
 # modify flags options
 option(SINGULARITY_BETTER_DEBUG_FLAGS "Better debug flags for singularity" ON)
 option(SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
+option(SINGULARITY_STRICT_WARNINGS "Make warnings strict" OFF)
 
 # toggle code options
 option(SINGULARITY_USE_TRUE_LOG_GRIDDING
@@ -552,6 +561,10 @@ target_compile_options(
          > # release
          > # cuda
 )
+if (SINGULARITY_STRICT_WARNINGS)
+  target_compile_options(singularity-eos_Interface INTERFACE
+    -Wall -Werror)
+endif()
 
 if(TARGET singularity-eos_Library)
   target_compile_options(singularity-eos_Library PRIVATE ${xlfix})

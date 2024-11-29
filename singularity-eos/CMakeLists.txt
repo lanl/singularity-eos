@@ -73,13 +73,13 @@ if (SINGULARITY_BUILD_CLOSURE)
     closure/kinetic_phasetransition_utils.hpp
     closure/kinetic_phasetransition_methods.hpp
   )
-  if (SINGULARITY_USE_FORTRAN OR SINGULARITY_BUILD_TESTS)
+  if (SINGULARITY_BUILD_FORTRAN_BACKEND OR SINGULARITY_BUILD_TESTS)
     # while these are C++ files, they
     # are only needed for the fortran backend or unit testing
     register_srcs(eos/singularity_eos.cpp)
     register_headers(eos/singularity_eos.hpp)
   endif()
-  if (SINGULARITY_USE_FORTRAN)
+  if (SINGULARITY_BUILD_FORTRAN_BACKEND)
     register_srcs(eos/get_sg_eos.cpp)
     if (SINGULARITY_USE_KOKKOS)
       register_srcs(
