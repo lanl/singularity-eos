@@ -134,6 +134,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
         Real c = 0;
         THEN("The EOS is constructed correctly") {
           auto eos_ramped = Modify<BilinearRampEOS>(eos, r0, a, b, c);
+          eos_ramped.PrintParams();
         }
       }
     }

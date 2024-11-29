@@ -103,10 +103,10 @@ class CheckPofRE {
   int nwrong = 0;
 
  private:
-  int N_;
   Real *P_;
   Real *rho_;
   Real *sie_;
+  int N_;
 };
 SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
   GIVEN("An ideal gas, and some device memory") {

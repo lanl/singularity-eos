@@ -30,11 +30,11 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-constexpr Real GPa = 1.0e10;
-constexpr Real MJ_per_kg = 1.0e10;
-
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+
+constexpr Real GPa = 1.0e10;
+constexpr Real MJ_per_kg = 1.0e10;
 
 using singularity::DavisProducts;
 using singularity::DavisReactants;
