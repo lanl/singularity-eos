@@ -118,7 +118,6 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_USE_SINGLE_LOGS``         OFF      Use single precision logarithms (may degrade accuracy).
  ``SINGULARITY_NQT_ORDER_1``             OFF      For fast logs, use the less accurate but faster 1st-order version.
  ``SINGULARITY_NQT_PORTABLE``            OFF      For fast logs, use the slower but endianness-independent implementation.
- ``SINGULARITY_BUILD_FORTRAN_BACKEND``   OFF      For testing, you may build the C++ code to which the fortran bindings bind
  ``SINGULARITY_STRICT_WARNINGS``         OFF      For testing. Adds -Wall and -Werror to builds.
 ====================================== ======= ===========================================
 
@@ -161,6 +160,7 @@ preconditions:
  ``SINGULARITY_TEST_PYTHON``                    ``SINGULARITY_BUILD_TESTS=ON`` ``SINGULARITY_BUILD_PYTHON=ON``                    Test the Python bindings.
  ``SINGULARITY_USE_HELMHOLTZ``                  ``SINGULARITY_USE_SPINER=ON`` ``SINGULARITY_USE_SPINER_WITH_HDF5=ON``             Use Helmholtz equation of state.
  ``SINGULARITY_TEST_HELMHOLTZ``                 ``SINGULARITY_USE_HELMHOLTZ``                                                     Build Helmholtz equation of state tests.
+ ``SINGULARITY_BUILD_FORTRAN_BACKEND``          ``NOT SINGULARITY_USE_FORTRAN``                                                   For testing, you may build the C++ code to which the fortran bindings bind without building the bindings themselves.
 ============================================== ================================================================================= ===========================================
 
 When installing ``singularity-eos``, data files are also installed. The
