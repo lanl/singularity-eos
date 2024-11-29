@@ -1,4 +1,4 @@
-name: Run clang sanitizer on minimal code subset
+name: Sanitizer
 
 on:
   push:
