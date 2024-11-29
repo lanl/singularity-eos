@@ -44,7 +44,7 @@ void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
         // calculate pte condition (lookup for 1 mat cell)
         Real sie_tot_true{0.0};
         // need to initialize the scratch before it's used to avoid undefined behavior
-        for (int idx = 0; idx < solver_scratch.extent(1); ++idx) {
+        for (std::size_t idx = 0; idx < solver_scratch.extent(1); ++idx) {
           solver_scratch(tid, idx) = 0.0;
         }
         const int neq = npte;
