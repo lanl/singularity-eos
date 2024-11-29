@@ -54,10 +54,16 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           // create solver lambda
           // eos accessor
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
+          // JMM: Address sanitizer likes these named.
+          Real *prho_pte = &rho_pte(tid, 0);
+          Real *pvfrac_pte = &vfrac_pte(tid, 0);
+          Real *psie_pte = &sie_pte(tid, 0);
+          Real *ptemp_pte = &temp_pte(tid, 0);
+          Real *ppress_pte = &press_pte(tid, 0);
+          Real *pscratch = &solver_scratch(tid, 0);
           PTESolverFixedP<singularity::EOSAccessor_, Real *, Real *> method(
-              npte, eos_inx, vfrac_sum, press_pte(tid, 0), &rho_pte(tid, 0),
-              &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0),
-              cache[0], &solver_scratch(tid, 0));
+              npte, eos_inx, vfrac_sum, press_pte(tid, 0), prho_pte, pvfrac_pte, psie_pte,
+              ptemp_pte, ppress_pte, cache[0], pscratch);
           auto status = PTESolver(method);
           pte_converged = status.converged;
           // calculate total sie

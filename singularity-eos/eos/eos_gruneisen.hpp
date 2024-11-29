@@ -359,14 +359,14 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 Gruneisen::MinInternalEnergyFromDensity(const Real rho_in, Indexer_t &&lambda) const {
-  const Real rho = std::min(rho_in, _rho_max);
+  // const Real rho = std::min(rho_in, _rho_max);
   MinInternalEnergyIsNotEnabled("Gruneisen");
   return 0.0;
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityInternalEnergy(
     const Real rho_in, const Real sie, Indexer_t &&lambda) const {
-  const Real rho = std::min(rho_in, _rho_max);
+  // const Real rho = std::min(rho_in, _rho_max);
   EntropyIsNotEnabled("Gruneisen");
   return 1.0;
 }

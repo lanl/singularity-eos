@@ -209,9 +209,9 @@ class PTESolverBase {
                 const RealIndexer &vfrac_, const RealIndexer &sie_,
                 const RealIndexer &temp_, const RealIndexer &press_, Real *&scratch,
                 Real Tnorm, const MixParams &params = MixParams())
-      : nmat(nmats), neq(neqs), niter(0), eos(eos_), vfrac_total(vfrac_tot),
-        sie_total(sie_tot), rho(rho_), vfrac(vfrac_), sie(sie_), temp(temp_),
-        press(press_), Tnorm(Tnorm), params_(params) {
+      : params_(params), nmat(nmats), neq(neqs), niter(0), vfrac_total(vfrac_tot),
+        sie_total(sie_tot), eos(eos_), rho(rho_), vfrac(vfrac_), sie(sie_), temp(temp_),
+        press(press_), Tnorm(Tnorm) {
     jacobian = AssignIncrement(scratch, neq * neq);
     dx = AssignIncrement(scratch, neq);
     sol_scratch = AssignIncrement(scratch, 2 * neq);

@@ -452,7 +452,7 @@ PowerMG::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &
   }
   if (output & thermalqs::temperature)
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::specific_internal_energy) sie = sie;
+  // if (output & thermalqs::specific_internal_energy) sie = sie;
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::specific_heat)
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);

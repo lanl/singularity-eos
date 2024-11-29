@@ -54,10 +54,18 @@ void get_sg_eos_rho_e(const char *name, int ncell, indirection_v &offsets_v,
           // eos accessor
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
           // reset inputs
+          // JMM: Address sanitizer likes these named. My guess is
+          // that the forwarding references are not being resolved
+          // properly.
+          Real *prho_pte = &rho_pte(tid, 0);
+          Real *pvfrac_pte = &vfrac_pte(tid, 0);
+          Real *psie_pte = &sie_pte(tid, 0);
+          Real *ptemp_pte = &temp_pte(tid, 0);
+          Real *ppress_pte = &press_pte(tid, 0);
+          Real *pscratch = &solver_scratch(tid, 0);
           PTESolverRhoT<singularity::EOSAccessor_, Real *, Real **> method(
-              npte, eos_inx, vfrac_sum, sie_v(i), &rho_pte(tid, 0), &vfrac_pte(tid, 0),
-              &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), cache,
-              &solver_scratch(tid, 0));
+              npte, eos_inx, vfrac_sum, sie_v(i), prho_pte, pvfrac_pte, psie_pte,
+              ptemp_pte, ppress_pte, cache, pscratch);
           auto status = PTESolver(method);
           pte_converged = status.converged;
         } else {
