@@ -255,17 +255,17 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
-      const Real rho, const Real T,
+      const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return t_.MeanAtomicMassFromDensityTemperature(rho * rho_unit_, T * temp_unit_,
-                                                   lambda);
+    return t_.MeanAtomicMassFromDensityTemperature(rho * rho_unit_,
+                                                   temperature * temp_unit_, lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
-      const Real rho, const Real T,
+      const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return t_.MeanAtomicNumberFromDensityTemperature(rho * rho_unit_, T * temp_unit_,
-                                                     lambda);
+    return t_.MeanAtomicNumberFromDensityTemperature(rho * rho_unit_,
+                                                     temperature * temp_unit_, lambda);
   }
 
   // vector implementations
