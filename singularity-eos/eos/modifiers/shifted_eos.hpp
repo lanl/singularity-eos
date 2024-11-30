@@ -364,7 +364,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
-      const Real rho, const Rela T,
+      const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return t_.MeanAtomicNumberFromDensityTemperature(rho, T, lambda);
   }
