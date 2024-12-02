@@ -38,7 +38,9 @@ using namespace eos_base;
 class CarnahanStarling : public EosBase<CarnahanStarling> {
  public:
   CarnahanStarling() = default;
-  PORTABLE_INLINE_FUNCTION CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq)
+  PORTABLE_INLINE_FUNCTION
+  CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq,
+                   const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _bb(bb), _qq(qq), _T0(ROOM_TEMPERATURE),
         _P0(ATMOSPHERIC_PRESSURE), _qp(0.0),
         _rho0(DensityFromPressureTemperature(_P0, _T0)), _vol0(robust::ratio(1.0, _rho0)),
@@ -46,18 +48,19 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
         _bmod0(_rho0 * Cv * _T0 *
                (PartialRhoZedFromDensity(_rho0) +
                 ZedFromDensity(_rho0) * ZedFromDensity(_rho0) * gm1)),
-        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1) {
+        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1), _AZbar(AZbar) {
     CheckParams();
   }
-  PORTABLE_INLINE_FUNCTION CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq, Real qp,
-                                            Real T0, Real P0)
+  PORTABLE_INLINE_FUNCTION
+  CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq, Real qp, Real T0, Real P0,
+                   const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _bb(bb), _qq(qq), _T0(T0), _P0(P0), _qp(qp),
         _rho0(DensityFromPressureTemperature(P0, T0)), _vol0(robust::ratio(1.0, _rho0)),
         _sie0(Cv * T0 + qq),
         _bmod0(_rho0 * Cv * T0 *
                (PartialRhoZedFromDensity(_rho0) +
                 ZedFromDensity(_rho0) * ZedFromDensity(_rho0) * gm1)),
-        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1) {
+        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1), _AZbar(AZbar) {
     CheckParams();
   }
   CarnahanStarling GetOnDevice() { return *this; }
@@ -247,12 +250,18 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   static std::string EosType() { return std::string("CarnahanStarling"); }
   static std::string EosPyType() { return EosType(); }
 
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return _AZbar.Abar; }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return _AZbar.Zbar; }
+
  private:
   Real _Cv, _gm1, _bb, _qq;
   // optional reference state variables
   Real _T0, _P0, _qp;
   // reference values
   Real _rho0, _vol0, _sie0, _bmod0, _dpde0;
+  MeanAtomicProperties _AZbar;
   // static constexpr const Real _T0 = ROOM_TEMPERATURE;
   // static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
   static constexpr const unsigned long _preferred_input =

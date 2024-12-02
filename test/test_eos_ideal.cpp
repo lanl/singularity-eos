@@ -81,7 +81,8 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
   }
 }
 
-SCENARIO("Ideal gas mean atomic properties", "[IdealGas][MeanAtomicMass][MeanAtomicNumber]") {
+SCENARIO("Ideal gas mean atomic properties",
+         "[IdealGas][MeanAtomicMass][MeanAtomicNumber]") {
   constexpr Real Cv = 5.0;
   constexpr Real gm1 = 0.4;
   constexpr Real Abar = 4.0; // Helium
@@ -93,21 +94,24 @@ SCENARIO("Ideal gas mean atomic properties", "[IdealGas][MeanAtomicMass][MeanAto
       Real Ab_eval = host_eos.MeanAtomicMass();
       Real Zb_eval = host_eos.MeanAtomicNumber();
       THEN("We get the right answer") {
-        REQUIRE( isClose(Ab_eval, Abar, 1e-12) );
-        REQUIRE( isClose(Zb_eval, Zbar, 1e-12) );
+        REQUIRE(isClose(Ab_eval, Abar, 1e-12));
+        REQUIRE(isClose(Zb_eval, Zbar, 1e-12));
       }
     }
     WHEN("We evaluate it on device, using a loop") {
       constexpr int N = 100;
       auto device_eos = host_eos.GetOnDevice();
       int nwrong = 0;
-      portableReduce("Check mean atomic number", 0, N, PORTABLE_LAMBDA(const int i, int &nw) {
-          double rho = i;
-          double T = 100.0*i;
-          double Ab_eval = device_eos.MeanAtomicMassFromDensityTemperature(rho, T);
-          double Zb_eval = device_eos.MeanAtomicNumberFromDensityTemperature(rho, T);
-          nw += !(isClose(Ab_eval, Abar, 1e-12)) + !(isClose(Zb_eval, Zbar, 1e-12));
-        }, nwrong);
+      portableReduce(
+          "Check mean atomic number", 0, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            double rho = i;
+            double T = 100.0 * i;
+            double Ab_eval = device_eos.MeanAtomicMassFromDensityTemperature(rho, T);
+            double Zb_eval = device_eos.MeanAtomicNumberFromDensityTemperature(rho, T);
+            nw += !(isClose(Ab_eval, Abar, 1e-12)) + !(isClose(Zb_eval, Zbar, 1e-12));
+          },
+          nwrong);
       REQUIRE(nwrong == 0);
       device_eos.Finalize();
     }
