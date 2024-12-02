@@ -55,8 +55,9 @@ void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
           // create solver lambda
           // eos accessor
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
-          // JMM: Address sanitizer does not like passing these in
-          // through the function call.
+          // JMM: The solver constructor is (deep under the hood)
+          // capturing by reference. So to avoid out-of-scope access,
+          // these must be "anchored" at caller scope.
           Real *prho_pte = &rho_pte(tid, 0);
           Real *pvfrac_pte = &vfrac_pte(tid, 0);
           Real *psie_pte = &sie_pte(tid, 0);
