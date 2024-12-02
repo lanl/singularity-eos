@@ -38,16 +38,20 @@ using namespace eos_base;
 class IdealGas : public EosBase<IdealGas> {
  public:
   IdealGas() = default;
-  PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv)
+  PORTABLE_INLINE_FUNCTION
+  IdealGas(Real gm1, Real Cv, const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
-        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(_T0), _EntropyRho0(_rho0) {
+        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(_T0), _EntropyRho0(_rho0), _AZbar(AZbar) {
     CheckParams();
   }
-  PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0)
+  PORTABLE_INLINE_FUNCTION
+  IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0,
+           const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
-        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(EntropyT0), _EntropyRho0(EntropyRho0) {
+        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(EntropyT0), _EntropyRho0(EntropyRho0),
+        _AZbar(AZbar) {
     CheckParams();
   }
 
@@ -148,6 +152,12 @@ class IdealGas : public EosBase<IdealGas> {
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return _AZbar.Abar; }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return _AZbar.Zbar; }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
@@ -198,6 +208,8 @@ class IdealGas : public EosBase<IdealGas> {
       thermalqs::density | thermalqs::specific_internal_energy;
   // optional entropy reference state variables
   Real _EntropyT0, _EntropyRho0;
+  // optional mean atomic mass and number
+  MeanAtomicProperties _AZbar;
 };
 
 template <typename Indexer_t>

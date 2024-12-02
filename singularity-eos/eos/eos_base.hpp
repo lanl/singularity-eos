@@ -135,6 +135,23 @@ struct Transform {
 };
 
 /*
+  This is a utility struct used for analytic equations of state,
+  allowing them to store/report mean atomic mass/number easily.
+ */
+struct MeanAtomicProperties {
+  Real Abar, Zbar;
+
+  // default is hydrogen
+  static constexpr Real DEFAULT_ABAR = 1.0;
+  static constexpr Real DEFAULT_ZBAR = 1.0;
+
+  PORTABLE_INLINE_FUNCTION
+  MeanAtomicProperties(Real Abar_, Real Zbar_) : Abar(Abar_), Zbar(Zbar_) {}
+  PORTABLE_INLINE_FUNCTION
+  MeanAtomicProperties() : Abar(DEFAULT_ABAR), Zbar(DEFAULT_ZBAR) {}
+};
+
+/*
 This is a CRTP that allows for static inheritance so that default behavior for
 various member functions can be defined.
 https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
@@ -751,23 +768,29 @@ class EosBase {
   // developer is in charge of either throwing an error or choosing
   // reasonable defaults.
   PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicMass() const { return 1.0; }
+  Real MeanAtomicMass() const {
+    PORTABLE_THROW_OR_ABORT("Mean atomic mass not implemented!");
+    return 1.0;
+  }
   PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicNumber() const { return 1.0; }
+  Real MeanAtomicNumber() const {
+    PORTABLE_THROW_OR_ABORT("Mean atomic number not implemented!");
+    return 1.0;
+  }
   // TODO(JMM): Should we provide vector implementations if we depend on rho, T, etc?
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     CRTP copy = *(static_cast<CRTP const *>(this));
-    return copy.MeanAtomicMass(rho, T, lambda);
+    return copy.MeanAtomicMass();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     CRTP copy = *(static_cast<CRTP const *>(this));
-    return copy.MeanAtomicNumber(rho, T, lambda);
+    return copy.MeanAtomicNumber();
   }
 
   // Default entropy behavior is to cause an error
