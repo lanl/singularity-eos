@@ -307,6 +307,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
+  MeanAtomicProperties _AZbar; // TODO(JMM): Load from table.
   int matid_;
   bool reproducible_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.

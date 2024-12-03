@@ -249,10 +249,6 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
     return inv_temp_unit_ * t_.MinimumTemperature();
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }
-  PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
       const Real rho, const Real temperature,

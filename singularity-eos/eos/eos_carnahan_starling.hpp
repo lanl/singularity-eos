@@ -74,6 +74,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
     PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");
+    _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real ZedFromDensity(
@@ -224,6 +225,8 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     bmod = _bmod0;
     dpde = _dpde0;
   }
+  // Default accessors for mean atomic mass/number
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(CarnahanStarling)
@@ -238,6 +241,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     printf("Carnahan-Starling Parameters:\nGamma = %g\nCv    = %g\nb     = %g\nq     = "
            "%g\n",
            _gm1 + 1.0, _Cv, _bb, _qq);
+    _AZbar.PrintParams();
   }
   template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
@@ -249,11 +253,6 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   inline void Finalize() {}
   static std::string EosType() { return std::string("CarnahanStarling"); }
   static std::string EosPyType() { return EosType(); }
-
-  PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicMass() const { return _AZbar.Abar; }
-  PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicNumber() const { return _AZbar.Zbar; }
 
  private:
   Real _Cv, _gm1, _bb, _qq;

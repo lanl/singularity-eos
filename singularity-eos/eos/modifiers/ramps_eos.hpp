@@ -243,10 +243,6 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     return;
   }
 
-  PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }
-  PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
       const Real rho, const Real temperature,

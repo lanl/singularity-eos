@@ -162,6 +162,32 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
 
   // Properties of an NSE EOS
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const {
+    PORTABLE_THROW_OR_ABORT("For Helmholtz EOS, mean atomic mass is an input!\n");
+    return 1.0;
+  }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const {
+    PORTABLE_THROW_OR_ABORT("For Helmholtz EOS, mean atomic number is an input!\n");
+    return 1.0;
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real lRho, lT, Ye;
+    getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+    return Abar_.interpToReal(Ye, lT, lRho);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real lRho, lT, Ye;
+    getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+    return Zbar_.interpToReal(Ye, lT, lRho);
+  }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
       const Real rho, const Real temperature, Real &Xa, Real &Xh, Real &Xn, Real &Xp,
