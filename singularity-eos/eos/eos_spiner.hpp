@@ -80,6 +80,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };
   };
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT);
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
                               bool reproduciblity_mode = false);
@@ -307,7 +308,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
-  MeanAtomicProperties _AZbar; // TODO(JMM): Load from table.
+  MeanAtomicProperties AZbar_; // TODO(JMM): Load from table.
   int matid_;
   bool reproducible_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.
@@ -350,6 +351,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   };
   using STricks = table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
 
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie);
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
@@ -539,6 +541,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] = "SpinerEOSDependsRhoSie";
   int matid_;
+  MeanAtomicProperties AZbar_; // TODO(JMM): Load from table.
   bool reproducible_;
   mutable RootFinding1D::Status status_;
   static constexpr const int _n_lambda = 1;
@@ -717,6 +720,11 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   status += H5LTget_attribute_double(file, matid_str.c_str(),
                                      SP5::Material::normalDensity, &rhoNormal_);
   rhoNormal_ = std::abs(rhoNormal_);
+  // Mean atomic mass and mean atomic number
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicMass, &(AZbar_.Abar));
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
 
   // tables
   status += P_.loadHDF(lTGroup, SP5::Fields::P);
@@ -1553,6 +1561,11 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   status += H5LTget_attribute_double(file, matid_str.c_str(),
                                      SP5::Material::normalDensity, &rhoNormal_);
   rhoNormal_ = std::abs(rhoNormal_);
+  // Mean atomic mass and mean atomic number
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicMass, &(AZbar_.Abar));
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
 
   // sometimes independent variables
   status += sie_.loadHDF(lTGroup, SP5::Fields::sie);
