@@ -40,8 +40,8 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   SAP_Polynomial(const Real rho0, const Real a0, const Real a1, const Real a2c,
                  const Real a2e, const Real a3, const Real b0, const Real b1,
                  const Real b2c, const Real b2e, const Real b3)
-      : _rho0(rho0), _a0(a0), _a1(a1), _a2c(a2c), _a2e(a2e), _a3(a3), _b0(b0), _b1(b1),
-        _b2c(b2c), _b2e(b2e), _b3(b3) {
+      : _a0(a0), _a1(a1), _a2c(a2c), _a2e(a2e), _a3(a3), _b0(b0), _b1(b1), _b2c(b2c),
+        _b2e(b2e), _b3(b3), _rho0(rho0) {
     CheckParams();
   }
 

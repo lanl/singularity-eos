@@ -395,7 +395,7 @@ Vinet::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bm
   }
   Real Vout[8];
   Vinet_F_DT_func(rho, temp, Vout);
-  if (output & thermalqs::temperature) temp = temp;
+  // if (output & thermalqs::temperature) temp = temp;
   if (output & thermalqs::specific_internal_energy) sie = Vout[0];
   if (output & thermalqs::pressure) press = Vout[1];
   if (output & thermalqs::specific_heat) cv = Vout[4];

@@ -41,7 +41,7 @@ constexpr std::size_t MAX_NUM_CHARS = 121;
 // Cuda doesn't have strcat, so we implement it ourselves
 PORTABLE_FORCEINLINE_FUNCTION
 char *StrCat(char *destination, const char *source) {
-  int i, j; // not in loops because they're re-used.
+  std::size_t i, j; // not in loops because they're re-used.
 
   // specifically avoid strlen, which isn't on GPU
   for (i = 0; destination[i] != '\0'; i++) {
@@ -49,9 +49,10 @@ char *StrCat(char *destination, const char *source) {
   // assumes destination has enough memory allocated
   for (j = 0; source[j] != '\0'; j++) {
     // MAX_NUM_CHARS-1 to leave room for null terminator
-    PORTABLE_REQUIRE((i + j) < MAX_NUM_CHARS - 1,
+    std::size_t ipj = i + j;
+    PORTABLE_REQUIRE(ipj < MAX_NUM_CHARS - 1,
                      "Concat string must be within allowed size");
-    destination[i + j] = source[j];
+    destination[ipj] = source[j];
   }
   // null terminate destination string
   destination[i + j] = '\0';

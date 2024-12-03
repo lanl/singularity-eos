@@ -35,9 +35,9 @@ using namespace eos_base;
 
 // tag dispatch for constructors for UnitSystem
 namespace eos_units_init {
-static struct ThermalUnitsInit {
+[[maybe_unused]] static struct ThermalUnitsInit {
 } thermal_units_init_tag;
-static struct LengthTimeUnitsInit {
+[[maybe_unused]] static struct LengthTimeUnitsInit {
 } length_time_units_init_tag;
 } // namespace eos_units_init
 

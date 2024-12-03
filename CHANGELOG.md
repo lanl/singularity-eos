@@ -5,6 +5,7 @@
 ### Added (new features/APIs/variables/...)
 
 ### Fixed (Repair bugs, etc)
+- [[OR437]](https://github.com/lanl/singularity-eos/pull/437) Fix segfault on HIP, clean up warnings, add strict sanitizer test
 
 ### Changed (changing behavior/API/variables/...)
 
