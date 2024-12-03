@@ -177,7 +177,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real lRho, lT, Ye;
-    getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+    getLogsFromRhoT_(rho, T, lambda, lRho, lT, Ye);
     return Abar_.interpToReal(Ye, lT, lRho);
   }
   template <typename Indexer_t = Real *>
@@ -185,7 +185,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     Real lRho, lT, Ye;
-    getLogsFromRhoT_(rho, temperature, lambda, lRho, lT, Ye);
+    getLogsFromRhoT_(rho, T, lambda, lRho, lT, Ye);
     return Zbar_.interpToReal(Ye, lT, lRho);
   }
   template <typename Indexer_t = Real *>
