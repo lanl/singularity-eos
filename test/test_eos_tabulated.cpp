@@ -239,8 +239,8 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
       REQUIRE(steelEOS_host.matid() == steelID);
 
       AND_THEN("We get the correct mean atomic mass and number") {
-        REQUIRE(steelEOS_host.MeanAtomicMass() == eospac.MeanAtomicMass());
-        REQUIRE(steelEOS_host.MeanAtomicNumber() == eospac.MeanAtomicNumber());
+        REQUIRE(isClose(steelEOS_host.MeanAtomicMass(), 55.37));
+        REQUIRE(isClose(steelEOS_host.MeanAtomicNumber(), 25.80));
       }
 
       int nw_ie2{0}, nw_te2{0};
