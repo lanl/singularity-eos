@@ -1039,6 +1039,56 @@ The function
 
 .. code-block:: cpp
 
+   template<typename Indexer_t Real*>
+   void MeanAtomicMassFromDensityTemperature(const Real rho, const Real T,
+                                             Indexer_t &&lambda = nullpter) const;
+
+returns the mean atomic mass (i.e., the number of nucleons) of a
+material given density in :math:`g/cm^3` and temperature in
+Kelvin. The reason this is allowed to vary with density and
+temperature is that some equations of state, such as the Stellar
+Collapse and Helmholtz equations of state encapsulate reactive flows
+where the average nucleus may depend on thermodynamic variables. For
+most materials, however, this is not the case and a convenience
+function that drops the dependence is available:
+
+.. code-block:: cpp
+
+   Real MeanAtomicMass() const;
+
+The function
+
+.. code-block:: cpp
+
+   template<typename Indexer_t Real*>
+   void MeanAtomicNumberFromDensityTemperature(const Real rho, const Real T,
+                                               Indexer_t &&lambda = nullpter) const;
+
+returns the mean atomic number (i.e., the number of protons in the
+nucleus) of a material given density in :math:`g/cm^3` and temperature
+in Kelvin. The reason this is allowed to vary with density and
+temperature is that some equations of state, such as the Stellar
+Collapse and Helmholtz equations of state encapsulate reactive flows
+where the average nucleus may depend on thermodynamic variables. For
+most materials, however, this is not the case and a convenience
+function that drops the dependence is available:
+
+.. code-block:: cpp
+
+   Real MeanAtomicNumber() const;
+
+
+
+.. warning::
+
+  For materials where the mean atomic mass and number **do** vary with
+  density and temperature, the convenience call without this
+  dependence will produce an error.
+
+The function
+
+.. code-block:: cpp
+
    template <typename Indexer_t = Real*>
    void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
                                Real &cv, Real &bmod, Real &dpde, Real &dvdt,
