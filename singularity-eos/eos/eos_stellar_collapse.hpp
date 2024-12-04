@@ -164,12 +164,14 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // Properties of an NSE EOS
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicMass() const {
-    PORTABLE_THROW_OR_ABORT("For Helmholtz EOS, mean atomic mass is an input!\n");
+    PORTABLE_THROW_OR_ABORT(
+        "For Stellar Collapse EOS, mean atomic mass is a state variable!\n");
     return 1.0;
   }
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicNumber() const {
-    PORTABLE_THROW_OR_ABORT("For Helmholtz EOS, mean atomic number is an input!\n");
+    PORTABLE_THROW_OR_ABORT(
+        "For Stellar Collapse EOS, mean atomic number is a state variable!\n");
     return 1.0;
   }
   template <typename Indexer_t = Real *>

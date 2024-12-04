@@ -308,7 +308,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
-  MeanAtomicProperties AZbar_; // TODO(JMM): Load from table.
+  MeanAtomicProperties AZbar_;
   int matid_;
   bool reproducible_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.
@@ -541,7 +541,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] = "SpinerEOSDependsRhoSie";
   int matid_;
-  MeanAtomicProperties AZbar_; // TODO(JMM): Load from table.
+  MeanAtomicProperties AZbar_;
   bool reproducible_;
   mutable RootFinding1D::Status status_;
   static constexpr const int _n_lambda = 1;
