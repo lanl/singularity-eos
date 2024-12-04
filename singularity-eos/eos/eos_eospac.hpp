@@ -1100,7 +1100,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   static std::string EosPyType() { return EosType(); }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("EOSPAC parameters:\nmatid = %i\n", matid_);
-    _AZbar.PrintParams();
+    AZbar_.PrintParams();
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
