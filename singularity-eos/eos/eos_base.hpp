@@ -167,6 +167,7 @@ struct MeanAtomicProperties {
     PORTABLE_ALWAYS_REQUIRE(Abar > 0, "Positive mean atomic mass");
     PORTABLE_ALWAYS_REQUIRE(Zbar > 0, "Positive mean atomic number");
   }
+  PORTABLE_INLINE_FUNCTION
   void PrintParams() const {
     printf("      Abar  = %g\n", Abar);
     printf("      Zbar  = %g\n", Zbar);
