@@ -86,6 +86,11 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
         REQUIRE(isClose(T, T_pac));
       }
 
+      AND_THEN("We get the correct mean atomic mass and number") {
+        REQUIRE(steelEOS_host.MeanAtomicMass() == eospac.MeanAtomicMass());
+        REQUIRE(steelEOS_host.MeanAtomicNumber() == eospac.MeanAtomicNumber());
+      }
+
       // TODO: this needs to be a much more rigorous test
       AND_THEN("Quantities can be read from density and temperature") {
         const Real sie_pac = eospac.InternalEnergyFromDensityTemperature(1e0, 1e6);
@@ -232,6 +237,11 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
     EOS steelEOS = steelEOS_host.GetOnDevice();
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
+
+      AND_THEN("We get the correct mean atomic mass and number") {
+        REQUIRE(steelEOS_host.MeanAtomicMass() == eospac.MeanAtomicMass());
+        REQUIRE(steelEOS_host.MeanAtomicNumber() == eospac.MeanAtomicNumber());
+      }
 
       int nw_ie2{0}, nw_te2{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
