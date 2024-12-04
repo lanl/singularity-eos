@@ -1533,6 +1533,12 @@ of the material in the file, and ``reproducability_mode`` is a boolean
 which slightly changes how initial guesses for root finds are
 computed. The constructor for ``SpinerEOSDependsRhoSie`` is identical.
 
+.. note::
+
+  Mean atomic mass and number are loaded from input tables. The
+  ``SpinerEOS`` model does **not** support the
+  ``MeanAtomicProperties`` struct.
+
 ``sp5`` files and ``sesame2spiner``
 `````````````````````````````````````
 
@@ -1803,6 +1809,17 @@ where ``filename`` is the file containing the tabulated model,
 original `Stellar Collapse`_ format, and ``filter_bmod`` specifies
 whether or not to apply the above-described median filter.
 
+.. note::
+
+  The ``StellarCollapse`` EOS assumes nuclear statistical equilibrium
+  and as such mean atomic mass and number are state variables. As such
+  class does not accept the ``MeanAtomicProperties`` struct. The
+  ``MeanAtomicMassFromDensityTemperature`` and
+  ``MeanAtomicNumberFromDensityTemperature`` functions return the
+  relevant quantities for some thermodynamic state. The
+  ``MeanAtomicMass()`` and ``MeanAtomicNumber()`` functions raise an
+  error.
+
 ``StellarCollapse`` also provides 
 
 .. cpp:function:: void Save(const std::string &filename)
@@ -1887,6 +1904,14 @@ The degenerate electron term is computed via thermodynamic derivatives
 of the Helmholtz free energy (hence the name Helmholtz EOS). The free
 energy is pre-computed via integrals over the Fermi sphere and
 tabulated in a file provided from `Frank Timmes's website`_.
+
+.. note::
+
+  Since mean atomic mass and number are required inputs, the
+  ``MeanAtomicMassFromDensityTemperature`` and
+  ``MeanAtomicNumberFromDensityAndTemperature`` functions simply
+  return the input values. The ``MeanAtomicMass()`` and
+  ``MeanAtomicNumber`` functions produce an error.
 
 The table is a simple small ascii file. To ensure thermodyanic
 consistency, the table is interpolated using either biquintic or
@@ -1988,6 +2013,13 @@ model, :math:`splitIdealGas` uses the cold curve plus ideal gas model
 and :math:`splitCowan` uses the cold curve plus Cowan-nuclear model 
 for ions and the final option ``linear_interp`` uses linear instead of 
 bilinear interpolation. 
+
+.. note::
+
+  Mean atomic mass and number are loaded from input tables. The
+  ``EOSPAC`` model does **not** support the ``MeanAtomicProperties``
+  struct.
+
 
 Note for performance reasons this EOS uses a slightly different vector API.
 See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
