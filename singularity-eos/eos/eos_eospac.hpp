@@ -141,6 +141,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     // TODO(JMM): More validation checks?
     PORTABLE_ALWAYS_REQUIRE(rho_min_ >= 0, "Non-negative minimum density");
     PORTABLE_ALWAYS_REQUIRE(temp_min_ >= 0, "Non-negative minimum temperature");
+    AZbar_.CheckParams();
   }
   inline EOSPAC GetOnDevice() { return *this; }
 
@@ -456,6 +457,8 @@ class EOSPAC : public EosBase<EOSPAC> {
   // TODO(JMM): Add performant entropy and Gibbs Free Energy
   using EosBase<EOSPAC>::FillEos;
   using EosBase<EOSPAC>::EntropyIsNotEnabled;
+
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
 
   // EOSPAC vector implementations
   template <typename LambdaIndexer>
@@ -1097,6 +1100,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   static std::string EosPyType() { return EosType(); }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("EOSPAC parameters:\nmatid = %i\n", matid_);
+    AZbar_.PrintParams();
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
@@ -1127,6 +1131,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   // TODO(JMM): Is the fact that EOS_INTEGER isn't a size_t a
   // problem? Could it ever realistically overflow?
   EOS_INTEGER shared_size_, packed_size_;
+  MeanAtomicProperties AZbar_;
 
   static inline std::map<std::string, unsigned int> &scratch_nbuffers() {
     static std::map<std::string, unsigned int> nbuffers = {
@@ -1194,6 +1199,9 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
   rho_ref_ = m.normalDensity;
   rho_min_ = m.rhoMin;
   temp_min_ = m.TMin;
+  // use std::max to hydrogen, in case of bad table
+  AZbar_.Abar = std::max(1.0, m.meanAtomicMass);
+  AZbar_.Zbar = std::max(1.0, m.meanAtomicNumber);
 
   EOS_REAL R[1] = {rho_ref_};
   EOS_REAL T[1] = {temperatureToSesame(temp_ref_)};

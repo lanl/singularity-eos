@@ -352,6 +352,19 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     return t_.MinimumTemperature();
   }
 
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicMassFromDensityTemperature(rho, temperature, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(rho, temperature, lambda);
+  }
+
   SG_ADD_MODIFIER_METHODS(T, t_);
 
  private:

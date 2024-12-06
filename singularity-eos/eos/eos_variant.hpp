@@ -333,6 +333,36 @@ class Variant {
     return mpark::visit([](const auto &eos) { return eos.MinimumTemperature(); }, eos_);
   }
 
+  // Atomic mass/atomic number functions
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const {
+    return mpark::visit([](const auto &eos) { return eos.MeanAtomicMass(); }, eos_);
+  }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const {
+    return mpark::visit([](const auto &eos) { return eos.MeanAtomicNumber(); }, eos_);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return mpark::visit(
+        [&rho, &T, &lambda](const auto &eos) {
+          return eos.MeanAtomicMassFromDensityTemperature(rho, T, lambda);
+        },
+        eos_);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return mpark::visit(
+        [&rho, &T, &lambda](const auto &eos) {
+          return eos.MeanAtomicNumberFromDensityTemperature(rho, T, lambda);
+        },
+        eos_);
+  }
+
   /*
   Vector versions of the member functions run on the host but the scalar
   lookups will run on the device
