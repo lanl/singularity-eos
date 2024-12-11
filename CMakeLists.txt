@@ -560,6 +560,10 @@ target_compile_options(
          -use_fast_math
          > # release
          > # cuda
+
+         # Suppresses annoying ABI notes. See:
+         # https://stackoverflow.com/questions/52020305/what-exactly-does-gccs-wpsabi-option-do-what-are-the-implications-of-supressi
+         $<$<CXX_COMPILER_ID:GNU>:-Wno-psabi>
 )
 if (SINGULARITY_STRICT_WARNINGS)
   target_compile_options(singularity-eos_Interface INTERFACE

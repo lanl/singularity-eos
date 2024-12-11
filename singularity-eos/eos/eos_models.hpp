@@ -18,6 +18,7 @@
 // EOS models
 #include <singularity-eos/eos/eos_carnahan_starling.hpp>
 #include <singularity-eos/eos/eos_davis.hpp>
+#include <singularity-eos/eos/eos_electrons.hpp>
 #include <singularity-eos/eos/eos_eospac.hpp>
 #include <singularity-eos/eos/eos_gruneisen.hpp>
 #include <singularity-eos/eos/eos_helmholtz.hpp>
