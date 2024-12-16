@@ -343,13 +343,9 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   }
 
   PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicMass() const {
-    return inv_scale_*t_.MeanAtomicMass();
-  }
+  Real MeanAtomicMass() const { return inv_scale_ * t_.MeanAtomicMass(); }
   PORTABLE_INLINE_FUNCTION
-  Real MeanAtomicNumber() const {
-    return t_.MeanAtomicNumber();
-  }
+  Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(

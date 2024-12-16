@@ -40,16 +40,17 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   SG_ADD_BASE_CLASS_USINGS(ZSplit<ztype, T>);
 
   static std::string EosType() {
-    std::string ts = (ztype == Electrons) ? "Electrons, " : "Ions, ";
+    std::string ts = (ztype == ZSplitComponent::Electrons) ? "Electrons, " : "Ions, ";
     return std::string("ZSplit<") + ts + T::EosType() + std::string(">");
   }
-  std::string ts = (ztype == Electrons) ? "Electrons" : "Ions";
-  static std::string EosPyType() { return std::string("ZSplit") + ts + T::EosPyType(); }
+  static std::string EosPyType() {
+    std::string ts = (ztype == ZSplitComponent::Electrons) ? "Electrons" : "Ions";
+    return std::string("ZSplit") + ts + T::EosPyType();
+  }
 
   ZSplit() = default;
   PORTABLE_INLINE_FUNCTION
-  ZSplit(T &&t) : t_(std::forward<T>(t));
-  {}
+  ZSplit(T &&t) : t_(std::forward<T>(t)) {}
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const { t_.CheckParams(); }
   auto GetOnDevice() { return ZSplit<ztype, T>(t_.GetOnDevice()); }
@@ -140,7 +141,66 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
     return scale * t_.BulkModulusFromDensityInternalEnergy(rho, iscale * sie, lambda);
   }
 
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    // (1/rho) (dP/de). Scale cancels in P and e
+    return t_.GruneisenParameterFromDensityTemperature(rho, temperature, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+      const Real rho, const Real sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real iscale = GetInvScale_(lambda);
+    return t_.GruneisenParameterFromDensityInternalEnergy(rho, iscale * sie, lambda);
+  }
 
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+          const unsigned long output,
+          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real scale = GetScale_(lambda);
+    const Real iscale = GetInvScale_(lambda);
+
+    const bool sie_output = (output & thermalqs::specific_internal_energy);
+    const bool sie_input = !sie_output;
+
+    const bool press_output = (output & thermalqs::pressure);
+    const bool press_input = !press_output;
+
+    const bool cv_output = (output & thermalqs::specific_heat);
+    const bool bmod_output = (output & thermalqs::bulk_modulus);
+
+    if (sie_input) energy *= iscale;
+    if (press_input) press *= iscale;
+
+    t_.FillEos(rho, temp, energy, press, cv, output, lambda);
+
+    // do it to undo if it was input. do it because you need to if
+    // output
+    energy *= scale;
+    press *= scale;
+    // These aren't input
+    if (cv_output) cv *= scale;
+    if (bmod_output) bmod *= scale;
+  }
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real scale = GetScale_(lambda);
+    const Real iscale = GetInvScale_(lambda);
+    t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt);
+    sie *= scale;
+    press *= scale;
+    cv *= scale;
+    bmod *= scale;
+    // dvdt, dpde unchanged
+  }
 
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return NL + t_.nlambda(); }
@@ -182,8 +242,9 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real GetIonizationState_(const Indexer_t &&lambda) const {
     return std::max(0.0, lambda[t_.nlambda()]);
   }
+  // TODO(JMM): Runtime?
   template <typename Indexer_t>
-  PORTABLE_INLINE_FUNCTION Real GetScale_(const Indexer_t &&lambda) const {
+  PORTABLE_FORCEINLINE_FUNCTION Real GetScale_(const Indexer_t &&lambda) const {
     Real Z = GetIonizationState_(lambda);
     if constexpr (ztype == ZSplitComponent::Electrons) {
       return robust::ratio(Z, Z + 1);
@@ -192,7 +253,7 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
     }
   }
   template <typename Indexer_t>
-  PORTABLE_INLINE_FUNCTION Real GetInvScale_(const Indexer_t &&lambda) const {
+  PORTABLE_FORCEINLINE_FUNCTION Real GetInvScale_(const Indexer_t &&lambda) const {
     Real Z = GetIonizationState_(lambda);
     if constexpr (ztype == ZSplitComponent::Electrons) {
       return robust::ratio(Z + 1, Z);
