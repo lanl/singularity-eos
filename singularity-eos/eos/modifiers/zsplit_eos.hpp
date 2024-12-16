@@ -238,13 +238,13 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
 
  private:
   static constexpr const int NL = 1;
-  template <typename Indexer_t>
-  PORTABLE_FORCEINLINE_FUNCTION Real GetIonizationState_(const Indexer_t &&lambda) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FORCEINLINE_FUNCTION Real GetIonizationState_(Indexer_t &&lambda) const {
     return std::max(0.0, lambda[t_.nlambda()]);
   }
   // TODO(JMM): Runtime?
-  template <typename Indexer_t>
-  PORTABLE_FORCEINLINE_FUNCTION Real GetScale_(const Indexer_t &&lambda) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FORCEINLINE_FUNCTION Real GetScale_(Indexer_t &&lambda) const {
     Real Z = GetIonizationState_(lambda);
     if constexpr (ztype == ZSplitComponent::Electrons) {
       return robust::ratio(Z, Z + 1);
@@ -252,8 +252,8 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
       return robust::ratio(1.0, Z + 1);
     }
   }
-  template <typename Indexer_t>
-  PORTABLE_FORCEINLINE_FUNCTION Real GetInvScale_(const Indexer_t &&lambda) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_FORCEINLINE_FUNCTION Real GetInvScale_(Indexer_t &&lambda) const {
     Real Z = GetIonizationState_(lambda);
     if constexpr (ztype == ZSplitComponent::Electrons) {
       return robust::ratio(Z + 1, Z);
