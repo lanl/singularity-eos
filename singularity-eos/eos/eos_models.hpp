@@ -38,5 +38,6 @@
 #include <singularity-eos/eos/modifiers/relativistic_eos.hpp>
 #include <singularity-eos/eos/modifiers/scaled_eos.hpp>
 #include <singularity-eos/eos/modifiers/shifted_eos.hpp>
+#include <singularity-eos/eos/modifiers/zsplit_eos.hpp>
 
 #endif // _SINGULARITY_EOS_EOS_EOS_MODELS_HPP_

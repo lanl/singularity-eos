@@ -467,6 +467,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   }
 
   SG_ADD_MODIFIER_METHODS(T, t_);
+  SG_ADD_MODIFIER_MEAN_METHODS(t_)
 
  private:
   T t_;

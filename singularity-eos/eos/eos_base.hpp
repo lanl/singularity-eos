@@ -111,7 +111,9 @@ char *StrCat(char *destination, const char *source) {
   }                                                                                      \
   constexpr bool AllDynamicMemoryIsShareable() const {                                   \
     return t_.AllDynamicMemoryIsShareable();                                             \
-  }                                                                                      \
+  }
+
+#define SG_ADD_MODIFIER_MEAN_METHODS(t_)                                                 \
   PORTABLE_INLINE_FUNCTION                                                               \
   Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }                            \
   PORTABLE_INLINE_FUNCTION                                                               \
