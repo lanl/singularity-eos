@@ -116,7 +116,7 @@ SCENARIO("ZSplit of Ideal Gas", "[ZSplit][IdealGas][IdealElectrons]") {
               Real e_fi = eos_ze.InternalEnergyFromDensityTemperature(rho, T, lambda);
               Real e_ie = eos_ie.InternalEnergyFromDensityTemperature(rho, T, lambda);
               if (!isClose(e_fi, e_ie, 1e-12)) {
-                printf("Bad P ionized! %d %.14e %.14e\n", i, e_fi, e_ie);
+                printf("Bad sie ionized! %d %.14e %.14e\n", i, e_fi, e_ie);
                 nw += 1;
               }
             },
