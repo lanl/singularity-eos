@@ -15,7 +15,7 @@ permissions:
 jobs:
     docs:
       name: build and deploy docs
-      runs-on: ubuntu-latest
+      runs-on: ubuntu-noble
 
       steps:      
         - name: Checkout code
