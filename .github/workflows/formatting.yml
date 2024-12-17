@@ -9,7 +9,7 @@ on:
 jobs:
     formatting:
       name: Check Formatting
-      runs-on: ubuntu-noble
+      runs-on: ubuntu-22.04
 
       steps:      
         - name: Checkout code
