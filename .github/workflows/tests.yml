@@ -45,6 +45,6 @@ jobs:
                   #-DSINGULARITY_TEST_PYTHON=ON \
                   #-DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
                   #..
-            VERBOSE=1 make -j4
+            make -j4
             make install
             ctest --output-on-failure
