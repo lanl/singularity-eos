@@ -59,7 +59,6 @@ class IdealElectrons : public EosBase<IdealElectrons> {
   static constexpr const Real mp = 1.67262171e-24; // proton mass, in g.
 
   IdealElectrons() = default;
-  PORTABLE_INLINE_FUNCTION
   IdealElectrons(const MeanAtomicProperties &AZbar)
       : _AZbar(AZbar), _Cvbase(robust::ratio(kb, _gm1 * _AZbar.Abar * mp)) {
     CheckParams();
@@ -215,12 +214,15 @@ class IdealElectrons : public EosBase<IdealElectrons> {
   }
 
   // TODO(JMM): Change gamma if needed
-  static constexpr const Real _gm1 = (5. / 3.) - 1; // 3 translational DOF
-  static constexpr const Real _rho0 = 1.0;
-  static constexpr const Real _T0 = ROOM_TEMPERATURE;
-  static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
-  static constexpr const Real _dpde0 = _gm1 * _rho0;
-  static constexpr const Real _dvdt0 = 1. / (_rho0 * _T0);
+  // JMM: For some reason some cuda/HIP implementations don't like
+  // static constexpr vars. They are not getting properly translated to
+  // device, even with --expt-relaxed-constexpr
+  const Real _gm1 = (5. / 3.) - 1; // 3 translational DOF
+  const Real _rho0 = 1.0;
+  const Real _T0 = ROOM_TEMPERATURE;
+  const Real _P0 = ATMOSPHERIC_PRESSURE;
+  const Real _dpde0 = _gm1 * _rho0;
+  const Real _dvdt0 = 1. / (_rho0 * _T0);
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
   MeanAtomicProperties _AZbar;
