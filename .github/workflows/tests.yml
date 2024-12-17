@@ -40,6 +40,7 @@ jobs:
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   -DSINGULARITY_USE_V_AND_V_EOS=OFF \
                   -DSINGULARITY_PLUGINS=$(pwd)/../example/plugin \
+                  -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
                   ..
                   #-DSINGULARITY_TEST_PYTHON=ON \
                   #-DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
