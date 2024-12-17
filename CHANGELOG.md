@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)
 - [[PR439]](https://github.com/lanl/singularity-eos/pull/439) Add mean atomic mass and number to EOS API
