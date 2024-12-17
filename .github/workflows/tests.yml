@@ -28,6 +28,8 @@ jobs:
           run: |
             mkdir -p bin
             cd bin
+            ulimit -m unlimited
+            ulimit -v unlimited
             mkdir -p ${HOME}/install
             cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
                   -DSINGULARITY_USE_SPINER=ON \
@@ -41,6 +43,7 @@ jobs:
                   -DSINGULARITY_USE_V_AND_V_EOS=OFF \
                   -DSINGULARITY_PLUGINS=$(pwd)/../example/plugin \
                   -DCMAKE_LINKER=ld.gold \
+                  -DCMAKE_BUILD_TYPE=Release \
                   ..
                   #-DSINGULARITY_TEST_PYTHON=ON \
                   #-DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
