@@ -8,14 +8,16 @@ Equation of State Modifiers
 provides some internal transformation on inputs and outputs. For
 example the ``ShiftedEOS`` modifier changes the zero point energy of a
 given EOS model by shifting all energies up or down. Modifiers can be
-used to, for example, production-harden a model. Only certain
-combinations of ``EOS`` and ``modifier`` are permitted by the defualt
-``Variant``. For example, only ``IdealGas``, ``SpinerEOS``, and
-``StellarCollapse`` support the ``RelativisticEOS`` and ``UnitSystem``
-modifiers. All models support the ``ShiftedEOS`` and ``ScaledEOS``
-modifiers. However, note that modifiers do not commute, and only one
-order is supported. The ordering, inside-out, is ``UnitSystem`` or
-``RelativisticEOS``, then ``ScaledEOS``, then ``ShiftedEOS``.
+used to, for example, production-harden a model.
+
+Only certain combinations of ``EOS`` and ``modifier`` are permitted by
+the defualt ``Variant``. For example, only ``IdealGas``,
+``SpinerEOS``, and ``StellarCollapse`` support the ``RelativisticEOS``
+and ``UnitSystem`` modifiers. All models support the ``ShiftedEOS``
+and ``ScaledEOS`` modifiers. However, note that modifiers do not
+commute, and only one order is supported. The ordering, inside-out, is
+``UnitSystem`` or ``RelativisticEOS``, then ``ScaledEOS``, then
+``ShiftedEOS``.
 
 We list below the available modifiers and their constructors.
 
@@ -186,6 +188,99 @@ internal energy, and temperature. On the other hand,
 
 specifies the unit system by specifying units for time, mass, length,
 and temperature.
+
+Z-Split EOS
+-------------
+
+For 3T physics (as described in the models section) it is often
+desirable to have a separate equation of state for electrons and a
+separate equation of state for ions. The Z-split model takes a total
+equation of state and splits it into electron and ion components. The
+"Z" here signifies mean ionization state, or the average number of
+free electrons contributed per atomic nucleus, which is the mean
+atomic number in the case of full ionization, but could be smaller in
+the case of partial ionization. (It is zero for an unionized gas.) The
+physical model of Z-split can be derived from an ideal gas equation of
+state. For an ideal gas made up of electrons and ions, where all
+molecular bonds have been broken, the total pressure is given by
+
+.. math::
+
+  P_t = (\left\langle Z\right\rangle + 1) \frac{\rho}{m_p \bar{A}} k_b T
+
+where :math:`\left\langle Z\right\rangle` is the mean ionization
+state, :math:`rho` is the ion mass density (the electron ion mass
+density is negligible), :math:`m_p` is the proton mass,
+:math:`\bar{A}` is the mean atomic mass, :math:`k_b` is Boltzmann's
+constant, and :math:`T` is temperature. The contribution from
+electrons is proportional to :math:`\left\langle Z\right\rangle`.
+
+The split simply splits the total pressure into normalized
+contributions for the electrons:
+
+.. math::
+
+  P_e = \frac{\left\langle Z\right\rangle}{1 + \left\langle Z\right\rangle} P_t(\rho, T_e)
+
+and ions:
+
+.. math::
+
+  P_i = \frac{1}{1 + \left\langle Z\right\rangle} P_t(\rho, T_i)
+
+where here :math:`T_e` is the electron temperature and :math:`T_i` the
+ion temperature such that, when the temperatures are equal,
+
+.. math::
+
+  P_e + P_i = P_t
+
+The same split is applied to the specific internal energy:
+
+.. math::
+
+  \varepsilon_e = \frac{\left\langle Z\right\rangle}{1 + \left\langle Z\right\rangle} \varepsilon_t(\rho, T_e)\\
+  \varepsilon_i = \frac{1}{1 + \left\langle Z\right\rangle} \varepsilon_t(\rho, T_i)
+
+and the remaining state variables and thermodynamic derivatives can be
+derived from these relations.
+
+In ``singularity-eos``, the z-split is implemented as the templated class
+
+.. code-block:: cpp
+
+  template<ZSplitComponent ztype, typename T>
+  class ZSplit
+
+where ``ZSPlitComponent`` may either be ``ZSplitComponent::Electrons``
+or ``ZSplitComponent::Ions``. As syntactic sugar, ``ZSplitE<T>`` and
+``ZSplitI<T>`` are available. The Z-split constructor does not require
+any additional parameters, so you may construct one as, e.g.,
+
+.. code-block:: cpp
+
+  using namespace singularity
+  auto ion_eos = ZSPlitI<IdealGas>(IdealGas(gm1, Cv);
+
+and similarly for electrons,
+
+.. code-block:: cpp
+
+  auto electron_eos = ZSPlitE<IdealGas>(IdealGas(gm1, Cv);
+
+The Z-split modifier takes the ionization state as an additional
+parameter via the lambda. For example:
+
+.. code-block:: cpp
+
+  Real lambda[1] = {Z};
+  Real Pe = electron_eos.PressureFromDensityTemperature(rho, temperature, lambda);
+
+.. note::
+
+  For now, the Z-split EOS is not in the default variant provided by
+  singularity-eos. If you would like to use it, you must implement
+  your own custom variant.
 
 Composing Modifiers
 --------------------
