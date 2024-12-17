@@ -38,6 +38,7 @@ jobs:
                   -DSINGULARITY_USE_HELMHOLTZ=ON \
                   -DSINGULARITY_TEST_HELMHOLTZ=ON \
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
+                  -DSINGULARITY_USE_V_AND_V_EOS=OFF \
                   -DSINGULARITY_PLUGINS=$(pwd)/../example/plugin \
                   ..
                   #-DSINGULARITY_TEST_PYTHON=ON \

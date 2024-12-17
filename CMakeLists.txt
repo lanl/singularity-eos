@@ -85,6 +85,13 @@ cmake_dependent_option(
   SINGULARITY_USE_HELMHOLTZ "Include Helmholtz equation of state" OFF
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
 
+# Enables polynomial, carnahan starling, and NobleAbel in variant.
+# Off by default, as they are not in the default python bindings or used
+# by default in downstream codes.
+option(SINGULARITY_USE_V_AND_V_EOS
+  "Add analytic EOSs for V&V to the variant"
+  OFF)
+
 # testing options
 option(SINGULARITY_BUILD_TESTS "Compile tests" OFF)
 
