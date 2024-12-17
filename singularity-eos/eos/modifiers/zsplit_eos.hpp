@@ -193,7 +193,6 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real scale = GetScale_(lambda);
-    const Real iscale = GetInvScale_(lambda);
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt);
     sie *= scale;
     press *= scale;

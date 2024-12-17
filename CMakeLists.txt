@@ -440,7 +440,7 @@ if(SINGULARITY_BUILD_TESTS)
     FetchContent_Declare(
       Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      # or later is fine too
+      # jmm: updated Dec 17, 2024 to avoid build errors on modern gcc
       GIT_TAG v3.7.1)
     FetchContent_MakeAvailable(Catch2)
     list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
