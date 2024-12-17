@@ -33,7 +33,7 @@ jobs:
                   -DSINGULARITY_USE_SPINER=ON \
                   -DSINGULARITY_BUILD_TESTS=ON \
                   -DSINGULARITY_BUILD_EXAMPLES=ON \
-                  -DSINGULARITY_BUILD_PYTHON=OFF \
+                  -DSINGULARITY_BUILD_PYTHON=ON \
                   -DSINGULARITY_TEST_SESAME=OFF \
                   -DSINGULARITY_USE_HELMHOLTZ=ON \
                   -DSINGULARITY_TEST_HELMHOLTZ=ON \
