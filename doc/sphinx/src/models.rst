@@ -167,7 +167,7 @@ complicated.
 The 3T Model
 ``````````````
 
-In high-energy denisty physics, the so-called three-temperature (or
+In high-energy density physics, the so-called three-temperature (or
 3T) model is often employed. In this model, a material is fully or
 partially ionized. Due to the separation in masses between electrons
 and atomic nuclei, electrons come into thermal equilibrium and ions
@@ -567,7 +567,7 @@ as expected.
 The constructor takes only the ``MeanAtomicProperties`` struct, which
 is a required input:
 
-.. code-block::cpp
+.. code-block:: cpp
 
   IdealElectrons(const MeanAtomicProperties &AZbar);
 
