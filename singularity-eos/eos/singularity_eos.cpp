@@ -144,6 +144,7 @@ int init_sg_SAP_Polynomial(const int matindex, EOS *eos, const double rho0,
                            const double b1, const double b2c, const double b2e,
                            const double b3, int const *const enabled,
                            double *const vals) {
+#if SINGULARITY_USE_V_AND_V_EOS
   assert(matindex >= 0);
   EOS eosi =
       SGAPPLYMODSIMPLE(SAP_Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3));
@@ -154,6 +155,11 @@ int init_sg_SAP_Polynomial(const int matindex, EOS *eos, const double rho0,
   EOS eos_ = SGAPPLYMOD(SAP_Polynomial(rho0, a0, a1, a2c, a2e, a3, b0, b1, b2c, b2e, b3));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
+#else
+  PORTABLE_THROW_OR_ABORT("SAP Polynomial not currently supported. Please build with "
+                          "-DSINGULARITY_USE_V_AND_V_EOS");
+  return 1;
+#endif // SINGULARITY_USE_V_AND_V_EOS
 }
 
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
@@ -178,6 +184,7 @@ int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const doubl
 int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
                       const double bb, const double qq, int const *const enabled,
                       double *const vals) {
+#if SINGULARITY_USE_V_AND_V_EOS
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(NobleAbel(gm1, Cv, bb, qq));
   if (enabled[3] == 1) {
@@ -187,6 +194,11 @@ int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const doub
   EOS eos_ = SGAPPLYMOD(NobleAbel(gm1, Cv, bb, qq));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
+#else
+  PORTABLE_THROW_OR_ABORT("NobleAbel not currently supported. Please build with "
+                          "-DSINGULARITY_USE_V_AND_V_EOS");
+  return 1;
+#endif // SINGULARITY_USE_V_AND_V_EOS
 }
 
 int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
@@ -197,6 +209,7 @@ int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const doub
 int init_sg_CarnahanStarling(const int matindex, EOS *eos, const double gm1,
                              const double Cv, const double bb, const double qq,
                              int const *const enabled, double *const vals) {
+#if SINGULARITY_USE_V_AND_V_EOS
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(CarnahanStarling(gm1, Cv, bb, qq));
   if (enabled[3] == 1) {
@@ -206,6 +219,11 @@ int init_sg_CarnahanStarling(const int matindex, EOS *eos, const double gm1,
   EOS eos_ = SGAPPLYMOD(CarnahanStarling(gm1, Cv, bb, qq));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
+#else
+  PORTABLE_THROW_OR_ABORT("Carnahan Starling not currently supported. Please build with "
+                          "-DSINGULARITY_USE_V_AND_V_EOS");
+  return 1;
+#endif // SINGULARITY_USE_V_AND_V_EOS
 }
 
 int init_sg_CarnahanStarling(const int matindex, EOS *eos, const double gm1,
