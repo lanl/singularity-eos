@@ -200,8 +200,8 @@ equation of state and splits it into electron and ion components. The
 free electrons contributed per atomic nucleus, which is the mean
 atomic number in the case of full ionization, but could be smaller in
 the case of partial ionization. (It is zero for an unionized gas.) The
-physical model of Z-split can be derived from an ideal gas equation of
-state. For an ideal gas made up of electrons and ions, where all
+physical model of Z-split can be derived by approximating the
+material as an ideal gas. For an ideal gas made up of electrons and ions, where all
 molecular bonds have been broken, the total pressure is given by
 
 .. math::
