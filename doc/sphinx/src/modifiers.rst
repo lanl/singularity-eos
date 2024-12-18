@@ -192,7 +192,7 @@ and temperature.
 Z-Split EOS
 -------------
 
-For 3T physics (as described in the models section) it is often
+For 3T physics (as described in the :ref:`models section<3T-Model>`) it is often
 desirable to have a separate equation of state for electrons and a
 separate equation of state for ions. The Z-split model takes a total
 equation of state and splits it into electron and ion components. The
@@ -206,12 +206,12 @@ molecular bonds have been broken, the total pressure is given by
 
 .. math::
 
-  P_t = (\left\langle Z\right\rangle + 1) \frac{\rho}{m_p \bar{A}} k_b T
+  P_t = (\left\langle Z\right\rangle + 1) \frac{\rho}{m_p \overline{A}} k_b T
 
 where :math:`\left\langle Z\right\rangle` is the mean ionization
 state, :math:`rho` is the ion mass density (the electron ion mass
 density is negligible), :math:`m_p` is the proton mass,
-:math:`\bar{A}` is the mean atomic mass, :math:`k_b` is Boltzmann's
+:math:`\overline{A}` is the mean atomic mass, :math:`k_b` is Boltzmann's
 constant, and :math:`T` is temperature. The contribution from
 electrons is proportional to :math:`\left\langle Z\right\rangle`.
 
@@ -268,6 +268,14 @@ and similarly for electrons,
 
   auto electron_eos = ZSPlitE<IdealGas>(IdealGas(gm1, Cv);
 
+.. note::
+
+  The Z-split modifier uses the mean atomic properties methods
+  provided by the underlying equation of state to pick, e.g., the
+  total number of nuclei per unit mass. This means you must specify
+  ``MeanAtomicProperties`` when constructing the underlying equation
+  of state. If you don't specify anything, hydrogen is assumed.
+
 The Z-split modifier takes the ionization state as an additional
 parameter via the lambda. For example:
 
@@ -275,6 +283,17 @@ parameter via the lambda. For example:
 
   Real lambda[1] = {Z};
   Real Pe = electron_eos.PressureFromDensityTemperature(rho, temperature, lambda);
+
+.. warning::
+
+  Several thermodynamic properties are approximated in the z-split
+  model due to incomplete information. Notably, the specific heat and
+  bulk modulus should depend on the electron chemical potential and
+  the ionization model: how much does the ionization state change with
+  respect to temperature? However, the ionization model is typically
+  decoupled from the equation of state and treated separately. As
+  such, this dependence is neglected here. This treatment may be
+  extended in the future.
 
 .. note::
 

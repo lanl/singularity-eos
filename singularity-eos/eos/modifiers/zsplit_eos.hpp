@@ -109,6 +109,11 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
     return scale * t_.EntropyFromDensityInternalEnergy(rho, iscale * sie, lambda);
   }
 
+  // TODO(JMM): Formally, this should be d/dT (scale * sie_base) but
+  // we don't have access to d/dT scale, as it depends on d/dT <Z>
+  // which depends on the ionization model. In principle, we could
+  // request a derivative in the lambda or do something more
+  // sophisticated. We should keep that in mind going forward.
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature,
@@ -125,6 +130,12 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
     return scale * t_.SpecificHeatFromDensityInternalEnergy(rho, iscale * sie, lambda);
   }
 
+  // TODO(JMM): Formally this may also depend on the derivative of the
+  // ionization state with respect to volume along an
+  // isentrope. However, this cannot be included without more
+  // information from the ionization model. As with Cv we could in
+  // principle request a derivative in the lambda or do something more
+  // sophisticated. We should keep that in mind going forward.
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature,

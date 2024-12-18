@@ -164,6 +164,8 @@ functional forms for :math:`\Gamma` and the reference curves, the task of
 calculating a **thermodynamically consistent** temperature becomes more
 complicated.
 
+.. _3T-Model:
+
 The 3T Model
 ``````````````
 
@@ -182,11 +184,11 @@ as
 
 .. math::
 
-  n = \left\langle Z \right\rangle \frac{\rho}{\left\langle A\right\rangle m_p}
+  n = \left\langle Z \right\rangle \frac{\rho}{\overline{A} m_p}
 
 where here :math:`\left\langle Z\right\rangle` is the average number
 of electrons contributed per atom, also called mean ionization state,
-:math:`\rho` is the ion mass density, :math:`\bar{A}` is the mean
+:math:`\rho` is the ion mass density, :math:`\overline{A}` is the mean
 atomic mass (in grams per mole) of a given material and :math:`m_p` is
 the proton mass.
 
@@ -196,7 +198,7 @@ the proton mass.
   ionization state and the average atomic number, as the symbol for
   both is :math:`Z`. To disambiguate in ``singularity-eos``, we use
   overbars to reference mean atomic properties such as mean atomic
-  mass :math:`\bar{A}` and mean atomic number :math:`\bar{Z}` while we
+  mass :math:`\overline{A}` and mean atomic number :math:`\overline{Z}` while we
   use :math:`\left\langle Z\right\rangle` to denote mean ionizaiton
   state.
 
@@ -549,13 +551,13 @@ The pressure is given by the number density of electrons times
 
 .. math::
 
-  P = \frac{\rho}{m_p \bar{A}}\left\langle Z \right\rangle k_b T
+  P = \frac{\rho}{m_p \overline{A}}\left\langle Z \right\rangle k_b T
 
-The specific heat is then
+for proton mass :math:`m_p`. The specific heat is then
 
 .. math::
 
-  C_V = \frac{\left\langle Z \right\rangle k_b}{\Gamma m_p \bar{A}}
+  C_V = \frac{\left\langle Z \right\rangle k_b}{\Gamma m_p \overline{A}}
 
 so that
 
@@ -564,7 +566,7 @@ so that
   P = \Gamma \rho C_V T
 
 as expected. (Note that the total mass per nucleus isn't exactly
-:math:`\left\langle A\right\rangle m_p`, as protons and neutrons are
+:math:`\overline{A} m_p`, as protons and neutrons are
 not exactly the same mass. However, it's close enough for all intents
 and purposes.)
 
@@ -578,6 +580,22 @@ is a required input:
 Optionally reference values may be provided for the entropy
 calculation, which is computed in the same way as the standard ideal
 gas.
+
+.. note::
+
+  Since the mean ionization state is built into the heat capacity, the
+  entropy is zero until the material is ionized. This is physically
+  consistent, if there are no electrons, the total electron entropy
+  should be zero.
+
+.. note::
+
+  The electron entropy reference should probably be chosen to be
+  consistent with the chosen ionization model, such as a reference
+  temperature where ionization begins. This is about :math:`10^4`
+  Kelvin but will depend on the model and the material. This means
+  that the entropy reference temperature may be very different between
+  ions and electrons.
 
 Calls to compute state variables require the mean ionization state,
 which must be passed in the ``lambda`` parameter, e.g.,
