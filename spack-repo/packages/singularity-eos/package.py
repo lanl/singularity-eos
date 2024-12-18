@@ -79,6 +79,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
 
     variant("closure", default=True, description="Build closure module")
     variant("shared", default=False, description="Build shared libs")
+    variant("vandv", default=False, description="Enable V&V EOSs in default Singularity::Variant")
 
     plugins = {}
 
@@ -211,6 +212,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
             self.define_from_variant("SINGULARITY_USE_SPINER", "spiner"),
             self.define_from_variant("SINGULARITY_USE_SPINER_WITH_HDF5", "hdf5"),
             self.define_from_variant("BUILD_SHARED_LIBS", "shared"),
+            self.define_from_variant("SINGULARITY_USE_V_AND_V_EOS", "vandv"),
             self.define("SINGULARITY_BUILD_TESTS", self.run_tests),
             self.define(
                 "SINGULARITY_BUILD_SESAME2SPINER", "sesame" in self.spec.variants["build_extra"].value
