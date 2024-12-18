@@ -74,7 +74,7 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
 
   // Loop through cells and use the FillEos function call
   for (int i = 0; i < Ncells; ++i) {
-    double eps, temp, cv;
+    double temp, cv;
     // FillEos is very general and is capable of modifying any of the inputs,
     // so const vars cannot be passed into it. However, it is often more performant
     // than making individual function calls.

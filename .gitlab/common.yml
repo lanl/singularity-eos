@@ -10,7 +10,6 @@ default:
       aud: https://asc-git.lanl.gov
 
 .darwin_job:
-  allow_failure: true
   variables:
     CLUSTER: darwin
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p general,skylake-gold,skylake-platinum --constraint=\"(cpu_family:skylake)&ib:edr\""
@@ -25,7 +24,7 @@ default:
     - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "schedule"
     - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "pipeline"
     - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "web"
-    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "push"
+    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 .darwin_regular_mr_only_job:
   variables:
@@ -40,7 +39,6 @@ default:
     - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "pipeline"
     - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "web"
-    - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_PIPELINE_SOURCE == "push"
 
 .darwin_regular_default_branch_only_job:
   variables:
@@ -59,7 +57,6 @@ default:
     - if: $ENABLED_CLUSTERS =~ /darwin/ && $CI_MERGE_REQUEST_LABELS =~ /nightly/
 
 .rocinante_job:
-  allow_failure: true
   variables:
     CLUSTER: rocinante
     SCHEDULER_PARAMETERS: "-N 1 -A asc-ci -p ci --reservation ci --time=02:00:00"
@@ -74,13 +71,12 @@ default:
     - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "schedule"
     - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "web"
-    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "push"
+    - if: $ENABLED_CLUSTERS =~ /rocinante/ && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 .venado_job:
-  allow_failure: true
   variables:
     CLUSTER: venado
-    SCHEDULER_PARAMETERS: "-N 1 -p standard --time=02:00:00"
+    SCHEDULER_PARAMETERS: "-N 1 -A lanl_ai_g -p gpu --time=02:00:00"
   tags:
     - venado
     - batch
@@ -100,10 +96,9 @@ default:
     - if: $ENABLED_CLUSTERS =~ /venado/ && $GITLAB_USER_LOGIN =~ $VENADO_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $ENABLED_CLUSTERS =~ /venado/ && $GITLAB_USER_LOGIN =~ $VENADO_USERS && $CI_PIPELINE_SOURCE == "schedule"
     - if: $ENABLED_CLUSTERS =~ /venado/ && $GITLAB_USER_LOGIN =~ $VENADO_USERS && $CI_PIPELINE_SOURCE == "web"
-    - if: $ENABLED_CLUSTERS =~ /venado/ && $GITLAB_USER_LOGIN =~ $VENADO_USERS && $CI_PIPELINE_SOURCE == "push"
+    - if: $ENABLED_CLUSTERS =~ /venado/ && $GITLAB_USER_LOGIN =~ $VENADO_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 .rzansel_job:
-  allow_failure: true
   tags:
    - rzansel
    - batch
@@ -118,10 +113,9 @@ default:
     - if: $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "schedule"
     - if: $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "web"
-    - if: $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "push"
+    - if: $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 .rzvernal_job:
-  allow_failure: true
   tags:
    - rzvernal
    - batch
@@ -137,10 +131,9 @@ default:
     - if: $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "schedule"
     - if: $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "web"
-    - if: $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "push"
+    - if: $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 .rzadams_job:
-  allow_failure: true
   tags:
    - rzadams
    - batch
@@ -156,7 +149,7 @@ default:
     - if: $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "schedule"
     - if: $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "web"
-    - if: $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "push"
+    - if: $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 .build_and_test:
   stage: build_n_test

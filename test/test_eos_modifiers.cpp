@@ -62,7 +62,6 @@ using variadic_utils::transform_variadic_list;
 static constexpr const auto full_eos_list = tl<IdealGas>{};
 static constexpr const auto relativistic_eos_list = tl<IdealGas>{};
 static constexpr const auto unit_system_eos_list = tl<IdealGas>{};
-static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
 static constexpr const auto unit_system =
     transform_variadic_list(unit_system_eos_list, al<UnitSystem>{});
 // variadic list of eos's with shifted or scaled modifiers
@@ -135,6 +134,7 @@ SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
         Real c = 0;
         THEN("The EOS is constructed correctly") {
           auto eos_ramped = Modify<BilinearRampEOS>(eos, r0, a, b, c);
+          eos_ramped.PrintParams();
         }
       }
     }

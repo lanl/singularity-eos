@@ -38,8 +38,10 @@ class MGUsup : public EosBase<MGUsup> {
   MGUsup() = default;
   // Constructor
   MGUsup(const Real rho0, const Real T0, const Real Cs, const Real s, const Real G0,
-         const Real Cv0, const Real E0, const Real S0)
-      : _rho0(rho0), _T0(T0), _Cs(Cs), _s(s), _G0(G0), _Cv0(Cv0), _E0(E0), _S0(S0) {
+         const Real Cv0, const Real E0, const Real S0,
+         const MeanAtomicProperties &AZbar = MeanAtomicProperties())
+      : _rho0(rho0), _T0(T0), _Cs(Cs), _s(s), _G0(G0), _Cv0(Cv0), _E0(E0), _S0(S0),
+        _AZbar(AZbar) {
     CheckParams();
   }
   PORTABLE_INLINE_FUNCTION void CheckParams() const;
@@ -130,6 +132,7 @@ class MGUsup : public EosBase<MGUsup> {
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(MGUsup)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -142,6 +145,7 @@ class MGUsup : public EosBase<MGUsup> {
     static constexpr char st[]{"MGUsup Params: "};
     printf("%s rho0:%e T0:%e Cs:%e s:%e\n  G0:%e Cv0:%e E0:%e S0:%e\n", st, _rho0, _T0,
            _Cs, _s, _G0, _Cv0, _E0, _S0);
+    _AZbar.PrintParams();
     printf("\n\n");
   }
   // Density/Energy from P/T not unique, if used will give error
@@ -157,6 +161,7 @@ class MGUsup : public EosBase<MGUsup> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
   Real _rho0, _T0, _Cs, _s, _G0, _Cv0, _E0, _S0;
+  MeanAtomicProperties _AZbar;
 };
 
 PORTABLE_INLINE_FUNCTION void MGUsup::CheckParams() const {
@@ -178,6 +183,7 @@ PORTABLE_INLINE_FUNCTION void MGUsup::CheckParams() const {
   if (_Cv0 < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required MGUsup model parameter Cv0 < 0");
   }
+  _AZbar.CheckParams();
 }
 
 PORTABLE_INLINE_FUNCTION Real MGUsup::HugPressureFromDensity(Real rho) const {
@@ -370,7 +376,7 @@ MGUsup::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &b
   }
   if (output & thermalqs::temperature)
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::specific_internal_energy) sie = sie;
+  // if (output & thermalqs::specific_internal_energy) sie = sie;
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::specific_heat)
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);

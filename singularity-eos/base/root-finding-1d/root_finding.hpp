@@ -70,20 +70,20 @@ enum class Status { SUCCESS = 0, FAIL = 1 };
 */
 class RootCounts {
  private:
-  static constexpr int nbins_{15};
+  static constexpr std::size_t nbins_{15};
   mutable Real counts_[nbins_];
 
  public:
   PORTABLE_INLINE_FUNCTION
   RootCounts() {
-    for (int i{0}; i < nbins_; ++i)
+    for (std::size_t i{0}; i < nbins_; ++i)
       counts_[i] = 0;
   }
   PORTABLE_INLINE_FUNCTION void reset() {
-    for (int i{0}; i < nbins_; ++i)
+    for (std::size_t i{0}; i < nbins_; ++i)
       counts_[i] = 0;
   }
-  PORTABLE_INLINE_FUNCTION void increment(int i) const {
+  PORTABLE_INLINE_FUNCTION void increment(std::size_t i) const {
     assert(i < nbins_ && i >= 0);
 #ifdef PORTABILITY_STRATEGY_NONE
     counts_[i] += 1;
@@ -91,24 +91,24 @@ class RootCounts {
   }
   PORTABLE_INLINE_FUNCTION Real total() const {
     Real tot{1.e-20};
-    for (int i{0}; i < nbins_; ++i)
+    for (std::size_t i{0}; i < nbins_; ++i)
       tot += counts_[i];
     return tot;
   }
-  PORTABLE_INLINE_FUNCTION const Real &operator[](const int i) const {
+  PORTABLE_INLINE_FUNCTION const Real &operator[](const std::size_t i) const {
     assert(i < nbins_ && i >= 0);
     return counts_[i];
   }
-  PORTABLE_INLINE_FUNCTION Real &operator[](const int i) {
+  PORTABLE_INLINE_FUNCTION Real &operator[](const std::size_t i) {
     assert(i < nbins_ && i >= 0);
     return counts_[i];
   }
   PORTABLE_INLINE_FUNCTION void print_counts() const {
-    for (int i{0}; i < nbins_; ++i)
+    for (std::size_t i{0}; i < nbins_; ++i)
       printf("%e\n", counts_[i]);
   }
-  PORTABLE_INLINE_FUNCTION int nBins() const { return nbins_; }
-  PORTABLE_INLINE_FUNCTION int more() const { return nbins_ - 1; }
+  PORTABLE_INLINE_FUNCTION std::size_t nBins() const { return nbins_; }
+  PORTABLE_INLINE_FUNCTION std::size_t more() const { return nbins_ - 1; }
 };
 
 PORTABLE_INLINE_FUNCTION bool check_bracket(const Real ya, const Real yb) {
@@ -119,11 +119,11 @@ template <typename T>
 PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess, Real &b,
                                           Real &ya, const Real yg, Real &yb,
                                           const bool &verbose = false) {
-  constexpr int max_search_depth = 6;
+  constexpr std::size_t max_search_depth = 6;
   Real dx = b - a;
-  for (int level = 0; level < max_search_depth; level++) {
-    const int nlev = (1 << level);
-    for (int i = 0; i < nlev; i++) {
+  for (std::size_t level = 0; level < max_search_depth; level++) {
+    const std::size_t nlev = (1 << level);
+    for (std::size_t i = 0; i < nlev; i++) {
       const Real x = a + (i + 0.5) * dx;
       const Real yx = f(x);
       if (check_bracket(yx, yg)) {
@@ -158,7 +158,7 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
                                              Real &xroot,
                                              const RootCounts *counts = nullptr,
                                              const bool &verbose = false) {
-  constexpr int max_iter = SECANT_NITER_MAX;
+  constexpr std::size_t max_iter = SECANT_NITER_MAX;
   auto func = [&](const Real x) { return f(x) - ytarget; };
   Real ya = func(a);
   Real yg = func(guess);
@@ -187,9 +187,9 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
   ya *= sign;
   yb *= sign;
 
-  int b1 = 0;
-  int b2 = 0;
-  int iteration_count = 0;
+  std::size_t b1 = 0;
+  std::size_t b2 = 0;
+  std::size_t iteration_count = 0;
   while (b - a > 2.0 * xtol && (std::abs(ya) > ytol || std::abs(yb) > ytol) &&
          iteration_count < max_iter) {
     Real c = (a * yb - b * ya) / (yb - ya);
@@ -251,7 +251,7 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
                                                const bool &verbose = false,
                                                const bool &fail_on_bound_root = true) {
 
-  constexpr int max_iter = NEWTON_RAPHSON_NITER_MAX;
+  constexpr std::size_t max_iter = NEWTON_RAPHSON_NITER_MAX;
   Real _x = guess;
   Real _xold = 0.0;
   auto status = Status::SUCCESS;
@@ -259,7 +259,7 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
   Real yg;
   Real dfunc;
 
-  int iter;
+  std::size_t iter;
 
   for (iter = 0; iter < max_iter; iter++) {
     std::tie(yg, dfunc) = f(_x); // C++11 tuple unpacking
@@ -383,7 +383,7 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
   Real x_last, y, yp, ym, dyNum, dyDen, dy;
 
   Real x = xguess;
-  unsigned int iter{0};
+  std::size_t iter{0};
   for (iter = 0; iter < SECANT_NITER_MAX; ++iter) {
     x_last = x;
     dx = fabs(1.e-7 * x) + xtol;
@@ -490,7 +490,7 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
     x += 2. * xtol;
   }
   // do { // Try to find reasonable region for bisection
-  for (int i{0}; i < BISECT_REG_MAX; ++i) {
+  for (std::size_t i{0}; i < BISECT_REG_MAX; ++i) {
     dx = fabs(grow * x);
     xl = x - dx;
     xr = x + dx;
@@ -547,10 +547,10 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
                 "\til      = %.10e\n"
                 "\tir      = %.10e\n",
                 xguess, ytarget, xl, xr, fl, fr, il, ir);
-        int nx = 300;
+        std::size_t nx = 300;
         Real dx = (xmax - xmin) / (nx - 1);
         fprintf(stderr, "Area map:\nx\ty\n");
-        for (int i = 0; i < nx; i++) {
+        for (std::size_t i = 0; i < nx; i++) {
           fprintf(stderr, "%.4f\t%.4e\n", x + i * dx, f(x + i * dx));
         }
 #endif
@@ -559,7 +559,7 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
     }
   }
 
-  for (int i{0}; i < BISECT_NITER_MAX; ++i) {
+  for (std::size_t i{0}; i < BISECT_NITER_MAX; ++i) {
     Real xm = 0.5 * (xl + xr);
     Real fm = f(xm) - ytarget;
     if (fl * fm <= 0) {

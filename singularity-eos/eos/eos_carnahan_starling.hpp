@@ -38,7 +38,9 @@ using namespace eos_base;
 class CarnahanStarling : public EosBase<CarnahanStarling> {
  public:
   CarnahanStarling() = default;
-  PORTABLE_INLINE_FUNCTION CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq)
+  PORTABLE_INLINE_FUNCTION
+  CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq,
+                   const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _bb(bb), _qq(qq), _T0(ROOM_TEMPERATURE),
         _P0(ATMOSPHERIC_PRESSURE), _qp(0.0),
         _rho0(DensityFromPressureTemperature(_P0, _T0)), _vol0(robust::ratio(1.0, _rho0)),
@@ -46,18 +48,19 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
         _bmod0(_rho0 * Cv * _T0 *
                (PartialRhoZedFromDensity(_rho0) +
                 ZedFromDensity(_rho0) * ZedFromDensity(_rho0) * gm1)),
-        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1) {
+        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1), _AZbar(AZbar) {
     CheckParams();
   }
-  PORTABLE_INLINE_FUNCTION CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq, Real qp,
-                                            Real T0, Real P0)
+  PORTABLE_INLINE_FUNCTION
+  CarnahanStarling(Real gm1, Real Cv, Real bb, Real qq, Real qp, Real T0, Real P0,
+                   const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _bb(bb), _qq(qq), _T0(T0), _P0(P0), _qp(qp),
         _rho0(DensityFromPressureTemperature(P0, T0)), _vol0(robust::ratio(1.0, _rho0)),
         _sie0(Cv * T0 + qq),
         _bmod0(_rho0 * Cv * T0 *
                (PartialRhoZedFromDensity(_rho0) +
                 ZedFromDensity(_rho0) * ZedFromDensity(_rho0) * gm1)),
-        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1) {
+        _dpde0(_rho0 * ZedFromDensity(_rho0) * gm1), _AZbar(AZbar) {
     CheckParams();
   }
   CarnahanStarling GetOnDevice() { return *this; }
@@ -71,6 +74,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
     PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");
+    _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real ZedFromDensity(
@@ -221,6 +225,8 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     bmod = _bmod0;
     dpde = _dpde0;
   }
+  // Default accessors for mean atomic mass/number
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(CarnahanStarling)
@@ -235,6 +241,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     printf("Carnahan-Starling Parameters:\nGamma = %g\nCv    = %g\nb     = %g\nq     = "
            "%g\n",
            _gm1 + 1.0, _Cv, _bb, _qq);
+    _AZbar.PrintParams();
   }
   template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
@@ -253,6 +260,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   Real _T0, _P0, _qp;
   // reference values
   Real _rho0, _vol0, _sie0, _bmod0, _dpde0;
+  MeanAtomicProperties _AZbar;
   // static constexpr const Real _T0 = ROOM_TEMPERATURE;
   // static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
   static constexpr const unsigned long _preferred_input =

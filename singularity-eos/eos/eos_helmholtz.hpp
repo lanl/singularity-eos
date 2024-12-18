@@ -640,6 +640,31 @@ class Helmholtz : public EosBase<Helmholtz> {
     return gamma3 - 1.0;
   }
 
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const {
+    PORTABLE_THROW_OR_ABORT("For Helmholtz EOS, mean atomic mass is an input!\n");
+    return 1.0;
+  }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const {
+    PORTABLE_THROW_OR_ABORT("For Helmholtz EOS, mean atomic number is an input!\n");
+    return 1.0;
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    using namespace HelmUtils;
+    return lambda[Lambda::Abar];
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    using namespace HelmUtils;
+    return lambda[Lambda::Zbar];
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,

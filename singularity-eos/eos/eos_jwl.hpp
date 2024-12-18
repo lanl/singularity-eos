@@ -40,17 +40,20 @@ class JWL : public EosBase<JWL> {
  public:
   JWL() = default;
   PORTABLE_INLINE_FUNCTION JWL(const Real A, const Real B, const Real R1, const Real R2,
-                               const Real w, const Real rho0, const Real Cv)
+                               const Real w, const Real rho0, const Real Cv,
+                               const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _A(A), _B(B), _R1(R1), _R2(R2), _w(w), _rho0(rho0), _Cv(Cv),
-        _c1(robust::ratio(A, rho0 * R1)), _c2(robust::ratio(B, rho0 * R2)) {
-    assert(R1 > 0.0);
-    assert(R2 > 0.0);
+        _c1(robust::ratio(A, rho0 * R1)), _c2(robust::ratio(B, rho0 * R2)),
+        _AZbar(AZbar) {
+    PORTABLE_REQUIRE(R1 > 0.0, "Ratio of rho0 to A > 0");
+    PORTABLE_REQUIRE(R2 > 0.0, "Ratio of rho0 to B > 0");
     CheckParams();
   }
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_w > 0.0, "w > 0");
     PORTABLE_ALWAYS_REQUIRE(_rho0 > 0.0, "Positive reference density");
     PORTABLE_ALWAYS_REQUIRE(_Cv > 0.0, "Positive specific heat");
+    _AZbar.CheckParams();
   }
   JWL GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
@@ -111,6 +114,7 @@ class JWL : public EosBase<JWL> {
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(JWL)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -128,6 +132,7 @@ class JWL : public EosBase<JWL> {
     static constexpr char s1[]{"JWL Params: "};
     printf("%sA:%e B:%e R1: %e\nR2:%e w:%e rho0:%e\nCv:%e\n", s1, _A, _B, _R1, _R2, _w,
            _rho0, _Cv);
+    _AZbar.PrintParams();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
@@ -139,6 +144,7 @@ class JWL : public EosBase<JWL> {
 
  private:
   Real _A, _B, _R1, _R2, _w, _rho0, _Cv, _c1, _c2;
+  MeanAtomicProperties _AZbar;
   PORTABLE_INLINE_FUNCTION Real ReferenceEnergy(const Real rho) const;
   PORTABLE_INLINE_FUNCTION Real ReferencePressure(const Real rho) const;
   // static constexpr const char _eos_type[] = "JWL";

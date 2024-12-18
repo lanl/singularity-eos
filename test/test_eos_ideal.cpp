@@ -30,6 +30,7 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::IdealGas;
+using singularity::MeanAtomicProperties;
 using EOS = singularity::Variant<IdealGas>;
 
 SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
@@ -80,6 +81,44 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
   }
 }
 
+SCENARIO("Ideal gas mean atomic properties",
+         "[IdealGas][MeanAtomicMass][MeanAtomicNumber]") {
+  constexpr Real Cv = 5.0;
+  constexpr Real gm1 = 0.4;
+  constexpr Real Abar = 4.0; // Helium
+  constexpr Real Zbar = 2.0;
+  const MeanAtomicProperties azbar(Abar, Zbar);
+  GIVEN("An ideal gas initialized with mean atomic poroperties") {
+    EOS host_eos = IdealGas(gm1, Cv, azbar);
+    WHEN("We evaluate it on host") {
+      Real Ab_eval = host_eos.MeanAtomicMass();
+      Real Zb_eval = host_eos.MeanAtomicNumber();
+      THEN("We get the right answer") {
+        REQUIRE(isClose(Ab_eval, Abar, 1e-12));
+        REQUIRE(isClose(Zb_eval, Zbar, 1e-12));
+      }
+    }
+    WHEN("We evaluate it on device, using a loop") {
+      constexpr int N = 100;
+      auto device_eos = host_eos.GetOnDevice();
+      int nwrong = 0;
+      portableReduce(
+          "Check mean atomic number", 0, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            double rho = i;
+            double T = 100.0 * i;
+            double Ab_eval = device_eos.MeanAtomicMassFromDensityTemperature(rho, T);
+            double Zb_eval = device_eos.MeanAtomicNumberFromDensityTemperature(rho, T);
+            nw += !(isClose(Ab_eval, Abar, 1e-12)) + !(isClose(Zb_eval, Zbar, 1e-12));
+          },
+          nwrong);
+      REQUIRE(nwrong == 0);
+      device_eos.Finalize();
+    }
+    host_eos.Finalize();
+  }
+}
+
 // A non-standard pattern where we do a reduction
 class CheckPofRE {
  public:
@@ -103,10 +142,10 @@ class CheckPofRE {
   int nwrong = 0;
 
  private:
-  int N_;
   Real *P_;
   Real *rho_;
   Real *sie_;
+  int N_;
 };
 SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
   GIVEN("An ideal gas, and some device memory") {
@@ -136,7 +175,7 @@ SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
           });
       THEN("The vector Evaluate API can be used to compare") {
         CheckPofRE my_op(P, rho, sie, N);
-        eos_device.Evaluate(my_op);
+        eos_device.EvaluateHost(my_op);
         REQUIRE(my_op.nwrong == 0);
       }
     }

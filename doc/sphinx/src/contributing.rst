@@ -653,7 +653,7 @@ number :math:`x` is represented as a mantissa and an exponent in base
 
    x = m 2^e
 
-for mantissa :math:`m` and exponent :math:`e`. The mantiss is
+for mantissa :math:`m` and exponent :math:`e`. The mantissa is
 guaranteed to be on the interval :math:`[1/2, 1)`. The standard
 library of most low-level languages provides a performant and portable
 routine to pick apart this represnetation, ``frexp``, which given a
@@ -667,34 +667,42 @@ of the mantissa plus the exponent:
    \lg(x) = \lg(m) + e
 
 Therefore, if we can find a fast, invertible approximation to
-:math:`\lg(m)`, we will have achieved our goal. It turns out the
-expression
+:math:`\lg(m)`, we will have achieved our goal. The linear
+interpolation of :math:`\lg(m)` on the given interval is
 
 .. math::
 
    2 (x - 1)
 
-works pretty well, so we use that. (To convince yourself of this note
-that for :math:`x=1/2` this expression returns -1 and for :math:`x=1`,
-it returns 0, which are the correct values of :math:`\lg(x)` at the
-bounds of the interval.) Thus our approximate, invertible expression
-for :math:`\lg` is just
+and the quadratic is
 
 .. math::
 
-   2 (m - 1) + e
+  -\frac{4}{3} (m -2) (m - 1)
 
-for the mantissa and exponent extracted via ``frexp``. This differs
-from :math:`lg` by a maximum of about 0.1, which translates to at most
-a 25 percent difference. As discussed above, however, the function
-itself is an exact representation of itself and the difference from
-:math:`lg` is acceptable.
+where the former produces a function that is piecewise :math:`C^1` and
+everywhere continuous. The latter produces a function that is
+everywhere :math:`C^1` and piecewise :math:`C^2`. Both functions are
+exactly exactly invertible. To invert, we use the built in function
+that inverts ``frexp``, ``ldexp``, which combines the mantissa and
+exponent into the original floating point representation.
 
-To invert, we use the built in function that inverts ``frexp``,
-``ldexp``, which combines the mantissa and exponent into the original
-floating point representation.
+While these functions are not exactly logarithms, they do work for
+building logarithmic grids. The smoothness of the transformation
+mapping from linear to "not-quite-log" space does matter for
+interpolation, however. Linear interpolation in "not-quite-log" space
+converges at second order only in the :math:`L^1` norm for the linear
+version of the approximate log. The quadratic version of the fast log
+provides second-order convergence in all norms, however.
 
-This approach is described in more detail in our `short note`_ on the topic.
+Finally, while ``frexp`` and ``ldexp`` are portable and performant,
+they are less performant than hand-implemented, low-level methods that
+leverage the bitwise structure of floating point numbers. These
+"bithacked" or "integer aliased" implementations are what are used in
+practice in the code.
+
+This approach is described in more detail in our `short note`_ on the
+topic.
 
 .. _Short note: https://arxiv.org/abs/2206.08957
 

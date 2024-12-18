@@ -39,9 +39,10 @@ class Gruneisen : public EosBase<Gruneisen> {
   PORTABLE_INLINE_FUNCTION
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv,
-            const Real rho_max)
+            const Real rho_max,
+            const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
-        _Cv(Cv), _rho_max(rho_max) {
+        _Cv(Cv), _rho_max(rho_max), _AZbar(AZbar) {
     // Warn user when provided rho_max is greater than the computed rho_max
 #ifndef NDEBUG
     const Real computed_rho_max = ComputeRhoMax(s1, s2, s3, rho0);
@@ -58,9 +59,11 @@ class Gruneisen : public EosBase<Gruneisen> {
   // Constructor when rho_max isn't specified automatically determines _rho_max
   PORTABLE_INLINE_FUNCTION
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
-            const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
+            const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv,
+            const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _C0(C0), _s1(s1), _s2(s2), _s3(s3), _G0(G0), _b(b), _rho0(rho0), _T0(T0), _P0(P0),
-        _Cv(Cv), _rho_max(RHOMAX_SAFETY * ComputeRhoMax(s1, s2, s3, rho0)) {}
+        _Cv(Cv), _rho_max(RHOMAX_SAFETY * ComputeRhoMax(s1, s2, s3, rho0)),
+        _AZbar(AZbar) {}
   static PORTABLE_INLINE_FUNCTION Real ComputeRhoMax(const Real s1, const Real s2,
                                                      const Real s3, const Real rho0);
   PORTABLE_INLINE_FUNCTION
@@ -71,6 +74,7 @@ class Gruneisen : public EosBase<Gruneisen> {
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Non-negative heat capacity required");
     PORTABLE_ALWAYS_REQUIRE(_rho_max > _rho0,
                             "Maximum density must be greater than reference");
+    _AZbar.CheckParams();
   }
   PORTABLE_INLINE_FUNCTION Real
   MaxStableDensityAtTemperature(const Real temperature) const;
@@ -150,6 +154,7 @@ class Gruneisen : public EosBase<Gruneisen> {
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(Gruneisen)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -163,6 +168,7 @@ class Gruneisen : public EosBase<Gruneisen> {
     printf("%s C0:%e s1:%e s2:%e s3:%e\n  G0:%e b:%e rho0:%e T0:%e\n  P0:%eCv:%e "
            "rho_max:%e\n",
            s1, _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max);
+    _AZbar.PrintParams();
   }
   template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
@@ -174,6 +180,7 @@ class Gruneisen : public EosBase<Gruneisen> {
 
  private:
   Real _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max;
+  MeanAtomicProperties _AZbar;
   // static constexpr const char _eos_type[] = {"Gruneisen"};
   PORTABLE_INLINE_FUNCTION
   Real Gamma(const Real rho_in) const {
@@ -359,14 +366,14 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 Gruneisen::MinInternalEnergyFromDensity(const Real rho_in, Indexer_t &&lambda) const {
-  const Real rho = std::min(rho_in, _rho_max);
+  // const Real rho = std::min(rho_in, _rho_max);
   MinInternalEnergyIsNotEnabled("Gruneisen");
   return 0.0;
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityInternalEnergy(
     const Real rho_in, const Real sie, Indexer_t &&lambda) const {
-  const Real rho = std::min(rho_in, _rho_max);
+  // const Real rho = std::min(rho_in, _rho_max);
   EntropyIsNotEnabled("Gruneisen");
   return 1.0;
 }

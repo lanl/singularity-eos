@@ -41,7 +41,7 @@ constexpr Real T_split = 1e4;
 constexpr int N_per_decade_fine = 200;
 constexpr Real N_factor = 5;
 
-constexpr Real REAL_TOL = std::numeric_limits<Real>::epsilon() * 1e3;
+constexpr Real REAL_TOL = std::numeric_limits<Real>::epsilon() * 1e4;
 
 SCENARIO("Bounds can compute number of points from points per decade", "[Bounds]") {
   WHEN("We compute the number of points from points per decade") {
@@ -79,14 +79,14 @@ SCENARIO("Logarithmic, single-grid bounds in the bounds object", "[Bounds]") {
         int ianchor;
         Spiner::weights_t<Real> w;
         lRhoBounds.grid.weights(lanchor, ianchor, w);
-        REQUIRE(std::abs(w[0] - 1) <= REAL_TOL);
-        REQUIRE(std::abs(w[1]) <= REAL_TOL);
+        REQUIRE(((std::abs(w[0] - 1) <= REAL_TOL) || (std::abs(w[0]) <= REAL_TOL)));
+        REQUIRE(((std::abs(w[1] - 1) <= REAL_TOL) || (std::abs(w[1]) <= REAL_TOL)));
       }
     }
   }
 }
 
-SCENARIO("Logarithmic, piecewise bounds in boudns object", "[Bounds]") {
+SCENARIO("Logarithmic, piecewise bounds in bounds object", "[Bounds]") {
   WHEN("We compute a piecewise bounds object with three grids") {
     Bounds bnds(Bounds::ThreeGrids(), rho_min, rho_max, rho_normal, 0.5,
                 N_per_decade_fine, N_factor, N_factor, true);

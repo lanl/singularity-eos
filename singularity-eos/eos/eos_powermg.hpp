@@ -38,8 +38,10 @@ class PowerMG : public EosBase<PowerMG> {
   PowerMG() = default;
   // Constructor
   PowerMG(const Real rho0, const Real T0, const Real G0, const Real Cv0, const Real E0,
-          const Real S0, const Real Pmin, const Real *expconsts)
-      : _rho0(rho0), _T0(T0), _G0(G0), _Cv0(Cv0), _E0(E0), _S0(S0), _Pmin(Pmin) {
+          const Real S0, const Real Pmin, const Real *expconsts,
+          const MeanAtomicProperties &AZbar = MeanAtomicProperties())
+      : _rho0(rho0), _T0(T0), _G0(G0), _Cv0(Cv0), _E0(E0), _S0(S0), _Pmin(Pmin),
+        _AZbar(AZbar) {
     _InitializePowerMG(expconsts);
     CheckParams();
     if (_Pmin >= 0.0) {
@@ -136,6 +138,7 @@ class PowerMG : public EosBase<PowerMG> {
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(PowerMG)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -167,6 +170,7 @@ class PowerMG : public EosBase<PowerMG> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
   Real _rho0, _T0, _G0, _Cv0, _E0, _S0, _Pmin;
+  MeanAtomicProperties _AZbar;
   static constexpr const int PressureCoeffsK0toK40Size = 41;
   int _M;
   Real _K0toK40[PressureCoeffsK0toK40Size];
@@ -194,6 +198,7 @@ PORTABLE_INLINE_FUNCTION void PowerMG::CheckParams() const {
   if (_K0toK40[0] < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required PowerMG model parameter K0 < 0");
   }
+  _AZbar.CheckParams();
 }
 
 inline void PowerMG::_InitializePowerMG(const Real *K0toK40input) {
@@ -452,7 +457,7 @@ PowerMG::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &
   }
   if (output & thermalqs::temperature)
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::specific_internal_energy) sie = sie;
+  // if (output & thermalqs::specific_internal_energy) sie = sie;
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::specific_heat)
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);

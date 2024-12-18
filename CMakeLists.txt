@@ -32,6 +32,7 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 set(SINGULARITY_GOLDFILES_VERSION "goldfiles-1.8.0")
 set(SINGULARITY_GOLDFILE_HASH
     249772f3314c4b6b9386aa08895280698ae905ef188f4383b819f28c1484603b)
+set(DOWNLOAD_EXTRACT_TIMESTAMP ON)
 
 # ------------------------------------------------------------------------------#
 # Options
@@ -45,6 +46,14 @@ cmake_dependent_option(
   "SINGULARITY_USE_SPINER" OFF)
 
 option(SINGULARITY_USE_FORTRAN "Enable fortran bindings" ON)
+# Optionally build these if you want to build/test the fortran
+# infrastructure without invoking a fortran compiler If fortran is
+# off, you can set this. If fortran is on, it's forced to ON and is
+# not set-able.
+cmake_dependent_option(SINGULARITY_BUILD_FORTRAN_BACKEND
+  "Build the C++ code to which the fortran bindings bind"
+  OFF "NOT SINGULARITY_USE_FORTRAN" ON)
+
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
 option(SINGULARITY_EOSPAC_ENABLE_SHMEM
@@ -94,18 +103,20 @@ cmake_dependent_option(
 # modify flags options
 option(SINGULARITY_BETTER_DEBUG_FLAGS "Better debug flags for singularity" ON)
 option(SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
+option(SINGULARITY_STRICT_WARNINGS "Make warnings strict" OFF)
 
 # toggle code options
-option(SINGULARITY_USE_SINGLE_LOGS
-       "Use single precision logs. Can harm accuracy." OFF)
 option(SINGULARITY_USE_TRUE_LOG_GRIDDING
-       "Use grids that conform to log spacing." OFF)
-# TODO(JMM): Should this automatically be activated when true log gridding is
-# off?
-cmake_dependent_option(
-  SINGULARITY_USE_HIGH_RISK_MATH
-  "Use integer aliased logs, may not be portable" OFF
-  "NOT SINGULARITY_USE_TRUE_LOG_GRIDDING" OFF)
+  "Use grids that conform to log spacing." OFF)
+cmake_dependent_option(SINGULARITY_USE_SINGLE_LOGS
+  "Use single precision logs. Only available for true log gridding. Can harm accuracy."
+  OFF "SINGULARITY_USE_TRUE_LOG_GRIDDING" OFF)
+option(SINGULARITY_NQT_ORDER_1
+  "In NQT logs, use first order. Faster but less accurate."
+  OFF)
+option(SINGULARITY_NQT_PORTABLE
+  "In NQT logs, use portable, rather than bithacked implementation. Slower, but more likely to function on exotic architectures."
+  OFF)
 
 # misc options
 option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
@@ -125,6 +136,26 @@ option(SINGULARITY_PATCH_MPARK_VARIANT
 set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
 set(SINGULARITY_VARIANT "singularity-eos/eos/default_variant.hpp" CACHE STRING
   "The include path for the file containing the definition of singularity::EOS.")
+
+# Detect ARM architecture
+set(SINGULARITY_ON_ARM OFF CACHE BOOL "We are running on an ARM system")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|aarch64)")
+    if (NOT SINGULARITY_USE_CUDA)
+      message(STATUS
+        "ARM architecture detected: ${CMAKE_SYSTEM_PROCESSOR}")
+      set(SINGULARITY_ON_ARM ON CACHE BOOL
+        "We are running on an ARM system")
+    endif()
+endif()
+
+if (SINGULAIRTY_ON_ARM)
+  if (NOT SINGULARITY_USE_TRUE_LOG_GRIDDING)
+    message(WARNING
+      "Fast logs not necessarily better on ARM CPU systems. "
+      "You may wish to build with "
+      "-DSINGULARITY_USE_TRUE_LOG_GRIDDING=ON.")
+  endif()
+endif()
 
 # ------------------------------------------------------------------------------#
 # singularity-eos Library
@@ -161,6 +192,15 @@ include(CMakeDetermineCCompiler)
 if(SINGULARITY_USE_FORTRAN)
   enable_language(Fortran)
   include(CMakeDetermineFortranCompiler)
+endif()
+
+# Big endianness
+include(TestBigEndian)
+TEST_BIG_ENDIAN(IS_BIG_ENDIAN)
+if (BIG_ENDIAN)
+  message(WARNING "Big endian detected! "
+    "Integer aliasing as currently implemented will not function. "
+    "Please set -DSINGULARITY_NQT_PORTABLE=ON.")
 endif()
 
 include(GNUInstallDirs)
@@ -254,17 +294,34 @@ if(SINGULARITY_BUILD_SESAME2SPINER)
   add_subdirectory(sesame2spiner)
 endif()
 
+# Define the full version as a string macro
+target_compile_definitions(singularity-eos_Interface INTERFACE
+    SINGULARITY_VERSION=\"${PROJECT_VERSION}\"
+)
+
+# Optionally, define major, minor, and patch versions separately
+target_compile_definitions(singularity-eos_Interface INTERFACE
+    SINGULARITY_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    SINGULARITY_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    SINGULARITY_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+)
+
 # defines
-if(SINGULARITY_USE_SINGLE_LOGS)
-  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SINGLE_LOGS)
-endif()
-if(SINGULARITY_USE_HIGH_RISK_MATH)
-  target_compile_definitions(singularity-eos_Interface
-                             INTERFACE SINGULARITY_USE_HIGH_RISK_MATH)
-endif()
 if (SINGULARITY_USE_TRUE_LOG_GRIDDING)
   target_compile_definitions(singularity-eos_Interface
     INTERFACE SINGULARITY_USE_TRUE_LOG_GRIDDING)
+endif()
+if(SINGULARITY_USE_SINGLE_LOGS)
+  target_compile_definitions(singularity-eos_Interface
+    INTERFACE SINGULARITY_USE_SINGLE_LOGS)
+endif()
+if(SINGULARITY_NQT_ORDER_1)
+  target_compile_definitions(singularity-eos_Interface
+    INTERFACE SINGULARITY_NQT_ORDER_1)
+endif()
+if(SINGULARITY_NQT_PORTABLE)
+  target_compile_definitions(singularity-eos_Interface
+    INTERFACE SINGULARITY_NQT_PORTABLE)
 endif()
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_TEST_SESAME)
@@ -504,6 +561,10 @@ target_compile_options(
          > # release
          > # cuda
 )
+if (SINGULARITY_STRICT_WARNINGS)
+  target_compile_options(singularity-eos_Interface INTERFACE
+    -Wall -Werror -Wno-unknown-pragmas)
+endif()
 
 if(TARGET singularity-eos_Library)
   target_compile_options(singularity-eos_Library PRIVATE ${xlfix})
@@ -541,6 +602,7 @@ endif()
 # ----------------------------------------------------------------------------#
 
 if(SINGULARITY_BUILD_TESTS)
+  include(CTest)
   enable_testing()
   add_subdirectory(test)
 endif()

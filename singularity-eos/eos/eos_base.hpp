@@ -41,7 +41,7 @@ constexpr std::size_t MAX_NUM_CHARS = 121;
 // Cuda doesn't have strcat, so we implement it ourselves
 PORTABLE_FORCEINLINE_FUNCTION
 char *StrCat(char *destination, const char *source) {
-  int i, j; // not in loops because they're re-used.
+  std::size_t i, j; // not in loops because they're re-used.
 
   // specifically avoid strlen, which isn't on GPU
   for (i = 0; destination[i] != '\0'; i++) {
@@ -49,9 +49,10 @@ char *StrCat(char *destination, const char *source) {
   // assumes destination has enough memory allocated
   for (j = 0; source[j] != '\0'; j++) {
     // MAX_NUM_CHARS-1 to leave room for null terminator
-    PORTABLE_REQUIRE((i + j) < MAX_NUM_CHARS - 1,
+    std::size_t ipj = i + j;
+    PORTABLE_REQUIRE(ipj < MAX_NUM_CHARS - 1,
                      "Concat string must be within allowed size");
-    destination[i + j] = source[j];
+    destination[ipj] = source[j];
   }
   // null terminate destination string
   destination[i + j] = '\0';
@@ -83,6 +84,16 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityTemperature;                      \
   using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityInternalEnergy;
 
+// This macro adds these methods to a derived class. Due to scope,
+// these can't be implemented in the base class, unless we make
+// _AZbar public. Not all EOS's may want these default functions
+// TODO(JMM): Should we go the alternate route and make _AZbar public?
+#define SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)                                     \
+  PORTABLE_INLINE_FUNCTION                                                               \
+  Real MeanAtomicMass() const { return _AZbar.Abar; }                                    \
+  PORTABLE_INLINE_FUNCTION                                                               \
+  Real MeanAtomicNumber() const { return _AZbar.Zbar; }
+
 // This macro adds several methods that most modifiers will
 // want. Not ALL modifiers will want these methods as written here,
 // so use this macro with care.
@@ -100,7 +111,11 @@ char *StrCat(char *destination, const char *source) {
   }                                                                                      \
   constexpr bool AllDynamicMemoryIsShareable() const {                                   \
     return t_.AllDynamicMemoryIsShareable();                                             \
-  }
+  }                                                                                      \
+  PORTABLE_INLINE_FUNCTION                                                               \
+  Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }                            \
+  PORTABLE_INLINE_FUNCTION                                                               \
+  Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
 
 class Factor {
   Real value_ = 1.0;
@@ -132,6 +147,34 @@ struct Transform {
 };
 
 /*
+  This is a utility struct used to bundle mean atomic
+  mass/number. Used in the default implementations of MeanAtomicMass
+  and MeanAtomicNumber provided by the base class.
+ */
+struct MeanAtomicProperties {
+  Real Abar, Zbar;
+
+  // default is hydrogen
+  static constexpr Real DEFAULT_ABAR = 1.0;
+  static constexpr Real DEFAULT_ZBAR = 1.0;
+
+  PORTABLE_INLINE_FUNCTION
+  MeanAtomicProperties(Real Abar_, Real Zbar_) : Abar(Abar_), Zbar(Zbar_) {}
+  PORTABLE_INLINE_FUNCTION
+  MeanAtomicProperties() : Abar(DEFAULT_ABAR), Zbar(DEFAULT_ZBAR) {}
+  PORTABLE_INLINE_FUNCTION
+  void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(Abar > 0, "Positive mean atomic mass");
+    PORTABLE_ALWAYS_REQUIRE(Zbar > 0, "Positive mean atomic number");
+  }
+  PORTABLE_INLINE_FUNCTION
+  void PrintParams() const {
+    printf("      Abar  = %g\n", Abar);
+    printf("      Zbar  = %g\n", Zbar);
+  }
+};
+
+/*
 This is a CRTP that allows for static inheritance so that default behavior for
 various member functions can be defined.
 https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
@@ -148,8 +191,13 @@ class EosBase {
 
   // Generic evaluator
   template <typename Functor_t>
-  constexpr void Evaluate(Functor_t &f) const {
-    CRTP copy = *(static_cast<CRTP const *>(this));
+  PORTABLE_INLINE_FUNCTION void EvaluateDevice(const Functor_t f) const {
+    const CRTP copy = *(static_cast<CRTP const *>(this));
+    f(copy);
+  }
+  template <typename Functor_t>
+  void EvaluateHost(Functor_t &f) const {
+    const CRTP copy = *(static_cast<CRTP const *>(this));
     f(copy);
   }
 
@@ -732,6 +780,29 @@ class EosBase {
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
+
+  // JMM: EOS's which encapsulate a mix or reactions may wish to vary
+  // this.  For example, Helmholtz and StellarCollapse. This isn't the
+  // default, so by default the base class provides a specialization.
+  // for models where density and temperature are required, the EOS
+  // developer is in charge of either throwing an error or choosing
+  // reasonable defaults.
+  // TODO(JMM): Should we provide vector implementations if we depend
+  // on rho, T, etc?
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    return copy.MeanAtomicMass();
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    return copy.MeanAtomicNumber();
+  }
 
   // Default entropy behavior is to cause an error
   PORTABLE_FORCEINLINE_FUNCTION

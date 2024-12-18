@@ -80,6 +80,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };
   };
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT);
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
                               bool reproduciblity_mode = false);
@@ -307,6 +308,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
+  MeanAtomicProperties AZbar_;
   int matid_;
   bool reproducible_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.
@@ -349,6 +351,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   };
   using STricks = table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
 
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie);
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
@@ -538,6 +541,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] = "SpinerEOSDependsRhoSie";
   int matid_;
+  MeanAtomicProperties AZbar_;
   bool reproducible_;
   mutable RootFinding1D::Status status_;
   static constexpr const int _n_lambda = 1;
@@ -622,6 +626,14 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   herr_t status = H5_SUCCESS;
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  int log_type = FastMath::LogType::NQT1;
+  if (H5LTfind_attribute(file, SP5::logType)) {
+    H5LTget_attribute_int(file, "/", SP5::logType, &log_type);
+  }
+  PORTABLE_ALWAYS_REQUIRE(
+      log_type == FastMath::Settings::log_type,
+      "Log mode used at runtime must be identical to the one used to generate the file!");
+
   matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
   lTGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT);
   coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
@@ -708,6 +720,11 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   status += H5LTget_attribute_double(file, matid_str.c_str(),
                                      SP5::Material::normalDensity, &rhoNormal_);
   rhoNormal_ = std::abs(rhoNormal_);
+  // Mean atomic mass and mean atomic number
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicMass, &(AZbar_.Abar));
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
 
   // tables
   status += P_.loadHDF(lTGroup, SP5::Fields::P);
@@ -1544,6 +1561,11 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   status += H5LTget_attribute_double(file, matid_str.c_str(),
                                      SP5::Material::normalDensity, &rhoNormal_);
   rhoNormal_ = std::abs(rhoNormal_);
+  // Mean atomic mass and mean atomic number
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicMass, &(AZbar_.Abar));
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
 
   // sometimes independent variables
   status += sie_.loadHDF(lTGroup, SP5::Fields::sie);

@@ -38,10 +38,13 @@ using namespace robust;
 class Vinet : public EosBase<Vinet> {
  public:
   Vinet() = default;
-  // Constructor
+  // TODO(JMM): Should Vinet and MGPower take AZbar before
+  // the series coefficients? Would require an overload...
   Vinet(const Real rho0, const Real T0, const Real B0, const Real BP0, const Real A0,
-        const Real Cv0, const Real E0, const Real S0, const Real *expconsts)
-      : _rho0(rho0), _T0(T0), _B0(B0), _BP0(BP0), _A0(A0), _Cv0(Cv0), _E0(E0), _S0(S0) {
+        const Real Cv0, const Real E0, const Real S0, const Real *expconsts,
+        const MeanAtomicProperties &AZbar = MeanAtomicProperties())
+      : _rho0(rho0), _T0(T0), _B0(B0), _BP0(BP0), _A0(A0), _Cv0(Cv0), _E0(E0), _S0(S0),
+        _AZbar(AZbar) {
     CheckParams();
     InitializeVinet(expconsts);
   }
@@ -131,6 +134,7 @@ class Vinet : public EosBase<Vinet> {
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Vinet)
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -161,6 +165,7 @@ class Vinet : public EosBase<Vinet> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   Real _rho0, _T0, _B0, _BP0, _A0, _Cv0, _E0, _S0;
+  MeanAtomicProperties _AZbar;
   static constexpr const int PressureCoeffsd2tod40Size = 39;
   static constexpr const int VinetInternalParametersSize = PressureCoeffsd2tod40Size + 4;
   Real _VIP[VinetInternalParametersSize], _d2tod40[PressureCoeffsd2tod40Size];
@@ -189,6 +194,7 @@ PORTABLE_INLINE_FUNCTION void Vinet::CheckParams() const {
   if (_Cv0 < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required Vinet model parameter Cv0 < 0");
   }
+  _AZbar.CheckParams();
 }
 
 inline void Vinet::InitializeVinet(const Real *d2tod40input) {
@@ -395,7 +401,7 @@ Vinet::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bm
   }
   Real Vout[8];
   Vinet_F_DT_func(rho, temp, Vout);
-  if (output & thermalqs::temperature) temp = temp;
+  // if (output & thermalqs::temperature) temp = temp;
   if (output & thermalqs::specific_internal_energy) sie = Vout[0];
   if (output & thermalqs::pressure) press = Vout[1];
   if (output & thermalqs::specific_heat) cv = Vout[4];

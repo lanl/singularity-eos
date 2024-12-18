@@ -162,6 +162,34 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
 
   // Properties of an NSE EOS
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const {
+    PORTABLE_THROW_OR_ABORT(
+        "For Stellar Collapse EOS, mean atomic mass is a state variable!\n");
+    return 1.0;
+  }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const {
+    PORTABLE_THROW_OR_ABORT(
+        "For Stellar Collapse EOS, mean atomic number is a state variable!\n");
+    return 1.0;
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real lRho, lT, Ye;
+    getLogsFromRhoT_(rho, T, lambda, lRho, lT, Ye);
+    return Abar_.interpToReal(Ye, lT, lRho);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    Real lRho, lT, Ye;
+    getLogsFromRhoT_(rho, T, lambda, lRho, lT, Ye);
+    return Zbar_.interpToReal(Ye, lT, lRho);
+  }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void MassFractionsFromDensityTemperature(
       const Real rho, const Real temperature, Real &Xa, Real &Xh, Real &Xn, Real &Xp,
@@ -225,6 +253,17 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // Collapse, so I think we can leave it here for now?
   inline static void dataBoxToFastLogs(DataBox &db, DataBox &scratch,
                                        bool dependent_var_log);
+  inline static Real log10toNQT(const Real x) {
+    return FastMath::log10(std::pow(10, x));
+  };
+  inline static Real NQTtolog10(const Real x) { return std::log10(FastMath::pow10(x)); };
+  inline static auto gridToNQT(const Grid_t &g, const int n) {
+    const Real l10min = g.min();
+    const Real l10max = g.max();
+    const Real lmin = log10toNQT(l10min);
+    const Real lmax = log10toNQT(l10max);
+    return Grid_t(lmin, lmax, n);
+  };
 
   std::size_t DynamicMemorySizeInBytes() const;
   std::size_t DumpDynamicMemory(char *dst);
@@ -390,7 +429,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
 
   // offsets must be non-negative
-  Real lEOffset_;
+  Real lEOffset_ = 0;                      // defaults to zero
   static constexpr Real lRhoOffset_ = 0.0; // TODO(JMM): Address if this ever changes
   static constexpr Real lTOffset_ = 0.0;
   static constexpr Real lPOffset_ = 0.0;
@@ -407,6 +446,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   static constexpr Real DELTASMOOTH = 10.0;
   static constexpr int MF_W = 3;
   static constexpr int MF_S = (2 * MF_W + 1) * (2 * MF_W + 1) * (2 * MF_W + 1);
+
+  static constexpr Real DENSE_FACTOR = 1.25;
 };
 
 // ======================================================================
@@ -836,9 +877,19 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
     medianFilter_(dPdE_);
     medianFilter_(dEdT_);
   }
+  computeBulkModulus_();
 
   // Re-interpolate tables in case we want fast-log gridding
-  DataBox scratch(numYe_, numT_, numRho_);
+  int nT_new = static_cast<int>(numT_ * DENSE_FACTOR);
+  int nR_new = static_cast<int>(numRho_ * DENSE_FACTOR);
+  DataBox scratch(numYe_, nT_new, nR_new);
+
+  Grid_t gT_new = gridToNQT(lP_.range(1), nT_new);
+  Grid_t gR_new = gridToNQT(lP_.range(0), nR_new);
+  scratch.setRange(2, lP_.range(2));
+  scratch.setRange(1, gT_new);
+  scratch.setRange(0, gR_new);
+
   // logged quantities
   dataBoxToFastLogs(lP_, scratch, true);
   dataBoxToFastLogs(lE_, scratch, true);
@@ -854,8 +905,12 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   dataBoxToFastLogs(Xp_, scratch, false);
   dataBoxToFastLogs(Abar_, scratch, false);
   dataBoxToFastLogs(Zbar_, scratch, false);
+  // And bulk modulus
+  dataBoxToFastLogs(lBMod_, scratch, true);
 
   // Generate bounds
+  numT_ = nT_new;
+  numRho_ = nR_new;
   Ye_grid = lP_.range(2);
   lT_grid = lP_.range(1);
   lRho_grid = lP_.range(0);
@@ -866,9 +921,8 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
   lRhoMin_ = lRho_grid.min();
   lRhoMax_ = lRho_grid.max();
 
-  // Finally, compute bulk modulus, hot and cold curves from
+  // Finally compute hot and cold curves from
   // re-interpolated data.
-  computeBulkModulus_();
   computeColdAndHotCurves_();
 }
 
@@ -942,30 +996,17 @@ inline void StellarCollapse::readSCDset_(const hid_t &file_id, const std::string
 // Assume index 3 is linear, indexes 2 and 1 are logarithmic
 inline void StellarCollapse::dataBoxToFastLogs(DataBox &db, DataBox &scratch,
                                                bool dependent_var_log) {
-  auto log10toNQT = [](const Real x) { return FastMath::log10(std::pow(10, x)); };
-  auto NQTtolog10 = [](const Real x) { return std::log10(FastMath::pow10(x)); };
-  auto gridToNQT = [&](const Grid_t &g) {
-    const Real l10min = g.min();
-    const Real l10max = g.max();
-    const Real lmin = log10toNQT(l10min);
-    const Real lmax = log10toNQT(l10max);
-    return Grid_t(lmin, lmax, g.nPoints());
-  };
-
-  auto &r2 = db.range(2);
-  auto &r1 = db.range(1);
-  auto &r0 = db.range(0);
-
-  Grid_t newr1 = gridToNQT(r1);
-  Grid_t newr0 = gridToNQT(r0);
+  auto &r2 = scratch.range(2);
+  auto &r1 = scratch.range(1);
+  auto &r0 = scratch.range(0);
 
   for (int i2 = 0; i2 < r2.nPoints(); ++i2) {
     Real x2 = r2.x(i2);
-    for (int i1 = 0; i1 < newr1.nPoints(); ++i1) {
-      Real lx1 = newr1.x(i1);
+    for (int i1 = 0; i1 < r1.nPoints(); ++i1) {
+      Real lx1 = r1.x(i1);
       Real l10x1 = NQTtolog10(lx1);
-      for (int i0 = 0; i0 < newr0.nPoints(); ++i0) {
-        Real lx0 = newr0.x(i0);
+      for (int i0 = 0; i0 < r0.nPoints(); ++i0) {
+        Real lx0 = r0.x(i0);
         Real l10x0 = NQTtolog10(lx0);
         Real val = db.interpToReal(x2, l10x1, l10x0);
         if (dependent_var_log) {
@@ -975,12 +1016,10 @@ inline void StellarCollapse::dataBoxToFastLogs(DataBox &db, DataBox &scratch,
       }
     }
   }
+  db.copyMetadata(scratch);
   for (int i = 0; i < db.size(); ++i) {
     db(i) = scratch(i);
   }
-  // range(2) is already ok
-  db.setRange(1, newr1);
-  db.setRange(0, newr0);
 }
 
 inline void StellarCollapse::medianFilter_(DataBox &db) {
@@ -1041,14 +1080,14 @@ inline void StellarCollapse::computeBulkModulus_() {
       Real lT = lBMod_.range(1).x(iT);
       for (int irho = 0; irho < numRho_; ++irho) {
         Real lRho = lBMod_.range(0).x(irho);
-        Real rho = rho_(lRho);
+        Real rho = std::pow(10., lRho); // rho_(lRho);
         Real lP = lP_(iY, iT, irho);
-        Real P = lP2P_(lP);
+        Real P = std::pow(10., lP); // lP2P_(lP) ;
         Real PoR = robust::ratio(P, rho);
         // assume table is hardened
         Real bMod = rho * dPdRho_(iY, iT, irho) + PoR * dPdE_(iY, iT, irho);
         if (bMod < robust::EPS()) bMod = robust::EPS();
-        lBMod_(iY, iT, irho) = B2lB_(bMod);
+        lBMod_(iY, iT, irho) = std::log10(bMod); // B2lB_(bMod);
       }
     }
   }

@@ -35,9 +35,10 @@ class DavisReactants : public EosBase<DavisReactants> {
   PORTABLE_INLINE_FUNCTION
   DavisReactants(const Real rho0, const Real e0, const Real P0, const Real T0,
                  const Real A, const Real B, const Real C, const Real G0, const Real Z,
-                 const Real alpha, const Real Cv0)
+                 const Real alpha, const Real Cv0,
+                 const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _rho0(rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C), _G0(G0), _Z(Z),
-        _alpha(alpha), _Cv0(Cv0) {
+        _alpha(alpha), _Cv0(Cv0), _AZbar(AZbar) {
     CheckParams();
   }
   DavisReactants GetOnDevice() { return *this; }
@@ -45,6 +46,7 @@ class DavisReactants : public EosBase<DavisReactants> {
   void CheckParams() const {
     PORTABLE_REQUIRE(_rho0 >= 0, "Density must be positive");
     PORTABLE_REQUIRE(_T0 >= 0, "Temperature must be positive");
+    _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -160,6 +162,8 @@ class DavisReactants : public EosBase<DavisReactants> {
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
+  // Default accessors for mean atomic mass/number
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(DavisReactants)
@@ -175,6 +179,7 @@ class DavisReactants : public EosBase<DavisReactants> {
     printf("%srho0:%e e0:%e P0:%e\nT0:%e A:%e B:%e\nC:%e G0:%e Z:%e\nalpha:%e "
            "Cv0:%e\n",
            s1, _rho0, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _Cv0);
+    _AZbar.PrintParams();
   }
   void inline Finalize() {}
   static std::string EosType() { return std::string("DavisReactants"); }
@@ -183,6 +188,7 @@ class DavisReactants : public EosBase<DavisReactants> {
  private:
   static constexpr Real onethird = 1.0 / 3.0;
   Real _rho0, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _Cv0;
+  MeanAtomicProperties _AZbar;
   // static constexpr const char _eos_type[] = "DavisReactants";
   static constexpr unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
@@ -198,10 +204,12 @@ class DavisProducts : public EosBase<DavisProducts> {
   DavisProducts() = default;
   PORTABLE_INLINE_FUNCTION
   DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
-                const Real pc, const Real Cv)
-      : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv) {}
+                const Real pc, const Real Cv,
+                const MeanAtomicProperties &AZbar = MeanAtomicProperties())
+      : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv), _AZbar(AZbar) {}
   PORTABLE_INLINE_FUNCTION
   void CheckParams() const {
+    _AZbar.CheckParams();
     // TODO(JMM): Stub.
   }
   DavisProducts GetOnDevice() { return *this; }
@@ -299,6 +307,8 @@ class DavisProducts : public EosBase<DavisProducts> {
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  // Default accessors for mean atomic mass/number
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(DavisProducts)
@@ -313,6 +323,7 @@ class DavisProducts : public EosBase<DavisProducts> {
     static constexpr char s1[]{"DavisProducts Params: "};
     printf("%sa:%e b:%e k:%e\nn:%e vc:%e pc:%e\nCv:%e \n", s1, _a, _b, _k, _n, _vc, _pc,
            _Cv);
+    _AZbar.PrintParams();
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("DavisProducts"); }
@@ -321,6 +332,7 @@ class DavisProducts : public EosBase<DavisProducts> {
  private:
   static constexpr Real onethird = 1.0 / 3.0;
   Real _a, _b, _k, _n, _vc, _pc, _Cv;
+  MeanAtomicProperties _AZbar;
   // static constexpr const char _eos_type[] = "DavisProducts";
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;

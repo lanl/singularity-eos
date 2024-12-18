@@ -38,16 +38,20 @@ using namespace eos_base;
 class IdealGas : public EosBase<IdealGas> {
  public:
   IdealGas() = default;
-  PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv)
+  PORTABLE_INLINE_FUNCTION
+  IdealGas(Real gm1, Real Cv, const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
-        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(_T0), _EntropyRho0(_rho0) {
+        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(_T0), _EntropyRho0(_rho0), _AZbar(AZbar) {
     CheckParams();
   }
-  PORTABLE_INLINE_FUNCTION IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0)
+  PORTABLE_INLINE_FUNCTION
+  IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0,
+           const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _rho0(_P0 / (_gm1 * _Cv * _T0)), _sie0(_Cv * _T0),
         _bmod0((_gm1 + 1) * _gm1 * _rho0 * _Cv * _T0), _dpde0(_gm1 * _rho0),
-        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(EntropyT0), _EntropyRho0(EntropyRho0) {
+        _dvdt0(1. / (_rho0 * _T0)), _EntropyT0(EntropyT0), _EntropyRho0(EntropyRho0),
+        _AZbar(AZbar) {
     CheckParams();
   }
 
@@ -67,6 +71,7 @@ class IdealGas : public EosBase<IdealGas> {
                             "Entropy reference temperature must be positive");
     PORTABLE_ALWAYS_REQUIRE(_EntropyRho0 >= 0,
                             "Entropy reference density must be positive");
+    _AZbar.CheckParams();
     return;
   }
   template <typename Indexer_t = Real *>
@@ -148,6 +153,7 @@ class IdealGas : public EosBase<IdealGas> {
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
@@ -165,6 +171,7 @@ class IdealGas : public EosBase<IdealGas> {
   }
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(IdealGas)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -175,6 +182,7 @@ class IdealGas : public EosBase<IdealGas> {
   static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Ideal Gas Parameters:\nGamma = %g\nCv    = %g\n", _gm1 + 1.0, _Cv);
+    _AZbar.PrintParams();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
@@ -198,6 +206,8 @@ class IdealGas : public EosBase<IdealGas> {
       thermalqs::density | thermalqs::specific_internal_energy;
   // optional entropy reference state variables
   Real _EntropyT0, _EntropyRho0;
+  // optional mean atomic mass and number
+  MeanAtomicProperties _AZbar;
 };
 
 template <typename Indexer_t>
