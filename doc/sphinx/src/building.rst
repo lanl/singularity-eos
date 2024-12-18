@@ -119,6 +119,7 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_NQT_ORDER_1``             OFF      For fast logs, use the less accurate but faster 1st-order version.
  ``SINGULARITY_NQT_PORTABLE``            OFF      For fast logs, use the slower but endianness-independent implementation.
  ``SINGULARITY_STRICT_WARNINGS``         OFF      For testing. Adds -Wall and -Werror to builds.
+ ``SINGULARITY_USE_V_AND_V_EOS``         OFF      Enables several additional EOS models and adds them to the default variant
 ====================================== ======= ===========================================
 
 More options are available to modify only if certain other options or
