@@ -209,7 +209,7 @@ molecular bonds have been broken, the total pressure is given by
   P_t = (\left\langle Z\right\rangle + 1) \frac{\rho}{m_p \bar{A}} k_b T
 
 where :math:`\left\langle Z\right\rangle` is the mean ionization
-state, :math:`rho` is the ion mass density (the electron ion mass
+state, :math:`\rho` is the ion mass density (the electron ion mass
 density is negligible), :math:`m_p` is the proton mass,
 :math:`\bar{A}` is the mean atomic mass, :math:`k_b` is Boltzmann's
 constant, and :math:`T` is temperature. The contribution from
