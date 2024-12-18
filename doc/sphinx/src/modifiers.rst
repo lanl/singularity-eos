@@ -200,8 +200,8 @@ equation of state and splits it into electron and ion components. The
 free electrons contributed per atomic nucleus, which is the mean
 atomic number in the case of full ionization, but could be smaller in
 the case of partial ionization. (It is zero for an unionized gas.) The
-physical model of Z-split can be derived from an ideal gas equation of
-state. For an ideal gas made up of electrons and ions, where all
+physical model of Z-split can be derived by approximating the
+material as an ideal gas. For an ideal gas made up of electrons and ions, where all
 molecular bonds have been broken, the total pressure is given by
 
 .. math::
@@ -209,7 +209,7 @@ molecular bonds have been broken, the total pressure is given by
   P_t = (\left\langle Z\right\rangle + 1) \frac{\rho}{m_p \overline{A}} k_b T
 
 where :math:`\left\langle Z\right\rangle` is the mean ionization
-state, :math:`rho` is the ion mass density (the electron ion mass
+state, :math:`\rho` is the ion mass density (the electron ion mass
 density is negligible), :math:`m_p` is the proton mass,
 :math:`\overline{A}` is the mean atomic mass, :math:`k_b` is Boltzmann's
 constant, and :math:`T` is temperature. The contribution from
