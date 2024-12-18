@@ -34,6 +34,6 @@ jobs:
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   -DSINGULARITY_USE_KOKKOS=ON \
                   ..
-            make
+            make -j4
             make install
             make test

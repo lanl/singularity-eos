@@ -164,6 +164,64 @@ functional forms for :math:`\Gamma` and the reference curves, the task of
 calculating a **thermodynamically consistent** temperature becomes more
 complicated.
 
+.. _3T-Model:
+
+The 3T Model
+``````````````
+
+In high-energy density physics, the so-called three-temperature (or
+3T) model is often employed. In this model, a material is fully or
+partially ionized. Due to the separation in masses between electrons
+and atomic nuclei, electrons come into thermal equilibrium and ions
+come into thermal equilibrium, but the two populations are not in
+thermal equilibrium with each other. This introduces separate electron
+and ion temperatures. The third temperature is potentially a radiation
+temperature.
+
+By convention in 3T physics, density :math:`\rho` is always the mass
+density of the ions. The electron number density may then be computed
+as
+
+.. math::
+
+  n = \left\langle Z \right\rangle \frac{\rho}{\overline{A} m_p}
+
+where here :math:`\left\langle Z\right\rangle` is the average number
+of electrons contributed per atom, also called mean ionization state,
+:math:`\rho` is the ion mass density, :math:`\overline{A}` is the mean
+atomic mass (in grams per mole) of a given material and :math:`m_p` is
+the proton mass.
+
+.. note::
+
+  Note that there is notational ambiguity between the average
+  ionization state and the average atomic number, as the symbol for
+  both is :math:`Z`. To disambiguate in ``singularity-eos``, we use
+  overbars to reference mean atomic properties such as mean atomic
+  mass :math:`\overline{A}` and mean atomic number :math:`\overline{Z}` while we
+  use :math:`\left\langle Z\right\rangle` to denote mean ionizaiton
+  state.
+
+Also, since the electron mass is negligible compared to the ion mass,
+the specific internal energy carried by electrons
+:math:`\varepsilon_e` is specific with respect to the *ion* mass. In
+particular:
+
+.. math::
+
+  u_e = \varepsilon_e \rho
+
+where here :math:`u_e` is the internal energy per unit volume carried
+by electrons and, as discussed above, :math:`\rho` is ion mass
+density.
+
+``singularity-eos`` assumes that, when 3T physics is active, electrons
+and ions are each described by a separate equation of state
+object. Several models are specifically designed to represent, e.g.,
+the electron equation of state or ion equation of state. The tabulated
+models may also support loading tables specifically for electron or
+ion equations of state.
+
 Available EOS Information and Nomenclature
 ------------------------------------------
 
@@ -468,6 +526,90 @@ the atomic mass and number as a final optional parameter, e.g.,
 
    IdealGas(Real gm1, Real Cv, MeanAtomicProperties(Abar, Zbar));
    IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0, MeanAtomicProperties(Abar, Zbar));
+
+Ideal Electron Gas
+```````````````````
+
+The ideal electron gas equation of state is designed for use with 3T
+physics. It is an ideal Boltzmann gas of electrons. As such, each
+electron is assumed to have three translational degrees of freedom
+:math:`f`, such that
+
+.. math::
+
+  \Gamma = \frac{2}{f} = \frac{2}{3}
+
+and
+
+.. math::
+
+  \gamma = \Gamma + 1 = \frac{5}{3}.
+
+The pressure is given by the number density of electrons times
+:math:`k_b T` for Boltzmann constant :math:`k_b` and temperature
+:math:`T`:
+
+.. math::
+
+  P = \frac{\rho}{m_p \overline{A}}\left\langle Z \right\rangle k_b T
+
+for proton mass :math:`m_p`. The specific heat is then
+
+.. math::
+
+  C_V = \frac{\left\langle Z \right\rangle k_b}{\Gamma m_p \overline{A}}
+
+so that
+
+.. math::
+
+  P = \Gamma \rho C_V T
+
+as expected. (Note that the total mass per nucleus isn't exactly
+:math:`\overline{A} m_p`, as protons and neutrons are
+not exactly the same mass. However, it's close enough for all intents
+and purposes.)
+
+The constructor takes only the ``MeanAtomicProperties`` struct, which
+is a required input:
+
+.. code-block:: cpp
+
+  IdealElectrons(const MeanAtomicProperties &AZbar);
+
+Optionally reference values may be provided for the entropy
+calculation, which is computed in the same way as the standard ideal
+gas.
+
+.. note::
+
+  Since the mean ionization state is built into the heat capacity, the
+  entropy is zero until the material is ionized. This is physically
+  consistent, if there are no electrons, the total electron entropy
+  should be zero.
+
+.. note::
+
+  The electron entropy reference should probably be chosen to be
+  consistent with the chosen ionization model, such as a reference
+  temperature where ionization begins. This is about :math:`10^4`
+  Kelvin but will depend on the model and the material. This means
+  that the entropy reference temperature may be very different between
+  ions and electrons.
+
+Calls to compute state variables require the mean ionization state,
+which must be passed in the ``lambda`` parameter, e.g.,
+
+.. code-block:: cpp
+
+  Real lambda[1] = {Z};
+  Real P = eos.PressureFromDensityTemperature(rho, T, lambda);
+
+.. note::
+
+  For now, the ideal electron gas is not in the default variant
+  provided by singularity-eos. If you would like to use it, you must
+  implement your own custom variant.
 
 Stiffened Gas
 `````````````

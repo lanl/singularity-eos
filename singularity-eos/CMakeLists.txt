@@ -57,6 +57,7 @@ register_headers(
     eos/modifiers/ramps_eos.hpp
     eos/modifiers/shifted_eos.hpp
     eos/modifiers/eos_unitsystem.hpp
+    eos/modifiers/zsplit_eos.hpp
     eos/eos_base.hpp
     eos/eos_eospac.hpp
     eos/eos_noble_abel.hpp
@@ -64,6 +65,7 @@ register_headers(
     eos/singularity_eos_init_utils.hpp
     eos/variant_utils.hpp
     eos/eos_carnahan_starling.hpp
+    eos/eos_electrons.hpp
 )
 
 if (SINGULARITY_BUILD_CLOSURE)

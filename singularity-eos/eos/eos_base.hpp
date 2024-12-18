@@ -66,23 +66,24 @@ char *StrCat(char *destination, const char *source) {
 // VECTOR functionality to overload the scalar implementations in the derived
 // classes. Do not add functions here that are not overloads of derived class features.
 // TODO(JMM): Should we have more macros that capture just some of these?
-#define SG_ADD_BASE_CLASS_USINGS(EOSDERIVED)                                             \
-  using EosBase<EOSDERIVED>::TemperatureFromDensityInternalEnergy;                       \
-  using EosBase<EOSDERIVED>::InternalEnergyFromDensityTemperature;                       \
-  using EosBase<EOSDERIVED>::PressureFromDensityTemperature;                             \
-  using EosBase<EOSDERIVED>::PressureFromDensityInternalEnergy;                          \
-  using EosBase<EOSDERIVED>::MinInternalEnergyFromDensity;                               \
-  using EosBase<EOSDERIVED>::SpecificHeatFromDensityTemperature;                         \
-  using EosBase<EOSDERIVED>::SpecificHeatFromDensityInternalEnergy;                      \
-  using EosBase<EOSDERIVED>::BulkModulusFromDensityTemperature;                          \
-  using EosBase<EOSDERIVED>::BulkModulusFromDensityInternalEnergy;                       \
-  using EosBase<EOSDERIVED>::GruneisenParamFromDensityTemperature;                       \
-  using EosBase<EOSDERIVED>::GruneisenParamFromDensityInternalEnergy;                    \
-  using EosBase<EOSDERIVED>::FillEos;                                                    \
-  using EosBase<EOSDERIVED>::EntropyFromDensityTemperature;                              \
-  using EosBase<EOSDERIVED>::EntropyFromDensityInternalEnergy;                           \
-  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityTemperature;                      \
-  using EosBase<EOSDERIVED>::GibbsFreeEnergyFromDensityInternalEnergy;
+// JMM: Use VA_ARGS to capture more complex template types
+#define SG_ADD_BASE_CLASS_USINGS(...)                                                    \
+  using EosBase<__VA_ARGS__>::TemperatureFromDensityInternalEnergy;                      \
+  using EosBase<__VA_ARGS__>::InternalEnergyFromDensityTemperature;                      \
+  using EosBase<__VA_ARGS__>::PressureFromDensityTemperature;                            \
+  using EosBase<__VA_ARGS__>::PressureFromDensityInternalEnergy;                         \
+  using EosBase<__VA_ARGS__>::MinInternalEnergyFromDensity;                              \
+  using EosBase<__VA_ARGS__>::SpecificHeatFromDensityTemperature;                        \
+  using EosBase<__VA_ARGS__>::SpecificHeatFromDensityInternalEnergy;                     \
+  using EosBase<__VA_ARGS__>::BulkModulusFromDensityTemperature;                         \
+  using EosBase<__VA_ARGS__>::BulkModulusFromDensityInternalEnergy;                      \
+  using EosBase<__VA_ARGS__>::GruneisenParamFromDensityTemperature;                      \
+  using EosBase<__VA_ARGS__>::GruneisenParamFromDensityInternalEnergy;                   \
+  using EosBase<__VA_ARGS__>::FillEos;                                                   \
+  using EosBase<__VA_ARGS__>::EntropyFromDensityTemperature;                             \
+  using EosBase<__VA_ARGS__>::EntropyFromDensityInternalEnergy;                          \
+  using EosBase<__VA_ARGS__>::GibbsFreeEnergyFromDensityTemperature;                     \
+  using EosBase<__VA_ARGS__>::GibbsFreeEnergyFromDensityInternalEnergy;
 
 // This macro adds these methods to a derived class. Due to scope,
 // these can't be implemented in the base class, unless we make
@@ -111,7 +112,9 @@ char *StrCat(char *destination, const char *source) {
   }                                                                                      \
   constexpr bool AllDynamicMemoryIsShareable() const {                                   \
     return t_.AllDynamicMemoryIsShareable();                                             \
-  }                                                                                      \
+  }
+
+#define SG_ADD_MODIFIER_MEAN_METHODS(t_)                                                 \
   PORTABLE_INLINE_FUNCTION                                                               \
   Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }                            \
   PORTABLE_INLINE_FUNCTION                                                               \

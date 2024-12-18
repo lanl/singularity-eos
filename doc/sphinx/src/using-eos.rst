@@ -737,6 +737,18 @@ For more details on modifiers, see the :ref:`modifiers<modifiers>`
 section. If you need a combination of modifiers not supported by
 default, we recommend building a custom variant as described above.
 
+Modifiers and Lambdas
+-----------------------
+
+Modifiers may require lambdas. When this is the case, the lambda
+required by the modifier is appended to the end of the lambda
+indexer. For example, the ``StellarCollapse`` EOS model requires
+``nlambda=2``. The ``ZSplitI`` modifier rquires
+``nlambda=1``. Together, ``ZSplitI<StellarCollapse>`` requires a
+lambda indexer of length 3, an the ordering is two parameters for
+``StellarCollapse`` first, and then the parameter required by
+``ZSplitI``.
+
 Preferred Inputs
 -----------------
 

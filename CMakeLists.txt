@@ -85,6 +85,13 @@ cmake_dependent_option(
   SINGULARITY_USE_HELMHOLTZ "Include Helmholtz equation of state" OFF
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
 
+# Enables polynomial, carnahan starling, and NobleAbel in variant.
+# Off by default, as they are not in the default python bindings or used
+# by default in downstream codes.
+option(SINGULARITY_USE_V_AND_V_EOS
+  "Add analytic EOSs for V&V to the variant"
+  OFF)
+
 # testing options
 option(SINGULARITY_BUILD_TESTS "Compile tests" OFF)
 
@@ -332,6 +339,9 @@ endif()
 if(SINGULARITY_USE_HELMHOLTZ)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_HELMHOLTZ)
 endif()
+if (SINGULARITY_USE_V_AND_V_EOS)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_V_AND_V_EOS)
+endif()
 if(SINGULARITY_USE_SPINER_WITH_HDF5)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_SPINER_WITH_HDF5)
 endif()
@@ -440,8 +450,8 @@ if(SINGULARITY_BUILD_TESTS)
     FetchContent_Declare(
       Catch2
       GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-      # or later is fine too
-      GIT_TAG v3.0.1)
+      # jmm: updated Dec 17, 2024 to avoid build errors on modern gcc
+      GIT_TAG v3.7.1)
     FetchContent_MakeAvailable(Catch2)
     list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
   endif()
@@ -560,6 +570,13 @@ target_compile_options(
          -use_fast_math
          > # release
          > # cuda
+
+         # Suppresses annoying ABI notes. See:
+         # https://stackoverflow.com/questions/52020305/what-exactly-does-gccs-wpsabi-option-do-what-are-the-implications-of-supressi
+         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<COMPILE_LANGUAGE:CXX>>:-Wno-psabi>
+         # `-Wclass-memaccess now default with -Wall but we explicitly
+         # manage this ourselves in our serialization routines.
+         $<$<AND:$<CXX_COMPILER_ID:GNU>,$<COMPILE_LANGUAGE:CXX>>:-Wno-class-memaccess>
 )
 if (SINGULARITY_STRICT_WARNINGS)
   target_compile_options(singularity-eos_Interface INTERFACE

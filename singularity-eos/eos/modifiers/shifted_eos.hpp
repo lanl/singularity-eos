@@ -366,6 +366,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   }
 
   SG_ADD_MODIFIER_METHODS(T, t_);
+  SG_ADD_MODIFIER_MEAN_METHODS(t_)
 
  private:
   T t_;

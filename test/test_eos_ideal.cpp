@@ -29,9 +29,10 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
+using singularity::IdealElectrons;
 using singularity::IdealGas;
 using singularity::MeanAtomicProperties;
-using EOS = singularity::Variant<IdealGas>;
+using EOS = singularity::Variant<IdealGas, IdealElectrons>;
 
 SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
   GIVEN("Parameters for an ideal gas with entropy reference states") {
@@ -246,5 +247,41 @@ SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
     // cleanup
     eos_bare.Finalize();
     eos_variant.Finalize();
+  }
+}
+
+SCENARIO("Ideal electron gas", "[IdealGas][IdealEelctrons]") {
+  GIVEN("An ideal electron gas from partially ionized iron") {
+    constexpr Real Abar = 26;
+    constexpr Real Zbar = 55.8;
+    constexpr Real rho = 1;
+    constexpr Real T = 4000;
+
+    MeanAtomicProperties AZbar(Abar, Zbar);
+    EOS eos = IdealElectrons(AZbar);
+
+    THEN("The gruneisen coefficient is for 3 DOF") {
+      Real gm1 = eos.GruneisenParamFromDensityTemperature(rho, T);
+      Real gamma = gm1 + 1;
+      REQUIRE(isClose(gamma, 5. / 3., 1e-12));
+    }
+
+    WHEN("We evaluate the specific heat for different partial ionizations") {
+      Real lambda[1] = {1};
+      const Real cv1 = eos.SpecificHeatFromDensityTemperature(rho, T, lambda);
+      int nwrong = 0;
+      constexpr int N = 55;
+      portableReduce(
+          "Check Cv vs Z", 2, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            Real ll[1] = {static_cast<Real>(i)};
+            Real Cv = eos.SpecificHeatFromDensityTemperature(rho, T, ll);
+            if (!isClose(Cv, i * cv1, 1e-12)) nw += 1;
+          },
+          nwrong);
+      THEN("The specific heat should scale linearly with the ionization state") {
+        REQUIRE(nwrong == 0);
+      }
+    }
   }
 }
