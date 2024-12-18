@@ -200,7 +200,8 @@ the proton mass.
   use :math:`\left\langle Z\right\rangle` to denote mean ionizaiton
   state.
 
-Also by convention, the specific internal energy carried by electrons
+Also, since the electron mass is negligible compared to the ion mass,
+the specific internal energy carried by electrons
 :math:`\varepsilon_e` is specific with respect to the *ion* mass. In
 particular:
 
@@ -562,7 +563,10 @@ so that
 
   P = \Gamma \rho C_V T
 
-as expected.
+as expected. (Note that the total mass per nucleus isn't exactly
+:math:`\left\langle A\right\rangle m_p`, as protons and neutrons are
+not exactly the same mass. However, it's close enough for all intents
+and purposes.)
 
 The constructor takes only the ``MeanAtomicProperties`` struct, which
 is a required input:
