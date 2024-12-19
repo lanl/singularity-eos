@@ -76,7 +76,7 @@ default:
 .venado_job:
   variables:
     CLUSTER: venado
-    SCHEDULER_PARAMETERS: "-N 1 -A lanl_ai_g -p gpu --time=02:00:00"
+    SCHEDULER_PARAMETERS: "-N 1 -A asc-ci_g -p ci_g --qos ci_g --reservation ci_g --time=02:00:00"
   tags:
     - venado
     - batch
@@ -105,6 +105,7 @@ default:
   variables:
     CLUSTER: rzansel
     LLNL_LSF_SCHEDULER_PARAMETERS: "--nnodes=1"
+    CUSTOM_CI_BUILDS_DIR: "/usr/workspace/$$USER/xcap-gitlab-ci"
 
 .rzansel_regular_job:
   variables:
@@ -123,6 +124,7 @@ default:
   variables:
     CLUSTER: rzvernal
     LLNL_FLUX_SCHEDULER_PARAMETERS: "-N=1 --time-limit=2h"
+    CUSTOM_CI_BUILDS_DIR: "/usr/workspace/$$USER/xcap-gitlab-ci"
 
 .rzvernal_regular_job:
   variables:
@@ -141,6 +143,7 @@ default:
   variables:
     CLUSTER: rzadams
     LLNL_FLUX_SCHEDULER_PARAMETERS: "-N=1 --time-limit=2h"
+    CUSTOM_CI_BUILDS_DIR: "/usr/workspace/$$USER/xcap-gitlab-ci"
 
 .rzadams_regular_job:
   variables:
