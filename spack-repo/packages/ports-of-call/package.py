@@ -16,6 +16,7 @@ class PortsOfCall(CMakePackage):
     maintainers = ["rbberger"]
 
     version("main", branch="main")
+    version("1.7.0", sha256="99045a7c4e3fbc73f01e930ce870cdc573a39910a28d85c54d65d2135f764bfc")
     version("1.6.0", sha256="290da149d4ad79c15787956559aeeefa0a06403be2f08cd324562ef013306797")
     version("1.5.2", sha256="73d16fe9236a9475010dbb01bf751c15bef01eb2e15bf92c8d9be2c0a606329f")
     version("1.5.1", sha256="b1f0232cd6d2aac65385d77cc061ec5035283ea50d0f167e7003eae034effb78")
