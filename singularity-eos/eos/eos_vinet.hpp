@@ -152,11 +152,6 @@ class Vinet : public EosBase<Vinet> {
     }
     printf("\n\n");
   }
-  // Density/Energy from P/T not unique, if used will give error
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("Vinet"); }
   static std::string EosPyType() { return EosType(); }
@@ -374,13 +369,6 @@ PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityInternalEnergy(
   temp = TemperatureFromDensityInternalEnergy(rho, sie);
   Vinet_F_DT_func(rho, temp, output);
   return output[7] * output[7] * rho;
-}
-// AEM: Give error since function is not well defined
-template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void Vinet::DensityEnergyFromPressureTemperature(
-    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
-  EOS_ERROR("Vinet::DensityEnergyFromPressureTemperature: "
-            "Not implemented.\n");
 }
 // AEM: We should add entropy and Gruneissen parameters here so that it is complete
 // If we add also alpha and BT, those should also be in here.

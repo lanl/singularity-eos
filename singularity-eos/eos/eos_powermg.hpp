@@ -157,11 +157,6 @@ class PowerMG : public EosBase<PowerMG> {
     }
     printf("\n\n");
   }
-  // Density/Energy from P/T not unique, if used will give error
-  template <typename Indexer_t>
-  PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("PowerMG"); }
   static std::string EosPyType() { return EosType(); }
@@ -430,13 +425,6 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::EntropyFromDensityInternalEnergy(
     value = 1.e-12;
   }
   return value;
-}
-// AEM: Give error since function is not well defined
-template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void PowerMG::DensityEnergyFromPressureTemperature(
-    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
-  EOS_ERROR("PowerMG::DensityEnergyFromPressureTemperature: "
-            "Not implemented.\n");
 }
 // AEM: We should add entropy and Gruneissen parameters here so that it is complete
 // If we add also alpha and BT, those should also be in here.

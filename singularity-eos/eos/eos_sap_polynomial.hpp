@@ -209,14 +209,6 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
     printf("      b3  = %g\n", _b3);
     _AZbar.PrintParams();
   }
-  template <typename Indexer_t>
-  PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
-    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
-    sie = 0.0;
-    rho = 0.0;
-  }
   inline void Finalize() {}
   static std::string EosType() { return std::string("SAP_Polynomial"); }
   static std::string EosPyType() { return EosType(); }

@@ -148,11 +148,6 @@ class MGUsup : public EosBase<MGUsup> {
     _AZbar.PrintParams();
     printf("\n\n");
   }
-  // Density/Energy from P/T not unique, if used will give error
-  template <typename Indexer_t>
-  PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("MGUsup"); }
   static std::string EosPyType() { return EosType(); }
@@ -349,13 +344,6 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::BulkModulusFromDensityInternalEnergy(
   value = value + _G0 * _G0 * _rho0 * (sie - HugInternalEnergyFromDensity(rho));
   value = robust::ratio(_rho0, rho) * value;
   return value;
-}
-// AEM: Give error since function is not well defined
-template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void MGUsup::DensityEnergyFromPressureTemperature(
-    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
-  EOS_ERROR("MGUsup::DensityEnergyFromPressureTemperature: "
-            "Not implemented.\n");
 }
 // AEM: We should add entropy and Gruneissen parameters here so that it is complete
 // If we add also alpha and BT, those should also be in here.

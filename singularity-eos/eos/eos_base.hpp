@@ -836,6 +836,38 @@ class EosBase {
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 
+  // JMM: This method is often going to be overloaded for special cases.
+  PORTABLE_INLINE_FUNCTION
+  template <typename Indexer_t>
+  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                            Indexer_t &&lambda, Real &rho,
+                                            Real &sie) const {
+
+    constexpr Real MAXFAC = 1e8;
+    constexpr Real EPS = 1e-8;
+    using RootFinding1D::regula_falsi;
+    using RootFinding1D::Status;
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    auto PofRT = [&](const Real r) {
+      return copy.PressureFromDensityTemperature(r, temp, lambda);
+    };
+    Real rhoguess = rho; // use input density
+    if (rhoguess < 0) {
+      Real tguess, sieguess, pguess, cvguess, bmodguess, dpde, dvdt;
+      copy.ValuesAtReferenceState(rhoguess, tguess, sieguess, pguess, cvguess, bmodguess,
+                                  dpde, dvdt);
+    }
+    Real rhomin = copyMinimumDensity();
+    Real rhomax = MAXFAC * rhomin;
+    auto status = regula_falsi(PofRT, press, rhoguess, rhomin, rhomax, EPS, EPS, rho);
+    if (status != Status::SUCCESS) {
+      PORTABLE_FAIL_OR_ABORT(
+          "DensityEnergyFromPressureTemperature failed to find root\n");
+    }
+    sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
+    return;
+  }
+
   // Serialization
   /*
     The methodology here is there are *three* size methods all EOS's provide:
