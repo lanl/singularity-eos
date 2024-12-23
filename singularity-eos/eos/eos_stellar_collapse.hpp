@@ -661,7 +661,7 @@ PORTABLE_INLINE_FUNCTION void StellarCollapse::DensityEnergyFromPressureTemperat
   Real lP = P2lP_(press);
   Real Ye = lambda[Lambda::Ye];
 
-  if ((lrguess < lRhoMin_) || (lrguess > lrMax_)) {
+  if ((lrguess < lRhoMin_) || (lrguess > lRhoMax_)) {
     lrguess = lRho_(rhoNormal_);
   }
   auto lPofRT = [&](Real lR) { return lP_.interpToReal(Ye, lT, lR); };

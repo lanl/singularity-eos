@@ -21,6 +21,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
@@ -837,11 +838,10 @@ class EosBase {
   }
 
   // JMM: This method is often going to be overloaded for special cases.
-  PORTABLE_INLINE_FUNCTION
-  template <typename Indexer_t>
-  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                            Indexer_t &&lambda, Real &rho,
-                                            Real &sie) const {
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
 
     constexpr Real MAXFAC = 1e8;
     constexpr Real EPS = 1e-8;
@@ -857,11 +857,11 @@ class EosBase {
       copy.ValuesAtReferenceState(rhoguess, tguess, sieguess, pguess, cvguess, bmodguess,
                                   dpde, dvdt);
     }
-    Real rhomin = copyMinimumDensity();
+    Real rhomin = copy.MinimumDensity();
     Real rhomax = MAXFAC * rhomin;
     auto status = regula_falsi(PofRT, press, rhoguess, rhomin, rhomax, EPS, EPS, rho);
     if (status != Status::SUCCESS) {
-      PORTABLE_FAIL_OR_ABORT(
+      PORTABLE_THROW_OR_ABORT(
           "DensityEnergyFromPressureTemperature failed to find root\n");
     }
     sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
