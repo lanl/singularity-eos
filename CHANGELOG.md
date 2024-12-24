@@ -6,6 +6,7 @@
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)
+- [[PR449]](https://github.com/lanl/singularity-eos/pull/449) Ensure that DensityEnergyFromPressureTemperature works for all equations of state and is properly tested
 - [[PR439]](https://github.com/lanl/singularity-eos/pull/439) Add mean atomic mass and number to EOS API
 - [[PR437]](https://github.com/lanl/singularity-eos/pull/437) Fix segfault on HIP, clean up warnings, add strict sanitizer test
 
