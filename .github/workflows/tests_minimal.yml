@@ -36,5 +36,4 @@ jobs:
                   ..
             make -j4
             make install
-            make test
-            ctest --output-on-failure --rerun-failed
+            ctest --output-on-failure
