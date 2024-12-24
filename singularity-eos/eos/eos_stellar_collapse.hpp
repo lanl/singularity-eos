@@ -655,7 +655,7 @@ PORTABLE_INLINE_FUNCTION void StellarCollapse::DensityEnergyFromPressureTemperat
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
-  CheckLambda_(lambda);
+  checkLambda_(lambda);
   Real lrguess = lRho_(rho);
   Real lT = lT_(temp);
   Real lP = P2lP_(press);

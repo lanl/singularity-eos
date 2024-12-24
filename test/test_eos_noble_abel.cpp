@@ -125,6 +125,18 @@ SCENARIO("NobleAbel1", "[NobleAbel][NobleAbel1]") {
         }
       }
 
+      WHEN("A [rho,e](P, T) loopup is performed") {
+        int nwrong = 0;
+        portableReduce(
+            "Check density energy from pressure temperature", 0, num,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              nw +=
+                  !CheckRhoSieFromPT(eos, 7.2347087589269467e-03, 4.0000000000000000e+03);
+            },
+            nwrong);
+        THEN("There are no errors") { REQUIRE(nwrong == 0); }
+      }
+
       WHEN("A B_S(rho, e) lookup is performed") {
         eos.BulkModulusFromDensityInternalEnergy(v_density, v_energy, v_bulkmodulus, num);
 #ifdef PORTABILITY_STRATEGY_KOKKOS

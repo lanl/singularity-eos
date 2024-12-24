@@ -21,6 +21,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 
@@ -842,9 +843,11 @@ class EosBase {
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
-
+    // TODO(JMM): A lot hardcoded in here... Hopefully relevent EOS's
+    // overwrite.
     constexpr Real MAXFAC = 1e8;
-    constexpr Real EPS = 1e-8;
+    constexpr Real EPS = 10 * robust::EPS();
+    constexpr Real MINR_DEFAULT = 1e-4;
     using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
     CRTP copy = *(static_cast<CRTP const *>(this));
@@ -857,14 +860,15 @@ class EosBase {
       copy.ValuesAtReferenceState(rhoguess, tguess, sieguess, pguess, cvguess, bmodguess,
                                   dpde, dvdt);
     }
-    Real rhomin = copy.MinimumDensity();
+    // JMM: This can't be zero, in case MinimumDensity is zero
+    Real rhomin = std::max(MINR_DEFAULT, copy.MinimumDensity());
     Real rhomax = MAXFAC * rhomin;
     auto status = regula_falsi(PofRT, press, rhoguess, rhomin, rhomax, EPS, EPS, rho);
     if (status != Status::SUCCESS) {
       PORTABLE_THROW_OR_ABORT(
           "DensityEnergyFromPressureTemperature failed to find root\n");
     }
-    sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
+    sie = copy.InternalEnergyFromDensityTemperature(rho, temp, lambda);
     return;
   }
 

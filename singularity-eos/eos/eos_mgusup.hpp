@@ -125,6 +125,47 @@ class MGUsup : public EosBase<MGUsup> {
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return 10 * robust::EPS(); }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const {
+    if (_s > 1) {
+      return 0.99 * robust::ratio(_s * _rho0, _s - 1);
+    } else { // for s <= 1, no maximum, but we need to pick something.
+      return 1e3 * _rho0;
+    }
+  }
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
+    using RootFinding1D::findRoot;
+    using RootFinding1D::Status;
+    // JMM: diverges for rho -> 0
+    // and for s > 1 and rho -> rho0
+    Real rhomin = MinimumDensity();
+    Real rhomax = MaximumDensity();
+    auto PofRT = [&](const Real r) {
+      return PressureFromDensityTemperature(r, temp, lambda);
+    };
+    Real rhoguess = rho; // use input density
+    if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
+      rhoguess = 0.5 * (rhomin + rhomax);
+    }
+    // JMM: regula_falsi does not respect bounds
+    auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, robust::EPS(),
+                           robust::EPS(), rho);
+    if (status != Status::SUCCESS) {
+      PORTABLE_THROW_OR_ABORT(
+          "DensityEnergyFromPressureTemperature failed to find root\n");
+    }
+    sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
+    return;
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
@@ -195,6 +236,8 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::HugTemperatureFromDensity(Real rho) const 
   Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real f1 = 1.0 - _s * eta;
   if (f1 <= 0.0) {
+    printf("f1, eta, rho, rho0, s = %.14e %.14e %.14e %.14e %.14e\n", f1, eta, rho, _rho0,
+           _s);
     PORTABLE_ALWAYS_THROW_OR_ABORT("MGUsup model parameters s and rho0 together with rho "
                                    "give a negative argument for a logarithm.");
   }
