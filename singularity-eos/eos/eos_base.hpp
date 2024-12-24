@@ -848,7 +848,7 @@ class EosBase {
     constexpr Real MAXFAC = 1e8;
     constexpr Real EPS = 10 * robust::EPS();
     constexpr Real MINR_DEFAULT = 1e-4;
-    using RootFinding1D::regula_falsi;
+    using RootFinding1D::findRoot; // more robust but slower. Better default.
     using RootFinding1D::Status;
     CRTP copy = *(static_cast<CRTP const *>(this));
     auto PofRT = [&](const Real r) {
@@ -863,7 +863,7 @@ class EosBase {
     // JMM: This can't be zero, in case MinimumDensity is zero
     Real rhomin = std::max(MINR_DEFAULT, copy.MinimumDensity());
     Real rhomax = MAXFAC * rhomin;
-    auto status = regula_falsi(PofRT, press, rhoguess, rhomin, rhomax, EPS, EPS, rho);
+    auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, EPS, EPS, rho);
     if (status != Status::SUCCESS) {
       PORTABLE_THROW_OR_ABORT(
           "DensityEnergyFromPressureTemperature failed to find root\n");
