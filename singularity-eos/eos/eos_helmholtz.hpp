@@ -693,7 +693,9 @@ class Helmholtz : public EosBase<Helmholtz> {
     using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
     PORTABLE_REQUIRE(temp > = 0, "Non-negative temperature required");
-    PofRT = [&](const Real r) { return PressureFromDensityTemperature(r, temp, lambda); };
+    auto PofRT = [&](const Real r) {
+      return PressureFromDensityTemperature(r, temp, lambda);
+    };
     auto status = regula_falsi(PofRT, press, 1e7, electrons_.rhoMin(),
                                electrons_.rhoMax(), 1.0e-8, 1.0e-8, rho);
     if (status != Status::SUCCESS) {
