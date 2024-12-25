@@ -846,7 +846,7 @@ class EosBase {
     // TODO(JMM): A lot hardcoded in here... Hopefully relevent EOS's
     // overwrite.
     constexpr Real MAXFAC = 1e8;
-    constexpr Real EPS = std::max(1e-8, 100 * robust::EPS());
+    constexpr Real EPS = 10 * robust::EPS();
     constexpr Real MINR_DEFAULT = 1e-4;
     constexpr Real DEFAULT_RHO_GUESS = 4;
     using RootFinding1D::findRoot; // more robust but slower. Better default.
