@@ -848,6 +848,7 @@ class EosBase {
     constexpr Real MAXFAC = 1e8;
     constexpr Real EPS = std::max(1e-8, 100 * robust::EPS());
     constexpr Real MINR_DEFAULT = 1e-4;
+    constexpr Real DEFAULT_RHO_GUESS = 4;
     using RootFinding1D::findRoot; // more robust but slower. Better default.
     using RootFinding1D::Status;
     CRTP copy = *(static_cast<CRTP const *>(this));
@@ -859,7 +860,11 @@ class EosBase {
     Real rhomax = MAXFAC * rhomin;
     Real rhoguess = rho; // use input density
     if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
-      rhoguess = 0.5 * (rhomin + rhomax);
+      if ((rhomin < DEFAULT_RHO_GUESS) && (rhomax > DEFAULT_RHOG_UESS)) {
+        rhoguess = DEFAULT_RHO_GUESS;
+      } else {
+        rhoguess = 0.5 * (rhomin + rhomax);
+      }
     }
     auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, EPS, EPS, rho);
     // JMM: This needs to not fail and instead return something sane
