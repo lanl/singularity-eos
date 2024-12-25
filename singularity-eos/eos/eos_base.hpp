@@ -860,7 +860,7 @@ class EosBase {
     Real rhomax = MAXFAC * rhomin;
     Real rhoguess = rho; // use input density
     if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
-      if ((rhomin < DEFAULT_RHO_GUESS) && (rhomax > DEFAULT_RHOG_UESS)) {
+      if ((rhomin < DEFAULT_RHO_GUESS) && (rhomax > DEFAULT_RHO_GUESS)) {
         rhoguess = DEFAULT_RHO_GUESS;
       } else {
         rhoguess = 0.5 * (rhomin + rhomax);
