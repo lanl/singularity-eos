@@ -854,19 +854,18 @@ class EosBase {
     auto PofRT = [&](const Real r) {
       return copy.PressureFromDensityTemperature(r, temp, lambda);
     };
-    Real rhoguess = rho; // use input density
-    if (rhoguess < 0) {
-      Real tguess, sieguess, pguess, cvguess, bmodguess, dpde, dvdt;
-      copy.ValuesAtReferenceState(rhoguess, tguess, sieguess, pguess, cvguess, bmodguess,
-                                  dpde, dvdt);
-    }
     // JMM: This can't be zero, in case MinimumDensity is zero
     Real rhomin = std::max(MINR_DEFAULT, copy.MinimumDensity());
     Real rhomax = MAXFAC * rhomin;
+    Real rhoguess = rho; // use input density
+    if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
+      rhoguess = 0.5 * (rhomin + rhomax);
+    }
     auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, EPS, EPS, rho);
+    // JMM: This needs to not fail and instead return something sane
     if (status != Status::SUCCESS) {
-      PORTABLE_THROW_OR_ABORT(
-          "DensityEnergyFromPressureTemperature failed to find root\n");
+      PORTABLE_WARN("DensityEnergyFromPressureTemperature failed to find root\n");
+      rho = rhoguess;
     }
     sie = copy.InternalEnergyFromDensityTemperature(rho, temp, lambda);
     return;

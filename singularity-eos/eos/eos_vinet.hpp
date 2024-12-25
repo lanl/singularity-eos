@@ -131,6 +131,10 @@ class Vinet : public EosBase<Vinet> {
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return std::cbrt(10 * robust::EPS()) * _rho0; }
+
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Vinet)
