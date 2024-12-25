@@ -132,7 +132,7 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
               if (!isClose(gruen, gruen_ref[k], 1e-6)) nwrong += 1;
 
               // RhoSie of PT
-              nwrong += CheckRhoSieFromPT(eos, rho_in[i], temp_in[i], lambda);
+              nwrong += !CheckRhoSieFromPT(eos, rho_in[i], temp_in[i], lambda);
 
               // Deserialized EOS
               ein = eos_2.InternalEnergyFromDensityTemperature(rho_in[i], temp_in[j],
