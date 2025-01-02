@@ -163,6 +163,9 @@ class CacheAccessor {
   Real *cache_;
 };
 
+// ======================================================================
+// Base class
+// ======================================================================
 template <typename EOSIndexer, typename RealIndexer>
 class PTESolverBase {
  public:
@@ -530,6 +533,9 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
   return FastMath::pow2((1.0 - alpha) * lTlo + alpha * lThi);
 }
 
+// ======================================================================
+// PTE Solver RhoT
+// ======================================================================
 inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
   return neq * neq                 // jacobian
@@ -757,7 +763,126 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real Tequil, Ttemp;
 };
 
+// ======================================================================
+// PT space solver
+// ======================================================================
+inline int PTESolverPTRequiredScratch(const int nmat) {
+  int neq = 2;
+  return neq * neq                 // jacobian
+         + 4 * neq                 // dx, residual, and sol_scratch
+         + 2 * nmat                // all the nmat sized arrays
+         + MAX_NUM_LAMBDAS * nmat; // the cache
+}
+inline size_t PTESolverPTRequiredScratchInBytes(const int nmat) {
+  return PTESolverPTRequiredScratch(nmat) * sizeof(Real);
+}
+template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
+class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::InitBase;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::AssignIncrement;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::nmat;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::neq;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::ResidualNorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::eos;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::temp;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::press;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::uscale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::utotal_scale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::MatIndex;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::TryIdealPTE;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::jacobian;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::residual;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::dx;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::u;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rhobar;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Cache;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Tnorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::params_;
+
+  enum RES { RV = 0, RSIE = 1 };
+
+ public:
+  // template the ctor to get type deduction/universal references prior to c++17
+  template <typename EOS_t, typename Real_t, typename Lambda_t>
+  PORTABLE_INLINE_FUNCTION
+  PTESolverPT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
+              Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
+              Lambda_t &&lambda, Real *scratch, const Real Tnorm = 0.0,
+              const MixParams &params = MixParams())
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2, eos, vfrac_tot, sie_tot,
+                                                         rho, vfrac, sie, temp, press,
+                                                         scratch, Tnorm, params) {
+    // TODO(JCD): use whatever lambdas are passed in
+    /*for (int m = 0; m < nmat; m++) {
+      if (!variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
+    }*/
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real Init() {
+    InitBase();
+    Residual();
+    // calculate an initil equilibrium pressure
+    Real psum = 0.0;
+    Real vsum = 0.0;
+    for (int m = 0; m < nmat; ++m) {
+      psum += vfrac[m] * press[m];
+      vsum += vfrac[m];
+    }
+    // all normalized temps set to 1 so no averaging necessary here.
+    Tequil = temp[0];
+    Pequil = psum / vsum;
+    // Leave this in for now, but comment out because I'm not sure it's a good idea
+    // TryIdealPTE(this);
+    // Set the current guess for the equilibrium temperature.  Note that this is already
+    // scaled.
+    return ResidualNorm();
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  void Residual() const {
+    Real vsum = 0.0;
+    Real esum = 0.0;
+    // is volume averaging the right thing here?
+    for (int m = 0; m < nmat; ++m) {
+      vsum += vfrac[m];
+      esum += sie[m];
+    }
+    // do we have an initial vfrac_sum
+    residual[RV] = vfrac_total - vsum;
+    residual[RSIE] = sie_total - esum;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  bool CheckPTE() const {
+    Real error_v = std::abs(residual[RV]);
+    Real error_u = std::abs(residual[RSIE]);
+    // this may not be quite right as we may need an energy scaling factor
+    // Check for convergence
+    bool converged_u =
+        (error_u < params_.pte_rel_tolerance_e || error_u < params_.pte_abs_tolerance_e);
+    bool converged_v =
+        (error_v < params_.pte_rel_tolerance_e || error_v < params_.pte_abs_tolerance_e);
+    return converged_v && converged_u;
+  }
+
+ private:
+  // TODO(JMM): Should these have trailing underscores?
+  Real Tequil;
+  Real Ttemp;
+  Real Pequil;
+  Real Ptemp;
+};
+
+// ======================================================================
 // fixed temperature solver
+// ======================================================================
 inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat;
   return neq * neq                 // jacobian
@@ -963,7 +1088,9 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   Real Tequil, Ttemp;
 };
 
+// ======================================================================
 // fixed P solver
+// ======================================================================
 inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
   return neq * neq                 // jacobian
@@ -1198,6 +1325,9 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   Real Tequil, Ttemp, Pequil;
 };
 
+// ======================================================================
+// RhoU Solver
+// ======================================================================
 inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat) {
   std::size_t neq = 2 * nmat;
   return neq * neq                 // jacobian
@@ -1443,6 +1573,9 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real *dpdv, *dtdv, *dpde, *dtde, *vtemp, *utemp;
 };
 
+// ======================================================================
+// Solver loop
+// ======================================================================
 template <class System>
 PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
   SolverStatus status;
