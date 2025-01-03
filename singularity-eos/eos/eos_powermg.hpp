@@ -172,10 +172,6 @@ class PowerMG : public EosBase<PowerMG> {
     // NOT seem well behaved for, e.g., 10*rho0*machine epsilon.
     return 1e-4 * _rho0;
   }
-  PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumDensity() const {
-    return robust::ratio(std::pow(std::numeric_limits<Real>::max(), 1. / _M), _rho0);
-  }
 
   inline void Finalize() {}
   static std::string EosType() { return std::string("PowerMG"); }

@@ -126,10 +126,10 @@ class MGUsup : public EosBase<MGUsup> {
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
-  // Since reference isotherm scales as _rho0/rho, EOS diverges at
-  // zero density. This bounds that to some degree.
+  // Since reference isotherm scales as eta = 1 -_rho0/rho, EOS
+  // diverges for rho << rho0. eta^2 is used, so...
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MinimumDensity() const { return 10 * robust::EPS(); }
+  Real MinimumDensity() const { return _RHOMINFAC * _rho0; }
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real MaximumDensity() const {
@@ -170,6 +170,7 @@ class MGUsup : public EosBase<MGUsup> {
  private:
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
+  const Real RHOMINFAC = std::sqrt(robust::EPS());
   Real _rho0, _T0, _Cs, _s, _G0, _Cv0, _E0, _S0;
   MeanAtomicProperties _AZbar;
 };

@@ -137,15 +137,6 @@ class Vinet : public EosBase<Vinet> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const { return std::cbrt(10 * robust::EPS()) * _rho0; }
 
-  // In principle, density should be unbounded from above In
-  // practice, however, since since this is a power law in
-  // (rho0/rho)^(1/3), it may fail when rho is sufficiently large.
-  PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumDensity() const {
-    Real maxind = VinetInternalParametersSize;
-    return robust::ratio(std::pow(std::numeric_limits<Real>::max(), 1. / maxind), _rho0);
-  }
-
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Vinet)

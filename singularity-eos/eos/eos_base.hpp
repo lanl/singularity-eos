@@ -869,8 +869,8 @@ class EosBase {
     auto PofRT = [&](const Real r) {
       return copy.PressureFromDensityTemperature(r, temp, lambda);
     };
-    Real rhoguess = rho; // use input density
-    if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
+    Real rhoguess = rho;                                // use input density
+    if ((rhoguess <= rhomin) || (rhoguess >= rhomax)) { // avoid edge effects
       if ((rhomin < DEFAULT_RHO_GUESS) && (DEFAULT_RHO_GUESS < rhomax)) {
         rhoguess = DEFAULT_RHO_GUESS;
       } else {
