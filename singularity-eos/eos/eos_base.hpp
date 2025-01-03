@@ -877,7 +877,6 @@ class EosBase {
         rhoguess = 0.5 * (rhomin + rhomax);
       }
     }
-    // JMM: Demand as much tolerance as we can, but don't reset rho below.
     auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, robust::EPS(),
                            robust::EPS(), rho);
     // JMM: This needs to not fail and instead return something sane.
