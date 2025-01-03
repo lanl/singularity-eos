@@ -870,8 +870,8 @@ class EosBase {
       return copy.PressureFromDensityTemperature(r, temp, lambda);
     };
     Real rhoguess = rho; // use input density
-    if ((rhoguess <= rhomin) || (rhoguess >= rhomax)) {
-      if ((rhomin <= DEFAULT_RHO_GUESS) && (DEFAULT_RHO_GUESS <= rhomax)) {
+    if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
+      if ((rhomin < DEFAULT_RHO_GUESS) && (DEFAULT_RHO_GUESS < rhomax)) {
         rhoguess = DEFAULT_RHO_GUESS;
       } else {
         rhoguess = 0.5 * (rhomin + rhomax);
