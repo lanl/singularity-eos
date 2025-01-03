@@ -664,6 +664,7 @@ PORTABLE_INLINE_FUNCTION void StellarCollapse::DensityEnergyFromPressureTemperat
   if ((lrguess < lRhoMin_) || (lrguess > lRhoMax_)) {
     lrguess = lRho_(rhoNormal_);
   }
+  // Since EOS is tabulated in logrho, use that for root find.
   auto lPofRT = [&](Real lR) { return lP_.interpToReal(Ye, lT, lR); };
   auto status = regula_falsi(lPofRT, lP, lrguess, lRhoMin_, lRhoMax_, ROOT_THRESH,
                              ROOT_THRESH, lrguess);

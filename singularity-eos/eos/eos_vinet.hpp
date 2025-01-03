@@ -132,6 +132,8 @@ class Vinet : public EosBase<Vinet> {
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
+  // EOS depends on (rho0/rho)^(1/3) so this is a reasonable bound
+  // before the EOS will become ill-behaved.
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const { return std::cbrt(10 * robust::EPS()) * _rho0; }
 

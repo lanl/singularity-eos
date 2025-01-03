@@ -126,6 +126,8 @@ class MGUsup : public EosBase<MGUsup> {
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
+  // Since reference isotherm scales as _rho0/rho, EOS diverges at
+  // zero density. This bounds that to some degree.
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const { return 10 * robust::EPS(); }
 
@@ -135,7 +137,7 @@ class MGUsup : public EosBase<MGUsup> {
       return 0.99 * robust::ratio(_s * _rho0, _s - 1);
     } else { // for s <= 1, no maximum, but we need to pick something.
       return 1e3 * _rho0;
-    }
+    } // note that s < 0 implies unphysical shock derivative.
   }
 
   template <typename Indexer_t = Real *>

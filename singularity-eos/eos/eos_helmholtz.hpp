@@ -676,7 +676,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    // TODO(JMM): Is this right???
+    // JMM: Conditions for an oxygen burning shell in a stellar
+    // core. Not sure if that's the best choice.
     rho = 1e7;
     temp = 1.5e9;
     FillEos(rho, temp, sie, press, cv, bmod,
