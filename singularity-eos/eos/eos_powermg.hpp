@@ -163,13 +163,11 @@ class PowerMG : public EosBase<PowerMG> {
   // compression, eta = 1 - rho0/rho, things will fail when rho is
   // much less than rho0. Worse, since this is a power law in
   // compression, it potentially depends on eta^M where M is the
-  // maximum index in the power series. In other words, the lower
-  // bound given by the M^th root of the smallest double times rho0, and
-  // the upper bound is given by the mth root of the maximum number,
-  // divided by rho0.
+  // maximum index in the power series.
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const {
-    return std::pow(std::numeric_limits<Real>::min(), 1. / _M) * _rho0;
+    // JMM: For whatever reason this seems a good heuristic.
+    return 1e-4 * _rho0;
   }
   PORTABLE_FORCEINLINE_FUNCTION
   Real MaximumDensity() const {
