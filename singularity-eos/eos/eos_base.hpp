@@ -863,9 +863,12 @@ class EosBase {
     constexpr Real DEFAULT_RHO_GUESS = 12;
 
     CRTP copy = *(static_cast<CRTP const *>(this));
+
     // P(rho) not monotone. When relevant, bound rhopmin.
     Real rhomin = std::max(copy.RhoPmin(temp), copy.MinimumDensity());
     Real rhomax = copy.MaximumDensity();
+    PORTABLE_REQUIRE(rhomax > rhomin, "max bound > min bound");
+
     auto PofRT = [&](const Real r) {
       return copy.PressureFromDensityTemperature(r, temp, lambda);
     };
