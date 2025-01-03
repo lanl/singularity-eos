@@ -166,7 +166,10 @@ class PowerMG : public EosBase<PowerMG> {
   // maximum index in the power series.
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const {
-    // JMM: For whatever reason this seems a good heuristic.
+    // JMM: I think formally this should be the mth root of machine
+    // epsilon times rho0, but for m = 20 or something that's of order
+    // 1. Things seem reasonably well behaved with this bound. They do
+    // NOT seem well behaved for, e.g., 10*rho0*machine epsilon.
     return 1e-4 * _rho0;
   }
   PORTABLE_FORCEINLINE_FUNCTION
