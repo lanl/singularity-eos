@@ -152,7 +152,6 @@ CheckRhoSieFromPT(EOS eos, Real rho, Real T,
   const Real sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
   Real rtest, etest;
   eos.DensityEnergyFromPressureTemperature(P, T, lambda, rtest, etest);
-  Real bmod = eos.BulkModulusFromDensityTemperature(rho, T, lambda);
   Real P_test = eos.PressureFromDensityTemperature(rtest, T, lambda);
   Real residual = P_test - P;
   Real frac_residual =
