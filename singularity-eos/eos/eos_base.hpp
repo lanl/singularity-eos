@@ -877,12 +877,13 @@ class EosBase {
         rhoguess = 0.5 * (rhomin + rhomax);
       }
     }
-    auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, robust::EPS(),
-                           robust::EPS(), rho);
-    // JMM: This needs to not fail and instead return something sane
+    auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, 10 * robust::EPS(),
+                           10 * robust::EPS(), rho);
+    // JMM: This needs to not fail and instead return something sane.
+    // If root find failed to converge, density will at least be
+    // within bounds.
     if (status != Status::SUCCESS) {
       PORTABLE_WARN("DensityEnergyFromPressureTemperature failed to find root\n");
-      rho = rhoguess;
     }
     sie = copy.InternalEnergyFromDensityTemperature(rho, temp, lambda);
     return;

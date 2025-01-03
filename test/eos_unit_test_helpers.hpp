@@ -159,7 +159,7 @@ CheckRhoSieFromPT(EOS eos, Real rho, Real T,
       std::min(std::abs(singularity::robust::ratio(residual, P)), std::abs(residual));
   bool results_good = (isClose(rho, rtest, 1e-8) && isClose(sie, etest, 1e-8))
                       // This is as good as it will get sometimes.
-                      || (std::abs(frac_residual) < 10 * singularity::robust::EPS());
+                      || (std::abs(frac_residual) <= 10 * singularity::robust::EPS());
   if (!results_good) {
     printf("RhoSie of PT failure!\n"
            "\trho_true = %.14e\n"
