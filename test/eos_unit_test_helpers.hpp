@@ -155,7 +155,7 @@ CheckRhoSieFromPT(EOS eos, Real rho, Real T,
   Real bmod = eos.BulkModulusFromDensityTemperature(rho, T, lambda);
   Real P_test = eos.PressureFromDensityTemperature(rtest, T, lambda);
   Real residual = P_test - P;
-  Real frac_residual = residual / P;
+  Real frac_residual = robust::ratio(residual, P);
   bool results_good = (isClose(rho, rtest, 1e-8) && isClose(sie, etest, 1e-8))
     // This is as good as it will get sometimes.
     || (std::abs(frac_residual) < 10*robust::EPS());
