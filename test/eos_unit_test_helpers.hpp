@@ -150,7 +150,8 @@ CheckRhoSieFromPT(EOS eos, Real rho, Real T,
                   Indexer_t &&lambda = static_cast<Real *>(nullptr)) {
   const Real P = eos.PressureFromDensityTemperature(rho, T, lambda);
   const Real sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
-  Real rtest, etest;
+  Real rtest = 12; // set these to something
+  Real etest = 1;
   eos.DensityEnergyFromPressureTemperature(P, T, lambda, rtest, etest);
   Real P_test = eos.PressureFromDensityTemperature(rtest, T, lambda);
   Real residual = P_test - P;
