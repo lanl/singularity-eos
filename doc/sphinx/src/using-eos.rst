@@ -1143,16 +1143,30 @@ quantities as outputs.
 Methods Used for Mixed Cell Closures
 --------------------------------------
 
-Several methods were developed in support of mixed cell closures. In particular:
+Several methods were developed in support of mixed cell closures. In particular the function
 
 .. cpp:function:: Real MinimumDensity() const;
 
-and 
+the function
 
 .. cpp:function:: Real MinimumTemperature() const;
 
+and the function
+
+.. cpp:function:: Real MaximumDensity() const;
+
 provide bounds for valid inputs into a table, which can be used by a
-root finder to meaningful bound the root search. Similarly,
+root finder to meaningful bound the root search.
+
+.. warning::
+
+  For unbounded equations of state, ``MinimumDensity`` and
+  ``MinimumTemperature`` will return zero, while ``MaximumDensity``
+  will return a very large finite number. Which number you get,
+  however, is not guaranteed. You may wish to apply more sensible
+  bounds in your own code.
+
+Similarly,
 
 .. cpp:function:: Real RhoPmin(const Real temp) const;
 
