@@ -142,34 +142,6 @@ class MGUsup : public EosBase<MGUsup> {
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
-    using RootFinding1D::findRoot;
-    using RootFinding1D::Status;
-    // JMM: diverges for rho -> 0
-    // and for s > 1 and rho -> rho0
-    Real rhomin = MinimumDensity();
-    Real rhomax = MaximumDensity();
-    auto PofRT = [&](const Real r) {
-      return PressureFromDensityTemperature(r, temp, lambda);
-    };
-    Real rhoguess = rho; // use input density
-    if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
-      rhoguess = 0.5 * (rhomin + rhomax);
-    }
-    // JMM: regula_falsi does not respect bounds
-    auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, robust::EPS(),
-                           robust::EPS(), rho);
-    if (status != Status::SUCCESS) {
-      PORTABLE_THROW_OR_ABORT(
-          "DensityEnergyFromPressureTemperature failed to find root\n");
-    }
-    sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
-    return;
-  }
-
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;

@@ -237,6 +237,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }

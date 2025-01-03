@@ -264,6 +264,12 @@ class HelmElectrons {
   std::size_t numTemp() const { return NTEMP; }
   PORTABLE_FORCEINLINE_FUNCTION
   std::size_t numRho() const { return NRHO; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumTemperature() const { return TMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const { return rhoMax(); }
 
  private:
   inline void InitDataFile_(const std::string &filename);

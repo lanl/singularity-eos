@@ -155,6 +155,9 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return t_.MinimumTemperature();
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
+    return t_.MaximumDensity();
+  }
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
