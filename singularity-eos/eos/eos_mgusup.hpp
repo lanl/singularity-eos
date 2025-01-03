@@ -170,7 +170,7 @@ class MGUsup : public EosBase<MGUsup> {
  private:
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
-  const Real _RHOMINFAC = std::sqrt(robust::EPS());
+  Real _RHOMINFAC = std::sqrt(robust::EPS());
   Real _rho0, _T0, _Cs, _s, _G0, _Cv0, _E0, _S0;
   MeanAtomicProperties _AZbar;
 };

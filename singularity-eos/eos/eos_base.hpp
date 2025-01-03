@@ -854,6 +854,7 @@ class EosBase {
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
     using RootFinding1D::findRoot; // more robust but slower. Better default.
+    using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
 
     // Pressure is not monotone in density at low densities, which can
