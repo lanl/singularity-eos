@@ -854,7 +854,6 @@ class EosBase {
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
     using RootFinding1D::findRoot; // more robust but slower. Better default.
-    using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
 
     // Pressure is not monotone in density at low densities, which can
@@ -875,11 +874,14 @@ class EosBase {
     };
     Real rhoguess = rho;                                // use input density
     if ((rhoguess <= rhomin) || (rhoguess >= rhomax)) { // avoid edge effects
+      /*
       if ((rhomin < DEFAULT_RHO_GUESS) && (DEFAULT_RHO_GUESS < rhomax)) {
         rhoguess = DEFAULT_RHO_GUESS;
       } else {
         rhoguess = 0.5 * (rhomin + rhomax);
       }
+      */
+      rhoguess = 0.5 * (rhomin + rhomax);
     }
     auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, robust::EPS(),
                            robust::EPS(), rho);
