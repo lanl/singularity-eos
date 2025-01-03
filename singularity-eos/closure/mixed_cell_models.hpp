@@ -776,6 +776,7 @@ inline int PTESolverPTRequiredScratch(const int nmat) {
 inline size_t PTESolverPTRequiredScratchInBytes(const int nmat) {
   return PTESolverPTRequiredScratch(nmat) * sizeof(Real);
 }
+// TODO(JMM): make sure normalizations are correct everywhere
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::InitBase;
@@ -872,12 +873,62 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     return converged_v && converged_u;
   }
 
+  PORTABLE_INLINE_FUNCTION
+  void Jacobian() const {
+    // sum_m d e_m / dT )_P
+    Real dedT_P_sum = 0.0;
+    // sum_m d e_m / dP )_T
+    Real dedP_T_sum = 0.0;
+    // - sum_m rho_tot / rho_m^2 * d rho_m / dT )_P
+    Real rtor2_dr_dT_P_sum = 0.0;
+    // - sum_m rho_tot / rho_m^2 d rho_m / dP )_T
+    Real rtor2_dr_dP_T_sum = 0.0;
+
+    // JMM: Note rescaling for u, P, T
+    for (int m = 0; m < nmat; ++m) {
+      Real r_pert, e_pert, u_pert;
+
+      //////////////////////////////
+      // perturb pressures
+      //////////////////////////////
+      Real dp = Pequil * params_.derivative_eps;
+      eos[m].DensityEnergyFromPressureTemperature(uscale * (Pequil + dp), Tnorm * Tequil,
+                                                  Cache[m], r_pert, e_pert);
+      Real drdp = robust::ratio(r_pert - rho[m], dp);
+      Real dedp = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dp);
+
+      rtor2_dr_dP_T_sum += robust::ratio(rho_total, rho[m] * rho[m]) * drdp;
+      dedP_T_sum += dedp;
+
+      //////////////////////////////
+      // perturb temperatures
+      //////////////////////////////
+      Real dT = Tequil * params_.derivative_eps;
+      eos[m].DensityEnergyFromPressureTemperature(uscale * Pequil, Tnorm * (Tequil + dT),
+                                                  Cache[m], r_pert, e_pert);
+      Real drdT = robust::ratio(r_pert - rho[m], dT);
+      Real dedT = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dT);
+
+      rtor2_dr_dT_P_sum += robust::ratio(rho_total, rho[m] * rho[m]) * drdT;
+      dedT_P_sum += dedp;
+    }
+
+    // Fill in the Jacobian
+    jacobian[0] = -rtor2_dr_dT_P_sum; // TODO(JMM): Check positions
+    jacobian[1] = -rtor2_dr_dP_T_sum;
+    jacobian[2] = dedT_P_sum;
+    jacobian[3] = dedP_T_sum;
+  }
+
  private:
   // TODO(JMM): Should these have trailing underscores?
-  Real Tequil;
-  Real Ttemp;
+  // Current P, T state
   Real Pequil;
+  Real Tequil;
+  // Scratch states for test update
   Real Ptemp;
+  Real Ttemp;
+  // TODO(JMM): Should there be a P norm as well as a Tnorm?
 };
 
 // ======================================================================
