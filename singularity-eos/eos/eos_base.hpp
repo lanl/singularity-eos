@@ -856,10 +856,10 @@ class EosBase {
     using RootFinding1D::findRoot; // more robust but slower. Better default.
     using RootFinding1D::Status;
 
-    // Pressure is not monotone in density at low densities, due to a
-    // phase transition, which can prevent convergence. We want to
-    // approach tension from above, not below. Choose close to, but
-    // above, normal density for a metal like copper.
+    // Pressure is not monotone in density at low densities, which can
+    // prevent convergence. We want to approach tension from above,
+    // not below. Choose close to, but above, normal density for a
+    // metal like copper.
     constexpr Real DEFAULT_RHO_GUESS = 12;
 
     CRTP copy = *(static_cast<CRTP const *>(this));
@@ -870,14 +870,13 @@ class EosBase {
       return copy.PressureFromDensityTemperature(r, temp, lambda);
     };
     Real rhoguess = rho; // use input density
-    if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
-      if ((rhomin < DEFAULT_RHO_GUESS) && (DEFAULT_RHO_GUESS < rhomax)) {
+    if ((rhoguess <= rhomin) || (rhoguess >= rhomax)) {
+      if ((rhomin <= DEFAULT_RHO_GUESS) && (DEFAULT_RHO_GUESS <= rhomax)) {
         rhoguess = DEFAULT_RHO_GUESS;
       } else {
         rhoguess = 0.5 * (rhomin + rhomax);
       }
     }
-    printf("%.14e %.14e %.14e\n", rhomin, rhomax, rhoguess);
     auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, robust::EPS(),
                            robust::EPS(), rho);
     // JMM: This needs to not fail and instead return something sane
