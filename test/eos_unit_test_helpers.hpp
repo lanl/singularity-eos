@@ -155,10 +155,10 @@ CheckRhoSieFromPT(EOS eos, Real rho, Real T,
   Real bmod = eos.BulkModulusFromDensityTemperature(rho, T, lambda);
   Real P_test = eos.PressureFromDensityTemperature(rtest, T, lambda);
   Real residual = P_test - P;
-  Real frac_residual = robust::ratio(residual, P);
+  Real frac_residual = singularity::robust::ratio(residual, P);
   bool results_good = (isClose(rho, rtest, 1e-8) && isClose(sie, etest, 1e-8))
                       // This is as good as it will get sometimes.
-                      || (std::abs(frac_residual) < 10 * robust::EPS());
+                      || (std::abs(frac_residual) < 10 * singularity::robust::EPS());
   if (!results_good) {
     printf("RhoSie of PT failure!\n"
            "\trho_true = %.14e\n"
