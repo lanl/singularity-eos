@@ -1172,3 +1172,35 @@ Similarly,
 
 returns the density at which pressure is minimized for a given
 temperature. This is again useful for root finds.
+
+The function
+
+.. code-block:: cpp
+
+  template <typename Indexer_t = Real*>
+  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                            Indexer_t &&lambda, Real &rho, Real &sie) const;
+
+is designed for working in Pressure-Temperature space. Given a
+pressure ``press`` and temperature ``temp``, it sets a density ``rho``
+and specific internal energy ``sie``.
+
+.. note::
+
+  Note that ``lambda`` must be passed in, whether or not a given
+  equation of state requires one. You may pass in ``nullptr`` safely,
+  however.
+
+Typically this operation requires a root find. You may pass in an
+initial guess for the density ``rho`` in-place and most EOS models
+will use it.
+
+.. warning::
+
+  Pressure is not necessarily monotone in density and it may be double
+  valued. Thus you are not guaranteed to find the correct root and the
+  value of your initial guess may determine correctness. The fact that
+  ``rho`` may be used as an initial guess means you **must** pass in
+  an initialized variable, even if it is zero-initialized. Do not pass
+  uninitialized memory into this function!
+
