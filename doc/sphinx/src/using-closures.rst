@@ -278,6 +278,42 @@ choice of the second independent variable is discussed below and has
 implications for both the number of additional unknowns and the stability of the
 method.
 
+.. _pressure-temperature-formulation:
+The Pressure-Temperature Formulation
+`````````````````````````````````````
+
+An obvious choice is to treat the independent variables as pressure
+and temperature. Then one has only two equations and two unknowns. The
+residual contains only the volume fraction and energy summmation rules
+described above. Taylor expanding these residuals about fixed
+temeprature and pressure points leads to two residual equations of the
+form
+
+.. math::
+
+  0 = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial P}\right)_T\\
+  0 = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial \epsilon_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial \epsilon_i}{\partial P}\right)_T
+
+However, derivatives in the volume fraction are not easily
+accessible. They can, however, be cast in terms of the density,
+resulting in the residual:
+
+.. math::
+
+  0 = (T^* - T) \sum_{i = 0}^{N-1} \frac{\rho_{\mathrm{tot}}}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \frac{\rho_{\mathrm{tot}}}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial P}\right)_T\\
+  0 = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial \epsilon_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial \epsilon_i}{\partial P}\right)_T
+
+where :math:`\rho_{\mathrm{tot}}` is the sum of densities over all materials.
+
+The primary advantage of the pressure-temperature space solver is that
+it has only two independent variables and two unknowns, meaning the
+cost scales only linearly with the number of materials, not
+quadratically (or worse). The primary disadvantage, is that most
+equations of state are not formulated in terms of pressure and
+temperature, meaning additional inversions are required.
+
+In the code, this method is referred to as ``PTESolverPT``.
+
 .. _density-energy-formalism:
 The Density-Energy Formulation
 ''''''''''''''''''''''''''''''

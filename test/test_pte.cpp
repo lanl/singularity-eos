@@ -30,11 +30,11 @@
 #include <singularity-eos/eos/eos_variant.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
+using singularity::PTESolver;
 using singularity::PTESolverPT;
 using singularity::PTESolverPTRequiredScratch;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
-using singularity::PTESolver;
 using singularity::Variant;
 using EOS = Variant<Gruneisen, DavisReactants, DavisProducts>;
 
