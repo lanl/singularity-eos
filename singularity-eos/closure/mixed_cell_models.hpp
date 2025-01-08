@@ -885,6 +885,9 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     Real rtor2_dr_dP_T_sum = 0.0;
 
     // JMM: Note rescaling for u, P, T
+
+    // TODO(JMM): Should we use the thermodynamic derivatives rather
+    // than finite differences?
     for (int m = 0; m < nmat; ++m) {
       Real r_pert, e_pert, u_pert;
 
@@ -918,6 +921,41 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     jacobian[1] = -rtor2_dr_dP_T_sum;
     jacobian[2] = dedT_P_sum;
     jacobian[3] = dedP_T_sum;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real ScaleDx() const {
+    Real scale = 1.0;
+    if (scale * dx[0] < -0.95 * Tequil) {
+      scale = robust::ratio(-0.95 * Tequil, dx[0]);
+    }
+    for (int i = 0; i < neq; ++i) {
+      dx[i] *= scale;
+    }
+    return scale;
+  }
+
+  // Update the solution and return new residual.  Possibly called repeatedly with
+  // different scale factors as part of a line search
+  PORTABLE_INLINE_FUNCTION
+  Real TestUpdate(const Real scale, bool const cache_state = false) {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
+      Ttemp = Tequil;
+      Ptemp = Pequil;
+    }
+    Tequil = Ttemp + scale * dx[0];
+    Pequil = Ptemp + scale * dx[1];
+    for (int m = 0; m < nmat; ++m) {
+      eos[m].DensityEnergyFromPressureTemperature(Pequil * uscale, Tequil * Tnorm,
+                                                  Cache[m], rho[m], sie[m]);
+      vfrac[m] = robust::ratio(rhobar[m], rho[m]);
+      u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
+      temp[m] = Tequil;
+    }
+    Residual();
+    return ResidualNorm();
   }
 
  private:
