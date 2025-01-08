@@ -829,16 +829,18 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real Init() {
     InitBase();
     Residual();
-    // calculate an initial equilibrium pressure
-    Real psum = 0.0;
-    Real vsum = 0.0;
+    // calculate an initial equilibrium pressure. Volume-fraction
+    // weighting pressures seems unwise. Use minimum positive pressure
+    // accross initial pressures.
+    Pequil = 1e100; // not actual infinity in case we run with fast math
     for (int m = 0; m < nmat; ++m) {
-      psum += vfrac[m] * press[m];
-      vsum += vfrac[m];
+      if ((press[m] < Pequil) && (press[m] > 0)) {
+        Pequil = press[m];
+      }
     }
+    if (Pequil = 1e100) Pequil = 1; // note includes uscale
     // all normalized temps set to 1 so no averaging necessary here.
     Tequil = temp[0];
-    Pequil = psum / vsum;
     // Leave this in for now, but comment out because I'm not sure it's a good idea
     // TryIdealPTE(this);
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -850,12 +852,10 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   void Residual() const {
     Real vsum = 0.0;
     Real esum = 0.0;
-    // is volume averaging the right thing here?
     for (int m = 0; m < nmat; ++m) {
       vsum += vfrac[m];
       esum += sie[m];
     }
-    // do we have an initial vfrac_sum
     residual[RV] = vfrac_total - vsum;
     residual[RSIE] = sie_total - esum;
   }
