@@ -158,6 +158,13 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
     return t_.MaximumDensity();
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
+    return t_.MinimumPressure();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real
+  MaximumPressureFromTemperature(const Real temp) const {
+    return t_.MaximumPressureFromTemperature(temp);
+  }
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 

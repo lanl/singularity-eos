@@ -793,6 +793,16 @@ class EosBase {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MaximumDensity() const { return 1e100; }
 
+  // These are for the PT space PTE solver to bound the iterations in
+  // a safe range.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return 0; }
+  // Gruneisen EOS's often have a maximum density, which implies a maximum pressure.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureFromTemperature([[maybe_unused]] const Real T) const {
+    return 1e100;
+  }
+
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
 

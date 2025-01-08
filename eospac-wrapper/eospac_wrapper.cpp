@@ -25,9 +25,9 @@
 namespace EospacWrapper {
 
 void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
-  constexpr int NT = 2;
+  constexpr int NT = 3;
   EOS_INTEGER tableHandle[NT];
-  EOS_INTEGER tableType[NT] = {EOS_Info, EOS_Ut_DT};
+  EOS_INTEGER tableType[NT] = {EOS_Info, EOS_Ut_DT, EOS_Pt_DT};
 
   EOS_INTEGER commentsHandle[1];
   EOS_INTEGER commentsType[1] = {EOS_Comment};
@@ -48,7 +48,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
     }
   }
 
-  eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Info", "EOS_Ut_DT"}, eospacWarn);
+  eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Info", "EOS_Ut_DT", "EOS_Pt_DT"},
+              eospacWarn);
 
   for (int i = 0; i < numInfoTables; i++) {
     eosSafeTableInfo(&(tableHandle[i]), NI[i], infoItems[i].data(), infoVals[i].data(),
@@ -66,6 +67,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
   metadata.TMax = temperatureFromSesame(infoVals[1][3]);
   metadata.sieMin = sieFromSesame(infoVals[1][4]);
   metadata.sieMax = sieFromSesame(infoVals[1][5]);
+  metadata.PMin = pressureFromSesame(infoVals[2][4]);
+  metadata.PMax = pressureFromSesame(infoVals[2][5]);
   metadata.numRho = static_cast<int>(infoVals[1][6]);
   metadata.numT = static_cast<int>(infoVals[1][7]);
   metadata.rhoConversionFactor = infoVals[1][8];
