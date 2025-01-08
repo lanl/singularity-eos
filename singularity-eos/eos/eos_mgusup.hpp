@@ -139,6 +139,14 @@ class MGUsup : public EosBase<MGUsup> {
       return 1e3 * _rho0;
     } // note that s < 0 implies unphysical shock derivative.
   }
+  // Hugoniot pressure ill defined at reference density. On one side,
+  // negative. On the other positive.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return -1e100; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureFromTemperature([[maybe_unused]] const Real T) const {
+    return 1e100;
+  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void

@@ -1171,7 +1171,18 @@ Similarly,
 .. cpp:function:: Real RhoPmin(const Real temp) const;
 
 returns the density at which pressure is minimized for a given
-temperature. This is again useful for root finds.
+temperature. The function
+
+.. cpp:function:: Real MinimumPressure() const;
+
+provides the minimum pressure an equation of state supports, which may
+be the most negative tension state. The function
+
+.. cpp:function:: Real MaximumPressureFromTemperature() const;
+
+provides a maximum possible pressure an equation of state
+supports. (Most models are unbounded in pressure.) This is again
+useful for root finds.
 
 The function
 

@@ -333,6 +333,23 @@ class Variant {
     return mpark::visit([](const auto &eos) { return eos.MinimumTemperature(); }, eos_);
   }
 
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const {
+    return mpark::visit([](const auto &eos) { return eos.MaximumDensity(); }, eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const {
+    return mpark::visit([](const auto &eos) { return eos.MinimumPressure(); }, eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureFromTemperature(const Real temp) const {
+    return mpark::visit(
+        [&temp](const auto &eos) { return eos.MaximumPressureFromTemperature(temp); },
+        eos_);
+  }
+
   // Atomic mass/atomic number functions
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicMass() const {

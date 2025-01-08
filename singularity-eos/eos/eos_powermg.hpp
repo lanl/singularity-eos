@@ -172,6 +172,13 @@ class PowerMG : public EosBase<PowerMG> {
     // NOT seem well behaved for, e.g., 10*rho0*machine epsilon.
     return 1e-4 * _rho0;
   }
+  // Essentially unbounded... I think.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return -1e100; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureFromTemperature([[maybe_unused]] const Real T) const {
+    return 1e100;
+  }
 
   inline void Finalize() {}
   static std::string EosType() { return std::string("PowerMG"); }

@@ -137,6 +137,14 @@ class Vinet : public EosBase<Vinet> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const { return std::cbrt(10 * robust::EPS()) * _rho0; }
 
+  // Essentially unbounded... I think.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return -1e100; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureFromTemperature([[maybe_unused]] const Real T) const {
+    return 1e100;
+  }
+
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Vinet)
