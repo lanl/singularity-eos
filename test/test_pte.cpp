@@ -30,8 +30,11 @@
 #include <singularity-eos/eos/eos_variant.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
+using singularity::PTESolverPT;
+using singularity::PTESolverPTRequiredScratch;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
+using singularity::PTESolver;
 using singularity::Variant;
 using EOS = Variant<Gruneisen, DavisReactants, DavisProducts>;
 
@@ -63,7 +66,8 @@ int main(int argc, char *argv[]) {
     EOSAccessor eos(eos_v);
 
     // scratch required for PTE solver
-    auto nscratch_vars = PTESolverRhoTRequiredScratch(NMAT);
+    auto nscratch_vars =
+        std::max(PTESolverRhoTRequiredScratch(NMAT), PTESolverPTRequiredScratch(NMAT));
 
     // state vars
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -173,10 +177,22 @@ int main(int argc, char *argv[]) {
                   NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
                   &scratch_d(t * nscratch_vars), Tguess);
           auto status = PTESolver(method);
+
           if (status.converged) {
             nsuccess_d() += 1;
           }
           hist_d[method.Niter()] += 1;
+
+          auto method2 =
+              PTESolverPT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
+                  NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
+                  &scratch_d(t * nscratch_vars), Tguess);
+          status = PTESolver(method2);
+
+          if (status.converged) {
+            nsuccess_d() += 1;
+          }
+          hist_d[method2.Niter()] += 1;
         });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();

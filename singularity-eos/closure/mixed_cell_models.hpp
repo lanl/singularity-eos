@@ -829,7 +829,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real Init() {
     InitBase();
     Residual();
-    // calculate an initil equilibrium pressure
+    // calculate an initial equilibrium pressure
     Real psum = 0.0;
     Real vsum = 0.0;
     for (int m = 0; m < nmat; ++m) {
