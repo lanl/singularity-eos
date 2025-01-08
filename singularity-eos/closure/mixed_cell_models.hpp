@@ -838,7 +838,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
         Pequil = press[m];
       }
     }
-    if (Pequil = 1e100) Pequil = 1; // note includes uscale
+    if (Pequil >= 1e100) Pequil = 1; // note includes uscale
     // all normalized temps set to 1 so no averaging necessary here.
     Tequil = temp[0];
     // Leave this in for now, but comment out because I'm not sure it's a good idea
