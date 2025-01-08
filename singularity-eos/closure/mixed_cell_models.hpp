@@ -913,7 +913,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       Real dedT = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dT);
 
       rtor2_dr_dT_P_sum += robust::ratio(rho_total, rho[m] * rho[m]) * drdT;
-      dedT_P_sum += dedp;
+      dedT_P_sum += dedT;
     }
 
     // Fill in the Jacobian
