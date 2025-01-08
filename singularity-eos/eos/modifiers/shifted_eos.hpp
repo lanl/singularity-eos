@@ -351,6 +351,9 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return t_.MinimumTemperature();
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
+    return t_.MaximumDensity();
+  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(

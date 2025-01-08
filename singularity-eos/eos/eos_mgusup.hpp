@@ -126,8 +126,10 @@ class MGUsup : public EosBase<MGUsup> {
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
+  // Since reference isotherm scales as eta = 1 -_rho0/rho, EOS
+  // diverges for rho << rho0. eta^2 is used, so...
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MinimumDensity() const { return 10 * robust::EPS(); }
+  Real MinimumDensity() const { return _RHOMINFAC * _rho0; }
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real MaximumDensity() const {
@@ -135,35 +137,7 @@ class MGUsup : public EosBase<MGUsup> {
       return 0.99 * robust::ratio(_s * _rho0, _s - 1);
     } else { // for s <= 1, no maximum, but we need to pick something.
       return 1e3 * _rho0;
-    }
-  }
-
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
-    using RootFinding1D::findRoot;
-    using RootFinding1D::Status;
-    // JMM: diverges for rho -> 0
-    // and for s > 1 and rho -> rho0
-    Real rhomin = MinimumDensity();
-    Real rhomax = MaximumDensity();
-    auto PofRT = [&](const Real r) {
-      return PressureFromDensityTemperature(r, temp, lambda);
-    };
-    Real rhoguess = rho; // use input density
-    if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
-      rhoguess = 0.5 * (rhomin + rhomax);
-    }
-    // JMM: regula_falsi does not respect bounds
-    auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, robust::EPS(),
-                           robust::EPS(), rho);
-    if (status != Status::SUCCESS) {
-      PORTABLE_THROW_OR_ABORT(
-          "DensityEnergyFromPressureTemperature failed to find root\n");
-    }
-    sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
-    return;
+    } // note that s < 0 implies unphysical shock derivative.
   }
 
   template <typename Indexer_t = Real *>
@@ -196,6 +170,7 @@ class MGUsup : public EosBase<MGUsup> {
  private:
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
+  Real _RHOMINFAC = std::sqrt(robust::EPS());
   Real _rho0, _T0, _Cs, _s, _G0, _Cv0, _E0, _S0;
   MeanAtomicProperties _AZbar;
 };

@@ -150,14 +150,17 @@ CheckRhoSieFromPT(EOS eos, Real rho, Real T,
                   Indexer_t &&lambda = static_cast<Real *>(nullptr)) {
   const Real P = eos.PressureFromDensityTemperature(rho, T, lambda);
   const Real sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
-  Real rtest, etest;
+  Real rtest = 12; // set these to something
+  Real etest = 1;
   eos.DensityEnergyFromPressureTemperature(P, T, lambda, rtest, etest);
-  Real bmod = eos.BulkModulusFromDensityTemperature(rho, T, lambda);
-  bool results_good = (isClose(rho, rtest, bmod * 1e-8) || isClose(rho, rtest, 1e-8)) &&
-                      (isClose(sie, etest, bmod * 1e-8) || isClose(sie, etest, 1e-8));
+  Real P_test = eos.PressureFromDensityTemperature(rtest, T, lambda);
+  Real residual = P_test - P;
+  Real frac_residual =
+      std::min(std::abs(singularity::robust::ratio(residual, P)), std::abs(residual));
+  bool results_good = (isClose(rho, rtest, 1e-8) && isClose(sie, etest, 1e-8))
+                      // This is as good as it will get sometimes.
+                      || (std::abs(frac_residual) <= 1e-8);
   if (!results_good) {
-    Real P_test = eos.PressureFromDensityTemperature(rtest, T, lambda);
-    Real residual = P_test - P;
     printf("RhoSie of PT failure!\n"
            "\trho_true = %.14e\n"
            "\tsie_true = %.14e\n"
@@ -166,8 +169,9 @@ CheckRhoSieFromPT(EOS eos, Real rho, Real T,
            "\trho      = %.14e\n"
            "\tsie      = %.14e\n"
            "\tP_test   = %.14e\n"
-           "\tresidual = %.14e\n",
-           rho, sie, P, T, rtest, etest, P_test, residual);
+           "\tresidual = %.14e\n"
+           "\tfracres  = %.14e\n",
+           rho, sie, P, T, rtest, etest, P_test, residual, frac_residual);
   }
   return results_good;
 }

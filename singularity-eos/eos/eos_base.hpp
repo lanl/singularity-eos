@@ -16,6 +16,7 @@
 #define _SINGULARITY_EOS_EOS_EOS_BASE_
 
 #include <cstring>
+#include <limits>
 #include <string>
 
 #include <ports-of-call/portability.hpp>
@@ -783,6 +784,15 @@ class EosBase {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumTemperature() const { return 0; }
 
+  // Report maximum value of density. Default is unbounded.
+  // JMM: Should we use actual infinity, the largest real, or just a
+  // big number?  For comparisons, actual infinity is better. It also
+  // has the advantage of being projective with modifiers that modify
+  // the max. On the other hand, it's more fraught if someone tries to
+  // put it into a formula without guarding against it.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const { return 1e100; }
+
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
 
@@ -843,34 +853,40 @@ class EosBase {
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
-    // TODO(JMM): A lot hardcoded in here... Hopefully relevent EOS's
-    // overwrite.
-    constexpr Real MAXFAC = 1e8;
-    constexpr Real EPS = 10 * robust::EPS();
-    constexpr Real MINR_DEFAULT = 1e-4;
-    constexpr Real DEFAULT_RHO_GUESS = 4;
     using RootFinding1D::findRoot; // more robust but slower. Better default.
     using RootFinding1D::Status;
+
+    // Pressure is not monotone in density at low densities, which can
+    // prevent convergence. We want to approach tension from above,
+    // not below. Choose close to, but above, normal density for a
+    // metal like copper.
+    constexpr Real DEFAULT_RHO_GUESS = 12;
+
     CRTP copy = *(static_cast<CRTP const *>(this));
+
+    // P(rho) not monotone. When relevant, bound rhopmin.
+    Real rhomin = std::max(copy.RhoPmin(temp), copy.MinimumDensity());
+    Real rhomax = copy.MaximumDensity();
+    PORTABLE_REQUIRE(rhomax > rhomin, "max bound > min bound");
+
     auto PofRT = [&](const Real r) {
       return copy.PressureFromDensityTemperature(r, temp, lambda);
     };
-    // JMM: This can't be zero, in case MinimumDensity is zero
-    Real rhomin = std::max(MINR_DEFAULT, copy.MinimumDensity());
-    Real rhomax = MAXFAC * rhomin;
-    Real rhoguess = rho; // use input density
-    if ((rhoguess < rhomin) || (rhoguess > rhomax)) {
-      if ((rhomin < DEFAULT_RHO_GUESS) && (rhomax > DEFAULT_RHO_GUESS)) {
+    Real rhoguess = rho;                                // use input density
+    if ((rhoguess <= rhomin) || (rhoguess >= rhomax)) { // avoid edge effects
+      if ((rhomin < DEFAULT_RHO_GUESS) && (DEFAULT_RHO_GUESS < rhomax)) {
         rhoguess = DEFAULT_RHO_GUESS;
       } else {
         rhoguess = 0.5 * (rhomin + rhomax);
       }
     }
-    auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, EPS, EPS, rho);
-    // JMM: This needs to not fail and instead return something sane
+    auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, robust::EPS(),
+                           robust::EPS(), rho);
+    // JMM: This needs to not fail and instead return something sane.
+    // If root find failed to converge, density will at least be
+    // within bounds.
     if (status != Status::SUCCESS) {
       PORTABLE_WARN("DensityEnergyFromPressureTemperature failed to find root\n");
-      rho = rhoguess;
     }
     sie = copy.InternalEnergyFromDensityTemperature(rho, temp, lambda);
     return;

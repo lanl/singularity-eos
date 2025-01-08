@@ -157,6 +157,22 @@ class PowerMG : public EosBase<PowerMG> {
     }
     printf("\n\n");
   }
+
+  // In principle, PowerMG should be valid for all densities. In
+  // practice, however, since the EOS is parametrized in terms of the
+  // compression, eta = 1 - rho0/rho, things will fail when rho is
+  // much less than rho0. Worse, since this is a power law in
+  // compression, it potentially depends on eta^M where M is the
+  // maximum index in the power series.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const {
+    // JMM: I think formally this should be the mth root of machine
+    // epsilon times rho0, but for m = 20 or something that's of order
+    // 1. Things seem reasonably well behaved with this bound. They do
+    // NOT seem well behaved for, e.g., 10*rho0*machine epsilon.
+    return 1e-4 * _rho0;
+  }
+
   inline void Finalize() {}
   static std::string EosType() { return std::string("PowerMG"); }
   static std::string EosPyType() { return EosType(); }
