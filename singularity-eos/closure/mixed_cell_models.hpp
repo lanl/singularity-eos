@@ -929,6 +929,20 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     if (scale * dx[0] < -0.95 * Tequil) {
       scale = robust::ratio(-0.95 * Tequil, dx[0]);
     }
+    auto bounded = [=](Real Pbound, Real delta) {
+      return robust::ratio(robust::ratio(Pbound, uscale) - Pequil, delta);
+    };
+
+    for (int m = 0; m < nmat; ++m) {
+      Real Pmin = eos[m].MinimumPressure();
+      scale = std::min(std::abs(scale), std::abs(0.95 * bounded(Pmin, dx[1])));
+    }
+    for (int m = 0; m < nmat; ++m) {
+      Real Ttest = (Tequil + scale * dx[0]) * Tnorm;
+      Real Pmax = eos[m].MaximumPressureFromTemperature(Ttest);
+      scale = std::min(std::abs(scale), std::abs(0.95 * bounded(Pmax, dx[0])));
+    }
+
     for (int i = 0; i < neq; ++i) {
       dx[i] *= scale;
     }
