@@ -889,7 +889,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     // TODO(JMM): Should we use the thermodynamic derivatives rather
     // than finite differences?
     for (int m = 0; m < nmat; ++m) {
-      Real r_pert, e_pert, u_pert;
+      Real r_pert, e_pert;
 
       //////////////////////////////
       // perturb pressures
