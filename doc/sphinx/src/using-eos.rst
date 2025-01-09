@@ -1178,11 +1178,11 @@ temperature. The function
 provides the minimum pressure an equation of state supports, which may
 be the most negative tension state. The function
 
-.. cpp:function:: Real MaximumPressureFromTemperature() const;
+.. cpp:function:: Real MaximumPressureAtTemperature(const Real temp) const;
 
-provides a maximum possible pressure an equation of state
-supports. (Most models are unbounded in pressure.) This is again
-useful for root finds.
+provides a maximum possible pressure an equation of state supports at
+a given temperature. (Most models are unbounded in pressure.) This is
+again useful for root finds.
 
 The function
 
@@ -1194,13 +1194,8 @@ The function
 
 is designed for working in Pressure-Temperature space. Given a
 pressure ``press`` and temperature ``temp``, it sets a density ``rho``
-and specific internal energy ``sie``.
-
-.. note::
-
-  Note that ``lambda`` must be passed in, whether or not a given
-  equation of state requires one. You may pass in ``nullptr`` safely,
-  however.
+and specific internal energy ``sie``. The ``lambda`` is optional and
+defaults to a ``nullptr``.
 
 Typically this operation requires a root find. You may pass in an
 initial guess for the density ``rho`` in-place and most EOS models

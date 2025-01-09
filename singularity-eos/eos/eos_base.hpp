@@ -799,9 +799,7 @@ class EosBase {
   Real MinimumPressure() const { return 0; }
   // Gruneisen EOS's often have a maximum density, which implies a maximum pressure.
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureFromTemperature([[maybe_unused]] const Real T) const {
-    return 1e100;
-  }
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
@@ -900,6 +898,14 @@ class EosBase {
     }
     sie = copy.InternalEnergyFromDensityTemperature(rho, temp, lambda);
     return;
+  }
+  PORTABLE_INLINE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
+                                                                     const Real temp,
+                                                                     Real &rho,
+                                                                     Real &sie) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    copy.DensityEnergyFromPressureTemperature(press, temp, static_cast<Real *>(nullptr),
+                                              rho, sie);
   }
 
   // Serialization

@@ -176,9 +176,7 @@ class PowerMG : public EosBase<PowerMG> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return -1e100; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureFromTemperature([[maybe_unused]] const Real T) const {
-    return 1e100;
-  }
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
 
   inline void Finalize() {}
   static std::string EosType() { return std::string("PowerMG"); }

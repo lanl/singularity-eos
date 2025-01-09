@@ -166,9 +166,7 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return -1e100; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureFromTemperature([[maybe_unused]] const Real T) const {
-    return 1e100;
-  }
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
