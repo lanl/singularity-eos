@@ -354,9 +354,9 @@ class Variant {
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureFromTemperature(const Real temp) const {
+  Real MaximumPressureAtTemperature(const Real temp) const {
     return mpark::visit(
-        [&temp](const auto &eos) { return eos.MaximumPressureFromTemperature(temp); },
+        [&temp](const auto &eos) { return eos.MaximumPressureAtTemperature(temp); },
         eos_);
   }
 

@@ -1178,11 +1178,11 @@ temperature. The function
 provides the minimum pressure an equation of state supports, which may
 be the most negative tension state. The function
 
-.. cpp:function:: Real MaximumPressureFromTemperature() const;
+.. cpp:function:: Real MaximumPressureAtTemperature(const Real temp) const;
 
-provides a maximum possible pressure an equation of state
-supports. (Most models are unbounded in pressure.) This is again
-useful for root finds.
+provides a maximum possible pressure an equation of state supports at
+a given temperature. (Most models are unbounded in pressure.) This is
+again useful for root finds.
 
 The function
 

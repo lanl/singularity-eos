@@ -254,9 +254,8 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
     return inv_press_unit_ * t_.MinimumPressure();
   }
-  PORTABLE_FORCEINLINE_FUNCTION Real
-  MaximumPressureFromTemperature(const Real temp) const {
-    return inv_press_unit_ * t_.MaximumPressureFromTemperature(temp_unit_ * temp);
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
+    return inv_press_unit_ * t_.MaximumPressureAtTemperature(temp_unit_ * temp);
   }
 
   template <typename Indexer_t = Real *>

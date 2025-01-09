@@ -245,9 +245,8 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
     return t_.MinimumPressure();
   }
-  PORTABLE_FORCEINLINE_FUNCTION Real
-  MaximumPressureFromTemperature(const Real temp) const {
-    return t_.MaximumPressureFromTemperature(temp);
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
+    return t_.MaximumPressureAtTemperature(temp);
   }
 
   template <typename Indexer_t = Real *>

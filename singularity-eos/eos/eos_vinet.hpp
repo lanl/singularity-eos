@@ -141,9 +141,7 @@ class Vinet : public EosBase<Vinet> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return -1e100; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureFromTemperature([[maybe_unused]] const Real T) const {
-    return 1e100;
-  }
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
 
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here

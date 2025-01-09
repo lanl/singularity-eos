@@ -177,7 +177,7 @@ class Gruneisen : public EosBase<Gruneisen> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return PressureFromDensityInternalEnergy(0, 0); }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real MaximumPressureFromTemperature(const Real T) const {
+  Real MaximumPressureAtTemperature(const Real T) const {
     return MaxStableDensityAtTemperature(T);
   }
 
