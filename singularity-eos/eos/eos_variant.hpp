@@ -317,6 +317,16 @@ class Variant {
         },
         eos_);
   }
+  PORTABLE_INLINE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
+                                                                     const Real temp,
+                                                                     Real &rho,
+                                                                     Real &sie) const {
+    return mpark::visit(
+        [&press, &temp, &rho, &sie](const auto &eos) {
+          return eos.DensityEnergyFromPressureTemperature(press, temp, rho, sie);
+        },
+        eos_);
+  }
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const {

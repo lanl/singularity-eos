@@ -1194,13 +1194,8 @@ The function
 
 is designed for working in Pressure-Temperature space. Given a
 pressure ``press`` and temperature ``temp``, it sets a density ``rho``
-and specific internal energy ``sie``.
-
-.. note::
-
-  Note that ``lambda`` must be passed in, whether or not a given
-  equation of state requires one. You may pass in ``nullptr`` safely,
-  however.
+and specific internal energy ``sie``. The ``lambda`` is optional and
+defaults to a ``nullptr``.
 
 Typically this operation requires a root find. You may pass in an
 initial guess for the density ``rho`` in-place and most EOS models

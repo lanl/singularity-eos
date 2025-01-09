@@ -901,6 +901,14 @@ class EosBase {
     sie = copy.InternalEnergyFromDensityTemperature(rho, temp, lambda);
     return;
   }
+  PORTABLE_INLINE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
+                                                                     const Real temp,
+                                                                     Real &rho,
+                                                                     Real &sie) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    copy.DensityEnergyFromPressureTemperature(press, temp, static_cast<Real *>(nullptr),
+                                              rho, sie);
+  }
 
   // Serialization
   /*
