@@ -939,7 +939,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     }
     for (int m = 0; m < nmat; ++m) {
       Real Ttest = (Tequil + scale * dx[0]) * Tnorm;
-      Real Pmax = eos[m].MaximumPressureFromTemperature(Ttest);
+      Real Pmax = eos[m].MaximumPressureAtTemperature(Ttest);
       scale = std::min(std::abs(scale), std::abs(0.95 * bounded(Pmax, dx[0])));
     }
 
