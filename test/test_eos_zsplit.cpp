@@ -88,6 +88,11 @@ SCENARIO("ZSplit of Ideal Gas", "[ZSplit][IdealGas][IdealElectrons]") {
               printf("Bad sie Sum! %d %.14e %.14e %.14e\n", i, et, ei, ee);
               nw += 1;
             }
+
+            if (Z > 0) {
+              nw += !CheckRhoSieFromPT(eos_zi, rho, temp, lambda);
+              nw += !CheckRhoSieFromPT(eos_ze, rho, temp, lambda);
+            }
           },
           nwrong);
       THEN("Pe + Pi = Pt") { REQUIRE(nwrong == 0); }
@@ -119,6 +124,9 @@ SCENARIO("ZSplit of Ideal Gas", "[ZSplit][IdealGas][IdealElectrons]") {
                 printf("Bad sie ionized! %d %.14e %.14e\n", i, e_fi, e_ie);
                 nw += 1;
               }
+
+              nw += !CheckRhoSieFromPT(eos_ze, rho, T, lambda);
+              nw += !CheckRhoSieFromPT(eos_ie, rho, T, lambda);
             },
             nwrong);
         THEN("Pe_fi == PE_ie") { REQUIRE(nwrong == 0); }

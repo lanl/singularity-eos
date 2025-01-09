@@ -16,11 +16,14 @@
 #define _SINGULARITY_EOS_EOS_EOS_BASE_
 
 #include <cstring>
+#include <limits>
 #include <string>
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
@@ -781,6 +784,23 @@ class EosBase {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumTemperature() const { return 0; }
 
+  // Report maximum value of density. Default is unbounded.
+  // JMM: Should we use actual infinity, the largest real, or just a
+  // big number?  For comparisons, actual infinity is better. It also
+  // has the advantage of being projective with modifiers that modify
+  // the max. On the other hand, it's more fraught if someone tries to
+  // put it into a formula without guarding against it.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const { return 1e100; }
+
+  // These are for the PT space PTE solver to bound the iterations in
+  // a safe range.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return 0; }
+  // Gruneisen EOS's often have a maximum density, which implies a maximum pressure.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
+
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
 
@@ -834,6 +854,58 @@ class EosBase {
     impl::StrCat(msg, eosname);
     impl::StrCat(msg, "' EOS");
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
+  }
+
+  // JMM: This method is often going to be overloaded for special cases.
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
+    using RootFinding1D::findRoot; // more robust but slower. Better default.
+    using RootFinding1D::Status;
+
+    // Pressure is not monotone in density at low densities, which can
+    // prevent convergence. We want to approach tension from above,
+    // not below. Choose close to, but above, normal density for a
+    // metal like copper.
+    constexpr Real DEFAULT_RHO_GUESS = 12;
+
+    CRTP copy = *(static_cast<CRTP const *>(this));
+
+    // P(rho) not monotone. When relevant, bound rhopmin.
+    Real rhomin = std::max(copy.RhoPmin(temp), copy.MinimumDensity());
+    Real rhomax = copy.MaximumDensity();
+    PORTABLE_REQUIRE(rhomax > rhomin, "max bound > min bound");
+
+    auto PofRT = [&](const Real r) {
+      return copy.PressureFromDensityTemperature(r, temp, lambda);
+    };
+    Real rhoguess = rho;                                // use input density
+    if ((rhoguess <= rhomin) || (rhoguess >= rhomax)) { // avoid edge effects
+      if ((rhomin < DEFAULT_RHO_GUESS) && (DEFAULT_RHO_GUESS < rhomax)) {
+        rhoguess = DEFAULT_RHO_GUESS;
+      } else {
+        rhoguess = 0.5 * (rhomin + rhomax);
+      }
+    }
+    auto status = findRoot(PofRT, press, rhoguess, rhomin, rhomax, robust::EPS(),
+                           robust::EPS(), rho);
+    // JMM: This needs to not fail and instead return something sane.
+    // If root find failed to converge, density will at least be
+    // within bounds.
+    if (status != Status::SUCCESS) {
+      PORTABLE_WARN("DensityEnergyFromPressureTemperature failed to find root\n");
+    }
+    sie = copy.InternalEnergyFromDensityTemperature(rho, temp, lambda);
+    return;
+  }
+  PORTABLE_INLINE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
+                                                                     const Real temp,
+                                                                     Real &rho,
+                                                                     Real &sie) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    copy.DensityEnergyFromPressureTemperature(press, temp, static_cast<Real *>(nullptr),
+                                              rho, sie);
   }
 
   // Serialization

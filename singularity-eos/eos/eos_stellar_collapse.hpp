@@ -237,6 +237,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
   inline RootFinding1D::Status rootStatus() const { return status_; }
@@ -653,7 +654,26 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::GruneisenParamFromDensityInternal
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void StellarCollapse::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
-  EOS_ERROR("StellarCollapse::DensityEnergyFromPRessureTemperature is a stub");
+  using RootFinding1D::regula_falsi;
+  using RootFinding1D::Status;
+  checkLambda_(lambda);
+  Real lrguess = lRho_(rho);
+  Real lT = lT_(temp);
+  Real lP = P2lP_(press);
+  Real Ye = lambda[Lambda::Ye];
+
+  if ((lrguess < lRhoMin_) || (lrguess > lRhoMax_)) {
+    lrguess = lRho_(rhoNormal_);
+  }
+  // Since EOS is tabulated in logrho, use that for root find.
+  auto lPofRT = [&](Real lR) { return lP_.interpToReal(Ye, lT, lR); };
+  auto status = regula_falsi(lPofRT, lP, lrguess, lRhoMin_, lRhoMax_, ROOT_THRESH,
+                             ROOT_THRESH, lrguess);
+
+  Real lE = lE_.interpToReal(Ye, lT, lrguess);
+  rho = rho_(lrguess);
+  sie = le2e_(lE);
+  lambda[Lambda::lT] = lT;
 }
 
 template <typename Indexer_t>

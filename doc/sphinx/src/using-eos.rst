@@ -1143,18 +1143,70 @@ quantities as outputs.
 Methods Used for Mixed Cell Closures
 --------------------------------------
 
-Several methods were developed in support of mixed cell closures. In particular:
+Several methods were developed in support of mixed cell closures. In particular the function
 
 .. cpp:function:: Real MinimumDensity() const;
 
-and 
+the function
 
 .. cpp:function:: Real MinimumTemperature() const;
 
+and the function
+
+.. cpp:function:: Real MaximumDensity() const;
+
 provide bounds for valid inputs into a table, which can be used by a
-root finder to meaningful bound the root search. Similarly,
+root finder to meaningful bound the root search.
+
+.. warning::
+
+  For unbounded equations of state, ``MinimumDensity`` and
+  ``MinimumTemperature`` will return zero, while ``MaximumDensity``
+  will return a very large finite number. Which number you get,
+  however, is not guaranteed. You may wish to apply more sensible
+  bounds in your own code.
+
+Similarly,
 
 .. cpp:function:: Real RhoPmin(const Real temp) const;
 
 returns the density at which pressure is minimized for a given
-temperature. This is again useful for root finds.
+temperature. The function
+
+.. cpp:function:: Real MinimumPressure() const;
+
+provides the minimum pressure an equation of state supports, which may
+be the most negative tension state. The function
+
+.. cpp:function:: Real MaximumPressureAtTemperature(const Real temp) const;
+
+provides a maximum possible pressure an equation of state supports at
+a given temperature. (Most models are unbounded in pressure.) This is
+again useful for root finds.
+
+The function
+
+.. code-block:: cpp
+
+  template <typename Indexer_t = Real*>
+  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                            Indexer_t &&lambda, Real &rho, Real &sie) const;
+
+is designed for working in Pressure-Temperature space. Given a
+pressure ``press`` and temperature ``temp``, it sets a density ``rho``
+and specific internal energy ``sie``. The ``lambda`` is optional and
+defaults to a ``nullptr``.
+
+Typically this operation requires a root find. You may pass in an
+initial guess for the density ``rho`` in-place and most EOS models
+will use it.
+
+.. warning::
+
+  Pressure is not necessarily monotone in density and it may be double
+  valued. Thus you are not guaranteed to find the correct root and the
+  value of your initial guess may determine correctness. The fact that
+  ``rho`` may be used as an initial guess means you **must** pass in
+  an initialized variable, even if it is zero-initialized. Do not pass
+  uninitialized memory into this function!
+

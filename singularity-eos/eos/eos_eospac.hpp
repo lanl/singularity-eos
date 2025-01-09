@@ -1104,6 +1104,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const { return press_min_; }
 
  private:
   static constexpr const unsigned long _preferred_input =
@@ -1128,6 +1129,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   Real dvdt_ref_ = 1;
   Real rho_min_ = 0;
   Real temp_min_ = 0;
+  Real press_min_ = 0;
   // TODO(JMM): Is the fact that EOS_INTEGER isn't a size_t a
   // problem? Could it ever realistically overflow?
   EOS_INTEGER shared_size_, packed_size_;
@@ -1199,6 +1201,8 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
   rho_ref_ = m.normalDensity;
   rho_min_ = m.rhoMin;
   temp_min_ = m.TMin;
+  press_min_ = m.PMin;
+
   // use std::max to hydrogen, in case of bad table
   AZbar_.Abar = std::max(1.0, m.meanAtomicMass);
   AZbar_.Zbar = std::max(1.0, m.meanAtomicNumber);

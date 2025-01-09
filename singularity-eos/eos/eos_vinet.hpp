@@ -131,6 +131,18 @@ class Vinet : public EosBase<Vinet> {
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+
+  // EOS depends on (rho0/rho)^(1/3) so this is a reasonable bound
+  // before the EOS will become ill-behaved.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return std::cbrt(10 * robust::EPS()) * _rho0; }
+
+  // Essentially unbounded... I think.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return -1e100; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
+
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Vinet)
@@ -152,11 +164,6 @@ class Vinet : public EosBase<Vinet> {
     }
     printf("\n\n");
   }
-  // Density/Energy from P/T not unique, if used will give error
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("Vinet"); }
   static std::string EosPyType() { return EosType(); }
@@ -374,13 +381,6 @@ PORTABLE_INLINE_FUNCTION Real Vinet::BulkModulusFromDensityInternalEnergy(
   temp = TemperatureFromDensityInternalEnergy(rho, sie);
   Vinet_F_DT_func(rho, temp, output);
   return output[7] * output[7] * rho;
-}
-// AEM: Give error since function is not well defined
-template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void Vinet::DensityEnergyFromPressureTemperature(
-    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
-  EOS_ERROR("Vinet::DensityEnergyFromPressureTemperature: "
-            "Not implemented.\n");
 }
 // AEM: We should add entropy and Gruneissen parameters here so that it is complete
 // If we add also alpha and BT, those should also be in here.

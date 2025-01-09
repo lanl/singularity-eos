@@ -106,10 +106,10 @@ SCENARIO("Ideal gas mean atomic properties",
       portableReduce(
           "Check mean atomic number", 0, N,
           PORTABLE_LAMBDA(const int i, int &nw) {
-            double rho = i;
-            double T = 100.0 * i;
-            double Ab_eval = device_eos.MeanAtomicMassFromDensityTemperature(rho, T);
-            double Zb_eval = device_eos.MeanAtomicNumberFromDensityTemperature(rho, T);
+            Real rho = i;
+            Real T = 100.0 * i;
+            Real Ab_eval = device_eos.MeanAtomicMassFromDensityTemperature(rho, T);
+            Real Zb_eval = device_eos.MeanAtomicNumberFromDensityTemperature(rho, T);
             nw += !(isClose(Ab_eval, Abar, 1e-12)) + !(isClose(Zb_eval, Zbar, 1e-12));
           },
           nwrong);
@@ -117,6 +117,29 @@ SCENARIO("Ideal gas mean atomic properties",
       device_eos.Finalize();
     }
     host_eos.Finalize();
+  }
+}
+
+SCENARIO("Ideal gas density energy from prssure temperature",
+         "[IdealGas][DensityEnergyFromPressureTemperature]") {
+  constexpr Real Cv = 5.0;
+  constexpr Real gm1 = 0.4;
+  GIVEN("An ideal gas") {
+    EOS host_eos = IdealGas(gm1, Cv);
+    auto device_eos = host_eos.GetOnDevice();
+    WHEN("We compute density and energy from pressure and temperature") {
+      constexpr int N = 100;
+      int nwrong = 0;
+      portableReduce(
+          "Check density energy from pressure temperature", 1, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            Real rho = i;
+            Real T = 100.0 * i;
+            nw += !CheckRhoSieFromPT(device_eos, rho, T);
+          },
+          nwrong);
+      THEN("There are no errors") { REQUIRE(nwrong == 0); }
+    }
   }
 }
 
@@ -282,6 +305,19 @@ SCENARIO("Ideal electron gas", "[IdealGas][IdealEelctrons]") {
       THEN("The specific heat should scale linearly with the ionization state") {
         REQUIRE(nwrong == 0);
       }
+    }
+
+    WHEN("We compute density and energy from pressure and temperature") {
+      constexpr int N = 100;
+      int nwrong = 0;
+      portableReduce(
+          "Check density energy from pressure temperature", 1, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            Real ll[1] = {static_cast<Real>(i)};
+            nw += !CheckRhoSieFromPT(eos, rho, T, ll);
+          },
+          nwrong);
+      THEN("There are no errors") { REQUIRE(nwrong == 0); }
     }
   }
 }

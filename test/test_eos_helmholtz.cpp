@@ -125,13 +125,16 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
                   eos.BulkModulusFromDensityTemperature(rho_in[i], temp_in[j], lambda);
               Real gruen =
                   eos.GruneisenParamFromDensityTemperature(rho_in[i], temp_in[j], lambda);
-
               if (!isClose(ein, ein_ref[k], 1e-10)) nwrong += 1;
               if (!isClose(press, press_ref[k], 1e-10)) nwrong += 1;
               if (!isClose(cv, cv_ref[k], 1e-6)) nwrong += 1;
               if (!isClose(bulkmod, bulkmod_ref[k], 1e-8)) nwrong += 1;
               if (!isClose(gruen, gruen_ref[k], 1e-6)) nwrong += 1;
 
+              // RhoSie of PT
+              nwrong += !CheckRhoSieFromPT(eos, rho_in[i], temp_in[i], lambda);
+
+              // Deserialized EOS
               ein = eos_2.InternalEnergyFromDensityTemperature(rho_in[i], temp_in[j],
                                                                lambda);
               press = eos_2.PressureFromDensityTemperature(rho_in[i], temp_in[j], lambda);

@@ -317,6 +317,16 @@ class Variant {
         },
         eos_);
   }
+  PORTABLE_INLINE_FUNCTION void DensityEnergyFromPressureTemperature(const Real press,
+                                                                     const Real temp,
+                                                                     Real &rho,
+                                                                     Real &sie) const {
+    return mpark::visit(
+        [&press, &temp, &rho, &sie](const auto &eos) {
+          return eos.DensityEnergyFromPressureTemperature(press, temp, rho, sie);
+        },
+        eos_);
+  }
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const {
@@ -331,6 +341,23 @@ class Variant {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumTemperature() const {
     return mpark::visit([](const auto &eos) { return eos.MinimumTemperature(); }, eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const {
+    return mpark::visit([](const auto &eos) { return eos.MaximumDensity(); }, eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const {
+    return mpark::visit([](const auto &eos) { return eos.MinimumPressure(); }, eos_);
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureAtTemperature(const Real temp) const {
+    return mpark::visit(
+        [&temp](const auto &eos) { return eos.MaximumPressureAtTemperature(temp); },
+        eos_);
   }
 
   // Atomic mass/atomic number functions

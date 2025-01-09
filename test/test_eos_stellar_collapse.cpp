@@ -278,6 +278,9 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
                 if (!isClose(b1, b2)) {
                   nwrong_d() += 1;
                 }
+                if (!CheckRhoSieFromPT(sc_d, R, T, lambda)) {
+                  nwrong_d() += 1;
+                }
               });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
           Kokkos::deep_copy(nwrong_h, nwrong_d);

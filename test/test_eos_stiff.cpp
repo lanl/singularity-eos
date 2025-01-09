@@ -583,6 +583,16 @@ SCENARIO("Test Stiff Gas Entropy Calls", "[StiffGas][StiffGas5]") {
           array_compare(num, density, energy, h_entropy, entropy_true, "Density",
                         "Energy");
         }
+        THEN("[rho, e](P, T) also works") {
+          int nwrong = 0;
+          portableReduce(
+              "Check density energy from pressure temperature", 0, num,
+              PORTABLE_LAMBDA(const int i, int &nw) {
+                nw += !CheckRhoSieFromPT(eos, v_density[i], v_local_temp[i]);
+              },
+              nwrong);
+          AND_THEN("There are no errors") { REQUIRE(nwrong == 0); }
+        }
       }
     }
   }

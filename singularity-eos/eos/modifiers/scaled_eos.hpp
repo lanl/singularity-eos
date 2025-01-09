@@ -341,6 +341,15 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return t_.MinimumTemperature();
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
+    return inv_scale_ * t_.MaximumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
+    return t_.MinimumPressure();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
+    return t_.MaximumPressureAtTemperature(temp);
+  }
 
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicMass() const { return inv_scale_ * t_.MeanAtomicMass(); }

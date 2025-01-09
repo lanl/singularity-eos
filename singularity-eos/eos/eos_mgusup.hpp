@@ -125,6 +125,27 @@ class MGUsup : public EosBase<MGUsup> {
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+
+  // Since reference isotherm scales as eta = 1 -_rho0/rho, EOS
+  // diverges for rho << rho0. eta^2 is used, so...
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return _RHOMINFAC * _rho0; }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const {
+    if (_s > 1) {
+      return 0.99 * robust::ratio(_s * _rho0, _s - 1);
+    } else { // for s <= 1, no maximum, but we need to pick something.
+      return 1e3 * _rho0;
+    } // note that s < 0 implies unphysical shock derivative.
+  }
+  // Hugoniot pressure ill defined at reference density. On one side,
+  // negative. On the other positive.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return -1e100; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
@@ -148,11 +169,6 @@ class MGUsup : public EosBase<MGUsup> {
     _AZbar.PrintParams();
     printf("\n\n");
   }
-  // Density/Energy from P/T not unique, if used will give error
-  template <typename Indexer_t>
-  PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
   inline void Finalize() {}
   static std::string EosType() { return std::string("MGUsup"); }
   static std::string EosPyType() { return EosType(); }
@@ -160,6 +176,7 @@ class MGUsup : public EosBase<MGUsup> {
  private:
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
+  Real _RHOMINFAC = std::sqrt(robust::EPS());
   Real _rho0, _T0, _Cs, _s, _G0, _Cv0, _E0, _S0;
   MeanAtomicProperties _AZbar;
 };
@@ -200,6 +217,8 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::HugTemperatureFromDensity(Real rho) const 
   Real eta = 1.0 - robust::ratio(_rho0, rho);
   Real f1 = 1.0 - _s * eta;
   if (f1 <= 0.0) {
+    printf("f1, eta, rho, rho0, s = %.14e %.14e %.14e %.14e %.14e\n", f1, eta, rho, _rho0,
+           _s);
     PORTABLE_ALWAYS_THROW_OR_ABORT("MGUsup model parameters s and rho0 together with rho "
                                    "give a negative argument for a logarithm.");
   }
@@ -349,13 +368,6 @@ PORTABLE_INLINE_FUNCTION Real MGUsup::BulkModulusFromDensityInternalEnergy(
   value = value + _G0 * _G0 * _rho0 * (sie - HugInternalEnergyFromDensity(rho));
   value = robust::ratio(_rho0, rho) * value;
   return value;
-}
-// AEM: Give error since function is not well defined
-template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void MGUsup::DensityEnergyFromPressureTemperature(
-    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
-  EOS_ERROR("MGUsup::DensityEnergyFromPressureTemperature: "
-            "Not implemented.\n");
 }
 // AEM: We should add entropy and Gruneissen parameters here so that it is complete
 // If we add also alpha and BT, those should also be in here.

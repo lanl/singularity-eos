@@ -170,6 +170,17 @@ class Gruneisen : public EosBase<Gruneisen> {
            s1, _C0, _s1, _s2, _s3, _G0, _b, _rho0, _T0, _P0, _Cv, _rho_max);
     _AZbar.PrintParams();
   }
+
+  // Report minimum values of density and temperature
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const { return _rho_max; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return PressureFromDensityInternalEnergy(0, 0); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureAtTemperature(const Real T) const {
+    return MaxStableDensityAtTemperature(T);
+  }
+
   template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
