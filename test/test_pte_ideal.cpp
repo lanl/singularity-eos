@@ -19,7 +19,7 @@
 #include <time.h>
 #include <vector>
 
-#include <ports-of-call/array.hpp>
+// #include <ports-of-call/array.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
@@ -73,7 +73,8 @@ PORTABLE_INLINE_FUNCTION Real set_state(Real rho_nom, Real sie_nom, RealIndexer 
 SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
   GIVEN("Two equations of state with different gammas") {
     constexpr std::size_t NEOS = 5;
-    using EOS_Indexer_t = PortsOfCall::array<EOS, NEOS>;
+    //using EOS_Indexer_t = PortsOfCall::array<EOS, NEOS>;
+    using EOS_Indexer_t = std::array<EOS, NEOS>;
     EOS_Indexer_t eoss;
 
     for (std::size_t m = 0; m < NEOS; ++m) {
@@ -132,12 +133,20 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
             success = success && status_pt.converged;
 
             for (std::size_t m = 0; m < NEOS; ++m) {
-              bool matches = (std::abs(rhos[m] - rhos_save[m]) <= EPS);
-              success = success && matches;
-              if (!matches) {
+              bool rho_matches = (std::abs(rhos[m] - rhos_save[m]) <= EPS);
+              success = success && rho_matches;
+              if (!rho_matches) {
                 printf("rho doesn't match!\n"
                        "%ld %.14e %.14e %.14e\n",
                        m, rhos[m], rhos_save[m], std::abs(rhos[m] - rhos_save[m]));
+              }
+            }
+            for (std::size_t m = 0; m < NEOS - 1; ++m) {
+              bool P_matches = std::abs(Ps[m] - Ps[m + 1]) <=
+                               0.5 * (std::abs(Ps[m]) + std::abs(Ps[m + 1]) + EPS) * EPS;
+              if (!P_matches) {
+                printf("Pressure not in equilibrium %ld %.14e %.14e!\n",
+                       m, Ps[m], Ps[m+1]);
               }
             }
 
