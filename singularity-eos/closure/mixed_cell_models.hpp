@@ -945,7 +945,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       scale = std::min(std::abs(scale), std::abs(0.95 * bounded(Pmax, dx[0])));
     }
 
-    for (int i = 0; i < neq; ++i) {
+    for (std::size_t i = 0; i < neq; ++i) {
       dx[i] *= scale;
     }
     return scale;
