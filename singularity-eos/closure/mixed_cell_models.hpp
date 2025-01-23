@@ -653,10 +653,9 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real vf_pert = vfrac[m] + dv;
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
-      Real p_pert{};
       Real e_pert =
           eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
-      p_pert =
+      Real p_pert =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
                                                        e_pert, Cache[m], false),
                         uscale);
@@ -840,7 +839,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     }
     if (Pequil >= 1e100) Pequil = 1; // note includes uscale
     // all normalized temps set to 1 so no averaging necessary here.
-    Tequil = temp[0];
+    Tequil = 1; // Because it's = Tnorm = initial guess
     // Leave this in for now, but comment out because I'm not sure it's a good idea
     // TryIdealPTE(this);
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -854,10 +853,10 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     Real esum = 0.0;
     for (int m = 0; m < nmat; ++m) {
       vsum += vfrac[m];
-      esum += sie[m];
+      esum += u[m];
     }
     residual[RV] = vfrac_total - vsum;
-    residual[RSIE] = sie_total - esum;
+    residual[RSIE] = utotal_scale - esum;
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -889,16 +888,18 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     // TODO(JMM): Should we use the thermodynamic derivatives rather
     // than finite differences?
     for (int m = 0; m < nmat; ++m) {
-      Real r_pert, e_pert;
+      Real r_pert = rho[m]; // provide initial guesses
+      Real e_pert = sie[m];
 
       //////////////////////////////
       // perturb pressures
       //////////////////////////////
-      Real dp = Pequil * params_.derivative_eps;
+      Real dp = -Pequil * params_.derivative_eps; // always move towards phase transition
       eos[m].DensityEnergyFromPressureTemperature(uscale * (Pequil + dp), Tnorm * Tequil,
                                                   Cache[m], r_pert, e_pert);
       Real drdp = robust::ratio(r_pert - rho[m], dp);
-      Real dedp = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dp);
+      // JMM: Note uscale here. Both sides divided by rhobar
+      Real dedp = robust::ratio(rhobar[m] * e_pert - u[m], rhobar[m] * uscale * dp);
 
       rtor2_dr_dP_T_sum += robust::ratio(rho_total, rho[m] * rho[m]) * drdp;
       dedP_T_sum += dedp;
@@ -910,7 +911,8 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       eos[m].DensityEnergyFromPressureTemperature(uscale * Pequil, Tnorm * (Tequil + dT),
                                                   Cache[m], r_pert, e_pert);
       Real drdT = robust::ratio(r_pert - rho[m], dT);
-      Real dedT = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dT);
+      Real dedT = robust::ratio(
+          robust::ratio(e_pert, uscale) - robust::ratio(sie[m], uscale), dT);
 
       rtor2_dr_dT_P_sum += robust::ratio(rho_total, rho[m] * rho[m]) * drdT;
       dedT_P_sum += dedT;
