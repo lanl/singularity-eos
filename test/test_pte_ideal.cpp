@@ -23,7 +23,6 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
-#include <spiner/databox.hpp>
 
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
@@ -35,7 +34,6 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
-using DataBox = Spiner::DataBox<Real>;
 using singularity::ApproxTemperatureFromRhoMatU;
 using singularity::IdealGas;
 using singularity::PTESolverPT;
