@@ -15,6 +15,8 @@ SUBMIT_TO_CDASH=${SUBMIT_TO_CDASH:-false}
 BUILD_WITH_CTEST=${BUILD_WITH_CTEST:-${SUBMIT_TO_CDASH}}
 SUBMIT_ON_ERROR=${SUBMIT_ON_ERROR:-${SUBMIT_TO_CDASH}}
 SHOW_HELP_MESSAGE=${SHOW_HELP_MESSAGE:-true}
+DEFAULT_TEST_TIMEOUT=${DEFAULT_TEST_TIMEOUT:-600}
+AVAILABLE_CLUSTERS=darwin,rocinante,venado,chicoma,rzvernal,rzadams
 
 if ${SUBMIT_TO_CDASH}; then
   UNTIL=${UNTIL:-submit}
@@ -44,11 +46,15 @@ section() {
 }
 
 print_usage() {
-  echo "usage: build_and_test [-h] [-u {spack,env,cmake,build,test,install}] system environment"
+  echo "usage: build_and_test [-h] [-u {spack,env,cmake,build,test,install}] [system] [environment]"
   echo
-  echo "This script allows you to active a Spack environment on a given system,"
+  echo "This script allows you to activate a Spack environment on a given system,"
   echo "configure your project's CMake based on its Spack variants, and then build, test and"
   echo "install it. Use the -u/--until option to stop the script early at a given phase."
+  echo
+  echo "Not specifying an environment will list all available configurations for the given system."
+  echo
+  echo "Not specifying a system or environment will list all available systems."
   echo
   echo "After the 'env' phase has run, you will be in an active Spack environment."
   echo "You can then use the 'activate_build_env' command to enter a sub-shell"
@@ -63,6 +69,12 @@ print_usage() {
   echo " - cmake_test [EXTRA_CTEST_ARGS]"
   echo " - cmake_install"
   echo
+  echo "To enable CDash submission, set environment variable SUBMIT_TO_CDASH=true"
+  echo
+  echo "Use the environment variable PROJECT_SPACK_ENV to select a different"
+  echo "upstream. If CI_SPACK_ENV is set to the same location as PROJECT_SPACK_ENV,"
+  echo "that spack deployment will be used directly and not replicated."
+  echo
   echo "positional arguments:"
   echo "  system         name of the system"
   echo "  environment    name of the Spack environment"
@@ -74,6 +86,7 @@ print_usage() {
 }
 
 VALID_CMD=false
+SHOW_AVAILABLE=false
 if [ $# -eq 2 ] && [[ ! "$1" =~ ^-.*  ]] && [[ ! "$2" =~ ^-.*  ]]; then
   VALID_CMD=true
 elif [ $# -eq 4 ]; then
@@ -84,6 +97,12 @@ elif [ $# -eq 4 ]; then
       shift 2
     fi
   fi
+elif [ $# -eq 1 ] && [[ "$AVAILABLE_CLUSTERS" =~ "$1" ]]; then
+  VALID_CMD=true
+  SHOW_AVAILABLE=true
+elif [ $# -eq 0 ]; then
+  VALID_CMD=true
+  SHOW_AVAILABLE=true
 fi
 
 if ! $VALID_CMD; then
@@ -95,13 +114,34 @@ fi
 export SYSTEM_NAME=$1
 export SPACK_ENV_NAME=$2
 
-if [[ "$SYSTEM_NAME" == "darwin" || "$SYSTEM_NAME" == "rocinante" || "$SYSTEM_NAME" == "venado" ]]; then
+if [[ "$SYSTEM_NAME" == "darwin" || "$SYSTEM_NAME" == "rocinante" || "$SYSTEM_NAME" == "venado" || "${SYSTEM_NAME}" == "chicoma" ]]; then
   PROJECT_SPACK_ENV=${PROJECT_SPACK_ENV:-/usr/projects/xcap/spack-env/${PROJECT_TYPE}/${PROJECT_SPACK_ENV_VERSION}}
-elif [[ "$SYSTEM_NAME" == "rzadams" || "${SYSTEM_NAME}" == "rzansel" || "$SYSTEM_NAME" == "rzvernal" ]]; then
+elif [[ "$SYSTEM_NAME" == "rzadams" || "${SYSTEM_NAME}" == "rzansel" || "$SYSTEM_NAME" == "rzvernal" || "$SYSTEM_NAME" == "elcapitan" ]]; then
   PROJECT_SPACK_ENV=${PROJECT_SPACK_ENV:-/usr/workspace/xcap/spack-env/${PROJECT_TYPE}/${PROJECT_SPACK_ENV_VERSION}}
+elif $SHOW_AVAILABLE; then
+  echo "Available systems:"
+  echo
+  for c in ${AVAILABLE_CLUSTERS//,/ }
+  do
+    echo "${c}"
+  done
+  true
+  return
 else
-  echo "Unkown system '${SYSTEM_NAME}'"
+  echo "ERROR: Unkown system '${SYSTEM_NAME}'"
   false
+  return
+fi
+
+if $SHOW_AVAILABLE; then
+  shift 1
+  if [ -f $PROJECT_SPACK_ENV/systems/$SYSTEM_NAME/activate.sh ]; then
+    source $PROJECT_SPACK_ENV/systems/$SYSTEM_NAME/activate.sh
+    true
+  else
+    echo "ERROR: command can only be executed on ${SYSTEM_NAME}"
+    false
+  fi
   return
 fi
 
@@ -155,8 +195,10 @@ pre_test_steps() {
 prepare_spack() {
   section start "prepare_spack[collapsed=true]" "Prepare Spack"
   umask 0007
-  mkdir -p $TMPDIR
-  source $PROJECT_SPACK_ENV/replicate.sh $CI_SPACK_ENV
+  if [[ "$PROJECT_SPACK_ENV" != "$CI_SPACK_ENV" ]]; then
+    mkdir -p $TMPDIR
+    source $PROJECT_SPACK_ENV/replicate.sh $CI_SPACK_ENV
+  fi
   section end "prepare_spack"
 }
 
@@ -234,7 +276,7 @@ cmake_test() {
   if ${BUILD_WITH_CTEST}; then
     ctest -V -S .gitlab/build_and_test.cmake,Test,$REPORT_ERRORS
   else
-    ctest --test-dir ${BUILD_DIR} --output-junit tests.xml $@
+    ctest --timeout ${DEFAULT_TEST_TIMEOUT} --test-dir ${BUILD_DIR} --output-junit tests.xml
   fi
   )
   section end "testing"
@@ -276,7 +318,7 @@ activate_build_env() {
 ###############################################################################
 if ${SHOW_HELP_MESSAGE}; then
   echo "Running on $(hostname)"
-  
+
   if [ ${CI} ]; then
     echo " "
     echo -e "${COLOR_BLUE}######################################################################${COLOR_PLAIN}"
@@ -292,6 +334,9 @@ if ${SHOW_HELP_MESSAGE}; then
       echo -e "${COLOR_BLUE}bsub -I ${LLNL_LSF_SCHEDULER_PARAMETERS}${COLOR_PLAIN}"
     else
       echo -e "${COLOR_BLUE}salloc ${SCHEDULER_PARAMETERS}${COLOR_PLAIN}"
+    fi
+    if [[ "${PROJECT_SPACK_ENV_VERSION}" != "current" ]]; then
+      echo -e "${COLOR_BLUE}export PROJECT_SPACK_ENV_VERSION=${PROJECT_SPACK_ENV_VERSION}${COLOR_PLAIN}"
     fi
     if [[ ! -z "${SPACK_ENV_SPEC}" ]]; then
       echo -e "${COLOR_BLUE}export SPACK_ENV_SPEC='${SPACK_ENV_SPEC}'${COLOR_PLAIN}"
