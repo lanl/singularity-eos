@@ -45,7 +45,6 @@ prereq_offline_deps:
   needs: []
   variables:
     GIT_SUBMODULE_STRATEGY: none
-    OMP_PROC_BIND: false
   script:
    - .gitlab/download_prereq.sh
   artifacts:

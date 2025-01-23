@@ -30,9 +30,6 @@
 #include <singularity-eos/eos/eos_variant.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
-using singularity::PTESolver;
-using singularity::PTESolverPT;
-using singularity::PTESolverPTRequiredScratch;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
 using singularity::Variant;
@@ -66,8 +63,7 @@ int main(int argc, char *argv[]) {
     EOSAccessor eos(eos_v);
 
     // scratch required for PTE solver
-    auto nscratch_vars_rt = PTESolverRhoTRequiredScratch(NMAT);
-    auto nscratch_vars_pt = PTESolverPTRequiredScratch(NMAT);
+    auto nscratch_vars = PTESolverRhoTRequiredScratch(NMAT);
 
     // state vars
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -78,8 +74,7 @@ int main(int argc, char *argv[]) {
     RView sie_v("sie", NPTS);
     RView temp_v("temp", NPTS);
     RView press_v("press", NPTS);
-    RView scratch_v_rt("scratch", NTRIAL * nscratch_vars_rt);
-    RView scratch_v_pt("scratch", NTRIAL * nscratch_vars_pt);
+    RView scratch_v("scratch", NTRIAL * nscratch_vars);
     Kokkos::View<int *, atomic_view> hist_d("histogram", HIST_SIZE);
     auto rho_vh = Kokkos::create_mirror_view(rho_v);
     auto vfrac_vh = Kokkos::create_mirror_view(vfrac_v);
@@ -93,30 +88,26 @@ int main(int argc, char *argv[]) {
     DataBox sie_d(sie_v.data(), NTRIAL, NMAT);
     DataBox temp_d(temp_v.data(), NTRIAL, NMAT);
     DataBox press_d(press_v.data(), NTRIAL, NMAT);
-    DataBox scratch_d_rt(scratch_v.data(), NTRIAL * nscratch_vars_rt);
-    DataBox scratch_d_pt(scratch_v.data(), NTRIAL * nscratch_vars_pt);
+    DataBox scratch_d(scratch_v.data(), NTRIAL * nscratch_vars);
     DataBox rho_hm(rho_vh.data(), NTRIAL, NMAT);
     DataBox vfrac_hm(vfrac_vh.data(), NTRIAL, NMAT);
     DataBox sie_hm(sie_vh.data(), NTRIAL, NMAT);
     DataBox temp_hm(temp_vh.data(), NTRIAL, NMAT);
     DataBox press_hm(press_vh.data(), NTRIAL, NMAT);
-    DataBox scratch_hm_rt(scratch_vh.data(), NTRIAL * nscratch_vars_rt);
-    DataBox scratch_hm_pt(scratch_vh.data(), NTRIAL * nscratch_vars_pt);
+    DataBox scratch_hm(scratch_vh.data(), NTRIAL * nscratch_vars);
 #else
     DataBox rho_d(NTRIAL, NMAT);
     DataBox vfrac_d(NTRIAL, NMAT);
     DataBox sie_d(NTRIAL, NMAT);
     DataBox temp_d(NTRIAL, NMAT);
     DataBox press_d(NTRIAL, NMAT);
-    DataBox scratch_d_rt(NTRIAL, nscratch_vars_rt);
-    DataBox scratch_d_pt(NTRIAL, nscratch_vars_pt);
+    DataBox scratch_d(NTRIAL, nscratch_vars);
     DataBox rho_hm = rho_d.slice(2, 0, NTRIAL);
     DataBox vfrac_hm = vfrac_d.slice(2, 0, NTRIAL);
     DataBox sie_hm = sie_d.slice(2, 0, NTRIAL);
     DataBox temp_hm = temp_d.slice(2, 0, NTRIAL);
     DataBox press_hm = press_d.slice(2, 0, NTRIAL);
-    DataBox scratch_hm_rt = scratch_d_rt.slice(2, 0, NTRIAL);
-    DataBox scratch_hm_pt = scratch_d_pt.slice(2, 0, NTRIAL);
+    DataBox scratch_hm = scratch_d.slice(2, 0, NTRIAL);
     int hist_vh[HIST_SIZE];
     int *hist_d = hist_vh;
 #endif
@@ -148,11 +139,11 @@ int main(int argc, char *argv[]) {
     PortableMDArray<int> nsuccess_d(&nsuccess, 1);
 #endif
 
-    auto start_rt = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif
-    std::cout << "Starting PTE RT with " << NTRIAL << " trials." << std::endl;
+    std::cout << "Starting PTE with " << NTRIAL << " trials." << std::endl;
     portableFor(
         "PTE!", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
           Real *lambda[NMAT];
@@ -177,14 +168,11 @@ int main(int argc, char *argv[]) {
           const Real Tguess =
               ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
 
-          Real *scratch_rt = &scratch_d_rt(t * nscratch_vars_rt);
-
           auto method =
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
                   NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
-                  scratch_rt, Tguess);
+                  &scratch_d(t * nscratch_vars), Tguess);
           auto status = PTESolver(method);
-
           if (status.converged) {
             nsuccess_d() += 1;
           }
@@ -193,73 +181,19 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif
-    auto stop_rt = std::chrono::high_resolution_clock::now();
-    auto sum_time_rt =
-        std::chrono::duration_cast<std::chrono::microseconds>(stop_rt - start_rt);
-
-    auto start_pt = std::chrono::high_resolution_clock::now();
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-    Kokkos::fence();
-#endif
-    std::cout << "Starting PTE PT with " << NTRIAL << " trials." << std::endl;
-    portableFor(
-        "PTE!", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
-          Real *lambda[NMAT];
-          for (int i = 0; i < NMAT; i++) {
-            lambda[i] = nullptr;
-          }
-
-          Indexer2D<decltype(rho_d)> rho(t, rho_d);
-          Indexer2D<decltype(vfrac_d)> vfrac(t, vfrac_d);
-          Indexer2D<decltype(sie_d)> sie(t, sie_d);
-          Indexer2D<decltype(temp_d)> temp(t, temp_d);
-          Indexer2D<decltype(press_d)> press(t, press_d);
-
-          Real sie_tot = 0.0;
-          Real rho_tot = 0.0;
-          for (int i = 0; i < NMAT; i++) {
-            rho_tot += rho[i] * vfrac[i];
-            sie_tot += rho[i] * vfrac[i] * sie[i];
-          }
-          sie_tot /= rho_tot;
-
-          const Real Tguess =
-              ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
-
-          Real *scratch_pt = &scratch_d_pt(t * nscratch_vars_pt);
-
-          auto method2 =
-              PTESolverPT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
-                  NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
-                  scratch_pt, Tguess);
-          auto status = PTESolver(method2);
-
-          if (status.converged) {
-            nsuccess_d() += 1;
-          }
-          hist_d[method2.Niter()] += 1;
-        });
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-    Kokkos::fence();
-#endif
-    auto stop_pt = std::chrono::high_resolution_clock::now();
-    auto sum_time_pt =
-        std::chrono::duration_cast<std::chrono::microseconds>(stop_pt - start_pt);
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto sum_time = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(nsuccess, nsuccess_d);
     Kokkos::deep_copy(hist_vh, hist_d);
 #endif
 
-    Real milliseconds_rt = sum_time_rt.count() / 1e3;
-    Real milliseconds_pt = sum_time_pt.count() / 1e3;
+    Real milliseconds = sum_time.count() / 1e3;
 
-    std::cout << "Finished " << NTRIAL << " RT solves in " << milliseconds_rt
-              << " milliseconds" << std::endl;
-    std::cout << "\tSolves/ms = " << NTRIAL / milliseconds_rt << std::endl;
-    std::cout << "Finished " << NTRIAL << " PT solves in " << milliseconds_pt
-              << " milliseconds" << std::endl;
-    std::cout << "\tSolves/ms = " << NTRIAL / milliseconds_pt << std::endl;
+    std::cout << "Finished " << NTRIAL << " solves in " << milliseconds << " milliseconds"
+              << std::endl;
+    std::cout << "Solves/ms = " << NTRIAL / milliseconds << std::endl;
     std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess
               << std::endl;
     std::cout << "Histogram:\n"
