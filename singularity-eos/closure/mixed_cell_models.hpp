@@ -832,7 +832,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     // weighting pressures seems unwise. Use minimum positive pressure
     // accross initial pressures.
     Pequil = 1e100; // not actual infinity in case we run with fast math
-    for (int m = 0; m < nmat; ++m) {
+    for (std::size_t m = 0; m < nmat; ++m) {
       if ((press[m] < Pequil) && (press[m] > 0)) {
         Pequil = press[m];
       }
@@ -887,7 +887,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
 
     // TODO(JMM): Should we use the thermodynamic derivatives rather
     // than finite differences?
-    for (int m = 0; m < nmat; ++m) {
+    for (std::size_t m = 0; m < nmat; ++m) {
       Real r_pert = rho[m]; // provide initial guesses
       Real e_pert = sie[m];
 
@@ -935,11 +935,11 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       return robust::ratio(robust::ratio(Pbound, uscale) - Pequil, delta);
     };
 
-    for (int m = 0; m < nmat; ++m) {
+    for (std::size_t m = 0; m < nmat; ++m) {
       Real Pmin = eos[m].MinimumPressure();
       scale = std::min(std::abs(scale), std::abs(0.95 * bounded(Pmin, dx[1])));
     }
-    for (int m = 0; m < nmat; ++m) {
+    for (std::size_t m = 0; m < nmat; ++m) {
       Real Ttest = (Tequil + scale * dx[0]) * Tnorm;
       Real Pmax = eos[m].MaximumPressureAtTemperature(Ttest);
       scale = std::min(std::abs(scale), std::abs(0.95 * bounded(Pmax, dx[0])));
@@ -963,7 +963,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     }
     Tequil = Ttemp + scale * dx[0];
     Pequil = Ptemp + scale * dx[1];
-    for (int m = 0; m < nmat; ++m) {
+    for (std::size_t m = 0; m < nmat; ++m) {
       eos[m].DensityEnergyFromPressureTemperature(Pequil * uscale, Tequil * Tnorm,
                                                   Cache[m], rho[m], sie[m]);
       vfrac[m] = robust::ratio(rhobar[m], rho[m]);

@@ -76,7 +76,7 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
     using EOS_Indexer_t = PortsOfCall::array<EOS, NEOS>;
     EOS_Indexer_t eoss;
 
-    for (int m = 0; m < NEOS; ++m) {
+    for (std::size_t m = 0; m < NEOS; ++m) {
       constexpr Real denom = NEOS + 1;
       eoss[m] = IdealGas((m + 1) / denom, m + 1);
     }
@@ -100,7 +100,7 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
             Real *Ts = (Real *)malloc(sizeof(Real) * NEOS);
             Real *Ps = (Real *)malloc(sizeof(Real) * NEOS);
             Real *lambda[NEOS];
-            for (int i = 0; i < NEOS; i++) {
+            for (std::size_t i = 0; i < NEOS; i++) {
               lambda[i] = nullptr;
             }
             Real *scratch_rt = (Real *)malloc(sizeof(Real) * nscratch_rt);
