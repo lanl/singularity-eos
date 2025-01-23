@@ -409,7 +409,7 @@ class PTESolverBase {
       if (Tnorm * Tideal < 0 ||
           robust::ratio(rhobar[m], vfrac[m]) < eos[m].RhoPmin(Tnorm * Tideal)) {
         // abort because this is putting this material into a bad state
-        for (std::size_t n = m; n >= 0; n--)
+        for (std::size_t n = 0; n <= m; n++)
           vfrac[n] = vtemp[n];
         return;
       }
@@ -851,7 +851,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   void Residual() const {
     Real vsum = 0.0;
     Real esum = 0.0;
-    for (int m = 0; m < nmat; ++m) {
+    for (std::size_t m = 0; m < nmat; ++m) {
       vsum += vfrac[m];
       esum += u[m];
     }
