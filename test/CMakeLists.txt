@@ -24,6 +24,7 @@ add_executable(
   test_eos_vinet.cpp
   test_eos_mgusup.cpp
   test_eos_powermg.cpp
+  test_pte_ideal.cpp
   test_eos_zsplit.cpp
   )
 
