@@ -73,7 +73,7 @@ PORTABLE_INLINE_FUNCTION Real set_state(Real rho_nom, Real sie_nom, RealIndexer 
 SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
   GIVEN("Two equations of state with different gammas") {
     constexpr std::size_t NEOS = 5;
-    //using EOS_Indexer_t = PortsOfCall::array<EOS, NEOS>;
+    // using EOS_Indexer_t = PortsOfCall::array<EOS, NEOS>;
     using EOS_Indexer_t = std::array<EOS, NEOS>;
     EOS_Indexer_t eoss;
 
@@ -145,8 +145,14 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
               bool P_matches = std::abs(Ps[m] - Ps[m + 1]) <=
                                0.5 * (std::abs(Ps[m]) + std::abs(Ps[m + 1]) + EPS) * EPS;
               if (!P_matches) {
-                printf("Pressure not in equilibrium %ld %.14e %.14e!\n",
-                       m, Ps[m], Ps[m+1]);
+                printf("Pressure not in equilibrium %ld %.14e %.14e!\n", m, Ps[m],
+                       Ps[m + 1]);
+              }
+              bool T_matches = std::abs(Ts[m] - Ts[m + 1]) <=
+                               0.5 * (std::abs(Ts[m]) + std::abs(Ts[m + 1]) + EPS) * EPS;
+              if (!T_matches) {
+                printf("Temperatures not in equilibrium %ld %.14e %.14e!\n", m, Ts[m],
+                       Ts[m + 1]);
               }
             }
 
