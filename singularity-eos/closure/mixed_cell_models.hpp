@@ -46,6 +46,8 @@ struct MixParams {
   Real pte_abs_tolerance_p = 0.0;
   Real pte_abs_tolerance_e = 1.e-4;
   Real pte_abs_tolerance_t = 0.0;
+  Real pte_rel_tolerance_v = 1e-6;
+  Real pte_abs_tolerance_v = 1e-6;
   Real pte_residual_tolerance = 1.e-8;
   std::size_t pte_max_iter_per_mat = 128;
   Real line_search_alpha = 1.e-2;
@@ -842,6 +844,17 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     Tequil = 1; // Because it's = Tnorm = initial guess
     // Leave this in for now, but comment out because I'm not sure it's a good idea
     // TryIdealPTE(this);
+
+    // Set the state based on the P/T chosen
+    for (std::size_t m = 0; m < nmat; ++m) {
+      eos[m].DensityEnergyFromPressureTemperature(Pequil * uscale, Tequil * Tnorm,
+                                                  Cache[m], rho[m], sie[m]);
+      vfrac[m] = robust::ratio(rhobar[m], rho[m]);
+      u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
+      temp[m] = Tequil;
+    }
+    Residual();
+
     // Set the current guess for the equilibrium temperature.  Note that this is already
     // scaled.
     return ResidualNorm();
@@ -865,10 +878,11 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     Real error_u = std::abs(residual[RSIE]);
     // this may not be quite right as we may need an energy scaling factor
     // Check for convergence
-    bool converged_u =
-        (error_u < params_.pte_rel_tolerance_e || error_u < params_.pte_abs_tolerance_e);
+    bool converged_u = (error_u < params_.pte_rel_tolerance_e ||
+                        uscale * error_u < params_.pte_abs_tolerance_e);
     bool converged_v =
-        (error_v < params_.pte_rel_tolerance_e || error_v < params_.pte_abs_tolerance_e);
+        (error_v < params_.pte_rel_tolerance_v || error_v < params_.pte_abs_tolerance_v);
+
     return converged_v && converged_u;
   }
 
@@ -969,6 +983,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       vfrac[m] = robust::ratio(rhobar[m], rho[m]);
       u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
       temp[m] = Tequil;
+      press[m] = Pequil;
     }
     Residual();
     return ResidualNorm();
@@ -1711,7 +1726,7 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     bool success = s.Solve();
     if (!success) {
       // do something to crash out?  Tell folks what happened?
-      // printf("crashing out at iteration: %i\n", niter);
+      // printf("crashing out at iteration: %ld\n", niter);
       converged = false;
       break;
     }
