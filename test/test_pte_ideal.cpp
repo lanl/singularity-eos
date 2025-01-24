@@ -89,6 +89,16 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
       const std::size_t nscratch_pt = PTESolverPTRequiredScratch(NEOS);
       const Real rho_nom = 1.0;
       const Real sie_nom = 1.0;
+
+      singularity::MixParams params;
+      params.pte_rel_tolerance_e = 1e-14;
+      params.pte_abs_tolerance_e = 1e-14;
+      params.pte_abs_tolerance_v = 1e-14;
+      params.pte_rel_tolerance_v = 1e-14;
+      params.pte_rel_tolerance_p = 1e-14;
+      params.pte_abs_tolerance_p = 1e-14;
+      params.pte_residual_tolerance = 1.e-14;
+
       int nsuccess = 0;
       portableReduce(
           "Test PTE ideal", 0, NTRIAL,
@@ -118,7 +128,7 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
 
             auto method_rt = PTESolverRhoT<EOS_Indexer_t, Real *, decltype(lambda)>(
                 NEOS, eoss, 1.0, sie_tot, rhos, vfracs, sies, Ts, Ps, lambda, scratch_rt,
-                Tguess);
+                Tguess, params);
             auto status_rt = PTESolver(method_rt);
             bool success = status_rt.converged;
 
@@ -126,11 +136,20 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
               rhos_save[m] = rhos[m];
             }
 
+            sie_tot = set_state(rho_nom, sie_nom, rhos, vfracs, sies, Ts, Ps, eoss, NEOS);
+            rho_tot = 0;
+            for (std::size_t m = 0; m < NEOS; ++m) {
+              rho_tot += rhos[m] * vfracs[m];
+            }
+
             auto method_pt = PTESolverPT<EOS_Indexer_t, Real *, decltype(lambda)>(
                 NEOS, eoss, 1.0, sie_tot, rhos, vfracs, sies, Ts, Ps, lambda, scratch_pt,
-                Tguess);
+                Tguess, params);
             auto status_pt = PTESolver(method_pt);
             success = success && status_pt.converged;
+            printf("PTE solvers converged in %ld iterations for RT and %ld iterations "
+                   "for PT\n",
+                   status_rt.max_niter, status_pt.max_niter);
 
             for (std::size_t m = 0; m < NEOS; ++m) {
               bool rho_matches = (std::abs(rhos[m] - rhos_save[m]) <= EPS);
