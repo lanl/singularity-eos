@@ -146,6 +146,15 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars) {
   std::cout << "Starting solver " << name << " with " << NTRIAL << " trials."
             << std::endl;
 
+  singularity::MixParams params;
+  params.pte_rel_tolerance_e = 1e-22;
+  params.pte_abs_tolerance_e = 1e-22;
+  params.pte_abs_tolerance_v = 1e-22;
+  params.pte_rel_tolerance_v = 1e-22;
+  params.pte_rel_tolerance_p = 1e-22;
+  params.pte_abs_tolerance_p = 1e-22;
+  params.pte_residual_tolerance = 1.e-22;
+
   portableReduce(
       "PTE!", 0, NTRIAL,
       PORTABLE_LAMBDA(const int &t, std::size_t &ns) {
@@ -173,7 +182,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars) {
 
         auto method = Method_t<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
             NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
-            &scratch_d(t * nscratch_vars), Tguess);
+            &scratch_d(t * nscratch_vars), Tguess, params);
         auto status = PTESolver(method);
         if (status.converged) {
           bool in_pte = true;
@@ -236,11 +245,26 @@ int main(int argc, char *argv[]) {
     // scratch required for PTE solver
     auto nscratch_vars_rt = PTESolverRhoTRequiredScratch(NMAT);
     auto [ns_rt, rho_rt] = TestPTE<PTESolverRhoT>("PTESolverRhoT", nscratch_vars_rt);
+    nsuccess += ns_rt;
 
     // // scratch required for PTE solver
     auto nscratch_vars_pt = PTESolverPTRequiredScratch(NMAT);
     auto [ns_pt, rho_pt] = TestPTE<PTESolverPT>("PTESolverPT", nscratch_vars_pt);
-    nsuccess += ns_rt;
+    nsuccess += ns_pt;
+
+    int nmatch = 0;
+    portableReduce(
+        "Check rho match", 0, NMAT,
+        PORTABLE_LAMBDA(const int i, int &nm) {
+          bool they_match = isClose(rho_rt(i), rho_pt(i));
+          if (!they_match) {
+            printf("Densities don't match for %d: %.14e %.14e %.14e\n", i, rho_rt(i),
+                   rho_pt(i), rho_rt(i) - rho_pt(i));
+          }
+          nm += they_match;
+        },
+        nmatch);
+    printf("Nmatch = %d / %d\n", nmatch, NMAT);
   }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::finalize();
