@@ -986,6 +986,17 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     return ResidualNorm();
   }
 
+  // Solve the linear system for the update dx
+  // Customized because this system can invert its jacobian analytically
+  PORTABLE_INLINE_FUNCTION
+  bool Solve() const {
+    dx[0] = robust::ratio(jacobian[3] * residual[0] - jacobian[1] * residual[1],
+                          jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2]);
+    dx[1] = robust::ratio(jacobian[2] * residual[0] - jacobian[0] * residual[1],
+                          jacobian[1] * jacobian[2] - jacobian[0] * jacobian[3]);
+    return mix_impl::check_nans(dx, 2);
+  }
+
  private:
   // TODO(JMM): Should these have trailing underscores?
   // Current P, T state
