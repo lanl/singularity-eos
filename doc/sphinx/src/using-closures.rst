@@ -291,19 +291,32 @@ form
 
 .. math::
 
-  0 = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial P}\right)_T\\
-  0 = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial \epsilon_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial \epsilon_i}{\partial P}\right)_T
+  1 - \sum_{i=0}^{N-1} f_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial P}\right)_T\\
+  u_{tot} - \sum_{i=0}^{N-1} u_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial P}\right)_T
 
 However, derivatives in the volume fraction are not easily
-accessible. They can, however, be cast in terms of the density,
-resulting in the residual:
+accessible. To access them, we leverage the fact that
 
 .. math::
 
-  0 = (T^* - T) \sum_{i = 0}^{N-1} \frac{\rho_{\mathrm{tot}}}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \frac{\rho_{\mathrm{tot}}}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial P}\right)_T\\
-  0 = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial \epsilon_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial \epsilon_i}{\partial P}\right)_T
+  \bar{\rho}_i = \rho_i f_i,
 
-where :math:`\rho_{\mathrm{tot}}` is the sum of densities over all materials.
+and thus
+
+.. math::
+
+  d f_i = - \frac{1}{\rho_i^2} d f_i.
+
+Thus the residual can be recast as
+
+.. math::
+
+  f_\mathrm{tot} - \sum_{i=0}^{N-1} = (T^* - T) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial P}\right)_T\\
+  u_\mathrm{tot} - u_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial P}\right)_T
+
+where :math:`\rho_{\mathrm{tot}}` is the sum of densities over all
+materials. These residual equations can then be cast as a matrix
+equation to solve for pressure and temperature.
 
 The primary advantage of the pressure-temperature space solver is that
 it has only two independent variables and two unknowns, meaning the
