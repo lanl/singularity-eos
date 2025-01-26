@@ -238,8 +238,8 @@ int main(int argc, char *argv[]) {
     auto [ns_rt, rho_rt] = TestPTE<PTESolverRhoT>("PTESolverRhoT", nscratch_vars_rt);
 
     // // scratch required for PTE solver
-    // auto nscratch_vars_pt = PTESolverPTRequiredScratch(NMAT);
-    // auto [ns_pt, rho_pt] = TestPTE<PTESolverPT>("PTESolverPT", nscratch_vars_pt);
+    auto nscratch_vars_pt = PTESolverPTRequiredScratch(NMAT);
+    auto [ns_pt, rho_pt] = TestPTE<PTESolverPT>("PTESolverPT", nscratch_vars_pt);
     nsuccess += ns_rt;
   }
 #ifdef PORTABILITY_STRATEGY_KOKKOS

@@ -830,20 +830,19 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real Init() {
     InitBase();
     Residual();
+
     // calculate an initial equilibrium pressure. Volume-fraction
     // weighting pressures seems unwise. Use minimum positive pressure
     // accross initial pressures.
-    Pequil = 1e100; // not actual infinity in case we run with fast math
+    Pequil = 0;
+    Real vsum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
-      if ((press[m] < Pequil) && (press[m] > 0)) {
-        Pequil = press[m];
-      }
+      // always approach from >0 side
+      Pequil += std::abs(press[m]) * vfrac[m];
+      vsum += vfrac[m];
     }
-    if (Pequil >= 1e100) Pequil = 1; // note includes uscale
-    // all normalized temps set to 1 so no averaging necessary here.
+    Pequil /= vsum;
     Tequil = 1; // Because it's = Tnorm = initial guess
-    // Leave this in for now, but comment out because I'm not sure it's a good idea
-    // TryIdealPTE(this);
 
     // Set the state based on the P/T chosen
     for (std::size_t m = 0; m < nmat; ++m) {
@@ -855,8 +854,8 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     }
     Residual();
 
-    // Set the current guess for the equilibrium temperature.  Note that this is already
-    // scaled.
+    // Set the current guess for the equilibrium temperature.  Note
+    // that this is already scaled.
     return ResidualNorm();
   }
 
@@ -888,14 +887,14 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
 
   PORTABLE_INLINE_FUNCTION
   void Jacobian() const {
-    // sum_m d e_m / dT )_P
-    Real dedT_P_sum = 0.0;
-    // sum_m d e_m / dP )_T
-    Real dedP_T_sum = 0.0;
-    // - sum_m rho_tot / rho_m^2 * d rho_m / dT )_P
-    Real rtor2_dr_dT_P_sum = 0.0;
-    // - sum_m rho_tot / rho_m^2 d rho_m / dP )_T
-    Real rtor2_dr_dP_T_sum = 0.0;
+    // sum_m d u_m / dT )_P
+    Real dudT_P_sum = 0.0;
+    // sum_m d u_m / dP )_T
+    Real dudP_T_sum = 0.0;
+    // - sum_m rhobar / rho_m^2 * d rho_m / dT )_P
+    Real rbor2_dr_dT_P_sum = 0.0;
+    // - sum_m rhobar / rho_m^2 d rho_m / dP )_T
+    Real rbor2_dr_dP_T_sum = 0.0;
 
     // JMM: Note rescaling for u, P, T
 
@@ -912,11 +911,10 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       eos[m].DensityEnergyFromPressureTemperature(uscale * (Pequil + dp), Tnorm * Tequil,
                                                   Cache[m], r_pert, e_pert);
       Real drdp = robust::ratio(r_pert - rho[m], dp);
-      // JMM: Note uscale here. Both sides divided by rhobar
-      Real dedp = robust::ratio(rhobar[m] * e_pert - u[m], rhobar[m] * uscale * dp);
+      Real dudp = robust::ratio(robust::ratio(rhobar[m] * e_pert, uscale) - u[m], dp);
 
-      rtor2_dr_dP_T_sum += robust::ratio(rho_total, rho[m] * rho[m]) * drdp;
-      dedP_T_sum += dedp;
+      rbor2_dr_dP_T_sum += robust::ratio(rhobar[m], rho[m] * rho[m]) * drdp;
+      dudP_T_sum += dudp;
 
       //////////////////////////////
       // perturb temperatures
@@ -925,18 +923,17 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       eos[m].DensityEnergyFromPressureTemperature(uscale * Pequil, Tnorm * (Tequil + dT),
                                                   Cache[m], r_pert, e_pert);
       Real drdT = robust::ratio(r_pert - rho[m], dT);
-      Real dedT = robust::ratio(
-          robust::ratio(e_pert, uscale) - robust::ratio(sie[m], uscale), dT);
+      Real dudT = robust::ratio(robust::ratio(rhobar[m] * e_pert, uscale) - u[m], dT);
 
-      rtor2_dr_dT_P_sum += robust::ratio(rho_total, rho[m] * rho[m]) * drdT;
-      dedT_P_sum += dedT;
+      rbor2_dr_dT_P_sum += robust::ratio(rhobar[m], rho[m] * rho[m]) * drdT;
+      dudT_P_sum += dudT;
     }
 
     // Fill in the Jacobian
-    jacobian[0] = -rtor2_dr_dT_P_sum; // TODO(JMM): Check positions
-    jacobian[1] = -rtor2_dr_dP_T_sum;
-    jacobian[2] = dedT_P_sum;
-    jacobian[3] = dedP_T_sum;
+    jacobian[0] = -rbor2_dr_dT_P_sum; // TODO(JMM): Check positions
+    jacobian[1] = -rbor2_dr_dP_T_sum;
+    jacobian[2] = dudT_P_sum;
+    jacobian[3] = dudP_T_sum;
   }
 
   PORTABLE_INLINE_FUNCTION
