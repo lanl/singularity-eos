@@ -34,8 +34,9 @@
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 
-#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
+#include <singularity-eos/eos/eos_models.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
 
 using namespace singularity;
 
@@ -57,6 +58,9 @@ constexpr Real T_MIN = 1.8e2; // Kelvin
 constexpr Real T_MAX = 1e3;
 constexpr Real E_MIN = 1e9;
 constexpr Real E_MAX = 1e13;
+using EOS = Variant<EOSPAC, UnitSystem<EOSPAC>, ShiftedEOS<EOSPAC>, ScaledEOS<EOSPAC>,
+                    ScaledEOS<ShiftedEOS<EOSPAC>>, BilinearRampEOS<EOSPAC>,
+                    BilinearRampEOS<ScaledEOS<EOSPAC>>>;
 
 inline auto now() { return std::chrono::high_resolution_clock::now(); }
 
