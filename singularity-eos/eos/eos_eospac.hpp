@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -1218,9 +1218,8 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
     }
   }
   eosSafeLoad(NT, matid, tableType, tablehandle, tableNames, Verbosity::Debug,
-              invert_at_setup = invert_at_setup, insert_data = insert_data,
-              monotonicity = monotonicity, apply_smoothing = apply_smoothing,
-              apply_splitting = apply_splitting, linear_interp = linear_interp);
+              invert_at_setup, insert_data, monotonicity, apply_smoothing,
+              apply_splitting, linear_interp);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
