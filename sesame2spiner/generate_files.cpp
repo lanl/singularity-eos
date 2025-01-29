@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -46,7 +46,8 @@ using namespace EospacWrapper;
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,
-                    const std::string &name, Verbosity eospacWarn) {
+                    const std::string &name, const bool addSubtables,
+                    Verbosity eospacWarn) {
 
   const int matid = metadata.matid;
   std::string sMatid = std::to_string(matid);
@@ -139,6 +140,50 @@ herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRh
     status += transitionMask.saveHDF(coldGroup, SP5::Fields::transitionMask);
   }
 
+  if (addSubtables) {
+    int i = 0;
+    std::vector<TableSplit> splits = {TableSplit::ElectronOnly, TableSplit::IonCold};
+    std::vector<std::string> grpnames = {SP5::SubTable::electronOnly, SP5::SubTable::ionCold};
+    for (TableSplit split : splits) {
+      std::string grpname = grpnames[i++];
+      {
+        hid_t grp =
+            H5Gcreate(leGroup, grpname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        DataBox P, sie, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, mask;
+        eosDataOfRhoSie(matid, split, lRhoBounds, leBounds, P, T, bMod, dPdRho, dPdE,
+                        dTdRho, dTdE, dEdRho, mask, eospacWarn);
+        status += P.saveHDF(grp, SP5::Fields::P);
+        status += T.saveHDF(grp, SP5::Fields::T);
+        status += bMod.saveHDF(grp, SP5::Fields::bMod);
+        status += dPdRho.saveHDF(grp, SP5::Fields::dPdRho);
+        status += dPdE.saveHDF(grp, SP5::Fields::dPdE);
+        status += dTdRho.saveHDF(grp, SP5::Fields::dTdRho);
+        status += dTdE.saveHDF(grp, SP5::Fields::dTdE);
+        status += dEdRho.saveHDF(grp, SP5::Fields::dEdRho);
+        status += mask.saveHDF(grp, SP5::Fields::mask);
+        status += H5Gclose(grp);
+      }
+      {
+        hid_t grp =
+            H5Gcreate(lTGroup, grpname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        DataBox P, sie, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, dEdT, mask;
+        eosDataOfRhoT(matid, split, lRhoBounds, lTBounds, P, sie, bMod, dPdRho, dPdE,
+                      dTdRho, dTdE, dEdRho, dEdT, mask, eospacWarn);
+        status += P.saveHDF(grp, SP5::Fields::P);
+        status += sie.saveHDF(grp, SP5::Fields::sie);
+        status += bMod.saveHDF(grp, SP5::Fields::bMod);
+        status += dPdRho.saveHDF(grp, SP5::Fields::dPdRho);
+        status += dPdE.saveHDF(grp, SP5::Fields::dPdE);
+        status += dTdRho.saveHDF(grp, SP5::Fields::dTdRho);
+        status += dTdE.saveHDF(grp, SP5::Fields::dTdE);
+        status += dEdRho.saveHDF(grp, SP5::Fields::dEdRho);
+        status += dEdT.saveHDF(grp, SP5::Fields::dEdT);
+        status += mask.saveHDF(grp, SP5::Fields::mask);
+        status += H5Gclose(grp);
+      }
+    }
+  }
+
   status += H5Gclose(leGroup);
   status += H5Gclose(lTGroup);
   status += H5Gclose(coldGroup);
@@ -219,8 +264,14 @@ herr_t saveAllMaterials(const std::string &savename,
                 << lRhoBounds << lTBounds << leBounds << std::endl;
     }
 
-    status +=
-        saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name, eospacWarn);
+    const bool add_subtables = params[i].Get("ionization", false);
+    if (eospacWarn == Verbosity::Debug) {
+      std::cout << "Adding subtables for partial ionization? " << add_subtables
+                << std::endl;
+    }
+
+    status += saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name,
+                           add_subtables, eospacWarn);
     if (status != H5_SUCCESS) {
       std::cerr << "WARNING: problem with HDf5" << std::endl;
     }

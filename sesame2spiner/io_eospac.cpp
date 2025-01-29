@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -24,17 +24,19 @@
 #include "io_eospac.hpp"
 
 // TODO: more error checking of bounds?
-void eosDataOfRhoSie(int matid, const Bounds &lRhoBounds, const Bounds &leBounds,
-                     DataBox &Ps, DataBox &Ts, DataBox &bMods, DataBox &dPdRho,
-                     DataBox &dPde, DataBox &dTdRho, DataBox &dTde, DataBox &dEdRho,
-                     DataBox &mask, Verbosity eospacWarn) {
+void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds,
+                     const Bounds &leBounds, DataBox &Ps, DataBox &Ts, DataBox &bMods,
+                     DataBox &dPdRho, DataBox &dPde, DataBox &dTdRho, DataBox &dTde,
+                     DataBox &dEdRho, DataBox &mask, Verbosity eospacWarn) {
   using namespace EospacWrapper;
 
   constexpr int NT = 3;
   constexpr EOS_INTEGER nXYPairs = 1;
   EOS_INTEGER tableHandle[NT];
   EOS_INTEGER eospacPofRT, eospacTofRE, eospacEofRT;
-  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT};
+  EOS_INTEGER tableType[NT] = {impl::select(split, EOS_Pt_DT, EOS_Pe_DT, EOS_Pic_DT),
+                               impl::select(split, EOS_T_DUt, EOS_T_DUe, EOS_T_DUic),
+                               impl::select(split, EOS_Ut_DT, EOS_Ue_DT, EOS_Uic_DT)};
 
   // Interpolatable vars
   EOS_REAL var[1], dx[1], dy[1];
@@ -44,9 +46,13 @@ void eosDataOfRhoSie(int matid, const Bounds &lRhoBounds, const Bounds &leBounds
   makeInterpPoints(rhos, lRhoBounds);
   makeInterpPoints(sies, leBounds);
 
+  EospacWrapper::eospacSplit apply_splitting = eospacSplit::splitNumProp;
+
   // Load tables
-  eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT"},
-              eospacWarn);
+  std::vector<std::string> names = {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT"};
+  impl::modifyNames(split, names);
+  eosSafeLoad(NT, matid, tableType, tableHandle, names, eospacWarn, false, 0.0,
+              eospacMonotonicity::none, false, apply_splitting, false);
   eospacPofRT = tableHandle[0];
   eospacTofRE = tableHandle[1];
   eospacEofRT = tableHandle[2];
@@ -107,17 +113,19 @@ void eosDataOfRhoSie(int matid, const Bounds &lRhoBounds, const Bounds &leBounds
   eosSafeDestroy(NT, tableHandle, eospacWarn);
 }
 
-void eosDataOfRhoT(int matid, const Bounds &lRhoBounds, const Bounds &lTBounds,
-                   DataBox &Ps, DataBox &sies, DataBox &bMods, DataBox &dPdRho,
-                   DataBox &dPdE, DataBox &dTdRho, DataBox &dTde, DataBox &dEdRho,
-                   DataBox &dEdT, DataBox &mask, Verbosity eospacWarn) {
+void eosDataOfRhoT(int matid, const TableSplit split, const Bounds &lRhoBounds,
+                   const Bounds &lTBounds, DataBox &Ps, DataBox &sies, DataBox &bMods,
+                   DataBox &dPdRho, DataBox &dPdE, DataBox &dTdRho, DataBox &dTde,
+                   DataBox &dEdRho, DataBox &dEdT, DataBox &mask, Verbosity eospacWarn) {
   using namespace EospacWrapper;
 
   constexpr int NT = 3;
   constexpr EOS_INTEGER nXYPairs = 1;
   EOS_INTEGER tableHandle[NT];
   EOS_INTEGER eospacPofRT, eospacTofRE, eospacEofRT;
-  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt, EOS_Ut_DT};
+  EOS_INTEGER tableType[NT] = {impl::select(split, EOS_Pt_DT, EOS_Pe_DT, EOS_Pic_DT),
+                               impl::select(split, EOS_T_DUt, EOS_T_DUe, EOS_T_DUic),
+                               impl::select(split, EOS_Ut_DT, EOS_Ue_DT, EOS_Uic_DT)};
 
   // Interpolatable vars
   EOS_REAL var[1], dx[1], dy[1];
@@ -128,8 +136,11 @@ void eosDataOfRhoT(int matid, const Bounds &lRhoBounds, const Bounds &lTBounds,
   makeInterpPoints(Ts, lTBounds);
 
   // Load tables
-  eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT"},
-              eospacWarn);
+  EospacWrapper::eospacSplit apply_splitting = eospacSplit::splitNumProp;
+  std::vector<std::string> names = {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT"};
+  impl::modifyNames(split, names);
+  eosSafeLoad(NT, matid, tableType, tableHandle, names, eospacWarn, false, 0.0,
+              eospacMonotonicity::none, false, apply_splitting, false);
   eospacPofRT = tableHandle[0];
   eospacTofRE = tableHandle[1];
   eospacEofRT = tableHandle[2];
@@ -302,3 +313,16 @@ void makeInterpPoints(std::vector<EOS_REAL> &v, const Bounds &b) {
     v[i] = b.i2lin(i);
   }
 }
+namespace impl {
+void modifyNames(TableSplit split, std::vector<std::string> &names) {
+  if (split != TableSplit::Total) {
+    auto rt = std::regex("t");
+    std::string newstr = (split == TableSplit::ElectronOnly) ? "e" : "ic";
+    for (auto &s : names) {
+      if (s != "EOS_D_PtT") {
+        s = std::regex_replace(s, rt, newstr);
+      }
+    }
+  }
+}
+} // namespace impl
