@@ -107,7 +107,8 @@ herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRh
     status += dTdRho.saveHDF(leGroup, SP5::Fields::dTdRho);
     status += dTdE.saveHDF(leGroup, SP5::Fields::dTdE);
     status += dEdRho.saveHDF(leGroup, SP5::Fields::dEdRho);
-    status += mask.saveHDF(leGroup, SP5::Fields::mask);
+    // currently unused
+    // status += mask.saveHDF(leGroup, SP5::Fields::mask);
   }
 
   {
@@ -123,21 +124,24 @@ herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRh
     status += dTdE.saveHDF(lTGroup, SP5::Fields::dTdE);
     status += dEdRho.saveHDF(lTGroup, SP5::Fields::dEdRho);
     status += dEdT.saveHDF(lTGroup, SP5::Fields::dEdT);
-    status += mask.saveHDF(lTGroup, SP5::Fields::mask);
+    // Currently unused
+    // status += mask.saveHDF(lTGroup, SP5::Fields::mask);
   }
   {
     DataBox P, sie, dPdRho, dEdRho, bMod, mask, transitionMask;
     eosColdCurves(matid, lRhoBounds, P, sie, dPdRho, dEdRho, bMod, mask, eospacWarn);
-    eosColdCurveMask(matid, lRhoBounds, leBounds.grid.nPoints(), sie, transitionMask,
-                     eospacWarn);
+    // currently unused
+    // eosColdCurveMask(matid, lRhoBounds, leBounds.grid.nPoints(), sie, transitionMask,
+    //                  eospacWarn);
 
     status += P.saveHDF(coldGroup, SP5::Fields::P);
     status += sie.saveHDF(coldGroup, SP5::Fields::sie);
     status += bMod.saveHDF(coldGroup, SP5::Fields::bMod);
     status += dPdRho.saveHDF(coldGroup, SP5::Fields::dPdRho);
     status += dEdRho.saveHDF(coldGroup, SP5::Fields::dEdRho);
-    status += mask.saveHDF(coldGroup, SP5::Fields::mask);
-    status += transitionMask.saveHDF(coldGroup, SP5::Fields::transitionMask);
+    // currently unused
+    // status += mask.saveHDF(coldGroup, SP5::Fields::mask);
+    // status += transitionMask.saveHDF(coldGroup, SP5::Fields::transitionMask);
   }
 
   if (addSubtables) {
