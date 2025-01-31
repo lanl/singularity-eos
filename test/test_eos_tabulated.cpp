@@ -381,6 +381,68 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
   }
 }
 
+SCENARIO("Tabulated EOS with partial ionization",
+         "[SpinerEOS][DependsRhoT][DependsRhoSie][EOSPAC][SplitTables]") {
+  using singularity::TableSplit;
+  GIVEN("Spiner EOSes for total, electron, and ion EOS") {
+    SpinerEOSDependsRhoT rt_tot(eosName, steelID, TableSplit::Total);
+    SpinerEOSDependsRhoT rt_e(eosName, steelID, TableSplit::ElectronOnly);
+    SpinerEOSDependsRhoT rt_ic(eosName, steelID, TableSplit::IonCold);
+    std::vector<SpinerEOSDependsRhoT> rt = {rt_tot, rt_e, rt_ic};
+
+    SpinerEOSDependsRhoSie re_tot(eosName, steelID, TableSplit::Total);
+    SpinerEOSDependsRhoSie re_e(eosName, steelID, TableSplit::ElectronOnly);
+    SpinerEOSDependsRhoSie re_ic(eosName, steelID, TableSplit::IonCold);
+    std::vector<SpinerEOSDependsRhoSie> re = {re_tot, re_e, re_ic};
+
+    EOSPAC pac_tot(steelID, TableSplit::Total);
+    EOSPAC pac_e(steelID, TableSplit::ElectronOnly);
+    EOSPAC pac_ic(steelID, TableSplit::IonCold);
+    std::vector<EOSPAC> pac = {pac_tot, pac_e, pac_ic};
+
+    WHEN("We evaluate pressure from density and temperature") {
+      constexpr Real rho = 1e1;
+      constexpr Real T = 1e4;
+      const std::size_t N = rt.size();
+      std::vector<Real> P_rt(N), P_re(N), P_pac(N);
+      for (std::size_t i = 0; i < N; ++i) {
+        P_rt[i] = rt[i].PressureFromDensityTemperature(rho, T);
+        P_re[i] = re[i].PressureFromDensityTemperature(rho, T);
+        P_pac[i] = pac[i].PressureFromDensityTemperature(rho, T);
+      }
+      THEN("The subtables add to the total for DependsRhoT") {
+        REQUIRE(isClose(P_rt[0], P_rt[1] + P_rt[2]));
+      }
+      THEN("The subtables add to the total for DependsRhoSie") {
+        REQUIRE(isClose(P_re[0], P_re[1] + P_re[2]));
+      }
+      THEN("The subtables add to the total for EOSPAC") {
+        REQUIRE(isClose(P_pac[0], P_pac[1] + P_pac[2]));
+      }
+      THEN("DependsRhoT agrees with EOSPAC") {
+        for (std::size_t i = 0; i < N; ++i) {
+          REQUIRE(isClose(P_rt[i], P_pac[i]));
+        }
+      }
+      THEN("DependsRhoSie agrees with EOSPAC") {
+        for (std::size_t i = 0; i < N; ++i) {
+          REQUIRE(isClose(P_re[i], P_pac[i]));
+        }
+      }
+    }
+
+    for (auto &eos : rt) {
+      eos.Finalize();
+    }
+    for (auto &eos : re) {
+      eos.Finalize();
+    }
+    for (auto &eos : pac) {
+      eos.Finalize();
+    }
+  }
+}
+
 #endif // SINGULARITY_USE_EOSPAC
 #endif // SINGULARITY_TEST_SESAME
 #endif // SPINER_USE_HDF
