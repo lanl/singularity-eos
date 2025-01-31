@@ -1756,6 +1756,12 @@ and files to locate files in the `sesame`_ database, and
 database need not be provided by the command line. For how to specify
 `sesame`_ file locations, see the `eospac`_ manual.
 
+.. note::
+
+  To enable 3T subtables with ``SpinerEOS``, you must set
+  ``ionization=true`` in the input file for ``sesame2spiner`` for the
+  desired material.
+
 Piecewise Spiner Grids
 ````````````````````````
 
