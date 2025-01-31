@@ -83,12 +83,15 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT);
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
+                              TableSplit split = TableSplit::Total,
                               bool reproduciblity_mode = false);
   inline SpinerEOSDependsRhoT(const std::string &filename,
                               const std::string &materialName,
+                              TableSplit split = TableSplit::Total,
                               bool reproducibility_mode = false);
   PORTABLE_INLINE_FUNCTION
-  SpinerEOSDependsRhoT() : memoryStatus_(DataStatus::Deallocated) {}
+  SpinerEOSDependsRhoT()
+      : memoryStatus_(DataStatus::Deallocated), split_(TableSplit::Total) {}
 
   inline SpinerEOSDependsRhoT GetOnDevice();
 
@@ -315,6 +318,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
   MeanAtomicProperties AZbar_;
   int matid_;
+  TableSplit split_;
   bool reproducible_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.
   mutable TableStatus whereAmI_ = TableStatus::OnTable;
@@ -361,9 +365,11 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
   inline SpinerEOSDependsRhoSie(const std::string &filename, int matid,
+                                TableSplit split = TableSplit::Total,
                                 bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoSie(const std::string &filename,
                                 const std::string &materialName,
+                                TableSplit split = TableSplit::Total,
                                 bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoSie GetOnDevice();
 
@@ -555,6 +561,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] = "SpinerEOSDependsRhoSie";
   int matid_;
+  TableSplit split_;
   MeanAtomicProperties AZbar_;
   bool reproducible_;
   mutable RootFinding1D::Status status_;
@@ -631,8 +638,9 @@ class interp {
 } // namespace callable_interp
 
 inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, int matid,
+                                                  TableSplit split,
                                                   bool reproducibility_mode)
-    : matid_(matid), reproducible_(reproducibility_mode),
+    : matid_(matid), split_(split), reproducible_(reproducibility_mode),
       status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
@@ -649,7 +657,14 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
       "Log mode used at runtime must be identical to the one used to generate the file!");
 
   matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
-  lTGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT);
+
+  std::string lTGroupName = SP5::Depends::logRhoLogT;
+  if (split == TableSplit::ElectronOnly) {
+    lTGroupName += (std::string("/") + SP5::SubTable::electronOnly);
+  } else if (split == TableSplit::IonCold) {
+    lTGroupName += (std::string("/") + SP5::SubTable::ionCold);
+  }
+  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
   coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
   status += loadDataboxes_(matid_str, file, lTGroup, coldGroup);
@@ -668,17 +683,25 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
 
 inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
                                                   const std::string &materialName,
+                                                  TableSplit split,
                                                   bool reproducibility_mode)
-    : reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
-      memoryStatus_(DataStatus::OnHost) {
+    : split_(split), reproducible_(reproducibility_mode),
+      status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
-  hid_t file, matGroup, lTGroup, coldGroup;
+  hid_t file, matGroup, lTGroup, subGroup, coldGroup;
   herr_t status = H5_SUCCESS;
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   matGroup = H5Gopen(file, materialName.c_str(), H5P_DEFAULT);
-  lTGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT);
+
+  std::string lTGroupName = SP5::Depends::logRhoLogT;
+  if (split == TableSplit::ElectronOnly) {
+    lTGroupName += (std::string("/") + SP5::SubTable::electronOnly);
+  } else if (split == TableSplit::IonCold) {
+    lTGroupName += (std::string("/") + SP5::SubTable::ionCold);
+  }
+  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
   coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
   status +=
@@ -1499,9 +1522,9 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
 }
 
 inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
-                                                      int matid,
+                                                      int matid, TableSplit split,
                                                       bool reproducibility_mode)
-    : matid_(matid), reproducible_(reproducibility_mode),
+    : matid_(matid), split_(split), reproducible_(reproducibility_mode),
       status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
@@ -1510,8 +1533,19 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
-  lTGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT);
-  lEGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogSie, H5P_DEFAULT);
+
+  std::string lTGroupName = SP5::Depends::logRhoLogT;
+  std::string lEGroupName = SP5::Depends::logRhoLogSie;
+  if (split == TableSplit::ElectronOnly) {
+    lTGroupName += (std::string("/") + SP5::SubTable::electronOnly);
+    lEGroupName += (std::string("/") + SP5::SubTable::electronOnly);
+  } else if (split == TableSplit::IonCold) {
+    lTGroupName += (std::string("/") + SP5::SubTable::ionCold);
+    lEGroupName += (std::string("/") + SP5::SubTable::ionCold);
+  }
+
+  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
+  lEGroup = H5Gopen(matGroup, lEGroupName.c_str(), H5P_DEFAULT);
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup);
 
@@ -1527,9 +1561,10 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
 
 inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
                                                       const std::string &materialName,
+                                                      TableSplit split,
                                                       bool reproducibility_mode)
-    : reproducible_(reproducibility_mode), status_(RootFinding1D::Status::SUCCESS),
-      memoryStatus_(DataStatus::OnHost) {
+    : split_(split), reproducible_(reproducibility_mode),
+      status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
   hid_t file, matGroup, lTGroup, lEGroup;
@@ -1537,8 +1572,19 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   matGroup = H5Gopen(file, materialName.c_str(), H5P_DEFAULT);
-  lTGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT);
-  lEGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogSie, H5P_DEFAULT);
+
+  std::string lTGroupName = SP5::Depends::logRhoLogT;
+  std::string lEGroupName = SP5::Depends::logRhoLogSie;
+  if (split == TableSplit::ElectronOnly) {
+    lTGroupName += (std::string("/") + SP5::SubTable::electronOnly);
+    lEGroupName += (std::string("/") + SP5::SubTable::electronOnly);
+  } else if (split == TableSplit::IonCold) {
+    lTGroupName += (std::string("/") + SP5::SubTable::ionCold);
+    lEGroupName += (std::string("/") + SP5::SubTable::ionCold);
+  }
+
+  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
+  lEGroup = H5Gopen(matGroup, lEGroupName.c_str(), H5P_DEFAULT);
 
   status +=
       H5LTget_attribute_int(file, materialName.c_str(), SP5::Material::matid, &matid_);
