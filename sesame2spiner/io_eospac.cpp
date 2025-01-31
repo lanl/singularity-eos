@@ -172,8 +172,8 @@ void eosDataOfRhoT(int matid, const TableSplit split, const Bounds &lRhoBounds,
   std::size_t iflat = 0;
   for (std::size_t j = 0; j < rhos.size(); ++j) {
     for (std::size_t i = 0; i < Ts.size(); ++i) {
-      rho_flat[i] = densityToSesame(rhos[j]);
-      T_flat[i] = temperatureToSesame(Ts[i]);
+      rho_flat[iflat] = densityToSesame(rhos[j]);
+      T_flat[iflat] = temperatureToSesame(Ts[i]);
       iflat++;
     }
   }
@@ -197,7 +197,6 @@ void eosDataOfRhoT(int matid, const TableSplit split, const Bounds &lRhoBounds,
   for (size_t j = 0; j < rhos.size(); j++) {
     Real rho = densityToSesame(rhos[j]);
     for (size_t i = 0; i < Ts.size(); i++) {
-      Real T = temperatureToSesame(Ts[i]);
       Real DPDE_R = DPDT_R[iflat] / DEDT_R[iflat];
       Real bMod =
           getBulkModulus(rho, P_pack[iflat], DPDR_T[iflat], DPDE_R, DEDR_T[iflat]);
