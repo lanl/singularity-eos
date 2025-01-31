@@ -42,7 +42,8 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   makeInterpPoints(rhos, lRhoBounds);
   makeInterpPoints(sies, leBounds);
 
-  EospacWrapper::eospacSplit apply_splitting = eospacSplit::splitNumProp;
+  EospacWrapper::eospacSplit apply_splitting =
+      (split == TableSplit::Total) ? eospacSplit::none : eospacSplit::splitNumProp;
 
   // Load tables
   std::vector<std::string> names = {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT"};
@@ -80,18 +81,16 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       iflat++;
     }
   }
-  bool no_errors = true;
-  no_errors =
-      no_errors && eosSafeInterpolate(&eospacTofRE, nXYPairs, rho_flat.data(),
-                                      sie_flat.data(), T_pack.data(), DTDR_E.data(),
-                                      DTDE_R.data(), "TofRE", eospacWarn);
-  no_errors = no_errors && eosSafeInterpolate(&eospacPofRT, nXYPairs, rho_flat.data(),
-                                              T_pack.data(), P_pack.data(), DPDR_T.data(),
-                                              DPDT_R.data(), "PofRT", eospacWarn);
-  no_errors =
-      no_errors && eosSafeInterpolate(&eospacEofRT, nXYPairs, rho_flat.data(),
-                                      T_pack.data(), sie_pack.data(), DEDR_T.data(),
-                                      DEDT_R.data(), "EofRT", eospacWarn);
+  const bool no_errors_tofre = eosSafeInterpolate(
+      &eospacTofRE, nXYPairs, rho_flat.data(), sie_flat.data(), T_pack.data(),
+      DTDR_E.data(), DTDE_R.data(), "TofRE", eospacWarn);
+  const bool no_errors_pofrt = eosSafeInterpolate(
+      &eospacPofRT, nXYPairs, rho_flat.data(), T_pack.data(), P_pack.data(),
+      DPDR_T.data(), DPDT_R.data(), "PofRT", eospacWarn);
+  const bool no_errors_eofrt = eosSafeInterpolate(
+      &eospacEofRT, nXYPairs, rho_flat.data(), T_pack.data(), sie_pack.data(),
+      DEDR_T.data(), DEDT_R.data(), "EofRT", eospacWarn);
+  const bool no_errors = no_errors_tofre && no_errors_pofrt && no_errors_eofrt;
 
   // Loop by hand to ensure ordering ordering of independent
   // variables is under our control.
@@ -138,7 +137,9 @@ void eosDataOfRhoT(int matid, const TableSplit split, const Bounds &lRhoBounds,
   makeInterpPoints(Ts, lTBounds);
 
   // Load tables
-  EospacWrapper::eospacSplit apply_splitting = eospacSplit::splitNumProp;
+  EospacWrapper::eospacSplit apply_splitting =
+      (split == TableSplit::Total) ? eospacSplit::none : eospacSplit::splitNumProp;
+
   std::vector<std::string> names = {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT"};
   impl::modifyNames(split, names);
   eosSafeLoad(NT, matid, tableType, tableHandle, names, eospacWarn, false, 0.0,
@@ -177,19 +178,19 @@ void eosDataOfRhoT(int matid, const TableSplit split, const Bounds &lRhoBounds,
     }
   }
 
-  bool no_errors = true;
   // Pressure
-  no_errors = no_errors && eosSafeInterpolate(&eospacPofRT, nXYPairs, rho_flat.data(),
-                                              T_flat.data(), P_pack.data(), DPDR_T.data(),
-                                              DPDT_R.data(), "PofRT", eospacWarn);
+  const bool no_errors_prt = eosSafeInterpolate(
+      &eospacPofRT, nXYPairs, rho_flat.data(), T_flat.data(), P_pack.data(),
+      DPDR_T.data(), DPDT_R.data(), "PofRT", eospacWarn);
   // Energy
-  no_errors = no_errors && eosSafeInterpolate(&eospacEofRT, nXYPairs, rho_flat.data(),
-                                              T_flat.data(), E_pack.data(), DEDR_T.data(),
-                                              DEDT_R.data(), "EofRT", eospacWarn);
+  const bool no_errors_ert = eosSafeInterpolate(
+      &eospacEofRT, nXYPairs, rho_flat.data(), T_flat.data(), E_pack.data(),
+      DEDR_T.data(), DEDT_R.data(), "EofRT", eospacWarn);
   // T derivatives
-  no_errors = no_errors && eosSafeInterpolate(&eospacTofRE, nXYPairs, rho_flat.data(),
-                                              E_pack.data(), T_pack.data(), DTDR_E.data(),
-                                              DTDE_R.data(), "TofRE", eospacWarn);
+  const bool no_errors_tre = eosSafeInterpolate(
+      &eospacTofRE, nXYPairs, rho_flat.data(), E_pack.data(), T_pack.data(),
+      DTDR_E.data(), DTDE_R.data(), "TofRE", eospacWarn);
+  const bool no_errors = no_errors_prt && no_errors_ert && no_errors_tre;
 
   // fill databoxes
   iflat = 0;
