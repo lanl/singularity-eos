@@ -82,13 +82,19 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   };
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT);
+  inline SpinerEOSDependsRhoT(const std::string &filename, int matid, TableSplit split,
+                              bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
-                              TableSplit split = TableSplit::Total,
-                              bool reproduciblity_mode = false);
+                              bool reproducibility_mode = false)
+      : SpinerEOSDependsRhoT(filename, matid, TableSplit::Total, reproducibility_mode) {}
+  inline SpinerEOSDependsRhoT(const std::string &filename,
+                              const std::string &materialName, TableSplit split,
+                              bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoT(const std::string &filename,
                               const std::string &materialName,
-                              TableSplit split = TableSplit::Total,
-                              bool reproducibility_mode = false);
+                              bool reproducibility_mode = false)
+      : SpinerEOSDependsRhoT(filename, materialName, TableSplit::Total,
+                             reproducibility_mode) {}
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT()
       : memoryStatus_(DataStatus::Deallocated), split_(TableSplit::Total) {}
@@ -364,13 +370,20 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie);
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
+  inline SpinerEOSDependsRhoSie(const std::string &filename, int matid, TableSplit split,
+                                bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoSie(const std::string &filename, int matid,
-                                TableSplit split = TableSplit::Total,
+                                bool reproducibility_mode = false)
+      : SpinerEOSDependsRhoSie(filename, matid, TableSplit::Total, reproducibility_mode) {
+  }
+  inline SpinerEOSDependsRhoSie(const std::string &filename,
+                                const std::string &materialName, TableSplit split,
                                 bool reproducibility_mode = false);
   inline SpinerEOSDependsRhoSie(const std::string &filename,
                                 const std::string &materialName,
-                                TableSplit split = TableSplit::Total,
-                                bool reproducibility_mode = false);
+                                bool reproducibility_mode = false)
+      : SpinerEOSDependsRhoSie(filename, materialName, TableSplit::Total,
+                               reproducibility_mode) {}
   inline SpinerEOSDependsRhoSie GetOnDevice();
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
