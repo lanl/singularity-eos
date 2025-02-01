@@ -305,7 +305,7 @@ and thus
 
 .. math::
 
-  d f_i = - \frac{1}{\rho_i^2} d f_i.
+  d f_i = - \frac{\overline{\rho}}{\rho_i^2} d \rho_i.
 
 Thus the residual can be recast as
 
