@@ -322,7 +322,10 @@ it has only two independent variables and two unknowns, meaning the
 cost scales only linearly with the number of materials, not
 quadratically (or worse). The primary disadvantage, is that most
 equations of state are not formulated in terms of pressure and
-temperature, meaning additional inversions are required.
+temperature, meaning additional inversions are required. In the case
+where a root-find is required for this inversion, performance may
+suffer for a small number of materials compared to a different
+formulation.
 
 In the code, this method is referred to as ``PTESolverPT``.
 
