@@ -252,9 +252,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
                                                          0.999687726808322};
       std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(),
                                           copper_eos.GetOnDevice()};
-      // TODO(JMM): For some reason the convergence check for this
-      // solver is commented out and it does NOT converge. Needs to be
-      // fixed.
+      // TODO(JMM): This test does not converge. See Issue 390. Possibly due to Spiner?
       THEN("The PTE solver should converge") {
         EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
