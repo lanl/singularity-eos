@@ -311,7 +311,7 @@ Thus the residual can be recast as
 
 .. math::
 
-  f_\mathrm{tot} - \sum_{i=0}^{N-1} = (T^* - T) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial P}\right)_T\\
+  f_\mathrm{tot} - \sum_{i=0}^{N-1} = -(T^* - T) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial T}\right)_P - (P^* - P) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial P}\right)_T\\
   u_\mathrm{tot} - u_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial P}\right)_T
 
 where :math:`\rho_{\mathrm{tot}}` is the sum of densities over all
