@@ -189,8 +189,8 @@ These are two non-linear residual equations that will need to be solved. In
 ``singularity-eos`` a Newton-Raphson method is used that first relies on
 Taylor-expanding the equations about the equilibrium state in order to cast the
 equations in terms of an update to the unknowns. The expansion about an
-equilibrium state described by :math:`f_i^*(\rho_i, y_i)` and
-:math:`u_i^*(\rho_i, y_i)` is
+equilibrium state described by :math:`f_i^*(x_i, y_i)` and
+:math:`u_i^*(x_i, y_i)` is
 
 .. math::
 
@@ -217,17 +217,16 @@ new update is found until some tolerance is reached. When a good initial guess
 is used (such as a previous PTE state), some algorithms may converge in
 relatively few iterations.
 
-The choice of :math:`x` and :math:`y` is discussed below, but crucially it
-determines the number of equations and unknowns needed to specify the system.
-For example, if pressure, :math:`P`, and temperature, :math:`T`, are chosen,
-then the subscripts are eliminated since we seek a solution where all materials
-have the same temperature and pressure. In this formulation, there are two
-equations and two unkowns, but due to the difficulty of inverting an
-equation of state to be a function of pressure and temperature,
-``singularity-eos`` does not have any PTE solvers that are designed to use
-pressure and temperature as independent variables.
+The choice of :math:`x` and :math:`y` is discussed below, but
+crucially it determines the number of equations and unknowns needed to
+specify the system.  For example, if pressure, :math:`P`, and
+temperature, :math:`T`, are chosen, then the subscripts are eliminated
+since we seek a solution where all materials have the same temperature
+and pressure. (See :ref:`pressure-temperature-formulation`.) In this
+formulation, there are two equations and two unkowns, and one such
+solver is described below.
 
-Instead, all of the current PTE solvers in ``singularity-eos`` are cast in terms
+Most of the current PTE solvers in ``singularity-eos`` are cast in terms
 of volume fraction and some other independent variable. Using material volume
 fractions introduces :math:`N - 1` additional unknowns since all but one of the
 volume fractions are independent from each other. The assumption of pressure
