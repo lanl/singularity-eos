@@ -56,6 +56,11 @@ herr_t saveAllMaterials(const std::string &savename,
                         const std::vector<std::string> &filenames, bool printMetadata,
                         Verbosity eospacWarn);
 
+herr_t saveTablesRhoSie(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
+                        const Bounds &leBounds, Verbosity eospacWarn = Verbosity::Quiet);
+herr_t saveTablesRhoT(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
+                      const Bounds &lTBounds, Verbosity eospacWarn = Verbosity::Quiet);
+
 void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
                   Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds);
 
