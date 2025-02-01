@@ -768,7 +768,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
 // PT space solver
 // ======================================================================
 inline int PTESolverPTRequiredScratch(const int nmat) {
-  int neq = 2;
+  constexpr int neq = 2;
   return neq * neq                 // jacobian
          + 4 * neq                 // dx, residual, and sol_scratch
          + 2 * nmat                // all the nmat sized arrays
@@ -777,7 +777,6 @@ inline int PTESolverPTRequiredScratch(const int nmat) {
 inline size_t PTESolverPTRequiredScratchInBytes(const int nmat) {
   return PTESolverPTRequiredScratch(nmat) * sizeof(Real);
 }
-// TODO(JMM): make sure normalizations are correct everywhere
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::InitBase;
@@ -831,9 +830,11 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     InitBase();
     Residual();
 
-    // calculate an initial equilibrium pressure. Volume-fraction
-    // weighting pressures seems unwise. Use minimum positive pressure
-    // accross initial pressures.
+    // TODO(JMM): Suggestion from Jeff:
+    // I suspect that you could multiply the bulk modulus by the
+    // volume fraction to produce a weighting that wasn't a bad
+    // guess. Worth keeping in mind for the future maybe if the
+    // iteration count becomes an issue.
     Pequil = 0;
     Real vsum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
