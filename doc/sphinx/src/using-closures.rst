@@ -189,8 +189,8 @@ These are two non-linear residual equations that will need to be solved. In
 ``singularity-eos`` a Newton-Raphson method is used that first relies on
 Taylor-expanding the equations about the equilibrium state in order to cast the
 equations in terms of an update to the unknowns. The expansion about an
-equilibrium state described by :math:`f_i^*(\rho_i, y_i)` and
-:math:`u_i^*(\rho_i, y_i)` is
+equilibrium state described by :math:`f_i^*(x_i, y_i)` and
+:math:`u_i^*(x_i, y_i)` is
 
 .. math::
 
@@ -217,17 +217,16 @@ new update is found until some tolerance is reached. When a good initial guess
 is used (such as a previous PTE state), some algorithms may converge in
 relatively few iterations.
 
-The choice of :math:`x` and :math:`y` is discussed below, but crucially it
-determines the number of equations and unknowns needed to specify the system.
-For example, if pressure, :math:`P`, and temperature, :math:`T`, are chosen,
-then the subscripts are eliminated since we seek a solution where all materials
-have the same temperature and pressure. In this formulation, there are two
-equations and two unkowns, but due to the difficulty of inverting an
-equation of state to be a function of pressure and temperature,
-``singularity-eos`` does not have any PTE solvers that are designed to use
-pressure and temperature as independent variables.
+The choice of :math:`x` and :math:`y` is discussed below, but
+crucially it determines the number of equations and unknowns needed to
+specify the system.  For example, if pressure, :math:`P`, and
+temperature, :math:`T`, are chosen, then the subscripts are eliminated
+since we seek a solution where all materials have the same temperature
+and pressure. (See :ref:`pressure-temperature-formulation`.) In this
+formulation, there are two equations and two unkowns, and one such
+solver is described below.
 
-Instead, all of the current PTE solvers in ``singularity-eos`` are cast in terms
+Most of the current PTE solvers in ``singularity-eos`` are cast in terms
 of volume fraction and some other independent variable. Using material volume
 fractions introduces :math:`N - 1` additional unknowns since all but one of the
 volume fractions are independent from each other. The assumption of pressure
@@ -278,9 +277,61 @@ choice of the second independent variable is discussed below and has
 implications for both the number of additional unknowns and the stability of the
 method.
 
+.. _pressure-temperature-formulation:
+The Pressure-Temperature Formulation
+`````````````````````````````````````
+
+An obvious choice is to treat the independent variables as pressure
+and temperature. Then one has only two equations and two unknowns. The
+residual contains only the volume fraction and energy summmation rules
+described above. Taylor expanding these residuals about fixed
+temeprature and pressure points leads to two residual equations of the
+form
+
+.. math::
+
+  1 - \sum_{i=0}^{N-1} f_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial P}\right)_T\\
+  u_{tot} - \sum_{i=0}^{N-1} u_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial P}\right)_T
+
+However, derivatives in the volume fraction are not easily
+accessible. To access them, we leverage the fact that
+
+.. math::
+
+  \bar{\rho}_i = \rho_i f_i,
+
+and thus
+
+.. math::
+
+  d f_i = - \frac{\overline{\rho}}{\rho_i^2} d \rho_i.
+
+Thus the residual can be recast as
+
+.. math::
+
+  f_\mathrm{tot} - \sum_{i=0}^{N-1} = -(T^* - T) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial T}\right)_P - (P^* - P) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial P}\right)_T\\
+  u_\mathrm{tot} - u_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial P}\right)_T
+
+where :math:`\rho_{\mathrm{tot}}` is the sum of densities over all
+materials. These residual equations can then be cast as a matrix
+equation to solve for pressure and temperature.
+
+The primary advantage of the pressure-temperature space solver is that
+it has only two independent variables and two unknowns, meaning the
+cost scales only linearly with the number of materials, not
+quadratically (or worse). The primary disadvantage, is that most
+equations of state are not formulated in terms of pressure and
+temperature, meaning additional inversions are required. In the case
+where a root-find is required for this inversion, performance may
+suffer for a small number of materials compared to a different
+formulation.
+
+In the code, this method is referred to as ``PTESolverPT``.
+
 .. _density-energy-formalism:
 The Density-Energy Formulation
-''''''''''''''''''''''''''''''
+```````````````````````````````
 
 One choice is to treat volume fractions and material energies as independent
 quantities, but the material energies provide :math:`N - 1` additional
@@ -319,7 +370,7 @@ more stable and performant and is usually preferrred to this formulation.
 In the code this is referred to as the ``PTESolverRhoU``.
 
 The Density-Temperature Formulation
-'''''''''''''''''''''''''''''''''''
+````````````````````````````````````
 
 Another choice is to treat the temperature as an independent variable, requiring
 no additional equations. The energy residual equation then takes the form
@@ -387,7 +438,7 @@ material pressures.
 In the code this is referred to as the ``PTESolverFixedP``.
 
 Using the Pressure-Temperature Equilibrium Solver
-'''''''''''''''''''''''''''''''''''''''''''''''''
+```````````````````````````````````````````````````
 
 The PTE machinery is implemented in the
 ``singularity-es/closure/mixed_cell_models.hpp`` header. It is
@@ -573,7 +624,7 @@ example of the PTE solver machinery in use, see the ``test_pte.cpp``
 file in the tests directory.
 
 Initial Guesses for PTE Solvers
-'''''''''''''''''''''''''''''''
+`````````````````````````````````
 
 As is always the case when solving systems of nonlinear equations, good initial
 guesses are important to ensure rapid convergence to the solution.  For the PTE

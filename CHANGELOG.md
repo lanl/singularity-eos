@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR453]](https://github.com/lanl/singularity-eos/pull/453) A PT space PTE solver
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)

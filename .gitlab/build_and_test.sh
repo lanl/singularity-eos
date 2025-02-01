@@ -272,6 +272,7 @@ cmake_test() {
   (
   source ${BUILD_ENV}
   export CTEST_OUTPUT_ON_FAILURE=1
+  export OMP_PROC_BIND=false
   if ${BUILD_WITH_CTEST}; then
     ctest -V -S .gitlab/build_and_test.cmake,Test,$REPORT_ERRORS
   else
