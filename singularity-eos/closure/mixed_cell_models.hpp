@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -46,6 +46,8 @@ struct MixParams {
   Real pte_abs_tolerance_p = 0.0;
   Real pte_abs_tolerance_e = 1.e-4;
   Real pte_abs_tolerance_t = 0.0;
+  Real pte_rel_tolerance_v = 1e-6;
+  Real pte_abs_tolerance_v = 1e-6;
   Real pte_residual_tolerance = 1.e-8;
   std::size_t pte_max_iter_per_mat = 128;
   Real line_search_alpha = 1.e-2;
@@ -163,6 +165,9 @@ class CacheAccessor {
   Real *cache_;
 };
 
+// ======================================================================
+// Base class
+// ======================================================================
 template <typename EOSIndexer, typename RealIndexer>
 class PTESolverBase {
  public:
@@ -406,7 +411,7 @@ class PTESolverBase {
       if (Tnorm * Tideal < 0 ||
           robust::ratio(rhobar[m], vfrac[m]) < eos[m].RhoPmin(Tnorm * Tideal)) {
         // abort because this is putting this material into a bad state
-        for (std::size_t n = m; n >= 0; n--)
+        for (std::size_t n = 0; n <= m; n++)
           vfrac[n] = vtemp[n];
         return;
       }
@@ -530,6 +535,9 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
   return FastMath::pow2((1.0 - alpha) * lTlo + alpha * lThi);
 }
 
+// ======================================================================
+// PTE Solver RhoT
+// ======================================================================
 inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
   return neq * neq                 // jacobian
@@ -647,10 +655,9 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real vf_pert = vfrac[m] + dv;
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
-      Real p_pert{};
       Real e_pert =
           eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
-      p_pert =
+      Real p_pert =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
                                                        e_pert, Cache[m], false),
                         uscale);
@@ -757,7 +764,254 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real Tequil, Ttemp;
 };
 
+// ======================================================================
+// PT space solver
+// ======================================================================
+inline int PTESolverPTRequiredScratch(const int nmat) {
+  constexpr int neq = 2;
+  return neq * neq                 // jacobian
+         + 4 * neq                 // dx, residual, and sol_scratch
+         + 2 * nmat                // all the nmat sized arrays
+         + MAX_NUM_LAMBDAS * nmat; // the cache
+}
+inline size_t PTESolverPTRequiredScratchInBytes(const int nmat) {
+  return PTESolverPTRequiredScratch(nmat) * sizeof(Real);
+}
+template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
+class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::InitBase;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::AssignIncrement;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::nmat;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::neq;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::ResidualNorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::eos;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::temp;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::press;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::uscale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::utotal_scale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::MatIndex;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::TryIdealPTE;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::jacobian;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::residual;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::dx;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::u;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rhobar;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Cache;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Tnorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::params_;
+
+  enum RES { RV = 0, RSIE = 1 };
+
+ public:
+  // template the ctor to get type deduction/universal references prior to c++17
+  template <typename EOS_t, typename Real_t, typename Lambda_t>
+  PORTABLE_INLINE_FUNCTION
+  PTESolverPT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
+              Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
+              Lambda_t &&lambda, Real *scratch, const Real Tnorm = 0.0,
+              const MixParams &params = MixParams())
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2, eos, vfrac_tot, sie_tot,
+                                                         rho, vfrac, sie, temp, press,
+                                                         scratch, Tnorm, params) {
+    // TODO(JCD): use whatever lambdas are passed in
+    /*for (int m = 0; m < nmat; m++) {
+      if (!variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
+    }*/
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real Init() {
+    InitBase();
+    Residual();
+
+    // TODO(JMM): Suggestion from Jeff:
+    // I suspect that you could multiply the bulk modulus by the
+    // volume fraction to produce a weighting that wasn't a bad
+    // guess. Worth keeping in mind for the future maybe if the
+    // iteration count becomes an issue.
+    Pequil = 0;
+    Real vsum = 0;
+    for (std::size_t m = 0; m < nmat; ++m) {
+      // always approach from >0 side
+      Pequil += std::abs(press[m]) * vfrac[m];
+      vsum += vfrac[m];
+    }
+    Pequil /= vsum;
+    Tequil = 1; // Because it's = Tnorm = initial guess
+
+    // Set the state based on the P/T chosen
+    for (std::size_t m = 0; m < nmat; ++m) {
+      eos[m].DensityEnergyFromPressureTemperature(Pequil * uscale, Tequil * Tnorm,
+                                                  Cache[m], rho[m], sie[m]);
+      vfrac[m] = robust::ratio(rhobar[m], rho[m]);
+      u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
+      temp[m] = Tequil;
+    }
+    Residual();
+
+    // Set the current guess for the equilibrium temperature.  Note
+    // that this is already scaled.
+    return ResidualNorm();
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  void Residual() const {
+    Real vsum = 0.0;
+    Real esum = 0.0;
+    for (std::size_t m = 0; m < nmat; ++m) {
+      vsum += vfrac[m];
+      esum += u[m];
+    }
+    residual[RV] = vfrac_total - vsum;
+    residual[RSIE] = utotal_scale - esum;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  bool CheckPTE() const {
+    Real error_v = std::abs(residual[RV]);
+    Real error_u = std::abs(residual[RSIE]);
+    // this may not be quite right as we may need an energy scaling factor
+    // Check for convergence
+    bool converged_u = (error_u < params_.pte_rel_tolerance_e ||
+                        uscale * error_u < params_.pte_abs_tolerance_e);
+    bool converged_v =
+        (error_v < params_.pte_rel_tolerance_v || error_v < params_.pte_abs_tolerance_v);
+
+    return converged_v && converged_u;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  void Jacobian() const {
+    // sum_m d u_m / dT )_P
+    Real dudT_P_sum = 0.0;
+    // sum_m d u_m / dP )_T
+    Real dudP_T_sum = 0.0;
+    // - sum_m rhobar / rho_m^2 * d rho_m / dT )_P
+    Real rbor2_dr_dT_P_sum = 0.0;
+    // - sum_m rhobar / rho_m^2 d rho_m / dP )_T
+    Real rbor2_dr_dP_T_sum = 0.0;
+
+    // JMM: Note rescaling for u, P, T
+
+    // TODO(JMM): Should we use the thermodynamic derivatives rather
+    // than finite differences?
+    for (std::size_t m = 0; m < nmat; ++m) {
+      Real r_pert = rho[m]; // provide initial guesses
+      Real e_pert = sie[m];
+
+      //////////////////////////////
+      // perturb pressures
+      //////////////////////////////
+      Real dp = -Pequil * params_.derivative_eps; // always move towards phase transition
+      eos[m].DensityEnergyFromPressureTemperature(uscale * (Pequil + dp), Tnorm * Tequil,
+                                                  Cache[m], r_pert, e_pert);
+      Real drdp = robust::ratio(r_pert - rho[m], dp);
+      Real dudp = robust::ratio(robust::ratio(rhobar[m] * e_pert, uscale) - u[m], dp);
+
+      rbor2_dr_dP_T_sum += robust::ratio(rhobar[m], rho[m] * rho[m]) * drdp;
+      dudP_T_sum += dudp;
+
+      //////////////////////////////
+      // perturb temperatures
+      //////////////////////////////
+      Real dT = Tequil * params_.derivative_eps;
+      eos[m].DensityEnergyFromPressureTemperature(uscale * Pequil, Tnorm * (Tequil + dT),
+                                                  Cache[m], r_pert, e_pert);
+      Real drdT = robust::ratio(r_pert - rho[m], dT);
+      Real dudT = robust::ratio(robust::ratio(rhobar[m] * e_pert, uscale) - u[m], dT);
+
+      rbor2_dr_dT_P_sum += robust::ratio(rhobar[m], rho[m] * rho[m]) * drdT;
+      dudT_P_sum += dudT;
+    }
+
+    // Fill in the Jacobian
+    jacobian[0] = -rbor2_dr_dT_P_sum; // TODO(JMM): Check positions
+    jacobian[1] = -rbor2_dr_dP_T_sum;
+    jacobian[2] = dudT_P_sum;
+    jacobian[3] = dudP_T_sum;
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real ScaleDx() const {
+    Real scale = 1.0;
+    if (scale * dx[0] < -0.95 * Tequil) {
+      scale = robust::ratio(-0.95 * Tequil, dx[0]);
+    }
+    auto bounded = [=](Real Pbound, Real delta) {
+      return robust::ratio(robust::ratio(Pbound, uscale) - Pequil, delta);
+    };
+
+    for (std::size_t m = 0; m < nmat; ++m) {
+      Real Pmin = eos[m].MinimumPressure();
+      scale = std::min(std::abs(scale), std::abs(0.95 * bounded(Pmin, dx[1])));
+    }
+    for (std::size_t m = 0; m < nmat; ++m) {
+      Real Ttest = (Tequil + scale * dx[0]) * Tnorm;
+      Real Pmax = eos[m].MaximumPressureAtTemperature(Ttest);
+      scale = std::min(std::abs(scale), std::abs(0.95 * bounded(Pmax, dx[0])));
+    }
+
+    for (std::size_t i = 0; i < neq; ++i) {
+      dx[i] *= scale;
+    }
+    return scale;
+  }
+
+  // Update the solution and return new residual.  Possibly called repeatedly with
+  // different scale factors as part of a line search
+  PORTABLE_INLINE_FUNCTION
+  Real TestUpdate(const Real scale, bool const cache_state = false) {
+    if (cache_state) {
+      // Store the current state in temp variables for first iteration of line
+      // search
+      Ttemp = Tequil;
+      Ptemp = Pequil;
+    }
+    Tequil = Ttemp + scale * dx[0];
+    Pequil = Ptemp + scale * dx[1];
+    for (std::size_t m = 0; m < nmat; ++m) {
+      eos[m].DensityEnergyFromPressureTemperature(Pequil * uscale, Tequil * Tnorm,
+                                                  Cache[m], rho[m], sie[m]);
+      vfrac[m] = robust::ratio(rhobar[m], rho[m]);
+      u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
+      temp[m] = Tequil;
+      press[m] = Pequil;
+    }
+    Residual();
+    return ResidualNorm();
+  }
+
+  // Solve the linear system for the update dx
+  // Customized because this system can invert its jacobian analytically
+  PORTABLE_INLINE_FUNCTION
+  bool Solve() const {
+    dx[0] = robust::ratio(jacobian[3] * residual[0] - jacobian[1] * residual[1],
+                          jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2]);
+    dx[1] = robust::ratio(jacobian[2] * residual[0] - jacobian[0] * residual[1],
+                          jacobian[1] * jacobian[2] - jacobian[0] * jacobian[3]);
+    return mix_impl::check_nans(dx, 2);
+  }
+
+ private:
+  // TODO(JMM): Should these have trailing underscores?
+  // Current P, T state
+  Real Pequil;
+  Real Tequil;
+  // Scratch states for test update
+  Real Ptemp;
+  Real Ttemp;
+  // TODO(JMM): Should there be a P norm as well as a Tnorm?
+};
+
+// ======================================================================
 // fixed temperature solver
+// ======================================================================
 inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat;
   return neq * neq                 // jacobian
@@ -963,7 +1217,9 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   Real Tequil, Ttemp;
 };
 
+// ======================================================================
 // fixed P solver
+// ======================================================================
 inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
   return neq * neq                 // jacobian
@@ -1198,6 +1454,9 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   Real Tequil, Ttemp, Pequil;
 };
 
+// ======================================================================
+// RhoU Solver
+// ======================================================================
 inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat) {
   std::size_t neq = 2 * nmat;
   return neq * neq                 // jacobian
@@ -1443,6 +1702,9 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   Real *dpdv, *dtdv, *dpde, *dtde, *vtemp, *utemp;
 };
 
+// ======================================================================
+// Solver loop
+// ======================================================================
 template <class System>
 PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
   SolverStatus status;
@@ -1473,7 +1735,7 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     bool success = s.Solve();
     if (!success) {
       // do something to crash out?  Tell folks what happened?
-      // printf("crashing out at iteration: %i\n", niter);
+      // printf("crashing out at iteration: %ld\n", niter);
       converged = false;
       break;
     }
