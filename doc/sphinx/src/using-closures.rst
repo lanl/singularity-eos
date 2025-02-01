@@ -329,7 +329,7 @@ In the code, this method is referred to as ``PTESolverPT``.
 
 .. _density-energy-formalism:
 The Density-Energy Formulation
-''''''''''''''''''''''''''''''
+```````````````````````````````
 
 One choice is to treat volume fractions and material energies as independent
 quantities, but the material energies provide :math:`N - 1` additional
@@ -368,7 +368,7 @@ more stable and performant and is usually preferrred to this formulation.
 In the code this is referred to as the ``PTESolverRhoU``.
 
 The Density-Temperature Formulation
-'''''''''''''''''''''''''''''''''''
+````````````````````````````````````
 
 Another choice is to treat the temperature as an independent variable, requiring
 no additional equations. The energy residual equation then takes the form
@@ -436,7 +436,7 @@ material pressures.
 In the code this is referred to as the ``PTESolverFixedP``.
 
 Using the Pressure-Temperature Equilibrium Solver
-'''''''''''''''''''''''''''''''''''''''''''''''''
+```````````````````````````````````````````````````
 
 The PTE machinery is implemented in the
 ``singularity-es/closure/mixed_cell_models.hpp`` header. It is
@@ -622,7 +622,7 @@ example of the PTE solver machinery in use, see the ``test_pte.cpp``
 file in the tests directory.
 
 Initial Guesses for PTE Solvers
-'''''''''''''''''''''''''''''''
+`````````````````````````````````
 
 As is always the case when solving systems of nonlinear equations, good initial
 guesses are important to ensure rapid convergence to the solution.  For the PTE
