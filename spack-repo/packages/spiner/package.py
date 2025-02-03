@@ -63,10 +63,7 @@ class Spiner(CMakePackage):
     depends_on("ports-of-call portability_strategy=Kokkos", when="@:1.5.1 +kokkos")
     depends_on("ports-of-call portability_strategy=None", when="@:1.5.1 ~kokkos")
     depends_on("kokkos@3.3.00:", when="+kokkos")
-    requires(
-        "^kokkos ~shared+cuda_lambda+cuda_constexpr",
-        when="+kokkos ^kokkos+cuda",
-    )
+    requires("^kokkos+cuda_lambda+cuda_constexpr", when="+kokkos ^kokkos+cuda")
 
     depends_on("hdf5+hl~mpi", when="+hdf5~mpi")
     depends_on("hdf5+hl+mpi", when="+hdf5+mpi")
