@@ -229,9 +229,10 @@ specifies which component of the material is being requst:
    enum class TableSplit { Total, ElectronOnly, IonCold };
 
 where here ``ElectronOnly`` is the free electrons of the material,
-``IonCold`` is the ions plus cold curve (i.e., the ions if you don't
-know what a cold curve is), and ``Total`` is the sum of free electrons
-and ions.
+corresponding to Sesame 304 tables, ``IonCold`` is the ions plus cold
+curve (i.e., the ions if you don't know what a cold curve is),
+corresponding to the Sesame 303 tables, and ``Total`` is the sum of
+free electrons and ions, correspodning to the Sesame 301 tables.
 
 .. note::
 
