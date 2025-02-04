@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -46,7 +46,8 @@ using namespace EospacWrapper;
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,
-                    const std::string &name, Verbosity eospacWarn) {
+                    const std::string &name, const bool addSubtables,
+                    Verbosity eospacWarn) {
 
   const int matid = metadata.matid;
   std::string sMatid = std::to_string(matid);
@@ -94,49 +95,47 @@ herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRh
   coldGroup =
       H5Gcreate(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-  {
-    DataBox P, sie, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, mask;
-    eosDataOfRhoSie(matid, lRhoBounds, leBounds, P, T, bMod, dPdRho, dPdE, dTdRho, dTdE,
-                    dEdRho, mask, eospacWarn);
-    status += P.saveHDF(leGroup, SP5::Fields::P);
-    status += T.saveHDF(leGroup, SP5::Fields::T);
-    status += bMod.saveHDF(leGroup, SP5::Fields::bMod);
-    status += dPdRho.saveHDF(leGroup, SP5::Fields::dPdRho);
-    status += dPdE.saveHDF(leGroup, SP5::Fields::dPdE);
-    status += dTdRho.saveHDF(leGroup, SP5::Fields::dTdRho);
-    status += dTdE.saveHDF(leGroup, SP5::Fields::dTdE);
-    status += dEdRho.saveHDF(leGroup, SP5::Fields::dEdRho);
-    status += mask.saveHDF(leGroup, SP5::Fields::mask);
-  }
-
-  {
-    DataBox P, sie, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, dEdT, mask;
-    eosDataOfRhoT(matid, lRhoBounds, lTBounds, P, sie, bMod, dPdRho, dPdE, dTdRho, dTdE,
-                  dEdRho, dEdT, mask, eospacWarn);
-    status += P.saveHDF(lTGroup, SP5::Fields::P);
-    status += sie.saveHDF(lTGroup, SP5::Fields::sie);
-    status += bMod.saveHDF(lTGroup, SP5::Fields::bMod);
-    status += dPdRho.saveHDF(lTGroup, SP5::Fields::dPdRho);
-    status += dPdE.saveHDF(lTGroup, SP5::Fields::dPdE);
-    status += dTdRho.saveHDF(lTGroup, SP5::Fields::dTdRho);
-    status += dTdE.saveHDF(lTGroup, SP5::Fields::dTdE);
-    status += dEdRho.saveHDF(lTGroup, SP5::Fields::dEdRho);
-    status += dEdT.saveHDF(lTGroup, SP5::Fields::dEdT);
-    status += mask.saveHDF(lTGroup, SP5::Fields::mask);
-  }
+  status += saveTablesRhoSie(leGroup, matid, TableSplit::Total, lRhoBounds, leBounds,
+                             eospacWarn);
+  status +=
+      saveTablesRhoT(lTGroup, matid, TableSplit::Total, lRhoBounds, lTBounds, eospacWarn);
   {
     DataBox P, sie, dPdRho, dEdRho, bMod, mask, transitionMask;
     eosColdCurves(matid, lRhoBounds, P, sie, dPdRho, dEdRho, bMod, mask, eospacWarn);
-    eosColdCurveMask(matid, lRhoBounds, leBounds.grid.nPoints(), sie, transitionMask,
-                     eospacWarn);
+    // currently unused
+    // eosColdCurveMask(matid, lRhoBounds, leBounds.grid.nPoints(), sie, transitionMask,
+    //                  eospacWarn);
 
     status += P.saveHDF(coldGroup, SP5::Fields::P);
     status += sie.saveHDF(coldGroup, SP5::Fields::sie);
     status += bMod.saveHDF(coldGroup, SP5::Fields::bMod);
     status += dPdRho.saveHDF(coldGroup, SP5::Fields::dPdRho);
     status += dEdRho.saveHDF(coldGroup, SP5::Fields::dEdRho);
-    status += mask.saveHDF(coldGroup, SP5::Fields::mask);
-    status += transitionMask.saveHDF(coldGroup, SP5::Fields::transitionMask);
+    // currently unused
+    // status += mask.saveHDF(coldGroup, SP5::Fields::mask);
+    // status += transitionMask.saveHDF(coldGroup, SP5::Fields::transitionMask);
+  }
+
+  if (addSubtables) {
+    int i = 0;
+    std::vector<TableSplit> splits = {TableSplit::ElectronOnly, TableSplit::IonCold};
+    std::vector<std::string> grpnames = {SP5::SubTable::electronOnly,
+                                         SP5::SubTable::ionCold};
+    for (auto split : splits) {
+      std::string grpname = grpnames[i++];
+      {
+        hid_t grp =
+            H5Gcreate(leGroup, grpname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status += saveTablesRhoSie(grp, matid, split, lRhoBounds, leBounds, eospacWarn);
+        status += H5Gclose(grp);
+      }
+      {
+        hid_t grp =
+            H5Gcreate(lTGroup, grpname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status += saveTablesRhoT(grp, matid, split, lRhoBounds, lTBounds, eospacWarn);
+        status += H5Gclose(grp);
+      }
+    }
   }
 
   status += H5Gclose(leGroup);
@@ -219,8 +218,14 @@ herr_t saveAllMaterials(const std::string &savename,
                 << lRhoBounds << lTBounds << leBounds << std::endl;
     }
 
-    status +=
-        saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name, eospacWarn);
+    const bool add_subtables = params[i].Get("ionization", false);
+    if (eospacWarn == Verbosity::Debug) {
+      std::cout << "Adding subtables for partial ionization? " << add_subtables
+                << std::endl;
+    }
+
+    status += saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name,
+                           add_subtables, eospacWarn);
     if (status != H5_SUCCESS) {
       std::cerr << "WARNING: problem with HDf5" << std::endl;
     }
@@ -231,6 +236,45 @@ herr_t saveAllMaterials(const std::string &savename,
   if (status != H5_SUCCESS) {
     std::cerr << "WARNING: problem with HDf5" << std::endl;
   }
+  return status;
+}
+
+herr_t saveTablesRhoSie(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
+                        const Bounds &leBounds, Verbosity eospacWarn) {
+  herr_t status = 0;
+  DataBox P, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, mask;
+  eosDataOfRhoSie(matid, split, lRhoBounds, leBounds, P, T, bMod, dPdRho, dPdE, dTdRho,
+                  dTdE, dEdRho, mask, eospacWarn);
+  status += P.saveHDF(loc, SP5::Fields::P);
+  status += T.saveHDF(loc, SP5::Fields::T);
+  status += bMod.saveHDF(loc, SP5::Fields::bMod);
+  status += dPdRho.saveHDF(loc, SP5::Fields::dPdRho);
+  status += dPdE.saveHDF(loc, SP5::Fields::dPdE);
+  status += dTdRho.saveHDF(loc, SP5::Fields::dTdRho);
+  status += dTdE.saveHDF(loc, SP5::Fields::dTdE);
+  status += dEdRho.saveHDF(loc, SP5::Fields::dEdRho);
+  // currently unused
+  // status += mask.saveHDF(loc, SP5::Fields::mask);
+  return status;
+}
+
+herr_t saveTablesRhoT(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
+                      const Bounds &lTBounds, Verbosity eospacWarn) {
+  herr_t status = 0;
+  DataBox P, sie, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, dEdT, mask;
+  eosDataOfRhoT(matid, split, lRhoBounds, lTBounds, P, sie, bMod, dPdRho, dPdE, dTdRho,
+                dTdE, dEdRho, dEdT, mask, eospacWarn);
+  status += P.saveHDF(loc, SP5::Fields::P);
+  status += sie.saveHDF(loc, SP5::Fields::sie);
+  status += bMod.saveHDF(loc, SP5::Fields::bMod);
+  status += dPdRho.saveHDF(loc, SP5::Fields::dPdRho);
+  status += dPdE.saveHDF(loc, SP5::Fields::dPdE);
+  status += dTdRho.saveHDF(loc, SP5::Fields::dTdRho);
+  status += dTdE.saveHDF(loc, SP5::Fields::dTdE);
+  status += dEdRho.saveHDF(loc, SP5::Fields::dEdRho);
+  status += dEdT.saveHDF(loc, SP5::Fields::dEdT);
+  // Currently unused
+  // status += mask.saveHDF(loc, SP5::Fields::mask);
   return status;
 }
 

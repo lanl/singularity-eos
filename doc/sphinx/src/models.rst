@@ -218,9 +218,26 @@ density.
 ``singularity-eos`` assumes that, when 3T physics is active, electrons
 and ions are each described by a separate equation of state
 object. Several models are specifically designed to represent, e.g.,
-the electron equation of state or ion equation of state. The tabulated
-models may also support loading tables specifically for electron or
-ion equations of state.
+the electron equation of state or ion equation of state.
+
+The tabulated models may also support loading tables specifically for
+electron or ion equations of state. In these cases, an ``enum class``
+specifies which component of the material is being requst:
+
+.. code-block:: cpp
+
+   enum class TableSplit { Total, ElectronOnly, IonCold };
+
+where here ``ElectronOnly`` is the free electrons of the material,
+corresponding to Sesame 304 tables, ``IonCold`` is the ions plus cold
+curve (i.e., the ions if you don't know what a cold curve is),
+corresponding to the Sesame 303 tables, and ``Total`` is the sum of
+free electrons and ions, correspodning to the Sesame 301 tables.
+
+.. note::
+
+  The tabulated equations of state have an implicitly assumed
+  ionization fraction that depends on the electron temperature.
 
 Available EOS Information and Nomenclature
 ------------------------------------------
@@ -1665,15 +1682,19 @@ The constructor for ``SpinerEOSDependsRhoT`` is given by two overloads:
 .. code-block:: cpp
 
   SpinerEOSDependsRhoT(const std::string &filename, int matid,
+                       const singularity::TableSplit = singularity::TableSplit::Total,
                        bool reproduciblity_mode = false);
   SpinerEOSDependsRhoT(const std::string &filename, const std::string &materialName,
+                       const singularity::TableSplit = singularity::TableSplit::Total,
                        bool reproducibility_mode = false);
 
 where here ``filename`` is the input file, ``matid`` is the unique
 material ID in the database in the file, ``materialName`` is the name
 of the material in the file, and ``reproducability_mode`` is a boolean
 which slightly changes how initial guesses for root finds are
-computed. The constructor for ``SpinerEOSDependsRhoSie`` is identical.
+computed. The ``TableSplit`` option selects electron, ion, or total
+equation of state tables for partial ionization. The constructor for
+``SpinerEOSDependsRhoSie`` is identical.
 
 .. note::
 
@@ -1735,6 +1756,12 @@ and files to locate files in the `sesame`_ database, and
 ``sesame2spiner`` uses `eospac`_. So the location of the ``sesame``
 database need not be provided by the command line. For how to specify
 `sesame`_ file locations, see the `eospac`_ manual.
+
+.. note::
+
+  To enable 3T subtables with ``SpinerEOS``, you must set
+  ``ionization=true`` in the input file for ``sesame2spiner`` for the
+  desired material.
 
 Piecewise Spiner Grids
 ````````````````````````
@@ -2134,27 +2161,40 @@ EOSPAC EOS
     Entropy is not yet available for this EOS
 
 This is a striaghtforward wrapper of the `EOSPAC`_ library for the
-`Sesame`_ database. The constructor for the ``EOSPAC`` model looks like
+`Sesame`_ database. The constructor for the ``EOSPAC`` model has several overloads
 
 .. code-block::
 
-  EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0, eospacMonotonicity monotonicity = eospacMonotonicity::none, bool apply_smoothing = false, eospacSplit apply_splitting = eospacSplit::none, bool linear_interp = false)
+  EOSPAC(int matid, TableSplit split, bool invert_at_setup = false,
+         Real insert_data = 0.0,
+         eospacMonotonicity monotonicity = eospacMonotonicity::none,
+         bool apply_smoothing = false,
+         eospacSplit apply_splitting = eospacSplit::none,
+         bool linear_interp = false);
+  EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
+         eospacMonotonicity monotonicity = eospacMonotonicity::none,
+         bool apply_smoothing = false,
+         eospacSplit apply_splitting = eospacSplit::none,
+         bool linear_interp = false);
+  EOSPAC(int matid, const Options &opts);
 
 where ``matid`` is the unique material number in the database,
-``invert_at_setup`` specifies whether or not pre-compute tables of
-temperature as a function of density and energy, ``insert_data`` 
-inserts specified number of grid points between original grid points 
-in the `Sesame`_ table, ``monotonicity` enforces monotonicity in x, 
-y or both (:math:`monotonicityX/Y/XY`), ``apply_smoothing`` enables 
-data table smoothing that imposes a linear floor on temperature dependence, 
-forces linear temperature dependence for low temperature, and forces 
-linear density dependence for low and high density, ``apply_splitting`` 
-has the following options for ion data tables not found in the `Sesame`_ 
-database :. :math:`splitNumProp` uses the cold curve plus number-proportional 
-model, :math:`splitIdealGas` uses the cold curve plus ideal gas model 
-and :math:`splitCowan` uses the cold curve plus Cowan-nuclear model 
-for ions and the final option ``linear_interp`` uses linear instead of 
-bilinear interpolation. 
+``split`` is the ``TableSplit`` parameter for electron, ion, or total
+tables used in partial ionization. ``invert_at_setup`` specifies
+whether or not pre-compute tables of temperature as a function of
+density and energy, ``insert_data`` inserts specified number of grid
+points between original grid points in the `Sesame`_ table,
+``monotonicity` enforces monotonicity in x, y or both
+(:math:`monotonicityX/Y/XY`), ``apply_smoothing`` enables data table
+smoothing that imposes a linear floor on temperature dependence,
+forces linear temperature dependence for low temperature, and forces
+linear density dependence for low and high density,
+``apply_splitting`` has the following options for ion data tables not
+found in the `Sesame`_ database :. :math:`splitNumProp` uses the cold
+curve plus number-proportional model, :math:`splitIdealGas` uses the
+cold curve plus ideal gas model and :math:`splitCowan` uses the cold
+curve plus Cowan-nuclear model for ions and the final option
+``linear_interp`` uses linear instead of bilinear interpolation.
 
 .. note::
 
