@@ -49,7 +49,7 @@ install(DIRECTORY ${PROJECT_SOURCE_DIR}/cmake/singularity-eos
         DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake)
 
 install(FILES ${PROJECT_SOURCE_DIR}/cmake/FindEOSPAC.cmake
-        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake)
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/cmake/singularity-eos)
 
 # ----------------------------------------------------------------------------#
 # install export target
