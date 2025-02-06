@@ -28,14 +28,13 @@
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
-// these two headers share a variant
-using EOS = singularity::Variant<singularity::Vinet>;
 #include <pte_longtest_2phaseVinetSn.hpp>
 #include <pte_test_2phaseVinetSn.hpp>
 
 using namespace pte_longtest_2phaseVinetSn;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
+using EOS = singularity::Variant<singularity::Vinet>;
 
 using DataBox = Spiner::DataBox<Real>;
 
@@ -193,8 +192,8 @@ int main(int argc, char *argv[]) {
               PTESolverRhoT<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
                   NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
                   &scratch_d(t * nscratch_vars), Tguess);
-          bool success = PTESolver(method);
-          if (success) {
+          auto status = PTESolver(method);
+          if (status.converged) {
             nsuccess_d() += 1;
           }
           hist_d[method.Niter()] += 1;

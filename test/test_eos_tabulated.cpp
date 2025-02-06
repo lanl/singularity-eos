@@ -86,6 +86,11 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
         REQUIRE(isClose(T, T_pac));
       }
 
+      AND_THEN("We get the correct mean atomic mass and number") {
+        REQUIRE(steelEOS_host.MeanAtomicMass() == eospac.MeanAtomicMass());
+        REQUIRE(steelEOS_host.MeanAtomicNumber() == eospac.MeanAtomicNumber());
+      }
+
       // TODO: this needs to be a much more rigorous test
       AND_THEN("Quantities can be read from density and temperature") {
         const Real sie_pac = eospac.InternalEnergyFromDensityTemperature(1e0, 1e6);
@@ -233,6 +238,11 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
 
+      AND_THEN("We get the correct mean atomic mass and number") {
+        REQUIRE(isClose(steelEOS_host.MeanAtomicMass(), 55.37));
+        REQUIRE(isClose(steelEOS_host.MeanAtomicNumber(), 25.80));
+      }
+
       int nw_ie2{0}, nw_te2{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::fence();
@@ -269,12 +279,16 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
     SpinerEOSDependsRhoT rhoT_orig = SpinerEOSDependsRhoT(eosName, steelID);
     SpinerEOSDependsRhoSie rhoSie_orig = SpinerEOSDependsRhoSie(eosName, steelID);
     EOS eospac_orig = EOSPAC(steelID);
+    // we want to stress test that we can serialize and deserialize
+    // multiple EOSPAC objects
+    EOS eospac_air = EOSPAC(airID);
     THEN("They report dynamic vs static memory correctly") {
       REQUIRE(rhoT_orig.AllDynamicMemoryIsShareable());
       REQUIRE(rhoSie_orig.AllDynamicMemoryIsShareable());
       REQUIRE(!eospac_orig.AllDynamicMemoryIsShareable());
       REQUIRE(eospac_orig.SerializedSizeInBytes() >
               eospac_orig.DynamicMemorySizeInBytes());
+      REQUIRE(eospac_air.SerializedSizeInBytes() > eospac_air.DynamicMemorySizeInBytes());
     }
     WHEN("We serialize") {
       auto [rhoT_size, rhoT_data] = rhoT_orig.Serialize();
@@ -286,6 +300,9 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
       auto [eospac_size, eospac_data] = eospac_orig.Serialize();
       REQUIRE(eospac_size == eospac_orig.SerializedSizeInBytes());
 
+      auto [air_size, air_data] = eospac_air.Serialize();
+      REQUIRE(air_size == eospac_air.SerializedSizeInBytes());
+
       const std::size_t rhoT_shared_size = rhoT_orig.DynamicMemorySizeInBytes();
       REQUIRE(rhoT_size > rhoT_shared_size);
 
@@ -294,6 +311,9 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
 
       const std::size_t eospac_shared_size = eospac_orig.DynamicMemorySizeInBytes();
       REQUIRE(eospac_size > eospac_shared_size);
+
+      const std::size_t air_shared_size = eospac_air.DynamicMemorySizeInBytes();
+      REQUIRE(air_size > air_shared_size);
 
       THEN("We can deserialize into shared memory") {
         using singularity::SharedMemSettings;
@@ -304,6 +324,7 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
         char *rhoT_shared_data = (char *)malloc(rhoT_shared_size);
         char *rhoSie_shared_data = (char *)malloc(rhoSie_shared_size);
         char *eospac_shared_data = (char *)malloc(eospac_shared_size);
+        char *air_shared_data = (char *)malloc(air_shared_size);
 
         SpinerEOSDependsRhoT eos_rhoT;
         std::size_t read_size_rhoT =
@@ -322,6 +343,12 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
         std::size_t read_size_eospac = eos_eospac.DeSerialize(
             eospac_data, SharedMemSettings(eospac_shared_data, true));
         REQUIRE(read_size_eospac == eospac_size);
+
+        eospac_air.Finalize();
+        EOS eos_air_2 = EOSPAC();
+        std::size_t read_size_air =
+            eos_air_2.DeSerialize(air_data, SharedMemSettings(air_shared_data, true));
+        REQUIRE(read_size_air == air_size);
 
         AND_THEN("EOS lookups work") {
           constexpr Real rho_trial = 1;

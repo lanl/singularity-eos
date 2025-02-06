@@ -15,6 +15,8 @@
 #ifndef _SINGULARITY_EOS_CLOSURE_KINETIC_PHSETRANSITION_MODELS_
 #define _SINGULARITY_EOS_CLOSURE_KINETIC_PHSETRANSITION_MODELS_
 
+#ifdef SINGULARITY_BUILD_CLOSURE
+
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
@@ -94,4 +96,5 @@ PORTABLE_INLINE_FUNCTION Real LogMaxTimeStep(const int num_phases, const Real *m
 
 } // namespace singularity
 
+#endif // SINGULARITY_BUILD_CLOSURE
 #endif // _SINGULARITY_EOS_CLOSURE_KINETIC_PHSETRANSITION_MODELS_

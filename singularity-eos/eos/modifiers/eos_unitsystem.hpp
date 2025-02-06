@@ -35,9 +35,9 @@ using namespace eos_base;
 
 // tag dispatch for constructors for UnitSystem
 namespace eos_units_init {
-static struct ThermalUnitsInit {
+[[maybe_unused]] static struct ThermalUnitsInit {
 } thermal_units_init_tag;
-static struct LengthTimeUnitsInit {
+[[maybe_unused]] static struct LengthTimeUnitsInit {
 } length_time_units_init_tag;
 } // namespace eos_units_init
 
@@ -248,6 +248,30 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return inv_temp_unit_ * t_.MinimumTemperature();
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
+    return inv_rho_unit_ * t_.MaximumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
+    return inv_press_unit_ * t_.MinimumPressure();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
+    return inv_press_unit_ * t_.MaximumPressureAtTemperature(temp_unit_ * temp);
+  }
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicMassFromDensityTemperature(rho * rho_unit_,
+                                                   temperature * temp_unit_, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(rho * rho_unit_,
+                                                     temperature * temp_unit_, lambda);
+  }
 
   // vector implementations
   template <typename LambdaIndexer>
@@ -426,6 +450,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   }
 
   SG_ADD_MODIFIER_METHODS(T, t_);
+  SG_ADD_MODIFIER_MEAN_METHODS(t_)
 
  private:
   T t_;

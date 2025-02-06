@@ -107,7 +107,9 @@ macro(singularity_import_kokkoskernels)
 endmacro()
 
 macro(singularity_find_kokkoskernels)
-  find_package(KokkosKernels REQUIRED)
+  if(NOT TARGET Kokkos::kokkoskernels)
+    find_package(KokkosKernels REQUIRED)
+  endif()
 endmacro()
 
 macro(singularity_enable_kokkoskernels target)

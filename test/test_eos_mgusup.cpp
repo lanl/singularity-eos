@@ -408,6 +408,17 @@ SCENARIO("MGUsup EOS rho T", "[VectorEOS][MGUsupEOS]") {
         }
       }
 
+      WHEN("a [rho,sie](P, T) lookup is performed") {
+        int nwrong = 0;
+        portableReduce(
+            "Check density energy from pressure temperature", 0, num,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              nw += !CheckRhoSieFromPT(eos, v_density[i], v_temperature[i]);
+            },
+            nwrong);
+        THEN("There are no errors") { REQUIRE(nwrong == 0); }
+      }
+
       portableFor(
           "entropy", 0, num, PORTABLE_LAMBDA(const int i) {
             v_entropy[i] =

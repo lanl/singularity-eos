@@ -73,7 +73,9 @@ macro(singularity_enable_hdf5 target)
     
     target_include_directories(${target} SYSTEM INTERFACE ${HDF5_INCLUDE_DIRS})
     target_link_libraries(${target} INTERFACE ${HDF5_LIBRARIES} ${HDF5_HL_LIBRARIES})
-    
+    target_link_libraries(${target} INTERFACE dl)
+    target_link_libraries(${target} INTERFACE z)
+
     if(HDF5_IS_PARALLEL)
       # find_package(MPI COMPONENTS C CXX REQUIRED)
       # target_link_libraries(${target} INTERFACE MPI::MPI_C MPI::MPI_CXX)

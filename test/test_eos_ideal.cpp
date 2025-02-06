@@ -29,10 +29,12 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
+using singularity::IdealElectrons;
 using singularity::IdealGas;
-using EOS = singularity::Variant<IdealGas>;
+using singularity::MeanAtomicProperties;
+using EOS = singularity::Variant<IdealGas, IdealElectrons>;
 
-SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
+SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
   GIVEN("Parameters for an ideal gas with entropy reference states") {
     // Create ideal gas EOS ojbect
     constexpr Real Cv = 5.0;
@@ -54,6 +56,16 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
         auto entropy = host_eos.EntropyFromDensityTemperature(rho, T);
         INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
         CHECK(isClose(entropy, entropy_true, 1e-12));
+
+        AND_THEN("The free energy agrees") {
+          const Real sie = host_eos.InternalEnergyFromDensityTemperature(rho, T);
+          const Real P = host_eos.PressureFromDensityTemperature(rho, T);
+          const Real G_true = sie + (P / rho) - T * entropy;
+          const Real GT = host_eos.GibbsFreeEnergyFromDensityTemperature(rho, T);
+          CHECK(isClose(GT, G_true, 1e-12));
+          const Real Gsie = host_eos.GibbsFreeEnergyFromDensityInternalEnergy(rho, sie);
+          CHECK(isClose(Gsie, G_true, 1e-12));
+        }
       }
     }
     GIVEN("A state at the reference density and a temperature whose square is the "
@@ -66,6 +78,67 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy]") {
         INFO("Entropy: " << entropy << "  True entropy: " << entropy_true);
         CHECK(isClose(entropy, entropy_true, 1e-12));
       }
+    }
+  }
+}
+
+SCENARIO("Ideal gas mean atomic properties",
+         "[IdealGas][MeanAtomicMass][MeanAtomicNumber]") {
+  constexpr Real Cv = 5.0;
+  constexpr Real gm1 = 0.4;
+  constexpr Real Abar = 4.0; // Helium
+  constexpr Real Zbar = 2.0;
+  const MeanAtomicProperties azbar(Abar, Zbar);
+  GIVEN("An ideal gas initialized with mean atomic poroperties") {
+    EOS host_eos = IdealGas(gm1, Cv, azbar);
+    WHEN("We evaluate it on host") {
+      Real Ab_eval = host_eos.MeanAtomicMass();
+      Real Zb_eval = host_eos.MeanAtomicNumber();
+      THEN("We get the right answer") {
+        REQUIRE(isClose(Ab_eval, Abar, 1e-12));
+        REQUIRE(isClose(Zb_eval, Zbar, 1e-12));
+      }
+    }
+    WHEN("We evaluate it on device, using a loop") {
+      constexpr int N = 100;
+      auto device_eos = host_eos.GetOnDevice();
+      int nwrong = 0;
+      portableReduce(
+          "Check mean atomic number", 0, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            Real rho = i;
+            Real T = 100.0 * i;
+            Real Ab_eval = device_eos.MeanAtomicMassFromDensityTemperature(rho, T);
+            Real Zb_eval = device_eos.MeanAtomicNumberFromDensityTemperature(rho, T);
+            nw += !(isClose(Ab_eval, Abar, 1e-12)) + !(isClose(Zb_eval, Zbar, 1e-12));
+          },
+          nwrong);
+      REQUIRE(nwrong == 0);
+      device_eos.Finalize();
+    }
+    host_eos.Finalize();
+  }
+}
+
+SCENARIO("Ideal gas density energy from prssure temperature",
+         "[IdealGas][DensityEnergyFromPressureTemperature]") {
+  constexpr Real Cv = 5.0;
+  constexpr Real gm1 = 0.4;
+  GIVEN("An ideal gas") {
+    EOS host_eos = IdealGas(gm1, Cv);
+    auto device_eos = host_eos.GetOnDevice();
+    WHEN("We compute density and energy from pressure and temperature") {
+      constexpr int N = 100;
+      int nwrong = 0;
+      portableReduce(
+          "Check density energy from pressure temperature", 1, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            Real rho = i;
+            Real T = 100.0 * i;
+            nw += !CheckRhoSieFromPT(device_eos, rho, T);
+          },
+          nwrong);
+      THEN("There are no errors") { REQUIRE(nwrong == 0); }
     }
   }
 }
@@ -93,10 +166,10 @@ class CheckPofRE {
   int nwrong = 0;
 
  private:
-  int N_;
   Real *P_;
   Real *rho_;
   Real *sie_;
+  int N_;
 };
 SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
   GIVEN("An ideal gas, and some device memory") {
@@ -126,7 +199,7 @@ SCENARIO("Ideal gas vector Evaluate call", "[IdealGas][Evaluate]") {
           });
       THEN("The vector Evaluate API can be used to compare") {
         CheckPofRE my_op(P, rho, sie, N);
-        eos_device.Evaluate(my_op);
+        eos_device.EvaluateHost(my_op);
         REQUIRE(my_op.nwrong == 0);
       }
     }
@@ -197,5 +270,54 @@ SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
     // cleanup
     eos_bare.Finalize();
     eos_variant.Finalize();
+  }
+}
+
+SCENARIO("Ideal electron gas", "[IdealGas][IdealEelctrons]") {
+  GIVEN("An ideal electron gas from partially ionized iron") {
+    constexpr Real Abar = 26;
+    constexpr Real Zbar = 55.8;
+    constexpr Real rho = 1;
+    constexpr Real T = 4000;
+
+    MeanAtomicProperties AZbar(Abar, Zbar);
+    EOS eos = IdealElectrons(AZbar);
+
+    THEN("The gruneisen coefficient is for 3 DOF") {
+      Real gm1 = eos.GruneisenParamFromDensityTemperature(rho, T);
+      Real gamma = gm1 + 1;
+      REQUIRE(isClose(gamma, 5. / 3., 1e-12));
+    }
+
+    WHEN("We evaluate the specific heat for different partial ionizations") {
+      Real lambda[1] = {1};
+      const Real cv1 = eos.SpecificHeatFromDensityTemperature(rho, T, lambda);
+      int nwrong = 0;
+      constexpr int N = 55;
+      portableReduce(
+          "Check Cv vs Z", 2, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            Real ll[1] = {static_cast<Real>(i)};
+            Real Cv = eos.SpecificHeatFromDensityTemperature(rho, T, ll);
+            if (!isClose(Cv, i * cv1, 1e-12)) nw += 1;
+          },
+          nwrong);
+      THEN("The specific heat should scale linearly with the ionization state") {
+        REQUIRE(nwrong == 0);
+      }
+    }
+
+    WHEN("We compute density and energy from pressure and temperature") {
+      constexpr int N = 100;
+      int nwrong = 0;
+      portableReduce(
+          "Check density energy from pressure temperature", 1, N,
+          PORTABLE_LAMBDA(const int i, int &nw) {
+            Real ll[1] = {static_cast<Real>(i)};
+            nw += !CheckRhoSieFromPT(eos, rho, T, ll);
+          },
+          nwrong);
+      THEN("There are no errors") { REQUIRE(nwrong == 0); }
+    }
   }
 }

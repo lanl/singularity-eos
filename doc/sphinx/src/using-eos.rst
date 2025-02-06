@@ -36,9 +36,10 @@ conditions. The type of parallelism used depends on how
 ``singularity-eos`` is compiled. If the ``Kokkos`` backend is used,
 any parallel dispatch supported by ``Kokkos`` is supported.
 
-A more generic version of the vector calls exists in the ``Evaluate``
-method, which allows the user to specify arbitrary parallel dispatch
-models by writing their own loops. See the relevant section below.
+A more generic version of the vector calls exists in the
+``EvaluateHost`` and ``EvaluateDevice`` methods, which allow the user
+to specify arbitrary parallel dispatch models by writing their own
+loops. See the relevant section below.
 
 Serialization and shared memory
 --------------------------------
@@ -494,19 +495,26 @@ available member function.
    eos.TemperatureFromDensityInternalEnergy(density.data(), energy.data(), temperature.data(),
                                             scratch.data(), density.size());
 
-The Evaluate Method
-~~~~~~~~~~~~~~~~~~~
+The Evaluate Methods
+~~~~~~~~~~~~~~~~~~~~~~
 
-A special call related to the vector calls is the ``Evaluate``
-method. The ``Evaluate`` method requests the EOS object to evaluate
-almost arbitrary code, but in a way where the type of the underlying
-EOS object is resolved *before* this arbitrary code is evaluated. This
-means the code required to resolve the type of the variant is only
-executed *once* per ``Evaluate`` call. This can enable composite EOS
-calls, non-standard vector calls, and vector calls with non-standard
-loop structure.
+A pair of special call related to the vector calls are the
+``EvaluateHost`` and ``EvaluateDevice`` methods. These methods request
+the EOS object to evaluate almost arbitrary code, but in a way where
+the type of the underlying EOS object is resolved *before* this
+arbitrary code is evaluated. This means the code required to resolve
+the type of the variant is only executed *once* per ``Evaluate``
+call. This can enable composite EOS calls, non-standard vector calls,
+and vector calls with non-standard loop structure.
 
-The ``Evaluate`` call has the signature
+The ``EvaluateHost`` call has the signature
+
+.. code-block:: cpp
+
+  template<typename Functor_t>
+  void Evaluate(Functor_t f);
+
+and the ``EvaluateDevice`` method has the signature
 
 .. code-block:: cpp
 
@@ -514,11 +522,11 @@ The ``Evaluate`` call has the signature
   PORTABLE_INLINE_FUNCTION
   void Evaluate(Functor_t f);
 
+
 where a ``Functor_t`` is a class that *must* provide a ``void
-operator() const`` method templated on EOS type. ``Evaluate`` is
-decorated so that it may be evaluated on either host or device,
-depending on desired use-case. Alternatively, you may use an anonymous
-function with an `auto` argument as the input, e.g.,
+operator() const`` method templated on EOS type. Alternatively, you
+may use an anonymous function with an `auto` argument as the input,
+e.g.,
 
 .. code-block:: cpp
 
@@ -531,7 +539,9 @@ function with an `auto` argument as the input, e.g.,
   with GPUs it can produce very unintuitive behaviour. We recommend
   you only make the ``operator()`` non-const if you really know what
   you're doing. And in the anonymous function case, we recommend you
-  capture by value, not reference.
+  capture by value, not reference. ``EvaluateDevice`` does not support
+  side effects at all and you must pass your functors in by value in
+  that case.
 
 To see the utlity of the ``Evaluate`` function, it's probably just
 easiest to provide an example. The following code evaluates the EOS on
@@ -583,17 +593,17 @@ is summed using the ``Kokkos::parallel_reduce`` functionality in the
   CheckPofRE my_op(P, rho, sie, N);
 
   // Here we call the evaluate function
-  eos.Evaluate(my_op);
+  eos.EvaluateHost(my_op);
 
   // The above two lines could have been called "in-one" with:
-  // eos.Evaluate(CheckPofRE(P, rho, sie, N));
+  // eos.EvaluateHost(CheckPofRE(P, rho, sie, N));
 
 Alternatively, you could eliminate the functor and use an anonymous
 function with:
 
 .. code-block:: cpp
 
-  eos.Evaluate([=](auto eos) {
+  eos.EvaluateHost([=](auto eos) {
     Real tot_diff;
     Kokkos::parallel_reduce(
         "MyCheckPofRE", N_,
@@ -726,6 +736,18 @@ undoes one level of modification.
 For more details on modifiers, see the :ref:`modifiers<modifiers>`
 section. If you need a combination of modifiers not supported by
 default, we recommend building a custom variant as described above.
+
+Modifiers and Lambdas
+-----------------------
+
+Modifiers may require lambdas. When this is the case, the lambda
+required by the modifier is appended to the end of the lambda
+indexer. For example, the ``StellarCollapse`` EOS model requires
+``nlambda=2``. The ``ZSplitI`` modifier rquires
+``nlambda=1``. Together, ``ZSplitI<StellarCollapse>`` requires a
+lambda indexer of length 3, an the ordering is two parameters for
+``StellarCollapse`` first, and then the parameter required by
+``ZSplitI``.
 
 Preferred Inputs
 -----------------
@@ -981,6 +1003,100 @@ given density in :math:`g/cm^3` and temperature in Kelvin.
 returns the unitless Gruneisen parameter given density in
 :math:`g/cm^3` and specific internal energy in :math:`erg/g`.
 
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                      Indexer_t &&lambda = nullptr) const;
+
+returns the entropy as a function of density in :math:`g/cm^3` and
+temperature in Kelvin.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Indexer_t &&lambda = nullptr) const;
+
+returns the entropy as a function of density in :math:`g/cm^3` and
+specific internal energy in :math:`erg/g`.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real GibssFreeEnergyFromDensityTemperature(const Real rho, const Real temperature,
+                                              Indexer_t &&lambda = nullptr) const;
+
+returns the Gibbs free energy as a function of density in :math:`g/cm^3` and
+temperature in Kelvin.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real GibbsFreeEnergyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                 Indexer_t &&lambda = nullptr) const;
+
+
+returns the Gibbs free energy as a function of density in :math:`g/cm^3` and
+specific internal energy in :math:`erg/g`.
+
+.. warning::
+
+  Not all equations of state provide entropy and Gibbs free
+  energy. These are coupled, however, so if one is provided, the other
+  will be too. If you call an entropy for a model that does not
+  provide it, ``singularity-eos`` will return an error.
+
+The function
+
+.. code-block:: cpp
+
+   template<typename Indexer_t Real*>
+   void MeanAtomicMassFromDensityTemperature(const Real rho, const Real T,
+                                             Indexer_t &&lambda = nullpter) const;
+
+returns the mean atomic mass (i.e., the number of nucleons) of a
+material given density in :math:`g/cm^3` and temperature in
+Kelvin. The reason this is allowed to vary with density and
+temperature is that some equations of state, such as the Stellar
+Collapse and Helmholtz equations of state encapsulate reactive flows
+where the average nucleus may depend on thermodynamic variables. For
+most materials, however, this is not the case and a convenience
+function that drops the dependence is available:
+
+.. code-block:: cpp
+
+   Real MeanAtomicMass() const;
+
+The function
+
+.. code-block:: cpp
+
+   template<typename Indexer_t Real*>
+   void MeanAtomicNumberFromDensityTemperature(const Real rho, const Real T,
+                                               Indexer_t &&lambda = nullpter) const;
+
+returns the mean atomic number (i.e., the number of protons in the
+nucleus) of a material given density in :math:`g/cm^3` and temperature
+in Kelvin. The reason this is allowed to vary with density and
+temperature is that some equations of state, such as the Stellar
+Collapse and Helmholtz equations of state encapsulate reactive flows
+where the average nucleus may depend on thermodynamic variables. For
+most materials, however, this is not the case and a convenience
+function that drops the dependence is available:
+
+.. code-block:: cpp
+
+   Real MeanAtomicNumber() const;
+
+
+
+.. warning::
+
+  For materials where the mean atomic mass and number **do** vary with
+  density and temperature, the convenience call without this
+  dependence will produce an error.
+
 The function
 
 .. code-block:: cpp
@@ -1027,18 +1143,70 @@ quantities as outputs.
 Methods Used for Mixed Cell Closures
 --------------------------------------
 
-Several methods were developed in support of mixed cell closures. In particular:
+Several methods were developed in support of mixed cell closures. In particular the function
 
 .. cpp:function:: Real MinimumDensity() const;
 
-and 
+the function
 
 .. cpp:function:: Real MinimumTemperature() const;
 
+and the function
+
+.. cpp:function:: Real MaximumDensity() const;
+
 provide bounds for valid inputs into a table, which can be used by a
-root finder to meaningful bound the root search. Similarly,
+root finder to meaningful bound the root search.
+
+.. warning::
+
+  For unbounded equations of state, ``MinimumDensity`` and
+  ``MinimumTemperature`` will return zero, while ``MaximumDensity``
+  will return a very large finite number. Which number you get,
+  however, is not guaranteed. You may wish to apply more sensible
+  bounds in your own code.
+
+Similarly,
 
 .. cpp:function:: Real RhoPmin(const Real temp) const;
 
 returns the density at which pressure is minimized for a given
-temperature. This is again useful for root finds.
+temperature. The function
+
+.. cpp:function:: Real MinimumPressure() const;
+
+provides the minimum pressure an equation of state supports, which may
+be the most negative tension state. The function
+
+.. cpp:function:: Real MaximumPressureAtTemperature(const Real temp) const;
+
+provides a maximum possible pressure an equation of state supports at
+a given temperature. (Most models are unbounded in pressure.) This is
+again useful for root finds.
+
+The function
+
+.. code-block:: cpp
+
+  template <typename Indexer_t = Real*>
+  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                            Indexer_t &&lambda, Real &rho, Real &sie) const;
+
+is designed for working in Pressure-Temperature space. Given a
+pressure ``press`` and temperature ``temp``, it sets a density ``rho``
+and specific internal energy ``sie``. The ``lambda`` is optional and
+defaults to a ``nullptr``.
+
+Typically this operation requires a root find. You may pass in an
+initial guess for the density ``rho`` in-place and most EOS models
+will use it.
+
+.. warning::
+
+  Pressure is not necessarily monotone in density and it may be double
+  valued. Thus you are not guaranteed to find the correct root and the
+  value of your initial guess may determine correctness. The fact that
+  ``rho`` may be used as an initial guess means you **must** pass in
+  an initialized variable, even if it is zero-initialized. Do not pass
+  uninitialized memory into this function!
+

@@ -217,7 +217,7 @@ knowledge to compute them as performantly as possible.
 
 Accelerators present new challenges to standard object-oriented
 programming. In particular, not all compiler stacks (such as Sycl
-[@SYCL] or OpenMP Target Offload [@chandra2001parallel])
+[@SYCL] or OpenMP [@chandra2001parallel] Target Offload [@openmp4])
 support relocatable device code, which is required for standard C++
 polymorphism. Even in programming models, such as CUDA [@cuda],
 which do support relocatable device code, polymorphism can be slower
@@ -274,3 +274,5 @@ Darwin testbed at LANL which is funded by the Computational Systems
 and Software Environments subprogram of LANL's Advanced Simulation and
 Computing program (NNSA/DOE). This work is approved for unlimited
 release with report number LA-UR-24-23364.
+
+# References

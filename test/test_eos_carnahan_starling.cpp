@@ -161,6 +161,18 @@ SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
                         "Energy");
         }
       }
+
+      WHEN("We check RhoSie from PT") {
+        int nwrong = 0;
+        portableReduce(
+            "Check RhoSieFromPT", 0, 1,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              nw +=
+                  !CheckRhoSieFromPT(eos, 7.8290736890381501e-03, 1.5320999999999999e+03);
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+      }
     }
   }
 }

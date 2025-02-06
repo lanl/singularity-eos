@@ -80,6 +80,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   struct Lambda {
     enum Index { lRho = 0, lT = 1 };
   };
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT);
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
                               bool reproduciblity_mode = false);
@@ -203,6 +204,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return PMin_; }
+
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
   PORTABLE_INLINE_FUNCTION
@@ -304,9 +309,11 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real lRhoMin_, lRhoMax_, rhoMax_;
   Real lRhoMinSearch_;
   Real lTMin_, lTMax_, TMax_;
+  Real PMin_;
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoOffset_, lTOffset_; // offsets must be non-negative
+  MeanAtomicProperties AZbar_;
   int matid_;
   bool reproducible_;
   // whereAmI_ and status_ used only for reporting. They are not thread-safe.
@@ -349,6 +356,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   };
   using STricks = table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
 
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSie);
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
@@ -469,6 +477,13 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return PMin_; }
+  PORTABLE_INLINE_FUNCTION
+  Real RhoPmin(const Real temp) const {
+    return rho_at_pmin_.interpToReal(toLog_(temp, lTOffset_));
+  }
 
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
@@ -512,22 +527,24 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
   DataBox sie_; // depends on (rho,T)
   DataBox T_;   // depends on (rho, sie)
+  DataBox rho_at_pmin_;
   SP5Tables dependsRhoT_;
   SP5Tables dependsRhoSie_;
-  int numRho_;
+  int numRho_, numT_;
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
   DataBox PlRhoMax_, dPdRhoMax_;
-
+  Real PMin_;
   Real lRhoOffset_, lTOffset_, lEOffset_; // offsets must be non-negative
 
 #define DBLIST                                                                           \
-  &sie_, &T_, &(dependsRhoT_.P), &(dependsRhoT_.bMod), &(dependsRhoT_.dPdRho),           \
-      &(dependsRhoT_.dPdE), &(dependsRhoT_.dTdRho), &(dependsRhoT_.dTdE),                \
-      &(dependsRhoT_.dEdRho), &(dependsRhoSie_.P), &(dependsRhoSie_.bMod),               \
-      &(dependsRhoSie_.dPdRho), &(dependsRhoSie_.dPdE), &(dependsRhoSie_.dTdRho),        \
-      &(dependsRhoSie_.dTdE), &(dependsRhoSie_.dEdRho), &PlRhoMax_, &dPdRhoMax_
+  &sie_, &T_, &rho_at_pmin_, &(dependsRhoT_.P), &(dependsRhoT_.bMod),                    \
+      &(dependsRhoT_.dPdRho), &(dependsRhoT_.dPdE), &(dependsRhoT_.dTdRho),              \
+      &(dependsRhoT_.dTdE), &(dependsRhoT_.dEdRho), &(dependsRhoSie_.P),                 \
+      &(dependsRhoSie_.bMod), &(dependsRhoSie_.dPdRho), &(dependsRhoSie_.dPdE),          \
+      &(dependsRhoSie_.dTdRho), &(dependsRhoSie_.dTdE), &(dependsRhoSie_.dEdRho),        \
+      &PlRhoMax_, &dPdRhoMax_
   std::vector<const DataBox *> GetDataBoxPointers_() const {
     return std::vector<const DataBox *>{DBLIST};
   }
@@ -538,6 +555,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
       thermalqs::density | thermalqs::temperature;
   // static constexpr const char _eos_type[] = "SpinerEOSDependsRhoSie";
   int matid_;
+  MeanAtomicProperties AZbar_;
   bool reproducible_;
   mutable RootFinding1D::Status status_;
   static constexpr const int _n_lambda = 1;
@@ -622,6 +640,14 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   herr_t status = H5_SUCCESS;
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  int log_type = FastMath::LogType::NQT1;
+  if (H5LTfind_attribute(file, SP5::logType)) {
+    H5LTget_attribute_int(file, "/", SP5::logType, &log_type);
+  }
+  PORTABLE_ALWAYS_REQUIRE(
+      log_type == FastMath::Settings::log_type,
+      "Log mode used at runtime must be identical to the one used to generate the file!");
+
   matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
   lTGroup = H5Gopen(matGroup, SP5::Depends::logRhoLogT, H5P_DEFAULT);
   coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
@@ -708,6 +734,11 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   status += H5LTget_attribute_double(file, matid_str.c_str(),
                                      SP5::Material::normalDensity, &rhoNormal_);
   rhoNormal_ = std::abs(rhoNormal_);
+  // Mean atomic mass and mean atomic number
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicMass, &(AZbar_.Abar));
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
 
   // tables
   status += P_.loadHDF(lTGroup, SP5::Fields::P);
@@ -754,11 +785,11 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   rho_at_pmin_.resize(numT_);
   rho_at_pmin_.setRange(0, P_.range(0));
   for (int i = 0; i < numT_; i++) {
-    Real pmin = std::numeric_limits<Real>::max();
+    PMin_ = std::numeric_limits<Real>::max();
     int jmax = -1;
     for (int j = 0; j < numRho_; j++) {
-      if (P_(j, i) < pmin) {
-        pmin = P_(j, i);
+      if (P_(j, i) < PMin_) {
+        PMin_ = P_(j, i);
         jmax = j;
       }
     }
@@ -1544,6 +1575,11 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   status += H5LTget_attribute_double(file, matid_str.c_str(),
                                      SP5::Material::normalDensity, &rhoNormal_);
   rhoNormal_ = std::abs(rhoNormal_);
+  // Mean atomic mass and mean atomic number
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicMass, &(AZbar_.Abar));
+  status += H5LTget_attribute_double(file, matid_str.c_str(),
+                                     SP5::Material::meanAtomicNumber, &(AZbar_.Zbar));
 
   // sometimes independent variables
   status += sie_.loadHDF(lTGroup, SP5::Fields::sie);
@@ -1573,6 +1609,7 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
 
   // Metadata for root finding extrapolation
   numRho_ = sie_.dim(2);
+  numT_ = sie_.dim(1);
   lRhoMin_ = sie_.range(1).min();
   lRhoMax_ = sie_.range(1).max();
   rhoMax_ = fromLog_(lRhoMax_, lRhoOffset_);
@@ -1580,6 +1617,22 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   // slice to maximum of rho
   PlRhoMax_ = dependsRhoT_.P.slice(numRho_ - 1);
   dPdRhoMax_ = dependsRhoT_.dPdRho.slice(numRho_ - 1);
+
+  // fill in minimum pressure as a function of temperature
+  rho_at_pmin_.resize(numT_);
+  rho_at_pmin_.setRange(0, sie_.range(0));
+  for (int i = 0; i < numT_; i++) {
+    PMin_ = std::numeric_limits<Real>::max();
+    int jmax = -1;
+    for (int j = 0; j < numRho_; j++) {
+      if (dependsRhoT_.P(j, i) < PMin_) {
+        PMin_ = dependsRhoT_.P(j, i);
+        jmax = j;
+      }
+    }
+    if (jmax < 0) printf("Failed to find minimum pressure.\n");
+    rho_at_pmin_(i) = fromLog_(dependsRhoT_.P.range(1).x(jmax), lRhoOffset_);
+  }
 
   // reference state
   Real lRhoNormal = toLog_(rhoNormal_, lRhoOffset_);

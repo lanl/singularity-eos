@@ -147,6 +147,9 @@ SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
 
     THEN("We can re-interpolate to fast log space") {
       StellarCollapse::DataBox scratch(N2, N1, N0);
+      scratch.setRange(2, db.range(2));
+      scratch.setRange(1, StellarCollapse::gridToNQT(db.range(1), N1));
+      scratch.setRange(0, StellarCollapse::gridToNQT(db.range(0), N0));
       StellarCollapse::dataBoxToFastLogs(db, scratch, true);
 
       AND_THEN("The fast-log gridded table contains correct ranges") {
@@ -273,6 +276,9 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
                   nwrong_d() += 1;
                 }
                 if (!isClose(b1, b2)) {
+                  nwrong_d() += 1;
+                }
+                if (!CheckRhoSieFromPT(sc_d, R, T, lambda)) {
                   nwrong_d() += 1;
                 }
               });

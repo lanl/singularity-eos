@@ -44,7 +44,7 @@ void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
         // calculate pte condition (lookup for 1 mat cell)
         Real sie_tot_true{0.0};
         // need to initialize the scratch before it's used to avoid undefined behavior
-        for (int idx = 0; idx < solver_scratch.extent(1); ++idx) {
+        for (std::size_t idx = 0; idx < solver_scratch.extent(1); ++idx) {
           solver_scratch(tid, idx) = 0.0;
         }
         const int neq = npte;
@@ -55,11 +55,20 @@ void get_sg_eos_rho_t(const char *name, int ncell, indirection_v &offsets_v,
           // create solver lambda
           // eos accessor
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
+          // JMM: The solver constructor is (deep under the hood)
+          // capturing by reference. So to avoid out-of-scope access,
+          // these must be "anchored" at caller scope.
+          Real *prho_pte = &rho_pte(tid, 0);
+          Real *pvfrac_pte = &vfrac_pte(tid, 0);
+          Real *psie_pte = &sie_pte(tid, 0);
+          Real *ptemp_pte = &temp_pte(tid, 0);
+          Real *ppress_pte = &press_pte(tid, 0);
+          Real *pscratch = &solver_scratch(tid, 0);
           PTESolverFixedT<singularity::EOSAccessor_, Real *, Real **> method(
-              npte, eos_inx, vfrac_sum, temp_pte(tid, 0), &rho_pte(tid, 0),
-              &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0),
-              cache, &solver_scratch(tid, 0));
-          pte_converged = PTESolver(method);
+              npte, eos_inx, vfrac_sum, temp_pte(tid, 0), prho_pte, pvfrac_pte, psie_pte,
+              ptemp_pte, ppress_pte, cache, pscratch);
+          auto status = PTESolver(method);
+          pte_converged = status.converged;
           // calculate total internal energy
           for (int mp = 0; mp < npte; ++mp) {
             const int m = pte_mats(tid, mp);

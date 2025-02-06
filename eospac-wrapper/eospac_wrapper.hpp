@@ -59,6 +59,7 @@ class SesameMetadata {
   double rhoMin, rhoMax;
   double TMin, TMax;
   double sieMin, sieMax;
+  double PMin, PMax;
   double rhoConversionFactor;
   double TConversionFactor;
   double sieConversionFactor;

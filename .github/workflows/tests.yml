@@ -21,13 +21,15 @@ jobs:
         - name: install dependencies
           run: |
             sudo apt-get update -y -qq
-            sudo apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages -qq build-essential gfortran libhdf5-serial-dev
+            sudo apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages -qq build-essential gfortran libhdf5-serial-dev binutils-gold
             pip install numpy
             pip install h5py
         - name: build and run tests
           run: |
             mkdir -p bin
             cd bin
+            ulimit -m unlimited
+            ulimit -v unlimited
             mkdir -p ${HOME}/install
             cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
                   -DSINGULARITY_USE_SPINER=ON \
@@ -38,11 +40,14 @@ jobs:
                   -DSINGULARITY_USE_HELMHOLTZ=ON \
                   -DSINGULARITY_TEST_HELMHOLTZ=ON \
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
+                  -DSINGULARITY_USE_V_AND_V_EOS=OFF \
                   -DSINGULARITY_PLUGINS=$(pwd)/../example/plugin \
+                  -DCMAKE_LINKER=ld.gold \
+                  -DCMAKE_BUILD_TYPE=Release \
                   ..
                   #-DSINGULARITY_TEST_PYTHON=ON \
                   #-DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
                   #..
-            make
+            make -j4
             make install
-            make test
+            ctest --output-on-failure

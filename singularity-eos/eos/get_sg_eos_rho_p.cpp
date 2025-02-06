@@ -43,7 +43,7 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
         i_func(i, tid, mass_sum, npte, vfrac_sum, 0.0, 0.0, 1.0);
         Real sie_tot_true{0.0};
         // need to initialize the scratch before it's used to avoid undefined behavior
-        for (int idx = 0; idx < solver_scratch.extent(1); ++idx) {
+        for (std::size_t idx = 0; idx < solver_scratch.extent(1); ++idx) {
           solver_scratch(tid, idx) = 0.0;
         }
         const int neq = npte + 1;
@@ -54,11 +54,18 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           // create solver lambda
           // eos accessor
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
+          // JMM: Address sanitizer likes these named.
+          Real *prho_pte = &rho_pte(tid, 0);
+          Real *pvfrac_pte = &vfrac_pte(tid, 0);
+          Real *psie_pte = &sie_pte(tid, 0);
+          Real *ptemp_pte = &temp_pte(tid, 0);
+          Real *ppress_pte = &press_pte(tid, 0);
+          Real *pscratch = &solver_scratch(tid, 0);
           PTESolverFixedP<singularity::EOSAccessor_, Real *, Real *> method(
-              npte, eos_inx, vfrac_sum, press_pte(tid, 0), &rho_pte(tid, 0),
-              &vfrac_pte(tid, 0), &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0),
-              cache[0], &solver_scratch(tid, 0));
-          pte_converged = PTESolver(method);
+              npte, eos_inx, vfrac_sum, press_pte(tid, 0), prho_pte, pvfrac_pte, psie_pte,
+              ptemp_pte, ppress_pte, cache[0], pscratch);
+          auto status = PTESolver(method);
+          pte_converged = status.converged;
           // calculate total sie
           for (int mp = 0; mp < npte; ++mp) {
             const int m = pte_mats(tid, mp);

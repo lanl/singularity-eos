@@ -341,6 +341,34 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return t_.MinimumTemperature();
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
+    return inv_scale_ * t_.MaximumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
+    return t_.MinimumPressure();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
+    return t_.MaximumPressureAtTemperature(temp);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return inv_scale_ * t_.MeanAtomicMass(); }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return inv_scale_ *
+           t_.MeanAtomicMassFromDensityTemperature(scale_ * rho, temperature, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(scale_ * rho, temperature, lambda);
+  }
 
   SG_ADD_MODIFIER_METHODS(T, t_);
 

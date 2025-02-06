@@ -264,6 +264,12 @@ class HelmElectrons {
   std::size_t numTemp() const { return NTEMP; }
   PORTABLE_FORCEINLINE_FUNCTION
   std::size_t numRho() const { return NRHO; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return rhoMin(); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumTemperature() const { return TMin_; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumDensity() const { return rhoMax(); }
 
  private:
   inline void InitDataFile_(const std::string &filename);
@@ -640,6 +646,31 @@ class Helmholtz : public EosBase<Helmholtz> {
     return gamma3 - 1.0;
   }
 
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const {
+    PORTABLE_THROW_OR_ABORT("For Helmholtz EOS, mean atomic mass is an input!\n");
+    return 1.0;
+  }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const {
+    PORTABLE_THROW_OR_ABORT("For Helmholtz EOS, mean atomic number is an input!\n");
+    return 1.0;
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    using namespace HelmUtils;
+    return lambda[Lambda::Abar];
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real T,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    using namespace HelmUtils;
+    return lambda[Lambda::Zbar];
+  }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
@@ -651,16 +682,38 @@ class Helmholtz : public EosBase<Helmholtz> {
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    // JMM: I'm not sure what to put here or if it matters. Some
-    // reference state, maybe stellar denity, would be appropriate.
-    PORTABLE_ALWAYS_ABORT("Stub");
+    // JMM: Conditions for an oxygen burning shell in a stellar
+    // core. Not sure if that's the best choice.
+    rho = 1e7;
+    temp = 1.5e9;
+    FillEos(rho, temp, sie, press, cv, bmod,
+            thermalqs::specific_internal_energy | thermalqs::pressure |
+                thermalqs::specific_heat | thermalqs::bulk_modulus,
+            lambda);
+    dpde = GruneisenParamFromDensityTemperature(rho, temp, lambda) * rho;
+    dvdt = 0;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
-    // This is only used for mixed cell closures. Stubbing it out for now.
-    PORTABLE_ALWAYS_ABORT("Stub");
+    using RootFinding1D::regula_falsi;
+    using RootFinding1D::Status;
+    PORTABLE_REQUIRE(temp > = 0, "Non-negative temperature required");
+    auto PofRT = [&](const Real r) {
+      return PressureFromDensityTemperature(r, temp, lambda);
+    };
+    auto status = regula_falsi(PofRT, press, 1e7, electrons_.rhoMin(),
+                               electrons_.rhoMax(), 1.0e-8, 1.0e-8, rho);
+    if (status != Status::SUCCESS) {
+      PORTABLE_THROW_OR_ABORT("Helmholtz::DensityEnergyFromPressureTemperature: "
+                              "Root find failed to find a solution given P, T\n");
+    }
+    if (rho < 0.) {
+      PORTABLE_THROW_OR_ABORT("Helmholtz::DensityEnergyFromPressureTemperature: "
+                              "Root find produced negative energy solution\n");
+    }
+    sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
   }
   static std::string EosType() { return std::string("Helmholtz"); }
   static std::string EosPyType() { return EosType(); }

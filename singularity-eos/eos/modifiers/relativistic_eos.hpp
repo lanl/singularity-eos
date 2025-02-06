@@ -155,6 +155,15 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return t_.MinimumTemperature();
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
+    return t_.MaximumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
+    return t_.MinimumPressure();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
+    return t_.MaximumPressureAtTemperature(temp);
+  }
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
@@ -182,7 +191,21 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicMassFromDensityTemperature(rho, temperature, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(rho, temperature, lambda);
+  }
+
   SG_ADD_MODIFIER_METHODS(T, t_);
+  SG_ADD_MODIFIER_MEAN_METHODS(t_)
 
  private:
   T t_;

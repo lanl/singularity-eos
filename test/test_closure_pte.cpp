@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -30,22 +30,24 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-constexpr Real GPa = 1.0e10;
-constexpr Real MJ_per_kg = 1.0e10;
-
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+
+constexpr Real GPa = 1.0e10;
+constexpr Real MJ_per_kg = 1.0e10;
 
 using singularity::DavisProducts;
 using singularity::DavisReactants;
 using singularity::IdealGas;
 using singularity::MAX_NUM_LAMBDAS;
+using singularity::MixParams;
+using singularity::PTESolverPT;
+using singularity::PTESolverPTRequiredScratch;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
 using singularity::ShiftedEOS;
 using singularity::SpinerEOSDependsRhoT;
 using singularity::mix_impl::CacheAccessor;
-using singularity::mix_params::pte_rel_tolerance_e;
 using singularity::robust::ratio;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
@@ -69,9 +71,11 @@ void finalize_eos_arr(EOSArrT eos_arr) {
   }
 }
 
-template <typename ArrT>
+template <template <typename... Types> class PTESolver_t, typename Scratch_t,
+          typename ArrT>
 bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
-                        const Real sie_bulk, ArrT mass_frac, Real &u_bulk_out) {
+                        const Real sie_bulk, const Scratch_t &&RequiredScratch,
+                        ArrT mass_frac, Real &u_bulk_out) {
   // Calculate material densities (and corresponding energies) and the total
   // volume fraction
   std::vector<Real> vol_frac(num_pte);
@@ -105,7 +109,7 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   portableCopyToDevice(v_pressures, pressures.data(), bytes);
 
   // Allocate scratch space for the PTE solver
-  const int pte_solver_scratch_size = PTESolverRhoTRequiredScratch(num_pte);
+  const int pte_solver_scratch_size = RequiredScratch(num_pte);
   const size_t scratch_bytes = pte_solver_scratch_size * sizeof(Real);
   Real *scratch = (double *)PORTABLE_MALLOC(scratch_bytes);
 
@@ -122,10 +126,11 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   Real *pte_u_out_d = (Real *)PORTABLE_MALLOC(real_bytes);
   portableFor(
       "Device execution of PTE Test", 0, 1, PORTABLE_LAMBDA(int i) {
-        PTESolverRhoT<decltype(v_EOS), Real *, Real **> method(
+        PTESolver_t<decltype(v_EOS), Real *, Real **> method(
             num_pte, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
             v_temperatures, v_pressures, lambdas, scratch);
-        pte_converged_d[0] = PTESolver(method);
+        auto status = PTESolver(method);
+        pte_converged_d[0] = status.converged;
         pte_u_out_d[0] = v_densities[0] * v_vol_frac[0] * v_sies[0];
         for (int m = 1; m < num_pte; ++m) {
           pte_u_out_d[0] += v_densities[m] * v_vol_frac[m] * v_sies[m];
@@ -148,7 +153,7 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   return pte_converged;
 }
 
-SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
+SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
 
   GIVEN("Four equations of state") {
     // Reference state
@@ -188,6 +193,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
     constexpr Real Q = 4.115 * MJ_per_kg;
     EOS davis_p_eos = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
 
+    const MixParams params;
     GIVEN("A difficult three-material state") {
       // Define the state
       constexpr Real spvol_bulk = 6.256037280402093e-01;
@@ -198,11 +204,12 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
       std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(), copper_eos.GetOnDevice(),
                                           davis_p_eos.GetOnDevice()};
 
-      THEN("The PTE solver should converge") {
+      THEN("The PTE Rho T solver should converge") {
         EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
-        const bool pte_converged = run_PTE_from_state(num_pte, v_EOS, spvol_bulk,
-                                                      sie_bulk, mass_frac, u_bulk_out);
+        const bool pte_converged = run_PTE_from_state<PTESolverRhoT>(
+            num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverRhoTRequiredScratch, mass_frac,
+            u_bulk_out);
         CHECK(pte_converged);
         AND_THEN("The solution satisfies the bulk internal energy constraint") {
           // NOTE(@pdmullen): The following fails prior to PR401
@@ -210,7 +217,25 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
           const Real u_scale = std::abs(u_bulk);
           const Real u_bulk_scale = ratio(u_bulk, u_scale);
           const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-          CHECK(residual < pte_rel_tolerance_e);
+          CHECK(residual < params.pte_rel_tolerance_e);
+        }
+        // Free EOS copies on device
+        PORTABLE_FREE(v_EOS);
+      }
+      THEN("The PTE P T solver should converge") {
+        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
+        Real u_bulk_out = std::numeric_limits<Real>::max();
+        const bool pte_converged = run_PTE_from_state<PTESolverPT>(
+            num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverPTRequiredScratch, mass_frac,
+            u_bulk_out);
+        CHECK(pte_converged);
+        AND_THEN("The solution satisfies the bulk internal energy constraint") {
+          // NOTE(@pdmullen): The following fails prior to PR401
+          const Real u_bulk = ratio(sie_bulk, spvol_bulk);
+          const Real u_scale = std::abs(u_bulk);
+          const Real u_bulk_scale = ratio(u_bulk, u_scale);
+          const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
+          CHECK(residual < params.pte_rel_tolerance_e);
         }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
@@ -227,11 +252,14 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
                                                          0.999687726808322};
       std::array<EOS, num_pte> eos_arr = {air_eos.GetOnDevice(),
                                           copper_eos.GetOnDevice()};
+      // TODO(JMM): This test does not converge. See Issue 390. Possibly due to Spiner?
       THEN("The PTE solver should converge") {
         EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
-        const bool pte_converged = run_PTE_from_state(num_pte, v_EOS, spvol_bulk,
-                                                      sie_bulk, mass_frac, u_bulk_out);
+        const bool pte_converged = run_PTE_from_state<PTESolverRhoT>(
+            num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverRhoTRequiredScratch, mass_frac,
+            u_bulk_out);
+        // const MixParams params;
         // CHECK(pte_converged);
         // AND_THEN("The solution satisfies the bulk internal energy constraint") {
         //   // NOTE(@pdmullen): The following fails prior to PR401
@@ -239,7 +267,7 @@ SCENARIO("Density-Temperature PTE Solver", "[PTE]") {
         //   const Real u_scale = std::abs(u_bulk);
         //   const Real u_bulk_scale = ratio(u_bulk, u_scale);
         //   const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-        //   CHECK(residual < pte_rel_tolerance_e);
+        //   CHECK(residual < params.pte_rel_tolerance_e);
         // }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);

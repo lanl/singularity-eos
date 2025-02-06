@@ -20,6 +20,7 @@
 namespace SP5 {
 
 constexpr char defaultSesFileName[] = "sesame_table.sp5";
+constexpr char logType[] = "log_type";
 
 namespace Depends {
 constexpr char logRhoLogSie[] = "dependsLogRhoLogSie";

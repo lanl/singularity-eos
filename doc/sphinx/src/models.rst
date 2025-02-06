@@ -164,6 +164,64 @@ functional forms for :math:`\Gamma` and the reference curves, the task of
 calculating a **thermodynamically consistent** temperature becomes more
 complicated.
 
+.. _3T-Model:
+
+The 3T Model
+``````````````
+
+In high-energy density physics, the so-called three-temperature (or
+3T) model is often employed. In this model, a material is fully or
+partially ionized. Due to the separation in masses between electrons
+and atomic nuclei, electrons come into thermal equilibrium and ions
+come into thermal equilibrium, but the two populations are not in
+thermal equilibrium with each other. This introduces separate electron
+and ion temperatures. The third temperature is potentially a radiation
+temperature.
+
+By convention in 3T physics, density :math:`\rho` is always the mass
+density of the ions. The electron number density may then be computed
+as
+
+.. math::
+
+  n = \left\langle Z \right\rangle \frac{\rho}{\overline{A} m_p}
+
+where here :math:`\left\langle Z\right\rangle` is the average number
+of electrons contributed per atom, also called mean ionization state,
+:math:`\rho` is the ion mass density, :math:`\overline{A}` is the mean
+atomic mass (in grams per mole) of a given material and :math:`m_p` is
+the proton mass.
+
+.. note::
+
+  Note that there is notational ambiguity between the average
+  ionization state and the average atomic number, as the symbol for
+  both is :math:`Z`. To disambiguate in ``singularity-eos``, we use
+  overbars to reference mean atomic properties such as mean atomic
+  mass :math:`\overline{A}` and mean atomic number :math:`\overline{Z}` while we
+  use :math:`\left\langle Z\right\rangle` to denote mean ionizaiton
+  state.
+
+Also, since the electron mass is negligible compared to the ion mass,
+the specific internal energy carried by electrons
+:math:`\varepsilon_e` is specific with respect to the *ion* mass. In
+particular:
+
+.. math::
+
+  u_e = \varepsilon_e \rho
+
+where here :math:`u_e` is the internal energy per unit volume carried
+by electrons and, as discussed above, :math:`\rho` is ion mass
+density.
+
+``singularity-eos`` assumes that, when 3T physics is active, electrons
+and ions are each described by a separate equation of state
+object. Several models are specifically designed to represent, e.g.,
+the electron equation of state or ion equation of state. The tabulated
+models may also support loading tables specifically for electron or
+ion equations of state.
+
 Available EOS Information and Nomenclature
 ------------------------------------------
 
@@ -338,6 +396,38 @@ Note: sometimes temperatures are measured in eV for which the conversion is
 
 Sesame units are equivalent to the mm-mg-µs unit system.
 
+The ``MeanAtomicProperties`` struct
+------------------------------------
+
+Several analytic equations of state optionally accept mean atomic mass
+and number as physics properties. These are the average number of
+nucleons and protons in a constituent nucleus respectively. They are
+not necessarily integers, as a given material may be made up of
+multiple kinds of atom. For example, dry air contains both nitrogen
+and oxygen.
+
+The mean atomic mass and number are frequently carried in the
+container struct
+
+.. code-block:: cpp
+
+  struct MeanAtomicProperties {
+    Real Abar, Zbar;
+
+    // default is hydrogen
+    static constexpr Real DEFAULT_ABAR = 1.0;
+    static constexpr Real DEFAULT_ZBAR = 1.0;
+
+    PORTABLE_INLINE_FUNCTION
+    MeanAtomicProperties(Real Abar_, Real Zbar_) : Abar(Abar_), Zbar(Zbar_) {}
+    PORTABLE_INLINE_FUNCTION
+    MeanAtomicProperties() : Abar(DEFAULT_ABAR), Zbar(DEFAULT_ZBAR) {}
+  };
+
+which owns the atomic mass ``Abar`` and atomic number ``Zbar``. You
+may set these by constructing the struct or by setting the fields in a
+pre-constructed struct. The defaults are for hydrogen.
+
 Implemented EOS models
 ----------------------
 
@@ -429,6 +519,98 @@ these values are not set, they will be the same as those returned by the
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
 
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter, e.g.,
+
+.. code-block:: cpp
+
+   IdealGas(Real gm1, Real Cv, MeanAtomicProperties(Abar, Zbar));
+   IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0, MeanAtomicProperties(Abar, Zbar));
+
+Ideal Electron Gas
+```````````````````
+
+The ideal electron gas equation of state is designed for use with 3T
+physics. It is an ideal Boltzmann gas of electrons. As such, each
+electron is assumed to have three translational degrees of freedom
+:math:`f`, such that
+
+.. math::
+
+  \Gamma = \frac{2}{f} = \frac{2}{3}
+
+and
+
+.. math::
+
+  \gamma = \Gamma + 1 = \frac{5}{3}.
+
+The pressure is given by the number density of electrons times
+:math:`k_b T` for Boltzmann constant :math:`k_b` and temperature
+:math:`T`:
+
+.. math::
+
+  P = \frac{\rho}{m_p \overline{A}}\left\langle Z \right\rangle k_b T
+
+for proton mass :math:`m_p`. The specific heat is then
+
+.. math::
+
+  C_V = \frac{\left\langle Z \right\rangle k_b}{\Gamma m_p \overline{A}}
+
+so that
+
+.. math::
+
+  P = \Gamma \rho C_V T
+
+as expected. (Note that the total mass per nucleus isn't exactly
+:math:`\overline{A} m_p`, as protons and neutrons are
+not exactly the same mass. However, it's close enough for all intents
+and purposes.)
+
+The constructor takes only the ``MeanAtomicProperties`` struct, which
+is a required input:
+
+.. code-block:: cpp
+
+  IdealElectrons(const MeanAtomicProperties &AZbar);
+
+Optionally reference values may be provided for the entropy
+calculation, which is computed in the same way as the standard ideal
+gas.
+
+.. note::
+
+  Since the mean ionization state is built into the heat capacity, the
+  entropy is zero until the material is ionized. This is physically
+  consistent, if there are no electrons, the total electron entropy
+  should be zero.
+
+.. note::
+
+  The electron entropy reference should probably be chosen to be
+  consistent with the chosen ionization model, such as a reference
+  temperature where ionization begins. This is about :math:`10^4`
+  Kelvin but will depend on the model and the material. This means
+  that the entropy reference temperature may be very different between
+  ions and electrons.
+
+Calls to compute state variables require the mean ionization state,
+which must be passed in the ``lambda`` parameter, e.g.,
+
+.. code-block:: cpp
+
+  Real lambda[1] = {Z};
+  Real P = eos.PressureFromDensityTemperature(rho, T, lambda);
+
+.. note::
+
+  For now, the ideal electron gas is not in the default variant
+  provided by singularity-eos. If you would like to use it, you must
+  implement your own custom variant.
+
 Stiffened Gas
 `````````````
 
@@ -485,6 +667,15 @@ these values are not set, they will be the same as those returned by the
 :code:`ValuesAtReferenceState()` function. However, if the entropy reference
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
+
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter, e.g.,
+
+.. code-block:: cpp
+
+   StiffGas(Real gm1, Real Cv, Real Pinf, Real q, MeanAtomicProperties(Abar, Zbar));
+   StiffGas(Real gm1, Real Cv, Real Pinf, Real q, Real qp, Real T0, Real P0,
+            EntropyRho0, MeanAtomicProperties(Abar, Zbar));
 
 Noble-Abel
 ``````````
@@ -543,6 +734,17 @@ these values are not set, they will be the same as those returned by the
 :code:`ValuesAtReferenceState()` function. However, if the entropy reference
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
+
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter, e.g.,
+
+.. code-block:: cpp
+
+   NobleAbel(Real gm1, Real Cv, Real b, Real q,
+             MeanAtomicProperties(Abar, Zbar));
+   NobleAbel(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0,
+             MeanAtomicProperties(Abar, Zbar));
+
 
 Carnahan-Starling
 `````````````````
@@ -630,6 +832,16 @@ these values are not set, they will be the same as those returned by the
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
 
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter, e.g.,
+
+.. code-block:: cpp
+
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q,
+                     MeanAtomicProperties(Abar, Zbar))
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0,
+                     MeanAtomicProperties(Abar, Zbar))
+
 Gruneisen EOS
 `````````````
 
@@ -698,7 +910,7 @@ If the unitless user parameter :math:`b=\Gamma_0`, the Gruneisen parameter is of
 form where :math:`\Gamma_0 =` constant in compression. These two limitig cases are 
 shown in the figure below.
 
-.. image:: ../SteinbergGammarho.pdf
+.. image:: ../SteinbergGammarho.png
   :width: 500
   :alt: Figure: Demonstration of how the parameter b interpolated between two common approximations for Gamma
 
@@ -766,6 +978,9 @@ There is an overload of the ``Gruneisen`` class which computes
 
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
+
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 Extendended Vinet EOS
 `````````````````````
@@ -848,6 +1063,9 @@ is :math:`S_0`, and ``expconsts`` is a pointer to the constant array of length
 39 containing the expansion coefficients
 :math:`d_2` to :math:`d_{40}`. Expansion coefficients not used should be set to
 0.0.
+
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 Mie-Gruneisen linear :math:`U_s`- :math:`u_p` EOS
 `````````````````````````````````````````````````
@@ -978,7 +1196,7 @@ The first omitted term in the expansion inside the square brackets is :math:`\Ga
 in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the 
 isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
 
-.. image:: ../ApproxForTH.pdf
+.. image:: ../ApproxForTH.png
   :width: 500
   :alt: Figure: Different approximations for the temperature on the Hugoniot.
 
@@ -994,6 +1212,9 @@ where
 ``Cs`` is :math:`C_s`, ``s`` is :math:`s`, 
 ``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_V`,
 ``E0`` is :math:`E_0`, and ``S0`` is :math:`S_0`. 
+
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 Mie-Gruneisen power expansion EOS
 `````````````````````````````````
@@ -1018,7 +1239,7 @@ By expanding the MGUsup Hugoniot pressure into a power series in :math:`\eta` we
 
 In the figure below we have used :math:`M=20` with these coefficients and show how the divergence in the MGUsup pressure at :math:`\eta = \frac{1}{s}` is avoided in the PowerMG, making it more suitable for modeling high pressures.
 
-.. image:: ../PMGvsMGUsupPress.pdf
+.. image:: ../PMGvsMGUsupPress.png
   :width: 500
   :alt: Figure: Comparing Hugoniot pressure for PowerMG and MGUsup
 
@@ -1075,6 +1296,8 @@ where
 :math:`K_0` to :math:`K_{40}`. Expansion coefficients not used should be set to
 :math:`0.0`.
 
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 
 JWL EOS
@@ -1126,6 +1349,9 @@ The constructor for the JWL EOS is
 where ``A`` is :math:`A`, ``B`` is :math:`B`, ``R1`` is :math:`R_1`,
 ``R2`` is :math:`R_2`, ``w`` is :math:`w`, ``rho0`` is :math:`\rho_0`,
 and ``Cv`` is :math:`C_V`.
+
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 Davis EOS
 ```````````
@@ -1274,6 +1500,9 @@ where ``rho0`` is :math:`\rho_0`, ``e0`` is :math:`e_0`, ``P0`` is
 :math:`Z`, ``alpha`` is :math:`\alpha`, and ``Cv0`` is the specific
 heat capacity at the reference state.
 
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
+
 Davis Products EOS
 '''''''''''''''''''
 
@@ -1381,6 +1610,9 @@ where ``a`` is :math:`a`, ``b`` is :math:`b`, ``k`` is :math:`k`,
 ``n`` is :math:`n`, ``vc`` is :math:`V_\mathrm{C}`, ``pc`` is
 :math:`P_\mathrm{C}`, ``Cv`` is :math:`C_{V,0}`.
 
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
+
 Spiner EOS
 ````````````
 
@@ -1442,6 +1674,12 @@ material ID in the database in the file, ``materialName`` is the name
 of the material in the file, and ``reproducability_mode`` is a boolean
 which slightly changes how initial guesses for root finds are
 computed. The constructor for ``SpinerEOSDependsRhoSie`` is identical.
+
+.. note::
+
+  Mean atomic mass and number are loaded from input tables. The
+  ``SpinerEOS`` model does **not** support the
+  ``MeanAtomicProperties`` struct.
 
 ``sp5`` files and ``sesame2spiner``
 `````````````````````````````````````
@@ -1630,6 +1868,8 @@ values in expansion and compression.
 
 and similar expressions for :math:`b_2^*`.
 
+The SAP polynomial EOS also optionally accepts a
+``MeanAtomicProperties`` struct.
 
 
 Stellar Collapse EOS
@@ -1711,6 +1951,17 @@ where ``filename`` is the file containing the tabulated model,
 original `Stellar Collapse`_ format, and ``filter_bmod`` specifies
 whether or not to apply the above-described median filter.
 
+.. note::
+
+  The ``StellarCollapse`` EOS assumes nuclear statistical equilibrium
+  and as such mean atomic mass and number are state variables. As such
+  class does not accept the ``MeanAtomicProperties`` struct. The
+  ``MeanAtomicMassFromDensityTemperature`` and
+  ``MeanAtomicNumberFromDensityTemperature`` functions return the
+  relevant quantities for some thermodynamic state. The
+  ``MeanAtomicMass()`` and ``MeanAtomicNumber()`` functions raise an
+  error.
+
 ``StellarCollapse`` also provides 
 
 .. cpp:function:: void Save(const std::string &filename)
@@ -1736,19 +1987,23 @@ return a ``Real`` number.
 .. warning::
     As with the SpinerEOS models, the stellar collapse models use fast
     logs. You can switch the logs to true logs with the
-    ``SINGULARITY_USE_TRUE_LOG_GRIDDING`` cmake option.
+    ``SINGULARITY_USE_TRUE_LOG_GRIDDING`` cmake option. This may be
+    desirable on ARM-based architectures (e.g., ``aarch64``), where
+    a hardware log intrinsic is available.
+    
 
 .. note::
-    A more performant implementation of fast logs is available, but it
-    might not be portable. Enable it with the
-    ``SINGULARITY_USE_HIGH_RISK_MATH`` cmake option.
+   The default implementation of our fast logs assumes little endian
+   numbers. If you are on a big-endian machine, they will not work
+   properly. If you encounter a big-endian machine, please report it
+   to us in the issues and (for now) enable the portable
+   implementation of fast logs with ``-DSINGULARITY_NQT_PORTABLE=ON``.
 
 .. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
 
 .. _OConnor and Ott: https://doi.org/10.1088/0264-9381/27/11/114103
 
 .. _median filter: https://en.wikipedia.org/wiki/Median_filter
-
 
 
 Helmholtz EOS
@@ -1791,6 +2046,14 @@ The degenerate electron term is computed via thermodynamic derivatives
 of the Helmholtz free energy (hence the name Helmholtz EOS). The free
 energy is pre-computed via integrals over the Fermi sphere and
 tabulated in a file provided from `Frank Timmes's website`_.
+
+.. note::
+
+  Since mean atomic mass and number are required inputs, the
+  ``MeanAtomicMassFromDensityTemperature`` and
+  ``MeanAtomicNumberFromDensityAndTemperature`` functions simply
+  return the input values. The ``MeanAtomicMass()`` and
+  ``MeanAtomicNumber`` functions produce an error.
 
 The table is a simple small ascii file. To ensure thermodyanic
 consistency, the table is interpolated using either biquintic or
@@ -1892,6 +2155,13 @@ model, :math:`splitIdealGas` uses the cold curve plus ideal gas model
 and :math:`splitCowan` uses the cold curve plus Cowan-nuclear model 
 for ions and the final option ``linear_interp`` uses linear instead of 
 bilinear interpolation. 
+
+.. note::
+
+  Mean atomic mass and number are loaded from input tables. The
+  ``EOSPAC`` model does **not** support the ``MeanAtomicProperties``
+  struct.
+
 
 Note for performance reasons this EOS uses a slightly different vector API.
 See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.

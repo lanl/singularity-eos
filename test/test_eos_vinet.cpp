@@ -346,6 +346,16 @@ SCENARIO("Vinet EOS rho T", "[VectorEOS][VinetEOS]") {
           array_compare(num, density, temperature, h_pressure, pressure_true, "Density",
                         "Temperature");
         }
+        THEN("[rho, e](P, T) also works") {
+          int nwrong = 0;
+          portableReduce(
+              "Check density energy from pressure temperature", 0, num,
+              PORTABLE_LAMBDA(const int i, int &nw) {
+                nw += !CheckRhoSieFromPT(eos, v_density[i], v_temperature[i]);
+              },
+              nwrong);
+          AND_THEN("There are no errors") { REQUIRE(nwrong == 0); }
+        }
       }
 
       portableFor(

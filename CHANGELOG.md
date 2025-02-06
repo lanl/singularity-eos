@@ -3,11 +3,37 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR453]](https://github.com/lanl/singularity-eos/pull/453) A PT space PTE solver
+- [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
+
+### Fixed (Repair bugs, etc)
+- [[PR449]](https://github.com/lanl/singularity-eos/pull/449) Ensure that DensityEnergyFromPressureTemperature works for all equations of state and is properly tested
+- [[PR439]](https://github.com/lanl/singularity-eos/pull/439) Add mean atomic mass and number to EOS API
+- [[PR437]](https://github.com/lanl/singularity-eos/pull/437) Fix segfault on HIP, clean up warnings, add strict sanitizer test
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+
+## Release 1.9.1
+Date: 11/7/2024
+
+Release is in preparation for JOSS publication.
+
+### Added (new features/APIs/variables/...)
+- [[PR416]](https://github.com/lanl/singularity-eos/pull/416) Gibbs free energy
 - [[PR361]](https://github.com/lanl/singularity-eos/pull/361) Added tests for PTEsolver and added a strawman kinetic phase transition framework
 - [[PR410]](https://github.com/lanl/singularity-eos/pull/410) Enable serialization and de-serialization
 - [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Piecewise grids for Spiner EOS.
 
 ### Fixed (Repair bugs, etc)
+- [[PR434]](https://github.com/lanl/singularity-eos/pull/434) Fix failure of eospac to build on HIP and segfaults with Evalaute
+- [[PR424]](https://github.com/lanl/singularity-eos/pull/424) Fix for variant patch: point to correct patch file
+- [[PR420]](https://github.com/lanl/singularity-eos/pull/420) Fix broken test_get_sg_eos
+- [[PR417]](https://github.com/lanl/singularity-eos/pull/417) Bugs in shared memory related to eospac resolved
 - [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Includes a fix for extrapolation of specific internal energy in SpinerEOS.
 - [[PR401]](https://github.com/lanl/singularity-eos/pull/401) Fix for internal energy scaling in PTE closure
 - [[PR403]](https://github.com/lanl/singularity-eos/pull/403) Fix Gruneisen EOS DensityEnergyFromPressureTemperature function
