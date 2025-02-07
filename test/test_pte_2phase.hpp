@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_TEST_PTE_TEST_2PHASEVINETSN_
-#define _SINGULARITY_EOS_TEST_PTE_TEST_2PHASEVINETSN_
+#ifndef _SINGULARITY_EOS_TEST_TEST_PTE_2PHASE_
+#define _SINGULARITY_EOS_TEST_TEST_PTE_2PHASE_
 
 #include <stdlib.h>
 
@@ -26,9 +26,14 @@
 // This data is taken from the .ult file for a test case in Flag, MPMat_KPT_PTsolv.ult.std
 // Note that at this point in time (April 2024) the global and phase times are not alinged
 // in .ult but they will be in the near future.
-namespace pte_test_2phaseVinetSn {
+
+#include <material_2phaseVinetSn.hpp>
+
+namespace pte_test_2phase {
 
 constexpr int NMAT = 2;
+constexpr int PHASES[NMAT] = {0, 1};
+
 constexpr int NTRIAL = 5;
 constexpr int NPTS = NTRIAL * NMAT;
 constexpr int HIST_SIZE = 10;
@@ -53,24 +58,9 @@ constexpr Real out_vfrac0[NTRIAL] = {0.5, 0.500019325, 0.500038138, 0.500056927,
 constexpr Real out_vfrac1[NTRIAL] = {0.5, 0.499980675, 0.499961862, 0.499943073,
                                      0.499924321};
 
-template <typename T>
-inline void set_eos(T *eos) {
-  constexpr Real d2to40[39] = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                               0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                               0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
-
-  T Snbeta = singularity::Vinet(7.285, 298.0, 0.529e12, 5.3345, 0.000072977, 0.2149e07,
-                                0.658e09, 0.4419e07, d2to40);
-  T Sngamma = singularity::Vinet(7.271, 298.0, 0.3878e12, 6.0532, 0.0001085405, 0.2161e07,
-                                 1.025e09, 0.5051e07, d2to40);
-  eos[0] = Snbeta.GetOnDevice();
-  eos[1] = Sngamma.GetOnDevice();
-  return;
-}
-
-template <typename RealIndexer, typename EOSIndexer>
+template <typename RealIndexer>
 inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
-                            RealIndexer &&sie, EOSIndexer &&eos) {
+                            RealIndexer &&sie) {
 
   Real vsum = 0.;
   for (int i = 0; i < NMAT; i++) {
@@ -87,6 +77,6 @@ inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
   return;
 }
 
-} // namespace pte_test_2phaseVinetSn
+} // namespace pte_test_2phase
 
-#endif // _SINGULARITY_EOS_TEST_PTE_TEST_2PHASEVINETSN_
+#endif // _SINGULARITY_EOS_TEST_TEST_PTE_2PHASE_

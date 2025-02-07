@@ -28,7 +28,7 @@
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
-#include <pte_test_5phaseSesameSn.hpp>
+#include <test_pte_3phase.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
 using singularity::PTESolverRhoT;
@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
     PortableMDArray<EOS> eos_v(eos_vec.data(), NMAT);
 #endif
 
-    LinearIndexer<decltype(eos_hv)> eos_h(eos_hv);
-    set_eos(eos_hv.data());
+    //    set_eos(NMAT,PHASES,eos_hv.data());
+    set_eos(NMAT, eos_hv.data());
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(eos_v, eos_hv);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
       Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
       Indexer2D<decltype(sie_hm)> e(n, sie_hm);
-      set_trial_3state(n, r, vf, e, eos_h);
+      set_trial_state(n, r, vf, e);
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;

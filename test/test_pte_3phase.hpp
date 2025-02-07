@@ -12,15 +12,17 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_TEST_PTE_TEST_5PHASESESAMESN_
-#define _SINGULARITY_EOS_TEST_PTE_TEST_5PHASESESAMESN_
+#ifndef _SINGULARITY_EOS_TEST_TEST_3PHASE_
+#define _SINGULARITY_EOS_TEST_TEST_3PHASE_
 
 #include <stdlib.h>
 
+// For getting the symlink in
 #include <unistd.h>
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
+
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
@@ -30,7 +32,11 @@
 // at this point in time (April 2024) the global and phase times are not alinged in .ult
 // but they will be in the near future.
 
+#include <material_5phaseSesameSn.hpp>
+
 constexpr int NMAT = 3;
+constexpr int PHASES[NMAT] = {0, 1, 3};
+
 constexpr int NTRIAL = 5;
 constexpr int NPTS = NTRIAL * NMAT;
 constexpr int HIST_SIZE = 30;
@@ -62,41 +68,9 @@ constexpr Real out_sie1[NTRIAL] = {1.93716882e09, 1.93864981e09, 1.93994981e09,
 constexpr Real out_sie2[NTRIAL] = {2.01473728e09, 2.01621655e09, 2.01751522e09,
                                    2.01840528e09, 2.01875845e09};
 
-using singularity::EOSPAC;
-using singularity::Variant;
-using EOS = Variant<EOSPAC>;
-
-template <typename T>
-inline void set_eos(T *eos) {
-
-  int sl = symlink("/usr/projects/data/eos/eos-developmental/Sn2162/v01/sn2162-v01.bin",
-                   "sesameu");
-
-  int SnbetaID = 2102;
-  int SngammaID = 2103;
-  // int SndeltaID = 2104;
-  int SnhcpID = 2105;
-  // int SnliquidID = 2106;
-
-  // bool invert_at_setup = true;
-
-  T Snbeta = singularity::EOSPAC(SnbetaID);
-  T Sngamma = singularity::EOSPAC(SngammaID);
-  //  EOS Sndelta = singularity::EOSPAC(SndeltaID);
-  T Snhcp = singularity::EOSPAC(SnhcpID);
-  //  EOS Snliquid = singularity::EOSPAC(SnliquidID);
-
-  eos[0] = Snbeta.GetOnDevice();
-  eos[1] = Sngamma.GetOnDevice();
-  //  eos[x] = Sndelta.GetOnDevice();
-  eos[2] = Snhcp.GetOnDevice();
-  //  eos[x] = Snliquid.GetOnDevice();
-  return;
-}
-
-template <typename RealIndexer, typename EOSIndexer>
-inline void set_trial_3state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
-                             RealIndexer &&sie, EOSIndexer &&eos) {
+template <typename RealIndexer>
+inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
+                            RealIndexer &&sie) {
 
   Real vsum = 0.;
   for (int i = 0; i < NMAT; i++) {
@@ -113,4 +87,4 @@ inline void set_trial_3state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
   return;
 }
 
-#endif // _SINGULARITY_EOS_TEST_PTE_TEST_5PHASESESAMESN_
+#endif // _SINGULARITY_EOS_TEST_TEST_PTE_3PHASE_
