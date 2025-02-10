@@ -157,14 +157,14 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     // (1/rho) (dP/de). Scale cancels in P and e
-    return t_.GruneisenParameterFromDensityTemperature(rho, temperature, lambda);
+    return t_.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real iscale = GetInvScale_(lambda);
-    return t_.GruneisenParameterFromDensityInternalEnergy(rho, iscale * sie, lambda);
+    return t_.GruneisenParamFromDensityInternalEnergy(rho, iscale * sie, lambda);
   }
 
   template <typename Indexer_t = Real *>
@@ -223,7 +223,7 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   }
 
   PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return NL + t_.nlambda(); }
+  int nlambda() const noexcept { return 1 + t_.nlambda(); }
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return T::scratch_size(method, nelements);
@@ -266,7 +266,6 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   SG_ADD_MODIFIER_MEAN_METHODS(t_)
 
  private:
-  static constexpr const int NL = 1;
   template <typename Indexer_t = Real *>
   PORTABLE_FORCEINLINE_FUNCTION Real GetIonizationState_(Indexer_t &&lambda) const {
     return std::max(0.0, lambda[t_.nlambda()]);

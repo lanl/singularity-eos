@@ -217,12 +217,13 @@ class IdealElectrons : public EosBase<IdealElectrons> {
   // JMM: For some reason some cuda/HIP implementations don't like
   // static constexpr vars. They are not getting properly translated to
   // device, even with --expt-relaxed-constexpr
-  const Real _gm1 = (5. / 3.) - 1; // 3 translational DOF
-  const Real _rho0 = 1.0;
-  const Real _T0 = ROOM_TEMPERATURE;
-  const Real _P0 = ATMOSPHERIC_PRESSURE;
-  const Real _dpde0 = _gm1 * _rho0;
-  const Real _dvdt0 = 1. / (_rho0 * _T0);
+  // And setting these to const deletes the operator=
+  Real _gm1 = (5. / 3.) - 1; // 3 translational DOF
+  Real _rho0 = 1.0;
+  Real _T0 = ROOM_TEMPERATURE;
+  Real _P0 = ATMOSPHERIC_PRESSURE;
+  Real _dpde0 = _gm1 * _rho0;
+  Real _dvdt0 = 1. / (_rho0 * _T0);
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
   MeanAtomicProperties _AZbar;
