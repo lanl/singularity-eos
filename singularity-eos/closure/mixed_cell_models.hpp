@@ -599,7 +599,7 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     // pointers, it must be done this way.
     for (std::size_t m = 0; m < nmat; ++m) {
       if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+        for (int l = 0; l < eos[m].nlambda(); ++l) {
           Cache[m][l] = lambda[m][l];
         }
       }
@@ -830,7 +830,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     // pointers, it must be done this way.
     for (std::size_t m = 0; m < nmat; ++m) {
       if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+        for (int l = 0; l < eos[m].nlambda(); ++l) {
           Cache[m][l] = lambda[m][l];
         }
       }
@@ -1082,7 +1082,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // pointers, it must be done this way.
     for (std::size_t m = 0; m < nmat; ++m) {
       if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+        for (int l = 0; l < eos[m].nlambda(); ++l) {
           Cache[m][l] = lambda[m][l];
         }
       }
@@ -1296,7 +1296,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     // pointers, it must be done this way.
     for (std::size_t m = 0; m < nmat; ++m) {
       if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+        for (int l = 0; l < eos[m].nlambda(); ++l) {
           Cache[m][l] = lambda[m][l];
         }
       }
@@ -1540,7 +1540,7 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     // pointers, it must be done this way.
     for (std::size_t m = 0; m < nmat; ++m) {
       if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+        for (int l = 0; l < eos[m].nlambda(); ++l) {
           Cache[m][l] = lambda[m][l];
         }
       }
