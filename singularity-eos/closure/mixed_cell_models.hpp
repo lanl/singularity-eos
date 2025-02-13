@@ -478,10 +478,11 @@ class PTESolverBase {
 
 } // namespace mix_impl
 
-template <typename EOSIndexer, typename RealIndexer>
+template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer = NullIndexer>
 PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
     const std::size_t nmat, EOSIndexer &&eos, const Real u_tot, RealIndexer &&rho,
-    RealIndexer &&vfrac, const Real Tguess = 0.0) {
+    RealIndexer &&vfrac, const Real Tguess = 0.0,
+    LambdaIndexer &&lambda = NullIndexer()) {
   // should these be passed in?
   constexpr Real minimum_temperature = 1.e-9;
   constexpr Real maximum_temperature = 1.e9;
@@ -493,7 +494,8 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
   auto ufunc = [&](const Real T) {
     Real usum = 0.0;
     for (std::size_t m = 0; m < nmat; m++) {
-      usum += rho[m] * vfrac[m] * eos[m].InternalEnergyFromDensityTemperature(rho[m], T);
+      usum += rho[m] * vfrac[m] *
+              eos[m].InternalEnergyFromDensityTemperature(rho[m], T, lambda[m]);
     }
     return usum;
   };
@@ -593,10 +595,15 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     dedv = AssignIncrement(scratch, nmat);
     dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
-    // TODO(JCD): use whatever lambdas are passed in
-    /*for (int m = 0; m < nmat; m++) {
-      if (!variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
-    }*/
+    // JMM: Copy lambda data into cache. Since the cache uses
+    // pointers, it must be done this way.
+    for (std::size_t m = 0; m < nmat; ++m) {
+      if (!variadic_utils::is_nullptr(lambda[m])) {
+        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+          Cache[m][l] = lambda[m][l];
+        }
+      }
+    }
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -819,10 +826,15 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2, eos, vfrac_tot, sie_tot,
                                                          rho, vfrac, sie, temp, press,
                                                          scratch, Tnorm, params) {
-    // TODO(JCD): use whatever lambdas are passed in
-    /*for (int m = 0; m < nmat; m++) {
-      if (!variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
-    }*/
+    // JMM: Copy lambda data into cache. Since the cache uses
+    // pointers, it must be done this way.
+    for (std::size_t m = 0; m < nmat; ++m) {
+      if (!variadic_utils::is_nullptr(lambda[m])) {
+        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+          Cache[m][l] = lambda[m][l];
+        }
+      }
+    }
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1066,10 +1078,15 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     Tequil = T_true;
     Ttemp = T_true;
     Tnorm = 1.0;
-    // TODO(JCD): use whatever lambdas are passed in
-    /*for (int m = 0; m < nmat; m++) {
-      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
-    }*/
+    // JMM: Copy lambda data into cache. Since the cache uses
+    // pointers, it must be done this way.
+    for (std::size_t m = 0; m < nmat; ++m) {
+      if (!variadic_utils::is_nullptr(lambda[m])) {
+        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+          Cache[m][l] = lambda[m][l];
+        }
+      }
+    }
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1275,10 +1292,15 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     Pequil = P;
-    // TODO(JCD): use whatever lambdas are passed in
-    /*for (int m = 0; m < nmat; m++) {
-      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
-    }*/
+    // JMM: Copy lambda data into cache. Since the cache uses
+    // pointers, it must be done this way.
+    for (std::size_t m = 0; m < nmat; ++m) {
+      if (!variadic_utils::is_nullptr(lambda[m])) {
+        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+          Cache[m][l] = lambda[m][l];
+        }
+      }
+    }
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1514,10 +1536,15 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     dtde = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     utemp = AssignIncrement(scratch, nmat);
-    // TODO(JCD): use whatever lambdas are passed in
-    /*for (int m = 0; m < nmat; m++) {
-      if (variadic_utils::is_nullptr(lambda[m])) Cache[m] = lambda[m];
-    }*/
+    // JMM: Copy lambda data into cache. Since the cache uses
+    // pointers, it must be done this way.
+    for (std::size_t m = 0; m < nmat; ++m) {
+      if (!variadic_utils::is_nullptr(lambda[m])) {
+        for (std::size_t l = 0; l < eos[m].nlambda(); ++l) {
+          Cache[m][l] = lambda[m][l];
+        }
+      }
+    }
   }
 
   PORTABLE_INLINE_FUNCTION

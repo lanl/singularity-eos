@@ -35,13 +35,20 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::ApproxTemperatureFromRhoMatU;
-using singularity::IdealGas;
+using singularity::IdealElectrons;
+using singularity::MeanAtomicProperties;
 using singularity::PTESolverPT;
 using singularity::PTESolverPTRequiredScratch;
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
 using singularity::Variant;
-using EOS = Variant<IdealGas>;
+using EOS = Variant<IdealElectrons>;
+
+struct LambdaIndexer {
+  Real *operator[](const int i) { return &z; }
+  const Real *operator[](const int i) const { return &z; }
+  Real z = 0.9;
+};
 
 template <typename RealIndexer, typename EOSIndexer>
 PORTABLE_INLINE_FUNCTION Real set_state(Real rho_nom, Real sie_nom, RealIndexer &&rho,
@@ -78,8 +85,9 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
     EOS_Indexer_t eoss;
 
     for (std::size_t m = 0; m < NEOS; ++m) {
-      constexpr Real denom = NEOS + 1;
-      eoss[m] = IdealGas((m + 1) / denom, m + 1);
+      constexpr Real Abar = NEOS + 1;
+      MeanAtomicProperties AZBar(Abar, m + 1);
+      eoss[m] = IdealElectrons(AZBar);
     }
 
     WHEN("We create a thermodynamic state") {
@@ -110,10 +118,8 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
             Real *sies = (Real *)malloc(sizeof(Real) * NEOS);
             Real *Ts = (Real *)malloc(sizeof(Real) * NEOS);
             Real *Ps = (Real *)malloc(sizeof(Real) * NEOS);
-            Real *lambda[NEOS];
-            for (std::size_t i = 0; i < NEOS; i++) {
-              lambda[i] = nullptr;
-            }
+            LambdaIndexer lambda;
+
             Real *scratch_rt = (Real *)malloc(sizeof(Real) * nscratch_rt);
             Real *scratch_pt = (Real *)malloc(sizeof(Real) * nscratch_pt);
 
@@ -123,8 +129,8 @@ SCENARIO("PT space PTE solver for two ideal gases", "[PTESolverPT][IdealGas]") {
             for (std::size_t m = 0; m < NEOS; ++m) {
               rho_tot += rhos[m] * vfracs[m];
             }
-            const Real Tguess =
-                ApproxTemperatureFromRhoMatU(NEOS, eoss, rho_tot * sie_tot, rhos, vfracs);
+            const Real Tguess = ApproxTemperatureFromRhoMatU(
+                NEOS, eoss, rho_tot * sie_tot, rhos, vfracs, 0.0, lambda);
 
             auto method_rt = PTESolverRhoT<EOS_Indexer_t, Real *, decltype(lambda)>(
                 NEOS, eoss, 1.0, sie_tot, rhos, vfracs, sies, Ts, Ps, lambda, scratch_rt,
