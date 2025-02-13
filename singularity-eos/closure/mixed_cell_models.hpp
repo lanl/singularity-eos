@@ -774,14 +774,14 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
 // ======================================================================
 // PT space solver
 // ======================================================================
-inline int PTESolverPTRequiredScratch(const int nmat) {
+inline int PTESolverPTRequiredScratch(const std::size_t nmat) {
   constexpr int neq = 2;
   return neq * neq                 // jacobian
          + 4 * neq                 // dx, residual, and sol_scratch
          + 2 * nmat                // all the nmat sized arrays
          + MAX_NUM_LAMBDAS * nmat; // the cache
 }
-inline size_t PTESolverPTRequiredScratchInBytes(const int nmat) {
+inline size_t PTESolverPTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverPTRequiredScratch(nmat) * sizeof(Real);
 }
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
@@ -819,10 +819,10 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
   // template the ctor to get type deduction/universal references prior to c++17
   template <typename EOS_t, typename Real_t, typename Lambda_t>
   PORTABLE_INLINE_FUNCTION
-  PTESolverPT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
-              Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
-              Lambda_t &&lambda, Real *scratch, const Real Tnorm = 0.0,
-              const MixParams &params = MixParams())
+  PTESolverPT(const std::size_t nmat, EOS_t &&eos, const Real vfrac_tot,
+              const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
+              Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
+              const Real Tnorm = 0.0, const MixParams &params = MixParams())
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2, eos, vfrac_tot, sie_tot,
                                                          rho, vfrac, sie, temp, press,
                                                          scratch, Tnorm, params) {
