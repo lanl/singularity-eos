@@ -76,7 +76,7 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           // calculate sie from single eos
           auto p_from_t = [&](const Real &t_i) {
             return eos_v(pte_idxs(tid, 0))
-                .PressureFromDensityTemperature(rho_pte(tid, 0), t_i, cache);
+                .PressureFromDensityTemperature(rho_pte(tid, 0), t_i, cache[0]);
           };
           // calculate sie root bounds
           Real r_rho{}, r_temp{}, r_sie{}, r_press{}, r_cv{}, r_bmod{};
