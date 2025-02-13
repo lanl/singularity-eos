@@ -46,7 +46,9 @@ using singularity::Variant;
 using EOS = Variant<IdealGas, IdealElectrons>;
 
 struct LambdaIndexer {
+  PORTABLE_FORCEINLINE_FUNCTION
   Real *operator[](const int i) { return &z; }
+  PORTABLE_FORCEINLINE_FUNCTION
   const Real *operator[](const int i) const { return &z; }
   Real z = 0.9;
 };
