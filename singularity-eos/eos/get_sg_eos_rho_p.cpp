@@ -61,9 +61,9 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           Real *ptemp_pte = &temp_pte(tid, 0);
           Real *ppress_pte = &press_pte(tid, 0);
           Real *pscratch = &solver_scratch(tid, 0);
-          PTESolverFixedP<singularity::EOSAccessor_, Real *, Real *> method(
+          PTESolverFixedP<singularity::EOSAccessor_, Real *, Real **> method(
               npte, eos_inx, vfrac_sum, press_pte(tid, 0), prho_pte, pvfrac_pte, psie_pte,
-              ptemp_pte, ppress_pte, cache[0], pscratch);
+              ptemp_pte, ppress_pte, cache, pscratch);
           auto status = PTESolver(method);
           pte_converged = status.converged;
           // calculate total sie
@@ -76,7 +76,7 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           // calculate sie from single eos
           auto p_from_t = [&](const Real &t_i) {
             return eos_v(pte_idxs(tid, 0))
-                .PressureFromDensityTemperature(rho_pte(tid, 0), t_i, cache[0]);
+                .PressureFromDensityTemperature(rho_pte(tid, 0), t_i, cache);
           };
           // calculate sie root bounds
           Real r_rho{}, r_temp{}, r_sie{}, r_press{}, r_cv{}, r_bmod{};
@@ -87,9 +87,9 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           Real temp_i;
           RootFinding1D::findRoot(p_from_t, press_v(i), r_temp, 1.e-10 * r_temp,
                                   1.e10 * r_temp, 1.e-12, 1.e-12, temp_i);
-          sie_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
-                                .InternalEnergyFromDensityTemperature(rho_pte(tid, 0),
-                                                                      temp_i, cache[0]);
+          sie_pte(tid, 0) =
+              eos_v(pte_idxs(tid, 0))
+                  .InternalEnergyFromDensityTemperature(rho_pte(tid, 0), temp_i, cache);
           sie_tot_true = sie_pte(tid, 0);
           // set temperature
           temp_pte(tid, 0) = temp_i;
