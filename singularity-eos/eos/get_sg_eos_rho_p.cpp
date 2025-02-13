@@ -87,9 +87,9 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           Real temp_i;
           RootFinding1D::findRoot(p_from_t, press_v(i), r_temp, 1.e-10 * r_temp,
                                   1.e10 * r_temp, 1.e-12, 1.e-12, temp_i);
-          sie_pte(tid, 0) =
-              eos_v(pte_idxs(tid, 0))
-                  .InternalEnergyFromDensityTemperature(rho_pte(tid, 0), temp_i, cache);
+          sie_pte(tid, 0) = eos_v(pte_idxs(tid, 0))
+                                .InternalEnergyFromDensityTemperature(rho_pte(tid, 0),
+                                                                      temp_i, cache[0]);
           sie_tot_true = sie_pte(tid, 0);
           // set temperature
           temp_pte(tid, 0) = temp_i;
