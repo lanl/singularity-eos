@@ -19,6 +19,11 @@
 #include <singularity-eos/eos/singularity_eos.hpp>
 #include <singularity-eos/eos/singularity_eos_init_utils.hpp>
 
+namespace singularity {
+int def_en[4] = {0, 0, 0, 0};
+double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+} // namespace singularity
+
 using namespace singularity;
 
 int init_sg_eos(const int nmat, EOS *&eos) {

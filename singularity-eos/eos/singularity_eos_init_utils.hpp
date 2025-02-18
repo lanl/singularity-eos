@@ -80,8 +80,8 @@ inline EOS applyShiftAndScaleAndBilinearRamp(T &&eos, bool scaled, bool shifted,
                                     enabled[2] == 1 || enabled[3] == 1, vals[0],         \
                                     vals[1], vals[2], vals[3], vals[4], vals[5])
 
-int def_en[4] = {0, 0, 0, 0};
-double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+extern int def_en[4];
+extern double def_v[6];
 
 } // namespace singularity
 #endif // _SINGULARITY_EOS_EOS_SINGULARITY_EOS_INIT_UTILS_HPP_
