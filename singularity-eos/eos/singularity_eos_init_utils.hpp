@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -80,8 +80,8 @@ inline EOS applyShiftAndScaleAndBilinearRamp(T &&eos, bool scaled, bool shifted,
                                     enabled[2] == 1 || enabled[3] == 1, vals[0],         \
                                     vals[1], vals[2], vals[3], vals[4], vals[5])
 
-int def_en[4] = {0, 0, 0, 0};
-double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+extern int def_en[4];
+extern double def_v[6];
 
 } // namespace singularity
 #endif // _SINGULARITY_EOS_EOS_SINGULARITY_EOS_INIT_UTILS_HPP_
