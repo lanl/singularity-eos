@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -42,11 +42,24 @@ constexpr Real T_SPLIT_POINT_DEFAULT = 1e4;
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,
-                    const std::string &name, Verbosity eospacWarn = Verbosity::Quiet);
+                    const std::string &name, const bool addSubtables,
+                    Verbosity eospacWarn = Verbosity::Quiet);
+inline herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata,
+                           const Bounds &lRhoBounds, const Bounds &lTBounds,
+                           const Bounds &leBounds, const std::string &name,
+                           Verbosity eospacWarn = Verbosity::Quiet) {
+  return saveMaterial(loc, metadata, lRhoBounds, lTBounds, leBounds, name, false,
+                      eospacWarn);
+}
 
 herr_t saveAllMaterials(const std::string &savename,
                         const std::vector<std::string> &filenames, bool printMetadata,
                         Verbosity eospacWarn);
+
+herr_t saveTablesRhoSie(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
+                        const Bounds &leBounds, Verbosity eospacWarn = Verbosity::Quiet);
+herr_t saveTablesRhoT(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
+                      const Bounds &lTBounds, Verbosity eospacWarn = Verbosity::Quiet);
 
 void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
                   Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds);

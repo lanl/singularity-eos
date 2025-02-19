@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <map>
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -129,14 +130,39 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
 class EOSPAC : public EosBase<EOSPAC> {
 
  public:
+  struct Options {
+    TableSplit split = TableSplit::Total;
+    bool invert_at_setup = false;
+    Real insert_data = 0.0;
+    eospacMonotonicity monotonicity = eospacMonotonicity::none;
+    bool apply_smoothing = false;
+    eospacSplit apply_splitting = eospacSplit::none;
+    bool linear_interp = false;
+  };
+
   inline EOSPAC() = default;
 
   ////add options here... and elsewhere
-  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
+  // Complete constructor
+  inline EOSPAC(int matid, TableSplit split, bool invert_at_setup = false,
+                Real insert_data = 0.0,
                 eospacMonotonicity monotonicity = eospacMonotonicity::none,
                 bool apply_smoothing = false,
                 eospacSplit apply_splitting = eospacSplit::none,
                 bool linear_interp = false);
+  // Overloads with fewer positional arguments
+  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
+                eospacMonotonicity monotonicity = eospacMonotonicity::none,
+                bool apply_smoothing = false,
+                eospacSplit apply_splitting = eospacSplit::none,
+                bool linear_interp = false)
+      : EOSPAC(matid, TableSplit::Total, invert_at_setup, insert_data, monotonicity,
+               apply_smoothing, apply_splitting, linear_interp) {}
+  inline EOSPAC(int matid, const Options &opts)
+      : EOSPAC(matid, opts.split, opts.invert_at_setup, opts.insert_data,
+               opts.monotonicity, opts.apply_smoothing, opts.apply_splitting,
+               opts.linear_interp) {}
+
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
     // TODO(JMM): More validation checks?
     PORTABLE_ALWAYS_REQUIRE(rho_min_ >= 0, "Non-negative minimum density");
@@ -1110,6 +1136,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   int matid_;
+  TableSplit split_;
   static constexpr int NT = 7;
   EOS_INTEGER PofRT_table_;
   EOS_INTEGER TofRE_table_;
@@ -1158,21 +1185,41 @@ class EOSPAC : public EosBase<EOSPAC> {
 // Implementation details below
 // ======================================================================
 
-inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
-                      EospacWrapper::eospacMonotonicity monotonicity,
+inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
+                      Real insert_data, EospacWrapper::eospacMonotonicity monotonicity,
                       bool apply_smoothing, EospacWrapper::eospacSplit apply_splitting,
                       bool linear_interp)
-    : matid_(matid) {
+    : matid_(matid), split_(split) {
   using namespace EospacWrapper;
-  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt,  EOS_Ut_DT, EOS_D_PtT,
-                               EOS_T_DPt, EOS_Pt_DUt, EOS_Uc_D};
-  eosSafeLoad(
-      NT, matid, tableType, tablehandle,
-      std::vector<std::string>({"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT",
-                                "EOS_T_DPt", "EOS_Pt_DUt", "EOS_Uc_D"}),
-      Verbosity::Debug, invert_at_setup = invert_at_setup, insert_data = insert_data,
-      monotonicity = monotonicity, apply_smoothing = apply_smoothing,
-      apply_splitting = apply_splitting, linear_interp = linear_interp);
+  auto TableSelect = [&](auto a, auto b, auto c) {
+    if (split == TableSplit::Total) return a;
+    if (split == TableSplit::ElectronOnly)
+      return b;
+    else // if (split == TableSplit::IonCold)
+      return c;
+  };
+  EOS_INTEGER tableType[NT] = {TableSelect(EOS_Pt_DT, EOS_Pe_DT, EOS_Pic_DT),
+                               TableSelect(EOS_T_DUt, EOS_T_DUe, EOS_T_DUic),
+                               TableSelect(EOS_Ut_DT, EOS_Ue_DT, EOS_Uic_DT),
+                               EOS_D_PtT,
+                               TableSelect(EOS_T_DPt, EOS_T_DPe, EOS_T_DPic),
+                               TableSelect(EOS_Pt_DUt, EOS_Pe_DUe, EOS_Pic_DUic),
+                               EOS_Uc_D};
+  std::vector<std::string> tableNames = {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT",
+                                         "EOS_D_PtT", "EOS_T_DPt", "EOS_Pt_DUt",
+                                         "EOS_Uc_D"};
+  if (split != TableSplit::Total) {
+    auto rt = std::regex("t");
+    std::string newstr = (split == TableSplit::ElectronOnly) ? "e" : "ic";
+    for (auto &s : tableNames) {
+      if (s != "EOS_D_PtT") {
+        s = std::regex_replace(s, rt, newstr);
+      }
+    }
+  }
+  eosSafeLoad(NT, matid, tableType, tablehandle, tableNames, Verbosity::Debug,
+              invert_at_setup, insert_data, monotonicity, apply_smoothing,
+              apply_splitting, linear_interp);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
@@ -1325,6 +1372,9 @@ EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &b
   }
   if (output & thermalqs::density) {
     if (input & thermalqs::pressure && input & thermalqs::temperature) {
+      PORTABLE_REQUIRE(split_ == TableSplit::Total,
+                       "Density of pressure and temperature only supported for total "
+                       "tables at this time");
       EOS_INTEGER table = RofPT_table_;
       eosSafeInterpolate(&table, nxypairs, P, T, R, dx, dy, "RofPT", Verbosity::Quiet);
       rho = R[0];
@@ -1560,6 +1610,10 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
 #if SINGULARITY_ON_DEVICE
   PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
 #else
+  PORTABLE_REQUIRE(split_ == TableSplit::Total,
+                   "Density of pressure and temperature only supported for total "
+                   "tables at this time");
+
   using namespace EospacWrapper;
   EOS_REAL P[1] = {pressureToSesame(press)};
   EOS_REAL T[1] = {temperatureToSesame(temp)};
