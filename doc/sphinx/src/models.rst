@@ -1702,12 +1702,6 @@ equation of state tables for partial ionization. The constructor for
   ``SpinerEOS`` model does **not** support the
   ``MeanAtomicProperties`` struct.
 
-.. note::
-
-  Mean atomic mass and number are loaded from input tables. The
-  ``SpinerEOS`` model does **not** support the
-  ``MeanAtomicProperties`` struct.
-
 ``sp5`` files and ``sesame2spiner``
 `````````````````````````````````````
 
@@ -2201,13 +2195,6 @@ curve plus number-proportional model, :math:`splitIdealGas` uses the
 cold curve plus ideal gas model and :math:`splitCowan` uses the cold
 curve plus Cowan-nuclear model for ions and the final option
 ``linear_interp`` uses linear instead of bilinear interpolation.
-
-.. note::
-
-  Mean atomic mass and number are loaded from input tables. The
-  ``EOSPAC`` model does **not** support the ``MeanAtomicProperties``
-  struct.
-
 
 .. note::
 
