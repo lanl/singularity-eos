@@ -46,10 +46,11 @@ using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
 #endif
 
 template <template <typename... Types> class Method_t>
-auto TestPTE(const std::string name, const std::size_t nscratch_vars) {
+auto TestPTE(const std::string name, const std::size_t nscratch_vars,
+             std::size_t &nsuccess) {
   constexpr Real EPS = 1e-5;
   Real time;
-  std::size_t nsuccess = 0;
+  nsuccess = 0;
 
   // EOS
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -231,7 +232,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars) {
   }
   std::cout << std::endl;
 
-  return std::make_pair(nsuccess, rho_d);
+  return rho_d;
 }
 
 int main(int argc, char *argv[]) {
@@ -243,13 +244,15 @@ int main(int argc, char *argv[]) {
     srand(time(NULL));
 
     // scratch required for PTE solver
+    std::size_t ns_rt;
     auto nscratch_vars_rt = PTESolverRhoTRequiredScratch(NMAT);
-    auto [ns_rt, rho_rt] = TestPTE<PTESolverRhoT>("PTESolverRhoT", nscratch_vars_rt);
+    auto rho_rt = TestPTE<PTESolverRhoT>("PTESolverRhoT", nscratch_vars_rt, ns_rt);
     nsuccess += ns_rt;
 
     // // scratch required for PTE solver
+    std::size_t ns_pt;
     auto nscratch_vars_pt = PTESolverPTRequiredScratch(NMAT);
-    auto [ns_pt, rho_pt] = TestPTE<PTESolverPT>("PTESolverPT", nscratch_vars_pt);
+    auto rho_pt = TestPTE<PTESolverPT>("PTESolverPT", nscratch_vars_pt, ns_pt);
     nsuccess += ns_pt;
 
     int nmatch = 0;

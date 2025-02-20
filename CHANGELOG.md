@@ -3,10 +3,13 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR459]](https://github.com/lanl/singularity-eos/pull/459) Add electron and ion tables to EOSPAC and SpinerEOS backends
 - [[PR453]](https://github.com/lanl/singularity-eos/pull/453) A PT space PTE solver
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)
+- [[PR468]](https://github.com/lanl/singularity-eos/pull/468) Move definition of def_en and def_v to an implementation file
+- [[PR466]](https://github.com/lanl/singularity-eos/pull/466) Fully thread lambda inputs through the PTE solver
 - [[PR449]](https://github.com/lanl/singularity-eos/pull/449) Ensure that DensityEnergyFromPressureTemperature works for all equations of state and is properly tested
 - [[PR439]](https://github.com/lanl/singularity-eos/pull/439) Add mean atomic mass and number to EOS API
 - [[PR437]](https://github.com/lanl/singularity-eos/pull/437) Fix segfault on HIP, clean up warnings, add strict sanitizer test

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -61,9 +61,9 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           Real *ptemp_pte = &temp_pte(tid, 0);
           Real *ppress_pte = &press_pte(tid, 0);
           Real *pscratch = &solver_scratch(tid, 0);
-          PTESolverFixedP<singularity::EOSAccessor_, Real *, Real *> method(
+          PTESolverFixedP<singularity::EOSAccessor_, Real *, Real **> method(
               npte, eos_inx, vfrac_sum, press_pte(tid, 0), prho_pte, pvfrac_pte, psie_pte,
-              ptemp_pte, ppress_pte, cache[0], pscratch);
+              ptemp_pte, ppress_pte, cache, pscratch);
           auto status = PTESolver(method);
           pte_converged = status.converged;
           // calculate total sie

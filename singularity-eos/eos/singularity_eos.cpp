@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -18,6 +18,11 @@
 #include <singularity-eos/eos/eos_builder.hpp>
 #include <singularity-eos/eos/singularity_eos.hpp>
 #include <singularity-eos/eos/singularity_eos_init_utils.hpp>
+
+namespace singularity {
+int def_en[4] = {0, 0, 0, 0};
+double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+} // namespace singularity
 
 using namespace singularity;
 
