@@ -49,6 +49,9 @@ macro(singularity_import_kokkoskernels)
   set(KokkosKernels_ENABLE_TPL_CUSPARSE
       OFF
       CACHE BOOL "" FORCE)
+  set(KokkosKernels_ENABLE_TPL_CUSOLVER
+      OFF
+      CACHE BOOL "" FORCE)
   set(KokkosKernels_ENABLE_TPL_MAGMA
       OFF
       CACHE BOOL "" FORCE)
@@ -104,7 +107,9 @@ macro(singularity_import_kokkoskernels)
 endmacro()
 
 macro(singularity_find_kokkoskernels)
-  find_package(KokkosKernels REQUIRED)
+  if(NOT TARGET Kokkos::kokkoskernels)
+    find_package(KokkosKernels REQUIRED)
+  endif()
 endmacro()
 
 macro(singularity_enable_kokkoskernels target)

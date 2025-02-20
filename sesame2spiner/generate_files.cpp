@@ -1,7 +1,7 @@
 //======================================================================
 // sesame2spiner tool for converting eospac to spiner
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -31,6 +31,7 @@
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
@@ -45,7 +46,8 @@ using namespace EospacWrapper;
 
 herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRhoBounds,
                     const Bounds &lTBounds, const Bounds &leBounds,
-                    const std::string &name, Verbosity eospacWarn) {
+                    const std::string &name, const bool addSubtables,
+                    Verbosity eospacWarn) {
 
   const int matid = metadata.matid;
   std::string sMatid = std::to_string(matid);
@@ -93,49 +95,47 @@ herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRh
   coldGroup =
       H5Gcreate(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-  {
-    DataBox P, sie, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, mask;
-    eosDataOfRhoSie(matid, lRhoBounds, leBounds, P, T, bMod, dPdRho, dPdE, dTdRho, dTdE,
-                    dEdRho, mask, eospacWarn);
-    status += P.saveHDF(leGroup, SP5::Fields::P);
-    status += T.saveHDF(leGroup, SP5::Fields::T);
-    status += bMod.saveHDF(leGroup, SP5::Fields::bMod);
-    status += dPdRho.saveHDF(leGroup, SP5::Fields::dPdRho);
-    status += dPdE.saveHDF(leGroup, SP5::Fields::dPdE);
-    status += dTdRho.saveHDF(leGroup, SP5::Fields::dTdRho);
-    status += dTdE.saveHDF(leGroup, SP5::Fields::dTdE);
-    status += dEdRho.saveHDF(leGroup, SP5::Fields::dEdRho);
-    status += mask.saveHDF(leGroup, SP5::Fields::mask);
-  }
-
-  {
-    DataBox P, sie, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, dEdT, mask;
-    eosDataOfRhoT(matid, lRhoBounds, lTBounds, P, sie, bMod, dPdRho, dPdE, dTdRho, dTdE,
-                  dEdRho, dEdT, mask, eospacWarn);
-    status += P.saveHDF(lTGroup, SP5::Fields::P);
-    status += sie.saveHDF(lTGroup, SP5::Fields::sie);
-    status += bMod.saveHDF(lTGroup, SP5::Fields::bMod);
-    status += dPdRho.saveHDF(lTGroup, SP5::Fields::dPdRho);
-    status += dPdE.saveHDF(lTGroup, SP5::Fields::dPdE);
-    status += dTdRho.saveHDF(lTGroup, SP5::Fields::dTdRho);
-    status += dTdE.saveHDF(lTGroup, SP5::Fields::dTdE);
-    status += dEdRho.saveHDF(lTGroup, SP5::Fields::dEdRho);
-    status += dEdT.saveHDF(lTGroup, SP5::Fields::dEdT);
-    status += mask.saveHDF(lTGroup, SP5::Fields::mask);
-  }
+  status += saveTablesRhoSie(leGroup, matid, TableSplit::Total, lRhoBounds, leBounds,
+                             eospacWarn);
+  status +=
+      saveTablesRhoT(lTGroup, matid, TableSplit::Total, lRhoBounds, lTBounds, eospacWarn);
   {
     DataBox P, sie, dPdRho, dEdRho, bMod, mask, transitionMask;
     eosColdCurves(matid, lRhoBounds, P, sie, dPdRho, dEdRho, bMod, mask, eospacWarn);
-    eosColdCurveMask(matid, lRhoBounds, leBounds.grid.nPoints(), sie, transitionMask,
-                     eospacWarn);
+    // currently unused
+    // eosColdCurveMask(matid, lRhoBounds, leBounds.grid.nPoints(), sie, transitionMask,
+    //                  eospacWarn);
 
     status += P.saveHDF(coldGroup, SP5::Fields::P);
     status += sie.saveHDF(coldGroup, SP5::Fields::sie);
     status += bMod.saveHDF(coldGroup, SP5::Fields::bMod);
     status += dPdRho.saveHDF(coldGroup, SP5::Fields::dPdRho);
     status += dEdRho.saveHDF(coldGroup, SP5::Fields::dEdRho);
-    status += mask.saveHDF(coldGroup, SP5::Fields::mask);
-    status += transitionMask.saveHDF(coldGroup, SP5::Fields::transitionMask);
+    // currently unused
+    // status += mask.saveHDF(coldGroup, SP5::Fields::mask);
+    // status += transitionMask.saveHDF(coldGroup, SP5::Fields::transitionMask);
+  }
+
+  if (addSubtables) {
+    int i = 0;
+    std::vector<TableSplit> splits = {TableSplit::ElectronOnly, TableSplit::IonCold};
+    std::vector<std::string> grpnames = {SP5::SubTable::electronOnly,
+                                         SP5::SubTable::ionCold};
+    for (auto split : splits) {
+      std::string grpname = grpnames[i++];
+      {
+        hid_t grp =
+            H5Gcreate(leGroup, grpname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status += saveTablesRhoSie(grp, matid, split, lRhoBounds, leBounds, eospacWarn);
+        status += H5Gclose(grp);
+      }
+      {
+        hid_t grp =
+            H5Gcreate(lTGroup, grpname.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        status += saveTablesRhoT(grp, matid, split, lRhoBounds, lTBounds, eospacWarn);
+        status += H5Gclose(grp);
+      }
+    }
   }
 
   status += H5Gclose(leGroup);
@@ -171,6 +171,12 @@ herr_t saveAllMaterials(const std::string &savename,
 
   std::cout << "Saving to file " << savename << std::endl;
   file = H5Fcreate(savename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+  // singularity version
+  H5LTset_attribute_string(file, "/", "singularity_version", SINGULARITY_VERSION);
+  // log type. 0 for true, 1 for NQT1, 2 for NQT2, -1 for single precision true
+  int log_type = singularity::FastMath::Settings::log_type;
+  H5LTset_attribute_int(file, "/", SP5::logType, &log_type, 1);
 
   std::cout << "Processing " << matids.size() << " materials..." << std::endl;
 
@@ -212,8 +218,14 @@ herr_t saveAllMaterials(const std::string &savename,
                 << lRhoBounds << lTBounds << leBounds << std::endl;
     }
 
-    status +=
-        saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name, eospacWarn);
+    const bool add_subtables = params[i].Get("ionization", false);
+    if (eospacWarn == Verbosity::Debug) {
+      std::cout << "Adding subtables for partial ionization? " << add_subtables
+                << std::endl;
+    }
+
+    status += saveMaterial(file, metadata, lRhoBounds, lTBounds, leBounds, name,
+                           add_subtables, eospacWarn);
     if (status != H5_SUCCESS) {
       std::cerr << "WARNING: problem with HDf5" << std::endl;
     }
@@ -224,6 +236,45 @@ herr_t saveAllMaterials(const std::string &savename,
   if (status != H5_SUCCESS) {
     std::cerr << "WARNING: problem with HDf5" << std::endl;
   }
+  return status;
+}
+
+herr_t saveTablesRhoSie(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
+                        const Bounds &leBounds, Verbosity eospacWarn) {
+  herr_t status = 0;
+  DataBox P, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, mask;
+  eosDataOfRhoSie(matid, split, lRhoBounds, leBounds, P, T, bMod, dPdRho, dPdE, dTdRho,
+                  dTdE, dEdRho, mask, eospacWarn);
+  status += P.saveHDF(loc, SP5::Fields::P);
+  status += T.saveHDF(loc, SP5::Fields::T);
+  status += bMod.saveHDF(loc, SP5::Fields::bMod);
+  status += dPdRho.saveHDF(loc, SP5::Fields::dPdRho);
+  status += dPdE.saveHDF(loc, SP5::Fields::dPdE);
+  status += dTdRho.saveHDF(loc, SP5::Fields::dTdRho);
+  status += dTdE.saveHDF(loc, SP5::Fields::dTdE);
+  status += dEdRho.saveHDF(loc, SP5::Fields::dEdRho);
+  // currently unused
+  // status += mask.saveHDF(loc, SP5::Fields::mask);
+  return status;
+}
+
+herr_t saveTablesRhoT(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
+                      const Bounds &lTBounds, Verbosity eospacWarn) {
+  herr_t status = 0;
+  DataBox P, sie, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, dEdT, mask;
+  eosDataOfRhoT(matid, split, lRhoBounds, lTBounds, P, sie, bMod, dPdRho, dPdE, dTdRho,
+                dTdE, dEdRho, dEdT, mask, eospacWarn);
+  status += P.saveHDF(loc, SP5::Fields::P);
+  status += sie.saveHDF(loc, SP5::Fields::sie);
+  status += bMod.saveHDF(loc, SP5::Fields::bMod);
+  status += dPdRho.saveHDF(loc, SP5::Fields::dPdRho);
+  status += dPdE.saveHDF(loc, SP5::Fields::dPdE);
+  status += dTdRho.saveHDF(loc, SP5::Fields::dTdRho);
+  status += dTdE.saveHDF(loc, SP5::Fields::dTdE);
+  status += dEdRho.saveHDF(loc, SP5::Fields::dEdRho);
+  status += dEdT.saveHDF(loc, SP5::Fields::dEdT);
+  // Currently unused
+  // status += mask.saveHDF(loc, SP5::Fields::mask);
   return status;
 }
 
@@ -252,9 +303,9 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   checkValInMatBounds(matid, "sieMin", sieMin, metadata.sieMin, metadata.sieMax);
   checkValInMatBounds(matid, "sieMax", sieMax, metadata.sieMin, metadata.sieMax);
 
-  Real shrinklRhoBounds = params.Get("shrinklRhoBounds", 0.0);
-  Real shrinklTBounds = params.Get("shrinklTBounds", 0.0);
-  Real shrinkleBounds = params.Get("shrinkleBounds", 0.0);
+  Real shrinklRhoBounds = params.Get("shrinklRhoBounds", 0.);
+  Real shrinklTBounds = params.Get("shrinklTBounds", 0.);
+  Real shrinkleBounds = params.Get("shrinkleBounds", 0.);
 
   shrinklRhoBounds = std::min(1., std::max(shrinklRhoBounds, 0.));
   shrinklTBounds = std::min(1., std::max(shrinklTBounds, 0.));
@@ -273,21 +324,53 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
               << "shrinkleBounds > 0 and siemin or siemax set" << std::endl;
   }
 
-  int ppdRho = params.Get("numrho/decade", PPD_DEFAULT);
-  int numRhoDefault = getNumPointsFromPPD(rhoMin, rhoMax, ppdRho);
+  int ppdRho = params.Get("numrho/decade", PPD_DEFAULT_RHO);
+  int numRhoDefault = Bounds::getNumPointsFromPPD(rhoMin, rhoMax, ppdRho);
 
-  int ppdT = params.Get("numT/decade", PPD_DEFAULT);
-  int numTDefault = getNumPointsFromPPD(TMin, TMax, ppdT);
+  int ppdT = params.Get("numT/decade", PPD_DEFAULT_T);
+  int numTDefault = Bounds::getNumPointsFromPPD(TMin, TMax, ppdT);
 
-  int ppdSie = params.Get("numSie/decade", PPD_DEFAULT);
-  int numSieDefault = getNumPointsFromPPD(sieMin, sieMax, ppdSie);
+  int ppdSie = params.Get("numSie/decade", PPD_DEFAULT_T);
+  int numSieDefault = Bounds::getNumPointsFromPPD(sieMin, sieMax, ppdSie);
 
   int numRho = params.Get("numrho", numRhoDefault);
   int numT = params.Get("numT", numTDefault);
   int numSie = params.Get("numsie", numSieDefault);
 
-  Real rhoAnchor = metadata.normalDensity;
-  Real TAnchor = 298.15;
+  constexpr Real TAnchor = 298.15;
+  Real rhoAnchor = params.Get("rho_fine_center", metadata.normalDensity);
+  if (std::isnan(rhoAnchor) || rhoAnchor <= 0 || rhoAnchor > 1e8) {
+    std::cerr << "WARNING [" << matid << "] "
+              << "normal density ill defined. Setting it to a sensible default."
+              << std::endl;
+    rhoAnchor = 1;
+  }
+
+  // Piecewise grids stuff
+  const bool piecewiseRho = params.Get("piecewiseRho", true);
+  const bool piecewiseT = params.Get("piecewiseT", true);
+  const bool piecewiseSie = params.Get("piecewiseSie", true);
+
+  const Real ppd_factor_rho_lo =
+      params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
+  const Real ppd_factor_rho_hi =
+      params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
+  const Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT_T);
+  const Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT_T);
+  const Real rho_fine_diameter =
+      params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
+  const Real TSplitPoint = params.Get("TSplitPoint", T_SPLIT_POINT_DEFAULT);
+  const Real rho_fine_center = rhoAnchor;
+
+  // These override the rho center/diameter settings
+  Real rho_fine_min = params.Get("rhoFineMin", -1);
+  Real rho_fine_max = params.Get("rhoFineMax", -1);
+  if (rho_fine_min * rho_fine_max < 0) {
+    std::cerr << "WARNING [" << matid << "]: "
+              << "Either rhoFineMin or rhoFineMax is set while the other is still unset."
+              << " Both must be set to be sensible. Ignoring." << std::endl;
+    rho_fine_min = rho_fine_max = -1;
+  }
 
   // Forces density and temperature to be in a region where an offset
   // is not needed. This improves resolution at low densities and
@@ -295,12 +378,57 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
 
   // Extrapolation and other resolution tricks will be explored in the
   // future.
-  if (rhoMin < STRICTLY_POS_MIN) rhoMin = STRICTLY_POS_MIN;
-  if (TMin < STRICTLY_POS_MIN) TMin = STRICTLY_POS_MIN;
+  if (rhoMin < STRICTLY_POS_MIN_RHO) rhoMin = STRICTLY_POS_MIN_RHO;
+  if (TMin < STRICTLY_POS_MIN_T) TMin = STRICTLY_POS_MIN_T;
 
-  lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
-  lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
-  leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
+  if (piecewiseRho) {
+    if (rho_fine_min > 0) {
+      lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center,
+                          rho_fine_min, rho_fine_max, ppdRho, ppd_factor_rho_lo,
+                          ppd_factor_rho_hi, true, shrinklRhoBounds);
+    } else {
+      lRhoBounds =
+          Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center, rho_fine_diameter,
+                 ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi, true, shrinklRhoBounds);
+    }
+  } else {
+    lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
+  }
+  if (piecewiseT) {
+    lTBounds = Bounds(Bounds::TwoGrids(), TMin, TMax, TAnchor, TSplitPoint, ppdT,
+                      ppd_factor_T, true, shrinklTBounds);
+  } else {
+    lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
+  }
+  if (piecewiseSie) {
+    // compute temperature as a reasonable anchor point
+    constexpr int NT = 1;
+    constexpr EOS_INTEGER nXYPairs = 2;
+    EOS_INTEGER tableHandle[NT];
+    EOS_INTEGER tableType[NT] = {EOS_Ut_DT};
+    EOS_REAL rho[2], T[2], sie[2], dx[2], dy[2];
+    {
+      eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Ut_DT"}, Verbosity::Quiet);
+      EOS_INTEGER eospacEofRT = tableHandle[0];
+      rho[0] = rho[1] = densityToSesame(rhoAnchor);
+      T[0] = temperatureToSesame(TAnchor);
+      T[1] = temperatureToSesame(TSplitPoint);
+      eosSafeInterpolate(&eospacEofRT, nXYPairs, rho, T, sie, dx, dy, "EofRT",
+                         Verbosity::Quiet);
+      eosSafeDestroy(NT, tableHandle, Verbosity::Quiet);
+    }
+    const Real sieAnchor = sie[0];
+    const Real sieSplitPoint = sie[1];
+    leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
+                      ppdSie, ppd_factor_sie, true, shrinkleBounds);
+  } else {
+    leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
+  }
+
+  std::cout << "lRho bounds are\n"
+            << lRhoBounds << "lT bounds are\n"
+            << lTBounds << "lSie bounds are \n"
+            << leBounds << std::endl;
 
   return;
 }
@@ -315,10 +443,4 @@ bool checkValInMatBounds(int matid, const std::string &name, Real val, Real vmin
     return false;
   }
   return true;
-}
-
-int getNumPointsFromPPD(Real min, Real max, int ppd) {
-  Bounds b(min, max, 3, true);
-  Real ndecades = b.grid.max() - b.grid.min();
-  return static_cast<int>(std::ceil(ppd * ndecades));
 }

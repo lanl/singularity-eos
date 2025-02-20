@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -34,16 +34,18 @@
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 
-#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_builder.hpp>
+#include <singularity-eos/eos/eos_models.hpp>
+#include <singularity-eos/eos/eos_variant.hpp>
 
 using namespace singularity;
 
 using duration = std::chrono::microseconds;
 using dvec = std::vector<double>;
 using ivec = std::vector<int>;
-using Spiner::RegularGrid1D;
+
 using DataBox = Spiner::DataBox<Real>;
+using RegularGrid1D = Spiner::RegularGrid1D<Real>;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 using RView = Kokkos::View<Real *>;
@@ -56,6 +58,9 @@ constexpr Real T_MIN = 1.8e2; // Kelvin
 constexpr Real T_MAX = 1e3;
 constexpr Real E_MIN = 1e9;
 constexpr Real E_MAX = 1e13;
+using EOS = Variant<EOSPAC, UnitSystem<EOSPAC>, ShiftedEOS<EOSPAC>, ScaledEOS<EOSPAC>,
+                    ScaledEOS<ShiftedEOS<EOSPAC>>, BilinearRampEOS<EOSPAC>,
+                    BilinearRampEOS<ScaledEOS<EOSPAC>>>;
 
 inline auto now() { return std::chrono::high_resolution_clock::now(); }
 

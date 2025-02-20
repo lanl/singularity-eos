@@ -6,7 +6,7 @@ Contributing
 =============
 
 If you have any trouble with the project, or are interested in
-participating, please contact us by creating an issue on the github
+participating, please contact us by creating an issue on the GitHub
 repository, or submit a pull request!
 
 Pull request protocol
@@ -37,7 +37,7 @@ useful output. For example:
 
 Several sets of tests are triggered on a pull request: a static format
 check, a docs buld, and unit tests of analytic models and the stellar
-collapse model. These are run through github's CPU infrastructure. We
+collapse model. These are run through GitHub's CPU infrastructure. We
 have a second set of tests run on a wider set of architectures that
 also access the Sesame library, which we are not able to make public.
 
@@ -127,7 +127,7 @@ Interwoven Dependencies
 ``singularity-eos`` depends on several other open-source, Los Alamos
 maintained, projects. In particular, ``spiner`` and
 ``ports-of-call``. If you have issues with these projects, ideally
-submit issues on the relevant github pages. However, if you can't
+submit issues on the relevant GitHub pages. However, if you can't
 figure out where an issue belongs, no big deal. Submit where you can
 and we'll engage with you to figure out how to proceed.
 
@@ -217,7 +217,7 @@ wrapped with ``#ifdef SINGULARITY_USE_EOSPAC``. This might look something like
     #endif
            >{};
 
-Note the placement of commas and angle brackets. This example excludes 
+Note the placement of commas and angle brackets. This example excludes
 
 Step 3: Create tests for your EOS
 `````````````````````````````````
@@ -229,7 +229,7 @@ same. In general, we recommend you copy the general structure of one of the
 existing EOS-specific unit tests.
 
 After creating your tests, you will need to include the ``.cpp`` for your new
-test in the ``CMakeLists.txt`` file, 
+test in the ``CMakeLists.txt`` file,
 
 .. code-block:: cmake
 
@@ -256,19 +256,19 @@ instantiated when ``singularity-eos`` is compiled.  Therefore to
 exercise all code paths, it is best to create an ``EOS`` type
 instantiated as
 
-.. code-block:: c++
+.. code-block:: cpp
 
-    #include <singularity-eos/eos/eos.hpp>
-    using EOS = singularity::Variant<MyNewEOS>;``.
-    EOS my_eos = MyNewEOS(parameter1, parameter2, ...)
+  #include <singularity-eos/eos/eos.hpp>
+  using EOS = singularity::Variant<MyNewEOS, ...>;
+  EOS my_eos = MyNewEOS(parameter1, parameter2, ...)
 
 in order to properly test the functionality of a new EOS. Simply using the
 new class as the type such as
 
-.. code-block:: c++
+.. code-block:: cpp
 
-    #include <singularity-eos/eos/eos.hpp>
-    auto my_eos = my_new_eos(parameter1, parameter2, ...)
+  #include <singularity-eos/eos/eos.hpp>
+  auto my_eos = my_new_eos(parameter1, parameter2, ...)
 
 won't ensure that the new EOS is working correctly in singularity with the
 static polymorphism of the ``EOS`` type.
@@ -402,7 +402,7 @@ Some notes on style and code architecture
   but many of the coding habits advocated for by Holzmann produce
   long-lived, easy to understand, easy to parse, and easy to maintain code.
   And we take many of the rules to heart. Here are a few that are most
-  relevant to ``singularity-eos``. They have been adapted slightly to 
+  relevant to ``singularity-eos``. They have been adapted slightly to
   our context.
 
     #. Avoid complex flow constructs such as gotos.
@@ -458,7 +458,7 @@ style. Here we briefly discuss a few things one should be aware of.
   ``PORTABLE_FORCEINLINE_FUNCTION``. These macros are imported from
   the `ports-of-call`_ library and resolve to the appropriate
   decorations for a given device-side backend such as cuda so the code
-  compiles correctly. Code that doesn't need to run on device, 
+  compiles correctly. Code that doesn't need to run on device,
   such as EOS class constructors, does not need these decorations.
 
 * **Relocatable device code:** It is common in C++ to split code
@@ -653,7 +653,7 @@ number :math:`x` is represented as a mantissa and an exponent in base
 
    x = m 2^e
 
-for mantissa :math:`m` and exponent :math:`e`. The mantiss is
+for mantissa :math:`m` and exponent :math:`e`. The mantissa is
 guaranteed to be on the interval :math:`[1/2, 1)`. The standard
 library of most low-level languages provides a performant and portable
 routine to pick apart this represnetation, ``frexp``, which given a
@@ -667,34 +667,42 @@ of the mantissa plus the exponent:
    \lg(x) = \lg(m) + e
 
 Therefore, if we can find a fast, invertible approximation to
-:math:`\lg(m)`, we will have achieved our goal. It turns out the
-expression
+:math:`\lg(m)`, we will have achieved our goal. The linear
+interpolation of :math:`\lg(m)` on the given interval is
 
 .. math::
 
    2 (x - 1)
 
-works pretty well, so we use that. (To convince yourself of this note
-that for :math:`x=1/2` this expression returns -1 and for :math:`x=1`,
-it returns 0, which are the correct values of :math:`\lg(x)` at the
-bounds of the interval.) Thus our approximate, invertible expression
-for :math:`\lg` is just
+and the quadratic is
 
 .. math::
 
-   2 (m - 1) + e
+  -\frac{4}{3} (m -2) (m - 1)
 
-for the mantissa and exponent extracted via ``frexp``. This differs
-from :math:`lg` by a maximum of about 0.1, which translates to at most
-a 25 percent difference. As discussed above, however, the function
-itself is an exact representation of itself and the difference from
-:math:`lg` is acceptable.
+where the former produces a function that is piecewise :math:`C^1` and
+everywhere continuous. The latter produces a function that is
+everywhere :math:`C^1` and piecewise :math:`C^2`. Both functions are
+exactly exactly invertible. To invert, we use the built in function
+that inverts ``frexp``, ``ldexp``, which combines the mantissa and
+exponent into the original floating point representation.
 
-To invert, we use the built in function that inverts ``frexp``,
-``ldexp``, which combines the mantissa and exponent into the original
-floating point representation.
+While these functions are not exactly logarithms, they do work for
+building logarithmic grids. The smoothness of the transformation
+mapping from linear to "not-quite-log" space does matter for
+interpolation, however. Linear interpolation in "not-quite-log" space
+converges at second order only in the :math:`L^1` norm for the linear
+version of the approximate log. The quadratic version of the fast log
+provides second-order convergence in all norms, however.
 
-This approach is described in more detail in our `short note`_ on the topic.
+Finally, while ``frexp`` and ``ldexp`` are portable and performant,
+they are less performant than hand-implemented, low-level methods that
+leverage the bitwise structure of floating point numbers. These
+"bithacked" or "integer aliased" implementations are what are used in
+practice in the code.
+
+This approach is described in more detail in our `short note`_ on the
+topic.
 
 .. _Short note: https://arxiv.org/abs/2206.08957
 
@@ -714,7 +722,7 @@ Main``. Typically the branch for this merge request should be called
 full test suite passes for this PR.
 
 After that pull request is merged, go to the ``releases`` tab on the
-right sidebar on github, and draft a new release. Set the tag to
+right sidebar on GitHub, and draft a new release. Set the tag to
 ``v[release number]``, fill the comment with the changes in the
 changelog since the last release, and make the release.
 
@@ -746,3 +754,76 @@ Finally, the new ``package.py`` file needs to be synchronized with
 the new ``package.py`` file.
 
 .. _Spack upstream: https://github.com/spack/spack
+
+Continuous Integration
+----------------------
+
+``singularity-eos`` has two continuous integration (CI) systems. A public
+facing one via GitHub actions and an LANL internal one through a GitLab
+instance.
+
+The GitHub actions are configured via the files located in the
+``.github/workflows`` subdirectory.
+
+Our GitLab CI is configured via the ``.gitlab-ci.yml`` file and scripts located
+in the ``.gitlab`` subdirectory. To trigger the GitLab CI runs, you need to
+have access to our internal GitLab instance, push your branch to this second
+Git repository, and create a GitLab merge request (MR).
+
+Each GitLab MR will launch a pipeline with multiple jobs on various
+clusters. These jobs will build and tests specific configurations of
+``singularity-eos`` via Spack environments.
+
+These environments are defined in the internal XCAP deployment repository,
+which contains project and cluster specific Spack configurations, such as
+available compilers, system packages, preinstalled modules, etc.
+
+The XCAP deployment repository is used to create a XCAP-wide shared Spack
+installation with all the necessary dependencies for these Spack environments
+pre-built.
+
+Each GitLab CI job uses the ``.gitlab/build_and_test.sh`` script to create a
+temporary local Spack instance that is connected to an XCAP deployment on a
+specified cluster and selects one of the available environments to build.
+Internally it uses ``spack develop`` and ``spack build-env``  to prepare the
+CMake build folder and its Spack build environment. This avoids duplicating
+CMake logic in ``.gitlab-ci.yml``, since all CMake configurations are
+already encoded in the project's Spack ``package.py``. The
+``build_and_test.sh`` script has the following signature.
+
+.. code-block:: bash
+
+   source .gitlab/build_and_test.sh [--until PHASE] <SYSTEM_NAME> <ENV_NAME>
+
+By default, all phases defined in this script will be executed. With the
+``-u``/``--until`` optional argument you can specify the name of a phase where
+the script should stop. See the output of ``source .gitlab/build_and_test.sh -h``
+for more details.
+
+Reproducing a GitLab CI run
+```````````````````````````
+
+To simplify reproducability of CI runs, each GitLab job prints out a message on
+how to recreate the CI run by manually allocating a cluster node on a given
+system and executing the ``build_and_test.sh`` script.
+
+.. code-block:: 
+
+   #####################################################################
+ 
+   To recreate this CI run, follow these steps:
+ 
+   ssh darwin
+   cd /your/singularity-eos/checkout
+   .gitlab/download_prereq.sh
+   salloc -N 1 --qos=debug -p general,skylake-gold,skylake-platinum --constraint="(cpu_family:skylake)&ib:edr"
+   source .gitlab/build_and_test.sh --until install darwin openmpi-gcc
+ 
+   See 'source .gitlab/build_and_test.sh -h' for more options.
+ 
+   ######################################################################
+
+After the ``env`` phase, you can use ``activate_build_env`` to enable the Spack
+build environment. See ``source .gitlab/build_and_test.sh`` for a list of
+commands to trigger the remaining phases or use regular CMake commands to drive
+your build and testing.

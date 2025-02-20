@@ -1,0 +1,40 @@
+name: Sanitizer
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+    sanitizer:
+      name: Run clang sanitizer on minimal code subset
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+          with:
+            submodules: recursive
+        - name: Set system to non-interactive mode
+          run: export DEBIAN_FRONTEND=noninteractive
+        - name: install dependencies
+          run: |
+            sudo apt-get update -y -qq
+            sudo apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages -qq build-essential clang llvm
+        - name: build and run tests
+          run: |
+            mkdir -p bin
+            cd bin
+            cmake -DCMAKE_CXX_COMPILER=clang++ \
+                  -DCMAKE_CXX_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer" \
+                  -DCMAKE_BUILD_TYPE=Debug \
+                  -DSINGULARITY_STRICT_WARNINGS=ON \
+                  -DSINGULARITY_USE_FORTRAN=OFF \
+                  -DSINGULARITY_BUILD_FORTRAN_BACKEND=ON \
+                  -DSINGULARITY_BUILD_TESTS=ON \
+                  -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
+                  -DSINGULARITY_USE_KOKKOS=ON \
+                  ..
+            make -j4
+            ctest --output-on-failure

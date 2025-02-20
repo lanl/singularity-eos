@@ -3,7 +3,7 @@
 Mixed Cell Closures
 ====================
 
-In the single-material Euler equations, the mass and energy are typically
+In the single-material Euler equations, mass and energy are typically
 evolved and the EOS is called to provide a pressure for the momentum equations.
 When transitioning to a multi-material approach, a single velocity is typically
 used and the Euler equations are solved with respect to the bulk fluid motion.
@@ -20,7 +20,7 @@ to compute thermodynamic quantities in that cell for each material.
 Governing Equations and Assumptions
 ------------------------------------
 
-In a general sense then the mixed
+In a general sense the mixed
 material closure rule takes the form
 
 .. math::
@@ -75,7 +75,7 @@ Similarly the energy can be summed in a similar way so that
 
 .. math::
 
-  u = \rho \epsilon = \sum_{i = 0}^{N - 1} \rho_i \epsilon_i 
+  u = \rho \epsilon = \sum_{i = 0}^{N - 1} \rho_i \epsilon_i
   = \sum_{i = 0}^{N - 1} u_i
 
 where :math:`u` is the total internal energy density (internal energy per unit
@@ -115,6 +115,8 @@ closure state.
 
     \rho = \sum_{i=0}^{N - 1} \overline{\rho}_i = \sum_{i=0}^{N-1} \rho_i f_i
 
+
+.. _massandvolumefractions:
 .. note::
 
   Since mass fraction information is encoded in the specification of the
@@ -156,7 +158,7 @@ closure state.
   fractions by the material bulk moduli to reflect the relative
   compressibilities.
 
-Pressure-Temperature Equilibirum
+Pressure-Temperature Equilibrium
 --------------------------------
 
 At present, ``singularity-eos`` focuses on several methods for finding a PTE
@@ -169,12 +171,12 @@ In essence, the PTE equations can be posed as two residual equations:
 
 .. math::
 
-  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i = 
+  f_\mathrm{tot} - \sum\limits_{i=0}^{N-1} f_i =
     \sum\limits_{i=0}^{N-1} f_i^*(x_i^*, y_i^*) - f_i(x_i, y_i)
 
 .. math::
 
-  u_\mathrm{tot} - \sum\limits_{i=0}^{N-1} u_i = 
+  u_\mathrm{tot} - \sum\limits_{i=0}^{N-1} u_i =
     \sum\limits_{i=0}^{N-1} u_i^*(x_i^*, y_i^*) - u_i(x_i, y_i)
 
 where the superscript :math:`^*` denotes the variables at the PTE state,
@@ -187,8 +189,8 @@ These are two non-linear residual equations that will need to be solved. In
 ``singularity-eos`` a Newton-Raphson method is used that first relies on
 Taylor-expanding the equations about the equilibrium state in order to cast the
 equations in terms of an update to the unknowns. The expansion about an
-equilibrium state described by :math:`f_i^*(\rho_i, y_i)` and
-:math:`u_i^*(\rho_i, y_i)` is
+equilibrium state described by :math:`f_i^*(x_i, y_i)` and
+:math:`u_i^*(x_i, y_i)` is
 
 .. math::
 
@@ -215,17 +217,16 @@ new update is found until some tolerance is reached. When a good initial guess
 is used (such as a previous PTE state), some algorithms may converge in
 relatively few iterations.
 
-The choice of :math:`x` and :math:`y` is discussed below, but crucially it
-determines the number of equations and unknowns needed to specify the system.
-For example, if pressure, :math:`P`, and temperature, :math:`T`, are chosen,
-then the subscripts are eliminated since we seek a solution where all materials
-have the same temperature and pressure. In this formulation, there are two
-equations and two unkowns, but due to the difficulty of inverting an
-equation of state to be a function of pressure and temperature,
-``singularity-eos`` does not have any PTE solvers that are designed to use
-pressure and temperature as independent variables.
+The choice of :math:`x` and :math:`y` is discussed below, but
+crucially it determines the number of equations and unknowns needed to
+specify the system.  For example, if pressure, :math:`P`, and
+temperature, :math:`T`, are chosen, then the subscripts are eliminated
+since we seek a solution where all materials have the same temperature
+and pressure. (See :ref:`pressure-temperature-formulation`.) In this
+formulation, there are two equations and two unkowns, and one such
+solver is described below.
 
-Instead, all of the current PTE solvers in ``singularity-eos`` are cast in terms
+Most of the current PTE solvers in ``singularity-eos`` are cast in terms
 of volume fraction and some other independent variable. Using material volume
 fractions introduces :math:`N - 1` additional unknowns since all but one of the
 volume fractions are independent from each other. The assumption of pressure
@@ -267,7 +268,7 @@ derivatives must be transformed to volume fraction derivatives via
 
 .. math::
 
-  \left(\frac{\partial Q}{\partial f_i}\right)_X 
+  \left(\frac{\partial Q}{\partial f_i}\right)_X
     = - \frac{\rho_i^2}{\rho}\left(\frac{\partial Q}{\partial \rho_i}\right)_X,
 
 were :math:`Q` and :math:`X` are arbitrary thermodynamic variables. At this
@@ -276,8 +277,61 @@ choice of the second independent variable is discussed below and has
 implications for both the number of additional unknowns and the stability of the
 method.
 
+.. _pressure-temperature-formulation:
+The Pressure-Temperature Formulation
+`````````````````````````````````````
+
+An obvious choice is to treat the independent variables as pressure
+and temperature. Then one has only two equations and two unknowns. The
+residual contains only the volume fraction and energy summmation rules
+described above. Taylor expanding these residuals about fixed
+temeprature and pressure points leads to two residual equations of the
+form
+
+.. math::
+
+  1 - \sum_{i=0}^{N-1} f_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial f_i}{\partial P}\right)_T\\
+  u_{tot} - \sum_{i=0}^{N-1} u_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial P}\right)_T
+
+However, derivatives in the volume fraction are not easily
+accessible. To access them, we leverage the fact that
+
+.. math::
+
+  \bar{\rho}_i = \rho_i f_i,
+
+and thus
+
+.. math::
+
+  d f_i = - \frac{\overline{\rho}}{\rho_i^2} d \rho_i.
+
+Thus the residual can be recast as
+
+.. math::
+
+  f_\mathrm{tot} - \sum_{i=0}^{N-1} = -(T^* - T) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial T}\right)_P - (P^* - P) \sum_{i = 0}^{N-1} \frac{\bar{\rho}_i}{\rho_i^2} \left(\frac{\partial \rho_i}{\partial P}\right)_T\\
+  u_\mathrm{tot} - u_i = (T^* - T) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial T}\right)_P + (P^* - P) \sum_{i = 0}^{N-1} \left(\frac{\partial u_i}{\partial P}\right)_T
+
+where :math:`\rho_{\mathrm{tot}}` is the sum of densities over all
+materials. These residual equations can then be cast as a matrix
+equation to solve for pressure and temperature.
+
+The primary advantage of the pressure-temperature space solver is that
+it has only two independent variables and two unknowns, meaning the
+cost scales only linearly with the number of materials, not
+quadratically (or worse). The primary disadvantage, is that most
+equations of state are not formulated in terms of pressure and
+temperature, meaning additional inversions are required. In the case
+where a root-find is required for this inversion, performance may
+suffer for a small number of materials compared to a different
+formulation.
+
+In the code, this method is referred to as ``PTESolverPT``.
+
+.. _density-energy-formalism:
 The Density-Energy Formulation
-''''''''''''''''''''''''''''''
+```````````````````````````````
 
 One choice is to treat volume fractions and material energies as independent
 quantities, but the material energies provide :math:`N - 1` additional
@@ -316,7 +370,7 @@ more stable and performant and is usually preferrred to this formulation.
 In the code this is referred to as the ``PTESolverRhoU``.
 
 The Density-Temperature Formulation
-'''''''''''''''''''''''''''''''''''
+````````````````````````````````````
 
 Another choice is to treat the temperature as an independent variable, requiring
 no additional equations. The energy residual equation then takes the form
@@ -384,7 +438,7 @@ material pressures.
 In the code this is referred to as the ``PTESolverFixedP``.
 
 Using the Pressure-Temperature Equilibrium Solver
-'''''''''''''''''''''''''''''''''''''''''''''''''
+```````````````````````````````````````````````````
 
 The PTE machinery is implemented in the
 ``singularity-es/closure/mixed_cell_models.hpp`` header. It is
@@ -447,9 +501,11 @@ The constructor for the ``PTESolverRhoT`` is of the form
 .. code-block:: cpp
 
   template <typename EOS_t, typename Real_t, typename Lambda_t>
-  PTESolverRhoT(const int nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
+  PORTABLE_INLINE_FUNCTION
+  PTESolverRhoT(const std::size_t nmat, EOS_t &&eos, const Real vfrac_tot, const Real sie_tot,
                 Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp, Real_t &&press,
-                Lambda_t &&lambda, Real *scratch, const Real Tguess = 0);
+                Lambda_t &&lambda, Real *scratch, const Real Tnorm = 0.0,
+                const MixParams &params = MixParams())
 
 where ``nmat`` is the number of materials, ``eos`` is an indexer over
 equation of state objects, one per material, and ``vfrac_tot`` is a
@@ -463,9 +519,64 @@ one per material. ``press`` is an indexer over pressures, one per
 material. ``lambda`` is an indexer over lambda arrays, one per
 material. ``scratch`` is a pointer to pre-allocated scratch memory, as
 described above. It is assumed enough scratch has been allocated.
-Finally, the optional argument ``Tguess`` allows for host codes to
-pass in an initial temperature guess for the solver.  For more
-information on initial guesses, see the section below.
+The optional argument ``Tnorm`` allows for host codes to pass in a
+normalization for the temperature scale. Initial guesses for density
+and temperature may be passed in through the ``rho`` and ``temp`` input
+parameters.
+
+The optional ``MixParams`` input contains a struct of runtime
+parameters that may be used by the various PTE solvers. This struct
+contains the following member fields, with default values:
+
+.. code-block:: cpp
+
+  struct MixParams {
+    bool verbose = false; // verbosity
+    Real derivative_eps = 3.0e-6;
+    Real pte_rel_tolerance_p = 1.e-6;
+    Real pte_rel_tolerance_e = 1.e-6;
+    Real pte_rel_tolerance_t = 1.e-4;
+    Real pte_abs_tolerance_p = 0.0;
+    Real pte_abs_tolerance_e = 1.e-4;
+    Real pte_abs_tolerance_t = 0.0;
+    Real pte_residual_tolerance = 1.e-8;
+    std::size_t pte_max_iter_per_mat = 128;
+    Real line_search_alpha = 1.e-2;
+    std::size_t line_search_max_iter = 6;
+    Real line_search_fac = 0.5;
+    Real vfrac_safety_fac = 0.95;
+    Real temperature_limit = 1.0e15;
+    Real default_tguess = 300.;
+    Real min_dtde = 1.0e-16;
+  };
+
+where here ``verbose`` enables verbose output in the PTE solve is,
+``derivative_eps`` is the spacing used for finite differences
+evaluations of equations of state when building a jacobian. The
+``pte_rel_tolerance_p``, ``pte_rel_tolerance_e``, and
+``pte_rel_tolerance_t`` variables are relative tolerances for the
+error in the pressure, energy, temperature respectively. The
+``pte_abs_tolerance_*`` variables are the same but are absolute,
+rather than relative tolerances. ``pte_residual_tolerance`` is the
+absolute tolerance for the residual.
+
+The maximum number of iterations the solver is allowed to take before
+giving up is ``pte_max_iter_per_mat`` multiplied by the number of
+materials used. ``line_search_alpha`` is used as a safety factor in
+the line search. ``line_search_max_iter`` is the maximum number of
+iterations the solver is allowed to take in the line
+search. ``line_search_fac`` is the step size in the line
+search. ``vfrac_safety_fac`` limites the relative amount the volume
+fraction can take in a given iteration. ``temperature_limit`` is the
+maximum temperature allowed by the solver. ``default_tguess`` is used
+as an initial guess for temperature if a better guess is not passed in
+or cannot be inferred. ``min_dtde`` is the minmum that temperature is
+allowed to change with respect to energy when computing Jacobians.
+
+.. note::
+
+  If ``MixParams`` are not provided, the default values are used. Not
+  all ``MixParams`` are used by every solver.
 
 The constructor for the ``PTESolverRhoU`` has the same structure:
 
@@ -475,7 +586,7 @@ The constructor for the ``PTESolverRhoU`` has the same structure:
   PTESolverRhoU(const int nmat, const EOS_t &&eos, const Real vfrac_tot,
                 const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
-                const Real Tguess = 0);
+                const Real Tnorm = 0, const MixParams &params = MixParams());
 
 Both constructors are callable on host or device. In gerneral,
 densities and internal energies are the required inputs. However, all
@@ -486,19 +597,34 @@ thermodynamically consistent with the equilibrium solution.
 
 Once a PTE solver has been constructed, one performs the solve with
 the ``PTESolver`` function, which takes a ``PTESolver`` object as
-input and returns a boolean status of either success or failure. For
-example:
+input and returns a ``SolverStatus`` struct:
 
 .. code-block:: cpp
 
   auto method = PTESolverRhoT<decltype(eos), decltype(rho), decltype(lambda)>(NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda, scratch);
-  bool success = PTESolver(method);
+  auto status = PTESolver(method);
 
-For an example of the PTE solver machinery in use, see the
-``test_pte.cpp`` file in the tests directory.
+The status struct is of the form:
+
+.. code-block:: cpp
+
+  struct SolverStatus {
+    bool converged;
+    std::size_t max_niter;
+    std::size_t max_line_niter;
+    Real residual;
+  };
+
+where ``converged`` will report whether or not the solver successfully
+converged, ``residual`` will report the final value of the residual,
+``max_niter`` will report the total number of iterations that the
+solver performed and ``max_line_niter`` will report the maximum number
+of iterations within a line search that the solver performed. For an
+example of the PTE solver machinery in use, see the ``test_pte.cpp``
+file in the tests directory.
 
 Initial Guesses for PTE Solvers
-'''''''''''''''''''''''''''''''
+`````````````````````````````````
 
 As is always the case when solving systems of nonlinear equations, good initial
 guesses are important to ensure rapid convergence to the solution.  For the PTE
@@ -528,12 +654,14 @@ used to provide an initial guess.  This function takes the form
 where ``nmat`` is the number of materials, ``eos`` is an indexer over
 equation of state objects, ``u_tot`` is the total material internal
 energy density (energy per unit volume), ``rho`` is an indexer over
-material density, ``vfrac`` is an indexer over material volume fractions,
-and the optional argument ``Tguess`` allows for callers to pass in a guess
-that could accelerate finding a solution.  This function does a 1-D root find
-to find the temperature at which the material internal energies sum to the
-total.  The root find does not have a tight tolerance -- instead the
-hard-coded tolerance was selected to balance performance with the accuracy
-desired for an initial guess in a PTE solve.  If a previous temperature value
-is unavailable or some other process may have significantly modified the
-temperature since it was last updated, this function can be quite effective.
+material density, ``vfrac`` is an indexer over material volume
+fractions, and the optional argument ``Tguess`` allows for callers to
+pass in an initial guess that could accelerate finding a solution.
+This function does a 1-D root find to find the temperature at which
+the material internal energies sum to the total.  The root find does
+not have a tight tolerance -- instead the hard-coded tolerance was
+selected to balance performance with the accuracy desired for an
+initial guess in a PTE solve.  If a previous temperature value is
+unavailable or some other process may have significantly modified the
+temperature since it was last updated, this function can be quite
+effective.

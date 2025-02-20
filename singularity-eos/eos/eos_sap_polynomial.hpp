@@ -39,15 +39,17 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   PORTABLE_INLINE_FUNCTION
   SAP_Polynomial(const Real rho0, const Real a0, const Real a1, const Real a2c,
                  const Real a2e, const Real a3, const Real b0, const Real b1,
-                 const Real b2c, const Real b2e, const Real b3)
-      : _rho0(rho0), _a0(a0), _a1(a1), _a2c(a2c), _a2e(a2e), _a3(a3), _b0(b0), _b1(b1),
-        _b2c(b2c), _b2e(b2e), _b3(b3) {
-    checkParams();
+                 const Real b2c, const Real b2e, const Real b3,
+                 const MeanAtomicProperties &AZbar = MeanAtomicProperties())
+      : _a0(a0), _a1(a1), _a2c(a2c), _a2e(a2e), _a3(a3), _b0(b0), _b1(b1), _b2c(b2c),
+        _b2e(b2e), _b3(b3), _rho0(rho0), _AZbar(AZbar) {
+    CheckParams();
   }
 
   SAP_Polynomial GetOnDevice() { return *this; }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_rho0 >= 0, "Reference density must be non-negative");
+    _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -153,6 +155,12 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
     return rho / _rho0 - 1;
   }
 
+  // Essentially unbounded... I think.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return -1e100; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
@@ -176,6 +184,7 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   }
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(SAP_Polynomial)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -197,14 +206,7 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
     printf("      b2c = %g\n", _b2c);
     printf("      b2e = %g\n", _b2e);
     printf("      b3  = %g\n", _b3);
-  }
-  template <typename Indexer_t>
-  PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const {
-    PORTABLE_WARN("This function is a stub for an incomplete EoS.");
-    sie = 0.0;
-    rho = 0.0;
+    _AZbar.PrintParams();
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("SAP_Polynomial"); }
@@ -214,7 +216,7 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   Real _a0, _a1, _a2c, _a2e, _a3, _b0, _b1, _b2c, _b2e, _b3;
   // reference values
   Real _rho0;
-
+  MeanAtomicProperties _AZbar;
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
 };

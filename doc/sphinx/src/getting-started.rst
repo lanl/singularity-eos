@@ -9,18 +9,28 @@ At it's most basic, you can download and compile ``singularity-eos`` with:
 
   git clone --recursive git@github.com:lanl/singularity-eos.git
   cd singularity-eos
-  mkdir bin
-  cd bin
-  cmake -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_FORTRAN=OFF ..
-  make -j 
-  make install # optional: install into directory defined via CMAKE_INSTALL_PREFIX
+  cmake -B builddir -S . -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_FORTRAN=OFF -DSINGULARITY_BUILD_EXAMPLES=ON
+  cmake --build builddir --parallel
+  cmake --install builddir # optional: install into directory defined via CMAKE_INSTALL_PREFIX
 
-This will downloady singularity-eos with no optional dependencies and
+This will download ``singularity-eos`` with no optional dependencies and
 compile the capabilities available in that form. For more details, see
 :ref:`our build page <building>`.
 
+Once compiled, you can quickly check your builddir/install by going to
+``builddir/example`` and running ``./get_sound_speed_press``. You should be
+able to see the following output:
+
+.. code-block::
+
+  The final values are:
+  rho = 0.987467
+  uu  = 0.00987467
+  P   = 0.0059248
+  cs  = 0.0979796
+
 If the library is in your include and lib paths (or you built it
-in-tree), you can include the eos part of the library with
+in-tree), you can include the ``eos`` part of the library with
 
 .. code-block:: cpp
 
@@ -78,7 +88,7 @@ And that's it!
 Going Deeper
 --------------
 
-* You can find code examples in the ``examples`` source directory.
+* You can find code examples in the ``example`` source directory. We describe them :ref:`here <examples>`.
 * To learn more about the design philosophy, look :ref:`here <philosophy>`.
 * To learn about how to build, look at :ref:`our build document <building>`.
 * To learn more about the equation of state API, look :ref:`here <using-eos>`.

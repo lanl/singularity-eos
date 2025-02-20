@@ -3,6 +3,58 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR459]](https://github.com/lanl/singularity-eos/pull/459) Add electron and ion tables to EOSPAC and SpinerEOS backends
+- [[PR453]](https://github.com/lanl/singularity-eos/pull/453) A PT space PTE solver
+- [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
+
+### Fixed (Repair bugs, etc)
+- [[PR468]](https://github.com/lanl/singularity-eos/pull/468) Move definition of def_en and def_v to an implementation file
+- [[PR466]](https://github.com/lanl/singularity-eos/pull/466) Fully thread lambda inputs through the PTE solver
+- [[PR449]](https://github.com/lanl/singularity-eos/pull/449) Ensure that DensityEnergyFromPressureTemperature works for all equations of state and is properly tested
+- [[PR439]](https://github.com/lanl/singularity-eos/pull/439) Add mean atomic mass and number to EOS API
+- [[PR437]](https://github.com/lanl/singularity-eos/pull/437) Fix segfault on HIP, clean up warnings, add strict sanitizer test
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+
+## Release 1.9.1
+Date: 11/7/2024
+
+Release is in preparation for JOSS publication.
+
+### Added (new features/APIs/variables/...)
+- [[PR416]](https://github.com/lanl/singularity-eos/pull/416) Gibbs free energy
+- [[PR361]](https://github.com/lanl/singularity-eos/pull/361) Added tests for PTEsolver and added a strawman kinetic phase transition framework
+- [[PR410]](https://github.com/lanl/singularity-eos/pull/410) Enable serialization and de-serialization
+- [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Piecewise grids for Spiner EOS.
+
+### Fixed (Repair bugs, etc)
+- [[PR434]](https://github.com/lanl/singularity-eos/pull/434) Fix failure of eospac to build on HIP and segfaults with Evalaute
+- [[PR424]](https://github.com/lanl/singularity-eos/pull/424) Fix for variant patch: point to correct patch file
+- [[PR420]](https://github.com/lanl/singularity-eos/pull/420) Fix broken test_get_sg_eos
+- [[PR417]](https://github.com/lanl/singularity-eos/pull/417) Bugs in shared memory related to eospac resolved
+- [[PR330]](https://github.com/lanl/singularity-eos/pull/330) Includes a fix for extrapolation of specific internal energy in SpinerEOS.
+- [[PR401]](https://github.com/lanl/singularity-eos/pull/401) Fix for internal energy scaling in PTE closure
+- [[PR403]](https://github.com/lanl/singularity-eos/pull/403) Fix Gruneisen EOS DensityEnergyFromPressureTemperature function
+
+### Changed (changing behavior/API/variables/...)
+- [[PR407]](https://github.com/lanl/singularity-eos/pull/407) Update C++ standard to C++17
+
+### Infrastructure (changes irrelevant to downstream codes)
+- [[PR402]](https://github.com/lanl/singularity-eos/pull/402) Added stiff gas to python interface
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.9.0
+Date: 7/29/2024
+
+### Added (new features/APIs/variables/...)
+- [[PR377]](https://github.com/lanl/singularity-eos/pull/377) Moved much of the variant creating machinery and initialization machinery into separate header files. This is useful for downstream codes that use custom variants and helps with producing plugins.
+- [[PR292]](https://github.com/lanl/singularity-eos/pull/292) Added Carnahan-Starling EoS
 - [[PR#362]](https://github.com/lanl/singularity-eos/pull/362) Add lambda to thermalqs
 - [[PR#339]](https://github.com/lanl/singularity-eos/pull/339) Added COMPONENTS to singularity-eos CMake install, allowing to select a minimal subset needed e.g. for Fortran bindings only
 - [[PR#336]](https://github.com/lanl/singularity-eos/pull/336) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a pressure power law expansion in eta = 1-V/V0. PowerMG.
@@ -10,8 +62,10 @@
 - [[PR331]](https://github.com/lanl/singularity-eos/pull/331) Included code and documentation for a full, temperature consistent, Mie-Gruneisen EOS based on a linear Us-up relation. MGUsup.
 - [[PR326]](https://github.com/lanl/singularity-eos/pull/326) Document how to do a release
 - [[PR#357]](https://github.com/lanl/singularity-eos/pull/357) Added support for C++17 (e.g., needed when using newer Kokkos).
+- [[PR#382]](https://github.com/lanl/singularity-eos/pull/382) Added debug checks to the `get_sg_eos()` interface to ensure sane values are returned
 
 ### Fixed (Repair bugs, etc)
+- [[PR380]](https://github.com/lanl/singularity-eos/pull/380) Set material internal energy to 0 if not participating in the pte solve to make sure potentially uninitialized data is set.
 - [[PR370]](https://github.com/lanl/singularity-eos/pull/370) Fix bulk modulus calculation in spiner EOS
 - [[PR343]](https://github.com/lanl/singularity-eos/pull/343) Add chemical potentials to stellar collapse gold files
 - [[PR342]](https://github.com/lanl/singularity-eos/pull/342) Fix missing using statement in stellar collapse root finding routines
@@ -22,10 +76,12 @@
 - [[PR356]](https://github.com/lanl/singularity-eos/pull/356) Update CMake for proper Kokkos linking in Fortran interface
 - [[PR373]](https://github.com/lanl/singularity-eos/pull/373) Initialize cache in `get_sg_eos*` functions
 - [[PR374]](https://github.com/lanl/singularity-eos/pull/374) Make the Davis EOS more numerically robust
+- [[PR383]](https://github.com/lanl/singularity-eos/pull/383) Fix bug in step scaling for PTE solver
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR363]](https://github.com/lanl/singularity-eos/pull/363) Template lambda values for scalar calls
 - [[PR372]](https://github.com/lanl/singularity-eos/pull/372) Removed E0 from Davis Products EOS in favor of using the shifted EOS modifier. CHANGES API!
+- [[PR#382]](https://github.com/lanl/singularity-eos/pull/382) Changed `get_sg_eos()` API to allow optionally specifying the mass fraction cutoff for materials to participate in the PTE solver
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR329]](https://github.com/lanl/singularity-eos/pull/329) Move vinet tests into analytic test suite
@@ -158,7 +214,7 @@ Date: 07/07/2022
 
 This is the start of changelog
 
-© 2021-2023. Triad National Security, LLC. All rights reserved.  This
+© 2021-2024. Triad National Security, LLC. All rights reserved.  This
 program was produced under U.S. Government contract 89233218CNA000001
 for Los Alamos National Laboratory (LANL), which is operated by Triad
 National Security, LLC for the U.S.  Department of Energy/National

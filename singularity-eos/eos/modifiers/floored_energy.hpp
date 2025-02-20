@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_EOS_MINIMUM_ENERGY_
-#define _SINGULARITY_EOS_EOS_MINIMUM_ENERGY_
+#ifndef _SINGULARITY_EOS_EOS_FLOORED_ENERGY_
+#define _SINGULARITY_EOS_EOS_FLOORED_ENERGY_
 
 #include "stdio.h"
 #include <cstdlib>
@@ -28,43 +28,39 @@ namespace singularity {
 using namespace eos_base;
 
 template <typename T>
-class MinimumEnergy : public EosBase<MinimumEnergy<T>> {
+class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
  public:
   // Generic functions provided by the base class. These contain
   // e.g. the vector overloads that use the scalar versions declared
   // here We explicitly list, rather than using the macro because we
   // overload some methods.
-
-  // TODO(JMM): The modifier EOS's should probably call the specific
-  // sub-functions of the class they modify so that they can leverage,
-  // e.g., an especially performant or special version of these
-  using EosBase<MinimumEnergy<T>>::TemperatureFromDensityInternalEnergy;
-  using EosBase<MinimumEnergy<T>>::InternalEnergyFromDensityTemperature;
-  using EosBase<MinimumEnergy<T>>::PressureFromDensityTemperature;
-  using EosBase<MinimumEnergy<T>>::PressureFromDensityInternalEnergy;
-  using EosBase<MinimumEnergy<T>>::MinInternalEnergyFromDensity;
-  using EosBase<MinimumEnergy<T>>::EntropyFromDensityTemperature;
-  using EosBase<MinimumEnergy<T>>::EntropyFromDensityInternalEnergy;
-  using EosBase<MinimumEnergy<T>>::SpecificHeatFromDensityTemperature;
-  using EosBase<MinimumEnergy<T>>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<MinimumEnergy<T>>::BulkModulusFromDensityTemperature;
-  using EosBase<MinimumEnergy<T>>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<MinimumEnergy<T>>::GruneisenParamFromDensityTemperature;
-  using EosBase<MinimumEnergy<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<MinimumEnergy<T>>::FillEos;
+  using EosBase<FlooredEnergy<T>>::TemperatureFromDensityInternalEnergy;
+  using EosBase<FlooredEnergy<T>>::InternalEnergyFromDensityTemperature;
+  using EosBase<FlooredEnergy<T>>::PressureFromDensityTemperature;
+  using EosBase<FlooredEnergy<T>>::PressureFromDensityInternalEnergy;
+  using EosBase<FlooredEnergy<T>>::MinInternalEnergyFromDensity;
+  using EosBase<FlooredEnergy<T>>::EntropyFromDensityTemperature;
+  using EosBase<FlooredEnergy<T>>::EntropyFromDensityInternalEnergy;
+  using EosBase<FlooredEnergy<T>>::SpecificHeatFromDensityTemperature;
+  using EosBase<FlooredEnergy<T>>::SpecificHeatFromDensityInternalEnergy;
+  using EosBase<FlooredEnergy<T>>::BulkModulusFromDensityTemperature;
+  using EosBase<FlooredEnergy<T>>::BulkModulusFromDensityInternalEnergy;
+  using EosBase<FlooredEnergy<T>>::GruneisenParamFromDensityTemperature;
+  using EosBase<FlooredEnergy<T>>::GruneisenParamFromDensityInternalEnergy;
+  using EosBase<FlooredEnergy<T>>::FillEos;
 
   using BaseType = T;
 
   // give me std::format or fmt::format...
   static std::string EosType() {
-    return std::string("MinimumEnergy<") + T::EosType() + std::string(">");
+    return std::string("FlooredEnergy<") + T::EosType() + std::string(">");
   }
 
-  static std::string EosPyType() { return std::string("MinimumEnergy") + T::EosPyType(); }
+  static std::string EosPyType() { return std::string("FlooredEnergy") + T::EosPyType(); }
 
-  MinimumEnergy() = default;
+  FlooredEnergy() = default;
 
-  auto GetOnDevice() { return MinimumEnergy<T>(t_.GetOnDevice()); }
+  auto GetOnDevice() { return FlooredEnergy<T>(t_.GetOnDevice()); }
   inline void Finalize() { t_.Finalize(); }
 
   template <typename Indexer_t = Real *>
@@ -156,7 +152,7 @@ class MinimumEnergy : public EosBase<MinimumEnergy<T>> {
     // This code makes the assumption that `sie_use` is first populated with the
     // apprioriate minimum values
     static auto const name = singularity::mfuncname::member_func_name(
-        typeid(MinimumEnergy<T>).name(), __func__);
+        typeid(FlooredEnergy<T>).name(), __func__);
     static auto const cname = name.c_str();
     portableFor(
         cname, 0, num,

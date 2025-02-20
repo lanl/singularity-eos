@@ -7,7 +7,7 @@ macro(singularity_import_mpark_variant)
       COMMAND
         patch -N -s -V never
         ${CMAKE_CURRENT_SOURCE_DIR}/utils/variant/include/mpark/variant.hpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/utils/cuda_compatibility.patch)
+        ${CMAKE_CURRENT_SOURCE_DIR}/utils/gpu_compatibility.patch)
   endif()
   if(NOT TARGET mpark_variant)
     add_subdirectory(utils/variant)

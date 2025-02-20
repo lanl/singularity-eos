@@ -74,7 +74,7 @@ inline void PressureSoundSpeedFromDensityEnergyDensity(double *rho, // inputs
 
   // Loop through cells and use the FillEos function call
   for (int i = 0; i < Ncells; ++i) {
-    double eps, temp, cv;
+    double temp, cv;
     // FillEos is very general and is capable of modifying any of the inputs,
     // so const vars cannot be passed into it. However, it is often more performant
     // than making individual function calls.
@@ -91,36 +91,8 @@ int main() {
   constexpr double gm1 = 0.6;
   constexpr double Cv = 2;
 
-  // We initialize the eos two ways to show how it can be done
   // First initialize the EOS the "easy" way:
   EOS eos1 = IdealGas(gm1, Cv);
-
-  // The EOS Builder automates building an eos with modifiers, such as
-  // shift and scale by worrying about the combinatorics/switch
-  // statements, etc, for you. We'll initialize a shifted/scaled EOS
-  // with shift 0 and scale 1 to show you how it's done
-  constexpr double shift = 0;
-  constexpr double scale = 1;
-
-  // Eos builder requires a type specification,
-  // and then for each modifier, it requires a set of parameters,
-  // which are implemented as a variatic dictionary.
-  //
-  // This is equivalent to
-  // EOS eos2 = Shifted(Scaled(IdealGas(gm1, Cv), scale), shift);
-  EOSBuilder::EOSType type = EOSBuilder::EOSType::IdealGas;
-  EOSBuilder::modifiers_t modifiers;                               // this is a dictionary
-  EOSBuilder::params_t base_params, shifted_params, scaled_params; // so are these
-  base_params["Cv"].emplace<Real>(
-      Cv); // base params is the parameters of the underlying eos
-  base_params["gm1"].emplace<Real>(gm1);
-  shifted_params["shift"].emplace<Real>(
-      shift); // these are the parameters for the modifiers
-  scaled_params["scale"].emplace<Real>(scale); // you use strings for the variable names
-  // for each modifier put the relevant params in the modifiers object
-  modifiers[EOSBuilder::EOSModifier::Shifted] = shifted_params;
-  modifiers[EOSBuilder::EOSModifier::Scaled] = scaled_params;
-  EOS eos2 = EOSBuilder::buildEOS(type, base_params, modifiers); // build the builder
 
   // If you're on device, you need to call
   // eos1.GetOnDevice();
@@ -155,7 +127,6 @@ int main() {
   // This usually only does anything if you're on device, but for GPU-data it
   // will call the appropriate destructor.
   eos1.Finalize();
-  eos2.Finalize();
 
   return 0;
 }

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -35,29 +36,7 @@ using namespace eos_base;
 template <typename T>
 class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
  public:
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-
-  // TODO(JMM): The modifier EOS's should probably call the specific
-  // sub-functions of the class they modify so that they can leverage,
-  // e.g., an especially performant or special version of these
-  using EosBase<ShiftedEOS<T>>::TemperatureFromDensityInternalEnergy;
-  using EosBase<ShiftedEOS<T>>::InternalEnergyFromDensityTemperature;
-  using EosBase<ShiftedEOS<T>>::PressureFromDensityTemperature;
-  using EosBase<ShiftedEOS<T>>::PressureFromDensityInternalEnergy;
-  using EosBase<ShiftedEOS<T>>::MinInternalEnergyFromDensity;
-  using EosBase<ShiftedEOS<T>>::EntropyFromDensityTemperature;
-  using EosBase<ShiftedEOS<T>>::EntropyFromDensityInternalEnergy;
-  using EosBase<ShiftedEOS<T>>::SpecificHeatFromDensityTemperature;
-  using EosBase<ShiftedEOS<T>>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<ShiftedEOS<T>>::BulkModulusFromDensityTemperature;
-  using EosBase<ShiftedEOS<T>>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityTemperature;
-  using EosBase<ShiftedEOS<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<ShiftedEOS<T>>::FillEos;
-
+  SG_ADD_BASE_CLASS_USINGS(ShiftedEOS<T>);
   using BaseType = T;
 
   // give me std::format or fmt::format...
@@ -68,8 +47,15 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   static std::string EosPyType() { return std::string("Shifted") + T::EosPyType(); }
 
   // move semantics ensures dynamic memory comes along for the ride
-  ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {}
+  ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {
+    CheckParams();
+  }
   ShiftedEOS() = default;
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(shift_), "Shift must be a number");
+    t_.CheckParams();
+  }
 
   auto GetOnDevice() { return ShiftedEOS<T>(t_.GetOnDevice(), shift_); }
   inline void Finalize() { t_.Finalize(); }
@@ -365,14 +351,31 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return t_.MinimumTemperature();
   }
-
-  inline constexpr bool IsModified() const { return true; }
-
-  inline constexpr T UnmodifyOnce() { return t_; }
-
-  inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return t_.GetUnmodifiedObject();
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
+    return t_.MaximumDensity();
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
+    return t_.MinimumPressure();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
+    return t_.MaximumPressureAtTemperature(temp);
+  }
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicMassFromDensityTemperature(rho, temperature, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(rho, temperature, lambda);
+  }
+
+  SG_ADD_MODIFIER_METHODS(T, t_);
+  SG_ADD_MODIFIER_MEAN_METHODS(t_)
 
  private:
   T t_;

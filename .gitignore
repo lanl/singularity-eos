@@ -12,4 +12,4 @@ spack-configure-*
 *.sublime*
 CMakeUserPresets.json
 build/
-
+goldfiles.tar.gz

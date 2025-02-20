@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
@@ -83,14 +84,21 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
       : t_(std::forward<T>(t)), r0_(r0), a_(a), b_(b), c_(c),
         rmid_(r0 * (a - b * c) / (a - b)), Pmid_(a * (rmid_ / r0 - 1.0)) {
     // add input parameter checks to ensure validity of the ramp
-    assert(r0 > 0.0);
-    assert(a > 0.0);
-    assert(b >= 0);
-    assert(a != b);
+    CheckParams();
   }
   BilinearRampEOS() = default;
 
   using BaseType = T;
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(r0_ > 0.0, "Reference density > 0");
+    PORTABLE_ALWAYS_REQUIRE(a_ > 0.0, "Ramp a coefficient > 0");
+    PORTABLE_ALWAYS_REQUIRE(b_ >= 0, "Non-negative ramp b coefficient");
+    PORTABLE_ALWAYS_REQUIRE(a_ != b_, "Ramp a and b coefficients may not be the same");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(rmid_), "Mid density must be well defined");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(Pmid_), "Mid pressure must be well defined");
+    t_.CheckParams();
+  }
 
   // give me std::format or fmt::format...
   static std::string EosType() {
@@ -202,6 +210,7 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
+    // TODO(JMM): This doesn't seem right. dpdrho relevant.
     return t_.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
   }
   template <typename Indexer_t = Real *>
@@ -232,6 +241,35 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     // bulk modulus
     bmod = BulkModulusFromDensityInternalEnergy(rho, energy, lambda);
     return;
+  }
+
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
+    return t_.MinimumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
+    return t_.MinimumTemperature();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
+    return t_.MaximumDensity();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
+    return t_.MinimumPressure();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
+    return t_.MaximumPressureAtTemperature(temp);
+  }
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicMassFromDensityTemperature(rho, temperature, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(rho, temperature, lambda);
   }
 
   // vector implementations
@@ -444,13 +482,8 @@ class BilinearRampEOS : public EosBase<BilinearRampEOS<T>> {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
   }
 
-  inline constexpr bool IsModified() const { return true; }
-
-  inline constexpr T UnmodifyOnce() { return t_; }
-
-  inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return t_.GetUnmodifiedObject();
-  }
+  SG_ADD_MODIFIER_METHODS(T, t_);
+  SG_ADD_MODIFIER_MEAN_METHODS(t_)
 
  private:
   T t_;

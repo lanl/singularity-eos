@@ -36,25 +36,28 @@ using namespace eos_base;
 class StiffGas : public EosBase<StiffGas> {
  public:
   StiffGas() = default;
-  PORTABLE_INLINE_FUNCTION StiffGas(Real gm1, Real Cv, Real Pinf, Real qq)
+  PORTABLE_INLINE_FUNCTION
+  StiffGas(Real gm1, Real Cv, Real Pinf, Real qq,
+           const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _Pinf(Pinf), _qq(qq), _T0(ROOM_TEMPERATURE),
         _P0(ATMOSPHERIC_PRESSURE), _qp(0.0),
         _rho0(robust::ratio(_P0 + Pinf, gm1 * Cv * _T0)),
         _vol0(robust::ratio(gm1 * Cv * _T0, _P0 + Pinf)),
         _sie0(robust::ratio(_P0 + (gm1 + 1.0) * Pinf, _P0 + Pinf) * Cv * _T0 + qq),
         _bmod0(gm1 * (gm1 + 1.0) * robust::ratio(_P0 + Pinf, gm1 * Cv * _T0) * Cv * _T0),
-        _dpde0(_rho0 * _gm1) {
-    checkParams();
+        _dpde0(_rho0 * _gm1), _AZbar(AZbar) {
+    CheckParams();
   }
-  PORTABLE_INLINE_FUNCTION StiffGas(Real gm1, Real Cv, Real Pinf, Real qq, Real qp,
-                                    Real T0, Real P0)
+  PORTABLE_INLINE_FUNCTION
+  StiffGas(Real gm1, Real Cv, Real Pinf, Real qq, Real qp, Real T0, Real P0,
+           const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _Pinf(Pinf), _qq(qq), _T0(T0), _P0(P0), _qp(qp),
         _rho0(robust::ratio(P0 + Pinf, gm1 * Cv * T0)),
         _vol0(robust::ratio(gm1 * Cv * _T0, _P0 + Pinf)),
         _sie0(robust::ratio(P0 + (gm1 + 1.0) * Pinf, P0 + Pinf) * Cv * T0 + qq),
         _bmod0(gm1 * (gm1 + 1.0) * robust::ratio(P0 + Pinf, gm1 * Cv * T0) * Cv * T0),
-        _dpde0(_rho0 * _gm1) {
-    checkParams();
+        _dpde0(_rho0 * _gm1), _AZbar(AZbar) {
+    CheckParams();
   }
   StiffGas GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
@@ -63,9 +66,10 @@ class StiffGas : public EosBase<StiffGas> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(), robust::ratio(rho * (sie - _qq) - _Pinf, rho * _Cv));
   }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_Cv >= 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
+    _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
@@ -161,6 +165,7 @@ class StiffGas : public EosBase<StiffGas> {
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(StiffGas)
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
@@ -172,6 +177,7 @@ class StiffGas : public EosBase<StiffGas> {
     printf("Stiff Gas Parameters:\nGamma = %g\nCv    = %g\nPinf  = %g\nq     = "
            "%g\n",
            _gm1 + 1.0, _Cv, _Pinf, _qq);
+    _AZbar.PrintParams();
   }
   template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
@@ -192,6 +198,7 @@ class StiffGas : public EosBase<StiffGas> {
   Real _T0, _P0, _qp;
   // reference values
   Real _rho0, _vol0, _sie0, _bmod0, _dpde0;
+  MeanAtomicProperties _AZbar;
   // static constexpr const Real _T0 = ROOM_TEMPERATURE;
   // static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
   static constexpr const unsigned long _preferred_input =

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -63,6 +63,10 @@ int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const doub
                       const double bb, const double qq, int const *const enabled,
                       double *const vals);
 
+int init_sg_CarnahanStarling(const int matindex, EOS *eos, const double gm1,
+                             const double Cv, const double bb, const double qq,
+                             int const *const enabled, double *const vals);
+
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
 #ifdef SINGULARITY_USE_HELMHOLTZ
@@ -110,9 +114,11 @@ int get_sg_eos( // sizing information
     double *press, double *pmax, double *vol, double *spvol, double *sie, double *temp,
     double *bmod, double *dpde, double *cv,
     // per material quantities
-    double *frac_mass, double *frac_vol, double *frac_sie,
+    double *frac_mass, double *frac_vol, double *frac_ie,
     // optional per material quantities
-    double *frac_bmod, double *frac_dpde, double *frac_cv);
+    double *frac_bmod, double *frac_dpde, double *frac_cv,
+    // Mass fraction cutoff for PTE
+    double mass_frac_cutoff);
 
 int finalize_sg_eos(const int nmat, EOS *&eos, const int own_kokkos = 0);
 
@@ -147,6 +153,9 @@ int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const doubl
 
 int init_sg_NobleAbel(const int matindex, EOS *eos, const double gm1, const double Cv,
                       const double bb, const double qq);
+
+int init_sg_CarnahanStarling(const int matindex, EOS *eos, const double gm1,
+                             const double Cv, const double bb, const double qq);
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 

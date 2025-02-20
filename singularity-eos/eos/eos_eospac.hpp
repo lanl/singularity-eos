@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -19,12 +19,14 @@
 #include <algorithm>
 #include <cstdio>
 #include <map>
+#include <regex>
 #include <string>
 #include <vector>
 
 #include <eos_Interface.h>
 // ports-of-call
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 #include <singularity-eos/base/constants.hpp>
@@ -43,16 +45,12 @@ using namespace EospacWrapper;
 // Only really works in serial
 // Not really supported on device
 
-// SG_PIF_NOWARN
-// this pragma disables host-device warnings when cuda enabled
-#if defined(__CUDACC__)
-#define SG_PIF_NOWARN #pragma nv_exec_check_disable
-#endif // __CUDACC__
-
-// force this macro to be defined regardless of complexity of logic above
-#ifndef SG_PIF_NOWARN
-#define SG_PIF_NOWARN
-#endif // !defind SG_PIF_NOWARN
+// TODO(JMM): Move this into ports of call or base if needed elsehwere.
+#if defined(__CUDA_ARCH__) || __HIP_DEVICE_COMPILE__
+#define SINGULARITY_ON_DEVICE 1
+#else
+#define SINGULARITY_ON_DEVICE 0
+#endif // ON DEVICE
 
 namespace impl_eospac {
 
@@ -132,91 +130,114 @@ inline void SetUpOutputScalingOption(EOS_INTEGER options[], EOS_REAL values[],
 class EOSPAC : public EosBase<EOSPAC> {
 
  public:
+  struct Options {
+    TableSplit split = TableSplit::Total;
+    bool invert_at_setup = false;
+    Real insert_data = 0.0;
+    eospacMonotonicity monotonicity = eospacMonotonicity::none;
+    bool apply_smoothing = false;
+    eospacSplit apply_splitting = eospacSplit::none;
+    bool linear_interp = false;
+  };
+
   inline EOSPAC() = default;
 
   ////add options here... and elsewhere
-  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
+  // Complete constructor
+  inline EOSPAC(int matid, TableSplit split, bool invert_at_setup = false,
+                Real insert_data = 0.0,
                 eospacMonotonicity monotonicity = eospacMonotonicity::none,
                 bool apply_smoothing = false,
                 eospacSplit apply_splitting = eospacSplit::none,
                 bool linear_interp = false);
+  // Overloads with fewer positional arguments
+  inline EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
+                eospacMonotonicity monotonicity = eospacMonotonicity::none,
+                bool apply_smoothing = false,
+                eospacSplit apply_splitting = eospacSplit::none,
+                bool linear_interp = false)
+      : EOSPAC(matid, TableSplit::Total, invert_at_setup, insert_data, monotonicity,
+               apply_smoothing, apply_splitting, linear_interp) {}
+  inline EOSPAC(int matid, const Options &opts)
+      : EOSPAC(matid, opts.split, opts.invert_at_setup, opts.insert_data,
+               opts.monotonicity, opts.apply_smoothing, opts.apply_splitting,
+               opts.linear_interp) {}
+
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    // TODO(JMM): More validation checks?
+    PORTABLE_ALWAYS_REQUIRE(rho_min_ >= 0, "Non-negative minimum density");
+    PORTABLE_ALWAYS_REQUIRE(temp_min_ >= 0, "Non-negative minimum temperature");
+    AZbar_.CheckParams();
+  }
   inline EOSPAC GetOnDevice() { return *this; }
-  SG_PIF_NOWARN
+
+  std::size_t DynamicMemorySizeInBytes() const;
+  std::size_t DumpDynamicMemory(char *dst);
+  std::size_t SetDynamicMemory(char *src,
+                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS);
+  std::size_t SharedMemorySizeInBytes() const;
+  constexpr bool AllDynamicMemoryIsShareable() const { return false; }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   PressureFromDensityTemperature(const Real rho, const Real temperature,
                                  Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
       const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const;
-  SG_PIF_NOWARN
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
@@ -459,8 +480,11 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                              lambdas);
   }
 
+  // TODO(JMM): Add performant entropy and Gibbs Free Energy
   using EosBase<EOSPAC>::FillEos;
   using EosBase<EOSPAC>::EntropyIsNotEnabled;
+
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
 
   // EOSPAC vector implementations
   template <typename LambdaIndexer>
@@ -1102,14 +1126,17 @@ class EOSPAC : public EosBase<EOSPAC> {
   static std::string EosPyType() { return EosType(); }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("EOSPAC parameters:\nmatid = %i\n", matid_);
+    AZbar_.PrintParams();
   }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rho_min_; }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return temp_min_; }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const { return press_min_; }
 
  private:
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::temperature;
   int matid_;
+  TableSplit split_;
   static constexpr int NT = 7;
   EOS_INTEGER PofRT_table_;
   EOS_INTEGER TofRE_table_;
@@ -1119,7 +1146,6 @@ class EOSPAC : public EosBase<EOSPAC> {
   EOS_INTEGER PofRE_table_;
   EOS_INTEGER EcofD_table_;
   EOS_INTEGER tablehandle[NT];
-  EOS_INTEGER EOS_Info_table_;
   static constexpr Real temp_ref_ = 293;
   Real rho_ref_ = 1;
   Real sie_ref_ = 1;
@@ -1130,6 +1156,11 @@ class EOSPAC : public EosBase<EOSPAC> {
   Real dvdt_ref_ = 1;
   Real rho_min_ = 0;
   Real temp_min_ = 0;
+  Real press_min_ = 0;
+  // TODO(JMM): Is the fact that EOS_INTEGER isn't a size_t a
+  // problem? Could it ever realistically overflow?
+  EOS_INTEGER shared_size_, packed_size_;
+  MeanAtomicProperties AZbar_;
 
   static inline std::map<std::string, unsigned int> &scratch_nbuffers() {
     static std::map<std::string, unsigned int> nbuffers = {
@@ -1154,21 +1185,41 @@ class EOSPAC : public EosBase<EOSPAC> {
 // Implementation details below
 // ======================================================================
 
-inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
-                      EospacWrapper::eospacMonotonicity monotonicity,
+inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
+                      Real insert_data, EospacWrapper::eospacMonotonicity monotonicity,
                       bool apply_smoothing, EospacWrapper::eospacSplit apply_splitting,
                       bool linear_interp)
-    : matid_(matid) {
+    : matid_(matid), split_(split) {
   using namespace EospacWrapper;
-  EOS_INTEGER tableType[NT] = {EOS_Pt_DT, EOS_T_DUt,  EOS_Ut_DT, EOS_D_PtT,
-                               EOS_T_DPt, EOS_Pt_DUt, EOS_Uc_D};
-  eosSafeLoad(
-      NT, matid, tableType, tablehandle,
-      std::vector<std::string>({"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT", "EOS_D_PtT",
-                                "EOS_T_DPt", "EOS_Pt_DUt", "EOS_Uc_D"}),
-      Verbosity::Quiet, invert_at_setup = invert_at_setup, insert_data = insert_data,
-      monotonicity = monotonicity, apply_smoothing = apply_smoothing,
-      apply_splitting = apply_splitting, linear_interp = linear_interp);
+  auto TableSelect = [&](auto a, auto b, auto c) {
+    if (split == TableSplit::Total) return a;
+    if (split == TableSplit::ElectronOnly)
+      return b;
+    else // if (split == TableSplit::IonCold)
+      return c;
+  };
+  EOS_INTEGER tableType[NT] = {TableSelect(EOS_Pt_DT, EOS_Pe_DT, EOS_Pic_DT),
+                               TableSelect(EOS_T_DUt, EOS_T_DUe, EOS_T_DUic),
+                               TableSelect(EOS_Ut_DT, EOS_Ue_DT, EOS_Uic_DT),
+                               EOS_D_PtT,
+                               TableSelect(EOS_T_DPt, EOS_T_DPe, EOS_T_DPic),
+                               TableSelect(EOS_Pt_DUt, EOS_Pe_DUe, EOS_Pic_DUic),
+                               EOS_Uc_D};
+  std::vector<std::string> tableNames = {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT",
+                                         "EOS_D_PtT", "EOS_T_DPt", "EOS_Pt_DUt",
+                                         "EOS_Uc_D"};
+  if (split != TableSplit::Total) {
+    auto rt = std::regex("t");
+    std::string newstr = (split == TableSplit::ElectronOnly) ? "e" : "ic";
+    for (auto &s : tableNames) {
+      if (s != "EOS_D_PtT") {
+        s = std::regex_replace(s, rt, newstr);
+      }
+    }
+  }
+  eosSafeLoad(NT, matid, tableType, tablehandle, tableNames, Verbosity::Debug,
+              invert_at_setup, insert_data, monotonicity, apply_smoothing,
+              apply_splitting, linear_interp);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
@@ -1177,12 +1228,31 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
   PofRE_table_ = tablehandle[5];
   EcofD_table_ = tablehandle[6];
 
+  // Shared memory info
+  {
+    EOS_INTEGER NTABLES[] = {NT};
+    EOS_INTEGER error_code = EOS_OK;
+#ifdef SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
+    eos_GetSharedPackedTablesSize(NTABLES, tablehandle, &packed_size_, &shared_size_,
+                                  &error_code);
+#else
+    eos_GetPackedTablesSize(NTABLES, tablehandle, &packed_size_, &error_code);
+    shared_size_ = 0;
+#endif // SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
+    eosCheckError(error_code, "Get shared memory info", Verbosity::Debug);
+  }
+
   // Set reference states and table bounds
   SesameMetadata m;
-  eosGetMetadata(matid, m, Verbosity::Quiet);
+  eosGetMetadata(matid, m, Verbosity::Debug);
   rho_ref_ = m.normalDensity;
   rho_min_ = m.rhoMin;
   temp_min_ = m.TMin;
+  press_min_ = m.PMin;
+
+  // use std::max to hydrogen, in case of bad table
+  AZbar_.Abar = std::max(1.0, m.meanAtomicMass);
+  AZbar_.Zbar = std::max(1.0, m.meanAtomicNumber);
 
   EOS_REAL R[1] = {rho_ref_};
   EOS_REAL T[1] = {temperatureToSesame(temp_ref_)};
@@ -1208,31 +1278,74 @@ inline EOSPAC::EOSPAC(const int matid, bool invert_at_setup, Real insert_data,
       robust::ratio(dpde_ref_ * cv_ref_, rho_ref_ * rho_ref_ * pressureFromSesame(DPDR));
 }
 
-SG_PIF_NOWARN
+inline std::size_t EOSPAC::DynamicMemorySizeInBytes() const { return packed_size_; }
+inline std::size_t EOSPAC::DumpDynamicMemory(char *dst) {
+  static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
+  EOS_INTEGER NTABLES[] = {NT};
+  EOS_INTEGER error_code = EOS_OK;
+  eos_GetPackedTables(NTABLES, tablehandle, (EOS_CHAR *)dst, &error_code);
+  eosCheckError(error_code, "eos_GetPackedTables", Verbosity::Debug);
+  return packed_size_; // JMM: Note this is NOT shared memory size
+}
+inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
+  static_assert(sizeof(char) == sizeof(EOS_CHAR), "EOS_CHAR is one byte");
+  EOS_INTEGER NTABLES[] = {NT};
+  EOS_INTEGER error_code = EOS_OK;
+#ifdef SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
+  PORTABLE_ALWAYS_REQUIRE(
+      stngs.data != nullptr,
+      "EOSPAC with shared memory active requires a shared memory pointer");
+  // EOS_BOOLEAN is not a type alias
+  EOS_BOOLEAN root = stngs.is_domain_root ? EOS_TRUE : EOS_FALSE;
+  eos_SetSharedPackedTables(NTABLES, &packed_size_, (EOS_CHAR *)src,
+                            (EOS_CHAR *)stngs.data, root, tablehandle, &error_code);
+#else
+  eos_SetPackedTables(NTABLES, &packed_size_, (EOS_CHAR *)src, tablehandle, &error_code);
+#endif // SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
+  eosCheckError(error_code, "eos_SetSharedPackedTables", Verbosity::Debug);
+  PofRT_table_ = tablehandle[0]; // these get re-set
+  TofRE_table_ = tablehandle[1];
+  EofRT_table_ = tablehandle[2];
+  RofPT_table_ = tablehandle[3];
+  TofRP_table_ = tablehandle[4];
+  PofRE_table_ = tablehandle[5];
+  EcofD_table_ = tablehandle[6];
+  return packed_size_;
+}
+inline std::size_t EOSPAC::SharedMemorySizeInBytes() const { return shared_size_; }
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::TemperatureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, E[1] = {sieToSesame(sie)}, T[1], dTdr[1], dTde[1];
   EOS_INTEGER nxypairs = 1;
   EOS_INTEGER table = TofRE_table_;
   eosSafeInterpolate(&table, nxypairs, R, E, T, dTdr, dTde, "TofRE", Verbosity::Quiet);
   return Real(temperatureFromSesame(T[0]));
+#endif // ON_DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, P[1], T[1] = {temperatureToSesame(temp)}, dPdr[1], dPdT[1];
   EOS_INTEGER nxypairs = 1;
   EOS_INTEGER table = PofRT_table_;
   eosSafeInterpolate(&table, nxypairs, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet);
   return Real(pressureFromSesame(P[0]));
+#endif // ON DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
     const Real rho, const Real temperature, Indexer_t &&lambda) const {
@@ -1240,11 +1353,13 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
   return 1.0;
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
 EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
                 const unsigned long output, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+#else
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, T[1] = {temperatureToSesame(temp)};
   EOS_REAL E[1] = {sieToSesame(sie)}, P[1] = {pressureToSesame(press)};
@@ -1257,6 +1372,9 @@ EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &b
   }
   if (output & thermalqs::density) {
     if (input & thermalqs::pressure && input & thermalqs::temperature) {
+      PORTABLE_REQUIRE(split_ == TableSplit::Total,
+                       "Density of pressure and temperature only supported for total "
+                       "tables at this time");
       EOS_INTEGER table = RofPT_table_;
       eosSafeInterpolate(&table, nxypairs, P, T, R, dx, dy, "RofPT", Verbosity::Quiet);
       rho = R[0];
@@ -1322,42 +1440,61 @@ EOSPAC::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &b
     }
     bmod = bulkModulusFromSesame(std::max(BMOD, 0.0));
   }
+#endif // ON DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::InternalEnergyFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
   const unsigned long output = thermalqs::specific_internal_energy;
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return sie;
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
   const unsigned long output = thermalqs::bulk_modulus;
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return bmod;
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityTemperature(
     const Real rho, const Real temp, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real RHO = rho, TEMP = temp, sie, press, cv, bmod;
   const unsigned long output = thermalqs::specific_heat;
   FillEos(RHO, TEMP, sie, press, cv, bmod, output, lambda);
   return cv;
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_INTEGER options[]{EOS_Y_CONVERT, EOS_F_CONVERT};
   EOS_REAL values[]{sieFromSesame(1.0), pressureFromSesame(1.0)};
@@ -1369,11 +1506,16 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityInternalEnergy(
                      options, values, nopts);
 
   return Real(P[0]);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 EOSPAC::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_INTEGER options[]{EOS_F_CONVERT};
   EOS_REAL values[]{sieFromSesame(1.0)};
@@ -1385,36 +1527,55 @@ EOSPAC::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
                      options, values, nopts);
 
   return Real(S[0]);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return EntropyFromDensityTemperature(rho, temp, lambda);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::SpecificHeatFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return SpecificHeatFromDensityTemperature(rho, temp, lambda);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::BulkModulusFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return BulkModulusFromDensityTemperature(rho, temp, lambda);
+#endif // ON DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityTemperature(
     const Real rho, const Real temperature, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, T[1] = {temperatureToSesame(temperature)};
   EOS_REAL E[1], P[1], dx[1], dy[1];
@@ -1428,19 +1589,31 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityTemperature(
   DPDT = dy[0];
   DPDE = DPDT / DEDT;
   return robust::ratio(pressureFromSesame(sieToSesame(DPDE)), rho);
+#endif // ON DEVICE
 }
-SG_PIF_NOWARN
+
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::GruneisenParamFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
   Real temperature = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return GruneisenParamFromDensityTemperature(rho, temperature, lambda);
+#endif // ON DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
     const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+#else
+  PORTABLE_REQUIRE(split_ == TableSplit::Total,
+                   "Density of pressure and temperature only supported for total "
+                   "tables at this time");
+
   using namespace EospacWrapper;
   EOS_REAL P[1] = {pressureToSesame(press)};
   EOS_REAL T[1] = {temperatureToSesame(temp)};
@@ -1455,14 +1628,17 @@ PORTABLE_INLINE_FUNCTION void EOSPAC::DensityEnergyFromPressureTemperature(
   table = EofRT_table_;
   eosSafeInterpolate(&table, nxypairs, R, T, E, dx, dy, "EofPRT", Verbosity::Quiet);
   sie = sieFromSesame(E[0]);
+#endif // ON DEVICE
 }
 
-SG_PIF_NOWARN
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
 EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                                Real &bmod, Real &dpde, Real &dvdt,
                                Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+#else
   using namespace EospacWrapper;
   rho = rho_ref_;
   temp = temp_ref_;
@@ -1472,6 +1648,7 @@ EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Re
   bmod = bmod_ref_;
   dpde = dpde_ref_;
   dvdt = dvdt_ref_;
+#endif // ON DEVICE
 }
 
 } // namespace singularity

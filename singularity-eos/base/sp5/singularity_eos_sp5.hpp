@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 // Extra definitions to the SP5 file format required for singularity-eos
 // Author: Jonah Miller (jonahm@lanl.gov)
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -20,12 +20,18 @@
 namespace SP5 {
 
 constexpr char defaultSesFileName[] = "sesame_table.sp5";
+constexpr char logType[] = "log_type";
 
 namespace Depends {
 constexpr char logRhoLogSie[] = "dependsLogRhoLogSie";
 constexpr char logRhoLogT[] = "dependsLogRhoLogT";
 constexpr char coldCurve[] = "coldCurve";
 } // namespace Depends
+
+namespace SubTable {
+constexpr char electronOnly[] = "electronOnly";
+constexpr char ionCold[] = "ionCold";
+} // namespace SubTable
 
 namespace Offsets {
 constexpr char messageName[] = "interpretation";

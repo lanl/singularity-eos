@@ -36,25 +36,28 @@ using namespace eos_base;
 class NobleAbel : public EosBase<NobleAbel> {
  public:
   NobleAbel() = default;
-  PORTABLE_INLINE_FUNCTION NobleAbel(Real gm1, Real Cv, Real bb, Real qq)
+  PORTABLE_INLINE_FUNCTION
+  NobleAbel(Real gm1, Real Cv, Real bb, Real qq,
+            const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _bb(bb), _qq(qq), _T0(ROOM_TEMPERATURE),
         _P0(ATMOSPHERIC_PRESSURE), _qp(0.0),
         _rho0(robust::ratio(_P0, gm1 * Cv * _T0 + bb * _P0)),
         _vol0(robust::ratio(gm1 * Cv * _T0 + bb * _P0, _P0)), _sie0(Cv * _T0 + qq),
         _bmod0(robust::ratio(_rho0 * Cv * _T0 * gm1 * (gm1 + 1.0),
                              (1.0 - bb * _rho0) * (1.0 - bb * _rho0))),
-        _dpde0(robust::ratio(_rho0 * gm1, 1.0 - bb * _rho0)) {
-    checkParams();
+        _dpde0(robust::ratio(_rho0 * gm1, 1.0 - bb * _rho0)), _AZbar(AZbar) {
+    CheckParams();
   }
-  PORTABLE_INLINE_FUNCTION NobleAbel(Real gm1, Real Cv, Real bb, Real qq, Real qp,
-                                     Real T0, Real P0)
+  PORTABLE_INLINE_FUNCTION
+  NobleAbel(Real gm1, Real Cv, Real bb, Real qq, Real qp, Real T0, Real P0,
+            const MeanAtomicProperties &AZbar = MeanAtomicProperties())
       : _Cv(Cv), _gm1(gm1), _bb(bb), _qq(qq), _T0(T0), _P0(P0), _qp(qp),
         _rho0(robust::ratio(P0, gm1 * Cv * T0 + bb * P0)),
         _vol0(robust::ratio(gm1 * Cv * T0 + bb * P0, P0)), _sie0(Cv * T0 + qq),
         _bmod0(robust::ratio(_rho0 * Cv * T0 * gm1 * (gm1 + 1.0),
                              (1.0 - bb * _rho0) * (1.0 - bb * _rho0))),
-        _dpde0(robust::ratio(_rho0 * gm1, 1.0 - bb * _rho0)) {
-    checkParams();
+        _dpde0(robust::ratio(_rho0 * gm1, 1.0 - bb * _rho0)), _AZbar(AZbar) {
+    CheckParams();
   }
   NobleAbel GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
@@ -63,10 +66,11 @@ class NobleAbel : public EosBase<NobleAbel> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(robust::SMALL(), (sie - _qq) / _Cv);
   }
-  PORTABLE_INLINE_FUNCTION void checkParams() const {
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_Cv > 0, "Heat capacity must be positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 >= 0, "Gruneisen parameter must be positive");
     PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be positive");
+    _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
@@ -88,7 +92,11 @@ class NobleAbel : public EosBase<NobleAbel> {
     return std::max(robust::SMALL(),
                     robust::ratio(_gm1 * rho * (sie - _qq), 1.0 - _bb * rho));
   }
-
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return _qq;
+  }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
@@ -170,6 +178,7 @@ class NobleAbel : public EosBase<NobleAbel> {
   }
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(NobleAbel)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -182,6 +191,7 @@ class NobleAbel : public EosBase<NobleAbel> {
     printf("Noble-Abel Parameters:\nGamma = %g\nCv    = %g\nb     = %g\nq     = "
            "%g\n",
            _gm1 + 1.0, _Cv, _bb, _qq);
+    _AZbar.PrintParams();
   }
   template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION void
@@ -201,6 +211,7 @@ class NobleAbel : public EosBase<NobleAbel> {
   Real _T0, _P0, _qp;
   // reference values
   Real _rho0, _vol0, _sie0, _bmod0, _dpde0;
+  MeanAtomicProperties _AZbar;
   // static constexpr const Real _T0 = ROOM_TEMPERATURE;
   // static constexpr const Real _P0 = ATMOSPHERIC_PRESSURE;
   static constexpr const unsigned long _preferred_input =

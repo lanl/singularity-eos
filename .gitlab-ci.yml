@@ -1,334 +1,278 @@
-###################
-# Global Settings #
-###################
-
 stages:
-  - prepare
   - build_n_test
 
 variables:
+  PROJECT_NAME: singularity-eos
+  ENABLE_CDASH: true
   GIT_SUBMODULE_STRATEGY: normal
-  XCAP_PROJECT_DIR: "/usr/projects/xcap/oss"
-  TESTING_CLUSTER: darwin
-  SINGULARITY_GOLDFILES_VERSION: "goldfiles-1.8.0"
-  SINGULARITY_EOS_GCC_VERSION: "10.3.0"
-  SINGULARITY_EOS_OPENMPI_VERSION: "4.1.1"
-  SINGULARITY_EOS_CUDA_VERSION: "11.6.0"
-  SINGULARITY_EOS_BUILD_TYPE: "RelWithDebInfo"
-  SINGULARITY_EOS_CXX_STANDARD: 14
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+spiner+hdf5+python+tests%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
-  COLOR_CYAN: "\e[1;36m"
-  COLOR_PLAIN: "\e[0m"
-  # uncomment to have the CI Spack installation for debugging
-  # PROJECT_TMP_CI_DIR: "${CI_PROJECT_DIR}"
-  # uncomment & set to different spack upstream for testing
-  # PROJECT_TMP_SPACK_DIR: "deployment/CI/spack-v0.20.1-8"
-  # uncomment for spack debug output
-  # PROJECT_SPACK_DEBUG_FLAG: "-d"
+  # use this variable if there is a xcap/deployment MR you want to use instead
+  # PROJECT_SPACK_ENV_VERSION: mr/62/2024-10-15
 
-workflow:
+include:
+ - .gitlab/common.yml
+
+# Spack environments are defined in
+# https://re-git.lanl.gov/xcap/deployment/-/tree/xcap-spack-env/systems
+# for each system and for each XCAP project.
+#
+# The project configuration can be found at the top of
+# .gitlab/build_and_test.sh.
+#
+# Each environment is uniquely identified by
+# ${SYSTEM_NAME}/${PROJECT_GROUP}/${PROJECT_NAME}/${SPACK_ENV_NAME}
+#
+# For creating a new custom environment for testing use the special
+# 'custom-spec' or 'custom-file` environments.
+#
+# The 'custom-spec` environment allows you specify an arbitrary Spack spec to
+# be added to a system-specific empty Spack environment. Use the SPACK_ENV_SPEC
+# environment variable to define the spec you want to add.
+
+# The 'custom-file` environment allows you to manually define an environment
+# from scratch.  Use the SPACK_ENV_FILE environment variable to specify the
+# path to the YAML file you want to use. Note, the environment will be placed
+# in ${SYSTEM_NAME}/${PROJECT_GROUP}/${PROJECT_NAME}/custom-file/spack.yaml and
+# can therefore make relative includes to common configuration files.
+
+prereq_offline_deps:
+  stage: build_n_test
+  extends: [.ascgit_job]
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_PIPELINE_SOURCE == "pipeline"
     - if: $CI_PIPELINE_SOURCE == "schedule"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_COMMIT_TAG
-
-default:
-  tags:
-    - darwin-slurm-shared
-  id_tokens:
-    SITE_ID_TOKEN:
-      aud: https://asc-git.lanl.gov
-
-##########################
-# Build Matrix Variables #
-##########################
-
-.buildtype_debug: &buildtype_debug
-  SINGULARITY_EOS_BUILD_TYPE: "Debug"
-
-.buildtype_release: &buildtype_release
-  SINGULARITY_EOS_BUILD_TYPE: "Release"
-  
-.buildtype_relDebugInfo: &buildtype_relDebugInfo
-  SINGULARITY_EOS_BUILD_TYPE: "RelWithDebInfo"
-
-.gpu: &gpu
-  SINGULARITY_USE_CUDA: "true"
-  SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+tests+cuda+kokkos+spiner+hdf5 cuda_arch=${SINGULARITY_CUDA_ARCH} +kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=14 ^cuda@${SINGULARITY_EOS_CUDA_VERSION} ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
-
-.fort: &fort
-  SINGULARITY_USE_FORTRAN: "true"
-
-.nofort: &nofort
-  SINGULARITY_USE_FORTRAN: "false"
-
-.python: &python
-    SINGULARITY_BUILD_PYTHON: "ON"
-
-######################
-# Platform Variables #
-######################
-
-.rocinante_shell:
-  tags:
-    - rocinante
-    - shell
-
-.rocinante_batch:
-  tags:
-    - rocinante
-    - batch
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  needs: []
   variables:
-    TESTING_CLUSTER: rocinante
-    SINGULARITY_EOS_GCC_VERSION: "12.2.0"
-    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+mpi+spiner+hdf5+python+tests%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^cray-mpich"
-    SCHEDULER_PARAMETERS: "--nodes=1 --time 2:00:00 -L none@slurmdb --account=asc-ci --qos=ci --reservation=ci --partition=ci"
-    HDF5_USE_FILE_LOCKING: "FALSE"
-
-.skylake: &skylake
-  SCHEDULER_PARAMETERS: "--nodes=1 -p skylake-gold,skylake-platinum"
-
-.x86volta: &x86volta
-    SINGULARITY_CUDA_ARCH: 70
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=volta-x86 -C cpu_family:haswell"
-
-.a100: &a100
-    SINGULARITY_CUDA_ARCH: 80
-    SCHEDULER_PARAMETERS: "--nodes=1 --partition=shared-gpu-ampere"
-
-#######################
-# Job Script Template #
-#######################
-
-.download_prereq:
-  stage: prepare
+    GIT_SUBMODULE_STRATEGY: none
   script:
-   - wget https://github.com/lanl/singularity-eos/releases/download/${SINGULARITY_GOLDFILES_VERSION}/goldfiles.tar.gz
+   - .gitlab/download_prereq.sh
   artifacts:
     paths:
       - goldfiles.tar.gz
 
-.test:
-  stage: build_n_test
-  before_script:
-    - echo "Running on $(hostname)"
-    - section() { echo $'\e[0K'"section_$1:$(date +%s):$2"$'\r\e[0K'"${3+${COLOR_CYAN}$3${COLOR_PLAIN}}"; }
-    - export PYTHONNOUSERSITE=1
-    - export SPACK_DISABLE_LOCAL_CONFIG=true
-    - export SPACK_SKIP_MODULES=true
-    - export TMP_USER_PROJECT_DIR="/tmp/${USER}/${CI_PROJECT_NAME}/${CI_JOB_NAME}"
-    - export PROJECT_TMP_CI_DIR=${PROJECT_TMP_CI_DIR:-${TMP_USER_PROJECT_DIR}}
-    - export SPACK_USER_CACHE_PATH="${PROJECT_TMP_CI_DIR}/spack-local"
-    - export DEVEL_SPACK_ROOT="${PROJECT_TMP_CI_DIR}/spack"
-    - export DEVEL_SPACK_MIRROR="${CI_PROJECT_DIR}/spack-mirror"
-    - rm -rf ${SPACK_USER_CACHE_PATH} ${DEVEL_SPACK_ROOT}
-    - |
-      if [[ -z "${PROJECT_TMP_SPACK_DIR}" ]]; then
-        export PROJECT_SPACK_ROOT="${XCAP_PROJECT_DIR}/spack-${TESTING_CLUSTER}"
-      else
-        export PROJECT_SPACK_ROOT="${XCAP_PROJECT_DIR}/${PROJECT_TMP_SPACK_DIR}-${TESTING_CLUSTER}"
-      fi
-    - section start "spack_init[collapsed=true]" "Creating Spack instance at ${DEVEL_SPACK_ROOT}"
-    - echo "Upstream ${PROJECT_SPACK_ROOT}"
-    - mkdir -m 2770 -p ${PROJECT_TMP_CI_DIR}
-    - |
-      rsync -rpl \
-          --exclude=".git" \
-          --exclude={"*__pycache__*","*.pyc"} \
-          --include="etc/spack/**" \
-          --include="lib/spack/**" \
-          --exclude-from=${PROJECT_SPACK_ROOT}/.gitignore \
-          ${PROJECT_SPACK_ROOT}/ ${DEVEL_SPACK_ROOT}/
-    - sed -i "s;xcap-admin;xcap;g" "${DEVEL_SPACK_ROOT}/etc/spack/packages.yaml"
-    - source ${DEVEL_SPACK_ROOT}/share/spack/setup-env.sh
-    - spack --version
-    - spack compiler list
-    - section end spack_init
-  script:
-    - |
-      if [[ "${TESTING_CLUSTER}" = "rocinante" ]]; then
-        module load PrgEnv-gnu
-        module load gcc/${SINGULARITY_EOS_GCC_VERSION}
-      else
-        module load gcc/${SINGULARITY_EOS_GCC_VERSION}
-        module load cuda/${SINGULARITY_EOS_CUDA_VERSION}
-        module load openmpi/${SINGULARITY_EOS_OPENMPI_VERSION}-gcc_${SINGULARITY_EOS_GCC_VERSION}
-      fi
-    - |
-      if [[ "${CI_COMMIT_BRANCH}" == "${CI_DEFAULT_BRANCH}" ]];
-      then
-        section start "spack_build[collapsed=true]" "Building via Spack"
-        spack env create spack_build_env
-        spack env activate spack_build_env
-        spack repo add ${DEVEL_SPACK_ROOT}/var/spack/repos/xcap_deployment
-        spack repo add spack-repo
-        spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/spiner spiner@main
-        spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/ports-of-call ports-of-call@main
-        spack config add upstreams:default:install_tree:${PROJECT_SPACK_ROOT}/opt/spack/
-        spack dev-build -j $(nproc) ${SINGULARITY_EOS_SPACK_SPEC}
-        spack env deactivate
-        section end spack_build
-      fi
-    - section start "spack_env[collapsed=true]" "Creating Spack environment"
-    - spack env create spack_env
-    - spack env activate spack_env
-    - spack repo add ${DEVEL_SPACK_ROOT}/var/spack/repos/xcap_deployment
-    - spack repo add spack-repo
-    - spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/spiner spiner@main
-    - spack develop --no-clone -p ${CI_PROJECT_DIR}/utils/ports-of-call ports-of-call@main
-    - spack develop --no-clone -p ${CI_PROJECT_DIR} singularity-eos@main
-    - spack config add upstreams:default:install_tree:${PROJECT_SPACK_ROOT}/opt/spack/
-    - spack spec -I ${SINGULARITY_EOS_SPACK_SPEC}
-    - spack add ${SINGULARITY_EOS_SPACK_SPEC}
-    - spack install -j $(nproc) --show-log-on-error --no-checksum --yes-to-all -u cmake
-    - section end spack_env
-    - |
-      if [[ -n ${SINGULARITY_USE_CUDA} ]];
-      then
-        export SINGULARITY_NVCC_WRAPPER="$(which nvcc_wrapper)";
-        export SINGULARITY_CMAKE_CXX_COMPILER_FLAG="-DCMAKE_CXX_COMPILER=${SINGULARITY_NVCC_WRAPPER}";
-        echo "passing '${SINGULARITY_CMAKE_CXX_COMPILER_FLAG}' to cmake"
-      fi
-    - mkdir -p build
-    - cd build
-    - |
-      cmake -DCMAKE_INSTALL_PREFIX=${CI_PROJECT_DIR}/install ${SINGULARITY_CMAKE_CXX_COMPILER_FLAG} \
-            -DCMAKE_BUILD_TYPE=${SINGULARITY_EOS_BUILD_TYPE} \
-            -DCMAKE_CXX_STANDARD=${SINGULARITY_EOS_CXX_STANDARD} \
-            -DSINGULARITY_USE_EOSPAC=ON \
-            -DSINGULARITY_USE_SPINER=ON \
-            -DSINGULARITY_USE_SPINER_WITH_HDF5=ON \
-            -DSINGULARITY_BUILD_SESAME2SPINER=ON \
-            -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON \
-            -DSINGULARITY_BUILD_PYTHON=${SINGULARITY_BUILD_PYTHON:-OFF} \
-            -DSINGULARITY_BUILD_TESTS=ON \
-            -DSINGULARITY_BUILD_EXAMPLES=ON \
-            -DSINGULARITY_TEST_SESAME=ON \
-            -DSINGULARITY_TEST_STELLAR_COLLAPSE=ON \
-            -DSINGULARITY_TEST_PYTHON=${SINGULARITY_BUILD_PYTHON:-OFF} \
-            -DSINGULARITY_USE_CUDA=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_KOKKOS=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_KOKKOSKERNELS=${SINGULARITY_USE_CUDA:-OFF} \
-            -DSINGULARITY_USE_FORTRAN=${SINGULARITY_USE_FORTRAN:-OFF} \
-            -DSINGULARITY_GOLDFILE_URL=file://${CI_PROJECT_DIR}/goldfiles.tar.gz \
-            ..
-    - make -j $(nproc) || make VERBOSE=1
-    - |
-      if [[ ${CI_JOB_NAME} =~ "install" ]];
-      then
-        make install
-        touch tests.xml
-      else
-        ./sesame2spiner/sesame2spiner -s materials.sp5 ../sesame2spiner/examples/unit_tests/*.dat;
-        ./sesame2spiner/sesame2spiner -s duplicates.sp5 ../sesame2spiner/examples/duplicate-test/*.dat;
-        export CTEST_OUTPUT_ON_FAILURE=1
-        ctest --output-junit tests.xml
-      fi
-  artifacts:
-    paths:
-      - build/tests.xml
-    reports:
-      junit: build/tests.xml
-
-########
-# Jobs #
-########
-
-download_prereq:
-  extends:
-    - .download_prereq
-
-test_gnu_skylake:
-  needs: [download_prereq]
-  extends: .test
+openmpi_gcc:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
-    <<: *skylake
-    <<: *python
+    SPACK_ENV_NAME: openmpi-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-test_x86_volta_gpu:
-  needs: [download_prereq]
-  extends: .test
+openmpi_fortran_gcc:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
-    <<: *x86volta
-    <<: *buildtype_release
-    <<: *gpu
+    SPACK_ENV_NAME: openmpi-fortran-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-test_x86_ampere_gpu:
-  needs: [download_prereq]
-  extends: .test
+openmpi_cuda_gcc_ampere:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
-    <<: *a100
-    <<: *buildtype_release
-    <<: *gpu
+    SPACK_ENV_NAME: openmpi-cuda-gcc-ampere
+    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-install_gnu_skylake_fort:
-  needs: [download_prereq]
-  extends: .test
+openmpi_cuda_gcc_volta:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
-    <<: *skylake
-    <<: *python
-    <<: *fort
+    SPACK_ENV_NAME: openmpi-cuda-gcc-volta
+    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-install_gnu_skylake_fort_kokkos:
-  needs: [download_prereq]
-  extends: .test
-  variables:
-    <<: *skylake
-    <<: *python
-    <<: *fort
-    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+python+mpi+tests+kokkos+spiner+hdf5+kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=${SINGULARITY_EOS_CXX_STANDARD} +openmp ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+# currently disabled due to very long compilation times
+#openmpi_fortran_cuda_gcc_ampere:
+#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+#  needs:
+#   - prereq_offline_deps
+#  variables:
+#    SPACK_ENV_NAME: openmpi-fortran-cuda-gcc-ampere
+#    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
+#    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
+#
+#openmpi_fortran_cuda_gcc_volta:
+#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+#  needs:
+#   - prereq_offline_deps
+#  variables:
+#    SPACK_ENV_NAME: openmpi-fortran-cuda-gcc-volta
+#    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+#    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-install_gnu_skylake_fort_kokkos_cxx17:
-  needs: [download_prereq]
-  extends: .test
-  variables:
-    <<: *skylake
-    <<: *python
-    <<: *fort
-    SINGULARITY_EOS_CXX_STANDARD: 17
-    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+python+mpi+tests+kokkos+spiner+hdf5+kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=${SINGULARITY_EOS_CXX_STANDARD} +openmp ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+# EXAMPLE of how to modify an existing Spack environment and/or set CMake options
+#openmpi_cuda_gcc_volta_noclosure:
+#  stage: build_n_test
+#  extends: [.ascgit_job, .darwin_job, .darwin_regular_job,]
+#  needs:
+#   - prereq_offline_deps
+#  variables:
+#    SPACK_ENV_NAME: openmpi-cuda-gcc-volta
+#    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+#    SINGULARITY_EOS_SPEC: "%gcc@=12.2.0 +mpi+cuda+kokkos+spiner+hdf5+kokkos-kernels+tests~closure~fortran build_extra=sesame,stellarcollapse cuda_arch=70"
+#    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
+#  script:
+#   - source .gitlab/build_and_test.sh --until env ${CLUSTER} ${SPACK_ENV_NAME}
+#   - spack config add "packages:singularity-eos:require:'${SINGULARITY_EOS_SPEC}'"
+#   - spack concretize -f --fresh
+#   - spack_cmake_configure
+#   - cmake_build -DSINGULARITY_BUILD_CLOSURE=off -DSINGULARITY_USE_FORTRAN=off
+#   - cmake_test
+#   - cmake_install
 
-install_gnu_skylake_fort_static_kokkos:
-  needs: [download_prereq]
-  extends: .test
+openmpi_fortran_kokkos_openmp_gcc:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
-    <<: *skylake
-    <<: *python
-    <<: *fort
-    SINGULARITY_EOS_SPACK_SPEC: "singularity-eos@main+python+mpi+tests+kokkos+spiner+hdf5+kokkos-kernels%gcc@=${SINGULARITY_EOS_GCC_VERSION} ^kokkos std=${SINGULARITY_EOS_CXX_STANDARD} ~shared +openmp ^kokkos-kernels~shared ^openmpi@${SINGULARITY_EOS_OPENMPI_VERSION}"
+    SPACK_ENV_NAME: openmpi-fortran-kokkos-openmp-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-install_gnu_skylake_nofort:
-  needs: [download_prereq]
-  extends: .test
+openmpi_fortran_kokkos_static_openmp_gcc:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
-    <<: *skylake
-    <<: *python
-    <<: *nofort
+    SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-test_gnu_rocinante:
-  needs: [download_prereq]
-  extends:
-   - .rocinante_batch
-   - .test
+openmpi_rocm_gcc:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
-    <<: *python
+    SPACK_ENV_NAME: openmpi-rocm-gcc
+    SCHEDULER_PARAMETERS: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-install_gnu_rocinante_fort:
-  needs: [download_prereq]
-  extends:
-   - .rocinante_batch
-   - .test
+openmpi_fortran_rocm_gcc:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
-    <<: *python
-    <<: *fort
+    SPACK_ENV_NAME: openmpi-fortran-rocm-gcc
+    SCHEDULER_PARAMETERS: "-n 1 --qos=debug -p shared-gpu-amd-mi250"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
-install_gnu_rocinante_nofort:
-  needs: [download_prereq]
-  extends:
-   - .rocinante_batch
-   - .test
+rocinante_craympich_gcc:
+  extends: [.ascgit_job, .rocinante_job, .rocinante_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
   variables:
-    <<: *python
-    <<: *nofort
+    SPACK_ENV_NAME: craympich-gcc
+    SUBMIT_TO_CDASH: false
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}"
+    SUBMIT_ON_ERROR: false          # Venado nodes don't have network access, don't try to send from compute node
+    SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
+
+rocinante_craympich_fortran_gcc:
+  extends: [.ascgit_job, .rocinante_job, .rocinante_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: craympich-fortran-gcc
+    SUBMIT_TO_CDASH: false
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}"
+    SUBMIT_ON_ERROR: false          # Venado nodes don't have network access, don't try to send from compute node
+    SUBMIT_AFTER: "${ENABLE_CDASH}" # after_script runs on a network connected system
+
+rzansel_spectrummpi_cuda_volta_gcc:
+  extends: [.ascgit_job, .rzansel_job, .rzansel_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: spectrummpi-cuda-volta-gcc
+    SUBMIT_TO_CDASH: false              # disable CDash submission, since LLNL systems can't reach them
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}" # but do build with CTest to create the necessary files
+    SUBMIT_ON_ERROR: false              # no network access, don't try to send from compute node
+    SUBMIT_AFTER: false                 # submit host also doesn't have access to CDash server
+    CREATE_SUBMIT_ARTIFACT: "${ENABLE_CDASH}" # archive results
+
+rzansel_spectrummpi_cuda_volta_xl:
+  extends: [.ascgit_job, .rzansel_job, .rzansel_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: spectrummpi-cuda-volta-xl
+    SUBMIT_TO_CDASH: false              # disable CDash submission, since LLNL systems can't reach them
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}" # but do build with CTest to create the necessary files
+    SUBMIT_ON_ERROR: false              # no network access, don't try to send from compute node
+    SUBMIT_AFTER: false                 # submit host also doesn't have access to CDash server
+    CREATE_SUBMIT_ARTIFACT: "${ENABLE_CDASH}" # archive results
+
+rzvernal_craympich_rocm_mi250_cce:
+  extends: [.ascgit_job, .rzvernal_job, .rzvernal_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: craympich-rocm-gfx90a-cce
+    SUBMIT_TO_CDASH: false              # disable CDash submission, since LLNL systems can't reach them
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}" # but do build with CTest to create the necessary files
+    SUBMIT_ON_ERROR: false              # no network access, don't try to send from compute node
+    SUBMIT_AFTER: false                 # submit host also doesn't have access to CDash server
+    CREATE_SUBMIT_ARTIFACT: "${ENABLE_CDASH}" # archive results
+
+rzadams_craympich_rocm_mi300_cce:
+  extends: [.ascgit_job, .rzadams_job, .rzadams_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: craympich-rocm-gfx942-cce
+    SUBMIT_TO_CDASH: false              # disable CDash submission, since LLNL systems can't reach them
+    BUILD_WITH_CTEST: "${ENABLE_CDASH}" # but do build with CTest to create the necessary files
+    SUBMIT_ON_ERROR: false              # no network access, don't try to send from compute node
+    SUBMIT_AFTER: false                 # submit host also doesn't have access to CDash server
+    CREATE_SUBMIT_ARTIFACT: "${ENABLE_CDASH}" # archive results
+
+# collect job results from RZansel and submit them to CDash
+post_rzansel_results_to_cdash:
+  extends: [.post_results_to_cdash]
+  allow_failure: true
+  rules:
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "web"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+  needs:
+    - rzansel_spectrummpi_cuda_volta_gcc
+    - rzansel_spectrummpi_cuda_volta_xl
+
+# collect job results from RZvernal and submit them to CDash
+post_rzvernal_results_to_cdash:
+  extends: [.post_results_to_cdash]
+  allow_failure: true
+  rules:
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "web"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+  needs:
+    - rzvernal_craympich_rocm_mi250_cce
+
+# collect job results from RZadams and submit them to CDash
+post_rzadams_results_to_cdash:
+  extends: [.post_results_to_cdash]
+  allow_failure: true
+  rules:
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "schedule"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "web"
+      when: always
+    - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: always
+  needs:
+    - rzadams_craympich_rocm_mi300_cce

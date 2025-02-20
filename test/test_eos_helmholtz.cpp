@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -44,6 +44,16 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
     Helmholtz host_eos(filename, true, true, false, true, true);
     Helmholtz eos = host_eos.GetOnDevice();
     THEN("We loaded the file!") { REQUIRE(true); }
+
+    Helmholtz host_eos_2;
+    auto [size, data] = host_eos.Serialize();
+    auto read_size = host_eos_2.DeSerialize(data);
+    THEN("We can serialize!") {
+      host_eos_2.CheckParams();
+      REQUIRE(size == read_size);
+      REQUIRE(size > sizeof(Helmholtz));
+    }
+    Helmholtz eos_2 = host_eos_2.GetOnDevice();
 
     /* Compare test values. Difference should be less than 1e-10 */
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -115,6 +125,25 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
                   eos.BulkModulusFromDensityTemperature(rho_in[i], temp_in[j], lambda);
               Real gruen =
                   eos.GruneisenParamFromDensityTemperature(rho_in[i], temp_in[j], lambda);
+              if (!isClose(ein, ein_ref[k], 1e-10)) nwrong += 1;
+              if (!isClose(press, press_ref[k], 1e-10)) nwrong += 1;
+              if (!isClose(cv, cv_ref[k], 1e-6)) nwrong += 1;
+              if (!isClose(bulkmod, bulkmod_ref[k], 1e-8)) nwrong += 1;
+              if (!isClose(gruen, gruen_ref[k], 1e-6)) nwrong += 1;
+
+              // RhoSie of PT
+              nwrong += !CheckRhoSieFromPT(eos, rho_in[i], temp_in[i], lambda);
+
+              // Deserialized EOS
+              ein = eos_2.InternalEnergyFromDensityTemperature(rho_in[i], temp_in[j],
+                                                               lambda);
+              press = eos_2.PressureFromDensityTemperature(rho_in[i], temp_in[j], lambda);
+              cv =
+                  eos_2.SpecificHeatFromDensityTemperature(rho_in[i], temp_in[j], lambda);
+              bulkmod =
+                  eos_2.BulkModulusFromDensityTemperature(rho_in[i], temp_in[j], lambda);
+              gruen = eos_2.GruneisenParamFromDensityTemperature(rho_in[i], temp_in[j],
+                                                                 lambda);
 
               if (!isClose(ein, ein_ref[k], 1e-10)) nwrong += 1;
               if (!isClose(press, press_ref[k], 1e-10)) nwrong += 1;
@@ -127,6 +156,8 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
         },
         nwrong);
     REQUIRE(nwrong == 0);
+    eos.Finalize();
+    host_eos.Finalize();
   }
 }
 
@@ -198,6 +229,8 @@ SCENARIO("Helmholtz equation of state - Root finding (egiven)", "[HelmholtzEOS]"
         },
         nwrong);
     REQUIRE(nwrong == 0);
+    eos.Finalize();
+    host_eos.Finalize();
   }
 }
 

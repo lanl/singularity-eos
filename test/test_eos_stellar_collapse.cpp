@@ -37,6 +37,78 @@
 
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_STELLAR_COLLAPSE
+
+#include <singularity-eos/base/spiner_table_utils.hpp>
+
+template <typename EOS_t>
+void CompareStellarCollapse(EOS_t sc, EOS_t sc2) {
+  Real yemin = sc.YeMin();
+  Real yemax = sc.YeMax();
+  Real tmin = sc.TMin();
+  Real tmax = sc.TMax();
+  Real ltmin = std::log10(tmin);
+  Real ltmax = std::log10(tmax);
+  Real lrhomin = std::log10(sc.rhoMin());
+  Real lrhomax = std::log10(sc.rhoMax());
+  REQUIRE(yemin == sc2.YeMin());
+  REQUIRE(yemax == sc2.YeMax());
+  REQUIRE(sc.TMin() == sc2.TMin());
+  REQUIRE(sc.TMax() == sc2.TMax());
+  REQUIRE(isClose(lrhomin, std::log10(sc2.rhoMin()), 1e-12));
+  REQUIRE(isClose(lrhomax, std::log10(sc2.rhoMax()), 1e-12));
+
+  auto sc1_d = sc.GetOnDevice();
+  auto sc2_d = sc2.GetOnDevice();
+
+  int nwrong_h = 0;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
+  Kokkos::View<int, atomic_view> nwrong_d("wrong");
+#else
+  PortableMDArray<int> nwrong_d(&nwrong_h, 1);
+#endif
+
+  const int N = 123;
+  constexpr Real gamma = 1.4;
+  const Real dY = (yemax - yemin) / (N + 1);
+  const Real dlT = (ltmax - ltmin) / (N + 1);
+  const Real dlR = (lrhomax - lrhomin) / (N + 1);
+  portableFor(
+      "fill eos", 0, N, 0, N, 0, N,
+      PORTABLE_LAMBDA(const int &k, const int &j, const int &i) {
+        Real lambda[2];
+        Real Ye = yemin + k * dY;
+        Real lT = ltmin + j * dlT;
+        Real lR = lrhomin + i * dlR;
+        Real T = std::pow(10., lT);
+        Real R = std::pow(10., lR);
+        Real e1, e2, p1, p2, cv1, cv2, b1, b2, s1, s2;
+        unsigned long output = (singularity::thermalqs::pressure |
+                                singularity::thermalqs::specific_internal_energy |
+                                singularity::thermalqs::specific_heat |
+                                singularity::thermalqs::bulk_modulus);
+        lambda[0] = Ye;
+
+        sc1_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
+        sc2_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);
+        // Fill entropy. Will need to change later.
+        s1 = sc1_d.EntropyFromDensityTemperature(R, T, lambda);
+        s2 = p2 * std::pow(R, -gamma); // ideal
+        if (!isClose(e1, e2)) nwrong_d() += 1;
+        if (!isClose(p1, p2)) nwrong_d() += 1;
+        if (!isClose(cv1, cv2)) nwrong_d() += 1;
+        if (!isClose(b1, b2)) nwrong_d() += 1;
+        if (!isClose(s1, s2)) nwrong_d() += 1;
+      });
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  Kokkos::deep_copy(nwrong_h, nwrong_d);
+#endif
+  REQUIRE(nwrong_h == 0);
+
+  sc1_d.Finalize();
+  sc2_d.Finalize();
+}
+
 SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
   WHEN("We generate a 3D DataBox of a 2D power law times a line") {
     using singularity::StellarCollapse;
@@ -75,6 +147,9 @@ SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
 
     THEN("We can re-interpolate to fast log space") {
       StellarCollapse::DataBox scratch(N2, N1, N0);
+      scratch.setRange(2, db.range(2));
+      scratch.setRange(1, StellarCollapse::gridToNQT(db.range(1), N1));
+      scratch.setRange(0, StellarCollapse::gridToNQT(db.range(0), N0));
       StellarCollapse::dataBoxToFastLogs(db, scratch, true);
 
       AND_THEN("The fast-log gridded table contains correct ranges") {
@@ -90,8 +165,6 @@ SCENARIO("Test 3D reinterpolation to fast log grid", "[StellarCollapse]") {
         REQUIRE(isClose(db.range(0).max(),
                         singularity::FastMath::log10(std::pow(10, g0.max())), 1e-12));
       }
-
-      AND_THEN("The re-interpolated fast log is a sane number") {}
 
       AND_THEN("The fast-log table approximately interpolates the power law") {
         const Real x2 = 0.5;
@@ -205,6 +278,9 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
                 if (!isClose(b1, b2)) {
                   nwrong_d() += 1;
                 }
+                if (!CheckRhoSieFromPT(sc_d, R, T, lambda)) {
+                  nwrong_d() += 1;
+                }
               });
 #ifdef PORTABILITY_STRATEGY_KOKKOS
           Kokkos::deep_copy(nwrong_h, nwrong_d);
@@ -220,76 +296,128 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
         AND_THEN("We can load the sp5 file") {
           StellarCollapse sc2(savename, true);
           AND_THEN("The two stellar collapse EOS's agree") {
-
-            Real yemin = sc.YeMin();
-            Real yemax = sc.YeMax();
-            Real tmin = sc.TMin();
-            Real tmax = sc.TMax();
-            Real ltmin = std::log10(tmin);
-            Real ltmax = std::log10(tmax);
-            Real lrhomin = std::log10(sc.rhoMin());
-            Real lrhomax = std::log10(sc.rhoMax());
-            REQUIRE(yemin == sc2.YeMin());
-            REQUIRE(yemax == sc2.YeMax());
-            REQUIRE(sc.TMin() == sc2.TMin());
-            REQUIRE(sc.TMax() == sc2.TMax());
-            REQUIRE(isClose(lrhomin, std::log10(sc2.rhoMin()), 1e-12));
-            REQUIRE(isClose(lrhomax, std::log10(sc2.rhoMax()), 1e-12));
-
-            auto sc1_d = sc.GetOnDevice();
-            auto sc2_d = sc2.GetOnDevice();
-
-            int nwrong_h = 0;
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-            using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
-            Kokkos::View<int, atomic_view> nwrong_d("wrong");
-#else
-            PortableMDArray<int> nwrong_d(&nwrong_h, 1);
-#endif
-
-            const int N = 123;
-            constexpr Real gamma = 1.4;
-            const Real dY = (yemax - yemin) / (N + 1);
-            const Real dlT = (ltmax - ltmin) / (N + 1);
-            const Real dlR = (lrhomax - lrhomin) / (N + 1);
-            portableFor(
-                "fill eos", 0, N, 0, N, 0, N,
-                PORTABLE_LAMBDA(const int &k, const int &j, const int &i) {
-                  Real lambda[2];
-                  Real Ye = yemin + k * dY;
-                  Real lT = ltmin + j * dlT;
-                  Real lR = lrhomin + i * dlR;
-                  Real T = std::pow(10., lT);
-                  Real R = std::pow(10., lR);
-                  Real e1, e2, p1, p2, cv1, cv2, b1, b2, s1, s2;
-                  unsigned long output =
-                      (singularity::thermalqs::pressure |
-                       singularity::thermalqs::specific_internal_energy |
-                       singularity::thermalqs::specific_heat |
-                       singularity::thermalqs::bulk_modulus);
-                  lambda[0] = Ye;
-
-                  sc1_d.FillEos(R, T, e1, p1, cv1, b1, output, lambda);
-                  sc2_d.FillEos(R, T, e2, p2, cv2, b2, output, lambda);
-                  // Fill entropy. Will need to change later.
-                  s1 = sc1_d.EntropyFromDensityTemperature(R, T, lambda);
-                  s2 = p2 * std::pow(R, -gamma); // ideal
-                  if (!isClose(e1, e2)) nwrong_d() += 1;
-                  if (!isClose(p1, p2)) nwrong_d() += 1;
-                  if (!isClose(cv1, cv2)) nwrong_d() += 1;
-                  if (!isClose(b1, b2)) nwrong_d() += 1;
-                  if (!isClose(s1, s2)) nwrong_d() += 1;
-                });
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-            Kokkos::deep_copy(nwrong_h, nwrong_d);
-#endif
-            REQUIRE(nwrong_h == 0);
-
-            sc1_d.Finalize();
-            sc2_d.Finalize();
+            CompareStellarCollapse(sc, sc2);
           }
           sc2.Finalize();
         }
+      }
+
+      WHEN("We serialize the StellarCollapse EOS") {
+        using Tricks = singularity::table_utils::SpinerTricks<StellarCollapse>;
+        auto [size, data] = sc.Serialize();
+        REQUIRE(size > 0);
+        THEN("We can de-serialize it into a new object") {
+          StellarCollapse sc2;
+          std::size_t read_size = sc2.DeSerialize(data);
+          REQUIRE(read_size == size);
+          REQUIRE(size > sizeof(StellarCollapse));
+          sc2.CheckParams();
+          AND_THEN("The new eos uses different memory than the original") {
+            REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc, sc2));
+          }
+          AND_THEN("The two stellar collapse EOS's agree") {
+            CompareStellarCollapse(sc, sc2);
+          }
+          AND_THEN("We can de-serialize into two objects") {
+            StellarCollapse sc3;
+            std::size_t read_size_2 = sc3.DeSerialize(data);
+            REQUIRE(read_size_2 == size);
+            sc3.CheckParams();
+            AND_THEN("The two de-serialized objects use the same memory") {
+              REQUIRE(Tricks::DataBoxesPointToSameMemory(sc2, sc3));
+            }
+          }
+          THEN("We can de-serialize it into a new object AROUND a new allocation") {
+            using singularity::SharedMemSettings;
+            // mockup of shared data
+            std::size_t shared_size = sc.SharedMemorySizeInBytes();
+            REQUIRE(shared_size == sc.DynamicMemorySizeInBytes());
+            char *shared_data = (char *)malloc(shared_size);
+            SharedMemSettings settings(shared_data, true);
+            StellarCollapse sc3;
+            std::size_t read_size = sc3.DeSerialize(data, settings);
+            REQUIRE(read_size == size);
+            REQUIRE(read_size > sizeof(StellarCollapse));
+            sc3.CheckParams();
+            AND_THEN("The new eos uses different memory than the original") {
+              REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc, sc3));
+            }
+            AND_THEN(
+                "The new eos uses different memory than the one de-serialized aorund "
+                "the non-shared memory") {
+              REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc2, sc3));
+            }
+            AND_THEN("The two stellar collapse EOS's agree") {
+              CompareStellarCollapse(sc, sc3);
+            }
+            AND_THEN("We can de-serialize from shared memory around one more object") {
+              SharedMemSettings settings2(shared_data, false);
+              StellarCollapse sc4;
+              std::size_t read_size_2 = sc4.DeSerialize(data, settings);
+              REQUIRE(read_size_2 == size);
+              REQUIRE(read_size_2 > sizeof(StellarCollapse));
+              sc4.CheckParams();
+              AND_THEN("The two shared-mem objects use the same memory") {
+                REQUIRE(Tricks::DataBoxesPointToSameMemory(sc3, sc4));
+              }
+              AND_THEN("The two stellar collapse EOS's agree") {
+                CompareStellarCollapse(sc, sc4);
+              }
+            }
+            free(shared_data);
+          }
+        }
+        free(data);
+      }
+
+      WHEN("We serialize a variant that owns a StellarCollapse EOS") {
+        using EOS = singularity::Variant<StellarCollapse, IdealGas>;
+        using Tricks = singularity::table_utils::SpinerTricks<StellarCollapse>;
+        EOS e1 = sc;
+        auto [size, data] = e1.Serialize();
+        REQUIRE(size > 0);
+        THEN("We can de-serialize it into a new object") {
+          EOS e2;
+          std::size_t read_size = e2.DeSerialize(data);
+          REQUIRE(read_size == size);
+          e2.CheckParams();
+          AND_THEN("The two stellar collapse EOS's agree") {
+            StellarCollapse sc2 = e2.get<StellarCollapse>();
+            CompareStellarCollapse(sc, sc2);
+            REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc, sc2));
+          }
+          AND_THEN("We can de-serialize it twice into shared memory") {
+            using singularity::SharedMemSettings;
+
+            std::size_t dyn_size = e1.DynamicMemorySizeInBytes();
+            char *shared_data = (char *)malloc(dyn_size);
+            EOS e3, e4;
+
+            std::size_t read_size_e3 =
+                e3.DeSerialize(data, SharedMemSettings(shared_data, true));
+            REQUIRE(read_size_e3 == size);
+            e3.CheckParams();
+
+            std::size_t read_size_e4 =
+                e4.DeSerialize(data, SharedMemSettings(shared_data, false));
+            REQUIRE(read_size_e4 == size);
+            e4.CheckParams();
+
+            AND_THEN("They all agree") {
+              StellarCollapse sc2 = e2.get<StellarCollapse>();
+              StellarCollapse sc3 = e3.get<StellarCollapse>();
+              StellarCollapse sc4 = e4.get<StellarCollapse>();
+              CompareStellarCollapse(sc, sc3);
+              CompareStellarCollapse(sc, sc4);
+              REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc, sc3));
+              REQUIRE(Tricks::DataBoxesPointToDifferentMemory(sc2, sc3));
+              REQUIRE(Tricks::DataBoxesPointToSameMemory(sc3, sc4));
+            }
+
+            free(shared_data);
+          }
+        }
+        free(data);
       }
       sc.Finalize();
     }

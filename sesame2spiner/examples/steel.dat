@@ -17,10 +17,18 @@
 
 matid = 4272
 name = steel
-rhomin = 1e-2
+rhomin = 1e-5
 Tmin = 1
+
+#piecewiseRho = false
+#piecewiseT = false
+#piecewiseSie = false
+#numrho = 1334
+#numT = 738
+#numsie = 634
+
 # These shrink logarithm of bounds
 # by a fraction of the total interval <= 1
-shrinklRhoBounds = 0.15,
-shrinklTBounds = 0.15,
-shrinkleBounds = 0.5
+#shrinklRhoBounds = 0.15,
+#shrinklTBounds = 0.15,
+#shrinkleBounds = 0.5

@@ -19,6 +19,7 @@ authors:
     orcid: 0000-0001-9425-4674
     affiliation: 4
   - name: Christopher M. Mauney
+    orcid: 0000-0002-7827-2247
     affiliation: "2, 5"
   - name: Richard Berger
     orcid: 0000-0002-3044-8266
@@ -35,6 +36,7 @@ authors:
     orcid: 0000-0001-5184-6928
     affiliation: "2, 3, 8"
   - name: Ann E. Mattsson
+    orcid: 0000-0002-0677-7537
     affiliation: 9
   - name: Mariam Gogilashvili
     orcid: 0000-0002-6944-8052
@@ -94,7 +96,7 @@ specific internal energy. All capabilities are performance portable,
 meaning they compile and run on both CPU and GPU for a wide variety of
 architectures.
 
-# Statement of need
+# Statement of need and State of the Field
 
 When expressed mathematically for continuous materials, the laws of
 conservation of mass, energy, and momentum form the Navier-Stokes
@@ -108,7 +110,7 @@ atomic) scale. This closure is commonly called the *equation of state*
 (EOS).
 
 Equations of state vary from the simple ideal gas law, to
-sophisticated descriptions multi-phase descriptions of the lattice
+sophisticated multi-phase descriptions of the lattice
 structure of ice or wood, to models of quark-gluon plasma and nuclear
 pasta at ultra high densities. A common form to write an equation of
 state is as a pair of relations:
@@ -123,23 +125,21 @@ collection of knowledge needed to reconstruct some intrinsic
 thermodynamic quantities from others. For example, the speed of sound
 through a material or the specific heat capacity, which are
 thermodynamic derivatives of the pressure and the specific internal
-energy, are both determined by the EOS.
+energy respectively, can both be determined by the EOS.
 
 In multi-material fluid dynamics simulations, one often will end up
 with a so-called *mixed cell*, where two materials exist within
 the same simulation zone. This can be an artifact of the numerical
 representation; for example a steel bar and the surrounding air may
 end up sharing a finite volume cell if the boundaries of the cell do
-not align exactly with the surface of the steel bar. Or it may
+not align exactly with the surface of the steel bar, or, it may
 represent physical reality; for example, air is a mixture of nitrogen
 and oxygen gases, as well as water vapor. Regardless of the nature of
-the mixed cell, one must somehow provide to the fluid code what the
+the mixed cell, one must somehow provide, to the fluid code, what the
 material properties of the cell are as a whole. This is called a
 *mixed cell closure.* One such closure is
 *pressure-temperature equilibrium* (PTE), where all materials
 in the cell are assumed to be at the same pressure and temperature.
-
-# State of the Field
 
 Typically fluid dynamics codes each develop an EOS package
 individually to meet a given problem's needs. Databases of tabulated
@@ -169,7 +169,7 @@ GPUs, as well as other accelerators. This fills an important need, as
 modern super computing capabilities increasingly rely on GPUs for
 performance. Singularity-EOS is now used in the ongoing open-source
 [Phoebus](https://github.com/lanl/phoebus) project which has a
-separate code paper in-prep.
+separate code paper in-preparation.
 
 # Design Principles and Feature Highlights
 
@@ -198,7 +198,7 @@ memory.
 Many equations of state are most naturally represented as functions of
 density and temperature. However, fluid codes require pressure as a
 function of density and internal energy. Extracting this often
-requires computing a root find to invert the relation
+requires computing a root to invert the relation
 
 $$\varepsilon = \varepsilon(\rho, T).$$
 
@@ -215,9 +215,9 @@ knowledge to compute them as performantly as possible.
 
 ## Performance-portable polymorphism
 
-Accelerators provide new challenges to standard object-oriented
+Accelerators present new challenges to standard object-oriented
 programming. In particular, not all compiler stacks (such as Sycl
-[@SYCL] or OpenMP Target Offload [@chandra2001parallel])
+[@SYCL] or OpenMP [@chandra2001parallel] Target Offload [@openmp4])
 support relocatable device code, which is required for standard C++
 polymorphism. Even in programming models, such as CUDA [@cuda],
 which do support relocatable device code, polymorphism can be slower
@@ -237,7 +237,7 @@ way. Modifiers may also be chained.
 
 ## Fast log-lookups
 
-To span the required orders of magnitude, tabulated equations of state
+To span the required orders of magnitude, equations of state
 are often tabulated on log-spaced grids. Logarithms and exponentials
 are, however, expensive operations and the performance of lookups can
 suffer. We instead use the not-quite-transcendental lookups described
@@ -265,7 +265,7 @@ Singularity-EOS proper is not possible due to, e.g., licensing issues.
 
 This work was supported through the Laboratory Directed Research and
 Development program, the Center for Space and Earth Sciences, and the
-center for Nonlinear Studies under project numbers 20240477CR-SES and
+Center for Nonlinear Studies under project numbers 20240477CR-SES and
 20220564ECR at Los Alamos National Laboratory (LANL). LANL is operated
 by Triad National Security, LLC, for the National Nuclear Security
 Administration of U.S. Department of Energy (Contract
@@ -274,3 +274,5 @@ Darwin testbed at LANL which is funded by the Computational Systems
 and Software Environments subprogram of LANL's Advanced Simulation and
 Computing program (NNSA/DOE). This work is approved for unlimited
 release with report number LA-UR-24-23364.
+
+# References

@@ -34,6 +34,7 @@
 #include <memory>
 
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 
 inline std::string demangle(const char *name) {
 
@@ -141,6 +142,38 @@ inline void compare_two_eoss(const E1 &test_e, const E2 &ref_e) {
                             << " test T min.: " << test_e.MinimumTemperature());
   CHECK(isClose(test_e.MinimumTemperature(), ref_e.MinimumTemperature(), 1.e-15));
   return;
+}
+
+template <typename EOS, typename Indexer_t = Real *>
+PORTABLE_INLINE_FUNCTION bool
+CheckRhoSieFromPT(EOS eos, Real rho, Real T,
+                  Indexer_t &&lambda = static_cast<Real *>(nullptr)) {
+  const Real P = eos.PressureFromDensityTemperature(rho, T, lambda);
+  const Real sie = eos.InternalEnergyFromDensityTemperature(rho, T, lambda);
+  Real rtest = 12; // set these to something
+  Real etest = 1;
+  eos.DensityEnergyFromPressureTemperature(P, T, lambda, rtest, etest);
+  Real P_test = eos.PressureFromDensityTemperature(rtest, T, lambda);
+  Real residual = P_test - P;
+  Real frac_residual =
+      std::min(std::abs(singularity::robust::ratio(residual, P)), std::abs(residual));
+  bool results_good = (isClose(rho, rtest, 1e-8) && isClose(sie, etest, 1e-8))
+                      // This is as good as it will get sometimes.
+                      || (std::abs(frac_residual) <= 1e-8);
+  if (!results_good) {
+    printf("RhoSie of PT failure!\n"
+           "\trho_true = %.14e\n"
+           "\tsie_true = %.14e\n"
+           "\tP        = %.14e\n"
+           "\tT        = %.14e\n"
+           "\trho      = %.14e\n"
+           "\tsie      = %.14e\n"
+           "\tP_test   = %.14e\n"
+           "\tresidual = %.14e\n"
+           "\tfracres  = %.14e\n",
+           rho, sie, P, T, rtest, etest, P_test, residual, frac_residual);
+  }
+  return results_good;
 }
 
 // Macro that checks for an exception or is a no-op depending on

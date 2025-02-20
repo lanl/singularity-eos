@@ -40,7 +40,7 @@ jobs:
                   -DSINGULARITY_USE_SPINER_WITH_HDF5=OFF \
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   -B build .
-            cmake --build build
+            cmake --build build --parallel 4
             sudo cmake --install build
         - name: build docs
           run: |

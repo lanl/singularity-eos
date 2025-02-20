@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------#
-# © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -27,10 +27,13 @@ register_headers(
     base/fast-math/logs.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
+    base/serialization_utils.hpp
+    base/spiner_table_utils.hpp
     base/variadic_utils.hpp
     base/math_utils.hpp
     base/constants.hpp
     base/eos_error.hpp
+    base/error_utils.hpp
     base/sp5/singularity_eos_sp5.hpp
     eos/default_variant.hpp
     base/hermite.hpp
@@ -38,6 +41,8 @@ register_headers(
     eos/eos_stellar_collapse.hpp
     eos/eos_ideal.hpp
     eos/eos_models.hpp
+    eos/eos_mgusup.hpp
+    eos/eos_powermg.hpp
     eos/eos_spiner.hpp
     eos/eos_davis.hpp
     eos/eos_gruneisen.hpp
@@ -46,27 +51,38 @@ register_headers(
     eos/eos_jwl.hpp
     eos/eos_helmholtz.hpp
     eos/eos_sap_polynomial.hpp
+    eos/eos_type_lists.hpp
     eos/modifiers/relativistic_eos.hpp
     eos/modifiers/scaled_eos.hpp
     eos/modifiers/ramps_eos.hpp
     eos/modifiers/shifted_eos.hpp
     eos/modifiers/eos_unitsystem.hpp
     eos/modifiers/minimum_energy.hpp
+    eos/modifiers/zsplit_eos.hpp
     eos/eos_base.hpp
     eos/eos_eospac.hpp
     eos/eos_noble_abel.hpp
     eos/eos_stiff.hpp
+    eos/singularity_eos_init_utils.hpp
+    eos/variant_utils.hpp
+    eos/eos_carnahan_starling.hpp
+    eos/eos_electrons.hpp
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
-  register_headers(closure/mixed_cell_models.hpp)
-  if (SINGULARITY_USE_FORTRAN OR SINGULARITY_BUILD_TESTS)
+  register_headers(
+    closure/mixed_cell_models.hpp
+    closure/kinetic_phasetransition_models.hpp
+    closure/kinetic_phasetransition_utils.hpp
+    closure/kinetic_phasetransition_methods.hpp
+  )
+  if (SINGULARITY_BUILD_FORTRAN_BACKEND OR SINGULARITY_BUILD_TESTS)
     # while these are C++ files, they
     # are only needed for the fortran backend or unit testing
     register_srcs(eos/singularity_eos.cpp)
     register_headers(eos/singularity_eos.hpp)
   endif()
-  if (SINGULARITY_USE_FORTRAN)
+  if (SINGULARITY_BUILD_FORTRAN_BACKEND)
     register_srcs(eos/get_sg_eos.cpp)
     if (SINGULARITY_USE_KOKKOS)
       register_srcs(

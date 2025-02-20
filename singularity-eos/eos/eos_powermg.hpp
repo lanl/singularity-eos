@@ -38,12 +38,20 @@ class PowerMG : public EosBase<PowerMG> {
   PowerMG() = default;
   // Constructor
   PowerMG(const Real rho0, const Real T0, const Real G0, const Real Cv0, const Real E0,
-          const Real S0, const Real Pmin, const Real *expconsts)
-      : _rho0(rho0), _T0(T0), _G0(G0), _Cv0(Cv0), _E0(E0), _S0(S0), _Pmin(Pmin) {
+          const Real S0, const Real Pmin, const Real *expconsts,
+          const MeanAtomicProperties &AZbar = MeanAtomicProperties())
+      : _rho0(rho0), _T0(T0), _G0(G0), _Cv0(Cv0), _E0(E0), _S0(S0), _Pmin(Pmin),
+        _AZbar(AZbar) {
     _InitializePowerMG(expconsts);
-    _CheckPowerMG();
+    CheckParams();
+    if (_Pmin >= 0.0) {
+      _Pmin = -1000 * _K0toK40[0];
+      PORTABLE_WARN("PowerMG model parameter Pmin not set or positive. Reset to default "
+                    "(-1000*K0)");
+    }
   }
 
+  PORTABLE_INLINE_FUNCTION void CheckParams() const;
   PowerMG GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
@@ -127,6 +135,7 @@ class PowerMG : public EosBase<PowerMG> {
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
+  SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(PowerMG)
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
@@ -145,11 +154,27 @@ class PowerMG : public EosBase<PowerMG> {
     }
     printf("\n\n");
   }
-  // Density/Energy from P/T not unique, if used will give error
-  template <typename Indexer_t>
-  PORTABLE_INLINE_FUNCTION void
-  DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       Indexer_t &&lambda, Real &rho, Real &sie) const;
+
+  // In principle, PowerMG should be valid for all densities. In
+  // practice, however, since the EOS is parametrized in terms of the
+  // compression, eta = 1 - rho0/rho, things will fail when rho is
+  // much less than rho0. Worse, since this is a power law in
+  // compression, it potentially depends on eta^M where M is the
+  // maximum index in the power series.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const {
+    // JMM: I think formally this should be the mth root of machine
+    // epsilon times rho0, but for m = 20 or something that's of order
+    // 1. Things seem reasonably well behaved with this bound. They do
+    // NOT seem well behaved for, e.g., 10*rho0*machine epsilon.
+    return 1e-4 * _rho0;
+  }
+  // Essentially unbounded... I think.
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumPressure() const { return -1e100; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MaximumPressureAtTemperature([[maybe_unused]] const Real T) const { return 1e100; }
+
   inline void Finalize() {}
   static std::string EosType() { return std::string("PowerMG"); }
   static std::string EosPyType() { return EosType(); }
@@ -158,10 +183,10 @@ class PowerMG : public EosBase<PowerMG> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
   Real _rho0, _T0, _G0, _Cv0, _E0, _S0, _Pmin;
+  MeanAtomicProperties _AZbar;
   static constexpr const int PressureCoeffsK0toK40Size = 41;
   int _M;
   Real _K0toK40[PressureCoeffsK0toK40Size];
-  void _CheckPowerMG();
   void _InitializePowerMG(const Real *expcoeffs);
   PORTABLE_INLINE_FUNCTION Real _HugPressureFromDensity(const Real rho) const;
   PORTABLE_INLINE_FUNCTION Real _HugTemperatureFromDensity(const Real rho) const;
@@ -172,7 +197,7 @@ class PowerMG : public EosBase<PowerMG> {
   _compBulkModulusFromDensityInternalEnergy(const Real rho, const Real sie) const;
 };
 
-inline void PowerMG::_CheckPowerMG() {
+PORTABLE_INLINE_FUNCTION void PowerMG::CheckParams() const {
 
   if (_rho0 < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required PowerMG model parameter rho0 < 0");
@@ -186,13 +211,7 @@ inline void PowerMG::_CheckPowerMG() {
   if (_K0toK40[0] < 0.0) {
     PORTABLE_ALWAYS_THROW_OR_ABORT("Required PowerMG model parameter K0 < 0");
   }
-  if (_Pmin >= 0.0) {
-    _Pmin = -1000 * _K0toK40[0];
-#ifndef NDEBUG
-    PORTABLE_WARN(
-        "PowerMG model parameter Pmin not set or positive. Reset to default (-1000*K0)");
-#endif // NDEBUG
-  }
+  _AZbar.CheckParams();
 }
 
 inline void PowerMG::_InitializePowerMG(const Real *K0toK40input) {
@@ -419,13 +438,6 @@ PORTABLE_INLINE_FUNCTION Real PowerMG::EntropyFromDensityInternalEnergy(
   }
   return value;
 }
-// AEM: Give error since function is not well defined
-template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void PowerMG::DensityEnergyFromPressureTemperature(
-    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
-  EOS_ERROR("PowerMG::DensityEnergyFromPressureTemperature: "
-            "Not implemented.\n");
-}
 // AEM: We should add entropy and Gruneissen parameters here so that it is complete
 // If we add also alpha and BT, those should also be in here.
 template <typename Indexer_t>
@@ -445,7 +457,7 @@ PowerMG::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &
   }
   if (output & thermalqs::temperature)
     temp = TemperatureFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::specific_internal_energy) sie = sie;
+  // if (output & thermalqs::specific_internal_energy) sie = sie;
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::specific_heat)
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
@@ -460,7 +472,7 @@ PowerMG::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, R
                                 Real &bmod, Real &dpde, Real &dvdt,
                                 Indexer_t &&lambda) const {
   // AEM: Added all variables I think should be output eventually
-  Real tbmod;
+  // Real tbmod;
   // Real entropy, alpha, Gamma;
 
   rho = _rho0;
@@ -469,7 +481,7 @@ PowerMG::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, R
   press = PressureFromDensityTemperature(rho, temp, lambda);
   // entropy = _S0;
   cv = _Cv0;
-  tbmod = _K0toK40[0] - _G0 * _G0 * _Cv0 * _rho0 * _T0;
+  // tbmod = _K0toK40[0] - _G0 * _G0 * _Cv0 * _rho0 * _T0;
   // alpha = _A0;
   bmod = _K0toK40[0];
   // Gamma = _G0;

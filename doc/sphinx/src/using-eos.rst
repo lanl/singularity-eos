@@ -19,13 +19,14 @@ The parallelism model
 ----------------------
 
 For the most part, ``singularity-eos`` tries to be agnostic to how you
-parallelize your code on-node. (It knows nothing at all about
-distributed memory parallelism.) An ``EOS`` object can be copied into
-any parallel code block by value (see below) and scalar calls do not
-attempt any internal multi-threading, meaning ``EOS`` objects are not
-thread-safe, but are compatible with thread safety, assuming the user
-calls them appropriately. The main complication is ``lambda`` arrays,
-which are discussed below.
+parallelize your code on-node. It knows nothing at all about
+distributed memory parallelism, with one exception, discussed
+below. An ``EOS`` object can be copied into any parallel code block by
+value (see below) and scalar calls do not attempt any internal
+multi-threading, meaning ``EOS`` objects are not thread-safe, but are
+compatible with thread safety, assuming the user calls them
+appropriately. The main complication is ``lambda`` arrays, which are
+discussed below.
 
 The vector ``EOS`` method overloads are a bit different. These are
 thread-parallel operations launched by ``singularity-EOS``. They run
@@ -35,9 +36,275 @@ conditions. The type of parallelism used depends on how
 ``singularity-eos`` is compiled. If the ``Kokkos`` backend is used,
 any parallel dispatch supported by ``Kokkos`` is supported.
 
-A more generic version of the vector calls exists in the ``Evaluate``
-method, which allows the user to specify arbitrary parallel dispatch
-models by writing their own loops. See the relevant section below.
+A more generic version of the vector calls exists in the
+``EvaluateHost`` and ``EvaluateDevice`` methods, which allow the user
+to specify arbitrary parallel dispatch models by writing their own
+loops. See the relevant section below.
+
+Serialization and shared memory
+--------------------------------
+
+While ``singularity-eos`` makes a best effort to be agnostic to
+parallelism, it exposes several methods that are useful in a
+distributed memory environment. In particular, there are two use-cases
+the library seeks to support:
+
+#. To avoid stressing a filesystem, it may desirable to load a table from one thread (e.g., MPI rank) and broadcast this data to all other ranks.
+#. To save memory it may be desirable to place tabulated data, which is read-only after it has been loaded from file, into shared memory on a given node, even if all other data is thread local in a distributed-memory environment. This is possible via, e.g., `MPI Windows`_.
+
+Therefore ``singularity-eos`` exposes several methods that can be used
+in this context. The function
+
+.. cpp:function:: std::size_t EOS::SerializedSizeInBytes() const;
+
+returns the amount of memory required in bytes to hold a serialized
+EOS object. The return value will depend on the underlying equation of
+state model currently contained in the object. The function
+
+.. cpp:function:: std::size_t EOS::SharedMemorySizeInBytes() const;
+
+returns the amount of data (in bytes) that a given object can place into shared memory. Again, the return value depends on the model the object currently represents.
+
+.. note::
+
+  Many models may not be able to utilize shared memory at all. This
+  holds for most analytic models, for example. The ``EOSPAC`` backend
+  will only utilize shared memory if the ``EOSPAC`` version is sufficiently recent
+  to support it and if ``singularity-eos`` is built with serialization
+  support for ``EOSPAC`` (enabled with
+  ``-DSINGULARITY_EOSPAC_ENABLE_SHMEM=ON``).
+
+The function
+
+.. cpp:function:: std::size_t EOS::Serialize(char *dst);
+
+fills the ``dst`` pointer with the memory required for serialization
+and returns the number of bytes written to ``dst``. The function
+
+.. cpp:function:: std::pair<std::size_t, char*> EOS::Serialize();
+
+allocates a ``char*`` pointer to contain serialized data and fills
+it.
+
+.. warning::
+
+  Serialization and de-serialization may only be performed on objects
+  that live in host memory, before you have called
+  ``eos.GetOnDevice()``. Attempting to serialize device-initialized
+  objects is undefined behavior, but will likely result in a
+  segmentation fault.
+
+The pair is the pointer and its size. The function
+
+.. code-block:: cpp
+
+  std::size_t EOS::DeSerialize(char *src,
+                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS)
+
+Sets an EOS object based on the serialized representation contained in
+``src``. It returns the number of bytes read from ``src``. Optionally,
+``DeSerialize`` may also write the data that can be shared to a
+pointer contained in ``SharedMemSettings``. If you do this, you must
+pass this pointer in, but designate only one thread per shared memory
+domain (frequently a node or socket) to actually write to this
+data. ``SharedMemSettings`` is a struct containing a ``data`` pointer
+and a ``is_domain_root`` boolean:
+
+.. code-block:: cpp
+
+  struct SharedMemSettings {
+    SharedMemSettings();
+    SharedMemSettings(char *data_, bool is_domain_root_)
+        : data(data_), is_domain_root(is_domain_root_) {}
+    char *data = nullptr; // defaults
+    bool is_domain_root = false;
+  };
+
+The ``data`` pointer should point to a shared memory allocation. The
+``is_domain_root`` boolean should be true for exactly one thread per
+shared memory domain.
+
+For example you might call ``DeSerialize`` as
+
+.. code-block:: cpp
+
+  std::size_t read_size = eos.DeSerialize(packed_data,
+                singularity::SharedMemSettings(shared_data,
+                                               my_rank % NTHREADS == 0));
+  assert(read_size == write_size); // for safety
+
+.. warning::
+
+  Note that for equation of state models that have dynamically
+  allocated memory, ``singularity-eos`` reserves the right to point
+  directly at data in ``src``, so it **cannot** be freed until you
+  would call ``eos.Finalize()``. If the ``SharedMemSettings`` are
+  utilized to request data be written to a shared memory pointer,
+  however, you can free the ``src`` pointer, so long as you don't free
+  the shared memory pointer.
+
+Putting everything together, a full sequence with MPI might look like this:
+
+.. code-block:: cpp
+
+  singularity::EOS eos;
+  std::size_t packed_size, shared_size;
+  char *packed_data;
+  if (rank == 0) { // load eos object
+    eos = singularity::StellarCollapse(filename);
+    packed_size = eos.SerializedSizeInBytes();
+    shared_size = eos.SharedMemorySizeInBytes();
+  }
+
+  // Send sizes
+  MPI_Bcast(&packed_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&spacked_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+
+  // Allocate data needed
+  packed_data = (char*)malloc(packed_size);
+  if (rank == 0) {
+    eos.Serialize(packed_data);
+    eos.Finalize(); // Clean up this EOS object so it can be reused.
+  }
+  MPI_Bcast(packed_data, packed_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+  
+  // the default doesn't do shared memory.
+  // we will change it below if shared memory is enabled.
+  singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_STNGS;
+
+  char *shared_data;
+  char *mpi_base_pointer;
+  int mpi_unit;
+  MPI_Aint query_size;
+  MPI_Win window;
+  MPI_Comm shared_memory_comm;
+  int island_rank, island_size; // rank in, size of shared memory region
+  if (use_mpi_shared_memory) {
+    // Generate shared memory comms
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &shared_memory_comm);
+    // rank on a region that shares memory
+    MPI_Comm_rank(shared_memory_comm, &island_rank);
+    // size on a region that shares memory
+    MPI_COMM_size(shared_memory_comm, &island_size);
+
+    // Create the MPI shared memory object and get a pointer to shared data
+    // this allocation is a collective and must be called on every rank.
+    // the total size of the allocation is the sum over ranks in the shared memory comm
+    // of requested memory. So it's valid to request all you want on rank 0 and nothing
+    // on the remaining ranks.
+    MPI_Win_allocate_shared((island_rank == 0) ? shared_size : 0,
+                            1, MPI_INFO_NULL, shared_memory_comm, &mpi_base_pointer,
+                            &window);
+    // This gets a pointer to the shared memory allocation valid in local address space
+    // on every rank
+    MPI_Win_shared_query(window, MPI_PROC_NULL, &query_size, &mpi_unit, &shared_data);
+    // Mutex for MPI window. Writing to shared memory currently allowed.
+    MPI_Win_lock_all(MPI_MODE_NOCHECK, window);
+    // Set SharedMemSettings
+    settings.data = shared_data;
+    settings.is_domain_root = (island_rank == 0);
+  }
+  eos.DeSerialize(packed_data, settings);
+  if (use_mpi_shared_memory) {
+    MPI_Win_unlock_all(window); // Writing to shared memory disabled.
+    MPI_Barrier(shared_memory_comm);
+    free(packed_data);
+  }
+
+In the case where many EOS objects may be active at once, you can
+combine serialization and comm steps. You may wish to, for example,
+have a single pointer containing all serialized EOS's. Same for the
+shared memory. ``singularity-eos`` provides machinery to do this in
+the ``singularity-eos/base/serialization_utils.hpp`` header. This
+provides a helper struct, ``BulkSerializer``:
+
+.. code-block:: cpp
+
+  template<typename Container_t, Resizer_t = MemberResizer>
+  singularity::BulkSerializer
+
+which may be initialized by a collection of ``EOS`` objects or by
+simply assigning (or constructing) its member field, ``eos_objects``
+appropriately. An example ``Container_t`` might be
+``std::vector<EOS>``. A specialization for ``vector`` is provided as
+``VectorSerializer``. The ``Resizer_t`` is a functor that knows how to
+resize a collection. For example, the ``MemberResizor`` functor used
+for ``std::vector``s
+
+.. code-block:: cpp
+
+  struct MemberResizer {
+    template<typename Collection_t>
+    void operator()(Collection_t &collection, std::size_t count) {
+      collection.resize(count);
+    }
+  };
+
+which will work for any ``stl`` container with a ``resize`` method.
+
+The ``BulkSerializer`` provides all the above-described serialization
+functions for ``EOS`` objects: ``SerializedSizeInBytes``,
+``SharedMemorySizeInBytes``, ``Serialize``, and ``DeSerialize``, but
+it operates on all ``EOS`` objects contained in the container it
+wraps, not just one. Example usage might look like this:
+
+.. code-block:: cpp
+
+  int packed_size, shared_size;
+  singularity::VectorSerializer<EOS> serializer;
+  if (rank == 0) { // load eos object
+    // Code to initialize a bunch of EOS objects into a std::vector<EOS>
+    /*
+       Initialization code goes here
+     */
+    serializer = singularity::VectorSerializer<EOS>(eos_vec);
+    packed_size = serializer.SerializedSizeInBytes();
+    shared_size = serializer.SharedMemorySizeInBytes();
+  }
+
+  // Send sizes
+  MPI_Bcast(&packed_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&packed_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+
+  // Allocate data needed
+  packed_data = (char*)malloc(packed_size);
+  if (rank == 0) {
+    serializer.Serialize(packed_data);
+    serializer.Finalize(); // Clean up all EOSs owned by the serializer
+  }
+  MPI_Bcast(packed_data, packed_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+  
+  singularity::SharedMemSettings settings = singularity::DEFAULT_SHMEM_STNGS;
+  // same MPI declarations as above
+  if (use_mpi_shared_memory) {
+    // same MPI code as above including setting the settings
+    settings.data = shared_data;
+    settings.is_domain_root = (island_rank == 0);
+  }
+  singularity::VectorSerializer<EOS> deserializer;
+  deserializer.DeSerialize(packed_data, settings);
+  if (use_mpi_shared_memory) {
+    // same MPI code as above
+  }
+  // extract each individual EOS and do something with it
+  std::vector<EOS> eos_host_vec = deserializer.eos_objects;
+  // get on device if you want
+  for (auto EOS : eos_host_vec) {
+    EOS eos_device = eos.GetOnDevice();
+    // ...
+  }
+
+It is also possible to (with care) mix serializers... i.e., you might
+serialize with a ``VectorSerializer`` and de-serialize with a
+different container, as all that is required is that a container have
+a ``size``, provide iterators, and be capable of being resized.
+
+.. warning::
+
+  Since EOSPAC is a library, DeSerialization is destructive for EOSPAC
+  and may have side-effects.
+
+.. _`MPI Windows`: https://www.mpi-forum.org/docs/mpi-4.1/mpi41-report/node311.htm
 
 .. _variant section:
 
@@ -228,19 +495,26 @@ available member function.
    eos.TemperatureFromDensityInternalEnergy(density.data(), energy.data(), temperature.data(),
                                             scratch.data(), density.size());
 
-The Evaluate Method
-~~~~~~~~~~~~~~~~~~~
+The Evaluate Methods
+~~~~~~~~~~~~~~~~~~~~~~
 
-A special call related to the vector calls is the ``Evaluate``
-method. The ``Evaluate`` method requests the EOS object to evaluate
-almost arbitrary code, but in a way where the type of the underlying
-EOS object is resolved *before* this arbitrary code is evaluated. This
-means the code required to resolve the type of the variant is only
-executed *once* per ``Evaluate`` call. This can enable composite EOS
-calls, non-standard vector calls, and vector calls with non-standard
-loop structure.
+A pair of special call related to the vector calls are the
+``EvaluateHost`` and ``EvaluateDevice`` methods. These methods request
+the EOS object to evaluate almost arbitrary code, but in a way where
+the type of the underlying EOS object is resolved *before* this
+arbitrary code is evaluated. This means the code required to resolve
+the type of the variant is only executed *once* per ``Evaluate``
+call. This can enable composite EOS calls, non-standard vector calls,
+and vector calls with non-standard loop structure.
 
-The ``Evaluate`` call has the signature
+The ``EvaluateHost`` call has the signature
+
+.. code-block:: cpp
+
+  template<typename Functor_t>
+  void Evaluate(Functor_t f);
+
+and the ``EvaluateDevice`` method has the signature
 
 .. code-block:: cpp
 
@@ -248,11 +522,11 @@ The ``Evaluate`` call has the signature
   PORTABLE_INLINE_FUNCTION
   void Evaluate(Functor_t f);
 
+
 where a ``Functor_t`` is a class that *must* provide a ``void
-operator() const`` method templated on EOS type. ``Evaluate`` is
-decorated so that it may be evaluated on either host or device,
-depending on desired use-case. Alternatively, you may use an anonymous
-function with an `auto` argument as the input, e.g.,
+operator() const`` method templated on EOS type. Alternatively, you
+may use an anonymous function with an `auto` argument as the input,
+e.g.,
 
 .. code-block:: cpp
 
@@ -265,7 +539,9 @@ function with an `auto` argument as the input, e.g.,
   with GPUs it can produce very unintuitive behaviour. We recommend
   you only make the ``operator()`` non-const if you really know what
   you're doing. And in the anonymous function case, we recommend you
-  capture by value, not reference.
+  capture by value, not reference. ``EvaluateDevice`` does not support
+  side effects at all and you must pass your functors in by value in
+  that case.
 
 To see the utlity of the ``Evaluate`` function, it's probably just
 easiest to provide an example. The following code evaluates the EOS on
@@ -317,17 +593,17 @@ is summed using the ``Kokkos::parallel_reduce`` functionality in the
   CheckPofRE my_op(P, rho, sie, N);
 
   // Here we call the evaluate function
-  eos.Evaluate(my_op);
+  eos.EvaluateHost(my_op);
 
   // The above two lines could have been called "in-one" with:
-  // eos.Evaluate(CheckPofRE(P, rho, sie, N));
+  // eos.EvaluateHost(CheckPofRE(P, rho, sie, N));
 
 Alternatively, you could eliminate the functor and use an anonymous
 function with:
 
 .. code-block:: cpp
 
-  eos.Evaluate([=](auto eos) {
+  eos.EvaluateHost([=](auto eos) {
     Real tot_diff;
     Kokkos::parallel_reduce(
         "MyCheckPofRE", N_,
@@ -404,13 +680,17 @@ A modified equation of state can be built up iteratively. To check if
 the equation of state currently stored in the variant can modified,
 you may call
 
-.. cpp:function:: bool ModifiedInVariant<Mod>() const;
+.. code-block:: cpp
+
+  bool ModifiedInVariant<Mod>() const;
 
 where ``Mod`` is the type of the modifier you want to apply, for
 example ``ShiftedEOS``. If this function returns true, then you can
 apply a modifier with the function
 
-.. cpp:function:: Variant Modify<Mod>(Args &&..args) const;
+.. code-block:: cpp
+
+  Variant Modify<Mod>(Args &&..args) const;
 
 where again ``Mod`` is the modifier you wish to apply, and ``args``
 are the arguments to the constructor for that modifier, e.g., the
@@ -440,7 +720,7 @@ unmodified EOS model, call
 .. cpp:function:: auto GetUnmodifiedObject();
 
 The return value here will be either the type of the ``EOS`` variant
-type or the unmodified model (for example ``IdealGas``) or, depending
+type or the unmodified model (for example ``IdealGas``), depending
 on whether this method was callled within a variant or on a standalone
 model outside a variant.
 
@@ -456,6 +736,18 @@ undoes one level of modification.
 For more details on modifiers, see the :ref:`modifiers<modifiers>`
 section. If you need a combination of modifiers not supported by
 default, we recommend building a custom variant as described above.
+
+Modifiers and Lambdas
+-----------------------
+
+Modifiers may require lambdas. When this is the case, the lambda
+required by the modifier is appended to the end of the lambda
+indexer. For example, the ``StellarCollapse`` EOS model requires
+``nlambda=2``. The ``ZSplitI`` modifier rquires
+``nlambda=1``. Together, ``ZSplitI<StellarCollapse>`` requires a
+lambda indexer of length 3, an the ordering is two parameters for
+``StellarCollapse`` first, and then the parameter required by
+``ZSplitI``.
 
 Preferred Inputs
 -----------------
@@ -547,6 +839,18 @@ might look something like this:
   }
 
 .. _eos methods reference section:
+
+CheckParams
+------------
+
+You may check whether or not an equation of state object is
+constructed self-consistently and ready for use by calling
+
+.. cpp:function:: void CheckParams() const;
+
+which raise an error and/or print an equation of state specific error
+message if something has gone wrong. Most EOS constructors and ways of
+building an EOS call ``CheckParams`` by default.
 
 Equation of State Methods Reference
 ------------------------------------
@@ -646,7 +950,7 @@ returns the the bulk modulus
 
 .. math::
 
-  B_s = (\partial P/\partial \rho)_s
+  B_s = \rho (\partial P/\partial \rho)_s
 
 in units of :math:`g cm^2/s^2` given density in :math:`g/cm^3` and
 temperature in Kelvin. For most material models, the square of the
@@ -699,6 +1003,100 @@ given density in :math:`g/cm^3` and temperature in Kelvin.
 returns the unitless Gruneisen parameter given density in
 :math:`g/cm^3` and specific internal energy in :math:`erg/g`.
 
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real EntropyFromDensityTemperature(const Real rho, const Real temperature,
+                                      Indexer_t &&lambda = nullptr) const;
+
+returns the entropy as a function of density in :math:`g/cm^3` and
+temperature in Kelvin.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                         Indexer_t &&lambda = nullptr) const;
+
+returns the entropy as a function of density in :math:`g/cm^3` and
+specific internal energy in :math:`erg/g`.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real GibssFreeEnergyFromDensityTemperature(const Real rho, const Real temperature,
+                                              Indexer_t &&lambda = nullptr) const;
+
+returns the Gibbs free energy as a function of density in :math:`g/cm^3` and
+temperature in Kelvin.
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   Real GibbsFreeEnergyFromDensityInternalEnergy(const Real rho, const Real sie,
+                                                 Indexer_t &&lambda = nullptr) const;
+
+
+returns the Gibbs free energy as a function of density in :math:`g/cm^3` and
+specific internal energy in :math:`erg/g`.
+
+.. warning::
+
+  Not all equations of state provide entropy and Gibbs free
+  energy. These are coupled, however, so if one is provided, the other
+  will be too. If you call an entropy for a model that does not
+  provide it, ``singularity-eos`` will return an error.
+
+The function
+
+.. code-block:: cpp
+
+   template<typename Indexer_t Real*>
+   void MeanAtomicMassFromDensityTemperature(const Real rho, const Real T,
+                                             Indexer_t &&lambda = nullpter) const;
+
+returns the mean atomic mass (i.e., the number of nucleons) of a
+material given density in :math:`g/cm^3` and temperature in
+Kelvin. The reason this is allowed to vary with density and
+temperature is that some equations of state, such as the Stellar
+Collapse and Helmholtz equations of state encapsulate reactive flows
+where the average nucleus may depend on thermodynamic variables. For
+most materials, however, this is not the case and a convenience
+function that drops the dependence is available:
+
+.. code-block:: cpp
+
+   Real MeanAtomicMass() const;
+
+The function
+
+.. code-block:: cpp
+
+   template<typename Indexer_t Real*>
+   void MeanAtomicNumberFromDensityTemperature(const Real rho, const Real T,
+                                               Indexer_t &&lambda = nullpter) const;
+
+returns the mean atomic number (i.e., the number of protons in the
+nucleus) of a material given density in :math:`g/cm^3` and temperature
+in Kelvin. The reason this is allowed to vary with density and
+temperature is that some equations of state, such as the Stellar
+Collapse and Helmholtz equations of state encapsulate reactive flows
+where the average nucleus may depend on thermodynamic variables. For
+most materials, however, this is not the case and a convenience
+function that drops the dependence is available:
+
+.. code-block:: cpp
+
+   Real MeanAtomicNumber() const;
+
+
+
+.. warning::
+
+  For materials where the mean atomic mass and number **do** vary with
+  density and temperature, the convenience call without this
+  dependence will produce an error.
+
 The function
 
 .. code-block:: cpp
@@ -745,18 +1143,70 @@ quantities as outputs.
 Methods Used for Mixed Cell Closures
 --------------------------------------
 
-Several methods were developed in support of mixed cell closures. In particular:
+Several methods were developed in support of mixed cell closures. In particular the function
 
 .. cpp:function:: Real MinimumDensity() const;
 
-and 
+the function
 
 .. cpp:function:: Real MinimumTemperature() const;
 
+and the function
+
+.. cpp:function:: Real MaximumDensity() const;
+
 provide bounds for valid inputs into a table, which can be used by a
-root finder to meaningful bound the root search. Similarly,
+root finder to meaningful bound the root search.
+
+.. warning::
+
+  For unbounded equations of state, ``MinimumDensity`` and
+  ``MinimumTemperature`` will return zero, while ``MaximumDensity``
+  will return a very large finite number. Which number you get,
+  however, is not guaranteed. You may wish to apply more sensible
+  bounds in your own code.
+
+Similarly,
 
 .. cpp:function:: Real RhoPmin(const Real temp) const;
 
 returns the density at which pressure is minimized for a given
-temperature. This is again useful for root finds.
+temperature. The function
+
+.. cpp:function:: Real MinimumPressure() const;
+
+provides the minimum pressure an equation of state supports, which may
+be the most negative tension state. The function
+
+.. cpp:function:: Real MaximumPressureAtTemperature(const Real temp) const;
+
+provides a maximum possible pressure an equation of state supports at
+a given temperature. (Most models are unbounded in pressure.) This is
+again useful for root finds.
+
+The function
+
+.. code-block:: cpp
+
+  template <typename Indexer_t = Real*>
+  void DensityEnergyFromPressureTemperature(const Real press, const Real temp,
+                                            Indexer_t &&lambda, Real &rho, Real &sie) const;
+
+is designed for working in Pressure-Temperature space. Given a
+pressure ``press`` and temperature ``temp``, it sets a density ``rho``
+and specific internal energy ``sie``. The ``lambda`` is optional and
+defaults to a ``nullptr``.
+
+Typically this operation requires a root find. You may pass in an
+initial guess for the density ``rho`` in-place and most EOS models
+will use it.
+
+.. warning::
+
+  Pressure is not necessarily monotone in density and it may be double
+  valued. Thus you are not guaranteed to find the correct root and the
+  value of your initial guess may determine correctness. The fact that
+  ``rho`` may be used as an initial guess means you **must** pass in
+  an initialized variable, even if it is zero-initialized. Do not pass
+  uninitialized memory into this function!
+

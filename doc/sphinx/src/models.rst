@@ -164,6 +164,81 @@ functional forms for :math:`\Gamma` and the reference curves, the task of
 calculating a **thermodynamically consistent** temperature becomes more
 complicated.
 
+.. _3T-Model:
+
+The 3T Model
+``````````````
+
+In high-energy density physics, the so-called three-temperature (or
+3T) model is often employed. In this model, a material is fully or
+partially ionized. Due to the separation in masses between electrons
+and atomic nuclei, electrons come into thermal equilibrium and ions
+come into thermal equilibrium, but the two populations are not in
+thermal equilibrium with each other. This introduces separate electron
+and ion temperatures. The third temperature is potentially a radiation
+temperature.
+
+By convention in 3T physics, density :math:`\rho` is always the mass
+density of the ions. The electron number density may then be computed
+as
+
+.. math::
+
+  n = \left\langle Z \right\rangle \frac{\rho}{\overline{A} m_p}
+
+where here :math:`\left\langle Z\right\rangle` is the average number
+of electrons contributed per atom, also called mean ionization state,
+:math:`\rho` is the ion mass density, :math:`\overline{A}` is the mean
+atomic mass (in grams per mole) of a given material and :math:`m_p` is
+the proton mass.
+
+.. note::
+
+  Note that there is notational ambiguity between the average
+  ionization state and the average atomic number, as the symbol for
+  both is :math:`Z`. To disambiguate in ``singularity-eos``, we use
+  overbars to reference mean atomic properties such as mean atomic
+  mass :math:`\overline{A}` and mean atomic number :math:`\overline{Z}` while we
+  use :math:`\left\langle Z\right\rangle` to denote mean ionizaiton
+  state.
+
+Also, since the electron mass is negligible compared to the ion mass,
+the specific internal energy carried by electrons
+:math:`\varepsilon_e` is specific with respect to the *ion* mass. In
+particular:
+
+.. math::
+
+  u_e = \varepsilon_e \rho
+
+where here :math:`u_e` is the internal energy per unit volume carried
+by electrons and, as discussed above, :math:`\rho` is ion mass
+density.
+
+``singularity-eos`` assumes that, when 3T physics is active, electrons
+and ions are each described by a separate equation of state
+object. Several models are specifically designed to represent, e.g.,
+the electron equation of state or ion equation of state.
+
+The tabulated models may also support loading tables specifically for
+electron or ion equations of state. In these cases, an ``enum class``
+specifies which component of the material is being requst:
+
+.. code-block:: cpp
+
+   enum class TableSplit { Total, ElectronOnly, IonCold };
+
+where here ``ElectronOnly`` is the free electrons of the material,
+corresponding to Sesame 304 tables, ``IonCold`` is the ions plus cold
+curve (i.e., the ions if you don't know what a cold curve is),
+corresponding to the Sesame 303 tables, and ``Total`` is the sum of
+free electrons and ions, correspodning to the Sesame 301 tables.
+
+.. note::
+
+  The tabulated equations of state have an implicitly assumed
+  ionization fraction that depends on the electron temperature.
+
 Available EOS Information and Nomenclature
 ------------------------------------------
 
@@ -338,6 +413,38 @@ Note: sometimes temperatures are measured in eV for which the conversion is
 
 Sesame units are equivalent to the mm-mg-µs unit system.
 
+The ``MeanAtomicProperties`` struct
+------------------------------------
+
+Several analytic equations of state optionally accept mean atomic mass
+and number as physics properties. These are the average number of
+nucleons and protons in a constituent nucleus respectively. They are
+not necessarily integers, as a given material may be made up of
+multiple kinds of atom. For example, dry air contains both nitrogen
+and oxygen.
+
+The mean atomic mass and number are frequently carried in the
+container struct
+
+.. code-block:: cpp
+
+  struct MeanAtomicProperties {
+    Real Abar, Zbar;
+
+    // default is hydrogen
+    static constexpr Real DEFAULT_ABAR = 1.0;
+    static constexpr Real DEFAULT_ZBAR = 1.0;
+
+    PORTABLE_INLINE_FUNCTION
+    MeanAtomicProperties(Real Abar_, Real Zbar_) : Abar(Abar_), Zbar(Zbar_) {}
+    PORTABLE_INLINE_FUNCTION
+    MeanAtomicProperties() : Abar(DEFAULT_ABAR), Zbar(DEFAULT_ZBAR) {}
+  };
+
+which owns the atomic mass ``Abar`` and atomic number ``Zbar``. You
+may set these by constructing the struct or by setting the fields in a
+pre-constructed struct. The defaults are for hydrogen.
+
 Implemented EOS models
 ----------------------
 
@@ -429,6 +536,98 @@ these values are not set, they will be the same as those returned by the
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
 
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter, e.g.,
+
+.. code-block:: cpp
+
+   IdealGas(Real gm1, Real Cv, MeanAtomicProperties(Abar, Zbar));
+   IdealGas(Real gm1, Real Cv, Real EntropyT0, Real EntropyRho0, MeanAtomicProperties(Abar, Zbar));
+
+Ideal Electron Gas
+```````````````````
+
+The ideal electron gas equation of state is designed for use with 3T
+physics. It is an ideal Boltzmann gas of electrons. As such, each
+electron is assumed to have three translational degrees of freedom
+:math:`f`, such that
+
+.. math::
+
+  \Gamma = \frac{2}{f} = \frac{2}{3}
+
+and
+
+.. math::
+
+  \gamma = \Gamma + 1 = \frac{5}{3}.
+
+The pressure is given by the number density of electrons times
+:math:`k_b T` for Boltzmann constant :math:`k_b` and temperature
+:math:`T`:
+
+.. math::
+
+  P = \frac{\rho}{m_p \overline{A}}\left\langle Z \right\rangle k_b T
+
+for proton mass :math:`m_p`. The specific heat is then
+
+.. math::
+
+  C_V = \frac{\left\langle Z \right\rangle k_b}{\Gamma m_p \overline{A}}
+
+so that
+
+.. math::
+
+  P = \Gamma \rho C_V T
+
+as expected. (Note that the total mass per nucleus isn't exactly
+:math:`\overline{A} m_p`, as protons and neutrons are
+not exactly the same mass. However, it's close enough for all intents
+and purposes.)
+
+The constructor takes only the ``MeanAtomicProperties`` struct, which
+is a required input:
+
+.. code-block:: cpp
+
+  IdealElectrons(const MeanAtomicProperties &AZbar);
+
+Optionally reference values may be provided for the entropy
+calculation, which is computed in the same way as the standard ideal
+gas.
+
+.. note::
+
+  Since the mean ionization state is built into the heat capacity, the
+  entropy is zero until the material is ionized. This is physically
+  consistent, if there are no electrons, the total electron entropy
+  should be zero.
+
+.. note::
+
+  The electron entropy reference should probably be chosen to be
+  consistent with the chosen ionization model, such as a reference
+  temperature where ionization begins. This is about :math:`10^4`
+  Kelvin but will depend on the model and the material. This means
+  that the entropy reference temperature may be very different between
+  ions and electrons.
+
+Calls to compute state variables require the mean ionization state,
+which must be passed in the ``lambda`` parameter, e.g.,
+
+.. code-block:: cpp
+
+  Real lambda[1] = {Z};
+  Real P = eos.PressureFromDensityTemperature(rho, T, lambda);
+
+.. note::
+
+  For now, the ideal electron gas is not in the default variant
+  provided by singularity-eos. If you would like to use it, you must
+  implement your own custom variant.
+
 Stiffened Gas
 `````````````
 
@@ -485,6 +684,15 @@ these values are not set, they will be the same as those returned by the
 :code:`ValuesAtReferenceState()` function. However, if the entropy reference
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
+
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter, e.g.,
+
+.. code-block:: cpp
+
+   StiffGas(Real gm1, Real Cv, Real Pinf, Real q, MeanAtomicProperties(Abar, Zbar));
+   StiffGas(Real gm1, Real Cv, Real Pinf, Real q, Real qp, Real T0, Real P0,
+            EntropyRho0, MeanAtomicProperties(Abar, Zbar));
 
 Noble-Abel
 ``````````
@@ -543,6 +751,113 @@ these values are not set, they will be the same as those returned by the
 :code:`ValuesAtReferenceState()` function. However, if the entropy reference
 conditions are given, the return values of the :code:`ValuesAtReferenceState()`
 function will not be the same.
+
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter, e.g.,
+
+.. code-block:: cpp
+
+   NobleAbel(Real gm1, Real Cv, Real b, Real q,
+             MeanAtomicProperties(Abar, Zbar));
+   NobleAbel(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0,
+             MeanAtomicProperties(Abar, Zbar));
+
+
+Carnahan-Starling
+`````````````````
+
+The (quasi-exact) Carnahan-Starling model in ``singularity-eos`` takes
+the form
+
+.. math::
+
+    P = Z(\rho) \rho (e-q) (\gamma-1)
+
+.. math::
+
+    Z(\rho) = \frac{1+\eta+\eta^2-\eta^3}{(1-\eta)^3},
+
+where :math:`\eta` is the packing fraction given by
+
+.. math::
+
+    \eta = b\rho.
+
+The energy is related to the temperature through
+
+.. math::
+
+    e = C_V T + q,
+
+where :math:`q` is an energy offset.
+
+As with the Noble-Abel EOS, it should be noted that covolume is physically
+significant as it represents the maximum compressibility of the gas,
+and as a result it should be non-negative.
+
+The Carnahan-Starling EOS is intended to represent a hard sphere fluid, and the
+covolume parameter, :math:`b`, can be related to the hard sphere
+diameter, :math:`\sigma`, through
+
+.. math::
+
+    b = \frac{\pi}{6}\frac{\sigma^3}{M},
+
+where :math:`M` is the molar mass of the gas.
+
+The entropy for the Carnahan-Starling EOS is given by
+
+.. math::
+    
+    S =  C_V \ln\left(\frac{T}{T_0}\right) + C_V (\gamma-1) \left\{ \ln\left(\frac{v}
+     {v_0}\right) - S^{CS} \right\} + q',
+
+.. math::
+   S^{CS} = b\left(4\left(\frac{1}{v-b} - \frac{1}{v_0-b}\right)+
+     b\left(\frac{1}{(v-b)^2} - \frac{1}{(v_0-b)^2}\right)\right)
+
+where :math:`S(\rho_0,T_0)=q'`. By default, :math:`T_0 = 298` K and the
+reference density is given by
+
+.. math::
+
+    P_0 = \rho_0 Z(\rho_0) C_V T_0(\gamma-1),
+
+where :math:`P_0` is by default 1 bar. Denisty is obtained through root finding methods.
+
+The settable parameters for this EOS are :math:`\gamma-1`, specific
+heat capacity (:math:`C_V`), covolume (:math:`b`) and offset internal energy (:math:`q`). Optionally, the reference state for the entropy calculation can
+be provided by setting the reference temperature, pressure, and entropy offset.
+
+The ``CarnahanStarling`` EOS constructor has four arguments: ``gm1``, which is :math:`\gamma-1`; ``Cv``, the
+specific heat :math:`C_V`; :math:`b`, the covolume; and :math:`q`, the internal energy offset.
+
+.. code-block:: cpp
+
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q)
+
+Optionally, the reference state for the entropy calculation,
+can be provided in the constructor via ``qp``, ``T0`` and ``P0``:
+
+.. code-block:: cpp
+
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0)
+
+Note that these parameters are provided solely for the entropy calculation. When
+these values are not set, they will be the same as those returned by the
+:code:`ValuesAtReferenceState()` function. However, if the entropy reference
+conditions are given, the return values of the :code:`ValuesAtReferenceState()`
+function will not be the same.
+
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter, e.g.,
+
+.. code-block:: cpp
+
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q,
+                     MeanAtomicProperties(Abar, Zbar))
+    CarnahanStarling(Real gm1, Real Cv, Real b, Real q, Real qp, Real T0, Real P0,
+                     MeanAtomicProperties(Abar, Zbar))
 
 Gruneisen EOS
 `````````````
@@ -612,7 +927,7 @@ If the unitless user parameter :math:`b=\Gamma_0`, the Gruneisen parameter is of
 form where :math:`\Gamma_0 =` constant in compression. These two limitig cases are 
 shown in the figure below.
 
-.. image:: ../SteinbergGammarho.pdf
+.. image:: ../SteinbergGammarho.png
   :width: 500
   :alt: Figure: Demonstration of how the parameter b interpolated between two common approximations for Gamma
 
@@ -680,6 +995,9 @@ There is an overload of the ``Gruneisen`` class which computes
 
   Gruneisen(const Real C0, const Real s1, const Real s2, const Real s3, const Real G0,
             const Real b, const Real rho0, const Real T0, const Real P0, const Real Cv)
+
+Both constructors also optionally accept `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 Extendended Vinet EOS
 `````````````````````
@@ -762,6 +1080,9 @@ is :math:`S_0`, and ``expconsts`` is a pointer to the constant array of length
 39 containing the expansion coefficients
 :math:`d_2` to :math:`d_{40}`. Expansion coefficients not used should be set to
 0.0.
+
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 Mie-Gruneisen linear :math:`U_s`- :math:`u_p` EOS
 `````````````````````````````````````````````````
@@ -892,7 +1213,7 @@ The first omitted term in the expansion inside the square brackets is :math:`\Ga
 in fact even better than the common approximation of replacing the full temperature on the Hugoniot with the temperature on the 
 isentrope, that is, the first term :math:`T_0 e^{\Gamma(\rho_0) \eta}`.
 
-.. image:: ../ApproxForTH.pdf
+.. image:: ../ApproxForTH.png
   :width: 500
   :alt: Figure: Different approximations for the temperature on the Hugoniot.
 
@@ -908,6 +1229,9 @@ where
 ``Cs`` is :math:`C_s`, ``s`` is :math:`s`, 
 ``G0`` is :math:`\Gamma(\rho_0)`, ``Cv0`` is :math:`C_V`,
 ``E0`` is :math:`E_0`, and ``S0`` is :math:`S_0`. 
+
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 Mie-Gruneisen power expansion EOS
 `````````````````````````````````
@@ -932,7 +1256,7 @@ By expanding the MGUsup Hugoniot pressure into a power series in :math:`\eta` we
 
 In the figure below we have used :math:`M=20` with these coefficients and show how the divergence in the MGUsup pressure at :math:`\eta = \frac{1}{s}` is avoided in the PowerMG, making it more suitable for modeling high pressures.
 
-.. image:: ../PMGvsMGUsupPress.pdf
+.. image:: ../PMGvsMGUsupPress.png
   :width: 500
   :alt: Figure: Comparing Hugoniot pressure for PowerMG and MGUsup
 
@@ -989,6 +1313,8 @@ where
 :math:`K_0` to :math:`K_{40}`. Expansion coefficients not used should be set to
 :math:`0.0`.
 
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 
 JWL EOS
@@ -1040,6 +1366,9 @@ The constructor for the JWL EOS is
 where ``A`` is :math:`A`, ``B`` is :math:`B`, ``R1`` is :math:`R_1`,
 ``R2`` is :math:`R_2`, ``w`` is :math:`w`, ``rho0`` is :math:`\rho_0`,
 and ``Cv`` is :math:`C_V`.
+
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 Davis EOS
 ```````````
@@ -1188,6 +1517,9 @@ where ``rho0`` is :math:`\rho_0`, ``e0`` is :math:`e_0`, ``P0`` is
 :math:`Z`, ``alpha`` is :math:`\alpha`, and ``Cv0`` is the specific
 heat capacity at the reference state.
 
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
+
 Davis Products EOS
 '''''''''''''''''''
 
@@ -1278,9 +1610,11 @@ the energy offset of the products EOS is given by
 Practically, this means :math:`e_0` should be positive for any energetic material.
 
 To provide the energy offset to the Davis Products EOS, `the energy shift
-modifier<modifiers shifted EOS>`_ should be used. Note that the convention there
+modifier`_ should be used. Note that the convention there
 is that the shift is positive, so :math:`-e_0` should be provided to the shift
 modifier.
+
+.. _the energy shift modifier: modifiers shifted EOS
 
 The constructor for the Davis Products EOS is
 
@@ -1292,6 +1626,9 @@ The constructor for the Davis Products EOS is
 where ``a`` is :math:`a`, ``b`` is :math:`b`, ``k`` is :math:`k`,
 ``n`` is :math:`n`, ``vc`` is :math:`V_\mathrm{C}`, ``pc`` is
 :math:`P_\mathrm{C}`, ``Cv`` is :math:`C_{V,0}`.
+
+This constructor also optionally accepts `MeanAtomicProperties` for
+the atomic mass and number as a final optional parameter.
 
 Spiner EOS
 ````````````
@@ -1345,15 +1682,25 @@ The constructor for ``SpinerEOSDependsRhoT`` is given by two overloads:
 .. code-block:: cpp
 
   SpinerEOSDependsRhoT(const std::string &filename, int matid,
+                       const singularity::TableSplit = singularity::TableSplit::Total,
                        bool reproduciblity_mode = false);
   SpinerEOSDependsRhoT(const std::string &filename, const std::string &materialName,
+                       const singularity::TableSplit = singularity::TableSplit::Total,
                        bool reproducibility_mode = false);
 
 where here ``filename`` is the input file, ``matid`` is the unique
 material ID in the database in the file, ``materialName`` is the name
 of the material in the file, and ``reproducability_mode`` is a boolean
 which slightly changes how initial guesses for root finds are
-computed. The constructor for ``SpinerEOSDependsRhoSie`` is identical.
+computed. The ``TableSplit`` option selects electron, ion, or total
+equation of state tables for partial ionization. The constructor for
+``SpinerEOSDependsRhoSie`` is identical.
+
+.. note::
+
+  Mean atomic mass and number are loaded from input tables. The
+  ``SpinerEOS`` model does **not** support the
+  ``MeanAtomicProperties`` struct.
 
 ``sp5`` files and ``sesame2spiner``
 `````````````````````````````````````
@@ -1385,8 +1732,7 @@ key-value pairs. For exampe the following input deck is for air:
 
   matid = 5030
   # These set the number of grid points per decade
-  # for each variable. The default is 50 points
-  # per decade.
+  # for each variable. 
   numrho/decade = 40
   numT/decade = 40
   numSie/decade = 40
@@ -1405,16 +1751,120 @@ key-value pairs. For exampe the following input deck is for air:
   shrinklTBounds = 0.15
   shrinkleBounds = 0.5
 
-The only required value in an input file is the matid, in this
-case 5030. All other values will be inferred from the original sesame
-database if possible and if no value in the input file is
-provided. Comments are prefixed with ``#``.
+Comments are prefixed with ``#``. `eospac`_ uses environment variables
+and files to locate files in the `sesame`_ database, and
+``sesame2spiner`` uses `eospac`_. So the location of the ``sesame``
+database need not be provided by the command line. For how to specify
+`sesame`_ file locations, see the `eospac`_ manual.
 
-`eospac`_ uses environment variables and files to locate files in the
-`sesame`_ database, and ``sesame2spiner`` uses `eospac`_. So the
-location of the ``sesame`` database need not be provided by the
-command line. For how to specify `sesame`_ file locations, see the
-`eospac`_ manual.
+.. note::
+
+  To enable 3T subtables with ``SpinerEOS``, you must set
+  ``ionization=true`` in the input file for ``sesame2spiner`` for the
+  desired material.
+
+Piecewise Spiner Grids
+````````````````````````
+
+``sesame2spiner`` also supports grids with different resolutions in
+different parts of the table. We call these **piecewise** grids. By
+default grids are now piecewise. Piecewise grids can be disabled with
+
+.. code-block::
+
+  # defaults are true
+  piecewiseRho = false
+  piecewiseT = false
+  piecewiseSie = false
+
+These options may be true or false. The default is true. When
+piecewise grids are active, the density-temperature (or
+density-energy) grid is built as a Cartesian product grid of grids of
+non-uniform resolutions. The density grid gets split into three
+pieces, a region ``[rhoMin, rhoFineMin]``, a region ``[rhoFineMin,
+rhoFineMax]``, and a region ``[rhoFineMin, rhoMax]``. The
+``numrho/decade`` parameter sets the number of points per decade in
+the central refined region. The regions at lower and higher density
+have ``rhoCoarseFactorLo`` and ``rhoCoarseFactorHi`` fewer points per
+decade respectively compared to the finer region.
+
+Typically the fine region should be roughly centered around the normal
+density for a material, which is usually a challenging region to
+capture. If you neglect to set ``rhoFineMin`` and ``rhoFineMax``,
+``sesame2spiner`` will set the central refined region to be a region
+of diameter ``rhoFineDiameterDecades`` (in log space) around the
+material's normal density.
+
+The temperature grid has two regions, a more finely spaced region at
+low temperatures and a less finely spaced region at high
+temperatures. The regions are spearated by a temperature
+``TSplitPoint``. The default is :math:`10^4` Kelvin. The energy grid
+follows the temperature grid, with the energy split point
+corresponding to the temperature split point. The coarser
+high-temperature temperature and energy grids are coarsened by a
+factor of ``TCoarseFactor`` and ``sieCoarseFactor`` respectively.
+
+A diagram of a density-temperature grid is shown below. The region
+with temperatures below ``TSplitPoint`` is refined in temperature. The
+region between ``rhoFineMin`` and ``rhoFineMax`` is refined in
+density.
+
+.. image:: phase_diagram.png
+  :width: 400
+  :alt: An example piecewise density-temperature grid.
+
+
+Thus the input block for piecewise grid might look like this:
+
+.. code-block::
+
+  # Below, all right-hand-sides are set to their default values.
+  piecewiseRho = true
+  piecewiseT = true
+  piecewiseSie = true
+
+  # the fine resolution for rho.
+  numrho/decade = 350
+  # width of the fine region for rho
+  rhoFineDiameterDecades = 1.5
+  # the lower density region is 3x less refined
+  rhoCoarseFactorLo = 3
+  # the higher density region is 5x less refined
+  rhoCoarseFactorHi = 5
+
+  # the fine resolution for T
+  numT/decade = 100
+  # the point demarking the coarse and fine regions in temperature
+  TSplitPoint = 1e4
+  # it's usually wise to to not let
+  # temperature get too small in log space if you do this
+  Tmin = 1
+  # The coarser region (above the split point) is 50 percent less refined
+  TCoarseFactor = 1.5
+
+  # energy has the split point sie(rhonormal, TSplitPoint)
+  # but we may still specify the resolution
+  numSie/decade = 100
+  sieCoarseFactor = 1.5
+
+.. note::
+
+  For all grid types, the only required value in an input file is the
+  matid. Table bounds and normal density will be inferred from the
+  sesame metadata if possible and if no value in the original input
+  file is provided. Table densities and positions and sizes of refined
+  regions are not inferred from the table, but are chosen with
+  the default values listed in the above code block.
+
+.. note::
+
+  Both the flat and hierarchical grids attempt to align their grids so
+  that there is a grid point in density and temperature exactly at
+  room temperature and normal density. This is because normal density
+  and room temperature is a particularly important point in phase
+  space, as it is the point in phase space a piece of material sitting
+  on your desk would be at. This is called an *anchor* point for the
+  mesh.
 
 SAP Polynomial EOS
 ``````````````````
@@ -1445,6 +1895,8 @@ values in expansion and compression.
 
 and similar expressions for :math:`b_2^*`.
 
+The SAP polynomial EOS also optionally accepts a
+``MeanAtomicProperties`` struct.
 
 
 Stellar Collapse EOS
@@ -1526,6 +1978,17 @@ where ``filename`` is the file containing the tabulated model,
 original `Stellar Collapse`_ format, and ``filter_bmod`` specifies
 whether or not to apply the above-described median filter.
 
+.. note::
+
+  The ``StellarCollapse`` EOS assumes nuclear statistical equilibrium
+  and as such mean atomic mass and number are state variables. As such
+  class does not accept the ``MeanAtomicProperties`` struct. The
+  ``MeanAtomicMassFromDensityTemperature`` and
+  ``MeanAtomicNumberFromDensityTemperature`` functions return the
+  relevant quantities for some thermodynamic state. The
+  ``MeanAtomicMass()`` and ``MeanAtomicNumber()`` functions raise an
+  error.
+
 ``StellarCollapse`` also provides 
 
 .. cpp:function:: void Save(const std::string &filename)
@@ -1551,19 +2014,23 @@ return a ``Real`` number.
 .. warning::
     As with the SpinerEOS models, the stellar collapse models use fast
     logs. You can switch the logs to true logs with the
-    ``SINGULARITY_USE_TRUE_LOG_GRIDDING`` cmake option.
+    ``SINGULARITY_USE_TRUE_LOG_GRIDDING`` cmake option. This may be
+    desirable on ARM-based architectures (e.g., ``aarch64``), where
+    a hardware log intrinsic is available.
+    
 
 .. note::
-    A more performant implementation of fast logs is available, but it
-    might not be portable. Enable it with the
-    ``SINGULARITY_USE_HIGH_RISK_MATH`` cmake option.
+   The default implementation of our fast logs assumes little endian
+   numbers. If you are on a big-endian machine, they will not work
+   properly. If you encounter a big-endian machine, please report it
+   to us in the issues and (for now) enable the portable
+   implementation of fast logs with ``-DSINGULARITY_NQT_PORTABLE=ON``.
 
 .. _Stellar Collapse: https://stellarcollapse.org/equationofstate.html
 
 .. _OConnor and Ott: https://doi.org/10.1088/0264-9381/27/11/114103
 
 .. _median filter: https://en.wikipedia.org/wiki/Median_filter
-
 
 
 Helmholtz EOS
@@ -1606,6 +2073,14 @@ The degenerate electron term is computed via thermodynamic derivatives
 of the Helmholtz free energy (hence the name Helmholtz EOS). The free
 energy is pre-computed via integrals over the Fermi sphere and
 tabulated in a file provided from `Frank Timmes's website`_.
+
+.. note::
+
+  Since mean atomic mass and number are required inputs, the
+  ``MeanAtomicMassFromDensityTemperature`` and
+  ``MeanAtomicNumberFromDensityAndTemperature`` functions simply
+  return the input values. The ``MeanAtomicMass()`` and
+  ``MeanAtomicNumber`` functions produce an error.
 
 The table is a simple small ascii file. To ensure thermodyanic
 consistency, the table is interpolated using either biquintic or
@@ -1686,27 +2161,47 @@ EOSPAC EOS
     Entropy is not yet available for this EOS
 
 This is a striaghtforward wrapper of the `EOSPAC`_ library for the
-`Sesame`_ database. The constructor for the ``EOSPAC`` model looks like
+`Sesame`_ database. The constructor for the ``EOSPAC`` model has several overloads
 
 .. code-block::
 
-  EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0, eospacMonotonicity monotonicity = eospacMonotonicity::none, bool apply_smoothing = false, eospacSplit apply_splitting = eospacSplit::none, bool linear_interp = false)
+  EOSPAC(int matid, TableSplit split, bool invert_at_setup = false,
+         Real insert_data = 0.0,
+         eospacMonotonicity monotonicity = eospacMonotonicity::none,
+         bool apply_smoothing = false,
+         eospacSplit apply_splitting = eospacSplit::none,
+         bool linear_interp = false);
+  EOSPAC(int matid, bool invert_at_setup = false, Real insert_data = 0.0,
+         eospacMonotonicity monotonicity = eospacMonotonicity::none,
+         bool apply_smoothing = false,
+         eospacSplit apply_splitting = eospacSplit::none,
+         bool linear_interp = false);
+  EOSPAC(int matid, const Options &opts);
 
 where ``matid`` is the unique material number in the database,
-``invert_at_setup`` specifies whether or not pre-compute tables of
-temperature as a function of density and energy, ``insert_data`` 
-inserts specified number of grid points between original grid points 
-in the `Sesame`_ table, ``monotonicity` enforces monotonicity in x, 
-y or both (:math:`monotonicityX/Y/XY`), ``apply_smoothing`` enables 
-data table smoothing that imposes a linear floor on temperature dependence, 
-forces linear temperature dependence for low temperature, and forces 
-linear density dependence for low and high density, ``apply_splitting`` 
-has the following options for ion data tables not found in the `Sesame`_ 
-database :. :math:`splitNumProp` uses the cold curve plus number-proportional 
-model, :math:`splitIdealGas` uses the cold curve plus ideal gas model 
-and :math:`splitCowan` uses the cold curve plus Cowan-nuclear model 
-for ions and the final option ``linear_interp`` uses linear instead of 
-bilinear interpolation. 
+``split`` is the ``TableSplit`` parameter for electron, ion, or total
+tables used in partial ionization. ``invert_at_setup`` specifies
+whether or not pre-compute tables of temperature as a function of
+density and energy, ``insert_data`` inserts specified number of grid
+points between original grid points in the `Sesame`_ table,
+``monotonicity` enforces monotonicity in x, y or both
+(:math:`monotonicityX/Y/XY`), ``apply_smoothing`` enables data table
+smoothing that imposes a linear floor on temperature dependence,
+forces linear temperature dependence for low temperature, and forces
+linear density dependence for low and high density,
+``apply_splitting`` has the following options for ion data tables not
+found in the `Sesame`_ database :. :math:`splitNumProp` uses the cold
+curve plus number-proportional model, :math:`splitIdealGas` uses the
+cold curve plus ideal gas model and :math:`splitCowan` uses the cold
+curve plus Cowan-nuclear model for ions and the final option
+``linear_interp`` uses linear instead of bilinear interpolation.
+
+.. note::
+
+  Mean atomic mass and number are loaded from input tables. The
+  ``EOSPAC`` model does **not** support the ``MeanAtomicProperties``
+  struct.
+
 
 Note for performance reasons this EOS uses a slightly different vector API.
 See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.

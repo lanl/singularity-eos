@@ -15,6 +15,7 @@ Documentation approved for unlimited release. LA-UR-21-31131.
    :caption: Contents:
 
    src/getting-started
+   src/examples
    src/philosophy
    src/building
    src/integration
@@ -23,6 +24,7 @@ Documentation approved for unlimited release. LA-UR-21-31131.
    src/modifiers
    src/customization
    src/using-closures
+   src/using-kpt
    src/python
    src/contributing
    src/sphinx-doc

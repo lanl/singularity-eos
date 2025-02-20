@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -35,29 +36,7 @@ using namespace eos_base;
 template <typename T>
 class ScaledEOS : public EosBase<ScaledEOS<T>> {
  public:
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-
-  // TODO(JMM): The modifier EOS's should probably call the specific
-  // sub-functions of the class they modify so that they can leverage,
-  // e.g., an especially performant or special version of these
-  using EosBase<ScaledEOS<T>>::TemperatureFromDensityInternalEnergy;
-  using EosBase<ScaledEOS<T>>::InternalEnergyFromDensityTemperature;
-  using EosBase<ScaledEOS<T>>::PressureFromDensityTemperature;
-  using EosBase<ScaledEOS<T>>::PressureFromDensityInternalEnergy;
-  using EosBase<ScaledEOS<T>>::MinInternalEnergyFromDensity;
-  using EosBase<ScaledEOS<T>>::EntropyFromDensityTemperature;
-  using EosBase<ScaledEOS<T>>::EntropyFromDensityInternalEnergy;
-  using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityTemperature;
-  using EosBase<ScaledEOS<T>>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<ScaledEOS<T>>::BulkModulusFromDensityTemperature;
-  using EosBase<ScaledEOS<T>>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityTemperature;
-  using EosBase<ScaledEOS<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<ScaledEOS<T>>::FillEos;
-
+  SG_ADD_BASE_CLASS_USINGS(ScaledEOS<T>);
   using BaseType = T;
 
   // give me std::format or fmt::format...
@@ -69,9 +48,19 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
 
   // move semantics ensures dynamic memory comes along for the ride
   ScaledEOS(T &&t, const Real scale)
-      : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {}
+      : t_(std::forward<T>(t)), scale_(scale), inv_scale_(1. / scale) {
+    CheckParams();
+  }
   ScaledEOS() = default;
 
+  PORTABLE_INLINE_FUNCTION void CheckParams() const {
+    PORTABLE_ALWAYS_REQUIRE(std::abs(scale_) > 0, "Scale must not be zero.");
+    PORTABLE_ALWAYS_REQUIRE(std::abs(inv_scale_) > 0, "Inverse scale must not be zero.");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(scale_), "Scale must be well defined.");
+    PORTABLE_ALWAYS_REQUIRE(!std::isnan(inv_scale_),
+                            "Inverse scale must be well defined.");
+    t_.CheckParams();
+  }
   auto GetOnDevice() { return ScaledEOS<T>(t_.GetOnDevice(), scale_); }
   inline void Finalize() { t_.Finalize(); }
 
@@ -352,14 +341,36 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const {
     return t_.MinimumTemperature();
   }
-
-  inline constexpr bool IsModified() const { return true; }
-
-  inline constexpr T UnmodifyOnce() { return t_; }
-
-  inline constexpr decltype(auto) GetUnmodifiedObject() {
-    return t_.GetUnmodifiedObject();
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const {
+    return inv_scale_ * t_.MaximumDensity();
   }
+  PORTABLE_FORCEINLINE_FUNCTION Real MinimumPressure() const {
+    return t_.MinimumPressure();
+  }
+  PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
+    return t_.MaximumPressureAtTemperature(temp);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicMass() const { return inv_scale_ * t_.MeanAtomicMass(); }
+  PORTABLE_INLINE_FUNCTION
+  Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
+
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return inv_scale_ *
+           t_.MeanAtomicMassFromDensityTemperature(scale_ * rho, temperature, lambda);
+  }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    return t_.MeanAtomicNumberFromDensityTemperature(scale_ * rho, temperature, lambda);
+  }
+
+  SG_ADD_MODIFIER_METHODS(T, t_);
 
  private:
   T t_;

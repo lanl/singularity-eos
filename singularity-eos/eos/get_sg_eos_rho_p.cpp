@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -38,25 +38,34 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
         const int32_t tid{small_loop ? iloop : token};
         double mass_sum{0.0};
         int npte{0};
+        double vfrac_sum{0.0};
         // initialize values for solver / lookup
-        i_func(i, tid, mass_sum, npte, 0.0, 0.0, 1.0);
+        i_func(i, tid, mass_sum, npte, vfrac_sum, 0.0, 0.0, 1.0);
         Real sie_tot_true{0.0};
         // need to initialize the scratch before it's used to avoid undefined behavior
-        for (int idx = 0; idx < solver_scratch.extent(1); ++idx) {
+        for (std::size_t idx = 0; idx < solver_scratch.extent(1); ++idx) {
           solver_scratch(tid, idx) = 0.0;
         }
         const int neq = npte + 1;
         singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
                                                    neq * (neq + 4) + 2 * npte);
+        bool pte_converged = true;
         if (npte > 1) {
           // create solver lambda
           // eos accessor
           singularity::EOSAccessor_ eos_inx(eos_v, &pte_idxs(tid, 0));
-          PTESolverFixedP<singularity::EOSAccessor_, Real *, Real *> method(
-              npte, eos_inx, 1.0, press_pte(tid, 0), &rho_pte(tid, 0), &vfrac_pte(tid, 0),
-              &sie_pte(tid, 0), &temp_pte(tid, 0), &press_pte(tid, 0), cache[0],
-              &solver_scratch(tid, 0));
-          const bool res_{PTESolver(method)};
+          // JMM: Address sanitizer likes these named.
+          Real *prho_pte = &rho_pte(tid, 0);
+          Real *pvfrac_pte = &vfrac_pte(tid, 0);
+          Real *psie_pte = &sie_pte(tid, 0);
+          Real *ptemp_pte = &temp_pte(tid, 0);
+          Real *ppress_pte = &press_pte(tid, 0);
+          Real *pscratch = &solver_scratch(tid, 0);
+          PTESolverFixedP<singularity::EOSAccessor_, Real *, Real **> method(
+              npte, eos_inx, vfrac_sum, press_pte(tid, 0), prho_pte, pvfrac_pte, psie_pte,
+              ptemp_pte, ppress_pte, cache, pscratch);
+          auto status = PTESolver(method);
+          pte_converged = status.converged;
           // calculate total sie
           for (int mp = 0; mp < npte; ++mp) {
             const int m = pte_mats(tid, mp);
@@ -88,7 +97,7 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
         // sie calculate explicitly already
         sie_v(i) = sie_tot_true;
         // assign remaining outputs
-        f_func(i, tid, npte, mass_sum, 1.0, 0.0, 0.0, cache);
+        f_func(i, tid, npte, mass_sum, 1.0, 0.0, 0.0, pte_converged, cache);
         // assign max pressure
         pmax_v(i) = press_v(i) > pmax_v(i) ? press_v(i) : pmax_v(i);
         // release the token used for scratch arrays

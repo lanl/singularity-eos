@@ -271,6 +271,17 @@ SCENARIO("PowerMG EOS rho sie", "[VectorEOS][PowerMGEOS]") {
         }
       }
 
+      WHEN("a [rho,sie](P, T) lookup is performed") {
+        int nwrong = 0;
+        portableReduce(
+            "Check density energy from pressure temperature", 0, 1,
+            PORTABLE_LAMBDA(const int i, int &nw) {
+              nw += !CheckRhoSieFromPT(eos, 7.285, 7.78960970661031411e+02);
+            },
+            nwrong);
+        THEN("There are no errors") { REQUIRE(nwrong == 0); }
+      }
+
       WHEN("A S(rho, e) lookup is performed") {
         portableFor(
             "Test entropy", 0, num, PORTABLE_LAMBDA(const int i) {
@@ -575,7 +586,7 @@ SCENARIO("PowerMG EOS SetUp", "[VectorEOS][PowerMGEOS]") {
     Real rho0 = 7.285;
     Real T0 = 298.0;
     constexpr Real Cs = 2766.0e2;
-    constexpr Real s = 1.5344;
+    // constexpr Real s = 1.5344;
     constexpr Real G0 = 2.4659;
     Real Cv0 = 0.2149e-05 * Mbcc_per_g;
     constexpr Real E0 = 0.658e-03 * Mbcc_per_g;

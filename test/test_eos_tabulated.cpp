@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -21,6 +21,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
@@ -32,6 +33,7 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 #ifdef SPINER_USE_HDF
+#include <singularity-eos/base/spiner_table_utils.hpp>
 using singularity::SpinerEOSDependsRhoSie;
 using singularity::SpinerEOSDependsRhoT;
 #endif
@@ -62,7 +64,7 @@ constexpr Real ev2k = 1.160451812e4;
 #ifdef SINGULARITY_USE_EOSPAC
 using EOS = singularity::Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
 
-SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") {
+SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
 
   GIVEN("SpinerEOS and EOSPAC EOS for steel can be initialized with matid") {
     EOS steelEOS_host_polymorphic = SpinerEOSDependsRhoT(eosName, steelID);
@@ -82,6 +84,11 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
                                       dpde_pac, dvdt_pac);
         REQUIRE(isClose(rho, rho_pac));
         REQUIRE(isClose(T, T_pac));
+      }
+
+      AND_THEN("We get the correct mean atomic mass and number") {
+        REQUIRE(steelEOS_host.MeanAtomicMass() == eospac.MeanAtomicMass());
+        REQUIRE(steelEOS_host.MeanAtomicNumber() == eospac.MeanAtomicNumber());
       }
 
       // TODO: this needs to be a much more rigorous test
@@ -124,6 +131,7 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
     steelEOS_host_polymorphic.Finalize(); // host and device must be
                                           // finalized separately.
     steelEOS.Finalize();                  // cleans up memory on device.
+    eospac.Finalize();
   }
 
   GIVEN("SpinerEOS and EOSPAC for air can be initialized with matid") {
@@ -179,6 +187,7 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
     }
     airEOS_host.Finalize();
     airEOS.Finalize();
+    eospac.Finalize();
   }
 
   GIVEN("EOS initialized with matid") {
@@ -199,6 +208,7 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
       REQUIRE(isClose(cv, cv_pac));
     }
     eos_spiner.Finalize();
+    eos_eospac.Finalize();
   }
 
   GIVEN("EOS initialized with matid") {
@@ -216,17 +226,22 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS],[DependsRhoT][EOSPAC]") 
       REQUIRE(isClose(rho, rho_pac));
     }
     eos_spiner.Finalize();
+    eos_eospac.Finalize();
   }
 }
 
-// Disabling these tests for now as the DependsRhoSie code is not well-maintained
-SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]") {
+SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
 
   GIVEN("SpinerEOSes for steel can be initialised with matid") {
     SpinerEOSDependsRhoSie steelEOS_host(eosName, steelID);
     EOS steelEOS = steelEOS_host.GetOnDevice();
     THEN("The correct metadata is read in") {
       REQUIRE(steelEOS_host.matid() == steelID);
+
+      AND_THEN("We get the correct mean atomic mass and number") {
+        REQUIRE(isClose(steelEOS_host.MeanAtomicMass(), 55.37));
+        REQUIRE(isClose(steelEOS_host.MeanAtomicNumber(), 25.80));
+      }
 
       int nw_ie2{0}, nw_te2{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -257,6 +272,177 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS],[DependsRhoSie]") {
     steelEOS.Finalize();      // cleans up device memory
   }
 }
+
+SCENARIO("SpinerEOS and EOSPAC Serialization",
+         "[SpinerEOS][DependsRhoT][DependsRhoSie][EOSPAC][Serialization]") {
+  GIVEN("Eoses initialized with matid") {
+    SpinerEOSDependsRhoT rhoT_orig = SpinerEOSDependsRhoT(eosName, steelID);
+    SpinerEOSDependsRhoSie rhoSie_orig = SpinerEOSDependsRhoSie(eosName, steelID);
+    EOS eospac_orig = EOSPAC(steelID);
+    // we want to stress test that we can serialize and deserialize
+    // multiple EOSPAC objects
+    EOS eospac_air = EOSPAC(airID);
+    THEN("They report dynamic vs static memory correctly") {
+      REQUIRE(rhoT_orig.AllDynamicMemoryIsShareable());
+      REQUIRE(rhoSie_orig.AllDynamicMemoryIsShareable());
+      REQUIRE(!eospac_orig.AllDynamicMemoryIsShareable());
+      REQUIRE(eospac_orig.SerializedSizeInBytes() >
+              eospac_orig.DynamicMemorySizeInBytes());
+      REQUIRE(eospac_air.SerializedSizeInBytes() > eospac_air.DynamicMemorySizeInBytes());
+    }
+    WHEN("We serialize") {
+      auto [rhoT_size, rhoT_data] = rhoT_orig.Serialize();
+      REQUIRE(rhoT_size == rhoT_orig.SerializedSizeInBytes());
+
+      auto [rhoSie_size, rhoSie_data] = rhoSie_orig.Serialize();
+      REQUIRE(rhoSie_size == rhoSie_orig.SerializedSizeInBytes());
+
+      auto [eospac_size, eospac_data] = eospac_orig.Serialize();
+      REQUIRE(eospac_size == eospac_orig.SerializedSizeInBytes());
+
+      auto [air_size, air_data] = eospac_air.Serialize();
+      REQUIRE(air_size == eospac_air.SerializedSizeInBytes());
+
+      const std::size_t rhoT_shared_size = rhoT_orig.DynamicMemorySizeInBytes();
+      REQUIRE(rhoT_size > rhoT_shared_size);
+
+      const std::size_t rhoSie_shared_size = rhoSie_orig.DynamicMemorySizeInBytes();
+      REQUIRE(rhoSie_size > rhoSie_shared_size);
+
+      const std::size_t eospac_shared_size = eospac_orig.DynamicMemorySizeInBytes();
+      REQUIRE(eospac_size > eospac_shared_size);
+
+      const std::size_t air_shared_size = eospac_air.DynamicMemorySizeInBytes();
+      REQUIRE(air_size > air_shared_size);
+
+      THEN("We can deserialize into shared memory") {
+        using singularity::SharedMemSettings;
+        using RhoTTricks = singularity::table_utils::SpinerTricks<SpinerEOSDependsRhoT>;
+        using RhoSieTricks =
+            singularity::table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
+
+        char *rhoT_shared_data = (char *)malloc(rhoT_shared_size);
+        char *rhoSie_shared_data = (char *)malloc(rhoSie_shared_size);
+        char *eospac_shared_data = (char *)malloc(eospac_shared_size);
+        char *air_shared_data = (char *)malloc(air_shared_size);
+
+        SpinerEOSDependsRhoT eos_rhoT;
+        std::size_t read_size_rhoT =
+            eos_rhoT.DeSerialize(rhoT_data, SharedMemSettings(rhoT_shared_data, true));
+        REQUIRE(read_size_rhoT == rhoT_size);
+        REQUIRE(RhoTTricks::DataBoxesPointToDifferentMemory(rhoT_orig, eos_rhoT));
+
+        SpinerEOSDependsRhoSie eos_rhoSie;
+        std::size_t read_size_rhoSie = eos_rhoSie.DeSerialize(
+            rhoSie_data, SharedMemSettings(rhoSie_shared_data, true));
+        REQUIRE(read_size_rhoSie == rhoSie_size);
+        REQUIRE(RhoSieTricks::DataBoxesPointToDifferentMemory(rhoSie_orig, eos_rhoSie));
+
+        eospac_orig.Finalize();
+        EOS eos_eospac = EOSPAC();
+        std::size_t read_size_eospac = eos_eospac.DeSerialize(
+            eospac_data, SharedMemSettings(eospac_shared_data, true));
+        REQUIRE(read_size_eospac == eospac_size);
+
+        eospac_air.Finalize();
+        EOS eos_air_2 = EOSPAC();
+        std::size_t read_size_air =
+            eos_air_2.DeSerialize(air_data, SharedMemSettings(air_shared_data, true));
+        REQUIRE(read_size_air == air_size);
+
+        AND_THEN("EOS lookups work") {
+          constexpr Real rho_trial = 1;
+          constexpr Real sie_trial = 1e12;
+          const Real P_eospac =
+              eos_eospac.PressureFromDensityInternalEnergy(rho_trial, sie_trial);
+          const Real P_spiner_orig =
+              rhoT_orig.PressureFromDensityInternalEnergy(rho_trial, sie_trial);
+          const Real P_spiner_rhoT =
+              eos_rhoT.PressureFromDensityInternalEnergy(rho_trial, sie_trial);
+          const Real P_spiner_rhoSie =
+              eos_rhoSie.PressureFromDensityInternalEnergy(rho_trial, sie_trial);
+          REQUIRE(isClose(P_eospac, P_spiner_orig));
+          REQUIRE(isClose(P_eospac, P_spiner_rhoT));
+          REQUIRE(isClose(P_eospac, P_spiner_rhoSie));
+        }
+
+        eos_eospac.Finalize();
+        free(rhoT_shared_data);
+        free(rhoSie_shared_data);
+        free(eospac_shared_data);
+      }
+      free(rhoT_data);
+      free(rhoSie_data);
+      free(eospac_data);
+    }
+
+    rhoT_orig.Finalize();
+    rhoSie_orig.Finalize();
+  }
+}
+
+SCENARIO("Tabulated EOS with partial ionization",
+         "[SpinerEOS][DependsRhoT][DependsRhoSie][EOSPAC][SplitTables]") {
+  using singularity::TableSplit;
+  GIVEN("Spiner EOSes for total, electron, and ion EOS") {
+    SpinerEOSDependsRhoT rt_tot(eosName, steelID, TableSplit::Total);
+    SpinerEOSDependsRhoT rt_e(eosName, steelID, TableSplit::ElectronOnly);
+    SpinerEOSDependsRhoT rt_ic(eosName, steelID, TableSplit::IonCold);
+    std::vector<SpinerEOSDependsRhoT> rt = {rt_tot, rt_e, rt_ic};
+
+    SpinerEOSDependsRhoSie re_tot(eosName, steelID, TableSplit::Total);
+    SpinerEOSDependsRhoSie re_e(eosName, steelID, TableSplit::ElectronOnly);
+    SpinerEOSDependsRhoSie re_ic(eosName, steelID, TableSplit::IonCold);
+    std::vector<SpinerEOSDependsRhoSie> re = {re_tot, re_e, re_ic};
+
+    EOSPAC pac_tot(steelID, TableSplit::Total);
+    EOSPAC pac_e(steelID, TableSplit::ElectronOnly);
+    EOSPAC pac_ic(steelID, TableSplit::IonCold);
+    std::vector<EOSPAC> pac = {pac_tot, pac_e, pac_ic};
+
+    WHEN("We evaluate pressure from density and temperature") {
+      constexpr Real rho = 1e1;
+      constexpr Real T = 1e4;
+      const std::size_t N = rt.size();
+      std::vector<Real> P_rt(N), P_re(N), P_pac(N);
+      for (std::size_t i = 0; i < N; ++i) {
+        P_rt[i] = rt[i].PressureFromDensityTemperature(rho, T);
+        P_re[i] = re[i].PressureFromDensityTemperature(rho, T);
+        P_pac[i] = pac[i].PressureFromDensityTemperature(rho, T);
+      }
+      THEN("The subtables add to the total for DependsRhoT") {
+        REQUIRE(isClose(P_rt[0], P_rt[1] + P_rt[2]));
+      }
+      THEN("The subtables add to the total for DependsRhoSie") {
+        REQUIRE(isClose(P_re[0], P_re[1] + P_re[2]));
+      }
+      THEN("The subtables add to the total for EOSPAC") {
+        REQUIRE(isClose(P_pac[0], P_pac[1] + P_pac[2]));
+      }
+      THEN("DependsRhoT agrees with EOSPAC") {
+        for (std::size_t i = 0; i < N; ++i) {
+          REQUIRE(isClose(P_rt[i], P_pac[i]));
+        }
+      }
+      THEN("DependsRhoSie agrees with EOSPAC") {
+        for (std::size_t i = 0; i < N; ++i) {
+          REQUIRE(isClose(P_re[i], P_pac[i]));
+        }
+      }
+    }
+
+    for (auto &eos : rt) {
+      eos.Finalize();
+    }
+    for (auto &eos : re) {
+      eos.Finalize();
+    }
+    for (auto &eos : pac) {
+      eos.Finalize();
+    }
+  }
+}
+
 #endif // SINGULARITY_USE_EOSPAC
 #endif // SINGULARITY_TEST_SESAME
 #endif // SPINER_USE_HDF
