@@ -841,7 +841,18 @@ class EosBase {
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 
-  // Default MinInternalEnergyFromDensity behavior is to cause an error
+  // Default MinInternalEnergyFromDensity behavior is to just return the zero-K isotherm.
+  // This should be fine for all thermodynamically consistent EOS, but could cause issues
+  // with EOS that aren't thermodynamically consistent.
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    return copy.InternalEnergyFromDensityTemperature(rho, 0.);
+  }
+
+  // This error is useful for EOS where the zero-K approximation is invalid for whatever
+  // reason
   PORTABLE_FORCEINLINE_FUNCTION
   void MinInternalEnergyIsNotEnabled(const char *eosname) const {
     // Construct the error message using char* so it works on device

@@ -97,7 +97,6 @@ class NobleAbel : public EosBase<NobleAbel> {
       const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _qq;
   }
-
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
