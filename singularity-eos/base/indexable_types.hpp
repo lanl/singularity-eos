@@ -42,7 +42,7 @@ namespace IndexerUtils {
 // Convenience function for accessing an indexer by either type or
 // natural number index depending on what is available
 template <typename T, typename Indexer_t>
-inline auto &Get(Indexer_t &&lambda, std::size_t idx = 0) {
+PORTABLE_FORCEINLINE_FUNCTION auto &Get(Indexer_t &&lambda, std::size_t idx = 0) {
   if constexpr (T::template IsOverloadedIn<Indexer_t>::value) {
     return lambda[T()];
   } else {
@@ -51,9 +51,7 @@ inline auto &Get(Indexer_t &&lambda, std::size_t idx = 0) {
 }
 
 // This is a convenience struct to easily build a small indexer with
-// a set of indexable types. Note however that accessing with
-// indexable types is an O(N) operation with this implementation.
-// You probably don't want to use this in real code.
+// a set of indexable types.
 template <typename... Ts>
 class VariadicIndexer {
  public:
