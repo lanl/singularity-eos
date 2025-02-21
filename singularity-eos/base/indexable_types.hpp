@@ -20,6 +20,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 
 #define SINGULARITY_DECLARE_INDEXABLE_TYPE(TYPE_NAME)                                    \
   struct TYPE_NAME : public singularity::IndexableTypes::IndexableTypesBase<TYPE_NAME> {}
@@ -57,11 +58,9 @@ template <typename... Ts>
 class VariadicIndexer {
  public:
   VariadicIndexer() = default;
-  template <typename T>
+  template <typename T,
+            typename = std::enable_if_t<variadic_utils::contains<T, Ts...>::value>>
   PORTABLE_FORCEINLINE_FUNCTION Real &operator[](const T &t) {
-    constexpr bool contains_v = (std::is_same_v<T, Ts> || ...);
-    static_assert(contains_v, "Indexable type must be in indexer type list!");
-
     // get the index of T in the variadic type list
     constexpr std::size_t N = sizeof...(Ts);
     std::size_t idx = 0;

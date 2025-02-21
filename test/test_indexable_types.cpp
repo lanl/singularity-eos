@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#include <array>
+
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 
@@ -24,6 +26,18 @@ using namespace singularity::IndexerUtils;
 using namespace singularity::IndexableTypes;
 
 using Lambda_t = VariadicIndexer<MeanIonizationState, ElectronFraction, LogDensity>;
+
+class ManualLambda_t {
+ public:
+  ManualLambda_t() = default;
+  Real &operator[](const std::size_t idx) { return data_[idx]; }
+  Real &operator[](const MeanIonizationState &zbar) { return data_[0]; }
+  Real &operator[](const ElectronFraction &Ye) { return data_[1]; }
+  Real &operator[](const LogDensity &lRho) { return data_[2]; }
+
+ private:
+  std::array<Real, 3> data_;
+};
 
 SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer]") {
   GIVEN("A variadic indexer, filled with indices 0, 1, 2") {
@@ -46,6 +60,35 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
       THEN("We get the expected index") {
         REQUIRE(Zbar == static_cast<Real>(0));
         REQUIRE(Ye == static_cast<Real>(1));
+        REQUIRE(lRho == static_cast<Real>(2));
+      }
+    }
+    WHEN("We use the Get functionality") {
+      // Request a type that exists, but an incorrect index
+      Real Zbar = Get<MeanIonizationState>(lambda, 2);
+      // Request a type that doesn't exist but an index that does
+      Real lRho = Get<LogTemperature>(lambda, 2);
+      THEN("We get the correct values") {
+        REQUIRE(Zbar == static_cast<Real>(0));
+        REQUIRE(lRho == static_cast<Real>(2));
+      }
+    }
+  }
+}
+
+SCENARIO("IndexableTypes and ManualLambda", "[IndexableTypes]") {
+  GIVEN("A manually written indexer, filled with indices 0, 1, 2") {
+    ManualLambda_t lambda;
+    for (std::size_t i = 0; i < 3; ++i) {
+      lambda[i] = static_cast<Real>(i);
+    }
+    WHEN("We use the Get functionality") {
+      // Request a type that exists, but an incorrect index
+      Real Zbar = Get<MeanIonizationState>(lambda, 2);
+      // Request a type that doesn't exist but an index that does
+      Real lRho = Get<LogTemperature>(lambda, 2);
+      THEN("We get the correct values") {
+        REQUIRE(Zbar == static_cast<Real>(0));
         REQUIRE(lRho == static_cast<Real>(2));
       }
     }
