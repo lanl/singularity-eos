@@ -38,6 +38,7 @@ add_executable(
   test_math_utils.cpp
   test_variadic_utils.cpp
   test_bounds.cpp
+  test_indexable_types.cpp
   )
 
 add_executable(
