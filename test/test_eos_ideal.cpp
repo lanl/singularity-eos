@@ -114,7 +114,9 @@ SCENARIO("Ideal gas mean atomic properties",
             Real T = 100.0 * i;
             Real Ab_eval = device_eos.MeanAtomicMassFromDensityTemperature(rho, T);
             Real Zb_eval = device_eos.MeanAtomicNumberFromDensityTemperature(rho, T);
+            bool needs_zbar = device_eos.NeedsLambda(MeanIonizationState());
             nw += !(isClose(Ab_eval, Abar, 1e-12)) + !(isClose(Zb_eval, Zbar, 1e-12));
+            nw += needs_zbar;
           },
           nwrong);
       REQUIRE(nwrong == 0);
@@ -305,6 +307,8 @@ SCENARIO("Ideal electron gas", "[IdealGas][IdealEelctrons]") {
             ll[MeanIonizationState()] = static_cast<Real>(i);
             Real Cv = eos.SpecificHeatFromDensityTemperature(rho, T, ll);
             if (!isClose(Cv, i * cv1, 1e-12)) nw += 1;
+            bool needs_zbar = eos.NeedsLambda(MeanIonizationState());
+            nw += !needs_zbar;
           },
           nwrong);
       THEN("The specific heat should scale linearly with the ionization state") {

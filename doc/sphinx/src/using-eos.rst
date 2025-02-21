@@ -745,7 +745,19 @@ As a convenience tool, the struct
 
 automatically defines an indexer that accepts all named indices in the
 variadic list ``Ts...`` and also integer indexing. It's a fixed-size
-array under the hood. All of the above functionality is available in
+array under the hood.
+
+You can check if an equation of state is compatible with a given named
+index type by calling
+
+.. code-block:: cpp
+
+   eos.NeedsLambda(NamedIndex())
+
+which returns ``true`` if the EOS is compatible with ``NamedIndex``
+and ``false`` otherwise.
+
+All of the above functionality is available in
 the header file ``singularity-eos/base/indexable_types.hpp``.
 
 EOS Modifiers
