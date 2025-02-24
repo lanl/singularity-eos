@@ -114,7 +114,7 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   Real *scratch = (double *)PORTABLE_MALLOC(scratch_bytes);
 
   // Allocate lambdas for all EOS and use an accessor to index into it
-  const size_t lambda_bytes = num_pte * MAX_NUM_LAMBDAS * sizeof(Real *);
+  const size_t lambda_bytes = num_pte * MAX_NUM_LAMBDAS * sizeof(Real);
   Real *lambda_memory = (Real *)PORTABLE_MALLOC(lambda_bytes);
 
   // Solve the PTE system on device using a one-teration portableFor
