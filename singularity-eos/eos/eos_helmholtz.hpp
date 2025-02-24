@@ -464,7 +464,7 @@ class Helmholtz : public EosBase<Helmholtz> {
   static inline constexpr bool NeedsLambda() {
     return std::is_same<T, IndexableTypes::MeanAtomicMass>::value ||
            std::is_same<T, IndexableTypes::MeanAtomicNumber>::value ||
-           std::is_same<T, IndexableTypes::LogTemperature>::value
+           std::is_same<T, IndexableTypes::LogTemperature>::value;
   }
   static constexpr unsigned long PreferredInput() {
     return thermalqs::density | thermalqs::temperature;
