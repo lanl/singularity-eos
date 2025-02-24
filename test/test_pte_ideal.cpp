@@ -22,6 +22,8 @@
 // #include <ports-of-call/array.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
+
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 
 #include <singularity-eos/eos/eos_models.hpp>
@@ -45,12 +47,21 @@ using singularity::PTESolverRhoTRequiredScratch;
 using singularity::Variant;
 using EOS = Variant<IdealGas, IdealElectrons>;
 
+using singularity::IndexableTypes::MeanIonizationState;
+struct LambdaIndexerSingle {
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](const int i) { return z; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](const MeanIonizationState &s) { return z; }
+  Real z = 0.9;
+};
+
 struct LambdaIndexer {
   PORTABLE_FORCEINLINE_FUNCTION
-  Real *operator[](const int i) { return &z; }
+  auto &operator[](const int i) { return indexer; }
   PORTABLE_FORCEINLINE_FUNCTION
-  const Real *operator[](const int i) const { return &z; }
-  Real z = 0.9;
+  const auto &operator[](const int i) const { return indexer; }
+  LambdaIndexerSingle indexer;
 };
 
 template <typename RealIndexer, typename EOSIndexer>
@@ -83,8 +94,8 @@ PORTABLE_INLINE_FUNCTION Real set_state(Real rho_nom, Real sie_nom, RealIndexer 
 template <typename EOS_Indexer_t>
 int ComparePTEs(EOS_Indexer_t eoss, const std::size_t NEOS, const std::size_t NTRIAL) {
   constexpr Real EPS = 1e-5;
-  const std::size_t nscratch_rt = PTESolverRhoTRequiredScratch(NEOS);
-  const std::size_t nscratch_pt = PTESolverPTRequiredScratch(NEOS);
+  const std::size_t nscratch_rt = PTESolverRhoTRequiredScratch(NEOS, false);
+  const std::size_t nscratch_pt = PTESolverPTRequiredScratch(NEOS, false);
   const Real rho_nom = 1.0;
   const Real sie_nom = 1.0;
 
