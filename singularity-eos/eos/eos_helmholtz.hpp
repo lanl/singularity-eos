@@ -462,10 +462,9 @@ class Helmholtz : public EosBase<Helmholtz> {
   PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
-    using namespace IndexableTypes;
-    return std::is_same<T, MeanAtomicMass>::value ||
-           std::is_same<T, MeanAtomicNumber>::value ||
-           std::is_same<T, LogTemperature>::value
+    return std::is_same<T, IndexableTypes::MeanAtomicMass>::value ||
+           std::is_same<T, IndexableTypes::MeanAtomicNumber>::value ||
+           std::is_same<T, IndexableTypes::LogTemperature>::value
   }
   static constexpr unsigned long PreferredInput() {
     return thermalqs::density | thermalqs::temperature;

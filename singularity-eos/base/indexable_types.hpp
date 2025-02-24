@@ -60,7 +60,6 @@ class VariadicIndexer {
             typename = std::enable_if_t<variadic_utils::contains<T, Ts...>::value>>
   PORTABLE_FORCEINLINE_FUNCTION Real &operator[](const T &t) {
     // get the index of T in the variadic type list
-    constexpr std::size_t N = sizeof...(Ts);
     std::size_t idx = 0;
     std::size_t i = 0;
     ((std::is_same_v<T, Ts> ? idx = i : ++i), ...);

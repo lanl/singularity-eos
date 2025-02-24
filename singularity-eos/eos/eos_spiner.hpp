@@ -1372,8 +1372,8 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoSie_(
     }
   }
   if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<LogDensity>(lambda, Lambda::lRho) = lRho;
-    IndexerUtils::Get<LogTemperature>(lambda, Lambda::lT) = lT;
+    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
+    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
   }
 #ifdef PORTABILITY_STRATEGY_NONE
   if (memoryStatus_ != DataStatus::OnDevice) {
