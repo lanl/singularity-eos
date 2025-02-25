@@ -474,7 +474,7 @@ class PTESolverBase {
   const RealIndexer &sie;
   const RealIndexer &temp;
   const RealIndexer &press;
-  const LambdaIndexer &lambda;
+  LambdaIndexer &lambda;
   Real *jacobian, *dx, *sol_scratch, *residual, *u, *rhobar;
   CacheAccessor Cache;
   Real rho_total, uscale, utotal_scale, Tnorm;
