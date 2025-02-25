@@ -28,7 +28,7 @@ namespace IndexerUtils {
 // natural number index depending on what is available
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION auto &Get(Indexer_t &&lambda, std::size_t idx = 0) {
-  if constexpr (variadic_utils::is_indexable_v<T, Indexer_t>) {
+  if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
     return lambda[T()];
   } else {
     return lambda[idx];

@@ -279,7 +279,7 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
       PORTABLE_THROW_OR_ABORT(
           "StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
     }
-    if constexpr (is_indexable_v<IndexableTypes::MeanIonizationState, Indexer_t>) {
+    if constexpr (is_indexable_v<Indexer_t, IndexableTypes::MeanIonizationState>) {
       return std::max(0.0, lambda[IndexableTypes::MeanIonizationState()]);
     } else {
       return std::max(0.0, lambda[t_.nlambda()]);
