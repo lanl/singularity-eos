@@ -228,7 +228,8 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   int nlambda() const noexcept { return 1 + t_.nlambda(); }
   template <typename Indexable>
   static inline constexpr bool NeedsLambda() {
-    return std::is_same<Indexable, IndexableTypes::MeanIonizationState>::value;
+    return std::is_same<Indexable, IndexableTypes::MeanIonizationState>::value ||
+           T::template NeedsLambda<Indexable>();
   }
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
@@ -276,8 +277,7 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   PORTABLE_FORCEINLINE_FUNCTION Real GetIonizationState_(Indexer_t &&lambda) const {
     using namespace variadic_utils;
     if (is_nullptr(lambda)) {
-      PORTABLE_THROW_OR_ABORT(
-          "StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
+      PORTABLE_THROW_OR_ABORT("ZSplitEOS: lambda must contain mean ionization state!\n");
     }
     if constexpr (is_indexable_v<Indexer_t, IndexableTypes::MeanIonizationState>) {
       return std::max(0.0, lambda[IndexableTypes::MeanIonizationState()]);

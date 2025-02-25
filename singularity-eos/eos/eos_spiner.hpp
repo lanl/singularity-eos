@@ -365,6 +365,9 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   friend class table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
 
  public:
+  struct Lambda {
+    enum Index { lRho = 0 };
+  };
   using Grid_t = SpinerEOSDependsRhoT::Grid_t;
   using DataBox = SpinerEOSDependsRhoT::DataBox;
   struct SP5Tables {
@@ -1908,7 +1911,7 @@ SpinerEOSDependsRhoSie::FillEos(Real &rho, Real &temp, Real &energy, Real &press
   } else {
     lRho = toLog_(rho, lRhoOffset_);
     if (!variadic_utils::is_nullptr(lambda)) {
-      IndexerUtils::Get<IndexableTypes::LogDensity>(lambda) = lRho;
+      IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
     }
   }
   if (output & thermalqs::temperature) {
@@ -1959,7 +1962,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::interpRhoT_(
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lT = toLog_(T, lTOffset_);
   if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda) = lRho;
+    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
   }
   return db.interpToReal(lRho, lT);
 }
@@ -1970,7 +1973,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::interpRhoSie_(
   const Real lRho = toLog_(rho, lRhoOffset_);
   const Real lE = toLog_(sie, lEOffset_);
   if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda) = lRho;
+    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
   }
   return db.interpToReal(lRho, lE);
 }
@@ -1992,7 +1995,8 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
   } else {
     Real lRhoGuess = reproducible_ ? lRhoMin_ : 0.5 * (lRhoMin_ + lRhoMax_);
     if (!variadic_utils::is_nullptr(lambda)) {
-      Real lRho_cache = IndexerUtils::Get<IndexableTypes::LogDensity>(lambda);
+      Real lRho_cache =
+          IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho);
       if ((lRhoMin_ <= lRho_cache) && (lRho_cache <= lRhoMax_)) {
         lRhoGuess = lRho_cache;
       }
@@ -2017,7 +2021,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
     }
   }
   if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda) = lRho;
+    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
   }
   return lRho;
 }
