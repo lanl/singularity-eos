@@ -50,9 +50,9 @@ using EOS = Variant<IdealGas, IdealElectrons>;
 using singularity::IndexableTypes::MeanIonizationState;
 struct LambdaIndexerSingle {
   PORTABLE_FORCEINLINE_FUNCTION
-  Real &operator[](const int i) { return z; }
+  Real &operator[](const int i) const { return z; }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real &operator[](const MeanIonizationState &s) { return z; }
+  Real &operator[](const MeanIonizationState &s) const { return z; }
   Real z = 0.9;
 };
 
