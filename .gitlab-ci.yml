@@ -6,7 +6,8 @@ variables:
   ENABLE_CDASH: true
   GIT_SUBMODULE_STRATEGY: normal
   # use this variable if there is a xcap/deployment MR you want to use instead
-  # PROJECT_SPACK_ENV_VERSION: mr/62/2024-10-15
+  # PROJECT_SPACK_ENV_VERSION: "mr/62/2024-10-15"
+  PROJECT_SPACK_ENV_VERSION: "2025-01-18"
 
 include:
  - .gitlab/common.yml
