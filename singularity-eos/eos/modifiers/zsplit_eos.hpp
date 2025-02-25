@@ -274,11 +274,12 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
  private:
   template <typename Indexer_t = Real *>
   PORTABLE_FORCEINLINE_FUNCTION Real GetIonizationState_(Indexer_t &&lambda) const {
-    if (variadic_utils::is_nullptr(lambda)) {
+    using namespace variadic_utils;
+    if (is_nullptr(lambda)) {
       PORTABLE_THROW_OR_ABORT(
           "StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
     }
-    if constexpr (IndexableTypes::MeanIonizationState::IsOverloadedIn<Indexer_t>::value) {
+    if constexpr (is_indexable_v<IndexableTypes::MeanIonizationState, Indexer_t>) {
       return std::max(0.0, lambda[IndexableTypes::MeanIonizationState()]);
     } else {
       return std::max(0.0, lambda[t_.nlambda()]);

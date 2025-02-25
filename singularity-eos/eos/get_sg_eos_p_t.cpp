@@ -44,6 +44,8 @@ void get_sg_eos_p_t(const char *name, int ncell, int nmat, indirection_v &offset
           solver_scratch(tid, idx) = 0.0;
         }
         // caching mechanism
+        // JMM: We allocate more space than needed and re-use solver
+        // scratch for the cache accessor.
         singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0));
         double mass_sum{0.0};
         // normalize mass fractions

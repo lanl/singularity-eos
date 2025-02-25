@@ -683,14 +683,13 @@ The available types currently supported by default are:
   struct singularity::IndexableTypes::MeanAtomicNumber;
   struct singularity::IndexableTypes::ElectronFraction;
 
-However if you are implementing your own equation of state class, you
-can define new types with the macro
-``SINGULARITY_DECLARE_INDEXABLE_TYPE``. For example:
+However if you are not limited to these types. Any type will do and
+you can define your own as you like. For example:
 
 .. code-block::
 
   namespace IndexableTypes {
-  SINGULARITY_DECLARE_INDEXABLE_TYPE(MyLambdaParameter);
+  struct MyLambdaParameter;
   }
 
 To use an indexable type, you must define an indexer with an overload

@@ -94,8 +94,8 @@ PORTABLE_INLINE_FUNCTION Real set_state(Real rho_nom, Real sie_nom, RealIndexer 
 template <typename EOS_Indexer_t>
 int ComparePTEs(EOS_Indexer_t eoss, const std::size_t NEOS, const std::size_t NTRIAL) {
   constexpr Real EPS = 1e-5;
-  const std::size_t nscratch_rt = PTESolverRhoTRequiredScratch(NEOS, false);
-  const std::size_t nscratch_pt = PTESolverPTRequiredScratch(NEOS, false);
+  const std::size_t nscratch_rt = PTESolverRhoTRequiredScratch(NEOS);
+  const std::size_t nscratch_pt = PTESolverPTRequiredScratch(NEOS);
   const Real rho_nom = 1.0;
   const Real sie_nom = 1.0;
 

@@ -47,6 +47,9 @@ void get_sg_eos_rho_p(const char *name, int ncell, indirection_v &offsets_v,
           solver_scratch(tid, idx) = 0.0;
         }
         const int neq = npte + 1;
+        // JMM: We allocate more space than needed and re-use solver
+        // scratch for the cache accessor.
+
         singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
                                                    neq * (neq + 4) + 2 * npte);
         bool pte_converged = true;

@@ -86,6 +86,31 @@ struct type_list {};
 template <template <typename> class... Ts>
 struct adapt_list {};
 
+// provide index of a type in a type list
+template <typename T, typename Head, typename... Ts>
+constexpr std::size_t GetIndexInTL(std::size_t current_index) {
+  if constexpr (std::is_same_v<T, Head>) {
+    return current_index;
+  } else {
+    static_assert(sizeof...(Ts) > 0, "Type T must be in type list!");
+    return GetIndexInTL<T, Ts...>(current_index + 1);
+  }
+}
+template <typename T, typename Head, typename... Ts>
+constexpr std::size_t GetIndexInTL() {
+  return GetIndexInTL<T, Head, Ts...>(0);
+}
+
+// is_indexable similar to is_invokable
+template <typename, typename, typename = void>
+struct is_indexable : std::false_type {};
+template <typename T, typename Index>
+struct is_indexable<T, Index,
+                    std::void_t<decltype(std::declval<T>()[std::declval<Index>()])>>
+    : std::true_type {};
+template <typename T, typename Index>
+constexpr bool is_indexable_v = is_indexable<T, Index>::value;
+
 // this flattens a typelist of typelists to a single typelist
 
 // first parameter - accumulator

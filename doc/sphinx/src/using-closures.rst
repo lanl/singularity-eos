@@ -449,32 +449,23 @@ used by the solver. There are helper routines for providing the needed
 scratch space, wich will tell you how many bytes per mixed cell are
 required. For example:
 
-.. cpp:function:: int PTESolverRhoTRequiredScratch(const int nmat, bool with_cache);
+.. cpp:function:: int PTESolverRhoTRequiredScratch(const int nmat);
 
 and
 
-.. cpp:function:: int PTESolverRhoURequiredScratch(const int nmat, bool with_cache);
+.. cpp:function:: int PTESolverRhoURequiredScratch(const int nmat);
 
 provide the number of real numbers (i.e., either ``float`` or
 ``double``) required for a single cell given a number of materials in
-equilibriun for either the ``RhoT`` or ``RhoU`` solver. The
-``with_cache`` flag specifies whether or not you'd like the PTE solver
-to manage memory for lambdas for you. This argument is optional and
-the default is true.
-
-.. note::
-
-  The pre-allocated cache is used only automatically if you pass in a
-  ``singularity::NullIndexer`` type in for the lambda indexer, which
-  returns a ``nullptr`` for all lambda access.
+equilibriun for either the ``RhoT`` or ``RhoU`` solver.
 
 The equivalent functions
 
-.. cpp:function:: size_t PTESolverRhoTRequiredScratchInBytes(const int nmat, bool with_cache);
+.. cpp:function:: size_t PTESolverRhoTRequiredScratchInBytes(const int nmat);
 
 and
 
-.. cpp:function:: int PTESolverRhoURequiredScratchInBytes(const int nmat, bool with_cache);
+.. cpp:function:: int PTESolverRhoURequiredScratchInBytes(const int nmat);
 
 give the size in bytes needed to be allocated per cell given a number
 of materials ``nmat``.

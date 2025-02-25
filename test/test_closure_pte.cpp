@@ -109,7 +109,7 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   portableCopyToDevice(v_pressures, pressures.data(), bytes);
 
   // Allocate scratch space for the PTE solver
-  const int pte_solver_scratch_size = RequiredScratch(num_pte, false);
+  const int pte_solver_scratch_size = RequiredScratch(num_pte);
   const size_t scratch_bytes = pte_solver_scratch_size * sizeof(Real);
   Real *scratch = (double *)PORTABLE_MALLOC(scratch_bytes);
 

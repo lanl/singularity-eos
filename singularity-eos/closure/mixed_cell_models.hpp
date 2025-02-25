@@ -149,10 +149,6 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
   return retval;
 }
 
-struct NullPtrIndexer {
-  PORTABLE_INLINE_FUNCTION Real *operator[](const std::size_t i) { return nullptr; }
-};
-
 class CacheAccessor {
  public:
   CacheAccessor() = default;
@@ -160,6 +156,13 @@ class CacheAccessor {
   explicit CacheAccessor(Real *scr) : cache_(scr) {}
   PORTABLE_FORCEINLINE_FUNCTION
   Real *operator[](const std::size_t m) const { return cache_ + m * MAX_NUM_LAMBDAS; }
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  static std::size_t Size(const std::size_t nmat) { return MAX_NUM_LAMBDAS * nmat; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  static std::size_t SizeInBytes(const std::size_t nmat) {
+    return Size(nmat) * sizeof(Real);
+  }
 
  private:
   Real *cache_;
@@ -224,9 +227,6 @@ class PTESolverBase {
     residual = AssignIncrement(scratch, neq);
     u = AssignIncrement(scratch, nmat);
     rhobar = AssignIncrement(scratch, nmat);
-    if (needs_cache_) {
-      Cache = CacheAccessor(AssignIncrement(scratch, nmat * MAX_NUM_LAMBDAS));
-    }
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -341,10 +341,10 @@ class PTESolverBase {
     for (std::size_t m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
-      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, GetLambda(m));
+      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, lambda[m]);
       // note the scaling of pressure
-      press[m] = robust::ratio(this->GetPressureFromPreferred(
-                                   eos[m], rho[m], Tguess, sie[m], GetLambda(m), false),
+      press[m] = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tguess,
+                                                              sie[m], lambda[m], false),
                                uscale);
     }
 
@@ -423,12 +423,12 @@ class PTESolverBase {
     for (std::size_t m = 0; m < nmat; ++m) {
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
 
-      const Real sie_m = eos[m].InternalEnergyFromDensityTemperature(
-          rho[m], Tnorm * Tideal, GetLambda(m));
+      const Real sie_m =
+          eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * Tideal, lambda[m]);
       u[m] = rhobar[m] * robust::ratio(sie_m, uscale);
       press[m] =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tideal,
-                                                       sie_m, GetLambda(m), false),
+                                                       sie_m, lambda[m], false),
                         uscale);
     }
     // fill in the residual
@@ -464,17 +464,6 @@ class PTESolverBase {
     return p;
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  auto GetLambda(std::size_t m) const {
-    if constexpr (needs_cache_) {
-      return Cache[m];
-    } else {
-      return lambda[m];
-    }
-  }
-
-  static constexpr const bool needs_cache_ =
-      std::is_same<LambdaIndexer, NullIndexer>::value;
   const MixParams params_;
   const std::size_t nmat, neq;
   std::size_t niter;
@@ -555,16 +544,14 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
 // ======================================================================
 // PTE Solver RhoT
 // ======================================================================
-inline int PTESolverRhoTRequiredScratch(const std::size_t nmat, bool with_cache = true) {
+inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
-  return neq * neq                              // jacobian
-         + 4 * neq                              // dx, residual, and sol_scratch
-         + 6 * nmat                             // all the nmat sized arrays
-         + with_cache * MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 6 * nmat; // all the nmat sized arrays
 }
-inline size_t PTESolverRhoTRequiredScratchInBytes(const std::size_t nmat,
-                                                  bool with_cache = true) {
-  return PTESolverRhoTRequiredScratch(nmat, with_cache) * sizeof(Real);
+inline size_t PTESolverRhoTRequiredScratchInBytes(const std::size_t nmat) {
+  return PTESolverRhoTRequiredScratch(nmat) * sizeof(Real);
 }
 
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
@@ -597,7 +584,6 @@ class PTESolverRhoT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::GetLambda;
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
@@ -673,10 +659,10 @@ class PTESolverRhoT
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
       Real e_pert = eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil,
-                                                                GetLambda(m));
+                                                                lambda[m]);
       Real p_pert =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
-                                                       e_pert, GetLambda(m), false),
+                                                       e_pert, lambda[m], false),
                         uscale);
       dpdv[m] = robust::ratio((p_pert - press[m]), dv);
       dedv[m] = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dv);
@@ -685,10 +671,10 @@ class PTESolverRhoT
       //////////////////////////////
       Real dT = Tequil * params_.derivative_eps;
       e_pert = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * (Tequil + dT),
-                                                           GetLambda(m));
+                                                           lambda[m]);
       p_pert = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m],
                                                             Tnorm * (Tequil + dT), e_pert,
-                                                            GetLambda(m), false),
+                                                            lambda[m], false),
                              uscale);
       dpdT[m] = robust::ratio((p_pert - press[m]), dT);
       dedT_sum += robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dT);
@@ -763,13 +749,13 @@ class PTESolverRhoT
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
-                             rho[m], Tnorm * Tequil, GetLambda(m));
+                             rho[m], Tnorm * Tequil, lambda[m]);
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
       temp[m] = Tequil;
       press[m] =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tequil,
-                                                       sie[m], GetLambda(m), false),
+                                                       sie[m], lambda[m], false),
                         uscale);
     }
     Residual();
@@ -784,16 +770,14 @@ class PTESolverRhoT
 // ======================================================================
 // PT space solver
 // ======================================================================
-inline int PTESolverPTRequiredScratch(const std::size_t nmat, bool with_cache = true) {
+inline int PTESolverPTRequiredScratch(const std::size_t nmat) {
   constexpr int neq = 2;
-  return neq * neq                              // jacobian
-         + 4 * neq                              // dx, residual, and sol_scratch
-         + 2 * nmat                             // all the nmat sized arrays
-         + with_cache * MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * nmat; // all the nmat sized arrays
 }
-inline size_t PTESolverPTRequiredScratchInBytes(const std::size_t nmat,
-                                                bool with_cache = true) {
-  return PTESolverPTRequiredScratch(nmat, with_cache) * sizeof(Real);
+inline size_t PTESolverPTRequiredScratchInBytes(const std::size_t nmat) {
+  return PTESolverPTRequiredScratch(nmat) * sizeof(Real);
 }
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 class PTESolverPT
@@ -825,7 +809,6 @@ class PTESolverPT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::GetLambda;
 
   enum RES { RV = 0, RSIE = 1 };
 
@@ -864,7 +847,7 @@ class PTESolverPT
     // Set the state based on the P/T chosen
     for (std::size_t m = 0; m < nmat; ++m) {
       eos[m].DensityEnergyFromPressureTemperature(Pequil * uscale, Tequil * Tnorm,
-                                                  GetLambda(m), rho[m], sie[m]);
+                                                  lambda[m], rho[m], sie[m]);
       vfrac[m] = robust::ratio(rhobar[m], rho[m]);
       u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
       temp[m] = Tequil;
@@ -926,7 +909,7 @@ class PTESolverPT
       //////////////////////////////
       Real dp = -Pequil * params_.derivative_eps; // always move towards phase transition
       eos[m].DensityEnergyFromPressureTemperature(uscale * (Pequil + dp), Tnorm * Tequil,
-                                                  GetLambda(m), r_pert, e_pert);
+                                                  lambda[m], r_pert, e_pert);
       Real drdp = robust::ratio(r_pert - rho[m], dp);
       Real dudp = robust::ratio(robust::ratio(rhobar[m] * e_pert, uscale) - u[m], dp);
 
@@ -938,7 +921,7 @@ class PTESolverPT
       //////////////////////////////
       Real dT = Tequil * params_.derivative_eps;
       eos[m].DensityEnergyFromPressureTemperature(uscale * Pequil, Tnorm * (Tequil + dT),
-                                                  GetLambda(m), r_pert, e_pert);
+                                                  lambda[m], r_pert, e_pert);
       Real drdT = robust::ratio(r_pert - rho[m], dT);
       Real dudT = robust::ratio(robust::ratio(rhobar[m] * e_pert, uscale) - u[m], dT);
 
@@ -993,7 +976,7 @@ class PTESolverPT
     Pequil = Ptemp + scale * dx[1];
     for (std::size_t m = 0; m < nmat; ++m) {
       eos[m].DensityEnergyFromPressureTemperature(Pequil * uscale, Tequil * Tnorm,
-                                                  GetLambda(m), rho[m], sie[m]);
+                                                  lambda[m], rho[m], sie[m]);
       vfrac[m] = robust::ratio(rhobar[m], rho[m]);
       u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
       temp[m] = Tequil;
@@ -1028,18 +1011,15 @@ class PTESolverPT
 // ======================================================================
 // fixed temperature solver
 // ======================================================================
-inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat,
-                                                  const bool with_cache = true) {
+inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat;
-  return neq * neq                              // jacobian
-         + 4 * neq                              // dx, residual, and sol_scratch
-         + 2 * nmat                             // rhobar and u in base
-         + 2 * nmat                             // nmat sized arrays in fixed T solver
-         + with_cache * MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * nmat  // rhobar and u in base
+         + 2 * nmat; // nmat sized arrays in fixed T solver
 }
-inline size_t PTESolverFixedTRequiredScratchInBytes(const std::size_t nmat,
-                                                    const bool with_cache = true) {
-  return PTESolverFixedTRequiredScratch(nmat, with_cache) * sizeof(Real);
+inline size_t PTESolverFixedTRequiredScratchInBytes(const std::size_t nmat) {
+  return PTESolverFixedTRequiredScratch(nmat) * sizeof(Real);
 }
 
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
@@ -1068,7 +1048,6 @@ class PTESolverFixedT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::GetLambda;
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
@@ -1104,10 +1083,10 @@ class PTESolverFixedT
       // larger than rho(Pmin(Tequil)); set the physical density to reflect
       // this change in volume fraction
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
-      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, GetLambda(m));
+      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, lambda[m]);
       uscale += sie[m] * rho[m];
       // note the scaling of pressure
-      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, GetLambda(m));
+      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, lambda[m]);
     }
     for (std::size_t m = 0; m < nmat; ++m) {
       press[m] = robust::ratio(press[m], uscale);
@@ -1158,7 +1137,7 @@ class PTESolverFixedT
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
       Real p_pert = robust::ratio(
-          eos[m].PressureFromDensityTemperature(rho_pert, Tequil, GetLambda(m)), uscale);
+          eos[m].PressureFromDensityTemperature(rho_pert, Tequil, lambda[m]), uscale);
       dpdv[m] = robust::ratio((p_pert - press[m]), dv);
     }
 
@@ -1219,11 +1198,11 @@ class PTESolverFixedT
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] *
-             eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, GetLambda(m));
+             eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, lambda[m]);
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
       press[m] = robust::ratio(
-          eos[m].PressureFromDensityTemperature(rho[m], Tequil, GetLambda(m)), uscale);
+          eos[m].PressureFromDensityTemperature(rho[m], Tequil, lambda[m]), uscale);
     }
     Residual();
     return ResidualNorm();
@@ -1237,18 +1216,15 @@ class PTESolverFixedT
 // ======================================================================
 // fixed P solver
 // ======================================================================
-inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat,
-                                                  const bool with_cache = true) {
+inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
-  return neq * neq                              // jacobian
-         + 4 * neq                              // dx, residual, and sol_scratch
-         + 2 * nmat                             // all the nmat sized arrays in base
-         + 3 * nmat                             // all the nmat sized arrays in fixedP
-         + with_cache * MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * nmat  // all the nmat sized arrays in base
+         + 3 * nmat; // all the nmat sized arrays in fixedP
 }
-inline size_t PTESolverFixedPRequiredScratchInBytes(const std::size_t nmat,
-                                                    const bool with_cache = true) {
-  return PTESolverFixedPRequiredScratch(nmat, with_cache) * sizeof(Real);
+inline size_t PTESolverFixedPRequiredScratchInBytes(const std::size_t nmat) {
+  return PTESolverFixedPRequiredScratch(nmat) * sizeof(Real);
 }
 
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
@@ -1280,7 +1256,6 @@ class PTESolverFixedP
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::GetLambda;
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
@@ -1316,7 +1291,7 @@ class PTESolverFixedP
     for (std::size_t m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
-      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, GetLambda(m));
+      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, lambda[m]);
       uscale += sie[m] * rho[m];
     }
 
@@ -1324,7 +1299,7 @@ class PTESolverFixedP
     for (std::size_t m = 0; m < nmat; ++m) {
       u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
       press[m] = robust::ratio(
-          eos[m].PressureFromDensityTemperature(rho[m], Tguess, GetLambda(m)), uscale);
+          eos[m].PressureFromDensityTemperature(rho[m], Tguess, lambda[m]), uscale);
     }
     Residual();
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -1375,7 +1350,7 @@ class PTESolverFixedP
       Real e_pert{};
       p_pert =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
-                                                       e_pert, GetLambda(m), true),
+                                                       e_pert, lambda[m], true),
                         uscale);
       dpdv[m] = robust::ratio((p_pert - press[m]), dv);
       //////////////////////////////
@@ -1385,7 +1360,7 @@ class PTESolverFixedP
 
       p_pert = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m],
                                                             Tnorm * (Tequil + dT), e_pert,
-                                                            GetLambda(m), true),
+                                                            lambda[m], true),
                              uscale);
       dpdT[m] = robust::ratio((p_pert - press[m]), dT);
     }
@@ -1455,9 +1430,9 @@ class PTESolverFixedP
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
-                             rho[m], Tnorm * Tequil, GetLambda(m));
+                             rho[m], Tnorm * Tequil, lambda[m]);
       press[m] = robust::ratio(
-          eos[m].PressureFromDensityTemperature(rho[m], Tnorm * Tequil, GetLambda(m)),
+          eos[m].PressureFromDensityTemperature(rho[m], Tnorm * Tequil, lambda[m]),
           uscale);
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
@@ -1475,17 +1450,14 @@ class PTESolverFixedP
 // ======================================================================
 // RhoU Solver
 // ======================================================================
-inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat,
-                                                const bool with_cache = true) {
+inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat) {
   std::size_t neq = 2 * nmat;
-  return neq * neq                              // jacobian
-         + 4 * neq                              // dx, residual, and sol_scratch
-         + 8 * nmat                             // all the nmat sized arrays
-         + with_cache * MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 8 * nmat; // all the nmat sized arrays
 }
-inline size_t PTESolverRhoURequiredScratchInBytes(const std::size_t nmat,
-                                                  const bool with_cache = true) {
-  return PTESolverRhoURequiredScratch(nmat, with_cache) * sizeof(Real);
+inline size_t PTESolverRhoURequiredScratchInBytes(const std::size_t nmat) {
+  return PTESolverRhoURequiredScratch(nmat) * sizeof(Real);
 }
 
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
@@ -1518,7 +1490,6 @@ class PTESolverRhoU
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::GetLambda;
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
@@ -1600,11 +1571,11 @@ class PTESolverRhoU
 
       Real p_pert;
       Real t_pert = robust::ratio(
-          eos[m].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], GetLambda(m)),
+          eos[m].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], lambda[m]),
           Tnorm);
       p_pert =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * t_pert,
-                                                       sie[m], GetLambda(m), false),
+                                                       sie[m], lambda[m], false),
                         uscale);
       dpdv[m] = robust::ratio(p_pert - press[m], dv);
       dtdv[m] = robust::ratio(t_pert - temp[m], dv);
@@ -1614,13 +1585,13 @@ class PTESolverRhoU
       const Real de = std::abs(u[m]) * params_.derivative_eps;
       Real e_pert = robust::ratio(u[m] + de, rhobar[m]);
 
-      t_pert = robust::ratio(eos[m].TemperatureFromDensityInternalEnergy(
-                                 rho[m], uscale * e_pert, GetLambda(m)),
-                             Tnorm);
-      p_pert = robust::ratio(
-          this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert, uscale * e_pert,
-                                         GetLambda(m), false),
-          uscale);
+      t_pert = robust::ratio(
+          eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert, lambda[m]),
+          Tnorm);
+      p_pert =
+          robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert,
+                                                       uscale * e_pert, lambda[m], false),
+                        uscale);
       dpde[m] = robust::ratio(p_pert - press[m], de);
       dtde[m] = robust::ratio(t_pert - temp[m], de);
       if (std::abs(dtde[m]) < params_.min_dtde) { // must be on the cold curve
@@ -1708,11 +1679,10 @@ class PTESolverRhoU
       u[m] = utemp[m] + scale * dx[nmat + m];
       sie[m] = uscale * robust::ratio(u[m], rhobar[m]);
       temp[m] = robust::ratio(
-          eos[m].TemperatureFromDensityInternalEnergy(rho[m], sie[m], GetLambda(m)),
-          Tnorm);
+          eos[m].TemperatureFromDensityInternalEnergy(rho[m], sie[m], lambda[m]), Tnorm);
       press[m] =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * temp[m],
-                                                       sie[m], GetLambda(m), false),
+                                                       sie[m], lambda[m], false),
                         uscale);
     }
     Residual();

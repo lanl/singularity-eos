@@ -45,6 +45,8 @@ void get_sg_eos_rho_e(const char *name, int ncell, indirection_v &offsets_v,
           solver_scratch(tid, idx) = 0.0;
         }
         // get cache from offsets into scratch
+        // JMM: We allocate more space than needed and re-use solver
+        // scratch for the cache accessor.
         const int neq = npte + 1;
         singularity::mix_impl::CacheAccessor cache(&solver_scratch(tid, 0) +
                                                    neq * (neq + 4) + 2 * npte);
