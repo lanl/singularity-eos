@@ -45,12 +45,20 @@ class VariadicIndexerBase {
   VariadicIndexerBase(const Data_t &data) : data_(data) {}
   template <typename T,
             typename = std::enable_if_t<variadic_utils::contains<T, Ts...>::value>>
-  PORTABLE_FORCEINLINE_FUNCTION Real &operator[](const T &t) const {
+  PORTABLE_FORCEINLINE_FUNCTION Real &operator[](const T &t) {
     constexpr std::size_t idx = variadic_utils::GetIndexInTL<T, Ts...>();
     return data_[idx];
   }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real &operator[](const std::size_t idx) const { return data_[idx]; }
+  Real &operator[](const std::size_t idx) { return data_[idx]; }
+  template <typename T,
+            typename = std::enable_if_t<variadic_utils::contains<T, Ts...>::value>>
+  PORTABLE_FORCEINLINE_FUNCTION const Real &operator[](const T &t) const {
+    constexpr std::size_t idx = variadic_utils::GetIndexInTL<T, Ts...>();
+    return data_[idx];
+  }
+  PORTABLE_FORCEINLINE_FUNCTION
+  const Real &operator[](const std::size_t idx) const { return data_[idx]; }
   static inline constexpr std::size_t size() { return sizeof...(Ts); }
 
  private:
