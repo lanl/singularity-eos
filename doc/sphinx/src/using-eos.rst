@@ -701,11 +701,11 @@ of the ``[]`` operator that takes your type. For example:
   public:
     MyLambda_t() = default;
     PORTABLE_FORCEINLINE_FUNCTION
-    Real &operator[](const std::size_t idx) {
+    Real &operator[](const std::size_t idx) const {
       return data_[idx];
     }
     PORTABLE_FORCEINLINE_FUNCTION
-    Real &operator[](const MeanIonizationState &zbar) {
+    Real &operator[](const MeanIonizationState &zbar) const {
       return data_[2];
     }
   private:
@@ -722,8 +722,9 @@ which might be used as
   lambda[MeanIonizationState()] = Z;
 
 where ``MeanIonizationState`` is shorthand for index 2, since you
-defined that overload. To more easily enable mixing and matching
-integer-based indexing with type-based indexing, the function
+defined that overload. Note that the ``operator[]`` must be marked
+``const``. To more easily enable mixing and matching integer-based
+indexing with type-based indexing, the function
 
 .. code-block:: cpp
 
