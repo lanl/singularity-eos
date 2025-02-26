@@ -167,10 +167,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
 
     depends_on("kokkos+pic", when="+kokkos-kernels")
 
-    # specfic specs when using GPU/cuda offloading
-    # TODO remove +wrapper for clang builds
-    # TODO version guard +cuda_lambda
-    depends_on("kokkos +wrapper+cuda_lambda", when="+cuda+kokkos")
+    depends_on("kokkos +cuda_lambda", when="+cuda+kokkos")
 
     # fix for older spacks
     if Version(spack_version) >= Version("0.17"):
