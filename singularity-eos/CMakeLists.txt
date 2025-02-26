@@ -25,6 +25,7 @@ register_headers(
 
     # Normal files
     base/fast-math/logs.hpp
+    base/indexable_types.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
     base/serialization_utils.hpp

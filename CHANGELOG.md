@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR470]](https://github.com/lanl/singularity-eos/pull/470) Add the ability to access lambda elements by named types
 - [[PR459]](https://github.com/lanl/singularity-eos/pull/459) Add electron and ion tables to EOSPAC and SpinerEOS backends
 - [[PR453]](https://github.com/lanl/singularity-eos/pull/453) A PT space PTE solver
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS

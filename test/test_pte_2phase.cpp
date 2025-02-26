@@ -163,10 +163,7 @@ int main(int argc, char *argv[]) {
 
     portableFor(
         "PTE!", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
-          Real *lambda[NMAT];
-          for (int i = 0; i < NMAT; i++) {
-            lambda[i] = nullptr;
-          }
+          singularity::NullIndexer lambda;
 
           Indexer2D<decltype(rho_d)> rho(t, rho_d);
           Indexer2D<decltype(vfrac_d)> vfrac(t, vfrac_d);

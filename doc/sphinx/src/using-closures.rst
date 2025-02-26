@@ -457,8 +457,9 @@ and
 
 provide the number of real numbers (i.e., either ``float`` or
 ``double``) required for a single cell given a number of materials in
-equilibriun for either the ``RhoT`` or ``RhoU`` solver. The equivalent
-functions
+equilibriun for either the ``RhoT`` or ``RhoU`` solver.
+
+The equivalent functions
 
 .. cpp:function:: size_t PTESolverRhoTRequiredScratchInBytes(const int nmat);
 

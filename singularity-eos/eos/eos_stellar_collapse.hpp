@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -35,6 +35,7 @@
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
@@ -240,6 +241,12 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
+  template <typename T>
+  static inline constexpr bool NeedsLambda() {
+    using namespace IndexableTypes;
+    return std::is_same<T, ElectronFraction>::value ||
+           std::is_same<T, LogTemperature>::value;
+  }
   inline RootFinding1D::Status rootStatus() const { return status_; }
   RootFinding1D::RootCounts counts;
   inline void Finalize();
@@ -307,7 +314,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   template <typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION void checkLambda_(Indexer_t &&lambda) const noexcept {
     if (variadic_utils::is_nullptr(lambda)) {
-      EOS_ERROR("StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
+      PORTABLE_THROW_OR_ABORT(
+          "StellarCollapse: lambda must contain Ye and 1 space for caching.\n");
     }
   }
 
@@ -368,8 +376,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     checkLambda_(lambda);
     lRho = lRho_(rho);
     lT = lT_(temp);
-    Ye = lambda[Lambda::Ye];
-    lambda[Lambda::lT] = lT;
+    Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
+    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
   }
   template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
@@ -377,7 +385,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                      Real &lT, Real &Ye) const noexcept {
     lRho = lRho_(rho);
     lT = lTFromlRhoSie_(lRho, sie, lambda);
-    Ye = lambda[Lambda::Ye];
+    Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
     return;
   }
 
@@ -570,8 +578,9 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::PressureFromDensityInternalEnergy
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 StellarCollapse::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
-  MinInternalEnergyIsNotEnabled("Stellar Collapse");
-  return 0.0;
+  Real lRho = lRho_(rho);
+  Real Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
+  return eCold_.interpToReal(Ye, lRho);
 }
 
 template <typename Indexer_t>
@@ -660,7 +669,7 @@ PORTABLE_INLINE_FUNCTION void StellarCollapse::DensityEnergyFromPressureTemperat
   Real lrguess = lRho_(rho);
   Real lT = lT_(temp);
   Real lP = P2lP_(press);
-  Real Ye = lambda[Lambda::Ye];
+  Real Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
 
   if ((lrguess < lRhoMin_) || (lrguess > lRhoMax_)) {
     lrguess = lRho_(rhoNormal_);
@@ -673,7 +682,7 @@ PORTABLE_INLINE_FUNCTION void StellarCollapse::DensityEnergyFromPressureTemperat
   Real lE = lE_.interpToReal(Ye, lT, lrguess);
   rho = rho_(lrguess);
   sie = le2e_(lE);
-  lambda[Lambda::lT] = lT;
+  IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
 }
 
 template <typename Indexer_t>
@@ -755,8 +764,8 @@ StellarCollapse::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &
   dpde = dPdENormal_;
   dvdt = dVdTNormal_;
   Real lT = lT_(temp);
-  lambda[Lambda::Ye] = YeNormal_;
-  lambda[Lambda::lT] = lT;
+  IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye) = YeNormal_;
+  IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
 }
 
 inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
@@ -1168,8 +1177,8 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::lTFromlRhoSie_(
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
   using RootFinding1D::regula_falsi;
   Real lT;
-  Real Ye = lambda[Lambda::Ye];
-  Real lTGuess = lambda[Lambda::lT];
+  Real Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
+  Real lTGuess = IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT);
 
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
@@ -1215,7 +1224,7 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::lTFromlRhoSie_(
     status_ = status;
   }
 #endif // PORTABILITY_STRATEGY_NONE
-  lambda[Lambda::lT] = lT;
+  IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
   return lT;
 }
 } // namespace singularity
