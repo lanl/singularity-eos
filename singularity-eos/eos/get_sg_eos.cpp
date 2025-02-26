@@ -171,7 +171,8 @@ int get_sg_eos( // sizing information
     // set rho_i = nmat / spvol * frac_mass_i
     // iterate PTE solver to obtain internal energies
     // that results in the input T
-    pte_solver_scratch_size = PTESolverFixedTRequiredScratch(nmat);
+    pte_solver_scratch_size =
+        PTESolverFixedTRequiredScratch(nmat) + nmat * MAX_NUM_LAMBDAS;
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
                                       pte_solver_scratch_size);
     const std::string rt_name = "PTE::solve (rho,T) input" + perf_nums;
@@ -187,7 +188,7 @@ int get_sg_eos( // sizing information
     // set rho_i = nmat / spvol * frac_mass_i
     // iterate PTE solver to obtain internal energies
     // that results in the input P
-    pte_solver_scratch_size = PTESolverRhoTRequiredScratch(nmat);
+    pte_solver_scratch_size = PTESolverRhoTRequiredScratch(nmat) + nmat * MAX_NUM_LAMBDAS;
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
                                       pte_solver_scratch_size);
     const std::string rp_name = "PTE::solve (rho,P) input" + perf_nums;
@@ -199,6 +200,7 @@ int get_sg_eos( // sizing information
   }
   case input_condition::P_T_INPUT: {
     // P-T input
+    // TODO(JMM): Thread through P-T solver
     const int pte_solver_scratch_size = nmat * MAX_NUM_LAMBDAS;
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
                                       pte_solver_scratch_size);
@@ -215,7 +217,7 @@ int get_sg_eos( // sizing information
     // no break so fallthrough to case 1
   case input_condition::RHO_E_INPUT: {
     // rho-sie input
-    pte_solver_scratch_size = PTESolverRhoTRequiredScratch(nmat);
+    pte_solver_scratch_size = PTESolverRhoTRequiredScratch(nmat) + nmat * MAX_NUM_LAMBDAS;
     solver_scratch = ScratchV<double>(VAWI("PTE::scratch solver"), scratch_size,
                                       pte_solver_scratch_size);
     const std::string re_name = "PTE::solve (rho,e) input" + perf_nums;

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2024. Triad National Security, LLC. All rights reserved.  This
+// © 2024-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -20,6 +20,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
@@ -34,6 +35,9 @@ using singularity::IdealGas;
 using singularity::MeanAtomicProperties;
 using singularity::ZSplitE;
 using singularity::ZSplitI;
+
+using singularity::IndexableTypes::MeanIonizationState;
+using Lambda_t = singularity::IndexerUtils::VariadicIndexer<MeanIonizationState>;
 
 using EOS =
     singularity::Variant<IdealGas, IdealElectrons, ZSplitI<IdealGas>, ZSplitE<IdealGas>>;
@@ -71,7 +75,8 @@ SCENARIO("ZSplit of Ideal Gas", "[ZSplit][IdealGas][IdealElectrons]") {
           "Zsplit check P and sie", 0, NZ,
           PORTABLE_LAMBDA(const int i, int &nw) {
             Real Z = zmin + dz * i;
-            Real lambda[1] = {Z};
+            Lambda_t lambda;
+            lambda[MeanIonizationState()] = Z;
 
             Real Pt = eos_t.PressureFromDensityTemperature(rho, temp, lambda);
             Real Pi = eos_zi.PressureFromDensityTemperature(rho, temp, lambda);

@@ -24,6 +24,7 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <pte_test_3mat_analytic.hpp>
 #include <pte_test_utils.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <spiner/databox.hpp>
 
@@ -159,11 +160,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
   portableReduce(
       "PTE!", 0, NTRIAL,
       PORTABLE_LAMBDA(const int &t, std::size_t &ns) {
-        Real *lambda[NMAT];
-        for (int i = 0; i < NMAT; i++) {
-          lambda[i] = nullptr;
-        }
-
+        singularity::NullIndexer lambda;
         Indexer2D<decltype(rho_d)> rho(t, rho_d);
         Indexer2D<decltype(vfrac_d)> vfrac(t, vfrac_d);
         Indexer2D<decltype(sie_d)> sie(t, sie_d);

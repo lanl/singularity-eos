@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -1324,6 +1324,18 @@ class Variant {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept {
     return mpark::visit([](const auto &eos) { return eos.nlambda(); }, eos_);
+  }
+
+  template <typename T>
+  PORTABLE_INLINE_FUNCTION bool NeedsLambda() const {
+    return mpark::visit([](const auto &eos) { return eos.template NeedsLambda<T>(); },
+                        eos_);
+  }
+
+  template <typename T>
+  PORTABLE_INLINE_FUNCTION bool NeedsLambda(const T &t) const {
+    return mpark::visit([](const auto &eos) { return eos.template NeedsLambda<T>(); },
+                        eos_);
   }
 
   template <typename T>
