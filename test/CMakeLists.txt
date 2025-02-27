@@ -36,6 +36,7 @@ add_executable(
   test_eos_modifiers_minimal.cpp
   test_eos_vector.cpp
   test_math_utils.cpp
+  test_modifier_floored_energy.cpp
   test_variadic_utils.cpp
   test_bounds.cpp
   )
@@ -76,6 +77,7 @@ endif()
 
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(eos_tabulated_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+  target_compile_definitions(eos_infrastructure_tests PRIVATE SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_tabulated_unit_tests

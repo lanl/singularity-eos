@@ -53,24 +53,6 @@ using singularity::robust::ratio;
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
                                  DavisReactants, SpinerEOSDependsRhoT>;
 
-template <typename EOSArrT>
-EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
-  // Assumes that GetOnDevice() has already been called for each EOS in eos_arr
-  const size_t EOS_bytes = num_eos * sizeof(EOS);
-  EOS *v_EOS = (EOS *)PORTABLE_MALLOC(EOS_bytes);
-  const size_t bytes = num_eos * sizeof(EOS);
-  portableCopyToDevice(v_EOS, eos_arr.data(), bytes);
-  return v_EOS;
-}
-
-template <typename EOSArrT>
-void finalize_eos_arr(EOSArrT eos_arr) {
-  // Call Finalize on each EOS on the host
-  for (auto eos : eos_arr) {
-    eos.Finalize();
-  }
-}
-
 template <template <typename... Types> class PTESolver_t, typename Scratch_t,
           typename ArrT>
 bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,

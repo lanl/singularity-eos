@@ -82,6 +82,26 @@ inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN
   }
 }
 
+// Helper function to copy a collection of EOS to device memory
+template <typename EOSArrT>
+EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
+  // Assumes that GetOnDevice() has already been called for each EOS in eos_arr
+  const size_t EOS_bytes = num_eos * sizeof(EOS);
+  EOS *v_EOS = (EOS *)PORTABLE_MALLOC(EOS_bytes);
+  const size_t bytes = num_eos * sizeof(EOS);
+  portableCopyToDevice(v_EOS, eos_arr.data(), bytes);
+  return v_EOS;
+}
+
+// Helper function to call Finalize() on each eos in an array (host side)
+template <typename EOSArrT>
+void finalize_eos_arr(EOSArrT eos_arr) {
+  // Call Finalize on each EOS on the host
+  for (auto eos : eos_arr) {
+    eos.Finalize();
+  }
+}
+
 template <typename E1, typename E2>
 inline void compare_two_eoss(const E1 &test_e, const E2 &ref_e) {
   // compare all individual member functions with 1 as inputs,
