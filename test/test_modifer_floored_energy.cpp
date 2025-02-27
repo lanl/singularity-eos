@@ -19,29 +19,28 @@
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
 
-#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::FlooredEnergy;
-using singularity::IdealGas;
-using singularity::Gruneisen;
 using singularity::DavisReactants;
+using singularity::FlooredEnergy;
+using singularity::Gruneisen;
+using singularity::IdealGas;
 using singularity::JWL;
 using singularity::ShiftedEOS;
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 using singularity::SpinerEOSDependsRhoT;
 #endif
 
-using EOS = singularity::Variant<
-    FlooredEnergy<IdealGas>
-  , FlooredEnergy<Gruneisen>
-  , FlooredEnergy<DavisReactants>
-  , FlooredEnergy<ShiftedEOS<JWL>>
+using EOS =
+    singularity::Variant<FlooredEnergy<IdealGas>, FlooredEnergy<Gruneisen>,
+                         FlooredEnergy<DavisReactants>, FlooredEnergy<ShiftedEOS<JWL>>
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-  , FlooredEnergy<SpinerEOSDependsRhoT>
+                         ,
+                         FlooredEnergy<SpinerEOSDependsRhoT>
 #endif
->;
+                         >;
 
 // Helper function that returns the difference between a P(rho, T) and P(rho, e)
 // lookup for a set of EOS. The density is at rho_ref * rho_factor while the
@@ -57,36 +56,36 @@ auto diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
   portableCopyToDevice(v_P_rdiffs, P_rdiffs.data(), bytes);
 
   // Loop over EOS
-  portableFor("Positive temperature test", 0, n_eos, PORTABLE_LAMBDA(int i) {
+  portableFor(
+      "Positive temperature test", 0, n_eos, PORTABLE_LAMBDA(int i) {
+        this_eos = v_EOS[i];
 
-    this_eos = v_EOS[i];
+        // Find the reference state (really we just want the density :shrug:)
+        Real rho_ref;
+        Real temp_ref;
+        Real sie_ref;
+        Real press_ref;
+        Real cv_ref;
+        Real bmod_ref;
+        Real dpde_ref;
+        Real dvdt_ref;
+        this_eos.ValuesAtReferenceState(rho_ref, temp_ref, sie_ref, press_ref, cv_ref,
+                                        bmod_ref, dpde_ref, dvdt_ref);
 
-    // Find the reference state (really we just want the density :shrug:)
-    Real rho_ref;
-    Real temp_ref;
-    Real sie_ref;
-    Real press_ref;
-    Real cv_ref;
-    Real bmod_ref;
-    Real dpde_ref;
-    Real dvdt_ref;
-    this_eos.ValuesAtReferenceState(rho_ref, temp_ref, sie_ref, press_ref, cv_ref,
-                                    bmod_ref, dpde_ref, dvdt_ref);
+        const Real density_lookup = rho_factor * rho_ref;
 
-    const Real density_lookup = rho_factor * rho_ref;
+        // Find energy at reference density and specified temperature
+        const Real e_lookup =
+            this_eos.InternalEnergyFromDensityTemperature(density_lookup, T_lookup) -
+            e_offset;
 
-    // Find energy at reference density and specified temperature
-    const Real e_lookup =
-        this_eos.InternalEnergyFromDensityTemperature(density_lookup, T_lookup)
-        - e_offset;
-
-    // Diff the P(rho, e) and P(rho, T) lookups
-    const Real P_from_e =
-        this_eos.PressureFromDensityInternalEnergy(density_lookup, e_lookup);
-    const Real P_from_T =
-        this_eos.PressureFromDensityTemperature(density_lookup, T_lookup);
-    v_P_rdiffs[i] = robust::ratio(P_from_e - P_from_T, (P_from_e + P_from_T) / 2.);
-  });
+        // Diff the P(rho, e) and P(rho, T) lookups
+        const Real P_from_e =
+            this_eos.PressureFromDensityInternalEnergy(density_lookup, e_lookup);
+        const Real P_from_T =
+            this_eos.PressureFromDensityTemperature(density_lookup, T_lookup);
+        v_P_rdiffs[i] = robust::ratio(P_from_e - P_from_T, (P_from_e + P_from_T) / 2.);
+      });
 
   // Transfer to host
   portableCopyToHost(P_rdiffs.data(), v_P_rdiffs, bytes);
@@ -109,8 +108,8 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real MJ_per_kg = 1.0e10;
 
     // Ideal gas air
-    constexpr Real P0 = 1.0e6; // 1 bar
-    constexpr Real T0 = 296;   // K
+    constexpr Real P0 = 1.0e6;       // 1 bar
+    constexpr Real T0 = 296;         // K
     constexpr Real rho0_air = 1e-03; // g/cc
     constexpr Real Gruneisen_air = 0.4;
     constexpr Real Cv_air = P0 / rho0_air / (Gruneisen_air * T0);
@@ -140,9 +139,8 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real w_JWL = 0.8938;
     constexpr Real Cv_JWL = 2.487e-3 / rho0_JWL * MJ_per_kg;
     constexpr Real E0_JWL = 0.246929 * MJ_per_kg;
-    EOS jwl_eos =
-        ShiftedEOS<JWL>(JWL(A_JWL, B_JWL, R1_JWL, R2_JWL, w_JWL, rho0_JWL, Cv_JWL),
-                        E0_JWL);
+    EOS jwl_eos = ShiftedEOS<JWL>(
+        JWL(A_JWL, B_JWL, R1_JWL, R2_JWL, w_JWL, rho0_JWL, Cv_JWL), E0_JWL);
 
     // Gruneisen parameters for copper
     constexpr Real C0_G = 0.394 * cm / us;
@@ -154,7 +152,7 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real rho0_G = 8.93;
     constexpr Real Cv_G = 0.383e-05 * Mbcc_per_g;
     EOS gruneisen_eos =
-        Gruneisen(C0_G, S1_G, S2_G, S3_G, Gamma0_G, b_G, rho0_G, T0, P0,Cv_G);
+        Gruneisen(C0_G, S1_G, S2_G, S3_G, Gamma0_G, b_G, rho0_G, T0, P0, Cv_G);
 
     // Tabular EOS parameters (when used)
     constexpr int matid = 3337;
@@ -166,30 +164,27 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
 #endif
 
     // Put EOS in a vector and put EOS on device
-    std::vector<EOS> eos_vec = {
-        air_eos
-      , davis_r_eos
-      , jwl_eos
-      , gruneisen_eos
+    std::vector<EOS> eos_vec = {air_eos, davis_r_eos, jwl_eos, gruneisen_eos
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-      , spiner_eos
+                                ,
+                                spiner_eos
 #endif
 #endif
     };
 
-    const n_eos = eos_vec.size()
-    EOS *v_EOS = copy_eos_arr_to_device(n_eos, eos_vec);
+    const n_eos = eos_vec.size() EOS *v_EOS = copy_eos_arr_to_device(n_eos, eos_vec);
 
     WHEN("The energy is associated with a temperature and density above the reference") {
 
       constexpr Real T_lookup = 500;
-      constexpr Real e_offset = 0.; // No offset
-      constexpr Real rho_factor = 1.2;  // Slightly larger than reference density
+      constexpr Real e_offset = 0.;    // No offset
+      constexpr Real rho_factor = 1.2; // Slightly larger than reference density
 
       constexpr Real tol = 1.0e-14;
 
-      THEN("P(rho, e) lookups should agree with P(rho, T) lookups when the energy is floored") {
+      THEN("P(rho, e) lookups should agree with P(rho, T) lookups when the energy is "
+           "floored") {
 
         auto P_diffs = diff_pressures(n_eos, v_EOS, T_lookup, e_offset, rho_factor);
 
