@@ -187,7 +187,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
                                           davis_p_eos.GetOnDevice()};
 
       THEN("The PTE Rho T solver should converge") {
-        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device<EOS>(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state<PTESolverRhoT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverRhoTRequiredScratch, mass_frac,

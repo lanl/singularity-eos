@@ -173,7 +173,8 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
 #endif
     };
 
-    const n_eos = eos_vec.size() EOS *v_EOS = copy_eos_arr_to_device(n_eos, eos_vec);
+    const n_eos = eos_vec.size();
+    EOS *v_EOS = copy_eos_arr_to_device<EOS>(n_eos, eos_vec);
 
     WHEN("The energy is associated with a temperature and density above the reference") {
 
