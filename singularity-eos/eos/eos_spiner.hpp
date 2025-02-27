@@ -221,7 +221,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return _n_lambda; }
   template <typename T>
-  static inline constexpr bool NeedsLambda(const T &t) {
+  static inline constexpr bool NeedsLambda() {
     using namespace IndexableTypes;
     return std::is_same<T, LogDensity>::value || std::is_same<T, LogTemperature>::value;
   }
