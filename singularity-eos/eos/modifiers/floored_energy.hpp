@@ -30,24 +30,7 @@ using namespace eos_base;
 template <typename T>
 class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
  public:
-  // Generic functions provided by the base class. These contain
-  // e.g. the vector overloads that use the scalar versions declared
-  // here We explicitly list, rather than using the macro because we
-  // overload some methods.
-  using EosBase<FlooredEnergy<T>>::TemperatureFromDensityInternalEnergy;
-  using EosBase<FlooredEnergy<T>>::InternalEnergyFromDensityTemperature;
-  using EosBase<FlooredEnergy<T>>::PressureFromDensityTemperature;
-  using EosBase<FlooredEnergy<T>>::PressureFromDensityInternalEnergy;
-  using EosBase<FlooredEnergy<T>>::MinInternalEnergyFromDensity;
-  using EosBase<FlooredEnergy<T>>::EntropyFromDensityTemperature;
-  using EosBase<FlooredEnergy<T>>::EntropyFromDensityInternalEnergy;
-  using EosBase<FlooredEnergy<T>>::SpecificHeatFromDensityTemperature;
-  using EosBase<FlooredEnergy<T>>::SpecificHeatFromDensityInternalEnergy;
-  using EosBase<FlooredEnergy<T>>::BulkModulusFromDensityTemperature;
-  using EosBase<FlooredEnergy<T>>::BulkModulusFromDensityInternalEnergy;
-  using EosBase<FlooredEnergy<T>>::GruneisenParamFromDensityTemperature;
-  using EosBase<FlooredEnergy<T>>::GruneisenParamFromDensityInternalEnergy;
-  using EosBase<FlooredEnergy<T>>::FillEos;
+  SG_ADD_BASE_CLASS_USINGS(FlooredEnergy)
 
   using BaseType = T;
 
