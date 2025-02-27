@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -20,6 +20,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
@@ -33,6 +34,9 @@ using singularity::IdealElectrons;
 using singularity::IdealGas;
 using singularity::MeanAtomicProperties;
 using EOS = singularity::Variant<IdealGas, IdealElectrons>;
+
+using singularity::IndexableTypes::MeanIonizationState;
+using Lambda_t = singularity::IndexerUtils::VariadicIndexer<MeanIonizationState>;
 
 SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
   GIVEN("Parameters for an ideal gas with entropy reference states") {
@@ -110,7 +114,9 @@ SCENARIO("Ideal gas mean atomic properties",
             Real T = 100.0 * i;
             Real Ab_eval = device_eos.MeanAtomicMassFromDensityTemperature(rho, T);
             Real Zb_eval = device_eos.MeanAtomicNumberFromDensityTemperature(rho, T);
+            bool needs_zbar = device_eos.NeedsLambda(MeanIonizationState());
             nw += !(isClose(Ab_eval, Abar, 1e-12)) + !(isClose(Zb_eval, Zbar, 1e-12));
+            nw += needs_zbar;
           },
           nwrong);
       REQUIRE(nwrong == 0);
@@ -297,9 +303,12 @@ SCENARIO("Ideal electron gas", "[IdealGas][IdealEelctrons]") {
       portableReduce(
           "Check Cv vs Z", 2, N,
           PORTABLE_LAMBDA(const int i, int &nw) {
-            Real ll[1] = {static_cast<Real>(i)};
+            Lambda_t ll;
+            ll[MeanIonizationState()] = static_cast<Real>(i);
             Real Cv = eos.SpecificHeatFromDensityTemperature(rho, T, ll);
             if (!isClose(Cv, i * cv1, 1e-12)) nw += 1;
+            bool needs_zbar = eos.NeedsLambda(MeanIonizationState());
+            nw += !needs_zbar;
           },
           nwrong);
       THEN("The specific heat should scale linearly with the ionization state") {

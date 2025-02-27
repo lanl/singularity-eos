@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -993,6 +993,16 @@ class EosBase {
     const std::size_t tot_size = pcrtp->SerializedSizeInBytes();
     PORTABLE_ALWAYS_REQUIRE(offst == tot_size, "Deserialization failed!");
     return offst;
+  }
+
+  // Tooling for indexers
+  template <typename T>
+  static inline constexpr bool NeedsLambda() {
+    return false;
+  }
+  template <typename T>
+  static inline constexpr bool NeedsLambda(const T &t) {
+    return NeedsLambda<T>();
   }
 
   // Tooling for modifiers

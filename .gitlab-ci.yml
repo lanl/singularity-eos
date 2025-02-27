@@ -6,7 +6,8 @@ variables:
   ENABLE_CDASH: true
   GIT_SUBMODULE_STRATEGY: normal
   # use this variable if there is a xcap/deployment MR you want to use instead
-  # PROJECT_SPACK_ENV_VERSION: mr/62/2024-10-15
+  # PROJECT_SPACK_ENV_VERSION: "mr/62/2024-10-15"
+  PROJECT_SPACK_ENV_VERSION: "2025-01-18"
 
 include:
  - .gitlab/common.yml
@@ -36,7 +37,7 @@ include:
 
 prereq_offline_deps:
   stage: build_n_test
-  extends: [.ascgit_job]
+  extends: [.ascgit_job, .darwin_job]
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -230,7 +231,7 @@ rzadams_craympich_rocm_mi300_cce:
 
 # collect job results from RZansel and submit them to CDash
 post_rzansel_results_to_cdash:
-  extends: [.post_results_to_cdash]
+  extends: [.post_results_to_cdash, .darwin_job]
   allow_failure: true
   rules:
     - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzansel/ && $GITLAB_USER_LOGIN =~ $RZANSEL_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -247,7 +248,7 @@ post_rzansel_results_to_cdash:
 
 # collect job results from RZvernal and submit them to CDash
 post_rzvernal_results_to_cdash:
-  extends: [.post_results_to_cdash]
+  extends: [.post_results_to_cdash, .darwin_job]
   allow_failure: true
   rules:
     - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzvernal/ && $GITLAB_USER_LOGIN =~ $RZVERNAL_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"
@@ -263,7 +264,7 @@ post_rzvernal_results_to_cdash:
 
 # collect job results from RZadams and submit them to CDash
 post_rzadams_results_to_cdash:
-  extends: [.post_results_to_cdash]
+  extends: [.post_results_to_cdash, .darwin_job]
   allow_failure: true
   rules:
     - if: $ENABLE_CDASH == "true" && $ENABLED_CLUSTERS =~ /rzadams/ && $GITLAB_USER_LOGIN =~ $RZADAMS_USERS && $CI_PIPELINE_SOURCE == "merge_request_event"

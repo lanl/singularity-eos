@@ -1,5 +1,5 @@
 diff --git a/include/mpark/variant.hpp b/include/mpark/variant.hpp
-index 2364c7360..80f9527a7 100644
+index 2364c7360..7877e0a30 100644
 --- a/include/mpark/variant.hpp
 +++ b/include/mpark/variant.hpp
 @@ -8,6 +8,12 @@
@@ -15,7 +15,18 @@ index 2364c7360..80f9527a7 100644
  /*
     variant synopsis
  
-@@ -243,9 +249,11 @@ namespace mpark {
+@@ -194,6 +200,10 @@ namespace std {
+ 
+ */
+ 
++#if defined(__HIP_DEVICE_COMPILE__)
++#include <hip/hip_runtime.h>
++#endif
++
+ #include <cstddef>
+ #include <exception>
+ #include <functional>
+@@ -243,9 +253,11 @@ namespace mpark {
      virtual const char *what() const noexcept override { return "bad_variant_access"; }
    };
  
@@ -29,7 +40,7 @@ index 2364c7360..80f9527a7 100644
  #else
      std::terminate();
      MPARK_BUILTIN_UNREACHABLE;
-@@ -1022,7 +1030,7 @@ namespace mpark {
+@@ -1022,7 +1034,7 @@ namespace mpark {
  
      MPARK_VARIANT_RECURSIVE_UNION(Trait::TriviallyAvailable,
                                    ~recursive_union() = default;);
@@ -38,7 +49,7 @@ index 2364c7360..80f9527a7 100644
                                    ~recursive_union() {});
      MPARK_VARIANT_RECURSIVE_UNION(Trait::Unavailable,
                                    ~recursive_union() = delete;);
-@@ -1119,14 +1127,14 @@ namespace mpark {
+@@ -1119,14 +1131,14 @@ namespace mpark {
      MPARK_VARIANT_DESTRUCTOR(
          Trait::TriviallyAvailable,
          ~destructor() = default;,
@@ -56,7 +67,7 @@ index 2364c7360..80f9527a7 100644
            if (!this->valueless_by_exception()) {
              visitation::alt::visit_alt(dtor{}, *this);
            }
-@@ -1160,14 +1168,14 @@ namespace mpark {
+@@ -1160,14 +1172,14 @@ namespace mpark {
  #endif
  
        template <std::size_t I, typename T, typename... Args>
@@ -73,7 +84,7 @@ index 2364c7360..80f9527a7 100644
          lhs.destroy();
          if (!rhs.valueless_by_exception()) {
            visitation::alt::visit_alt_at(
-@@ -1214,7 +1222,7 @@ namespace mpark {
+@@ -1214,7 +1226,7 @@ namespace mpark {
  
      MPARK_VARIANT_MOVE_CONSTRUCTOR(
          Trait::Available,
@@ -82,7 +93,7 @@ index 2364c7360..80f9527a7 100644
              lib::all<std::is_nothrow_move_constructible<Ts>::value...>::value)
              : move_constructor(valueless_t{}) {
            this->generic_construct(*this, lib::move(that));
-@@ -1252,7 +1260,7 @@ namespace mpark {
+@@ -1252,7 +1264,7 @@ namespace mpark {
  
      MPARK_VARIANT_COPY_CONSTRUCTOR(
          Trait::Available,
@@ -91,7 +102,7 @@ index 2364c7360..80f9527a7 100644
              : copy_constructor(valueless_t{}) {
            this->generic_construct(*this, that);
          });
-@@ -1272,7 +1280,7 @@ namespace mpark {
+@@ -1272,7 +1284,7 @@ namespace mpark {
        using super::operator=;
  
        template <std::size_t I, typename... Args>
@@ -100,7 +111,7 @@ index 2364c7360..80f9527a7 100644
            -> decltype(this->construct_alt(access::base::get_alt<I>(*this),
                                            lib::forward<Args>(args)...)) {
          this->destroy();
-@@ -1295,7 +1303,7 @@ namespace mpark {
+@@ -1295,7 +1307,7 @@ namespace mpark {
  #endif
  
        template <std::size_t I, typename T, typename Arg>
@@ -109,7 +120,7 @@ index 2364c7360..80f9527a7 100644
          if (this->index() == I) {
  #ifdef _MSC_VER
  #pragma warning(push)
-@@ -1307,10 +1315,10 @@ namespace mpark {
+@@ -1307,10 +1319,10 @@ namespace mpark {
  #endif
          } else {
            struct {
@@ -122,7 +133,7 @@ index 2364c7360..80f9527a7 100644
                this_->emplace<I>(T(lib::forward<Arg>(arg_)));
              }
              assignment *this_;
-@@ -1323,7 +1331,7 @@ namespace mpark {
+@@ -1323,7 +1335,7 @@ namespace mpark {
        }
  
        template <typename That>
@@ -131,7 +142,7 @@ index 2364c7360..80f9527a7 100644
          if (this->valueless_by_exception() && that.valueless_by_exception()) {
            // do nothing.
          } else if (that.valueless_by_exception()) {
-@@ -1372,7 +1380,7 @@ namespace mpark {
+@@ -1372,7 +1384,7 @@ namespace mpark {
  
      MPARK_VARIANT_MOVE_ASSIGNMENT(
          Trait::Available,
@@ -140,7 +151,7 @@ index 2364c7360..80f9527a7 100644
          operator=(move_assignment &&that) noexcept(
              lib::all<(std::is_nothrow_move_constructible<Ts>::value &&
                        std::is_nothrow_move_assignable<Ts>::value)...>::value) {
-@@ -1412,7 +1420,7 @@ namespace mpark {
+@@ -1412,7 +1424,7 @@ namespace mpark {
  
      MPARK_VARIANT_COPY_ASSIGNMENT(
          Trait::Available,
@@ -149,7 +160,7 @@ index 2364c7360..80f9527a7 100644
            this->generic_assign(that);
            return *this;
          });
-@@ -1432,7 +1440,7 @@ namespace mpark {
+@@ -1432,7 +1444,7 @@ namespace mpark {
        using super::operator=;
  
        template <std::size_t I, typename Arg>
@@ -158,7 +169,7 @@ index 2364c7360..80f9527a7 100644
          this->assign_alt(access::base::get_alt<I>(*this),
                           lib::forward<Arg>(arg));
        }
-@@ -1484,7 +1492,7 @@ namespace mpark {
+@@ -1484,7 +1496,7 @@ namespace mpark {
  #ifndef MPARK_GENERIC_LAMBDAS
        struct swapper {
          template <typename ThisAlt, typename ThatAlt>
@@ -167,7 +178,7 @@ index 2364c7360..80f9527a7 100644
            using std::swap;
            swap(this_alt.value, that_alt.value);
          }
-@@ -1640,8 +1648,8 @@ namespace mpark {
+@@ -1640,8 +1652,8 @@ namespace mpark {
  
      ~variant() = default;
  
@@ -178,7 +189,7 @@ index 2364c7360..80f9527a7 100644
  
      template <typename Arg,
                lib::enable_if_t<!std::is_same<lib::decay_t<Arg>, variant>::value,
-@@ -1651,7 +1659,7 @@ namespace mpark {
+@@ -1651,7 +1663,7 @@ namespace mpark {
                lib::enable_if_t<(std::is_assignable<T &, Arg>::value &&
                                  std::is_constructible<T, Arg>::value),
                                 int> = 0>
@@ -187,7 +198,7 @@ index 2364c7360..80f9527a7 100644
          (std::is_nothrow_assignable<T &, Arg>::value &&
           std::is_nothrow_constructible<T, Arg>::value)) {
        impl_.template assign<I>(lib::forward<Arg>(arg));
-@@ -1663,7 +1671,7 @@ namespace mpark {
+@@ -1663,7 +1675,7 @@ namespace mpark {
          typename... Args,
          typename T = lib::type_pack_element_t<I, Ts...>,
          lib::enable_if_t<std::is_constructible<T, Args...>::value, int> = 0>
@@ -196,7 +207,7 @@ index 2364c7360..80f9527a7 100644
        return impl_.template emplace<I>(lib::forward<Args>(args)...);
      }
  
-@@ -1676,7 +1684,7 @@ namespace mpark {
+@@ -1676,7 +1688,7 @@ namespace mpark {
                                                 std::initializer_list<Up> &,
                                                 Args...>::value,
                           int> = 0>
@@ -205,7 +216,7 @@ index 2364c7360..80f9527a7 100644
        return impl_.template emplace<I>(il, lib::forward<Args>(args)...);
      }
  
-@@ -1685,7 +1693,7 @@ namespace mpark {
+@@ -1685,7 +1697,7 @@ namespace mpark {
          typename... Args,
          std::size_t I = detail::find_index_sfinae<T, Ts...>::value,
          lib::enable_if_t<std::is_constructible<T, Args...>::value, int> = 0>
@@ -214,7 +225,7 @@ index 2364c7360..80f9527a7 100644
        return impl_.template emplace<I>(lib::forward<Args>(args)...);
      }
  
-@@ -1698,7 +1706,7 @@ namespace mpark {
+@@ -1698,7 +1710,7 @@ namespace mpark {
                                                 std::initializer_list<Up> &,
                                                 Args...>::value,
                           int> = 0>
@@ -223,7 +234,7 @@ index 2364c7360..80f9527a7 100644
        return impl_.template emplace<I>(il, lib::forward<Args>(args)...);
      }
  
-@@ -1718,7 +1726,7 @@ namespace mpark {
+@@ -1718,7 +1730,7 @@ namespace mpark {
                              lib::dependent_type<lib::is_swappable<Ts>,
                                                  Dummy>::value)...>::value,
                    int> = 0>
@@ -232,7 +243,7 @@ index 2364c7360..80f9527a7 100644
          lib::all<(std::is_nothrow_move_constructible<Ts>::value &&
                    lib::is_nothrow_swappable<Ts>::value)...>::value) {
        impl_.swap(that.impl_);
-@@ -2039,7 +2047,7 @@ namespace mpark {
+@@ -2039,7 +2051,7 @@ namespace mpark {
  #endif
  
    template <typename... Ts>
@@ -241,7 +252,7 @@ index 2364c7360..80f9527a7 100644
                     variant<Ts...> &rhs) noexcept(noexcept(lhs.swap(rhs)))
        -> decltype(lhs.swap(rhs)) {
      lhs.swap(rhs);
-@@ -2143,5 +2151,6 @@ namespace std {
+@@ -2143,5 +2155,6 @@ namespace std {
    };
  
  }  // namespace std

@@ -213,6 +213,7 @@ default:
   variables:
     GIT_SUBMODULE_STRATEGY: none
   script:
+    - module load cmake
     - cmake --version
     - ls *.tar.gz
     - export SOURCE_DIR=$PWD

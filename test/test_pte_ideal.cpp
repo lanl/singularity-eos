@@ -22,6 +22,8 @@
 // #include <ports-of-call/array.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
+
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 
 #include <singularity-eos/eos/eos_models.hpp>
@@ -45,12 +47,21 @@ using singularity::PTESolverRhoTRequiredScratch;
 using singularity::Variant;
 using EOS = Variant<IdealGas, IdealElectrons>;
 
+using singularity::IndexableTypes::MeanIonizationState;
+struct LambdaIndexerSingle {
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](const int i) { return z; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &operator[](const MeanIonizationState &s) { return z; }
+  Real z = 0.9;
+};
+
 struct LambdaIndexer {
   PORTABLE_FORCEINLINE_FUNCTION
-  Real *operator[](const int i) { return &z; }
+  auto &operator[](const int i) { return indexer; }
   PORTABLE_FORCEINLINE_FUNCTION
-  const Real *operator[](const int i) const { return &z; }
-  Real z = 0.9;
+  const auto &operator[](const int i) const { return indexer; }
+  LambdaIndexerSingle indexer;
 };
 
 template <typename RealIndexer, typename EOSIndexer>
