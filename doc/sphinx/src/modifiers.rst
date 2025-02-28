@@ -310,7 +310,7 @@ temperature be positive, but there are no natural lower bounds on other
 variables, particularly energy.
 
 In general, this modifer imposes a lower bound on the energy by finding the
-energy along the zero kelvin isotherm, i.e. :math:`e(\rho, T=0)` and then
+energy along the zero kelvin isotherm, i.e. :math:`e(\rho, T=0)`, and then
 flooring the energy to that value when performing a lookup. As a result, any
 lookups in energy space that would otherwise be below the zero K isotherm return
 whatever value would lie upon the isotherm.
@@ -327,7 +327,8 @@ isotherm for two reasons:
 #. In the absence of a 306 table for the material, EOSPAC will instead report
    the lowest isotherm's energy in place of a cold curve. If a given table does
    not extend to zero K, then an extrapolaiton is *not* performed. This results
-   in a lower energy bound at the lowest temperature on the table.
+   in an energy floor from the lowest temperature on the table, **not** from
+   an extrapolated energy at zero K.
 
 .. note::
 
