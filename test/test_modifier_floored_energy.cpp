@@ -168,10 +168,10 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
         Gruneisen(C0_G, S1_G, S2_G, S3_G, Gamma0_G, b_G, rho0_G, T0, P0, Cv_G));
 
     // Tabular EOS parameters (when used)
-    constexpr int matid = 3337;
-    const std::string eos_file = "../materials.sp5";
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+    constexpr int matid = 3337;
+    const std::string eos_file = "../materials.sp5";
     EOS spiner_eos =
         FlooredEnergy<SpinerEOSDependsRhoT>(SpinerEOSDependsRhoT(eos_file, matid));
 #endif
