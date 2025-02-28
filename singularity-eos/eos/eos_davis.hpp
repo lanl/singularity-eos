@@ -465,10 +465,7 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
     EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
               "Root find failed to find a solution given P, T\n");
   }
-  if (rho < 0.) {
-    EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
-              "Root find resulted in a negative density\n");
-  }
+  rho = std::max(0., rho);
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
 
@@ -546,10 +543,7 @@ PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperatur
     EOS_ERROR("DavisProducts::DensityEnergyFromPressureTemperature: "
               "Root find failed to find a solution given P, T\n");
   }
-  if (rho < 0.) {
-    EOS_ERROR("DavisReactants::DensityEnergyFromPressureTemperature: "
-              "Root find resulted in a negative density\n");
-  }
+  rho = std::max(rho, 0.);
   sie = InternalEnergyFromDensityTemperature(rho, temp);
 }
 template <typename Indexer_t>
