@@ -18,9 +18,11 @@
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
+#endif
 
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/modifiers/floored_energy.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::DavisReactants;
@@ -29,6 +31,7 @@ using singularity::Gruneisen;
 using singularity::IdealGas;
 using singularity::JWL;
 using singularity::ShiftedEOS;
+using singularity::robust::ratio;
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 using singularity::SpinerEOSDependsRhoT;
 #endif
@@ -58,7 +61,7 @@ auto diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
   // Loop over EOS
   portableFor(
       "Positive temperature test", 0, n_eos, PORTABLE_LAMBDA(int i) {
-        this_eos = v_EOS[i];
+        const auto this_eos = v_EOS[i];
 
         // Find the reference state (really we just want the density :shrug:)
         Real rho_ref;
@@ -84,7 +87,7 @@ auto diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
             this_eos.PressureFromDensityInternalEnergy(density_lookup, e_lookup);
         const Real P_from_T =
             this_eos.PressureFromDensityTemperature(density_lookup, T_lookup);
-        v_P_rdiffs[i] = robust::ratio(P_from_e - P_from_T, (P_from_e + P_from_T) / 2.);
+        v_P_rdiffs[i] = ratio(P_from_e - P_from_T, (P_from_e + P_from_T) / 2.);
       });
 
   // Transfer to host
@@ -95,6 +98,16 @@ auto diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
 
   return P_rdiffs;
 }
+
+// Helper functor to get the name of the EOS
+struct GetName {
+  template<typename eosT>
+  void operator()(const eosT &eos) {
+    name = typeid(eos).name();
+  }
+
+  std::string name;
+};
 
 SCENARIO("Test the floored energy modifer for a suite of EOS",
          "[FlooredEnergy][IdealGas][Gruneisen][Davis][JWL]") {
@@ -113,7 +126,7 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real rho0_air = 1e-03; // g/cc
     constexpr Real Gruneisen_air = 0.4;
     constexpr Real Cv_air = P0 / rho0_air / (Gruneisen_air * T0);
-    EOS air_eos = IdealGas(Gruneisen_air, Cv_air);
+    EOS air_eos = FlooredEnergy<IdealGas>(IdealGas(Gruneisen_air, Cv_air));
 
     // Davis Reactants EOS
     constexpr Real rho0_DP = 1.890;
@@ -128,7 +141,8 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real alpha = 0.4265;
     constexpr Real Cv_DP = 0.001074 * MJ_per_kg; // erg / g / K
     EOS davis_r_eos =
-        DavisReactants(rho0_DP, e0_DP, P0_DP, T0_DP, A, B, C, G0, Z, alpha, Cv_DP);
+        FlooredEnergy<DavisReactants>(
+            DavisReactants(rho0_DP, e0_DP, P0_DP, T0_DP, A, B, C, G0, Z, alpha, Cv_DP));
 
     // JWL EOS (Tarver & McGuire, 2002)
     constexpr Real A_JWL = 6.3207e4 * GPa;
@@ -139,8 +153,11 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real w_JWL = 0.8938;
     constexpr Real Cv_JWL = 2.487e-3 / rho0_JWL * MJ_per_kg;
     constexpr Real E0_JWL = 0.246929 * MJ_per_kg;
-    EOS jwl_eos = ShiftedEOS<JWL>(
-        JWL(A_JWL, B_JWL, R1_JWL, R2_JWL, w_JWL, rho0_JWL, Cv_JWL), E0_JWL);
+    EOS jwl_eos = FlooredEnergy<ShiftedEOS<JWL>>(
+        ShiftedEOS<JWL>(
+            JWL(A_JWL, B_JWL, R1_JWL, R2_JWL, w_JWL, rho0_JWL, Cv_JWL),
+            E0_JWL)
+    );
 
     // Gruneisen parameters for copper
     constexpr Real C0_G = 0.394 * cm / us;
@@ -152,14 +169,16 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real rho0_G = 8.93;
     constexpr Real Cv_G = 0.383e-05 * Mbcc_per_g;
     EOS gruneisen_eos =
-        Gruneisen(C0_G, S1_G, S2_G, S3_G, Gamma0_G, b_G, rho0_G, T0, P0, Cv_G);
+        FlooredEnergy<Gruneisen>(
+            Gruneisen(C0_G, S1_G, S2_G, S3_G, Gamma0_G, b_G, rho0_G, T0, P0, Cv_G));
 
     // Tabular EOS parameters (when used)
     constexpr int matid = 3337;
     const std::string eos_file = "../materials.sp5";
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-    EOS spiner_eos = SpinerEOSDependsRhoT(eos_file, matid);
+    EOS spiner_eos =
+        FlooredEnergy<SpinerEOSDependsRhoT>(SpinerEOSDependsRhoT(eos_file, matid));
 #endif
 #endif
 
@@ -167,14 +186,13 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     std::vector<EOS> eos_vec = {air_eos, davis_r_eos, jwl_eos, gruneisen_eos
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-                                ,
-                                spiner_eos
+                                , spiner_eos
 #endif
 #endif
     };
 
-    const n_eos = eos_vec.size();
-    EOS *v_EOS = copy_eos_arr_to_device<EOS>(n_eos, eos_vec);
+    const size_t n_eos = eos_vec.size();
+    EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_vec), EOS>(n_eos, eos_vec);
 
     WHEN("The energy is associated with a temperature and density above the reference") {
 
@@ -190,8 +208,9 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
         auto P_diffs = diff_pressures(n_eos, v_EOS, T_lookup, e_offset, rho_factor);
 
         for (size_t i = 0; i < n_eos; i++) {
-          auto name = typeid(eos_vec[i].get()).name();
-          INFO("EOS " << name << " index: " << i);
+          GetName evaluate_func{};
+          eos_vec[i].EvaluateHost(evaluate_func);
+          INFO("EOS " << evaluate_func.name << " index: " << i);
           CHECK(fabs(P_diffs[i]) < tol);
         }
       }
@@ -199,7 +218,7 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     WHEN("The energy is below the zero Kelvin isotherm at the reference density") {
 
       constexpr Real T_lookup = 0;
-      constexpr Real e_offset = 1e10.; // Large offset
+      constexpr Real e_offset = 1.0e10; // Large offset
       constexpr Real rho_factor = 1.0; // Exactly reference density
 
       constexpr Real tol = 1.0e-14;
@@ -209,8 +228,9 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
         auto P_diffs = diff_pressures(n_eos, v_EOS, T_lookup, e_offset, rho_factor);
 
         for (size_t i = 0; i < n_eos; i++) {
-          auto name = typeid(eos_vec[i].get()).name();
-          INFO("EOS " << name << " index: " << i);
+          GetName evaluate_func{};
+          eos_vec[i].EvaluateHost(evaluate_func);
+          INFO("EOS " << evaluate_func.name << " index: " << i);
           CHECK(fabs(P_diffs[i]) < tol);
         }
       }
