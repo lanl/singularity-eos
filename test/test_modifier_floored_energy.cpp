@@ -101,7 +101,7 @@ auto diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
 
 // Helper functor to get the name of the EOS
 struct GetName {
-  template<typename eosT>
+  template <typename eosT>
   void operator()(const eosT &eos) {
     name = typeid(eos).name();
   }
@@ -140,9 +140,8 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real Z = 0.0;
     constexpr Real alpha = 0.4265;
     constexpr Real Cv_DP = 0.001074 * MJ_per_kg; // erg / g / K
-    EOS davis_r_eos =
-        FlooredEnergy<DavisReactants>(
-            DavisReactants(rho0_DP, e0_DP, P0_DP, T0_DP, A, B, C, G0, Z, alpha, Cv_DP));
+    EOS davis_r_eos = FlooredEnergy<DavisReactants>(
+        DavisReactants(rho0_DP, e0_DP, P0_DP, T0_DP, A, B, C, G0, Z, alpha, Cv_DP));
 
     // JWL EOS (Tarver & McGuire, 2002)
     constexpr Real A_JWL = 6.3207e4 * GPa;
@@ -153,11 +152,8 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real w_JWL = 0.8938;
     constexpr Real Cv_JWL = 2.487e-3 / rho0_JWL * MJ_per_kg;
     constexpr Real E0_JWL = 0.246929 * MJ_per_kg;
-    EOS jwl_eos = FlooredEnergy<ShiftedEOS<JWL>>(
-        ShiftedEOS<JWL>(
-            JWL(A_JWL, B_JWL, R1_JWL, R2_JWL, w_JWL, rho0_JWL, Cv_JWL),
-            E0_JWL)
-    );
+    EOS jwl_eos = FlooredEnergy<ShiftedEOS<JWL>>(ShiftedEOS<JWL>(
+        JWL(A_JWL, B_JWL, R1_JWL, R2_JWL, w_JWL, rho0_JWL, Cv_JWL), E0_JWL));
 
     // Gruneisen parameters for copper
     constexpr Real C0_G = 0.394 * cm / us;
@@ -168,9 +164,8 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     constexpr Real b_G = 0.47;
     constexpr Real rho0_G = 8.93;
     constexpr Real Cv_G = 0.383e-05 * Mbcc_per_g;
-    EOS gruneisen_eos =
-        FlooredEnergy<Gruneisen>(
-            Gruneisen(C0_G, S1_G, S2_G, S3_G, Gamma0_G, b_G, rho0_G, T0, P0, Cv_G));
+    EOS gruneisen_eos = FlooredEnergy<Gruneisen>(
+        Gruneisen(C0_G, S1_G, S2_G, S3_G, Gamma0_G, b_G, rho0_G, T0, P0, Cv_G));
 
     // Tabular EOS parameters (when used)
     constexpr int matid = 3337;
@@ -186,7 +181,8 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     std::vector<EOS> eos_vec = {air_eos, davis_r_eos, jwl_eos, gruneisen_eos
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-                                , spiner_eos
+                                ,
+                                spiner_eos
 #endif
 #endif
     };
@@ -219,7 +215,7 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
 
       constexpr Real T_lookup = 0;
       constexpr Real e_offset = 1.0e10; // Large offset
-      constexpr Real rho_factor = 1.0; // Exactly reference density
+      constexpr Real rho_factor = 1.0;  // Exactly reference density
 
       constexpr Real tol = 1.0e-14;
 
