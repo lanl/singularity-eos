@@ -19,6 +19,7 @@
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
 #endif
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -83,7 +84,7 @@ inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN
 }
 
 // Helper function to copy a collection of EOS to device memory
-template <typename EOSArrT, EOS_T>
+template <typename EOSArrT, typename EOS_T>
 EOS_T *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
   // Assumes that GetOnDevice() has already been called for each EOS in eos_arr
   const size_t EOS_bytes = num_eos * sizeof(EOS_T);
