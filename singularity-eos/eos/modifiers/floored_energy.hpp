@@ -43,6 +43,8 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
 
   FlooredEnergy() = default;
 
+  FlooredEnergy(T &&t) : t_(std::forward<T>(t)) {}
+
   auto GetOnDevice() { return FlooredEnergy<T>(t_.GetOnDevice()); }
   inline void Finalize() { t_.Finalize(); }
 
