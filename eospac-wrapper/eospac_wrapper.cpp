@@ -33,13 +33,14 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
   EOS_INTEGER commentsType[1] = {EOS_Comment};
 
   constexpr int numInfoTables = NT;
-  constexpr int NI[] = {5, 11, 11};
+  constexpr int NI[] = {5, 11, 2};
   std::array<std::vector<EOS_INTEGER>, numInfoTables> infoItems = {
       std::vector<EOS_INTEGER>{EOS_Exchange_Coeff, EOS_Mean_Atomic_Mass,
                                EOS_Mean_Atomic_Num, EOS_Modulus, EOS_Normal_Density},
       std::vector<EOS_INTEGER>{EOS_Rmin, EOS_Rmax, EOS_Tmin, EOS_Tmax, EOS_Fmin, EOS_Fmax,
                                EOS_NR, EOS_NT, EOS_X_Convert_Factor, EOS_Y_Convert_Factor,
-                               EOS_F_Convert_Factor}};
+                               EOS_F_Convert_Factor},
+      std::vector<EOS_INTEGER>{EOS_Fmin, EOS_Fmax}};
   std::vector<EOS_REAL> infoVals[numInfoTables];
   for (int i = 0; i < numInfoTables; i++) {
     infoVals[i].resize(NI[i]);
@@ -67,8 +68,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
   metadata.TMax = temperatureFromSesame(infoVals[1][3]);
   metadata.sieMin = sieFromSesame(infoVals[1][4]);
   metadata.sieMax = sieFromSesame(infoVals[1][5]);
-  metadata.PMin = pressureFromSesame(infoVals[2][4]);
-  metadata.PMax = pressureFromSesame(infoVals[2][5]);
+  metadata.PMin = pressureFromSesame(infoVals[2][0]);
+  metadata.PMax = pressureFromSesame(infoVals[2][1]);
   metadata.numRho = static_cast<int>(infoVals[1][6]);
   metadata.numT = static_cast<int>(infoVals[1][7]);
   metadata.rhoConversionFactor = infoVals[1][8];
