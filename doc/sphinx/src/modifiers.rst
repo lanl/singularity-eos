@@ -316,9 +316,9 @@ lookups in energy space that would otherwise be below the zero K isotherm return
 whatever value would lie upon the isotherm.
 
 Notably though, tabular SESAME tables can result in unexpected behavior. The
-``EOSPAC`` and ``SpinerEOSDependsRhoT`` both rely on the result when EOSPAC
-querries the cold energy table (306). This energy *can* differ from the zero K
-isotherm for two reasons:
+``EOSPAC`` and ``SpinerEOSDependsRhoT`` models both rely on the result when
+EOSPAC querries the cold energy table (306). This energy *can* differ from the
+zero K isotherm for two reasons:
 
 #. The zero K isotherm includes the zero point energy. In other words, it is the
    energy of the lowest energy level whereas the cold curve is the energy of the
@@ -332,9 +332,9 @@ isotherm for two reasons:
 
 .. note::
 
-  This modifier is only compatible with EOS where the ``MinInternalEnergyFromDensity``
-  function is properly defined. Where it isn't defined, an error will occur at
-  runtime.
+  This modifier is only compatible with EOS where the
+  ``MinInternalEnergyFromDensity`` function is properly defined. Where it isn't
+  defined, an error will occur at runtime.
 
 
 Composing Modifiers
