@@ -32,8 +32,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
   EOS_INTEGER commentsHandle[1];
   EOS_INTEGER commentsType[1] = {EOS_Comment};
 
-  constexpr int numInfoTables = 2;
-  constexpr int NI[] = {5, 11};
+  constexpr int numInfoTables = NT;
+  constexpr int NI[] = {5, 11, 11};
   std::array<std::vector<EOS_INTEGER>, numInfoTables> infoItems = {
       std::vector<EOS_INTEGER>{EOS_Exchange_Coeff, EOS_Mean_Atomic_Mass,
                                EOS_Mean_Atomic_Num, EOS_Modulus, EOS_Normal_Density},
