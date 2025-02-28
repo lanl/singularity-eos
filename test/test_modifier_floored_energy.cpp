@@ -219,7 +219,7 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
 
       constexpr Real tol = 1.0e-14;
 
-      THEN("P(rho, e) lookups should agree with P(rho, T) lookups") {
+      THEN("P(rho, e) lookups should agree with P(rho, T=0)") {
 
         auto P_diffs = diff_pressures(n_eos, v_EOS, T_lookup, e_offset, rho_factor);
 
