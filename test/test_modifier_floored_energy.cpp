@@ -179,12 +179,12 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
 
     // Put EOS in a vector and put EOS on device
     std::vector<EOS> eos_vec = {air_eos, davis_r_eos, jwl_eos, gruneisen_eos
-// #ifdef SINGULARITY_TEST_SESAME
-// #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-//                                 ,
-//                                 spiner_eos
-// #endif
-// #endif
+#ifdef SINGULARITY_TEST_SESAME
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+                                ,
+                                spiner_eos
+#endif
+#endif
     };
 
     const size_t n_eos = eos_vec.size();
