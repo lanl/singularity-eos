@@ -133,7 +133,7 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
   }
 
   // vector implementations
-  inline void choose_max_sie(const Real *sies, const Real *sie_use, const int num) const {
+  inline void choose_max_sie(const Real *sies, Real *sie_use, const int num) const {
     // This code makes the assumption that `sie_use` is first populated with the
     // apprioriate minimum values
     static auto const name = singularity::mfuncname::member_func_name(
