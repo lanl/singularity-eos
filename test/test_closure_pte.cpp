@@ -187,7 +187,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
                                           davis_p_eos.GetOnDevice()};
 
       THEN("The PTE Rho T solver should converge") {
-        EOS *v_EOS = copy_eos_arr_to_device<EOS>(num_pte, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_arr), EOS>(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state<PTESolverRhoT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverRhoTRequiredScratch, mass_frac,
@@ -205,7 +205,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
         PORTABLE_FREE(v_EOS);
       }
       THEN("The PTE P T solver should converge") {
-        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_arr), EOS>(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state<PTESolverPT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverPTRequiredScratch, mass_frac,
@@ -236,7 +236,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
                                           copper_eos.GetOnDevice()};
       // TODO(JMM): This test does not converge. See Issue 390. Possibly due to Spiner?
       THEN("The PTE solver should converge") {
-        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_arr), EOS>(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state<PTESolverRhoT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverRhoTRequiredScratch, mass_frac,
