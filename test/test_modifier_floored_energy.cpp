@@ -50,8 +50,8 @@ using EOS =
 // temperature for the lookup is T_lookup. The energy for the lookup is given by
 // e(rho, T_lookup) - e_offset
 PORTABLE_INLINE_FUNCTION
-auto diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
-                    const Real e_offset = 0., const Real rho_factor = 1.2) {
+std::vector<Real> diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
+                                 const Real e_offset = 0., const Real rho_factor = 1.2) {
   // Create storage for relative diffs
   std::vector<Real> P_rdiffs(n_eos); // zero initialized
   const size_t bytes = n_eos * sizeof(Real);
