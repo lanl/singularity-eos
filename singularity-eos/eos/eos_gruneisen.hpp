@@ -490,6 +490,7 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
   Real rho_lower;
   Real rho_upper;
   Real rho_guess;
+  Real p_used = press;
   // Pick bounds appropriate depending on whether in compression or expansion
   if (press < Pref) {
     rho_lower = 0.;
@@ -505,13 +506,14 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
       // We're off the EOS surface
       using PortsOfCall::printf;
       printf("ERROR: Requested pressure, %.15g, exceeds maximum, %.15g, for \n"
-             "       temperature, %.15g",
+             "       temperature, %.15g.\n"
+             "       setting pressure to maximum allowed value.\n",
              press, pres_max, temp);
-      PORTABLE_ALWAYS_THROW_OR_ABORT("Input pressure is off EOS surface");
+      p_used = pres_max;
     }
     // Construct a reasonable guess for the density
     const Real slope = (rho_upper - _rho0) / (pres_max - Pref);
-    rho_guess = _rho0 + slope * (press - Pref);
+    rho_guess = _rho0 + slope * (p_used - Pref);
   }
   // JMM: called inside a device kernel so does not need device annotation
   auto PofRatT = [this, temp](const Real r) {
@@ -520,7 +522,7 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
   auto status =
-      regula_falsi(PofRatT, press, rho_guess, rho_lower, rho_upper, 1.0e-8, 1.0e-8, rho);
+      regula_falsi(PofRatT, p_used, rho_guess, rho_lower, rho_upper, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: "
