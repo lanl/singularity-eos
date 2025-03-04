@@ -49,7 +49,7 @@ using EOS =
 // lookup for a set of EOS. The density is at rho_ref * rho_factor while the
 // temperature for the lookup is T_lookup. The energy for the lookup is given by
 // e(rho, T_lookup) - e_offset
-auto diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
+std::vector<Real> diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
                                  const Real e_offset = 0., const Real rho_factor = 1.2) {
   // Create storage for relative diffs
   std::vector<Real> P_rdiffs(n_eos); // zero initialized
