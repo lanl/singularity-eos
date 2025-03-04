@@ -49,11 +49,10 @@ using singularity::variadic_utils::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, Vinet, MGUsup, PowerMG, JWL, DavisReactants, DavisProducts,
-       StiffGas
+    tl<IdealGas, Gruneisen, Vinet, MGUsup, PowerMG, JWL, DavisReactants, DavisProducts
 #ifdef SINGULARITY_USE_V_AND_V_EOS
        ,
-       SAP_Polynomial, NobleAbel, CarnahanStarling
+       SAP_Polynomial, NobleAbel, CarnahanStarling, StiffGas
 #endif // SINGULARITY_USE_V_AND_V_EOS
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
@@ -61,28 +60,8 @@ static constexpr const auto full_eos_list =
        Helmholtz
 #endif // SINGULARITY_USE_HELMHOLTZ
        ,
-       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
-#ifdef SINGULARITY_USE_EOSPAC
-       ,
-       EOSPAC
-#endif // SINGULARITY_USE_EOSPAC
-       >{};
-// eos's that get relativistic modifier
-static constexpr const auto relativistic_eos_list =
-    tl<IdealGas
-#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-       ,
-       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
-#endif // SINGULAIRTY_USE_SPINER_WITH_HDF5
-       >{};
-// eos's that get unit system modifier
-static constexpr const auto unit_system_eos_list =
-    tl<IdealGas
-#ifdef SPINER_USE_HDF
-       ,
-       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
-#endif // SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
        ,
        EOSPAC
@@ -90,38 +69,20 @@ static constexpr const auto unit_system_eos_list =
        >{};
 // modifiers that get applied to all eos's
 static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
-// variadic list of UnitSystem<T>'s
-static constexpr const auto unit_system =
-    transform_variadic_list(unit_system_eos_list, al<UnitSystem>{});
-// variadic list of Relativistic<T>'s
-static constexpr const auto relativistic =
-    transform_variadic_list(relativistic_eos_list, al<RelativisticEOS>{});
 // variadic list of eos's with shifted or scaled modifiers
-static constexpr const auto shifted_1 =
+static constexpr const auto shifted =
     transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
 static constexpr const auto scaled_1 =
     transform_variadic_list(full_eos_list, al<ScaledEOS>{});
-// relativistic and unit system modifiers
-static constexpr const auto unit_or_rel =
-    singularity::variadic_utils::concat(unit_system, relativistic);
-// variadic list of eos with shifted, relativistic or unit system modifiers
-static constexpr const auto shifted_of_unit_or_rel =
-    transform_variadic_list(unit_or_rel, al<ShiftedEOS>{});
-// combined list of all shifted EOS
-static constexpr const auto shifted =
-    singularity::variadic_utils::concat(shifted_1, shifted_of_unit_or_rel);
-// variadic list of eos with scaled, relativistic or unit system modifiers
-static constexpr const auto scaled_of_unit_or_rel =
-    transform_variadic_list(unit_or_rel, al<ScaledEOS>{});
 // variadic list of Scaled<Shifted<T>>'s
 static constexpr const auto scaled_of_shifted =
     transform_variadic_list(shifted, al<ScaledEOS>{});
 // combined list of all scaled EOS
-static constexpr const auto scaled = singularity::variadic_utils::concat(
-    scaled_1, scaled_of_unit_or_rel, scaled_of_shifted);
+static constexpr const auto scaled =
+    singularity::variadic_utils::concat(scaled_1, scaled_of_shifted);
 // create combined list
 static constexpr const auto combined_list_1 =
-    singularity::variadic_utils::concat(full_eos_list, shifted, scaled, unit_or_rel);
+    singularity::variadic_utils::concat(full_eos_list, shifted, scaled);
 // make a ramped eos of everything
 static constexpr const auto ramped_all =
     transform_variadic_list(combined_list_1, al<BilinearRampEOS>{});

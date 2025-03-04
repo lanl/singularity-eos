@@ -60,46 +60,29 @@ using al = variadic_utils::adapt_list<Ts...>;
 using variadic_utils::transform_variadic_list;
 
 static constexpr const auto full_eos_list = tl<IdealGas>{};
-static constexpr const auto relativistic_eos_list = tl<IdealGas>{};
-static constexpr const auto unit_system_eos_list = tl<IdealGas>{};
-static constexpr const auto unit_system =
-    transform_variadic_list(unit_system_eos_list, al<UnitSystem>{});
+// modifiers that get applied to all eos's
+static constexpr const auto apply_to_all = al<ScaledEOS, ShiftedEOS>{};
 // variadic list of eos's with shifted or scaled modifiers
-static constexpr const auto shifted_1 =
+static constexpr const auto shifted =
     transform_variadic_list(full_eos_list, al<ShiftedEOS>{});
 static constexpr const auto scaled_1 =
     transform_variadic_list(full_eos_list, al<ScaledEOS>{});
-// variadic list of Relativistic<T>'s
-static constexpr const auto relativistic =
-    transform_variadic_list(relativistic_eos_list, al<RelativisticEOS>{});
-// relativistic and unit system modifiers
-static constexpr const auto unit_or_rel =
-    variadic_utils::concat(unit_system, relativistic);
-// variadic list of eos with shifted, relativistic or unit system modifiers
-static constexpr const auto shifted_of_unit_or_rel =
-    transform_variadic_list(unit_or_rel, al<ShiftedEOS>{});
-// combined list of all shifted EOS
-static constexpr const auto shifted =
-    variadic_utils::concat(shifted_1, shifted_of_unit_or_rel);
-// variadic list of eos with scaled, relativistic or unit system modifiers
-static constexpr const auto scaled_of_unit_or_rel =
-    transform_variadic_list(unit_or_rel, al<ScaledEOS>{});
 // variadic list of Scaled<Shifted<T>>'s
 static constexpr const auto scaled_of_shifted =
     transform_variadic_list(shifted, al<ScaledEOS>{});
 // combined list of all scaled EOS
 static constexpr const auto scaled =
-    variadic_utils::concat(scaled_1, scaled_of_unit_or_rel, scaled_of_shifted);
+    singularity::variadic_utils::concat(scaled_1, scaled_of_shifted);
 // create combined list
 static constexpr const auto combined_list_1 =
-    variadic_utils::concat(full_eos_list, shifted, scaled, unit_or_rel);
+    singularity::variadic_utils::concat(full_eos_list, shifted, scaled);
 // make a ramped eos of everything
 static constexpr const auto ramped_all =
     transform_variadic_list(combined_list_1, al<BilinearRampEOS>{});
 // final combined list
 static constexpr const auto combined_list =
-    variadic_utils::concat(combined_list_1, ramped_all);
-using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
+    singularity::variadic_utils::concat(combined_list_1, ramped_all);
+
 #endif
 
 SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
