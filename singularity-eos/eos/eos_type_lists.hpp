@@ -59,6 +59,10 @@ static constexpr const auto full_eos_list =
        ,
        Helmholtz
 #endif // SINGULARITY_USE_HELMHOLTZ
+#ifdef SINGULARITY_USE_STELLAR_COLLAPSE
+       ,
+       StellarCollapse
+#endif // SINGULARITY_USE_STELLAR_COLLAPSE
        ,
        SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5

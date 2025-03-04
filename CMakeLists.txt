@@ -79,8 +79,11 @@ cmake_dependent_option(
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5;SINGULARITY_USE_EOSPAC"
   OFF)
 cmake_dependent_option(
+  SINGULARITY_USE_STELLAR_COLLAPSE "Use the stellar collapse equation of state" OFF
+   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+cmake_dependent_option(
   SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" ON
-  "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+  "SINGULARITY_USE_STELLAR_COLLAPSE" OFF)
 cmake_dependent_option(
   SINGULARITY_USE_HELMHOLTZ "Include Helmholtz equation of state" OFF
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
@@ -100,7 +103,7 @@ cmake_dependent_option(
   "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_SESAME2SPINER" OFF)
 cmake_dependent_option(
   SINGULARITY_TEST_STELLAR_COLLAPSE "Test stellar collapse table readers" ON
-  "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
+  "SINGULARITY_USE_STELLAR_COLLAPSE" OFF)
 cmake_dependent_option(SINGULARITY_TEST_PYTHON "Test the Python bindings" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_PYTHON" OFF)
 cmake_dependent_option(
@@ -338,6 +341,9 @@ if(SINGULARITY_BUILD_CLOSURE)
 endif()
 if(SINGULARITY_USE_HELMHOLTZ)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_HELMHOLTZ)
+endif()
+if(SINGULARITY_USE_STELLAR_COLLAPSE)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_STELLAR_COLLAPSE)
 endif()
 if (SINGULARITY_USE_V_AND_V_EOS)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_V_AND_V_EOS)

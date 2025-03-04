@@ -95,6 +95,7 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def_property_readonly("sieMin", &SpinerEOSDependsRhoSie::sieMin)
     .def_property_readonly("sieMax", &SpinerEOSDependsRhoSie::sieMax);
 
+#ifdef SINGULARITY_USE_STELLAR_COLLAPSE
   eos_class<StellarCollapse>(m, "StellarCollapse")
     .def(py::init())
     .def(py::init<const std::string&, bool, bool>(), py::arg("filename"), py::arg("use_sp5")=false, py::arg("filter_bmod")=true)
@@ -107,7 +108,8 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def_property_readonly("YeMax", &StellarCollapse::YeMax)
     .def_property_readonly("sieMin", &StellarCollapse::sieMin)
     .def_property_readonly("sieMax", &StellarCollapse::sieMax);
-  
+#endif // SINGULARITY_USE_STELLAR_COLLAPSE
+
 #ifdef SINGULARITY_USE_HELMHOLTZ
   eos_class<Helmholtz>(m, "Helmholtz")
     .def(py::init())
