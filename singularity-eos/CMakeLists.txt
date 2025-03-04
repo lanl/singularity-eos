@@ -69,6 +69,29 @@ register_headers(
     eos/eos_electrons.hpp
 )
 
+if (SINGULARITY_INSTANTIATE_CLASSES)
+  register_srcs(
+    eos/eos_carnahan_starling.cpp
+    eos/eos_davis.cpp
+    eos/eos_electrons.cpp
+    eos/eos_eospac.cpp
+    eos/eos_gruneisen.cpp
+    eos/eos_helmholtz.cpp
+    eos/eos_ideal.cpp
+    eos/eos_jwl.cpp
+    eos/eos_mgusup.cpp
+    eos/eos_noble_abel.cpp
+    eos/eos_powermg.cpp
+    eos/eos_sap_polynomial.cpp
+    eos/eos_spiner.cpp
+    eos/eos_stellar_collapse.cpp
+    eos/eos_stiff.cpp
+    eos/eos_vinet.cpp
+    eos/modifiers/shifted_eos.cpp
+    eos/modifiers/scaled_eos.cpp
+    )
+endif()
+
 if (SINGULARITY_BUILD_CLOSURE)
   register_headers(
     closure/mixed_cell_models.hpp
@@ -80,6 +103,7 @@ if (SINGULARITY_BUILD_CLOSURE)
     # while these are C++ files, they
     # are only needed for the fortran backend or unit testing
     register_srcs(eos/singularity_eos.cpp)
+    register_srcs(eos/get_sg_eos_misc.cpp)
     register_headers(eos/singularity_eos.hpp)
   endif()
   if (SINGULARITY_BUILD_FORTRAN_BACKEND)

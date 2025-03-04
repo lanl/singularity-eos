@@ -49,11 +49,11 @@ using singularity::variadic_utils::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, Vinet, MGUsup, PowerMG, JWL, DavisReactants, DavisProducts,
-       StiffGas
+    tl<IdealGas, Gruneisen, Vinet, MGUsup, PowerMG, JWL, DavisReactants, DavisProducts
 #ifdef SINGULARITY_USE_V_AND_V_EOS
        ,
-       SAP_Polynomial, NobleAbel, CarnahanStarling
+       SAP_Polynomial, NobleAbel, CarnahanStarling, StiffGas
+
 #endif // SINGULARITY_USE_V_AND_V_EOS
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
@@ -61,7 +61,7 @@ static constexpr const auto full_eos_list =
        Helmholtz
 #endif // SINGULARITY_USE_HELMHOLTZ
        ,
-       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_EOSPAC
        ,
@@ -73,7 +73,7 @@ static constexpr const auto relativistic_eos_list =
     tl<IdealGas
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
        ,
-       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie
 #endif // SINGULAIRTY_USE_SPINER_WITH_HDF5
        >{};
 // eos's that get unit system modifier
@@ -81,7 +81,7 @@ static constexpr const auto unit_system_eos_list =
     tl<IdealGas
 #ifdef SPINER_USE_HDF
        ,
-       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie, StellarCollapse
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie
 #endif // SPINER_USE_HDF
 #ifdef SINGULARITY_USE_EOSPAC
        ,

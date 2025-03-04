@@ -22,6 +22,7 @@
 
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -420,6 +421,11 @@ MGUsup::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Re
   dpde = _G0 * _rho0;
   dvdt = robust::ratio(-1.0, _T0 * _G0 * _rho0);
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(MGUsup, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_MGUSUP_HPP_
