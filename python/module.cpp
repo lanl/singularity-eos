@@ -125,8 +125,6 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
 #endif
 
-  create_unit_system_eos_classes(m);
-  create_relativistic_eos_classes(m);
   create_shifted_eos_classes(m);
   create_scaled_eos_classes(m);
   create_bilinear_ramp_eos_classes(m);

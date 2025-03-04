@@ -374,5 +374,3 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
 void create_shifted_eos_classes(py::module_ & m);
 void create_scaled_eos_classes(py::module_ & m);
 void create_bilinear_ramp_eos_classes(py::module_ &m);
-void create_relativistic_eos_classes(py::module_ &m);
-void create_unit_system_eos_classes(py::module_ &m);
