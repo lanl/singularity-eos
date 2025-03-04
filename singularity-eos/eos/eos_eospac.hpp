@@ -30,6 +30,8 @@
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -1650,6 +1652,10 @@ EOSPAC::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Re
   dvdt = dvdt_ref_;
 #endif // ON DEVICE
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(EOSPAC, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
 
 } // namespace singularity
 

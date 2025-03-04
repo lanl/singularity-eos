@@ -386,6 +386,25 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   double shift_;
 };
 
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+class IdealGas;
+class Gruneisen;
+class Vinet;
+class MGUsup;
+class PowerMG;
+class JWL;
+class DavisReactants;
+class DavisProducts;
+extern template class ShiftedEOS<IdealGas>;
+extern template class ShiftedEOS<Gruneisen>;
+extern template class ShiftedEOS<Vinet>;
+extern template class ShiftedEOS<MGUsup>;
+extern template class ShiftedEOS<PowerMG>;
+extern template class ShiftedEOS<JWL>;
+extern template class ShiftedEOS<DavisReactants>;
+extern template class ShiftedEOS<DavisProducts>;
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_SHIFTED_EOS_
