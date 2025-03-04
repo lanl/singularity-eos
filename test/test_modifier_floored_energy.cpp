@@ -188,7 +188,7 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
 
     const size_t n_eos = eos_vec.size();
     for (size_t i = 0; i < n_eos; i++) {
-        eos_vec[i] = eos_vec[i].GetOnDevice();
+      eos_vec[i] = eos_vec[i].GetOnDevice();
     }
     EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_vec), EOS>(n_eos, eos_vec);
 
