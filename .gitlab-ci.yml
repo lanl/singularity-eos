@@ -60,12 +60,28 @@ openmpi_gcc:
     SPACK_ENV_NAME: openmpi-gcc
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
+openmpi_clang:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: openmpi-clang
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
+
 openmpi_fortran_gcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: openmpi-fortran-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
+
+openmpi_fortran_clang:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: openmpi-fortran-clang
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
 openmpi_cuda_gcc_ampere:
@@ -133,12 +149,28 @@ openmpi_fortran_kokkos_openmp_gcc:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-openmp-gcc
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
+openmpi_fortran_kokkos_openmp_clang:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: openmpi-fortran-kokkos-openmp-clang
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
+
 openmpi_fortran_kokkos_static_openmp_gcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
   needs:
    - prereq_offline_deps
   variables:
     SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-gcc
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
+
+openmpi_fortran_kokkos_static_openmp_clang:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: openmpi-fortran-kokkos-static-openmp-clang
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
 openmpi_rocm_gcc:
