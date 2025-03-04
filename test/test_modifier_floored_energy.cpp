@@ -187,6 +187,8 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     };
 
     const size_t n_eos = eos_vec.size();
+
+    // Get each EOS on device and copy the array to device
     for (size_t i = 0; i < n_eos; i++) {
       eos_vec[i] = eos_vec[i].GetOnDevice();
     }
@@ -233,5 +235,6 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
         }
       }
     }
+    finalize_eos_arr(eos_vec);
   }
 }
