@@ -83,6 +83,8 @@ static constexpr const auto ramped_all =
 static constexpr const auto combined_list =
     singularity::variadic_utils::concat(combined_list_1, ramped_all);
 
+using EOS = typename decltype(tl_to_Variant(combined_list))::vt;
+
 #endif
 
 SCENARIO("EOS Builder and Modifiers", "[EOSBuilder][Modifiers][IdealGas]") {
