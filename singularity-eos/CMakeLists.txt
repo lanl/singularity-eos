@@ -71,6 +71,7 @@ register_headers(
 
 if (SINGULARITY_INSTANTIATE_CLASSES)
   register_srcs(
+    eos/eos.cpp
     eos/eos_carnahan_starling.cpp
     eos/eos_davis.cpp
     eos/eos_electrons.cpp

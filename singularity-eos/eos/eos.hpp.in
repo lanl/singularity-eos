@@ -17,4 +17,17 @@
 
 #include <@SINGULARITY_VARIANT@>
 
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+namespace singularity {
+namespace impl {
+template<typename T>
+void ConcretizeType(T eos) {
+  eos.CheckParams();
+  eos.PrintParams();
+}
+extern template void ConcretizeType<EOS>(EOS);
+} // namespace impl
+} // namespace singularity
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 #endif // _SINGULARITY_EOS_EOS_EOS_HPP_
