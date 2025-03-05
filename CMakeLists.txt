@@ -188,6 +188,9 @@ add_library(singularity-eos::singularity-eos_Interface ALIAS singularity-eos_Int
 target_link_libraries(singularity-eos_Interface INTERFACE singularity-eos_Common)
 target_link_libraries(singularity-eos INTERFACE singularity-eos_Interface)
 
+# ld has problems with Clang's libomp.so, use ldd instead
+target_link_options(singularity-eos_Interface INTERFACE $<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>)
+
 # ------------------------------------------------------------------------------#
 # Compiler & language setup
 # ------------------------------------------------------------------------------#

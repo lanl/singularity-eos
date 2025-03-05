@@ -73,7 +73,7 @@ void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,             
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
-void func####WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,\
+void func##WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,  \
           py::array_t<Real> out, py::array_t<Real> scratch, const int num, py::array_t<Real> lambdas){       \
   py::buffer_info lambdas_info = lambdas.request();                               \
   if (lambdas_info.ndim != 2)                                                     \
@@ -87,13 +87,13 @@ void func####WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> 
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
-void func####NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,   \
+void func##NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,     \
           py::array_t<Real> out, const int num){                                  \
   self.func(a.data(), b.data(), out.mutable_data(), num, NoLambdaHelper());       \
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
-void func####NoLambdaWithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,  \
+void func##NoLambdaWithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,    \
           py::array_t<Real> out, py::array_t<Real> scratch, const int num){                 \
   self.func(a.data(), b.data(), out.mutable_data(), scratch.mutable_data(), num, NoLambdaHelper()); \
 }
