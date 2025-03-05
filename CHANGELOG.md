@@ -17,7 +17,7 @@
 - [[PR437]](https://github.com/lanl/singularity-eos/pull/437) Fix segfault on HIP, clean up warnings, add strict sanitizer test
 
 ### Changed (changing behavior/API/variables/...)
-- [[PR475]](https://github.com/lanl/singularity-eos/pull/475) Shrink the default variant
+- [[PR475]](https://github.com/lanl/singularity-eos/pull/475) Shrink the default variant. Notably moved Stiff Gas behind a flag.
 
 ### Infrastructure (changes irrelevant to downstream codes)
 
