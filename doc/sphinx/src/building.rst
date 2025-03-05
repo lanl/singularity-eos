@@ -120,6 +120,7 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_NQT_PORTABLE``            OFF      For fast logs, use the slower but endianness-independent implementation.
  ``SINGULARITY_STRICT_WARNINGS``         OFF      For testing. Adds -Wall and -Werror to builds.
  ``SINGULARITY_USE_V_AND_V_EOS``         OFF      Enables several additional EOS models and adds them to the default variant
+ ``SINGULARITY_USE_STELLAR_COLLAPSE``    OFF      Adds the Stellar Collapse EOS to the default variant
 ====================================== ======= ===========================================
 
 More options are available to modify only if certain other options or
