@@ -9,6 +9,8 @@
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)
+- [[PR478]](https://github.com/lanl/singularity-eos/pull/478) Fix bug in KPT test. Add more extensive clang build to github CI matrix.
+- [[PR473]](https://github.com/lanl/singularity-eos/pull/473) Resolve memory issue. Thanks for the catch, Richard!
 - [[PR468]](https://github.com/lanl/singularity-eos/pull/468) Move definition of def_en and def_v to an implementation file
 - [[PR466]](https://github.com/lanl/singularity-eos/pull/466) Fully thread lambda inputs through the PTE solver
 - [[PR449]](https://github.com/lanl/singularity-eos/pull/449) Ensure that DensityEnergyFromPressureTemperature works for all equations of state and is properly tested

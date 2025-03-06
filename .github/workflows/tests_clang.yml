@@ -1,0 +1,54 @@
+name: Tests Clang
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+    tests:
+      name: Extensive test suite with clang, no fortran or Kokkos
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+          with:
+            submodules: recursive
+        - name: Set system to non-interactive mode
+          run: export DEBIAN_FRONTEND=noninteractive
+        - name: install dependencies
+          run: |
+            sudo apt-get update -y -qq
+            sudo apt-get install -y --allow-downgrades --allow-remove-essential --allow-change-held-packages -qq build-essential libhdf5-serial-dev binutils-gold clang llvm
+            pip install numpy
+            pip install h5py
+        - name: build and run tests
+          run: |
+            mkdir -p bin
+            cd bin
+            ulimit -m unlimited
+            ulimit -v unlimited
+            mkdir -p ${HOME}/install
+            cmake -DCMAKE_INSTALL_PREFIX=${HOME}/install \
+                  -DCMAKE_CXX_COMPILER=clang++ \
+                  -DSINGULARITY_USE_FORTRAN=OFF \
+                  -DSINGULARITY_BUILD_FORTRAN_BACKEND=ON \
+                  -DSINGULARITY_USE_SPINER=ON \
+                  -DSINGULARITY_BUILD_TESTS=ON \
+                  -DSINGULARITY_BUILD_EXAMPLES=ON \
+                  -DSINGULARITY_BUILD_PYTHON=OFF \
+                  -DSINGULARITY_TEST_SESAME=OFF \
+                  -DSINGULARITY_USE_HELMHOLTZ=ON \
+                  -DSINGULARITY_TEST_HELMHOLTZ=ON \
+                  -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
+                  -DSINGULARITY_USE_V_AND_V_EOS=OFF \
+                  -DSINGULARITY_USE_KOKKOS=OFF \
+                  -DSINGULARITY_PLUGINS=$(pwd)/../example/plugin \
+                  -DCMAKE_LINKER=ld.gold \
+                  -DCMAKE_BUILD_TYPE=Release \
+                  ..
+            make -j4
+            make install
+            ctest --output-on-failure
