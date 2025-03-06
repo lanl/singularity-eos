@@ -22,6 +22,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
@@ -122,6 +123,70 @@ char *StrCat(char *destination, const char *source) {
   Real MeanAtomicMass() const { return t_.MeanAtomicMass(); }                            \
   PORTABLE_INLINE_FUNCTION                                                               \
   Real MeanAtomicNumber() const { return t_.MeanAtomicNumber(); }
+
+// These are used when SINGULARITY_INSTANTIATE_CLASSES is
+// active. Requires relocatable device code.
+#define SG_ADD_TEMPLATE_EXTERNS(T, S)                                                    \
+  extern template class eos_base::EosBase<T>;                                            \
+  extern template PORTABLE_FUNCTION Real T::TemperatureFromDensityInternalEnergy<S>(     \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::InternalEnergyFromDensityTemperature<S>(     \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::PressureFromDensityTemperature<S>(           \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::PressureFromDensityInternalEnergy<S>(        \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::MinInternalEnergyFromDensity<S>(const Real,  \
+                                                                            S &&) const; \
+  extern template PORTABLE_FUNCTION Real T::EntropyFromDensityTemperature<S>(            \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::EntropyFromDensityInternalEnergy<S>(         \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::SpecificHeatFromDensityTemperature<S>(       \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::SpecificHeatFromDensityInternalEnergy<S>(    \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::BulkModulusFromDensityTemperature<S>(        \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::BulkModulusFromDensityInternalEnergy<S>(     \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::GruneisenParamFromDensityTemperature<S>(     \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION Real T::GruneisenParamFromDensityInternalEnergy<S>(  \
+      const Real, const Real, S &&) const;                                               \
+  extern template PORTABLE_FUNCTION void T::ValuesAtReferenceState(                      \
+      Real &, Real &, Real &, Real &, Real &, Real &, Real &, Real &, S &&) const;
+
+#define SG_ADD_TEMPLATE_INSTANTIATIONS(T, S)                                             \
+  template class eos_base::EosBase<T>;                                                   \
+  template PORTABLE_FUNCTION Real T::TemperatureFromDensityInternalEnergy<S>(            \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::InternalEnergyFromDensityTemperature<S>(            \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::PressureFromDensityTemperature<S>(                  \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::PressureFromDensityInternalEnergy<S>(               \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::MinInternalEnergyFromDensity<S>(const Real, S &&)   \
+      const;                                                                             \
+  template PORTABLE_FUNCTION Real T::EntropyFromDensityTemperature<S>(                   \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::EntropyFromDensityInternalEnergy<S>(                \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::SpecificHeatFromDensityTemperature<S>(              \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::SpecificHeatFromDensityInternalEnergy<S>(           \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::BulkModulusFromDensityTemperature<S>(               \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::BulkModulusFromDensityInternalEnergy<S>(            \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::GruneisenParamFromDensityTemperature<S>(            \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION Real T::GruneisenParamFromDensityInternalEnergy<S>(         \
+      const Real, const Real, S &&) const;                                               \
+  template PORTABLE_FUNCTION void T::ValuesAtReferenceState(                             \
+      Real &, Real &, Real &, Real &, Real &, Real &, Real &, Real &, S &&) const;
 
 class Factor {
   Real value_ = 1.0;

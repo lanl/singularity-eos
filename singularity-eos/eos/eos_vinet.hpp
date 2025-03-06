@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -22,6 +22,7 @@
 
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -432,6 +433,11 @@ Vinet::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Rea
   dpde = robust::ratio(_A0 * tbmod, _Cv0);
   dvdt = robust::ratio(_A0, _rho0);
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(Vinet, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_VINET_HPP_

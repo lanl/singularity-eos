@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -239,6 +239,10 @@ StiffGas::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real 
   if (output & thermalqs::specific_heat)
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(StiffGas, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
 
 } // namespace singularity
 

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -11,29 +11,9 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
-// clang-format off
-#include "module.hpp"
 
-template<typename T>
-void relativistic_eos_class(py::module_ & m) {
-  // define Relativistic utility function
-  m.def("Relativistic", [](typename T::BaseType eos, const Real cl){
-    return T(std::move(eos), cl);
-  }, py::arg("eos"), py::arg("cl"));
+#include <singularity-eos/eos/eos_carnahan_starling.hpp>
 
-  eos_class<T>(m, T::EosPyType())
-    .def(
-      py::init<typename T::BaseType, Real>(),
-      py::arg("eos"), py::arg("cl")
-    );
-}
-
-template<typename... Ts>
-void create_relativistic(py::module_ &m, tl<Ts...>) {
-  // C++14 workaround, since we don't have C++17 fold expressions
-  auto l = { (relativistic_eos_class<Ts>(m), 0)... };
-}
-
-void create_relativistic_eos_classes(py::module_ & m) {
-  create_relativistic(m, singularity::relativistic);
-}
+namespace singularity {
+SG_ADD_TEMPLATE_INSTANTIATIONS(CarnahanStarling, Real *)
+} // namespace singularity

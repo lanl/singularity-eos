@@ -42,6 +42,7 @@
 
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/hermite.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/math_utils.hpp>
@@ -1570,6 +1571,10 @@ void Helmholtz::GetFromDensityLogTemperature_(
     }
   }
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(Helmholtz, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
 
 }; // namespace singularity
 

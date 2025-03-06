@@ -382,6 +382,25 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
   double inv_scale_;
 };
 
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+class IdealGas;
+class Gruneisen;
+class Vinet;
+class MGUsup;
+class PowerMG;
+class JWL;
+class DavisReactants;
+class DavisProducts;
+extern template class ScaledEOS<IdealGas>;
+extern template class ScaledEOS<Gruneisen>;
+extern template class ScaledEOS<Vinet>;
+extern template class ScaledEOS<MGUsup>;
+extern template class ScaledEOS<PowerMG>;
+extern template class ScaledEOS<JWL>;
+extern template class ScaledEOS<DavisReactants>;
+extern template class ScaledEOS<DavisProducts>;
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_SCALED_EOS_

@@ -12,6 +12,11 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_spiner.hpp>
 
-template void singularity::impl::ConcretizeType<singularity::EOS>(EOS);
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+namespace singularity {
+SG_ADD_TEMPLATE_INSTANTIATIONS(SpinerEOSDependsRhoT, Real *)
+SG_ADD_TEMPLATE_INSTANTIATIONS(SpinerEOSDependsRhoSie, Real *)
+} // namespace singularity
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5

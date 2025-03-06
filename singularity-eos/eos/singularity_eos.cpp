@@ -170,6 +170,7 @@ int init_sg_SAP_Polynomial(const int matindex, EOS *eos, const double rho0,
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,
                      const double Pinf, const double qq, int const *const enabled,
                      double *const vals) {
+#if SINGULARITY_USE_V_AND_V_EOS
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(StiffGas(gm1, Cv, Pinf, qq));
   if (enabled[3] == 1) {
@@ -179,6 +180,11 @@ int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const doubl
   EOS eos_ = SGAPPLYMOD(StiffGas(gm1, Cv, Pinf, qq));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
+#else
+  PORTABLE_THROW_OR_ABORT("StiffGas not currently supported. Please build with "
+                          "-DSINGULARITY_USE_V_AND_V_EOS");
+  return 1;
+#endif // SINGULARITY_USE_V_AND_V_EOS
 }
 
 int init_sg_StiffGas(const int matindex, EOS *eos, const double gm1, const double Cv,

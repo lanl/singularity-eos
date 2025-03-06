@@ -79,10 +79,16 @@ cmake_dependent_option(
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5;SINGULARITY_USE_EOSPAC"
   OFF)
 cmake_dependent_option(
+  SINGULARITY_USE_STELLAR_COLLAPSE "Use the stellar collapse equation of state" OFF
+   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+cmake_dependent_option(
   SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" ON
-  "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+  "SINGULARITY_USE_STELLAR_COLLAPSE" OFF)
 cmake_dependent_option(
   SINGULARITY_USE_HELMHOLTZ "Include Helmholtz equation of state" OFF
+  "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+cmake_dependent_option(
+  SINGULARITY_USE_STELLAR_COLLAPSE "Include StellarCollapse equation of state" OFF
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
 
 # Enables polynomial, carnahan starling, and NobleAbel in variant.
@@ -100,7 +106,7 @@ cmake_dependent_option(
   "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_SESAME2SPINER" OFF)
 cmake_dependent_option(
   SINGULARITY_TEST_STELLAR_COLLAPSE "Test stellar collapse table readers" ON
-  "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
+  "SINGULARITY_USE_STELLAR_COLLAPSE" OFF)
 cmake_dependent_option(SINGULARITY_TEST_PYTHON "Test the Python bindings" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_PYTHON" OFF)
 cmake_dependent_option(
@@ -111,6 +117,12 @@ cmake_dependent_option(
 option(SINGULARITY_BETTER_DEBUG_FLAGS "Better debug flags for singularity" ON)
 option(SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
 option(SINGULARITY_STRICT_WARNINGS "Make warnings strict" OFF)
+
+# This enables explicit instantiation of EOS classes, which can
+# significantly speed up compilation
+option(SINGULARITY_INSTANTIATE_CLASSES
+  "Instantiate classes and common templates. Speeds up compilation but can reduce runtime performance."
+  OFF)
 
 # toggle code options
 option(SINGULARITY_USE_TRUE_LOG_GRIDDING
@@ -137,7 +149,7 @@ option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
 # TODO This should depend on using offloading (`SINGULARITY_USE_CUDA` &t) Also,
 # patching in the source tree is messy, this should be done in the build dir
 option(SINGULARITY_PATCH_MPARK_VARIANT
-       "Apply GPU patch to mpark-variant submodule" ON)
+  "Apply GPU patch to mpark-variant submodule" ON)
 
 # Plugins
 set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
@@ -317,6 +329,10 @@ target_compile_definitions(singularity-eos_Interface INTERFACE
 )
 
 # defines
+if (SINGULARITY_INSTANTIATE_CLASSES)
+  target_compile_definitions(singularity-eos_Interface
+    INTERFACE SINGULARITY_INSTANTIATE_CLASSES)
+endif()
 if (SINGULARITY_USE_TRUE_LOG_GRIDDING)
   target_compile_definitions(singularity-eos_Interface
     INTERFACE SINGULARITY_USE_TRUE_LOG_GRIDDING)
@@ -341,6 +357,9 @@ if(SINGULARITY_BUILD_CLOSURE)
 endif()
 if(SINGULARITY_USE_HELMHOLTZ)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_HELMHOLTZ)
+endif()
+if(SINGULARITY_USE_STELLAR_COLLAPSE)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_STELLAR_COLLAPSE)
 endif()
 if (SINGULARITY_USE_V_AND_V_EOS)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_V_AND_V_EOS)
