@@ -13,12 +13,16 @@
 
 #include <array>
 #include <cmath>
+#include <tuple>
 #include <vector>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
 #endif
+
+#include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
@@ -49,18 +53,27 @@ using EOS =
 // lookup for a set of EOS. The density is at rho_ref * rho_factor while the
 // temperature for the lookup is T_lookup. The energy for the lookup is given by
 // e(rho, T_lookup) - e_offset
-std::vector<Real> diff_pressures(const int n_eos, EOS *v_EOS, const Real T_lookup,
-                                 const Real e_offset = 0., const Real rho_factor = 1.2) {
-  // Create storage for relative diffs
-  std::vector<Real> P_rdiffs(n_eos); // zero initialized
+template<typename HostEOSArr>
+std::tuple<std::vector<Real>, std::vector<Real>> diff_pressures(
+    const int n_eos, HostEOSArr eos_arr, const Real T_lookup,
+    const Real e_offset = 0., const Real rho_factor = 1.2) {
+
+  // Store EOS array on device
+  EOS *v_EOS = copy_eos_arr_to_device<HostEOSArr, EOS>(n_eos, eos_arr);
+
+  // Create storage for pressure lookups
+  std::vector<Real> P_of_RT(n_eos); // zero initialized
+  std::vector<Real> P_of_RE(n_eos); // zero initialized
   const size_t bytes = n_eos * sizeof(Real);
-  Real *v_P_rdiffs = (Real *)PORTABLE_MALLOC(bytes);
-  portableCopyToDevice(v_P_rdiffs, P_rdiffs.data(), bytes);
+  Real *v_P_of_RT = (Real *)PORTABLE_MALLOC(bytes);
+  portableCopyToDevice(v_P_of_RT, P_of_RT.data(), bytes);
+  Real *v_P_of_RE = (Real *)PORTABLE_MALLOC(bytes);
+  portableCopyToDevice(v_P_of_RE, P_of_RE.data(), bytes);
 
   // Loop over EOS
   portableFor(
-      "Positive temperature test", 0, n_eos, PORTABLE_LAMBDA(int i) {
-        const auto this_eos = v_EOS[i];
+      "Positive temperature test", 0, n_eos, PORTABLE_LAMBDA(const int i) {
+        const auto& this_eos = v_EOS[i];
 
         // Find the reference state (really we just want the density :shrug:)
         Real rho_ref;
@@ -74,6 +87,9 @@ std::vector<Real> diff_pressures(const int n_eos, EOS *v_EOS, const Real T_looku
         this_eos.ValuesAtReferenceState(rho_ref, temp_ref, sie_ref, press_ref, cv_ref,
                                         bmod_ref, dpde_ref, dvdt_ref);
 
+        // Sanity check on the density to make sure we don't screw this up
+        PORTABLE_ALWAYS_REQUIRE(rho_ref > 0, "Zero reference density");
+
         const Real density_lookup = rho_factor * rho_ref;
 
         // Find energy at reference density and specified temperature
@@ -81,21 +97,28 @@ std::vector<Real> diff_pressures(const int n_eos, EOS *v_EOS, const Real T_looku
             this_eos.InternalEnergyFromDensityTemperature(density_lookup, T_lookup) -
             e_offset;
 
-        // Diff the P(rho, e) and P(rho, T) lookups
+        // Store P(rho, e) and P(rho, T) lookups
         const Real P_from_e =
             this_eos.PressureFromDensityInternalEnergy(density_lookup, e_lookup);
+        v_P_of_RE[i] = P_from_e;
         const Real P_from_T =
             this_eos.PressureFromDensityTemperature(density_lookup, T_lookup);
-        v_P_rdiffs[i] = ratio(P_from_e - P_from_T, (P_from_e + P_from_T) / 2.);
-      });
+        v_P_of_RT[i] = P_from_T;
+      }
+  );
 
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  Kokkos::fence("After pressure diff");
+#endif
   // Transfer to host
-  portableCopyToHost(P_rdiffs.data(), v_P_rdiffs, bytes);
+  portableCopyToHost(P_of_RT.data(), v_P_of_RT, bytes);
+  portableCopyToHost(P_of_RE.data(), v_P_of_RE, bytes);
 
   // Free device memory
-  PORTABLE_FREE(v_P_rdiffs);
+  PORTABLE_FREE(v_P_of_RT);
+  PORTABLE_FREE(v_P_of_RE);
 
-  return P_rdiffs;
+  return std::make_tuple(P_of_RT, P_of_RE);
 }
 
 // Helper functor to get the name of the EOS
@@ -167,23 +190,23 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
         Gruneisen(C0_G, S1_G, S2_G, S3_G, Gamma0_G, b_G, rho0_G, T0, P0, Cv_G));
 
     // Tabular EOS parameters (when used)
-#ifdef SINGULARITY_TEST_SESAME
+// #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
     constexpr int matid = 3337;
     const std::string eos_file = "../materials.sp5";
     EOS spiner_eos =
         FlooredEnergy<SpinerEOSDependsRhoT>(SpinerEOSDependsRhoT(eos_file, matid));
 #endif
-#endif
+// #endif
 
     // Put EOS in a vector and put EOS on device
     std::vector<EOS> eos_vec = {air_eos, davis_r_eos, jwl_eos, gruneisen_eos
-#ifdef SINGULARITY_TEST_SESAME
+// #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
                                 ,
                                 spiner_eos
 #endif
-#endif
+// #endif
     };
 
     const size_t n_eos = eos_vec.size();
@@ -192,7 +215,6 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     for (size_t i = 0; i < n_eos; i++) {
       eos_vec[i] = eos_vec[i].GetOnDevice();
     }
-    EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_vec), EOS>(n_eos, eos_vec);
 
     WHEN("The energy is associated with a temperature and density above the reference") {
 
@@ -205,13 +227,19 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
       THEN("P(rho, e) lookups should agree with P(rho, T) lookups when the energy is "
            "floored") {
 
-        auto P_diffs = diff_pressures(n_eos, v_EOS, T_lookup, e_offset, rho_factor);
+        auto P_lookups = diff_pressures(n_eos, eos_vec, T_lookup, e_offset, rho_factor);
+        auto P_of_RT = std::get<0>(P_lookups);
+        auto P_of_RE = std::get<1>(P_lookups);
 
         for (size_t i = 0; i < n_eos; i++) {
           GetName get_name_func{};
           eos_vec[i].EvaluateHost(get_name_func);
           INFO("EOS " << get_name_func.name << " index: " << i);
-          CHECK(fabs(P_diffs[i]) < tol);
+          INFO("P(rho_0 * " << rho_factor << ", T=" << T_lookup << ") evaluation = "
+               << P_of_RT[i]);
+          INFO("P(rho_0 * " << rho_factor << ", e @ T =" << T_lookup << ") evaluation = "
+               << P_of_RT[i]);
+          CHECK(isClose(P_of_RT[i], P_of_RE[i], tol));
         }
       }
     }
@@ -225,13 +253,19 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
 
       THEN("P(rho, e) lookups should agree with P(rho, T=0)") {
 
-        auto P_diffs = diff_pressures(n_eos, v_EOS, T_lookup, e_offset, rho_factor);
+        auto P_lookups = diff_pressures(n_eos, eos_vec, T_lookup, e_offset, rho_factor);
+        auto P_of_RT = std::get<0>(P_lookups);
+        auto P_of_RE = std::get<1>(P_lookups);
 
         for (size_t i = 0; i < n_eos; i++) {
-          GetName evaluate_func{};
-          eos_vec[i].EvaluateHost(evaluate_func);
-          INFO("EOS " << evaluate_func.name << " index: " << i);
-          CHECK(fabs(P_diffs[i]) < tol);
+          GetName get_name_func{};
+          eos_vec[i].EvaluateHost(get_name_func);
+          INFO("EOS " << get_name_func.name << " index: " << i);
+          INFO("P(rho_0 * " << rho_factor << ", T=" << T_lookup << ") evaluation = "
+               << P_of_RT[i]);
+          INFO("P(rho_0 * " << rho_factor << ", e < e @ T = " << T_lookup <<
+               ") evaluation = " << P_of_RT[i]);
+          CHECK(isClose(P_of_RT[i], P_of_RE[i], tol));
         }
       }
     }

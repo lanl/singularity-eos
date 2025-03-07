@@ -79,7 +79,7 @@ inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN
       << std::scientific << "i: " << i << ", " << xname << ": " << x[i] << ", " << yname
       << ": " << y[i] << ", Value: " << z[i] << ", True Value: " << ztrue[i];
     INFO(s.str());
-    CHECK(isClose(z[i], ztrue[i], 1e-12));
+    CHECK(isClose(z[i], ztrue[i], tol));
   }
 }
 
