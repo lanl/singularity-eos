@@ -53,10 +53,10 @@ using EOS =
 // lookup for a set of EOS. The density is at rho_ref * rho_factor while the
 // temperature for the lookup is T_lookup. The energy for the lookup is given by
 // e(rho, T_lookup) - e_offset
-template<typename HostEOSArr>
-std::tuple<std::vector<Real>, std::vector<Real>> diff_pressures(
-    const int n_eos, HostEOSArr eos_arr, const Real T_lookup,
-    const Real e_offset = 0., const Real rho_factor = 1.2) {
+template <typename HostEOSArr>
+std::tuple<std::vector<Real>, std::vector<Real>>
+diff_pressures(const int n_eos, HostEOSArr eos_arr, const Real T_lookup,
+               const Real e_offset = 0., const Real rho_factor = 1.2) {
 
   // Store EOS array on device
   EOS *v_EOS = copy_eos_arr_to_device<HostEOSArr, EOS>(n_eos, eos_arr);
@@ -73,7 +73,7 @@ std::tuple<std::vector<Real>, std::vector<Real>> diff_pressures(
   // Loop over EOS
   portableFor(
       "Positive temperature test", 0, n_eos, PORTABLE_LAMBDA(const int i) {
-        const auto& this_eos = v_EOS[i];
+        const auto &this_eos = v_EOS[i];
 
         // Find the reference state (really we just want the density :shrug:)
         Real rho_ref;
@@ -104,8 +104,7 @@ std::tuple<std::vector<Real>, std::vector<Real>> diff_pressures(
         const Real P_from_T =
             this_eos.PressureFromDensityTemperature(density_lookup, T_lookup);
         v_P_of_RT[i] = P_from_T;
-      }
-  );
+      });
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::fence("After pressure diff");
@@ -197,16 +196,17 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
     EOS spiner_eos =
         FlooredEnergy<SpinerEOSDependsRhoT>(SpinerEOSDependsRhoT(eos_file, matid));
 #endif
-// #endif
+    // #endif
 
     // Put EOS in a vector and put EOS on device
-    std::vector<EOS> eos_vec = {air_eos, davis_r_eos, jwl_eos, gruneisen_eos
+    std::vector<EOS> eos_vec = {
+        air_eos, davis_r_eos, jwl_eos, gruneisen_eos
 // #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-                                ,
-                                spiner_eos
+        ,
+        spiner_eos
 #endif
-// #endif
+        // #endif
     };
 
     const size_t n_eos = eos_vec.size();
@@ -235,10 +235,10 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
           GetName get_name_func{};
           eos_vec[i].EvaluateHost(get_name_func);
           INFO("EOS " << get_name_func.name << " index: " << i);
-          INFO("P(rho_0 * " << rho_factor << ", T=" << T_lookup << ") evaluation = "
-               << P_of_RT[i]);
-          INFO("P(rho_0 * " << rho_factor << ", e @ T =" << T_lookup << ") evaluation = "
-               << P_of_RT[i]);
+          INFO("P(rho_0 * " << rho_factor << ", T=" << T_lookup
+                            << ") evaluation = " << P_of_RT[i]);
+          INFO("P(rho_0 * " << rho_factor << ", e @ T =" << T_lookup
+                            << ") evaluation = " << P_of_RT[i]);
           CHECK(isClose(P_of_RT[i], P_of_RE[i], tol));
         }
       }
@@ -261,10 +261,10 @@ SCENARIO("Test the floored energy modifer for a suite of EOS",
           GetName get_name_func{};
           eos_vec[i].EvaluateHost(get_name_func);
           INFO("EOS " << get_name_func.name << " index: " << i);
-          INFO("P(rho_0 * " << rho_factor << ", T=" << T_lookup << ") evaluation = "
-               << P_of_RT[i]);
-          INFO("P(rho_0 * " << rho_factor << ", e < e @ T = " << T_lookup <<
-               ") evaluation = " << P_of_RT[i]);
+          INFO("P(rho_0 * " << rho_factor << ", T=" << T_lookup
+                            << ") evaluation = " << P_of_RT[i]);
+          INFO("P(rho_0 * " << rho_factor << ", e < e @ T = " << T_lookup
+                            << ") evaluation = " << P_of_RT[i]);
           CHECK(isClose(P_of_RT[i], P_of_RE[i], tol));
         }
       }
