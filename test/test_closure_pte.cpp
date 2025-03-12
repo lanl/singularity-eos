@@ -53,24 +53,6 @@ using singularity::robust::ratio;
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
                                  DavisReactants, SpinerEOSDependsRhoT>;
 
-template <typename EOSArrT>
-EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
-  // Assumes that GetOnDevice() has already been called for each EOS in eos_arr
-  const size_t EOS_bytes = num_eos * sizeof(EOS);
-  EOS *v_EOS = (EOS *)PORTABLE_MALLOC(EOS_bytes);
-  const size_t bytes = num_eos * sizeof(EOS);
-  portableCopyToDevice(v_EOS, eos_arr.data(), bytes);
-  return v_EOS;
-}
-
-template <typename EOSArrT>
-void finalize_eos_arr(EOSArrT eos_arr) {
-  // Call Finalize on each EOS on the host
-  for (auto eos : eos_arr) {
-    eos.Finalize();
-  }
-}
-
 template <template <typename... Types> class PTESolver_t, typename Scratch_t,
           typename ArrT>
 bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
@@ -205,7 +187,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
                                           davis_p_eos.GetOnDevice()};
 
       THEN("The PTE Rho T solver should converge") {
-        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_arr), EOS>(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state<PTESolverRhoT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverRhoTRequiredScratch, mass_frac,
@@ -223,7 +205,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
         PORTABLE_FREE(v_EOS);
       }
       THEN("The PTE P T solver should converge") {
-        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_arr), EOS>(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state<PTESolverPT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverPTRequiredScratch, mass_frac,
@@ -254,7 +236,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
                                           copper_eos.GetOnDevice()};
       // TODO(JMM): This test does not converge. See Issue 390. Possibly due to Spiner?
       THEN("The PTE solver should converge") {
-        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
+        EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_arr), EOS>(num_pte, eos_arr);
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state<PTESolverRhoT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverRhoTRequiredScratch, mass_frac,
