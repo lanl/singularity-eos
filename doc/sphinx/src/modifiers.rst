@@ -284,6 +284,9 @@ parameter via the lambda. For example:
   Real lambda[1] = {Z};
   Real Pe = electron_eos.PressureFromDensityTemperature(rho, temperature, lambda);
 
+If you use the indexable types infrastructure, the name is
+``IndexableTypes::MeanIonizationState``.
+
 .. warning::
 
   Several thermodynamic properties are approximated in the z-split
