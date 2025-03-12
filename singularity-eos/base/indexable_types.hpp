@@ -79,6 +79,8 @@ struct LogTemperature {};
 struct MeanAtomicMass {};
 struct MeanAtomicNumber {};
 struct ElectronFraction {};
+struct RootStatus {};
+struct TableStatus {};
 } // namespace IndexableTypes
 } // namespace singularity
 #endif // SINGULARITY_EOS_BASE_INDEXABLE_TYPES_
