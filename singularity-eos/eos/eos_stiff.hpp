@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -89,13 +89,6 @@ class StiffGas : public EosBase<StiffGas> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return std::max(-_Pinf, _gm1 * rho * (sie - _qq) - (_gm1 + 1.0) * _Pinf);
   }
-
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    MinInternalEnergyIsNotEnabled("StiffGas");
-    return 0.0;
-  };
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real

@@ -1047,8 +1047,8 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::PressureFromDensityInternalE
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::MinInternalEnergyFromDensity(
     const Real rho, Indexer_t &&lambda) const {
-  MinInternalEnergyIsNotEnabled("SpinerEOSDependsRhoT");
-  return 0.0;
+  const Real lRho = lRho_(rho);
+  return sieCold_.interpToReal(lRho);
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::EntropyFromDensityTemperature(
