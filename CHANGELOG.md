@@ -19,6 +19,7 @@
 - [[PR375]](https://github.com/lanl/singularity-eos/pull/375) Added energy floor modifier
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR475]](https://github.com/lanl/singularity-eos/pull/475) Shrink the default variant. Notably moved Stiff Gas behind a flag.
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR481]](https://github.com/lanl/singularity-eos/pull/481) Move mutable diagnostic variables in singularity-eos into optional indexable types in a lambda.
