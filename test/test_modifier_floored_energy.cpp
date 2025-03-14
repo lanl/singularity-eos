@@ -124,7 +124,7 @@ diff_pressures(const int n_eos, HostEOSArr eos_arr, const Real T_lookup,
 struct GetName {
   template <typename eosT>
   void operator()(const eosT &eos) {
-    name = typeid(eos).name();
+    name = eos.EosType();
   }
 
   std::string name;
