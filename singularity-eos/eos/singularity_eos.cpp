@@ -19,6 +19,37 @@
 #include <singularity-eos/eos/singularity_eos.hpp>
 #include <singularity-eos/eos/singularity_eos_init_utils.hpp>
 
+/*
+===============================================
+Lambda indexer class. Usage is as follows:
+
+Assuming lambda is a std::array<Real, nCell>, instantiate this class
+as
+
+   idx = lambdaIndexer(lambda.data(), n)
+
+We can now use the [] operator as follows:
+
+   idx[i] 
+
+which will return the memory address of the element n*i of the array lambda
+===============================================
+*/
+
+class lambdaIndexer {
+public:
+  lambdaIndexer (double * data, int n) : data_(data), n_(n){}
+
+  double * operator[](int i) const {
+    return &(data_[n_*i]);
+  }
+  
+private:
+  double * data_;
+  int n_;
+};
+
+
 namespace singularity {
 int def_en[4] = {0, 0, 0, 0};
 double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -337,7 +368,13 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
 int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
                                              const double *sies, double *pressures,
                                              const int len, int stride = -1, double *lambda_data = NULL) {
-  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
+  if (stride == -1 && lambda_data == NULL)
+    eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
+  else{
+    //idx = lambdaIndexer(lambda_data, stride);
+    //    eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, idx);    
+  }
+    
   return 0;
 }
 int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos,

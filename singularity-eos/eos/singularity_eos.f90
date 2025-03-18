@@ -729,10 +729,10 @@ contains
     real(kind=8), dimension(:,:,:), intent(inout), target:: pressures
     type(sg_eos_ary_t), intent(in)    :: eos
     integer(c_int), intent(in), optional :: stride
-    real(kind=8), dimension(:), intent(inout), target, optional::lambda_data
+    real(kind=8), dimension(:,:,:,:), intent(inout), target, optional::lambda_data
     if (PRESENT(stride) .and. PRESENT(lambda_data)) then
        err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
-            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, stride, c_loc(lambda_data(1)))
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
        err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
