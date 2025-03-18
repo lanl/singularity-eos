@@ -336,7 +336,7 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
 
 int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
                                              const double *sies, double *pressures,
-                                             const int len, int stride = -1) {
+                                             const int len, int stride = -1, double *lambda_data = NULL) {
   eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
   return 0;
 }

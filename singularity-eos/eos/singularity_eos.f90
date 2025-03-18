@@ -257,13 +257,14 @@ module singularity_eos
   interface
    integer(kind=c_int) function &
        get_sg_PressureFromDensityInternalEnergy(matindex, eos, rhos, sies,&
-                                               pressures, len, stride) &
+                                               pressures, len, stride, lambda_data) &
        bind(C, name='get_sg_PressureFromDensityInternalEnergy')
        import
        integer(c_int), value, intent(in) :: matindex, len
        type(c_ptr), value, intent(in) :: eos, rhos, sies
        type(c_ptr), value, intent(in) :: pressures
        integer(c_int), intent(in), optional :: stride
+       type(c_ptr), intent(in), optional :: lambda_data
     end function
   end interface
 
@@ -721,19 +722,20 @@ contains
 ! SINGULARITY_USE_EOSPAC
 
   integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
-    eos, rhos, sies, pressures, len, stride) &
+    eos, rhos, sies, pressures, len, stride, lambda_data) &
     result(err)
     integer(c_int), intent(in) :: matindex, len
     real(kind=8), dimension(:,:,:), intent(in), target:: rhos, sies
     real(kind=8), dimension(:,:,:), intent(inout), target:: pressures
     type(sg_eos_ary_t), intent(in)    :: eos
     integer(c_int), intent(in), optional :: stride
-    if (PRESENT(stride)) then
+    real(kind=8), dimension(:), intent(inout), target, optional::lambda_data
+    if (PRESENT(stride) .and. PRESENT(lambda_data)) then
        err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
-            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, stride, c_loc(lambda_data(1)))
     else
        err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
-            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, stride)
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
     endif
   end function get_sg_PressureFromDensityInternalEnergy_f
 
