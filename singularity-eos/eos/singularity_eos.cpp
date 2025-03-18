@@ -19,6 +19,35 @@
 #include <singularity-eos/eos/singularity_eos.hpp>
 #include <singularity-eos/eos/singularity_eos_init_utils.hpp>
 
+/*
+===============================================
+2D Lambda indexer class. Usage is as follows:
+
+Assuming lambda is a std::array<Real, nCell>, instantiate this class
+as
+
+   idx = lambdaIndexer2D(lambda.data(), n)
+
+We can now use the [] operator as follows:
+
+   idx[i]
+
+which will return the memory address of the element n*i of the array lambda
+===============================================
+*/
+
+class lambdaIndexer2D {
+ public:
+  lambdaIndexer2D(int n, double *data) : n_(n), data_(data) {}
+
+  PORTABLE_FORCEINLINE_FUNCTION
+  double *operator[](int i) const { return &(data_[n_ * i]); }
+
+ private:
+  int n_;
+  double *data_;
+};
+
 namespace singularity {
 int def_en[4] = {0, 0, 0, 0};
 double def_v[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -342,8 +371,14 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
 
 int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
                                              const double *sies, double *pressures,
-                                             const int len) {
-  eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
+                                             const int len, const int stride = -1,
+                                             double *lambda_data = nullptr) {
+  if (stride != -1 && lambda_data != nullptr) {
+    lambdaIndexer2D idx(stride, lambda_data);
+    eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, idx);
+  } else
+    eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
+
   return 0;
 }
 int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos,
@@ -353,8 +388,15 @@ int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rh
 }
 int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos,
                                                 const double *rhos, const double *sies,
-                                                double *bmods, const int len) {
-  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
+                                                double *bmods, const int len,
+                                                const int stride = -1,
+                                                double *lambda_data = nullptr) {
+  if (stride != -1 && lambda_data != nullptr) {
+    lambdaIndexer2D idx(stride, lambda_data);
+    eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len, idx);
+  } else
+    eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
+
   return 0;
 }
 
