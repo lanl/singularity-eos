@@ -97,7 +97,7 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_Gruneisen
   end interface
-  
+
   interface
     integer(kind=c_int) function &
       init_sg_JWL(matindex, eos, A, B, R1, R2, w, rho0, Cv, sg_mods_enabled, &
@@ -137,7 +137,7 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_DavisReactants
   end interface
-  
+
   interface
     integer(kind=c_int) function &
       init_sg_NobleAbel(matindex, eos, gm1, Cv, bb, qq, sg_mods_enabled, &
@@ -150,7 +150,7 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_NobleAbel
   end interface
-  
+
   interface
     integer(kind=c_int) function &
       init_sg_CarnahanStarling(matindex, eos, gm1, Cv, bb, qq, sg_mods_enabled, &
@@ -176,7 +176,7 @@ module singularity_eos
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
     end function init_sg_StiffGas
   end interface
-  
+
   interface
     integer(kind=c_int) function &
       init_sg_SAP_Polynomial(matindex, eos, rho0, a0, a1, a2c, a2e, a3, b0, b1,&
@@ -290,7 +290,7 @@ module singularity_eos
        type(c_ptr), value, intent(in) :: bmods
     end function
   end interface
-  
+
   interface
     integer(kind=c_int) function &
       get_sg_eos(nmat, ncell, cell_dim,&
@@ -485,7 +485,7 @@ contains
     err = init_sg_JWL(matindex-1, eos%ptr, A, B, R1, R2, w, rho0, Cv, &
                       c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_JWL_f
-  
+
   integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc, &
                                            Cv, sg_mods_enabled, &
                                            sg_mods_values) &
@@ -556,7 +556,7 @@ contains
                                  a3, b0, b1, b2c, b2e, b3, &
                                  c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_SAP_Polynomial_f
-  
+
   integer function init_sg_StiffGas_f(matindex, eos, gm1, Cv, &
                                       Pinf, qq, &
                                       sg_mods_enabled, sg_mods_values) &
@@ -600,7 +600,7 @@ contains
     err = init_sg_NobleAbel(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
                            c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_NobleAbel_f
-  
+
   integer function init_sg_CarnahanStarling_f(matindex, eos, gm1, Cv, &
                                       bb, qq, &
                                       sg_mods_enabled, sg_mods_values) &
@@ -613,7 +613,7 @@ contains
     err = init_sg_CarnahanStarling(matindex-1, eos%ptr, gm1, Cv, bb, qq, &
                            c_loc(sg_mods_enabled), c_loc(sg_mods_values))
   end function init_sg_CarnahanStarling_f
-  
+
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_HELMHOLTZ
   integer function init_sg_Helmholtz_f(matindex, eos, filename, rad, gas, coul, ion, ele, &
@@ -760,7 +760,7 @@ contains
     err = get_sg_BulkModulusFromDensityInternalEnergy(matindex-1, &
        eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len)
   end function get_sg_BulkModulusFromDensityInternalEnergy_f
-  
+
   integer function finalize_sg_eos_f(nmat, eos) &
     result(err)
     integer(c_int), value, intent(in) :: nmat

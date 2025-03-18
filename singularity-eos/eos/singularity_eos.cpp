@@ -30,7 +30,7 @@ as
 
 We can now use the [] operator as follows:
 
-   idx[i] 
+   idx[i]
 
 which will return the memory address of the element n*i of the array lambda
 ===============================================
@@ -369,11 +369,11 @@ int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const doubl
                                              const int len, const int stride = -1, double *lambda_data = NULL) {
   if (stride != -1 && lambda_data != NULL){
     lambdaIndexer idx(stride, lambda_data);
-    eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, idx);    
+    eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, idx);
   }
   else
     eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
-    
+
   return 0;
 }
 int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos,
