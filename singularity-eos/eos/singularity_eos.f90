@@ -257,12 +257,13 @@ module singularity_eos
   interface
    integer(kind=c_int) function &
        get_sg_PressureFromDensityInternalEnergy(matindex, eos, rhos, sies,&
-                                               pressures, len) &
+                                               pressures, len, stride) &
        bind(C, name='get_sg_PressureFromDensityInternalEnergy')
        import
        integer(c_int), value, intent(in) :: matindex, len
        type(c_ptr), value, intent(in) :: eos, rhos, sies
        type(c_ptr), value, intent(in) :: pressures
+       integer(c_int), intent(in), optional :: stride
     end function
   end interface
 
@@ -720,14 +721,20 @@ contains
 ! SINGULARITY_USE_EOSPAC
 
   integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
-    eos, rhos, sies, pressures, len) &
+    eos, rhos, sies, pressures, len, stride) &
     result(err)
     integer(c_int), intent(in) :: matindex, len
     real(kind=8), dimension(:,:,:), intent(in), target:: rhos, sies
     real(kind=8), dimension(:,:,:), intent(inout), target:: pressures
     type(sg_eos_ary_t), intent(in)    :: eos
-    err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
-           eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
+    integer(c_int), intent(in), optional :: stride
+    if (PRESENT(stride)) then
+       err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
+    else
+       err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, stride)
+    endif
   end function get_sg_PressureFromDensityInternalEnergy_f
 
   integer function get_sg_MinInternalEnergyFromDensity_f(matindex, &
