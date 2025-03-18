@@ -37,17 +37,15 @@ which will return the memory address of the element n*i of the array lambda
 */
 
 class lambdaIndexer {
-public:
-  lambdaIndexer (int n, double * data) : n_(n), data_(data){}
+ public:
+  lambdaIndexer(int n, double *data) : n_(n), data_(data) {}
 
-  double * operator[](int i) const {
-    return &(data_[n_*i]);
-  }
-private:
+  double *operator[](int i) const { return &(data_[n_ * i]); }
+
+ private:
   int n_;
-  double * data_;
+  double *data_;
 };
-
 
 namespace singularity {
 int def_en[4] = {0, 0, 0, 0};
@@ -366,12 +364,12 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
 
 int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
                                              const double *sies, double *pressures,
-                                             const int len, const int stride = -1, double *lambda_data = NULL) {
-  if (stride != -1 && lambda_data != NULL){
+                                             const int len, const int stride = -1,
+                                             double *lambda_data = NULL) {
+  if (stride != -1 && lambda_data != NULL) {
     lambdaIndexer idx(stride, lambda_data);
     eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, idx);
-  }
-  else
+  } else
     eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
 
   return 0;
