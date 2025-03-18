@@ -21,12 +21,12 @@
 
 /*
 ===============================================
-Lambda indexer class. Usage is as follows:
+2D Lambda indexer class. Usage is as follows:
 
 Assuming lambda is a std::array<Real, nCell>, instantiate this class
 as
 
-   idx = lambdaIndexer(lambda.data(), n)
+   idx = lambdaIndexer2D(lambda.data(), n)
 
 We can now use the [] operator as follows:
 
@@ -36,9 +36,9 @@ which will return the memory address of the element n*i of the array lambda
 ===============================================
 */
 
-class lambdaIndexer {
+class lambdaIndexer2D {
  public:
-  lambdaIndexer(int n, double *data) : n_(n), data_(data) {}
+  lambdaIndexer2D(int n, double *data) : n_(n), data_(data) {}
 
   double *operator[](int i) const { return &(data_[n_ * i]); }
 
@@ -365,9 +365,9 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
 int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
                                              const double *sies, double *pressures,
                                              const int len, const int stride = -1,
-                                             double *lambda_data = NULL) {
-  if (stride != -1 && lambda_data != NULL) {
-    lambdaIndexer idx(stride, lambda_data);
+                                             double *lambda_data = nullptr) {
+  if (stride != -1 && lambda_data != nullptr) {
+    lambdaIndexer2D idx(stride, lambda_data);
     eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len, idx);
   } else
     eos[matindex].PressureFromDensityInternalEnergy(rhos, sies, pressures, len);
