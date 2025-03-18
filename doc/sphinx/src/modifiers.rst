@@ -284,6 +284,9 @@ parameter via the lambda. For example:
   Real lambda[1] = {Z};
   Real Pe = electron_eos.PressureFromDensityTemperature(rho, temperature, lambda);
 
+If you use the indexable types infrastructure, the name is
+``IndexableTypes::MeanIonizationState``.
+
 .. warning::
 
   Several thermodynamic properties are approximated in the z-split
@@ -300,6 +303,42 @@ parameter via the lambda. For example:
   For now, the Z-split EOS is not in the default variant provided by
   singularity-eos. If you would like to use it, you must implement
   your own custom variant.
+
+Energy Floor Modifier
+---------------------
+
+The models in ``singularity-eos`` do not guarantee that a lookup will lie on the
+EOS surface. The laws of thermodynamics require that volume (or density) and
+temperature be positive, but there are no natural lower bounds on other
+variables, particularly energy.
+
+In general, this modifer imposes a lower bound on the energy by finding the
+energy along the zero kelvin isotherm, i.e. :math:`e(\rho, T=0)`, and then
+flooring the energy to that value when performing a lookup. As a result, any
+lookups in energy space that would otherwise be below the zero K isotherm return
+whatever value would lie upon the isotherm.
+
+Notably though, tabular SESAME tables can result in unexpected behavior. The
+``EOSPAC`` and ``SpinerEOSDependsRhoT`` models both rely on the result when
+EOSPAC querries the cold energy table (306). This energy *can* differ from the
+zero K isotherm for two reasons:
+
+#. The zero K isotherm includes the zero point energy. In other words, it is the
+   energy of the lowest energy level whereas the cold curve is the energy of the
+   potential well itself. This effect may be insignificant.
+
+#. In the absence of a 306 table for the material, EOSPAC will instead report
+   the lowest isotherm's energy in place of a cold curve. If a given table does
+   not extend to zero K, then an extrapolaiton is *not* performed. This results
+   in an energy floor from the lowest temperature on the table, **not** from
+   an extrapolated energy at zero K.
+
+.. note::
+
+  This modifier is only compatible with EOS where the
+  ``MinInternalEnergyFromDensity`` function is properly defined. Where it isn't
+  defined, an error will occur at runtime.
+
 
 Composing Modifiers
 --------------------

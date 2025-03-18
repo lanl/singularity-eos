@@ -143,64 +143,6 @@ class Modifiers(unittest.TestCase, EOSTestBase):
         self.assertEqualEOS(igsc, ig)
         #  compare_two_eoss(igra, ig)
 
-    def testRelativisticIdealGas(self):
-        """[RelativisticEOS][IdealGas]"""
-        from singularity_eos import IdealGas, Relativistic
-        Cv = 2.0
-        gm1 = 0.5
-        eos = Relativistic(IdealGas(gm1, Cv), 1.0)
-
-        # The EOS has finite sound speeds"
-        rho = 1e3
-        sie = 1e3
-        bmod = eos.BulkModulusFromDensityInternalEnergy(rho, sie)
-        cs2 = bmod / rho
-        self.assertLess(cs2, 1)
-
-    def testUnitSystemIdealGas_ThermalUnits(self):
-        """[UnitSystem][IdealGas][ThermalUnits]"""
-        from singularity_eos import IdealGas, UnitSystem
-
-        # Parameters for an ideal gas
-        Cv = 2.0
-        gm1 = 0.5
-
-        # Units with a thermal unit system
-        rho_unit = 1e1
-        sie_unit = 1e-1
-        temp_unit = 123
-        eos = UnitSystem(IdealGas(gm1, Cv), rho_unit=rho_unit, sie_unit=sie_unit, temp_unit=temp_unit)
-
-        # Units cancel out for an ideal gas
-        rho = 1e3
-        sie = 1e3
-        P = eos.PressureFromDensityInternalEnergy(rho, sie)
-        Ptrue = gm1 * rho * sie
-        self.assertLess(abs(P - Ptrue) / Ptrue,1e-3)
-
-    def testUnitSystemIdealGas_LengthTimeUnits(self):
-        """[UnitSystem][IdealGas][LengthTimeUnits]"""
-        from singularity_eos import IdealGas, UnitSystem
-        from singularity_eos.eos_units import LengthTimeUnits
-
-        # Parameters for an ideal gas
-        Cv = 2.0
-        gm1 = 0.5
-
-        # Units with length and time units
-        time_unit = 456
-        length_unit = 1e2
-        mass_unit = 1e6
-        temp_unit = 789
-        eos = UnitSystem(IdealGas(gm1, Cv), units=LengthTimeUnits, time_unit=time_unit, length_unit=length_unit, mass_unit=mass_unit, temp_unit=temp_unit)
-
-        # Units cancel out for an ideal gas
-        rho = 1e3
-        sie = 1e3
-        P = eos.PressureFromDensityInternalEnergy(rho, sie)
-        Ptrue = gm1 * rho * sie
-        self.assertLess(abs(P - Ptrue) / Ptrue, 1e-3)
-
     def testBilinearRamp(self):
         from singularity_eos import IdealGas, BilinearRamp, pAlpha2BilinearRampParams
         Cv = 2.0;

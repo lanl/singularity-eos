@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -19,6 +19,7 @@
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
 #endif
+
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -78,7 +79,27 @@ inline void array_compare(int num, X &&x, Y &&y, Z &&z, ZT &&ztrue, XN xname, YN
       << std::scientific << "i: " << i << ", " << xname << ": " << x[i] << ", " << yname
       << ": " << y[i] << ", Value: " << z[i] << ", True Value: " << ztrue[i];
     INFO(s.str());
-    CHECK(isClose(z[i], ztrue[i], 1e-12));
+    CHECK(isClose(z[i], ztrue[i], tol));
+  }
+}
+
+// Helper function to copy a collection of EOS to device memory
+template <typename EOSArrT, typename EOS_T>
+EOS_T *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
+  // Assumes that GetOnDevice() has already been called for each EOS in eos_arr
+  const size_t EOS_bytes = num_eos * sizeof(EOS_T);
+  EOS_T *v_EOS = (EOS_T *)PORTABLE_MALLOC(EOS_bytes);
+  const size_t bytes = num_eos * sizeof(EOS_T);
+  portableCopyToDevice(v_EOS, eos_arr.data(), bytes);
+  return v_EOS;
+}
+
+// Helper function to call Finalize() on each eos in an array (host side)
+template <typename EOSArrT>
+void finalize_eos_arr(EOSArrT eos_arr) {
+  // Call Finalize on each EOS on the host
+  for (auto eos : eos_arr) {
+    eos.Finalize();
   }
 }
 

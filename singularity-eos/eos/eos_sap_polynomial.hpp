@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -84,13 +84,6 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
       return _a0 + _a1 * mu + _a2e * mu * mu + _a3 * mu * mu * mu +
              sie * (_b0 + _b1 * mu + _b2e * mu * mu + _b3 * mu * mu * mu);
   }
-
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    MinInternalEnergyIsNotEnabled("SAP Polynomial");
-    return 0.0;
-  };
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real

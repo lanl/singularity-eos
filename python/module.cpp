@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -95,6 +95,7 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def_property_readonly("sieMin", &SpinerEOSDependsRhoSie::sieMin)
     .def_property_readonly("sieMax", &SpinerEOSDependsRhoSie::sieMax);
 
+#ifdef SINGULARITY_USE_STELLAR_COLLAPSE
   eos_class<StellarCollapse>(m, "StellarCollapse")
     .def(py::init())
     .def(py::init<const std::string&, bool, bool>(), py::arg("filename"), py::arg("use_sp5")=false, py::arg("filter_bmod")=true)
@@ -107,7 +108,8 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def_property_readonly("YeMax", &StellarCollapse::YeMax)
     .def_property_readonly("sieMin", &StellarCollapse::sieMin)
     .def_property_readonly("sieMax", &StellarCollapse::sieMax);
-  
+#endif // SINGULARITY_USE_STELLAR_COLLAPSE
+
 #ifdef SINGULARITY_USE_HELMHOLTZ
   eos_class<Helmholtz>(m, "Helmholtz")
     .def(py::init())
@@ -125,8 +127,6 @@ PYBIND11_MODULE(singularity_eos, m) {
     .def(py::init<int, bool>(), py::arg("matid"), py::arg("invert_at_setup")=false);
 #endif
 
-  create_unit_system_eos_classes(m);
-  create_relativistic_eos_classes(m);
   create_shifted_eos_classes(m);
   create_scaled_eos_classes(m);
   create_bilinear_ramp_eos_classes(m);
