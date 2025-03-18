@@ -91,7 +91,7 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id, double *const eos
 
 int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
                                              const double *sies, double *pressures,
-                                             const int len, int stride, double *lambda_data);
+                                             const int len, const int stride, const double *lambda_data);
 
 int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rhos,
                                         double *sies, const int len);
