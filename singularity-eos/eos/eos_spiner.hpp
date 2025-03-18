@@ -225,10 +225,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
     using namespace IndexableTypes;
     return std::is_same<T, LogDensity>::value || std::is_same<T, LogTemperature>::value;
   }
-  PORTABLE_INLINE_FUNCTION
-  RootFinding1D::Status rootStatus() const { return status_; }
-  PORTABLE_INLINE_FUNCTION
-  TableStatus tableStatus() const { return whereAmI_; }
   RootFinding1D::RootCounts counts;
   inline void Finalize();
   static std::string EosType() { return std::string("SpinerEOSDependsRhoT"); }
@@ -332,9 +328,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   int matid_;
   TableSplit split_;
   bool reproducible_;
-  // whereAmI_ and status_ used only for reporting. They are not thread-safe.
-  mutable TableStatus whereAmI_ = TableStatus::OnTable;
-  mutable RootFinding1D::Status status_ = RootFinding1D::Status::SUCCESS;
   static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
   static constexpr const Real SOFT_THRESH = 1e-8;
   DataStatus memoryStatus_ = DataStatus::Deallocated;
@@ -526,8 +519,6 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     printf("%s\n\t%s\n\t%s%i\n", s1, s2, s3, matid_);
     return;
   }
-  PORTABLE_INLINE_FUNCTION
-  RootFinding1D::Status rootStatus() const { return status_; }
   RootFinding1D::RootCounts counts;
   static std::string EosType() { return std::string("SpinerEOSDependsRhoSie"); }
   static std::string EosPyType() { return EosType(); }
@@ -590,7 +581,6 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   TableSplit split_;
   MeanAtomicProperties AZbar_;
   bool reproducible_;
-  mutable RootFinding1D::Status status_;
   static constexpr const int _n_lambda = 1;
   static constexpr const char *_lambda_names[1] = {"log(rho)"};
   DataStatus memoryStatus_ = DataStatus::Deallocated;
@@ -667,7 +657,7 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
                                                   TableSplit split,
                                                   bool reproducibility_mode)
     : matid_(matid), split_(split), reproducible_(reproducibility_mode),
-      status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
+      memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
   hid_t file, matGroup, lTGroup, coldGroup;
@@ -712,7 +702,7 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
                                                   TableSplit split,
                                                   bool reproducibility_mode)
     : split_(split), reproducible_(reproducibility_mode),
-      status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
+      memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
   hid_t file, matGroup, lTGroup, subGroup, coldGroup;
@@ -1047,8 +1037,8 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::PressureFromDensityInternalE
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::MinInternalEnergyFromDensity(
     const Real rho, Indexer_t &&lambda) const {
-  MinInternalEnergyIsNotEnabled("SpinerEOSDependsRhoT");
-  return 0.0;
+  const Real lRho = lRho_(rho);
+  return sieCold_.interpToReal(lRho);
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::EntropyFromDensityTemperature(
@@ -1312,10 +1302,13 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lRhoFromPlT_(
   if (!variadic_utils::is_nullptr(lambda)) {
     IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
     IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
-  }
-  if (memoryStatus_ != DataStatus::OnDevice) {
-    status_ = status;
-    whereAmI_ = whereAmI;
+    if constexpr (variadic_utils::is_indexable_v<Indexer_t, IndexableTypes::RootStatus>) {
+      lambda[IndexableTypes::RootStatus()] = static_cast<Real>(status);
+    }
+    if constexpr (variadic_utils::is_indexable_v<Indexer_t,
+                                                 IndexableTypes::TableStatus>) {
+      lambda[IndexableTypes::TableStatus()] = static_cast<Real>(whereAmI);
+    }
   }
   return lRho;
 }
@@ -1377,13 +1370,14 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoSie_(
   if (!variadic_utils::is_nullptr(lambda)) {
     IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
     IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
+    if constexpr (variadic_utils::is_indexable_v<Indexer_t, IndexableTypes::RootStatus>) {
+      lambda[IndexableTypes::RootStatus()] = static_cast<Real>(status);
+    }
+    if constexpr (variadic_utils::is_indexable_v<Indexer_t,
+                                                 IndexableTypes::TableStatus>) {
+      lambda[IndexableTypes::TableStatus()] = static_cast<Real>(whereAmI);
+    }
   }
-#ifdef PORTABILITY_STRATEGY_NONE
-  if (memoryStatus_ != DataStatus::OnDevice) {
-    status_ = status;
-    whereAmI_ = whereAmI;
-  }
-#endif // PORTABILITY_STRATEGY_NONE
   return lT;
 }
 
@@ -1438,10 +1432,13 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoP_(
   if (!variadic_utils::is_nullptr(lambda)) {
     IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
     IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
-  }
-  if (memoryStatus_ != DataStatus::OnDevice) {
-    status_ = status;
-    whereAmI_ = whereAmI;
+    if constexpr (variadic_utils::is_indexable_v<Indexer_t, IndexableTypes::RootStatus>) {
+      lambda[IndexableTypes::RootStatus()] = static_cast<Real>(status);
+    }
+    if constexpr (variadic_utils::is_indexable_v<Indexer_t,
+                                                 IndexableTypes::TableStatus>) {
+      lambda[IndexableTypes::TableStatus()] = static_cast<Real>(whereAmI);
+    }
   }
   return lT;
 }
@@ -1530,11 +1527,6 @@ TableStatus SpinerEOSDependsRhoT::getLocDependsRhoSie_(const Real lRho,
   } else {
     whereAmI = TableStatus::OnTable;
   }
-#ifdef PORTABILITY_STRATEGY_NONE
-  if (memoryStatus_ != DataStatus::OnDevice) {
-    whereAmI_ = whereAmI;
-  }
-#endif // PORTABILITY_STRATEGY_NONE
   return whereAmI;
 }
 
@@ -1547,11 +1539,6 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
     whereAmI = TableStatus::OffTop;
   else
     whereAmI = TableStatus::OnTable;
-#ifdef PORTABILITY_STRATEGY_NONE
-  if (memoryStatus_ != DataStatus::OnDevice) {
-    whereAmI_ = whereAmI;
-  }
-#endif // PORTABILITY_STRATEGY_NONE
   return whereAmI;
 }
 
@@ -1559,7 +1546,7 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
                                                       int matid, TableSplit split,
                                                       bool reproducibility_mode)
     : matid_(matid), split_(split), reproducible_(reproducibility_mode),
-      status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
+      memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
   hid_t file, matGroup, lTGroup, lEGroup;
@@ -1598,7 +1585,7 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
                                                       TableSplit split,
                                                       bool reproducibility_mode)
     : split_(split), reproducible_(reproducibility_mode),
-      status_(RootFinding1D::Status::SUCCESS), memoryStatus_(DataStatus::OnHost) {
+      memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
   hid_t file, matGroup, lTGroup, lEGroup;
@@ -1983,6 +1970,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
     const Real P, const Real lT, Indexer_t &&lambda) const {
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
+  RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
   Real lRho;
   Real dPdRhoMax = dPdRhoMax_.interpToReal(lT);
   Real PMax = PlRhoMax_.interpToReal(lT);
@@ -2002,11 +1990,8 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
       }
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
-    auto status = ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
-                              robust::EPS(), lRho, pcounts);
-    if (memoryStatus_ != DataStatus::OnDevice) {
-      status_ = status;
-    }
+    status = ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
+                         robust::EPS(), lRho, pcounts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
@@ -2022,6 +2007,9 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
   }
   if (!variadic_utils::is_nullptr(lambda)) {
     IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
+    if constexpr (variadic_utils::is_indexable_v<Indexer_t, IndexableTypes::RootStatus>) {
+      lambda[IndexableTypes::RootStatus()] = static_cast<Real>(status);
+    }
   }
   return lRho;
 }

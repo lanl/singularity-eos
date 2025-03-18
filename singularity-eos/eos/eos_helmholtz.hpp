@@ -558,12 +558,6 @@ class Helmholtz : public EosBase<Helmholtz> {
             thermalqs::pressure | thermalqs::temperature, lambda);
     return p;
   }
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    MinInternalEnergyIsNotEnabled("Helmholtz");
-    return 0.0;
-  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real

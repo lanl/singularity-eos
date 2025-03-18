@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -11,29 +11,32 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
-// clang-format off
-#include "module.hpp"
 
-template<typename T>
-void relativistic_eos_class(py::module_ & m) {
-  // define Relativistic utility function
-  m.def("Relativistic", [](typename T::BaseType eos, const Real cl){
-    return T(std::move(eos), cl);
-  }, py::arg("eos"), py::arg("cl"));
+#include <util>
 
-  eos_class<T>(m, T::EosPyType())
-    .def(
-      py::init<typename T::BaseType, Real>(),
-      py::arg("eos"), py::arg("cl")
-    );
-}
+#ifndef _SINGULARITY_EOS_CLOSURE_MULTIPHASE_MATERIAL_HPP_
+#define _SINGULARITY_EOS_CLOSURE_MULTIPHASE_MATERIAL_HPP_
 
-template<typename... Ts>
-void create_relativistic(py::module_ &m, tl<Ts...>) {
-  // C++14 workaround, since we don't have C++17 fold expressions
-  auto l = { (relativistic_eos_class<Ts>(m), 0)... };
-}
+template <typename EOS, typename... Args>
+struct EOSInit_t {
+  using EOS_t = EOS;
+  template <typename... TupleArgs>
+  EOSInit_t(TupleArgs... targs) : args(std::make_tuple(targs...)) {}
+  std::tuple<Args...> args;
+  auto Initialize() const { return std::apply(EOS, args); }
+};
 
-void create_relativistic_eos_classes(py::module_ & m) {
-  create_relativistic(m, singularity::relativistic);
-}
+EOSInit_t<EOSPAC, int> snbeta_params(2102);
+EOS snbeta = snbeta_params.Initialize();
+
+template <std::size_t MAX_NPHASE, typename EOS_t>
+struct MultiphaseMaterial {
+  template <typename T>
+  using Array_t = std::array<T, MAX_NPHASE>;
+
+  std::size_t nphases;
+  Array_t<EOS_t> eos;
+  Array_t<std::size_t> phase_map;
+};
+
+#endif // _SINGULARITY_EOS_CLOSURE_MULTIPHASE_MATERIAL_HPP_

@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------
-# © 2021-2024. Triad National Security, LLC. All rights reserved.  This program
+# © 2021-2025. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -36,6 +36,7 @@ add_executable(
   test_eos_modifiers_minimal.cpp
   test_eos_vector.cpp
   test_math_utils.cpp
+  test_modifier_floored_energy.cpp
   test_variadic_utils.cpp
   test_bounds.cpp
   test_indexable_types.cpp
@@ -77,6 +78,7 @@ endif()
 
 if(SINGULARITY_TEST_SESAME)
   target_compile_definitions(eos_tabulated_unit_tests PRIVATE SINGULARITY_TEST_SESAME)
+  target_compile_definitions(eos_infrastructure_tests PRIVATE SINGULARITY_TEST_SESAME)
 endif()
 if(SINGULARITY_TEST_STELLAR_COLLAPSE)
   target_compile_definitions(eos_tabulated_unit_tests
