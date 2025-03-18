@@ -282,12 +282,14 @@ module singularity_eos
   interface
      integer(kind=c_int) function &
        get_sg_BulkModulusFromDensityInternalEnergy(matindex, eos, rhos, sies,&
-                                               bmods, len) &
+                                               bmods, len, stride, lambda_data) &
        bind(C, name='get_sg_BulkModulusFromDensityInternalEnergy')
        import
        integer(c_int),value, intent(in) :: matindex, len
        type(c_ptr), value, intent(in) :: eos, rhos, sies
        type(c_ptr), value, intent(in) :: bmods
+       integer(c_int), intent(in), optional :: stride
+       type(c_ptr), intent(in), optional :: lambda_data
     end function
   end interface
 
@@ -751,14 +753,21 @@ contains
   end function get_sg_MinInternalEnergyFromDensity_f
 
   integer function get_sg_BulkModulusFromDensityInternalEnergy_f(matindex, &
-    eos, rhos, sies, bmods, len) &
+    eos, rhos, sies, bmods, len, stride, lambda_data) &
     result(err)
     integer(c_int), intent(in) :: matindex, len
     real(kind=8), dimension(:,:,:), intent(in), target:: rhos, sies
     real(kind=8), dimension(:,:,:), intent(inout), target:: bmods
     type(sg_eos_ary_t), intent(in)    :: eos
-    err = get_sg_BulkModulusFromDensityInternalEnergy(matindex-1, &
-       eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len)
+    integer(c_int), intent(in), optional :: stride
+    real(kind=8), dimension(:,:,:,:), intent(inout), target, optional::lambda_data
+    if (PRESENT(stride) .and. PRESENT(lambda_data)) then
+       err = get_sg_BulkModulusFromDensityInternalEnergy(matindex-1, &
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
+    else
+       err = get_sg_BulkModulusFromDensityInternalEnergy(matindex-1, &
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len)
+    endif
   end function get_sg_BulkModulusFromDensityInternalEnergy_f
 
   integer function finalize_sg_eos_f(nmat, eos) &

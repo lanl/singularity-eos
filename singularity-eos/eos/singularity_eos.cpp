@@ -387,8 +387,14 @@ int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rh
 }
 int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos,
                                                 const double *rhos, const double *sies,
-                                                double *bmods, const int len) {
-  eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
+                                                double *bmods, const int len,
+                                                const int stride = -1, double *lambda_data = nullptr) {
+  if (stride != -1 && lambda_data != nullptr) {
+    lambdaIndexer2D idx(stride, lambda_data);
+    eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len, idx);
+  } else
+    eos[matindex].BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, len);
+  
   return 0;
 }
 

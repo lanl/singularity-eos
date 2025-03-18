@@ -99,7 +99,8 @@ int get_sg_MinInternalEnergyFromDensity(int matindex, EOS *eos, const double *rh
 
 int get_sg_BulkModulusFromDensityInternalEnergy(int matindex, EOS *eos,
                                                 const double *rhos, const double *sies,
-                                                double *bmods, const int len);
+                                                double *bmods, const int len, const int stride,
+                                             double *lambda_data);
 
 int get_sg_eos( // sizing information
     int nmat, int ncell, int cell_dim,
