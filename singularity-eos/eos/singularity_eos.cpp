@@ -40,6 +40,7 @@ class lambdaIndexer2D {
  public:
   lambdaIndexer2D(int n, double *data) : n_(n), data_(data) {}
 
+  PORTABLE_FORCEINLINE_FUNCTION
   double *operator[](int i) const { return &(data_[n_ * i]); }
 
  private:
