@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -20,6 +20,8 @@
 
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
@@ -49,7 +51,7 @@ class DavisReactants : public EosBase<DavisReactants> {
     _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
+  PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real power_base = DimlessEdiff(rho, sie);
@@ -62,7 +64,7 @@ class DavisReactants : public EosBase<DavisReactants> {
     return Ts(rho) * tmp;
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
+  PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temp,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real t_s = Ts(rho);
@@ -71,21 +73,21 @@ class DavisReactants : public EosBase<DavisReactants> {
            _Cv0 * t_s / (1.0 + _alpha) * (std::pow(temp / t_s, 1.0 + _alpha) - 1.0);
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
+  PORTABLE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temp,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return PressureFromDensityInternalEnergy(
         rho, InternalEnergyFromDensityTemperature(rho, temp));
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
+  PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return Ps(rho) + Gamma(rho) * rho * (sie - Es(rho));
   }
 
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+  PORTABLE_FUNCTION Real MinInternalEnergyFromDensity(
       const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     // Minimum enegy is when the returned temperature is zero. This only happens
     // when the base to the exponent is zero (see T(rho, e) equation)
@@ -94,28 +96,28 @@ class DavisReactants : public EosBase<DavisReactants> {
     return es - (_Cv0 * ts) / (1 + _alpha);
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real
+  PORTABLE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     EntropyIsNotEnabled("DavisReactants");
     return 1.0;
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
+  PORTABLE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     EntropyIsNotEnabled("DavisReactants");
     return 1.0;
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temp,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return SpecificHeatFromDensityInternalEnergy(
         rho, InternalEnergyFromDensityTemperature(rho, temp));
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
+  PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real power_base = DimlessEdiff(rho, sie);
@@ -126,24 +128,24 @@ class DavisReactants : public EosBase<DavisReactants> {
     return _Cv0 / std::pow(power_base, -_alpha / (1 + _alpha));
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
+  PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temp,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return BulkModulusFromDensityInternalEnergy(
         rho, InternalEnergyFromDensityTemperature(rho, temp));
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
+  PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
+  PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return Gamma(rho);
   }
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
+  PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return Gamma(rho);
@@ -577,6 +579,12 @@ DavisProducts::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &pr
   Real gm1 = GruneisenParamFromDensityTemperature(rho, temp) * rho;
   dvdt = gm1 * cv / bmod;
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(DavisReactants, Real *)
+SG_ADD_TEMPLATE_EXTERNS(DavisProducts, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_EOS_DAVIS_HPP_

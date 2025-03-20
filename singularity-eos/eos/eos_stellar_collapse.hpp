@@ -34,6 +34,7 @@
 
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
@@ -1227,6 +1228,11 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::lTFromlRhoSie_(
   IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
   return lT;
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(StellarCollapse, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 } // namespace singularity
 
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
