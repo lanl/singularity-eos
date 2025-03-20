@@ -622,6 +622,9 @@ which must be passed in the ``lambda`` parameter, e.g.,
   Real lambda[1] = {Z};
   Real P = eos.PressureFromDensityTemperature(rho, T, lambda);
 
+If you use the indexable types machinery, this is named
+``IndexableTypes::MeanIonizationState``.
+
 .. note::
 
   For now, the ideal electron gas is not in the default variant
@@ -1673,6 +1676,15 @@ an array of size 2 is passed in to the scalar call (or one per point
 for the vector call), the model will leverage this scratch space to
 cache initial guesses for root finds.
 
+.. note::
+
+  If you are using indexable types for your lambda, you may use
+  ``IndexableTypes::LogDensity`` and
+  ``IndexableTypes::LogTemperature`` for these cache
+  variables. Optionally, you may also expose
+  ``IndexableTypes::RootStatus`` and ``IndexableTypes::TableStatus``
+  for optional diagnostic variables used in root-finding.
+
 To avoid race conditions, at least one array should be allocated per
 thread. Depending on the call pattern, one per point may be best. In
 the vector case, one per point is necessary.
@@ -1952,6 +1964,12 @@ element of the ``lambda`` array contains the electron fraction. The
 first element is reserved for caching. It currently contains the
 log of the temperature, but this should not be assumed.
 
+.. note::
+
+  If you are using the indexable type machinery, you may use
+  ``IndexableTypes::ElectronFraction`` and
+  ``IndexableTypes::LogTemperature``.
+
 To avoid race conditions, at least one array should be allocated per
 thread. Depending on the call pattern, one per point may be best. In
 the vector case, one per point is necessary.
@@ -2068,6 +2086,13 @@ into the lambda:
   the lambda array.
 * ``Helmholtz::Lambda::lT`` indexes into the log temperature cache
   inside the lambda array.
+
+.. note::
+
+  If you are using the indexable types machinery, you may use
+  ``IndexableTypes::MeanAtomicMass``,
+  ``IndexableTypes::MeanAtomicNumber``, and
+  ``IndexableTypes::LogTemperature``.
 
 The degenerate electron term is computed via thermodynamic derivatives
 of the Helmholtz free energy (hence the name Helmholtz EOS). The free

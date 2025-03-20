@@ -1,5 +1,5 @@
 #------------------------------------------------------------------------------#
-# © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+# © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 # program was produced under U.S. Government contract 89233218CNA000001
 # for Los Alamos National Laboratory (LANL), which is operated by Triad
 # National Security, LLC for the U.S.  Department of Energy/National
@@ -58,6 +58,7 @@ register_headers(
     eos/modifiers/ramps_eos.hpp
     eos/modifiers/shifted_eos.hpp
     eos/modifiers/eos_unitsystem.hpp
+    eos/modifiers/floored_energy.hpp
     eos/modifiers/zsplit_eos.hpp
     eos/eos_base.hpp
     eos/eos_eospac.hpp

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -379,9 +379,8 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 Gruneisen::MinInternalEnergyFromDensity(const Real rho_in, Indexer_t &&lambda) const {
-  // const Real rho = std::min(rho_in, _rho_max);
-  MinInternalEnergyIsNotEnabled("Gruneisen");
-  return 0.0;
+  const Real rho = std::min(rho_in, _rho_max);
+  return EosBase<Gruneisen>::MinInternalEnergyFromDensity(rho);
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityInternalEnergy(
