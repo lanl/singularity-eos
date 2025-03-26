@@ -54,6 +54,7 @@ module singularity_eos
     init_sg_eospac_f,&
 #endif
 ! SINGULARITY_USE_EOSPAC
+    get_sg_EntropyFromDensityInternalEnergy_f,&
     get_sg_PressureFromDensityInternalEnergy_f,&
     get_sg_MinInternalEnergyFromDensity_f,&
     get_sg_BulkModulusFromDensityInternalEnergy_f,&
@@ -253,6 +254,20 @@ module singularity_eos
   end interface
 #endif
 ! SINGULARITY_USE_EOSPAC
+
+  interface
+   integer(kind=c_int) function &
+       get_sg_EntropyFromDensityInternalEnergy(matindex, eos, rhos, sies,&
+                                               entropies, len, stride, lambda_data) &
+       bind(C, name='get_sg_EntropyFromDensityInternalEnergy')
+       import
+       integer(c_int), value, intent(in) :: matindex, len
+       type(c_ptr), value, intent(in) :: eos, rhos, sies
+       type(c_ptr), value, intent(in) :: entropies
+       integer(c_int), intent(in), optional :: stride
+       type(c_ptr), intent(in), optional :: lambda_data
+    end function
+  end interface
 
   interface
    integer(kind=c_int) function &
@@ -722,6 +737,24 @@ contains
   end function init_sg_eospac_f
 #endif
 ! SINGULARITY_USE_EOSPAC
+
+  integer function get_sg_EntropyFromDensityInternalEnergy_f(matindex, &
+    eos, rhos, sies, entropies, len, stride, lambda_data) &
+    result(err)
+    integer(c_int), intent(in) :: matindex, len
+    real(kind=8), dimension(:,:,:), intent(in), target:: rhos, sies
+    real(kind=8), dimension(:,:,:), intent(inout), target:: entropies
+    type(sg_eos_ary_t), intent(in)    :: eos
+    integer(c_int), intent(in), optional :: stride
+    real(kind=8), dimension(:,:,:,:), intent(inout), target, optional::lambda_data
+    if (PRESENT(stride) .and. PRESENT(lambda_data)) then
+       err = get_sg_EntropyFromDensityInternalEnergy(matindex-1, &
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(entropies(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
+    else
+       err = get_sg_EntropyFromDensityInternalEnergy(matindex-1, &
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(entropies(1,1,1)), len)
+    endif
+  end function get_sg_EntropyFromDensityInternalEnergy_f
 
   integer function get_sg_PressureFromDensityInternalEnergy_f(matindex, &
     eos, rhos, sies, pressures, len, stride, lambda_data) &
