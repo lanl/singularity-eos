@@ -700,7 +700,7 @@ class Helmholtz : public EosBase<Helmholtz> {
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
     using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
-    PORTABLE_REQUIRE(temp > = 0, "Non-negative temperature required");
+    PORTABLE_REQUIRE(temp >= 0, "Non-negative temperature required");
     auto PofRT = [&](const Real r) {
       return PressureFromDensityTemperature(r, temp, lambda);
     };
