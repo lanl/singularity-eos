@@ -12,6 +12,9 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_davis.hpp>
 
-template void singularity::impl::ConcretizeType<singularity::EOS>(EOS);
+namespace singularity {
+SG_ADD_TEMPLATE_INSTANTIATIONS(DavisReactants, Real *)
+SG_ADD_TEMPLATE_INSTANTIATIONS(DavisProducts, Real *)
+} // namespace singularity

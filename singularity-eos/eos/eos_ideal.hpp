@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -26,6 +26,7 @@
 // Base stuff
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -237,6 +238,10 @@ IdealGas::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real 
   if (output & thermalqs::specific_heat)
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(IdealGas, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
 
 } // namespace singularity
 
