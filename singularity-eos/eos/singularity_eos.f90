@@ -727,7 +727,7 @@ contains
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
-    eospac_opts_values = 0.d0
+    eospac_opts_values_use = 0.d0
     if(present(eospac_opts_values)) eospac_opts_values_use = eospac_opts_values
     if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
     if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
