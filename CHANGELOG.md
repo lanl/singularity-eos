@@ -9,6 +9,7 @@
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)
+- [[PR485]](https://github.com/lanl/singularity-eos/pull/485) Fix segfault in Fortran interface related to EOSPAC initialization
 - [[PR478]](https://github.com/lanl/singularity-eos/pull/478) Fix bug in KPT test. Add more extensive clang build to github CI matrix.
 - [[PR473]](https://github.com/lanl/singularity-eos/pull/473) Resolve memory issue. Thanks for the catch, Richard!
 - [[PR468]](https://github.com/lanl/singularity-eos/pull/468) Move definition of def_en and def_v to an implementation file
@@ -23,6 +24,7 @@
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR481]](https://github.com/lanl/singularity-eos/pull/481) Move mutable diagnostic variables in singularity-eos into optional indexable types in a lambda.
+- [[PR486]](https://github.com/lanl/singularity-eos/pull/486) Use default behavior for max_scratch_size and scratch_size in the eos base class
 
 ### Removed (removing behavior/API/varaibles/...)
 
