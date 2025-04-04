@@ -170,10 +170,6 @@ class DavisReactants : public EosBase<DavisReactants> {
   PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisReactants Params: "};
     printf("%srho0:%e e0:%e P0:%e\nT0:%e A:%e B:%e\nC:%e G0:%e Z:%e\nalpha:%e "
