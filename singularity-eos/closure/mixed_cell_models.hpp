@@ -216,7 +216,7 @@ class PTESolverBase {
                 const Real vfrac_tot, const Real sie_tot, const RealIndexer &rho_,
                 const RealIndexer &vfrac_, const RealIndexer &sie_,
                 const RealIndexer &temp_, const RealIndexer &press_,
-                LambdaIndexer &lambda_, Real *&scratch, Real Tnorm,
+                LambdaIndexer &lambda_, Real *scratch, Real Tnorm,
                 const MixParams &params = MixParams())
       : params_(params), nmat(nmats), neq(neqs), niter(0), vfrac_total(vfrac_tot),
         sie_total(sie_tot), eos(eos_), rho(rho_), vfrac(vfrac_), sie(sie_), temp(temp_),
@@ -602,6 +602,18 @@ class PTESolverRhoT
     vtemp = AssignIncrement(scratch, nmat);
   }
 
+  static inline std::string MethodType() {
+    return std::string("PTESolveRhoT");
+  }
+
+  // Create static member functions bound to the class for ease of use
+  static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverRhoTRequiredScratch(nmat);
+  }
+  static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverRhoTRequiredScratchInBytes(nmat);
+  }
+
   PORTABLE_INLINE_FUNCTION
   Real Init() {
     InitBase();
@@ -823,6 +835,18 @@ class PTESolverPT
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
             nmat, 2, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
             scratch, Tnorm, params) {}
+
+  static inline std::string MethodType() {
+    return std::string("PTESolverPT");
+  }
+
+  // Create a static member function bound to the class for ease of use
+  static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverPTRequiredScratch(nmat);
+  }
+  static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverPTRequiredScratchInBytes(nmat);
+  }
 
   PORTABLE_INLINE_FUNCTION
   Real Init() {
@@ -1068,6 +1092,18 @@ class PTESolverFixedT
     Tnorm = 1.0;
   }
 
+  static inline std::string MethodType() {
+    return std::string("PTESolverFixedT");
+  }
+
+  // Create a static member function bound to the class for ease of use
+  static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverFixedTRequiredScratch(nmat);
+  }
+  static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverFixedTRequiredScratchInBytes(nmat);
+  }
+
   PORTABLE_INLINE_FUNCTION
   Real Init() {
     // InitBase();
@@ -1272,6 +1308,18 @@ class PTESolverFixedP
     dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     Pequil = P;
+  }
+
+  static inline std::string MethodType() {
+    return std::string("PTESolverFixedP");
+  }
+
+  // Create a static member function bound to the class for ease of use
+  static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverFixedPRequiredScratch(nmat);
+  }
+  static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverFixedPRequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1508,6 +1556,18 @@ class PTESolverRhoU
     dtde = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     utemp = AssignIncrement(scratch, nmat);
+  }
+
+  static inline std::string MethodType() {
+    return std::string("PTESolverRhoU");
+  }
+
+  // Create a static member function bound to the class for ease of use
+  static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverRhoURequiredScratch(nmat);
+  }
+  static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverRhoURequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
