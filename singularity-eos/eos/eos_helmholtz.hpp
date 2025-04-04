@@ -469,10 +469,6 @@ class Helmholtz : public EosBase<Helmholtz> {
   static constexpr unsigned long PreferredInput() {
     return thermalqs::density | thermalqs::temperature;
   }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
 
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Helmholtz Parameters:\n"

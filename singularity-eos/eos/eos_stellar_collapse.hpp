@@ -215,10 +215,6 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const { return rho_(lRhoMin_); }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rho_(lRhoMax_); }
   PORTABLE_FORCEINLINE_FUNCTION Real TMin() const { return T_(lTMin_); }

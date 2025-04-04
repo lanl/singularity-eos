@@ -199,10 +199,6 @@ class IdealElectrons : public EosBase<IdealElectrons> {
     return std::is_same<T, IndexableTypes::MeanIonizationState>::value;
   }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Ideal Electrons Parameters:\n");
     _AZbar.PrintParams();
