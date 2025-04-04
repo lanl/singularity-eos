@@ -38,6 +38,7 @@ register_headers(
     base/sp5/singularity_eos_sp5.hpp
     eos/default_variant.hpp
     base/hermite.hpp
+    base/tuple_utils.hpp
     eos/eos_variant.hpp
     eos/eos_stellar_collapse.hpp
     eos/eos_ideal.hpp
@@ -59,6 +60,7 @@ register_headers(
     eos/modifiers/shifted_eos.hpp
     eos/modifiers/eos_unitsystem.hpp
     eos/modifiers/floored_energy.hpp
+    eos/modifiers/multi_eos.hpp
     eos/modifiers/zsplit_eos.hpp
     eos/eos_base.hpp
     eos/eos_eospac.hpp
