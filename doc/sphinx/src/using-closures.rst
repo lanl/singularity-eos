@@ -465,11 +465,11 @@ The equivalent functions
 
 and
 
-.. cpp:function:: int PTESolverRhoURequiredScratchInBytes(const size_t nmat);
+.. cpp:function:: size_t PTESolverRhoURequiredScratchInBytes(const size_t nmat);
 
 give the size in bytes needed to be allocated per cell given a number
 of materials ``nmat``. Alternatively, there are a static member functions
-for each closure model that provides the same information
+for each closure model that provides the same information:
 
 .. cpp:function:: size_t RequiredScratch(const size_t nmat);
 
