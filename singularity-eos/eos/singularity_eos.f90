@@ -264,7 +264,7 @@ module singularity_eos
        integer(c_int), value, intent(in) :: matindex, len
        type(c_ptr), value, intent(in) :: eos, rhos, sies
        type(c_ptr), value, intent(in) :: entropies
-       integer(c_int), intent(in), optional :: stride
+       integer(c_int), value, intent(in), optional :: stride
        type(c_ptr), intent(in), optional :: lambda_data
     end function
   end interface
