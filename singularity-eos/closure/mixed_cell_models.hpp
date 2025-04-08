@@ -602,9 +602,7 @@ class PTESolverRhoT
     vtemp = AssignIncrement(scratch, nmat);
   }
 
-  static inline std::string MethodType() {
-    return std::string("PTESolveRhoT");
-  }
+  static inline std::string MethodType() { return std::string("PTESolveRhoT"); }
 
   // Create static member functions bound to the class for ease of use
   static inline int RequiredScratch(const std::size_t nmat) {
@@ -836,9 +834,7 @@ class PTESolverPT
             nmat, 2, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
             scratch, Tnorm, params) {}
 
-  static inline std::string MethodType() {
-    return std::string("PTESolverPT");
-  }
+  static inline std::string MethodType() { return std::string("PTESolverPT"); }
 
   // Create a static member function bound to the class for ease of use
   static inline int RequiredScratch(const std::size_t nmat) {
@@ -1092,9 +1088,7 @@ class PTESolverFixedT
     Tnorm = 1.0;
   }
 
-  static inline std::string MethodType() {
-    return std::string("PTESolverFixedT");
-  }
+  static inline std::string MethodType() { return std::string("PTESolverFixedT"); }
 
   // Create a static member function bound to the class for ease of use
   static inline int RequiredScratch(const std::size_t nmat) {
@@ -1310,9 +1304,7 @@ class PTESolverFixedP
     Pequil = P;
   }
 
-  static inline std::string MethodType() {
-    return std::string("PTESolverFixedP");
-  }
+  static inline std::string MethodType() { return std::string("PTESolverFixedP"); }
 
   // Create a static member function bound to the class for ease of use
   static inline int RequiredScratch(const std::size_t nmat) {
@@ -1558,9 +1550,7 @@ class PTESolverRhoU
     utemp = AssignIncrement(scratch, nmat);
   }
 
-  static inline std::string MethodType() {
-    return std::string("PTESolverRhoU");
-  }
+  static inline std::string MethodType() { return std::string("PTESolverRhoU"); }
 
   // Create a static member function bound to the class for ease of use
   static inline int RequiredScratch(const std::size_t nmat) {
