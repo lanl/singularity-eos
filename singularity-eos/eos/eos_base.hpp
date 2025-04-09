@@ -88,7 +88,8 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<__VA_ARGS__>::GibbsFreeEnergyFromDensityTemperature;                     \
   using EosBase<__VA_ARGS__>::GibbsFreeEnergyFromDensityInternalEnergy;                  \
   using EosBase<__VA_ARGS__>::scratch_size;                                              \
-  using EosBase<__VA_ARGS__>::max_scratch_size;
+  using EosBase<__VA_ARGS__>::max_scratch_size;                                          \
+  using EosBase<__VA_ARGS__>::nlambda;
 
 // This macro adds these methods to a derived class. Due to scope,
 // these can't be implemented in the base class, unless we make
@@ -811,6 +812,7 @@ class EosBase {
     return 0;
   }
   static inline unsigned long max_scratch_size(const unsigned int nelements) { return 0; }
+  static inline int nlambda() noexcept { return 0.; }
 
   // JMM: EOS's which encapsulate a mix or reactions may wish to vary
   // this.  For example, Helmholtz and StellarCollapse. This isn't the

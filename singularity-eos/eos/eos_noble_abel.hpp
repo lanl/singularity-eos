@@ -181,7 +181,7 @@ class NobleAbel : public EosBase<NobleAbel> {
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(NobleAbel)
   PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Noble-Abel Parameters:\nGamma = %g\nCv    = %g\nb     = %g\nq     = "
