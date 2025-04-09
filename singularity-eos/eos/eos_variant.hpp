@@ -1321,7 +1321,7 @@ class Variant {
                         eos_);
   }
 
-  constexpr static inline int nlambda() const noexcept {
+  constexpr static inline int nlambda() noexcept {
     return mpark::visit([](const auto &eos) { return eos.nlambda(); }, eos_);
   }
 

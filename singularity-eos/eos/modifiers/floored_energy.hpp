@@ -295,7 +295,7 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
                                         std::forward<Transform>(transform));
   }
 
-  constexpr static inline int nlambda() const noexcept { return t_.nlambda(); }
+  constexpr static inline int nlambda() noexcept { return t_.nlambda(); }
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
