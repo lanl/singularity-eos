@@ -544,13 +544,13 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
 // ======================================================================
 // PTE Solver RhoT
 // ======================================================================
-inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
+constexpr inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
   return neq * neq   // jacobian
          + 4 * neq   // dx, residual, and sol_scratch
          + 6 * nmat; // all the nmat sized arrays
 }
-inline size_t PTESolverRhoTRequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverRhoTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverRhoTRequiredScratch(nmat) * sizeof(Real);
 }
 
@@ -600,6 +600,16 @@ class PTESolverRhoT
     dedv = AssignIncrement(scratch, nmat);
     dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
+  }
+
+  static inline std::string MethodType() { return std::string("PTESolveRhoT"); }
+
+  // Create static member functions bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverRhoTRequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverRhoTRequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -770,13 +780,13 @@ class PTESolverRhoT
 // ======================================================================
 // PT space solver
 // ======================================================================
-inline int PTESolverPTRequiredScratch(const std::size_t nmat) {
+constexpr inline int PTESolverPTRequiredScratch(const std::size_t nmat) {
   constexpr int neq = 2;
   return neq * neq   // jacobian
          + 4 * neq   // dx, residual, and sol_scratch
          + 2 * nmat; // all the nmat sized arrays
 }
-inline size_t PTESolverPTRequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverPTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverPTRequiredScratch(nmat) * sizeof(Real);
 }
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
@@ -823,6 +833,16 @@ class PTESolverPT
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
             nmat, 2, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
             scratch, Tnorm, params) {}
+
+  static inline std::string MethodType() { return std::string("PTESolverPT"); }
+
+  // Create a static member function bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverPTRequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverPTRequiredScratchInBytes(nmat);
+  }
 
   PORTABLE_INLINE_FUNCTION
   Real Init() {
@@ -1011,14 +1031,14 @@ class PTESolverPT
 // ======================================================================
 // fixed temperature solver
 // ======================================================================
-inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat) {
+constexpr inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat;
   return neq * neq   // jacobian
          + 4 * neq   // dx, residual, and sol_scratch
          + 2 * nmat  // rhobar and u in base
          + 2 * nmat; // nmat sized arrays in fixed T solver
 }
-inline size_t PTESolverFixedTRequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverFixedTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverFixedTRequiredScratch(nmat) * sizeof(Real);
 }
 
@@ -1066,6 +1086,16 @@ class PTESolverFixedT
     Tequil = T_true;
     Ttemp = T_true;
     Tnorm = 1.0;
+  }
+
+  static inline std::string MethodType() { return std::string("PTESolverFixedT"); }
+
+  // Create a static member function bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverFixedTRequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverFixedTRequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1216,14 +1246,14 @@ class PTESolverFixedT
 // ======================================================================
 // fixed P solver
 // ======================================================================
-inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat) {
+constexpr inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
   return neq * neq   // jacobian
          + 4 * neq   // dx, residual, and sol_scratch
          + 2 * nmat  // all the nmat sized arrays in base
          + 3 * nmat; // all the nmat sized arrays in fixedP
 }
-inline size_t PTESolverFixedPRequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverFixedPRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverFixedPRequiredScratch(nmat) * sizeof(Real);
 }
 
@@ -1272,6 +1302,16 @@ class PTESolverFixedP
     dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     Pequil = P;
+  }
+
+  static inline std::string MethodType() { return std::string("PTESolverFixedP"); }
+
+  // Create a static member function bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverFixedPRequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverFixedPRequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1450,13 +1490,13 @@ class PTESolverFixedP
 // ======================================================================
 // RhoU Solver
 // ======================================================================
-inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat) {
+constexpr inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat) {
   std::size_t neq = 2 * nmat;
   return neq * neq   // jacobian
          + 4 * neq   // dx, residual, and sol_scratch
          + 8 * nmat; // all the nmat sized arrays
 }
-inline size_t PTESolverRhoURequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverRhoURequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverRhoURequiredScratch(nmat) * sizeof(Real);
 }
 
@@ -1508,6 +1548,16 @@ class PTESolverRhoU
     dtde = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     utemp = AssignIncrement(scratch, nmat);
+  }
+
+  static inline std::string MethodType() { return std::string("PTESolverRhoU"); }
+
+  // Create a static member function bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverRhoURequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverRhoURequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
