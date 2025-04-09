@@ -21,6 +21,7 @@
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR475]](https://github.com/lanl/singularity-eos/pull/475) Shrink the default variant. Notably moved Stiff Gas behind a flag.
+- [[PR487]](https://github.com/lanl/singularity-eos/pull/487) Added static member functions to closures for scratch size interrogation
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR481]](https://github.com/lanl/singularity-eos/pull/481) Move mutable diagnostic variables in singularity-eos into optional indexable types in a lambda.
