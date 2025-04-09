@@ -296,7 +296,7 @@ class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
   }
 
   PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return t_.nlambda(); }
+  static int nlambda() noexcept { return t_.nlambda(); }
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
