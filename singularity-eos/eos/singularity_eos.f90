@@ -257,7 +257,7 @@ module singularity_eos
 
   interface
    integer(kind=c_int) function &
-       get_sg_EntropyFromDensityInternalEnergy(matindex, eos, rhos, sies,&
+       get_sg_EntropyFromDensityInternalEnergy_nolambda(matindex, eos, rhos, sies,&
                                                entropies, len) &
        bind(C, name='get_sg_EntropyFromDensityInternalEnergy')
        import
@@ -283,7 +283,7 @@ module singularity_eos
 
   interface
    integer(kind=c_int) function &
-       get_sg_PressureFromDensityInternalEnergy(matindex, eos, rhos, sies,&
+       get_sg_PressureFromDensityInternalEnergy_nolambda(matindex, eos, rhos, sies,&
                                                pressures, len) &
        bind(C, name='get_sg_PressureFromDensityInternalEnergy')
        import
@@ -320,7 +320,7 @@ module singularity_eos
 
   interface
      integer(kind=c_int) function &
-       get_sg_BulkModulusFromDensityInternalEnergy(matindex, eos, rhos, sies,&
+       get_sg_BulkModulusFromDensityInternalEnergy_nolambda(matindex, eos, rhos, sies,&
                                                bmods, len) &
        bind(C, name='get_sg_BulkModulusFromDensityInternalEnergy')
        import
@@ -787,7 +787,7 @@ contains
        err = get_sg_EntropyFromDensityInternalEnergy_lambda(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(entropies(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
-       err = get_sg_EntropyFromDensityInternalEnergy(matindex-1, &
+       err = get_sg_EntropyFromDensityInternalEnergy_nolambda(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(entropies(1,1,1)), len)
     endif
   end function get_sg_EntropyFromDensityInternalEnergy_f
@@ -805,7 +805,7 @@ contains
        err = get_sg_PressureFromDensityInternalEnergy_lambda(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
-       err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
+       err = get_sg_PressureFromDensityInternalEnergy_nolambda(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
     endif
   end function get_sg_PressureFromDensityInternalEnergy_f
@@ -834,7 +834,7 @@ contains
        err = get_sg_BulkModulusFromDensityInternalEnergy_lambda(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
-       err = get_sg_BulkModulusFromDensityInternalEnergy(matindex-1, &
+       err = get_sg_BulkModulusFromDensityInternalEnergy_nolambda(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len)
     endif
   end function get_sg_BulkModulusFromDensityInternalEnergy_f
