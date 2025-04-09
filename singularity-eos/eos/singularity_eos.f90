@@ -257,18 +257,6 @@ module singularity_eos
 
   interface
    integer(kind=c_int) function &
-       get_sg_EntropyFromDensityInternalEnergy_nolambda(matindex, eos, rhos, sies,&
-                                               entropies, len) &
-       bind(C, name='get_sg_EntropyFromDensityInternalEnergy')
-       import
-       integer(c_int), value, intent(in) :: matindex, len
-       type(c_ptr), value, intent(in) :: eos, rhos, sies
-       type(c_ptr), value, intent(in) :: entropies
-    end function
-  end interface
-
-  interface
-   integer(kind=c_int) function &
        get_sg_EntropyFromDensityInternalEnergy_lambda(matindex, eos, rhos, sies,&
                                                entropies, len, stride, lambda_data) &
        bind(C, name='get_sg_EntropyFromDensityInternalEnergy')
@@ -278,18 +266,6 @@ module singularity_eos
        type(c_ptr), value, intent(in) :: entropies
        integer(c_int), value, intent(in) :: stride
        type(c_ptr), value, intent(in) :: lambda_data
-    end function
-  end interface
-
-  interface
-   integer(kind=c_int) function &
-       get_sg_PressureFromDensityInternalEnergy_nolambda(matindex, eos, rhos, sies,&
-                                               pressures, len) &
-       bind(C, name='get_sg_PressureFromDensityInternalEnergy')
-       import
-       integer(c_int), value, intent(in) :: matindex, len
-       type(c_ptr), value, intent(in) :: eos, rhos, sies
-       type(c_ptr), value, intent(in) :: pressures
     end function
   end interface
 
@@ -315,18 +291,6 @@ module singularity_eos
        import
        integer(c_int), value, intent(in) :: matindex, len
        type(c_ptr), value, intent(in) :: eos, rhos, sies
-    end function
-  end interface
-
-  interface
-     integer(kind=c_int) function &
-       get_sg_BulkModulusFromDensityInternalEnergy_nolambda(matindex, eos, rhos, sies,&
-                                               bmods, len) &
-       bind(C, name='get_sg_BulkModulusFromDensityInternalEnergy')
-       import
-       integer(c_int),value, intent(in) :: matindex, len
-       type(c_ptr), value, intent(in) :: eos, rhos, sies
-       type(c_ptr), value, intent(in) :: bmods
     end function
   end interface
 
@@ -787,8 +751,8 @@ contains
        err = get_sg_EntropyFromDensityInternalEnergy_lambda(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(entropies(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
-       err = get_sg_EntropyFromDensityInternalEnergy_nolambda(matindex-1, &
-            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(entropies(1,1,1)), len)
+       err = get_sg_EntropyFromDensityInternalEnergy_lambda(matindex-1, &
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(entropies(1,1,1)), len, -1, C_NULL_PTR)
     endif
   end function get_sg_EntropyFromDensityInternalEnergy_f
 
@@ -805,8 +769,8 @@ contains
        err = get_sg_PressureFromDensityInternalEnergy_lambda(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
-       err = get_sg_PressureFromDensityInternalEnergy_nolambda(matindex-1, &
-            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len)
+       err = get_sg_PressureFromDensityInternalEnergy_lambda(matindex-1, &
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, -1, C_NULL_PTR)
     endif
   end function get_sg_PressureFromDensityInternalEnergy_f
 
@@ -834,8 +798,8 @@ contains
        err = get_sg_BulkModulusFromDensityInternalEnergy_lambda(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
-       err = get_sg_BulkModulusFromDensityInternalEnergy_nolambda(matindex-1, &
-            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len)
+       err = get_sg_BulkModulusFromDensityInternalEnergy_lambda(matindex-1, &
+            eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len, -1, C_NULL_PTR)
     endif
   end function get_sg_BulkModulusFromDensityInternalEnergy_f
 
