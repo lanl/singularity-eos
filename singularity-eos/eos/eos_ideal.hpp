@@ -174,7 +174,7 @@ class IdealGas : public EosBase<IdealGas> {
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(IdealGas)
   PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Ideal Gas Parameters:\nGamma = %g\nCv    = %g\n", _gm1 + 1.0, _Cv);

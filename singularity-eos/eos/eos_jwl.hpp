@@ -114,7 +114,7 @@ class JWL : public EosBase<JWL> {
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(JWL)
   PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
