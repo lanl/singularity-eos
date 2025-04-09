@@ -1088,9 +1088,7 @@ class PTESolverFixedT
     Tnorm = 1.0;
   }
 
-  static inline std::string MethodType() {
-    return std::string("PTESolverFixedT");
-  }
+  static inline std::string MethodType() { return std::string("PTESolverFixedT"); }
 
   // Create a static member function bound to the class for ease of use
   constexpr static inline int RequiredScratch(const std::size_t nmat) {
@@ -1306,9 +1304,7 @@ class PTESolverFixedP
     Pequil = P;
   }
 
-  static inline std::string MethodType() {
-    return std::string("PTESolverFixedP");
-  }
+  static inline std::string MethodType() { return std::string("PTESolverFixedP"); }
 
   // Create a static member function bound to the class for ease of use
   constexpr static inline int RequiredScratch(const std::size_t nmat) {
@@ -1554,9 +1550,7 @@ class PTESolverRhoU
     utemp = AssignIncrement(scratch, nmat);
   }
 
-  static inline std::string MethodType() {
-    return std::string("PTESolverRhoU");
-  }
+  static inline std::string MethodType() { return std::string("PTESolverRhoU"); }
 
   // Create a static member function bound to the class for ease of use
   constexpr static inline int RequiredScratch(const std::size_t nmat) {
