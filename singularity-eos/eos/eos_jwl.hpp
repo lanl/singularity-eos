@@ -113,7 +113,6 @@ class JWL : public EosBase<JWL> {
   // overloads that use the scalar versions declared here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(JWL)
-  PORTABLE_INLINE_FUNCTION
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void

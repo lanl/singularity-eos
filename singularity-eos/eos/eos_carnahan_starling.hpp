@@ -230,7 +230,6 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(CarnahanStarling)
-  PORTABLE_INLINE_FUNCTION
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {

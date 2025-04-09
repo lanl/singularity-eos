@@ -152,7 +152,6 @@ class MGUsup : public EosBase<MGUsup> {
   // overloads that use the scalar versions declared here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(MGUsup)
-  PORTABLE_INLINE_FUNCTION
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {

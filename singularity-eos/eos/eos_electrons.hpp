@@ -192,7 +192,6 @@ class IdealElectrons : public EosBase<IdealElectrons> {
   // here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(IdealElectrons)
-  PORTABLE_INLINE_FUNCTION
   int nlambda() const noexcept { return 1; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
