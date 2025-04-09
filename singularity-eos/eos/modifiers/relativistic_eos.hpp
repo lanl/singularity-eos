@@ -146,8 +146,7 @@ class RelativisticEOS : public EosBase<RelativisticEOS<T>> {
     t_.FillEos(rho, temp, energy, press, cv, bmod, output, lambda);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return t_.nlambda(); }
+  constexpr static inline int nlambda() const noexcept { return t_.nlambda(); }
   template <typename Indexable>
   static inline constexpr bool NeedsLambda() {
     return T::template NeedsLambda<Indexable>();

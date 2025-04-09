@@ -214,8 +214,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return PMin_; }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return _n_lambda; }
+  constexpr static inline int nlambda() const noexcept { return _n_lambda; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     using namespace IndexableTypes;
