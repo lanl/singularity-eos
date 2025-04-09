@@ -215,7 +215,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real MinimumPressure() const { return PMin_; }
 
   PORTABLE_INLINE_FUNCTION
-  static int nlambda() noexcept { return _n_lambda; }
+  int nlambda() const noexcept { return _n_lambda; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     using namespace IndexableTypes;
@@ -499,7 +499,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   }
 
   PORTABLE_INLINE_FUNCTION
-  static int nlambda() noexcept { return _n_lambda; }
+  int nlambda() const noexcept { return _n_lambda; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     return std::is_same<T, IndexableTypes::LogDensity>::value;
