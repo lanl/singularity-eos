@@ -812,7 +812,8 @@ class EosBase {
     return 0;
   }
   static inline unsigned long max_scratch_size(const unsigned int nelements) { return 0; }
-  static inline int nlambda() noexcept { return 0.; }
+  PORTABLE_INLINE_FUNCTION
+  static int nlambda() noexcept { return 0.; }
 
   // JMM: EOS's which encapsulate a mix or reactions may wish to vary
   // this.  For example, Helmholtz and StellarCollapse. This isn't the

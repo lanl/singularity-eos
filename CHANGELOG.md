@@ -26,6 +26,7 @@
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR481]](https://github.com/lanl/singularity-eos/pull/481) Move mutable diagnostic variables in singularity-eos into optional indexable types in a lambda.
 - [[PR486]](https://github.com/lanl/singularity-eos/pull/486) Use default behavior for max_scratch_size and scratch_size in the eos base class
+- [[PR489]](https://github.com/lanl/singularity-eos/pull/489) Move default behavior for nlambda to the eos base class
 
 ### Removed (removing behavior/API/varaibles/...)
 
