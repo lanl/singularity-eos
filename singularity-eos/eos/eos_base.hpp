@@ -88,8 +88,7 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<__VA_ARGS__>::GibbsFreeEnergyFromDensityTemperature;                     \
   using EosBase<__VA_ARGS__>::GibbsFreeEnergyFromDensityInternalEnergy;                  \
   using EosBase<__VA_ARGS__>::scratch_size;                                              \
-  using EosBase<__VA_ARGS__>::max_scratch_size;                                          \
-  using EosBase<__VA_ARGS__>::nlambda;
+  using EosBase<__VA_ARGS__>::max_scratch_size;
 
 // This macro adds these methods to a derived class. Due to scope,
 // these can't be implemented in the base class, unless we make
