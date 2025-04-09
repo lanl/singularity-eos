@@ -1320,8 +1320,8 @@ class Variant {
     return mpark::visit([&](const auto &eos) { return eos.max_scratch_size(nelements); },
                         eos_);
   }
-
-  constexpr static inline int nlambda() noexcept {
+  PORTABLE_FORCE_INLINE_FUNCTION
+  int nlambda() noexcept {
     return mpark::visit([](const auto &eos) { return eos.nlambda(); }, eos_);
   }
 
