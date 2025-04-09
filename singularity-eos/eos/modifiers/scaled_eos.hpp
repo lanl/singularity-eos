@@ -309,7 +309,8 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
                                         std::forward<Transform>(transform));
   }
 
-  constexpr static inline int nlambda() noexcept { return t_.nlambda(); }
+  PORTABLE_INLINE_FUNCTION
+  int nlambda() const noexcept { return t_.nlambda(); }
   template <typename Indexable>
   static inline constexpr bool NeedsLambda() {
     return T::template NeedsLambda<Indexable>();

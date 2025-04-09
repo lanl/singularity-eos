@@ -235,7 +235,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
-  constexpr static inline int nlambda() noexcept { return _n_lambda; }
+  PORTABLE_INLINE_FUNCTION
+  int nlambda() const noexcept { return _n_lambda; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     using namespace IndexableTypes;
