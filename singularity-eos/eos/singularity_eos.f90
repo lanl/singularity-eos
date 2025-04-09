@@ -257,7 +257,7 @@ module singularity_eos
 
   interface
    integer(kind=c_int) function &
-       get_sg_EntropyFromDensityInternalEnergy_lambda(matindex, eos, rhos, sies,&
+       get_sg_EntropyFromDensityInternalEnergy(matindex, eos, rhos, sies,&
                                                entropies, len, stride, lambda_data) &
        bind(C, name='get_sg_EntropyFromDensityInternalEnergy')
        import
@@ -271,7 +271,7 @@ module singularity_eos
 
   interface
    integer(kind=c_int) function &
-       get_sg_PressureFromDensityInternalEnergy_lambda(matindex, eos, rhos, sies,&
+       get_sg_PressureFromDensityInternalEnergy(matindex, eos, rhos, sies,&
                                                pressures, len, stride, lambda_data) &
        bind(C, name='get_sg_PressureFromDensityInternalEnergy')
        import
@@ -296,7 +296,7 @@ module singularity_eos
 
   interface
      integer(kind=c_int) function &
-       get_sg_BulkModulusFromDensityInternalEnergy_lambda(matindex, eos, rhos, sies,&
+       get_sg_BulkModulusFromDensityInternalEnergy(matindex, eos, rhos, sies,&
                                                bmods, len, stride, lambda_data) &
        bind(C, name='get_sg_BulkModulusFromDensityInternalEnergy')
        import
@@ -748,10 +748,10 @@ contains
     integer(c_int), intent(in), optional :: stride
     real(kind=8), dimension(:,:,:,:), intent(inout), target, optional::lambda_data
     if (PRESENT(stride) .and. PRESENT(lambda_data)) then
-       err = get_sg_EntropyFromDensityInternalEnergy_lambda(matindex-1, &
+       err = get_sg_EntropyFromDensityInternalEnergy(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(entropies(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
-       err = get_sg_EntropyFromDensityInternalEnergy_lambda(matindex-1, &
+       err = get_sg_EntropyFromDensityInternalEnergy(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(entropies(1,1,1)), len, -1, C_NULL_PTR)
     endif
   end function get_sg_EntropyFromDensityInternalEnergy_f
@@ -766,10 +766,10 @@ contains
     integer(c_int), intent(in), optional :: stride
     real(kind=8), dimension(:,:,:,:), intent(inout), target, optional::lambda_data
     if (PRESENT(stride) .and. PRESENT(lambda_data)) then
-       err = get_sg_PressureFromDensityInternalEnergy_lambda(matindex-1, &
+       err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
-       err = get_sg_PressureFromDensityInternalEnergy_lambda(matindex-1, &
+       err = get_sg_PressureFromDensityInternalEnergy(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(pressures(1,1,1)), len, -1, C_NULL_PTR)
     endif
   end function get_sg_PressureFromDensityInternalEnergy_f
@@ -795,10 +795,10 @@ contains
     integer(c_int), intent(in), optional :: stride
     real(kind=8), dimension(:,:,:,:), intent(inout), target, optional::lambda_data
     if (PRESENT(stride) .and. PRESENT(lambda_data)) then
-       err = get_sg_BulkModulusFromDensityInternalEnergy_lambda(matindex-1, &
+       err = get_sg_BulkModulusFromDensityInternalEnergy(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len, stride, c_loc(lambda_data(1,1,1,1)))
     else
-       err = get_sg_BulkModulusFromDensityInternalEnergy_lambda(matindex-1, &
+       err = get_sg_BulkModulusFromDensityInternalEnergy(matindex-1, &
             eos%ptr, c_loc(rhos(1,1,1)), c_loc(sies(1,1,1)), c_loc(bmods(1,1,1)), len, -1, C_NULL_PTR)
     endif
   end function get_sg_BulkModulusFromDensityInternalEnergy_f
