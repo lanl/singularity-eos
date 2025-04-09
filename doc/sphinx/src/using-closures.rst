@@ -449,11 +449,11 @@ used by the solver. There are helper routines for providing the needed
 scratch space, wich will tell you how many bytes per mixed cell are
 required. For example:
 
-.. cpp:function:: int PTESolverRhoTRequiredScratch(const int nmat);
+.. cpp:function:: int PTESolverRhoTRequiredScratch(const size_t nmat);
 
 and
 
-.. cpp:function:: int PTESolverRhoURequiredScratch(const int nmat);
+.. cpp:function:: int PTESolverRhoURequiredScratch(const size_t nmat);
 
 provide the number of real numbers (i.e., either ``float`` or
 ``double``) required for a single cell given a number of materials in
@@ -461,14 +461,19 @@ equilibriun for either the ``RhoT`` or ``RhoU`` solver.
 
 The equivalent functions
 
-.. cpp:function:: size_t PTESolverRhoTRequiredScratchInBytes(const int nmat);
+.. cpp:function:: size_t PTESolverRhoTRequiredScratchInBytes(const size_t nmat);
 
 and
 
-.. cpp:function:: int PTESolverRhoURequiredScratchInBytes(const int nmat);
+.. cpp:function:: size_t PTESolverRhoURequiredScratchInBytes(const size_t nmat);
 
 give the size in bytes needed to be allocated per cell given a number
-of materials ``nmat``.
+of materials ``nmat``. Alternatively, there are a static member functions
+for each closure model that provides the same information:
+
+.. cpp:function:: int RequiredScratch(const size_t nmat);
+
+.. cpp:function:: size_t RequiredScratchInBytes(const size_t nmat);
 
 A solver in a given cell is initialized via a ``Solver`` object,
 either ``PTESolverRhoT`` or ``PTESolverRhoU``. The constructor takes
