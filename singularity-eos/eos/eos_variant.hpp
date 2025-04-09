@@ -1321,8 +1321,8 @@ class Variant {
                         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept {
+  PORTABLE_FORCE_INLINE_FUNCTION
+  int nlambda() noexcept {
     return mpark::visit([](const auto &eos) { return eos.nlambda(); }, eos_);
   }
 
