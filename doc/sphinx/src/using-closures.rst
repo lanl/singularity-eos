@@ -471,7 +471,7 @@ give the size in bytes needed to be allocated per cell given a number
 of materials ``nmat``. Alternatively, there are a static member functions
 for each closure model that provides the same information:
 
-.. cpp:function:: size_t RequiredScratch(const size_t nmat);
+.. cpp:function:: int RequiredScratch(const size_t nmat);
 
 .. cpp:function:: size_t RequiredScratchInBytes(const size_t nmat);
 
