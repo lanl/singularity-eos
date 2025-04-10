@@ -224,8 +224,7 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
     sie *= scale;
   }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 1 + t_.nlambda(); }
+  constexpr static inline int nlambda() noexcept { return 1 + T::nlambda(); }
   template <typename Indexable>
   static inline constexpr bool NeedsLambda() {
     return std::is_same<Indexable, IndexableTypes::MeanIonizationState>::value ||
@@ -282,7 +281,7 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
     if constexpr (is_indexable_v<Indexer_t, IndexableTypes::MeanIonizationState>) {
       return std::max(0.0, lambda[IndexableTypes::MeanIonizationState()]);
     } else {
-      return std::max(0.0, lambda[t_.nlambda()]);
+      return std::max(0.0, lambda[T::nlambda()]);
     }
   }
   // TODO(JMM): Runtime?

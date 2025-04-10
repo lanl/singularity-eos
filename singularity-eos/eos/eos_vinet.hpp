@@ -144,8 +144,7 @@ class Vinet : public EosBase<Vinet> {
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Vinet)
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char st[]{"Vinet Params: "};

@@ -192,8 +192,7 @@ class IdealElectrons : public EosBase<IdealElectrons> {
   // here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(IdealElectrons)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 1; }
+  constexpr static inline int nlambda() noexcept { return 1; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     return std::is_same<T, IndexableTypes::MeanIonizationState>::value;

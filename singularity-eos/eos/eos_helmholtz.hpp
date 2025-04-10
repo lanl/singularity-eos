@@ -458,8 +458,7 @@ class Helmholtz : public EosBase<Helmholtz> {
         options_(rad, gas, coul, ion, ele, verbose, newton_raphson) {}
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const { electrons_.CheckParams(); }
-
-  PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
+  constexpr static inline int nlambda() noexcept { return 3; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     return std::is_same<T, IndexableTypes::MeanAtomicMass>::value ||

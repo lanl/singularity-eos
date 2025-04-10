@@ -186,8 +186,7 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   // overloads that use the scalar versions declared here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(SAP_Polynomial)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("SAP_Polynomial EOS Parameters:\n");

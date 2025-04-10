@@ -1117,7 +1117,6 @@ class EOSPAC : public EosBase<EOSPAC> {
   }
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 0; }
   inline void Finalize() {
     using namespace EospacWrapper;
     eosSafeDestroy(NT, tablehandle, Verbosity::Quiet);

@@ -167,8 +167,7 @@ class DavisReactants : public EosBase<DavisReactants> {
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(DavisReactants)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"DavisReactants Params: "};
@@ -308,8 +307,7 @@ class DavisProducts : public EosBase<DavisProducts> {
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(DavisProducts)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return 0;

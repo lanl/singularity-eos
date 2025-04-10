@@ -156,8 +156,7 @@ class Gruneisen : public EosBase<Gruneisen> {
   // overloads that use the scalar versions declared here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(Gruneisen)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"Gruneisen Params: "};
