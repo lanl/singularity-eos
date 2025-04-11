@@ -187,7 +187,6 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     # these are mirrored in the cmake configuration
     conflicts("+cuda", when="~kokkos")
     conflicts("+rocm", when="~kokkos")
-    conflicts("+rocm", when=)
     conflicts("+kokkos-kernels", when="~kokkos")
     conflicts("+hdf5", when="~spiner")
 
