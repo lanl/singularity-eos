@@ -125,7 +125,8 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("spiner +hdf5", when="+hdf5+spiner")
 
     depends_on("spiner@:1.6.0", when="@:1.7.0 +spiner")
-    depends_on("spiner@1.6.1:", when="@1.7.1: +spiner") #TODO version
+    depends_on("spiner@1.6.1:", when="@1.7.1:1.9.0 +spiner")
+    depends_on("spiner@1.6.3:", when="@1.9.1: +spiner")
     depends_on("spiner@main", when="@main +spiner")
 
     depends_on("mpark-variant")
@@ -186,6 +187,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     # these are mirrored in the cmake configuration
     conflicts("+cuda", when="~kokkos")
     conflicts("+rocm", when="~kokkos")
+    conflicts("+rocm", when=)
     conflicts("+kokkos-kernels", when="~kokkos")
     conflicts("+hdf5", when="~spiner")
 
