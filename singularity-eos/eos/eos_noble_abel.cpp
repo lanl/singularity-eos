@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_noble_abel.hpp>
 
-template void singularity::impl::ConcretizeType<singularity::EOS>(EOS);
+namespace singularity {
+SG_ADD_TEMPLATE_INSTANTIATIONS(NobleAbel, Real *)
+} // namespace singularity

@@ -245,6 +245,10 @@ PORTABLE_INLINE_FUNCTION void SAP_Polynomial::FillEos(Real &rho, Real &temp, Rea
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
 }
 
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(SAP_Polynomial, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_EOS_SAP_POLYNOMIAL_HPP_
