@@ -19,6 +19,7 @@
 - [[PR439]](https://github.com/lanl/singularity-eos/pull/439) Add mean atomic mass and number to EOS API
 - [[PR437]](https://github.com/lanl/singularity-eos/pull/437) Fix segfault on HIP, clean up warnings, add strict sanitizer test
 - [[PR375]](https://github.com/lanl/singularity-eos/pull/375) Added energy floor modifier
+- [[PR491]](https://github.com/lanl/singularity-eos/pull/491) Fixed spackage logic to point at correct spiner version for piecewise grids
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR475]](https://github.com/lanl/singularity-eos/pull/475) Shrink the default variant. Notably moved Stiff Gas behind a flag.
