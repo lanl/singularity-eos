@@ -3,6 +3,20 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+
+### Fixed (Repair bugs, etc)
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+
+## Release 1.9.2
+Date: 4/7/2025
+
+### Added (new features/APIs/variables/...)
 - [[PR470]](https://github.com/lanl/singularity-eos/pull/470) Add the ability to access lambda elements by named types
 - [[PR459]](https://github.com/lanl/singularity-eos/pull/459) Add electron and ion tables to EOSPAC and SpinerEOS backends
 - [[PR453]](https://github.com/lanl/singularity-eos/pull/453) A PT space PTE solver
