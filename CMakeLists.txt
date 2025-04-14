@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------#
-# © 2021-2024. Triad National Security, LLC. All rights reserved.  This program
+# © 2021-2025. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -24,7 +24,7 @@ endif()
 # declare the project name
 project(
   singularity-eos
-  VERSION 1.9.1
+  VERSION 1.9.2
   LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
