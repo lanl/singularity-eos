@@ -475,16 +475,16 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rhoMax_; }
   PORTABLE_FORCEINLINE_FUNCTION Real TMin() const {
-    return fromLog_(T_.range(0).min(), lTOffset_);
+    return fromLog_(sie_.range(0).min(), lTOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real TMax() const {
-    return fromLog_(T_.range(0).max(), lTOffset_);
+    return fromLog_(sie_.range(0).max(), lTOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const {
-    return fromLog_(sie_.range(0).min(), lEOffset_);
+    return fromLog_(T_.range(0).min(), lEOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const {
-    return fromLog_(sie_.range(0).max(), lEOffset_);
+    return fromLog_(T_.range(0).max(), lEOffset_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
