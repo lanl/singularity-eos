@@ -92,8 +92,8 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
       }
 
       AND_THEN("We get the correct density and temperature bounds") {
-        REQUIRE(std::abs(steelEOS_host.MinimumTemperature() - 1e-8) <= 1e-12);
-        REQUIRE(std::abs(steelEOS_host.MinimumDensity() - 1e-2) <= 1e-12);
+        REQUIRE(std::abs(steelEOS_host.MinimumTemperature() - 1e-2) <= 1e-12);
+        REQUIRE(std::abs(steelEOS_host.MinimumDensity() - 1e-8) <= 1e-12);
       }
 
       // TODO: this needs to be a much more rigorous test
@@ -248,8 +248,8 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
         REQUIRE(isClose(steelEOS_host.MeanAtomicNumber(), 25.80));
       }
       AND_THEN("We get the correct density and temperature bounds") {
-        REQUIRE(std::abs(steelEOS_host.MinimumTemperature() - 1e-8) <= 1e-12);
-        REQUIRE(std::abs(steelEOS_host.MinimumDensity() - 1e-2) <= 1e-12);
+        REQUIRE(std::abs(steelEOS_host.MinimumTemperature() - 1e-2) <= 1e-12);
+        REQUIRE(std::abs(steelEOS_host.MinimumDensity() - 1e-8) <= 1e-12);
       }
 
       int nw_ie2{0}, nw_te2{0};
