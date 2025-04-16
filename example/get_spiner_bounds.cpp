@@ -40,14 +40,14 @@ int main(int argc, char *argv[]) {
     singularity::SpinerEOSDependsRhoT deprt(filename, matid);
     singularity::SpinerEOSDependsRhoSie depre(filename, matid);
 
-    printf("rho bounds, depends(r, T): %.14e %.14e\n",
-	   deprt.MinimumDensity(), deprt.rhoMax());
-    printf("rho bounds, depends(r, sie): %.14e %.14e\n",
-	   depre.MinimumDensity(), depre.rhoMax());
-    printf("T bounds, depends(r, T): %.14e %.14e\n",
-	   deprt.MinimumTemperature(), deprt.TMax());
-    printf("T bounds, depends(r, sie): %.14e %.14e\n",
-	   depre.MinimumTemperature(), depre.TMax());
+    printf("rho bounds, depends(r, T): %.14e %.14e\n", deprt.MinimumDensity(),
+           deprt.rhoMax());
+    printf("rho bounds, depends(r, sie): %.14e %.14e\n", depre.MinimumDensity(),
+           depre.rhoMax());
+    printf("T bounds, depends(r, T): %.14e %.14e\n", deprt.MinimumTemperature(),
+           deprt.TMax());
+    printf("T bounds, depends(r, sie): %.14e %.14e\n", depre.MinimumTemperature(),
+           depre.TMax());
 
     deprt.Finalize();
     depre.Finalize();
@@ -55,5 +55,4 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::finalize();
 #endif
-  
 }
