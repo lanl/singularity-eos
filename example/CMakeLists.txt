@@ -28,4 +28,8 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_SPINER_WITH_HDF5)
     get_sesame_state.cpp)
   target_link_libraries(get_sesame_state PRIVATE
     singularity-eos::singularity-eos)
+  add_executable(get_spiner_bounds
+    get_spiner_bounds.cpp)
+  target_link_libraries(get_spiner_bounds PRIVATE
+    singularity-eos::singularity-eos)
 endif()
