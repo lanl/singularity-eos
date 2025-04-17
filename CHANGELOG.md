@@ -5,6 +5,7 @@
 ### Added (new features/APIs/variables/...)
 
 ### Fixed (Repair bugs, etc)
+- [[PR496]](https://github.com/lanl/singularity-eos/pull/495) Fix bug related to MinimumTemperature and MinimumDensity in SpinerEOSDependsRhoSie
 
 ### Changed (changing behavior/API/variables/...)
 
