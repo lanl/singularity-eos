@@ -773,3 +773,17 @@ portability strategies.
    $> spack build-env singularity-eos@main%gcc@12+hdf5+eospac+mpi+kokkos+kokkos-kernels+openmp^eospac@6.4.0 -- bash
    $> mkdir -p build_gpu_mpi ; cd build_gpu_mpi
    $> cmake .. --preset="kokkos_nogpu_with_testing"
+
+Some Recipes
+-------------
+
+- Building stellar collapse and stellarcollapse2spiner without pre-installing dependencies:
+
+.. code:: bash
+
+  git clone --recursive https://github.com/lanl/singularity-eos.git
+  mkdir -p singularity-eos/build
+  cd singularity-eos/build
+  cmake -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_SPINER=ON -DSINGULARITY_USE_FORTRAN=OFF -DSINGULARITY_BUILD_CLOSURE=OFF -DSINGULARITY_USE_STELLAR_COLLAPSE=ON -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_USE_TRUE_LOG_GRIDDING=ON ..
+  make -j8
+

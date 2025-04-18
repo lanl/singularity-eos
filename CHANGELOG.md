@@ -5,7 +5,8 @@
 ### Added (new features/APIs/variables/...)
 
 ### Fixed (Repair bugs, etc)
-- [[PR496]](https://github.com/lanl/singularity-eos/pull/495) Fix bug related to MinimumTemperature and MinimumDensity in SpinerEOSDependsRhoSie
+- [[PR495]](https://github.com/lanl/singularity-eos/pull/495) Fix bug related to MinimumTemperature and MinimumDensity in SpinerEOSDependsRhoSie
+- [[PR496]](https://github.com/lanl/singularity-eos/pull/496) Re-enable stellarcollapse2spiner, which was disabled.
 
 ### Changed (changing behavior/API/variables/...)
 
