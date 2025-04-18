@@ -307,6 +307,10 @@ if(SINGULARITY_BUILD_SESAME2SPINER)
   add_subdirectory(sesame2spiner)
 endif()
 
+if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+  add_subdirectory(stellarcollapse2spiner)
+endif()
+
 # Define the full version as a string macro
 target_compile_definitions(singularity-eos_Interface INTERFACE
     SINGULARITY_VERSION=\"${PROJECT_VERSION}\"
