@@ -68,9 +68,41 @@ constexpr Real out_sie1[NTRIAL] = {1.93716882e09, 1.93864981e09, 1.93994981e09,
 constexpr Real out_sie2[NTRIAL] = {2.01473728e09, 2.01621655e09, 2.01751522e09,
                                    2.01840528e09, 2.01875845e09};
 
-template <typename RealIndexer>
-inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
-                            RealIndexer &&sie) {
+using singularity::EOSPAC;
+using singularity::Variant;
+using EOS = Variant<EOSPAC>;
+
+template <typename T>
+inline void set_eos(T *eos) {
+
+  int sl = symlink("/usr/projects/data/eos/eos-developmental/Sn2162/v01/sn2162-v01.bin",
+                   "sesameu");
+
+  int SnbetaID = 2102;
+  int SngammaID = 2103;
+  // int SndeltaID = 2104;
+  int SnhcpID = 2105;
+  // int SnliquidID = 2106;
+
+  // bool invert_at_setup = true;
+
+  T Snbeta = singularity::EOSPAC(SnbetaID);
+  T Sngamma = singularity::EOSPAC(SngammaID);
+  //  EOS Sndelta = singularity::EOSPAC(SndeltaID);
+  T Snhcp = singularity::EOSPAC(SnhcpID);
+  //  EOS Snliquid = singularity::EOSPAC(SnliquidID);
+
+  eos[0] = Snbeta.GetOnDevice();
+  eos[1] = Sngamma.GetOnDevice();
+  //  eos[x] = Sndelta.GetOnDevice();
+  eos[2] = Snhcp.GetOnDevice();
+  //  eos[x] = Snliquid.GetOnDevice();
+  return;
+}
+
+template <typename RealIndexer, typename EOSIndexer>
+inline void set_trial_3state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
+                             RealIndexer &&sie, EOSIndexer &&eos) {
 
   Real vsum = 0.;
   for (int i = 0; i < NMAT; i++) {

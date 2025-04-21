@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -86,7 +86,9 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<__VA_ARGS__>::EntropyFromDensityTemperature;                             \
   using EosBase<__VA_ARGS__>::EntropyFromDensityInternalEnergy;                          \
   using EosBase<__VA_ARGS__>::GibbsFreeEnergyFromDensityTemperature;                     \
-  using EosBase<__VA_ARGS__>::GibbsFreeEnergyFromDensityInternalEnergy;
+  using EosBase<__VA_ARGS__>::GibbsFreeEnergyFromDensityInternalEnergy;                  \
+  using EosBase<__VA_ARGS__>::scratch_size;                                              \
+  using EosBase<__VA_ARGS__>::max_scratch_size;
 
 // This macro adds these methods to a derived class. Due to scope,
 // these can't be implemented in the base class, unless we make
@@ -804,6 +806,13 @@ class EosBase {
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const { return 0.0; }
 
+  static inline unsigned long scratch_size(const std::string method,
+                                           const unsigned int nelements) {
+    return 0;
+  }
+  static inline unsigned long max_scratch_size(const unsigned int nelements) { return 0; }
+  constexpr static inline int nlambda() noexcept { return 0.; }
+
   // JMM: EOS's which encapsulate a mix or reactions may wish to vary
   // this.  For example, Helmholtz and StellarCollapse. This isn't the
   // default, so by default the base class provides a specialization.
@@ -841,7 +850,18 @@ class EosBase {
     PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
   }
 
-  // Default MinInternalEnergyFromDensity behavior is to cause an error
+  // Default MinInternalEnergyFromDensity behavior is to just return the zero-K isotherm.
+  // This should be fine for all thermodynamically consistent EOS, but could cause issues
+  // with EOS that aren't thermodynamically consistent.
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    return copy.InternalEnergyFromDensityTemperature(rho, 0.);
+  }
+
+  // This error is useful for EOS where the zero-K approximation is invalid for whatever
+  // reason
   PORTABLE_FORCEINLINE_FUNCTION
   void MinInternalEnergyIsNotEnabled(const char *eosname) const {
     // Construct the error message using char* so it works on device
@@ -982,6 +1002,16 @@ class EosBase {
     const std::size_t tot_size = pcrtp->SerializedSizeInBytes();
     PORTABLE_ALWAYS_REQUIRE(offst == tot_size, "Deserialization failed!");
     return offst;
+  }
+
+  // Tooling for indexers
+  template <typename T>
+  static inline constexpr bool NeedsLambda() {
+    return false;
+  }
+  template <typename T>
+  static inline constexpr bool NeedsLambda(const T &t) {
+    return NeedsLambda<T>();
   }
 
   // Tooling for modifiers

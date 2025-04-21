@@ -12,20 +12,14 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_EOS_SHIFTED_EOS_
-#define _SINGULARITY_EOS_EOS_SHIFTED_EOS_
+#ifndef _SINGULARITY_EOS_EOS_FLOORED_ENERGY_
+#define _SINGULARITY_EOS_EOS_FLOORED_ENERGY_
 
 #include "stdio.h"
-#include <cassert>
-#include <cmath>
 #include <cstdlib>
 #include <iostream>
-#include <limits>
-#include <utility>
 
 #include <ports-of-call/portability.hpp>
-#include <ports-of-call/portable_errors.hpp>
-#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -34,72 +28,72 @@ namespace singularity {
 using namespace eos_base;
 
 template <typename T>
-class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
+class FlooredEnergy : public EosBase<FlooredEnergy<T>> {
  public:
-  SG_ADD_BASE_CLASS_USINGS(ShiftedEOS<T>);
+  SG_ADD_BASE_CLASS_USINGS(FlooredEnergy)
+
   using BaseType = T;
 
   // give me std::format or fmt::format...
   static std::string EosType() {
-    return std::string("ShiftedEOS<") + T::EosType() + std::string(">");
+    return std::string("FlooredEnergy<") + T::EosType() + std::string(">");
   }
 
-  static std::string EosPyType() { return std::string("Shifted") + T::EosPyType(); }
+  static std::string EosPyType() { return std::string("FlooredEnergy") + T::EosPyType(); }
 
-  // move semantics ensures dynamic memory comes along for the ride
-  ShiftedEOS(T &&t, const Real shift) : t_(std::forward<T>(t)), shift_(shift) {
-    CheckParams();
-  }
-  ShiftedEOS() = default;
+  FlooredEnergy() = default;
 
-  PORTABLE_INLINE_FUNCTION void CheckParams() const {
-    PORTABLE_ALWAYS_REQUIRE(!std::isnan(shift_), "Shift must be a number");
-    t_.CheckParams();
-  }
+  FlooredEnergy(T &&t) : t_(std::forward<T>(t)) {}
 
-  auto GetOnDevice() { return ShiftedEOS<T>(t_.GetOnDevice(), shift_); }
+  auto GetOnDevice() { return FlooredEnergy<T>(t_.GetOnDevice()); }
   inline void Finalize() { t_.Finalize(); }
 
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return t_.TemperatureFromDensityInternalEnergy(rho, sie - shift_, lambda);
+    const Real min_sie = t_.MinInternalEnergyFromDensity(rho);
+    return t_.TemperatureFromDensityInternalEnergy(rho, std::max(sie, min_sie), lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature, Indexer_t &&lambda = nullptr) const {
-    Real energy = t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
-    return energy + shift_;
+    return t_.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return t_.PressureFromDensityInternalEnergy(rho, sie - shift_, lambda);
+    const Real min_sie = t_.MinInternalEnergyFromDensity(rho);
+    return t_.PressureFromDensityInternalEnergy(rho, std::max(sie, min_sie), lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real
   MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda = nullptr) const {
-    return t_.MinInternalEnergyFromDensity(rho, lambda) + shift_;
+    return t_.MinInternalEnergyFromDensity(rho, lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return t_.EntropyFromDensityInternalEnergy(rho, sie - shift_, lambda);
+    const Real min_sie = t_.MinInternalEnergyFromDensity(rho);
+    return t_.EntropyFromDensityInternalEnergy(rho, std::max(sie, min_sie), lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return t_.SpecificHeatFromDensityInternalEnergy(rho, sie - shift_, lambda);
+    const Real min_sie = t_.MinInternalEnergyFromDensity(rho);
+    return t_.SpecificHeatFromDensityInternalEnergy(rho, std::max(sie, min_sie), lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return t_.BulkModulusFromDensityInternalEnergy(rho, sie - shift_, lambda);
+    const Real min_sie = t_.MinInternalEnergyFromDensity(rho);
+    return t_.BulkModulusFromDensityInternalEnergy(rho, std::max(sie, min_sie), lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie, Indexer_t &&lambda = nullptr) const {
-    return t_.GruneisenParamFromDensityInternalEnergy(rho, sie - shift_, lambda);
+    const Real min_sie = t_.MinInternalEnergyFromDensity(rho);
+    return t_.GruneisenParamFromDensityInternalEnergy(rho, std::max(sie, min_sie),
+                                                      lambda);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION Real PressureFromDensityTemperature(
@@ -130,50 +124,38 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
                                  Indexer_t &&lambda = nullptr) const {
-    Real senergy;
-    switch (t_.PreferredInput()) {
-    case thermalqs::density | thermalqs::temperature:
+    if (output & thermalqs::specific_internal_energy) {
       t_.FillEos(rho, temp, energy, press, cv, bmod, output, lambda);
-      energy = energy + shift_;
-      break;
-    case thermalqs::density | thermalqs::specific_internal_energy:
-      senergy = energy - shift_;
-      t_.FillEos(rho, temp, senergy, press, cv, bmod, output, lambda);
-      break;
-    default:
-      EOS_ERROR("Didn't find a valid input for ShiftedEOS::FillEOS\n");
+    } else {
+      const Real min_sie = t_.MinInternalEnergyFromDensity(rho);
+      t_.FillEos(rho, temp, std::max(energy, min_sie), press, cv, bmod, output, lambda);
     }
   }
 
   // vector implementations
-  inline void shift_sies(const Real *sies, Real *shifted, const int num) const {
-    static auto const name =
-        singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
+  inline void choose_max_sie(const Real *sies, Real *sie_use, const int num) const {
+    // This code makes the assumption that `sie_use` is first populated with the
+    // apprioriate minimum values
+    static auto const name = singularity::mfuncname::member_func_name(
+        typeid(FlooredEnergy<T>).name(), __func__);
     static auto const cname = name.c_str();
-    const auto shift_val = shift_;
     portableFor(
         cname, 0, num,
-        PORTABLE_LAMBDA(const int i) { shifted[i] = sies[i] - shift_val; });
-  }
-
-  inline void unshift_sies(Real *sies, const int num) const {
-    static auto const name =
-        singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
-    static auto const cname = name.c_str();
-    const auto shift_val = shift_;
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
+        PORTABLE_LAMBDA(const int i) { sie_use[i] = std::max(sies[i], sie_use[i]); });
   }
 
   template <typename LambdaIndexer>
   inline void TemperatureFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *temperatures, Real *scratch,
       const int num, LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    Real *shifted_sies = scratch;
-    shift_sies(sies, shifted_sies, num);
-    t_.TemperatureFromDensityInternalEnergy(
-        rhos, shifted_sies, temperatures, &scratch[num], num,
-        std::forward<LambdaIndexer>(lambdas), std::forward<Transform>(transform));
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(sies, sie_used, num);
+    t_.TemperatureFromDensityInternalEnergy(rhos, sie_used, temperatures, &scratch[num],
+                                            num, std::forward<LambdaIndexer>(lambdas),
+                                            std::forward<Transform>(transform));
   }
 
   template <typename LambdaIndexer>
@@ -191,10 +173,13 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   PressureFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *pressures,
                                     Real *scratch, const int num, LambdaIndexer &&lambdas,
                                     Transform &&transform = Transform()) const {
-    Real *shifted_sies = scratch;
-    shift_sies(sies, shifted_sies, num);
-    t_.PressureFromDensityInternalEnergy(rhos, shifted_sies, pressures, &scratch[num],
-                                         num, std::forward<LambdaIndexer>(lambdas),
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(sies, sie_used, num);
+    t_.PressureFromDensityInternalEnergy(rhos, sie_used, pressures, &scratch[num], num,
+                                         std::forward<LambdaIndexer>(lambdas),
                                          std::forward<Transform>(transform));
   }
 
@@ -205,7 +190,6 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     t_.MinInternalEnergyFromDensity(rhos, sies, &scratch[num], num,
                                     std::forward<LambdaIndexer>(lambdas),
                                     std::forward<Transform>(transform));
-    unshift_sies(sies, num);
   }
 
   template <typename LambdaIndexer>
@@ -221,9 +205,12 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   inline void SpecificHeatFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *cvs, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    Real *shifted_sies = scratch;
-    shift_sies(sies, shifted_sies, num);
-    t_.SpecificHeatFromDensityInternalEnergy(rhos, shifted_sies, cvs, &scratch[num], num,
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(sies, sie_used, num);
+    t_.SpecificHeatFromDensityInternalEnergy(rhos, sie_used, cvs, &scratch[num], num,
                                              std::forward<LambdaIndexer>(lambdas),
                                              std::forward<Transform>(transform));
   }
@@ -241,9 +228,12 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   inline void BulkModulusFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *bmods, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    Real *shifted_sies = scratch;
-    shift_sies(sies, shifted_sies, num);
-    t_.BulkModulusFromDensityInternalEnergy(rhos, shifted_sies, bmods, &scratch[num], num,
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(sies, sie_used, num);
+    t_.BulkModulusFromDensityInternalEnergy(rhos, sie_used, bmods, &scratch[num], num,
                                             std::forward<LambdaIndexer>(lambdas),
                                             std::forward<Transform>(transform));
   }
@@ -261,10 +251,13 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   inline void GruneisenParamFromDensityInternalEnergy(
       const Real *rhos, const Real *sies, Real *gm1s, Real *scratch, const int num,
       LambdaIndexer &&lambdas, Transform &&transform = Transform()) const {
-    Real *shifted_sies = scratch;
-    shift_sies(sies, shifted_sies, num);
-    t_.GruneisenParamFromDensityInternalEnergy(rhos, shifted_sies, gm1s, &scratch[num],
-                                               num, std::forward<LambdaIndexer>(lambdas),
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(sies, sie_used, num);
+    t_.GruneisenParamFromDensityInternalEnergy(rhos, sie_used, gm1s, &scratch[num], num,
+                                               std::forward<LambdaIndexer>(lambdas),
                                                std::forward<Transform>(transform));
   }
 
@@ -275,7 +268,6 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     t_.InternalEnergyFromDensityTemperature(rhos, temperatures, sies, scratch, num,
                                             std::forward<LambdaIndexer>(lambdas),
                                             std::forward<Transform>(transform));
-    unshift_sies(sies, num);
   }
 
   template <typename LambdaIndexer>
@@ -293,18 +285,17 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
   EntropyFromDensityInternalEnergy(const Real *rhos, const Real *sies, Real *entropies,
                                    Real *scratch, const int num, LambdaIndexer &&lambdas,
                                    Transform &&transform = Transform()) const {
-    Real *shifted_sies = scratch;
-    shift_sies(sies, shifted_sies, num);
+    Real *sie_used = scratch;
+    // First populate sies with minimum energies
+    t_.MinInternalEnergyFromDensity(rhos, sie_used, num, lambdas);
+    // Chose the maximum between the input and the minimum energy
+    choose_max_sie(sies, sie_used, num);
     t_.EntropyFromDensityInternalEnergy(rhos, sies, entropies, &scratch[num], num,
                                         std::forward<LambdaIndexer>(lambdas),
                                         std::forward<Transform>(transform));
   }
 
   constexpr static inline int nlambda() noexcept { return T::nlambda(); }
-  template <typename Indexable>
-  static inline constexpr bool NeedsLambda() {
-    return T::template NeedsLambda<Indexable>();
-  }
 
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
 
@@ -327,16 +318,13 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
     return m;
   }
 
-  PORTABLE_FUNCTION void PrintParams() const {
-    t_.PrintParams();
-    printf("shift_value = %f\n", shift_);
-  }
+  PORTABLE_FUNCTION void PrintParams() const { t_.PrintParams(); }
+
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
     t_.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
-    sie = sie + shift_;
   }
 
   template <typename Indexer_t = Real *>
@@ -345,7 +333,6 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
                                                 Real &dpde, Real &dvdt,
                                                 Indexer_t &&lambda = nullptr) const {
     t_.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt, lambda);
-    sie += shift_;
   }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
@@ -382,7 +369,6 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
 
  private:
   T t_;
-  double shift_;
 };
 
 } // namespace singularity

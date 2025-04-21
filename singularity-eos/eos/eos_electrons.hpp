@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2024. Triad National Security, LLC. All rights reserved.  This
+// © 2024-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -23,6 +23,7 @@
 
 // Base stuff
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -191,13 +192,12 @@ class IdealElectrons : public EosBase<IdealElectrons> {
   // here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(IdealElectrons)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 1; }
-  static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
+  constexpr static inline int nlambda() noexcept { return 1; }
+  template <typename T>
+  static inline constexpr bool NeedsLambda() {
+    return std::is_same<T, IndexableTypes::MeanIonizationState>::value;
   }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
+  static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Ideal Electrons Parameters:\n");
     _AZbar.PrintParams();
@@ -209,8 +209,9 @@ class IdealElectrons : public EosBase<IdealElectrons> {
  private:
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real _Cv(Indexer_t &&lambda) const {
-    const Real Z = std::max(lambda[Lambda::Zi], static_cast<Real>(0.0));
-    return _Cvbase * Z;
+    const Real Z =
+        IndexerUtils::Get<IndexableTypes::MeanIonizationState>(lambda, Lambda::Zi);
+    return _Cvbase * std::max(Z, static_cast<Real>(0.0));
   }
 
   // TODO(JMM): Change gamma if needed

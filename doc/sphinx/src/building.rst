@@ -120,6 +120,7 @@ The main CMake options to configure building are in the following table:
  ``SINGULARITY_NQT_PORTABLE``            OFF      For fast logs, use the slower but endianness-independent implementation.
  ``SINGULARITY_STRICT_WARNINGS``         OFF      For testing. Adds -Wall and -Werror to builds.
  ``SINGULARITY_USE_V_AND_V_EOS``         OFF      Enables several additional EOS models and adds them to the default variant
+ ``SINGULARITY_USE_STELLAR_COLLAPSE``    OFF      Adds the Stellar Collapse EOS to the default variant
 ====================================== ======= ===========================================
 
 More options are available to modify only if certain other options or
@@ -772,3 +773,17 @@ portability strategies.
    $> spack build-env singularity-eos@main%gcc@12+hdf5+eospac+mpi+kokkos+kokkos-kernels+openmp^eospac@6.4.0 -- bash
    $> mkdir -p build_gpu_mpi ; cd build_gpu_mpi
    $> cmake .. --preset="kokkos_nogpu_with_testing"
+
+Some Recipes
+-------------
+
+- Building stellar collapse and stellarcollapse2spiner without pre-installing dependencies:
+
+.. code:: bash
+
+  git clone --recursive https://github.com/lanl/singularity-eos.git
+  mkdir -p singularity-eos/build
+  cd singularity-eos/build
+  cmake -DSINGULARITY_FORCE_SUBMODULE_MODE=ON -DSINGULARITY_USE_SPINER=ON -DSINGULARITY_USE_FORTRAN=OFF -DSINGULARITY_BUILD_CLOSURE=OFF -DSINGULARITY_USE_STELLAR_COLLAPSE=ON -DSINGULARITY_BUILD_STELLARCOLLAPSE2SPINER=ON -DSINGULARITY_USE_TRUE_LOG_GRIDDING=ON ..
+  make -j8
+

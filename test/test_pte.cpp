@@ -22,8 +22,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <pte_test_3mat_analytic.hpp>
-#include <pte_test_utils.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <spiner/databox.hpp>
 
@@ -31,6 +30,8 @@
 #include <singularity-eos/eos/eos_variant.hpp>
 
 #include "eos_unit_test_helpers.hpp"
+#include "pte_test_3mat_analytic.hpp"
+#include "pte_test_utils.hpp"
 
 using DataBox = Spiner::DataBox<Real>;
 using singularity::PTESolverPT;
@@ -159,11 +160,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
   portableReduce(
       "PTE!", 0, NTRIAL,
       PORTABLE_LAMBDA(const int &t, std::size_t &ns) {
-        Real *lambda[NMAT];
-        for (int i = 0; i < NMAT; i++) {
-          lambda[i] = nullptr;
-        }
-
+        singularity::NullIndexer lambda;
         Indexer2D<decltype(rho_d)> rho(t, rho_d);
         Indexer2D<decltype(vfrac_d)> vfrac(t, vfrac_d);
         Indexer2D<decltype(sie_d)> sie(t, sie_d);
@@ -232,7 +229,11 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
   }
   std::cout << std::endl;
 
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  return rho_v;
+#else
   return rho_d;
+#endif // PORTABILITY_STRATEGY_KOKKOS
 }
 
 int main(int argc, char *argv[]) {

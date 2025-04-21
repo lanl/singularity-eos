@@ -6,7 +6,7 @@
 // Original work is open-sourced under the CC-By license
 // https://creativecommons.org/licenses/by/4.0/
 //------------------------------------------------------------------------------
-// © 2023-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2023-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -43,6 +43,7 @@
 // singularity-eos
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/hermite.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
@@ -457,15 +458,16 @@ class Helmholtz : public EosBase<Helmholtz> {
         options_(rad, gas, coul, ion, ele, verbose, newton_raphson) {}
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const { electrons_.CheckParams(); }
-
-  PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
+  constexpr static inline int nlambda() noexcept { return 3; }
+  template <typename T>
+  static inline constexpr bool NeedsLambda() {
+    return std::is_same<T, IndexableTypes::MeanAtomicMass>::value ||
+           std::is_same<T, IndexableTypes::MeanAtomicNumber>::value ||
+           std::is_same<T, IndexableTypes::LogTemperature>::value;
+  }
   static constexpr unsigned long PreferredInput() {
     return thermalqs::density | thermalqs::temperature;
   }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
 
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Helmholtz Parameters:\n"
@@ -551,12 +553,6 @@ class Helmholtz : public EosBase<Helmholtz> {
             thermalqs::pressure | thermalqs::temperature, lambda);
     return p;
   }
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    MinInternalEnergyIsNotEnabled("Helmholtz");
-    return 0.0;
-  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
@@ -634,8 +630,8 @@ class Helmholtz : public EosBase<Helmholtz> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     using namespace HelmUtils;
     Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
-    Real abar = lambda[Lambda::Abar];
-    Real zbar = lambda[Lambda::Zbar];
+    Real abar = IndexerUtils::Get<IndexableTypes::MeanAtomicMass>(lambda, Lambda::Abar);
+    Real zbar = IndexerUtils::Get<IndexableTypes::MeanAtomicNumber>(lambda, Lambda::Zbar);
     Real ytot, ye, ywot, De, lDe;
     GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
     Real lT = lTFromRhoSie_(rho, sie, abar, zbar, ye, ytot, ywot, De, lDe, lambda);
@@ -661,14 +657,14 @@ class Helmholtz : public EosBase<Helmholtz> {
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     using namespace HelmUtils;
-    return lambda[Lambda::Abar];
+    return IndexerUtils::Get<IndexableTypes::MeanAtomicMass>(lambda, Lambda::Abar);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     using namespace HelmUtils;
-    return lambda[Lambda::Zbar];
+    return IndexerUtils::Get<IndexableTypes::MeanAtomicNumber>(lambda, Lambda::Zbar);
   }
 
   template <typename Indexer_t = Real *>
@@ -699,7 +695,7 @@ class Helmholtz : public EosBase<Helmholtz> {
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
     using RootFinding1D::regula_falsi;
     using RootFinding1D::Status;
-    PORTABLE_REQUIRE(temp > = 0, "Non-negative temperature required");
+    PORTABLE_REQUIRE(temp >= 0, "Non-negative temperature required");
     auto PofRT = [&](const Real r) {
       return PressureFromDensityTemperature(r, temp, lambda);
     };
@@ -762,10 +758,10 @@ class Helmholtz : public EosBase<Helmholtz> {
   GetFromDensityTemperature_(const Real rho, const Real temperature, Indexer_t &&lambda,
                              Real p[NDERIV], Real e[NDERIV], Real s[NDERIV],
                              Real etaele[NDERIV], Real nep[NDERIV]) const {
-    Real abar = lambda[Lambda::Abar];
-    Real zbar = lambda[Lambda::Zbar];
+    Real abar = IndexerUtils::Get<IndexableTypes::MeanAtomicMass>(lambda, Lambda::Abar);
+    Real zbar = IndexerUtils::Get<IndexableTypes::MeanAtomicNumber>(lambda, Lambda::Zbar);
     Real lT = std::log10(temperature);
-    lambda[Lambda::lT] = lT;
+    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
     Real ytot, ye, ywot, De, lDe;
     GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
     GetFromDensityLogTemperature_(rho, temperature, abar, zbar, ye, ytot, ywot, De, lDe,
@@ -777,8 +773,8 @@ class Helmholtz : public EosBase<Helmholtz> {
   GetFromDensityInternalEnergy_(const Real rho, const Real sie, Indexer_t &&lambda,
                                 Real p[NDERIV], Real e[NDERIV], Real s[NDERIV],
                                 Real etaele[NDERIV], Real nep[NDERIV]) const {
-    Real abar = lambda[Lambda::Abar];
-    Real zbar = lambda[Lambda::Zbar];
+    Real abar = IndexerUtils::Get<IndexableTypes::MeanAtomicMass>(lambda, Lambda::Abar);
+    Real zbar = IndexerUtils::Get<IndexableTypes::MeanAtomicNumber>(lambda, Lambda::Zbar);
     Real ytot, ye, ywot, De, lDe;
     GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
     Real lT = lTFromRhoSie_(rho, sie, abar, zbar, ye, ytot, ywot, De, lDe, lambda);
@@ -823,8 +819,8 @@ Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, R
   PORTABLE_ALWAYS_REQUIRE(
       !(need_temp && need_sie),
       "Either specific internal energy or temperature must be provided.");
-  Real abar = lambda[Lambda::Abar];
-  Real zbar = lambda[Lambda::Zbar];
+  Real abar = IndexerUtils::Get<IndexableTypes::MeanAtomicMass>(lambda, Lambda::Abar);
+  Real zbar = IndexerUtils::Get<IndexableTypes::MeanAtomicNumber>(lambda, Lambda::Zbar);
   Real ytot, ye, ywot, De, lDe, lT;
   GetElectronDensities_(rho, abar, zbar, ytot, ye, ywot, De, lDe);
   if (need_temp) {
@@ -832,7 +828,7 @@ Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, R
     temp = math_utils::pow10(lT);
   } else {
     lT = std::log10(temp);
-    lambda[Lambda::lT] = lT;
+    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
   }
   Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
   GetFromDensityLogTemperature_(rho, temp, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
@@ -874,7 +870,7 @@ PORTABLE_INLINE_FUNCTION Real Helmholtz::lTFromRhoSie_(const Real rho, const Rea
 
   if (options_.ENABLE_RAD || options_.GAS_DEGENERATE ||
       options_.ENABLE_COULOMB_CORRECTIONS) {
-    Real lTguess = lambda[Lambda::lT];
+    Real lTguess = IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT);
     if (!((electrons_.lTMin() <= lTguess) && (lTguess <= electrons_.lTMax()))) {
       lTguess = lTAnalytic_(rho, e, ni, ne);
       if (!((electrons_.lTMin() <= lTguess) && (lTguess <= electrons_.lTMax()))) {
@@ -948,7 +944,7 @@ PORTABLE_INLINE_FUNCTION Real Helmholtz::lTFromRhoSie_(const Real rho, const Rea
     }
     lT = electrons_.lTMax();
   }
-  lambda[Lambda::lT] = lT;
+  IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
   return lT;
 }
 

@@ -659,6 +659,107 @@ minimize latency due to ``malloc`` and ``free``. Several models, such
 as ``SpinerEOS`` also use the persistency of these arrays to cache
 useful quantities for a performance boost.
 
+Named Arguments to Lambda Indexers
+-----------------------------------
+
+Lambdas support a more free-form kind of indexer. In particular, you
+may define indexers that take **names** via a type system. For
+example, you can write code such as:
+
+.. code-block:: cpp
+
+  Lambda_t lambda;
+  lambda[MeanIonizationState()] = zbar;
+  Real P = eos.PressureFromDensityTemperature(rho, T, lambda);
+
+The available types currently supported by default are:
+
+.. code-block:: cpp
+
+  struct singularity::IndexableTypes::MeanIonizationState;
+  struct singularity::IndexableTypes::LogDensity;
+  struct singularity::IndexableTypes::LogTemperature;
+  struct singularity::IndexableTypes::MeanAtomicMass;
+  struct singularity::IndexableTypes::MeanAtomicNumber;
+  struct singularity::IndexableTypes::ElectronFraction;
+
+However if you are not limited to these types. Any type will do and
+you can define your own as you like. For example:
+
+.. code-block::
+
+  namespace IndexableTypes {
+  struct MyLambdaParameter;
+  }
+
+To use an indexable type, you must define an indexer with an overload
+of the ``[]`` operator that takes your type. For example:
+
+.. code-block:: cpp
+
+  class MyLambda_t {
+  public:
+    MyLambda_t() = default;
+    PORTABLE_FORCEINLINE_FUNCTION
+    Real &operator[](const std::size_t idx) const {
+      return data_[idx];
+    }
+    PORTABLE_FORCEINLINE_FUNCTION
+    Real &operator[](const MeanIonizationState &zbar) const {
+      return data_[2];
+    }
+  private:
+    std::array<Real, 3> data_;
+  };
+
+which might be used as
+
+.. code-blocK:: cpp
+
+  MyLambda_t lambda;
+  lambda[0] = lRho;
+  lambda[1] = lT;
+  lambda[MeanIonizationState()] = Z;
+
+where ``MeanIonizationState`` is shorthand for index 2, since you
+defined that overload. Note that the ``operator[]`` must be marked
+``const``. To more easily enable mixing and matching integer-based
+indexing with type-based indexing, the function
+
+.. code-block:: cpp
+
+  template<typename Name_t, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real &Get(Indexer_t &&lambda, std::size_t idx = 0);
+
+will return a reference to the value at named index ``Name_t()`` if
+that overload is defined in ``Indexer_t`` and otherwise return a
+reference at index ``idx``.
+
+As a convenience tool, the struct
+
+.. code-block:: cpp
+
+  template<typename... Ts>
+  singularity::IndexableTypes::VariadicIndexer;
+
+automatically defines an indexer that accepts all named indices in the
+variadic list ``Ts...`` and also integer indexing. It's a fixed-size
+array under the hood.
+
+You can check if an equation of state is compatible with a given named
+index type by calling
+
+.. code-block:: cpp
+
+   eos.NeedsLambda(NamedIndex())
+
+which returns ``true`` if the EOS is compatible with ``NamedIndex``
+and ``false`` otherwise.
+
+All of the above functionality is available in
+the header file ``singularity-eos/base/indexable_types.hpp``.
+
 EOS Modifiers
 --------------
 

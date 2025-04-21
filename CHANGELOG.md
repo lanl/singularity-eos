@@ -3,20 +3,48 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+
+### Fixed (Repair bugs, etc)
+- [[PR495]](https://github.com/lanl/singularity-eos/pull/495) Fix bug related to MinimumTemperature and MinimumDensity in SpinerEOSDependsRhoSie
+- [[PR496]](https://github.com/lanl/singularity-eos/pull/496) Re-enable stellarcollapse2spiner, which was disabled.
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+
+## Release 1.9.2
+Date: 4/7/2025
+
+### Added (new features/APIs/variables/...)
+- [[PR470]](https://github.com/lanl/singularity-eos/pull/470) Add the ability to access lambda elements by named types
 - [[PR459]](https://github.com/lanl/singularity-eos/pull/459) Add electron and ion tables to EOSPAC and SpinerEOS backends
 - [[PR453]](https://github.com/lanl/singularity-eos/pull/453) A PT space PTE solver
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)
+- [PR492](https://github.com/lanl/singularity-eos/pull/492) Fix import issue in spack's package.py.
+- [[PR485]](https://github.com/lanl/singularity-eos/pull/485) Fix segfault in Fortran interface related to EOSPAC initialization
+- [[PR478]](https://github.com/lanl/singularity-eos/pull/478) Fix bug in KPT test. Add more extensive clang build to github CI matrix.
+- [[PR473]](https://github.com/lanl/singularity-eos/pull/473) Resolve memory issue. Thanks for the catch, Richard!
 - [[PR468]](https://github.com/lanl/singularity-eos/pull/468) Move definition of def_en and def_v to an implementation file
 - [[PR466]](https://github.com/lanl/singularity-eos/pull/466) Fully thread lambda inputs through the PTE solver
 - [[PR449]](https://github.com/lanl/singularity-eos/pull/449) Ensure that DensityEnergyFromPressureTemperature works for all equations of state and is properly tested
 - [[PR439]](https://github.com/lanl/singularity-eos/pull/439) Add mean atomic mass and number to EOS API
 - [[PR437]](https://github.com/lanl/singularity-eos/pull/437) Fix segfault on HIP, clean up warnings, add strict sanitizer test
+- [[PR375]](https://github.com/lanl/singularity-eos/pull/375) Added energy floor modifier
+- [[PR491]](https://github.com/lanl/singularity-eos/pull/491) Fixed spackage logic to point at correct spiner version for piecewise grids
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR475]](https://github.com/lanl/singularity-eos/pull/475) Shrink the default variant. Notably moved Stiff Gas behind a flag.
+- [[PR487]](https://github.com/lanl/singularity-eos/pull/487) Added static member functions to closures for scratch size interrogation
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR481]](https://github.com/lanl/singularity-eos/pull/481) Move mutable diagnostic variables in singularity-eos into optional indexable types in a lambda.
+- [[PR486]](https://github.com/lanl/singularity-eos/pull/486) Use default behavior for max_scratch_size and scratch_size in the eos base class
+- [[PR489]](https://github.com/lanl/singularity-eos/pull/489) Move default behavior for nlambda to the eos base class
 
 ### Removed (removing behavior/API/varaibles/...)
 

@@ -81,7 +81,22 @@ constexpr Real out_vfrac1[NTRIAL] = {0.5,         0.498282729, 0.49686481,  0.49
                                      0.491417663, 0.491352403, 0.491336852, 0.49136598,
                                      0.491435452, 0.491541508, 0.491680878, 0.491850697};
 
-template <typename RealIndexer>
+template <typename T>
+inline void set_eos(T *eos) {
+  constexpr Real d2to40[39] = {0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                               0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                               0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.};
+
+  T Snbeta = singularity::Vinet(7.285, 298.0, 0.529e12, 5.3345, 0.000072977, 0.2149e07,
+                                0.658e09, 0.4419e07, d2to40);
+  T Sngamma = singularity::Vinet(7.271, 298.0, 0.3878e12, 6.0532, 0.0001085405, 0.2161e07,
+                                 1.025e09, 0.5051e07, d2to40);
+  eos[0] = Snbeta.GetOnDevice();
+  eos[1] = Sngamma.GetOnDevice();
+  return;
+}
+
+template <typename RealIndexer, typename EOSIndexer>
 inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
                             RealIndexer &&sie) {
 

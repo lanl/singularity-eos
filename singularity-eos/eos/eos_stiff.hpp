@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -91,13 +91,6 @@ class StiffGas : public EosBase<StiffGas> {
   }
 
   template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    MinInternalEnergyIsNotEnabled("StiffGas");
-    return 0.0;
-  };
-
-  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
@@ -173,13 +166,7 @@ class StiffGas : public EosBase<StiffGas> {
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(StiffGas)
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Stiff Gas Parameters:\nGamma = %g\nCv    = %g\nPinf  = %g\nq     = "
            "%g\n",

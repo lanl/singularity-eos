@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2023. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -73,7 +73,7 @@ void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,             
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
-void func####WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,\
+void func##WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,  \
           py::array_t<Real> out, py::array_t<Real> scratch, const int num, py::array_t<Real> lambdas){       \
   py::buffer_info lambdas_info = lambdas.request();                               \
   if (lambdas_info.ndim != 2)                                                     \
@@ -87,13 +87,13 @@ void func####WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> 
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
-void func####NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,   \
+void func##NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,     \
           py::array_t<Real> out, const int num){                                  \
   self.func(a.data(), b.data(), out.mutable_data(), num, NoLambdaHelper());       \
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
-void func####NoLambdaWithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,  \
+void func##NoLambdaWithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,    \
           py::array_t<Real> out, py::array_t<Real> scratch, const int num){                 \
   self.func(a.data(), b.data(), out.mutable_data(), scratch.mutable_data(), num, NoLambdaHelper()); \
 }
@@ -346,7 +346,7 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
 
     .def("MinimumDensity", &T::MinimumDensity)
     .def("MinimumTemperature", &T::MinimumTemperature)
-    .def_property_readonly("nlambda", &T::nlambda)
+    .def_property_readonly_static("nlambda", [](py::object) { return T::nlambda(); })
     .def_property_readonly_static("PreferredInput", [](py::object) { return T::PreferredInput(); })
     .def("PrintParams", &T::PrintParams)
     .def("DensityEnergyFromPressureTemperature", [](const T & self, const Real press, const Real temp, py::array_t<Real> lambda) {
@@ -374,5 +374,3 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
 void create_shifted_eos_classes(py::module_ & m);
 void create_scaled_eos_classes(py::module_ & m);
 void create_bilinear_ramp_eos_classes(py::module_ &m);
-void create_relativistic_eos_classes(py::module_ &m);
-void create_unit_system_eos_classes(py::module_ &m);

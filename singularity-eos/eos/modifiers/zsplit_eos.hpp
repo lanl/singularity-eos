@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2024. Triad National Security, LLC. All rights reserved.  This
+// © 2024-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -22,7 +22,9 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
 namespace singularity {
@@ -222,8 +224,12 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
     sie *= scale;
   }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 1 + t_.nlambda(); }
+  constexpr static inline int nlambda() noexcept { return 1 + T::nlambda(); }
+  template <typename Indexable>
+  static inline constexpr bool NeedsLambda() {
+    return std::is_same<Indexable, IndexableTypes::MeanIonizationState>::value ||
+           T::template NeedsLambda<Indexable>();
+  }
   static constexpr unsigned long PreferredInput() { return T::PreferredInput(); }
   static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
     return T::scratch_size(method, nelements);
@@ -268,7 +274,15 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
  private:
   template <typename Indexer_t = Real *>
   PORTABLE_FORCEINLINE_FUNCTION Real GetIonizationState_(Indexer_t &&lambda) const {
-    return std::max(0.0, lambda[t_.nlambda()]);
+    using namespace variadic_utils;
+    if (is_nullptr(lambda)) {
+      PORTABLE_THROW_OR_ABORT("ZSplitEOS: lambda must contain mean ionization state!\n");
+    }
+    if constexpr (is_indexable_v<Indexer_t, IndexableTypes::MeanIonizationState>) {
+      return std::max(0.0, lambda[IndexableTypes::MeanIonizationState()]);
+    } else {
+      return std::max(0.0, lambda[T::nlambda()]);
+    }
   }
   // TODO(JMM): Runtime?
   template <typename Indexer_t = Real *>

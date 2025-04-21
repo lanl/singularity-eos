@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -156,13 +156,8 @@ class Gruneisen : public EosBase<Gruneisen> {
   // overloads that use the scalar versions declared here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(Gruneisen)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char s1[]{"Gruneisen Params: "};
     printf("%s C0:%e s1:%e s2:%e s3:%e\n  G0:%e b:%e rho0:%e T0:%e\n  P0:%eCv:%e "
@@ -377,9 +372,8 @@ PORTABLE_INLINE_FUNCTION Real Gruneisen::PressureFromDensityInternalEnergy(
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 Gruneisen::MinInternalEnergyFromDensity(const Real rho_in, Indexer_t &&lambda) const {
-  // const Real rho = std::min(rho_in, _rho_max);
-  MinInternalEnergyIsNotEnabled("Gruneisen");
-  return 0.0;
+  const Real rho = std::min(rho_in, _rho_max);
+  return EosBase<Gruneisen>::MinInternalEnergyFromDensity(rho);
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Gruneisen::EntropyFromDensityInternalEnergy(
@@ -490,6 +484,7 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
   Real rho_lower;
   Real rho_upper;
   Real rho_guess;
+  Real p_used = press;
   // Pick bounds appropriate depending on whether in compression or expansion
   if (press < Pref) {
     rho_lower = 0.;
@@ -505,13 +500,14 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
       // We're off the EOS surface
       using PortsOfCall::printf;
       printf("ERROR: Requested pressure, %.15g, exceeds maximum, %.15g, for \n"
-             "       temperature, %.15g",
+             "       temperature, %.15g.\n"
+             "       setting pressure to maximum allowed value.\n",
              press, pres_max, temp);
-      PORTABLE_ALWAYS_THROW_OR_ABORT("Input pressure is off EOS surface");
+      p_used = pres_max;
     }
     // Construct a reasonable guess for the density
     const Real slope = (rho_upper - _rho0) / (pres_max - Pref);
-    rho_guess = _rho0 + slope * (press - Pref);
+    rho_guess = _rho0 + slope * (p_used - Pref);
   }
   // JMM: called inside a device kernel so does not need device annotation
   auto PofRatT = [this, temp](const Real r) {
@@ -520,7 +516,7 @@ PORTABLE_INLINE_FUNCTION void Gruneisen::DensityEnergyFromPressureTemperature(
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
   auto status =
-      regula_falsi(PofRatT, press, rho_guess, rho_lower, rho_upper, 1.0e-8, 1.0e-8, rho);
+      regula_falsi(PofRatT, p_used, rho_guess, rho_lower, rho_upper, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
     EOS_ERROR("Gruneisen::DensityEnergyFromPressureTemperature: "

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -67,9 +67,6 @@ class Vinet : public EosBase<Vinet> {
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  template <typename Indexer_t = Real *>
-  PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
-      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   // Entropy added AEM Dec. 2022
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
@@ -147,13 +144,7 @@ class Vinet : public EosBase<Vinet> {
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(Vinet)
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char st[]{"Vinet Params: "};
     printf("%s rho0:%e T0:%e B0:%e BP0:%e\n  A0:%e Cv0:%e E0:%e S0:%e\n"
@@ -357,12 +348,6 @@ PORTABLE_INLINE_FUNCTION Real Vinet::PressureFromDensityInternalEnergy(
   temp = TemperatureFromDensityInternalEnergy(rho, sie);
   Vinet_F_DT_func(rho, temp, output);
   return output[1];
-}
-template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION Real
-Vinet::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
-  MinInternalEnergyIsNotEnabled("Vinet");
-  return 0.0;
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real Vinet::EntropyFromDensityInternalEnergy(

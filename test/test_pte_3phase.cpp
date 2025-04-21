@@ -28,7 +28,7 @@
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
-#include <test_pte_3phase.hpp>
+#include <pte_test_5phaseSesameSn.hpp>
 
 using DataBox = Spiner::DataBox<Real>;
 using singularity::PTESolverRhoT;

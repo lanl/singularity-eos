@@ -4,9 +4,11 @@
 
 import os
 
+from spack import spack_version
 from spack.error import SpackError
 from spack.package import *
 from spack.directives import directive
+from spack.version import Version
 
 
 @directive("singularity_eos_plugins")
@@ -37,6 +39,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
 
     # allow `main` version for development
     version("main", branch="main")
+    version("1.9.2", sha256="4a58782020ad7bff3ea1c0cf55838a3692205770dbe4be39a3df25ba6fae302d")
     version("1.9.1", sha256="148889e1b2d5bdc3d59c5fd6a6b5da25bb4f4f0f4343c57b3ccaf96691c93aff")
     version("1.9.0", sha256="460b36a8311df430e6d4cccf3e72a6b3afda7db8d092b4a0a4259c4363c4dbde")
     version("1.8.0", sha256="1f1ec496f714aa23cc7003c88a85bd10d0e53e37659ba7310541248e48a66558")
@@ -125,23 +128,24 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("spiner +hdf5", when="+hdf5+spiner")
 
     depends_on("spiner@:1.6.0", when="@:1.7.0 +spiner")
-    depends_on("spiner@1.6.1:", when="@1.7.1: +spiner") #TODO version
+    depends_on("spiner@1.6.1:", when="@1.7.1:1.9.0 +spiner")
+    depends_on("spiner@1.6.3:", when="@1.9.1: +spiner")
     depends_on("spiner@main", when="@main +spiner")
 
     depends_on("mpark-variant")
     depends_on(
         "mpark-variant",
         patches=patch(
-            "https://raw.githubusercontent.com/lanl/singularity-eos/refs/heads/main/utils/gpu_compatibility.patch",
-            sha256="c803670cbd95f9b97458fb4ef403de30229ec81566a5b8e5ccb75ad9d0b22541"
+            "gpu_compatibility.patch",
+            sha256="6f8c929736662c580d36e6225604e0b8a26558cb262cb027f86a12d77a333663"
         ),
         when="+cuda",
     )
     depends_on(
         "mpark-variant",
         patches=patch(
-            "https://raw.githubusercontent.com/lanl/singularity-eos/refs/heads/main/utils/gpu_compatibility.patch",
-            sha256="c803670cbd95f9b97458fb4ef403de30229ec81566a5b8e5ccb75ad9d0b22541",
+            "gpu_compatibility.patch",
+            sha256="6f8c929736662c580d36e6225604e0b8a26558cb262cb027f86a12d77a333663",
         ),
         when="+rocm",
     )
@@ -168,7 +172,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("kokkos +wrapper+cuda_lambda", when="+cuda+kokkos")
 
     # fix for older spacks
-    if spack.version.Version(spack.spack_version) >= spack.version.Version("0.17"):
+    if Version(spack_version) >= Version("0.17"):
         depends_on("kokkos-kernels", when="+kokkos-kernels")
 
     for _flag in list(CudaPackage.cuda_arch_values):

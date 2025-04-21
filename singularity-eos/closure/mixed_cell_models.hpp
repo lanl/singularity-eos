@@ -149,10 +149,6 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
   return retval;
 }
 
-struct NullPtrIndexer {
-  PORTABLE_INLINE_FUNCTION Real *operator[](const std::size_t i) { return nullptr; }
-};
-
 class CacheAccessor {
  public:
   CacheAccessor() = default;
@@ -161,6 +157,13 @@ class CacheAccessor {
   PORTABLE_FORCEINLINE_FUNCTION
   Real *operator[](const std::size_t m) const { return cache_ + m * MAX_NUM_LAMBDAS; }
 
+  PORTABLE_FORCEINLINE_FUNCTION
+  static std::size_t Size(const std::size_t nmat) { return MAX_NUM_LAMBDAS * nmat; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  static std::size_t SizeInBytes(const std::size_t nmat) {
+    return Size(nmat) * sizeof(Real);
+  }
+
  private:
   Real *cache_;
 };
@@ -168,7 +171,7 @@ class CacheAccessor {
 // ======================================================================
 // Base class
 // ======================================================================
-template <typename EOSIndexer, typename RealIndexer>
+template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
 class PTESolverBase {
  public:
   PTESolverBase() = delete;
@@ -212,18 +215,18 @@ class PTESolverBase {
   PTESolverBase(std::size_t nmats, std::size_t neqs, const EOSIndexer &eos_,
                 const Real vfrac_tot, const Real sie_tot, const RealIndexer &rho_,
                 const RealIndexer &vfrac_, const RealIndexer &sie_,
-                const RealIndexer &temp_, const RealIndexer &press_, Real *&scratch,
-                Real Tnorm, const MixParams &params = MixParams())
+                const RealIndexer &temp_, const RealIndexer &press_,
+                LambdaIndexer &lambda_, Real *&scratch, Real Tnorm,
+                const MixParams &params = MixParams())
       : params_(params), nmat(nmats), neq(neqs), niter(0), vfrac_total(vfrac_tot),
         sie_total(sie_tot), eos(eos_), rho(rho_), vfrac(vfrac_), sie(sie_), temp(temp_),
-        press(press_), Tnorm(Tnorm) {
+        press(press_), lambda(lambda_), Tnorm(Tnorm) {
     jacobian = AssignIncrement(scratch, neq * neq);
     dx = AssignIncrement(scratch, neq);
     sol_scratch = AssignIncrement(scratch, 2 * neq);
     residual = AssignIncrement(scratch, neq);
     u = AssignIncrement(scratch, nmat);
     rhobar = AssignIncrement(scratch, nmat);
-    Cache = CacheAccessor(AssignIncrement(scratch, nmat * MAX_NUM_LAMBDAS));
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -298,10 +301,10 @@ class PTESolverBase {
     return Tguess;
   }
 
-  template <typename EOS_t>
+  template <typename EOS_t, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION static Real
   GetPressureFromPreferred(const EOS_t &eos, const Real rho, const Real T, Real sie,
-                           Real *lambda, const bool do_e_lookup) {
+                           Indexer_t lambda, const bool do_e_lookup) {
     Real P{};
     if (eos.PreferredInput() ==
         (thermalqs::density | thermalqs::specific_internal_energy)) {
@@ -338,11 +341,11 @@ class PTESolverBase {
     for (std::size_t m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
-      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, Cache[m]);
+      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, lambda[m]);
       // note the scaling of pressure
-      press[m] = robust::ratio(
-          this->GetPressureFromPreferred(eos[m], rho[m], Tguess, sie[m], Cache[m], false),
-          uscale);
+      press[m] = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tguess,
+                                                              sie[m], lambda[m], false),
+                               uscale);
     }
 
     // note the scaling of the material internal energy densities
@@ -421,11 +424,11 @@ class PTESolverBase {
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
 
       const Real sie_m =
-          eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * Tideal, Cache[m]);
+          eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * Tideal, lambda[m]);
       u[m] = rhobar[m] * robust::ratio(sie_m, uscale);
       press[m] =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tideal,
-                                                       sie_m, Cache[m], false),
+                                                       sie_m, lambda[m], false),
                         uscale);
     }
     // fill in the residual
@@ -471,6 +474,7 @@ class PTESolverBase {
   const RealIndexer &sie;
   const RealIndexer &temp;
   const RealIndexer &press;
+  LambdaIndexer &lambda;
   Real *jacobian, *dx, *sol_scratch, *residual, *u, *rhobar;
   CacheAccessor Cache;
   Real rho_total, uscale, utotal_scale, Tnorm;
@@ -540,45 +544,46 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
 // ======================================================================
 // PTE Solver RhoT
 // ======================================================================
-inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
+constexpr inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
-  return neq * neq                 // jacobian
-         + 4 * neq                 // dx, residual, and sol_scratch
-         + 6 * nmat                // all the nmat sized arrays
-         + MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 6 * nmat; // all the nmat sized arrays
 }
-inline size_t PTESolverRhoTRequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverRhoTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverRhoTRequiredScratch(nmat) * sizeof(Real);
 }
 
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
-class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::InitBase;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::AssignIncrement;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::nmat;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::neq;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::ResidualNorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::eos;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::temp;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::press;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::uscale;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::utotal_scale;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::MatIndex;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::TryIdealPTE;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::jacobian;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::residual;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::dx;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::u;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rhobar;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Cache;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Tnorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::params_;
+class PTESolverRhoT
+    : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer> {
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::InitBase;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::AssignIncrement;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::nmat;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::neq;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::ResidualNorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::eos;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::temp;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::press;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::uscale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::utotal_scale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::MatIndex;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::TryIdealPTE;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::jacobian;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::residual;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::dx;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::u;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rhobar;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Cache;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
@@ -588,22 +593,23 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
                 const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
                 const Real Tnorm = 0.0, const MixParams &params = MixParams())
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat + 1, eos, vfrac_tot,
-                                                         sie_tot, rho, vfrac, sie, temp,
-                                                         press, scratch, Tnorm, params) {
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
+            nmat, nmat + 1, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+            scratch, Tnorm, params) {
     dpdv = AssignIncrement(scratch, nmat);
     dedv = AssignIncrement(scratch, nmat);
     dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
-    // JMM: Copy lambda data into cache. Since the cache uses
-    // pointers, it must be done this way.
-    for (std::size_t m = 0; m < nmat; ++m) {
-      if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (int l = 0; l < eos[m].nlambda(); ++l) {
-          Cache[m][l] = lambda[m][l];
-        }
-      }
-    }
+  }
+
+  static inline std::string MethodType() { return std::string("PTESolveRhoT"); }
+
+  // Create static member functions bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverRhoTRequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverRhoTRequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -662,11 +668,11 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       const Real vf_pert = vfrac[m] + dv;
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
-      Real e_pert =
-          eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil, Cache[m]);
+      Real e_pert = eos[m].InternalEnergyFromDensityTemperature(rho_pert, Tnorm * Tequil,
+                                                                lambda[m]);
       Real p_pert =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
-                                                       e_pert, Cache[m], false),
+                                                       e_pert, lambda[m], false),
                         uscale);
       dpdv[m] = robust::ratio((p_pert - press[m]), dv);
       dedv[m] = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dv);
@@ -675,10 +681,10 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       //////////////////////////////
       Real dT = Tequil * params_.derivative_eps;
       e_pert = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tnorm * (Tequil + dT),
-                                                           Cache[m]);
+                                                           lambda[m]);
       p_pert = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m],
                                                             Tnorm * (Tequil + dT), e_pert,
-                                                            Cache[m], false),
+                                                            lambda[m], false),
                              uscale);
       dpdT[m] = robust::ratio((p_pert - press[m]), dT);
       dedT_sum += robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dT);
@@ -753,13 +759,13 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
-                             rho[m], Tnorm * Tequil, Cache[m]);
+                             rho[m], Tnorm * Tequil, lambda[m]);
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
       temp[m] = Tequil;
       press[m] =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tequil,
-                                                       sie[m], Cache[m], false),
+                                                       sie[m], lambda[m], false),
                         uscale);
     }
     Residual();
@@ -774,44 +780,45 @@ class PTESolverRhoT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
 // ======================================================================
 // PT space solver
 // ======================================================================
-inline int PTESolverPTRequiredScratch(const std::size_t nmat) {
+constexpr inline int PTESolverPTRequiredScratch(const std::size_t nmat) {
   constexpr int neq = 2;
-  return neq * neq                 // jacobian
-         + 4 * neq                 // dx, residual, and sol_scratch
-         + 2 * nmat                // all the nmat sized arrays
-         + MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * nmat; // all the nmat sized arrays
 }
-inline size_t PTESolverPTRequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverPTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverPTRequiredScratch(nmat) * sizeof(Real);
 }
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
-class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::InitBase;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::AssignIncrement;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::nmat;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::neq;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::ResidualNorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::eos;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::temp;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::press;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::uscale;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::utotal_scale;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::MatIndex;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::TryIdealPTE;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::jacobian;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::residual;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::dx;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::u;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rhobar;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Cache;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Tnorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::params_;
+class PTESolverPT
+    : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer> {
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::InitBase;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::AssignIncrement;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::nmat;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::neq;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::ResidualNorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::eos;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::temp;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::press;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::uscale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::utotal_scale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::MatIndex;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::TryIdealPTE;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::jacobian;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::residual;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::dx;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::u;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rhobar;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Cache;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
   enum RES { RV = 0, RSIE = 1 };
 
@@ -823,18 +830,18 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
               const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
               Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
               const Real Tnorm = 0.0, const MixParams &params = MixParams())
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2, eos, vfrac_tot, sie_tot,
-                                                         rho, vfrac, sie, temp, press,
-                                                         scratch, Tnorm, params) {
-    // JMM: Copy lambda data into cache. Since the cache uses
-    // pointers, it must be done this way.
-    for (std::size_t m = 0; m < nmat; ++m) {
-      if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (int l = 0; l < eos[m].nlambda(); ++l) {
-          Cache[m][l] = lambda[m][l];
-        }
-      }
-    }
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
+            nmat, 2, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+            scratch, Tnorm, params) {}
+
+  static inline std::string MethodType() { return std::string("PTESolverPT"); }
+
+  // Create a static member function bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverPTRequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverPTRequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -860,7 +867,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     // Set the state based on the P/T chosen
     for (std::size_t m = 0; m < nmat; ++m) {
       eos[m].DensityEnergyFromPressureTemperature(Pequil * uscale, Tequil * Tnorm,
-                                                  Cache[m], rho[m], sie[m]);
+                                                  lambda[m], rho[m], sie[m]);
       vfrac[m] = robust::ratio(rhobar[m], rho[m]);
       u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
       temp[m] = Tequil;
@@ -922,7 +929,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       //////////////////////////////
       Real dp = -Pequil * params_.derivative_eps; // always move towards phase transition
       eos[m].DensityEnergyFromPressureTemperature(uscale * (Pequil + dp), Tnorm * Tequil,
-                                                  Cache[m], r_pert, e_pert);
+                                                  lambda[m], r_pert, e_pert);
       Real drdp = robust::ratio(r_pert - rho[m], dp);
       Real dudp = robust::ratio(robust::ratio(rhobar[m] * e_pert, uscale) - u[m], dp);
 
@@ -934,7 +941,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       //////////////////////////////
       Real dT = Tequil * params_.derivative_eps;
       eos[m].DensityEnergyFromPressureTemperature(uscale * Pequil, Tnorm * (Tequil + dT),
-                                                  Cache[m], r_pert, e_pert);
+                                                  lambda[m], r_pert, e_pert);
       Real drdT = robust::ratio(r_pert - rho[m], dT);
       Real dudT = robust::ratio(robust::ratio(rhobar[m] * e_pert, uscale) - u[m], dT);
 
@@ -989,7 +996,7 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
     Pequil = Ptemp + scale * dx[1];
     for (std::size_t m = 0; m < nmat; ++m) {
       eos[m].DensityEnergyFromPressureTemperature(Pequil * uscale, Tequil * Tnorm,
-                                                  Cache[m], rho[m], sie[m]);
+                                                  lambda[m], rho[m], sie[m]);
       vfrac[m] = robust::ratio(rhobar[m], rho[m]);
       u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
       temp[m] = Tequil;
@@ -1024,42 +1031,43 @@ class PTESolverPT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
 // ======================================================================
 // fixed temperature solver
 // ======================================================================
-inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat) {
+constexpr inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat;
-  return neq * neq                 // jacobian
-         + 4 * neq                 // dx, residual, and sol_scratch
-         + 2 * nmat                // rhobar and u in base
-         + 2 * nmat                // nmat sized arrays in fixed T solver
-         + MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * nmat  // rhobar and u in base
+         + 2 * nmat; // nmat sized arrays in fixed T solver
 }
-inline size_t PTESolverFixedTRequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverFixedTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverFixedTRequiredScratch(nmat) * sizeof(Real);
 }
 
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
-class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::AssignIncrement;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::nmat;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::neq;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::ResidualNorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::eos;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::temp;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::press;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::uscale;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::MatIndex;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::jacobian;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::residual;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::dx;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::u;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rhobar;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Cache;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Tnorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::params_;
+class PTESolverFixedT
+    : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer> {
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::AssignIncrement;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::nmat;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::neq;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::ResidualNorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::eos;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::temp;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::press;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::uscale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::MatIndex;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::jacobian;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::residual;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::dx;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::u;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rhobar;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Cache;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
@@ -1068,25 +1076,26 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PORTABLE_INLINE_FUNCTION
   PTESolverFixedT(const std::size_t nmat, EOS_t &&eos, const Real vfrac_tot,
                   const Real T_true, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
-                  CReal_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
+                  CReal_t &&temp, Real_t &&press, Lambda_t &lambda, Real *scratch,
                   const MixParams &params = MixParams())
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat, eos, vfrac_tot, 1.0,
-                                                         rho, vfrac, sie, temp, press,
-                                                         scratch, T_true, params) {
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
+            nmat, nmat, eos, vfrac_tot, 1.0, rho, vfrac, sie, temp, press, lambda,
+            scratch, T_true, params) {
     dpdv = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     Tequil = T_true;
     Ttemp = T_true;
     Tnorm = 1.0;
-    // JMM: Copy lambda data into cache. Since the cache uses
-    // pointers, it must be done this way.
-    for (std::size_t m = 0; m < nmat; ++m) {
-      if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (int l = 0; l < eos[m].nlambda(); ++l) {
-          Cache[m][l] = lambda[m][l];
-        }
-      }
-    }
+  }
+
+  static inline std::string MethodType() { return std::string("PTESolverFixedT"); }
+
+  // Create a static member function bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverFixedTRequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverFixedTRequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1104,10 +1113,10 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       // larger than rho(Pmin(Tequil)); set the physical density to reflect
       // this change in volume fraction
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
-      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, Cache[m]);
+      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, lambda[m]);
       uscale += sie[m] * rho[m];
       // note the scaling of pressure
-      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]);
+      press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, lambda[m]);
     }
     for (std::size_t m = 0; m < nmat; ++m) {
       press[m] = robust::ratio(press[m], uscale);
@@ -1158,7 +1167,7 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       const Real rho_pert = robust::ratio(rhobar[m], vf_pert);
 
       Real p_pert = robust::ratio(
-          eos[m].PressureFromDensityTemperature(rho_pert, Tequil, Cache[m]), uscale);
+          eos[m].PressureFromDensityTemperature(rho_pert, Tequil, lambda[m]), uscale);
       dpdv[m] = robust::ratio((p_pert - press[m]), dv);
     }
 
@@ -1219,11 +1228,11 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] *
-             eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, Cache[m]);
+             eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, lambda[m]);
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
       press[m] = robust::ratio(
-          eos[m].PressureFromDensityTemperature(rho[m], Tequil, Cache[m]), uscale);
+          eos[m].PressureFromDensityTemperature(rho[m], Tequil, lambda[m]), uscale);
     }
     Residual();
     return ResidualNorm();
@@ -1237,45 +1246,46 @@ class PTESolverFixedT : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 // ======================================================================
 // fixed P solver
 // ======================================================================
-inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat) {
+constexpr inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
-  return neq * neq                 // jacobian
-         + 4 * neq                 // dx, residual, and sol_scratch
-         + 2 * nmat                // all the nmat sized arrays in base
-         + 3 * nmat                // all the nmat sized arrays in fixedP
-         + MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * nmat  // all the nmat sized arrays in base
+         + 3 * nmat; // all the nmat sized arrays in fixedP
 }
-inline size_t PTESolverFixedPRequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverFixedPRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverFixedPRequiredScratch(nmat) * sizeof(Real);
 }
 
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
-class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::InitBase;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::AssignIncrement;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::nmat;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::neq;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::ResidualNorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::eos;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::temp;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::press;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::uscale;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::MatIndex;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::TryIdealPTE;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::jacobian;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::residual;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::dx;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::u;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rhobar;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Cache;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Tnorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::params_;
+class PTESolverFixedP
+    : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer> {
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::InitBase;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::AssignIncrement;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::nmat;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::neq;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::ResidualNorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::eos;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::temp;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::press;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::uscale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::MatIndex;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::TryIdealPTE;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::jacobian;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::residual;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::dx;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::u;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rhobar;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Cache;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
@@ -1283,24 +1293,25 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
   PORTABLE_INLINE_FUNCTION
   PTESolverFixedP(const std::size_t nmat, EOS_t &&eos, const Real vfrac_tot, const Real P,
                   Real_t &&rho, Real_t &&vfrac, Real_t &&sie, Real_t &&temp,
-                  CReal_t &&press, Lambda_t &&lambda, Real *scratch,
+                  CReal_t &&press, Lambda_t &lambda, Real *scratch,
                   const MixParams &params = MixParams())
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, nmat + 1, eos, vfrac_tot,
-                                                         1.0, rho, vfrac, sie, temp,
-                                                         press, scratch, 0.0, params) {
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
+            nmat, nmat + 1, eos, vfrac_tot, 1.0, rho, vfrac, sie, temp, press, lambda,
+            scratch, 0.0, params) {
     dpdv = AssignIncrement(scratch, nmat);
     dpdT = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     Pequil = P;
-    // JMM: Copy lambda data into cache. Since the cache uses
-    // pointers, it must be done this way.
-    for (std::size_t m = 0; m < nmat; ++m) {
-      if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (int l = 0; l < eos[m].nlambda(); ++l) {
-          Cache[m][l] = lambda[m][l];
-        }
-      }
-    }
+  }
+
+  static inline std::string MethodType() { return std::string("PTESolverFixedP"); }
+
+  // Create a static member function bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverFixedPRequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverFixedPRequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1320,7 +1331,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     for (std::size_t m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
-      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, Cache[m]);
+      sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, lambda[m]);
       uscale += sie[m] * rho[m];
     }
 
@@ -1328,7 +1339,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
     for (std::size_t m = 0; m < nmat; ++m) {
       u[m] = robust::ratio(sie[m] * rhobar[m], uscale);
       press[m] = robust::ratio(
-          eos[m].PressureFromDensityTemperature(rho[m], Tguess, Cache[m]), uscale);
+          eos[m].PressureFromDensityTemperature(rho[m], Tguess, lambda[m]), uscale);
     }
     Residual();
     // Set the current guess for the equilibrium temperature.  Note that this is already
@@ -1379,7 +1390,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       Real e_pert{};
       p_pert =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
-                                                       e_pert, Cache[m], true),
+                                                       e_pert, lambda[m], true),
                         uscale);
       dpdv[m] = robust::ratio((p_pert - press[m]), dv);
       //////////////////////////////
@@ -1389,7 +1400,7 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 
       p_pert = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m],
                                                             Tnorm * (Tequil + dT), e_pert,
-                                                            Cache[m], true),
+                                                            lambda[m], true),
                              uscale);
       dpdT[m] = robust::ratio((p_pert - press[m]), dT);
     }
@@ -1459,9 +1470,9 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
       vfrac[m] = vtemp[m] + scale * dx[m];
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
-                             rho[m], Tnorm * Tequil, Cache[m]);
+                             rho[m], Tnorm * Tequil, lambda[m]);
       press[m] = robust::ratio(
-          eos[m].PressureFromDensityTemperature(rho[m], Tnorm * Tequil, Cache[m]),
+          eos[m].PressureFromDensityTemperature(rho[m], Tnorm * Tequil, lambda[m]),
           uscale);
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
@@ -1479,45 +1490,46 @@ class PTESolverFixedP : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> 
 // ======================================================================
 // RhoU Solver
 // ======================================================================
-inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat) {
+constexpr inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat) {
   std::size_t neq = 2 * nmat;
-  return neq * neq                 // jacobian
-         + 4 * neq                 // dx, residual, and sol_scratch
-         + 8 * nmat                // all the nmat sized arrays
-         + MAX_NUM_LAMBDAS * nmat; // the cache
+  return neq * neq   // jacobian
+         + 4 * neq   // dx, residual, and sol_scratch
+         + 8 * nmat; // all the nmat sized arrays
 }
-inline size_t PTESolverRhoURequiredScratchInBytes(const std::size_t nmat) {
+constexpr inline size_t PTESolverRhoURequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverRhoURequiredScratch(nmat) * sizeof(Real);
 }
 
 template <typename EOSIndexer, typename RealIndexer, typename LambdaIndexer>
-class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::InitBase;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::AssignIncrement;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::nmat;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::neq;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::ResidualNorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::eos;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::vfrac;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::sie;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::temp;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::press;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rho_total;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::uscale;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::utotal_scale;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::TryIdealPTE;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::MatIndex;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::jacobian;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::residual;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::dx;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::u;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::rhobar;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Cache;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::Tnorm;
-  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer>::params_;
+class PTESolverRhoU
+    : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer> {
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::InitBase;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::AssignIncrement;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::nmat;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::neq;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::ResidualNorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::eos;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::temp;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::press;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::uscale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::utotal_scale;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::TryIdealPTE;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::MatIndex;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::jacobian;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::residual;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::dx;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::u;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rhobar;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Cache;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::Tnorm;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::params_;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::lambda;
 
  public:
   // template the ctor to get type deduction/universal references prior to c++17
@@ -1527,24 +1539,25 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
                 const Real sie_tot, Real_t &&rho, Real_t &&vfrac, Real_t &&sie,
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
                 const Real Tnorm = 0.0, const MixParams &params = MixParams())
-      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer>(nmat, 2 * nmat, eos, vfrac_tot,
-                                                         sie_tot, rho, vfrac, sie, temp,
-                                                         press, scratch, Tnorm, params) {
+      : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
+            nmat, 2 * nmat, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+            scratch, Tnorm, params) {
     dpdv = AssignIncrement(scratch, nmat);
     dtdv = AssignIncrement(scratch, nmat);
     dpde = AssignIncrement(scratch, nmat);
     dtde = AssignIncrement(scratch, nmat);
     vtemp = AssignIncrement(scratch, nmat);
     utemp = AssignIncrement(scratch, nmat);
-    // JMM: Copy lambda data into cache. Since the cache uses
-    // pointers, it must be done this way.
-    for (std::size_t m = 0; m < nmat; ++m) {
-      if (!variadic_utils::is_nullptr(lambda[m])) {
-        for (int l = 0; l < eos[m].nlambda(); ++l) {
-          Cache[m][l] = lambda[m][l];
-        }
-      }
-    }
+  }
+
+  static inline std::string MethodType() { return std::string("PTESolverRhoU"); }
+
+  // Create a static member function bound to the class for ease of use
+  constexpr static inline int RequiredScratch(const std::size_t nmat) {
+    return PTESolverRhoURequiredScratch(nmat);
+  }
+  constexpr static inline size_t RequiredScratchInBytes(const std::size_t nmat) {
+    return PTESolverRhoURequiredScratchInBytes(nmat);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1608,10 +1621,11 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
 
       Real p_pert;
       Real t_pert = robust::ratio(
-          eos[m].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], Cache[m]), Tnorm);
+          eos[m].TemperatureFromDensityInternalEnergy(rho_pert, sie[m], lambda[m]),
+          Tnorm);
       p_pert =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * t_pert,
-                                                       sie[m], Cache[m], false),
+                                                       sie[m], lambda[m], false),
                         uscale);
       dpdv[m] = robust::ratio(p_pert - press[m], dv);
       dtdv[m] = robust::ratio(t_pert - temp[m], dv);
@@ -1622,11 +1636,11 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       Real e_pert = robust::ratio(u[m] + de, rhobar[m]);
 
       t_pert = robust::ratio(
-          eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert, Cache[m]),
+          eos[m].TemperatureFromDensityInternalEnergy(rho[m], uscale * e_pert, lambda[m]),
           Tnorm);
       p_pert =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * t_pert,
-                                                       uscale * e_pert, Cache[m], false),
+                                                       uscale * e_pert, lambda[m], false),
                         uscale);
       dpde[m] = robust::ratio(p_pert - press[m], de);
       dtde[m] = robust::ratio(t_pert - temp[m], de);
@@ -1715,10 +1729,10 @@ class PTESolverRhoU : public mix_impl::PTESolverBase<EOSIndexer, RealIndexer> {
       u[m] = utemp[m] + scale * dx[nmat + m];
       sie[m] = uscale * robust::ratio(u[m], rhobar[m]);
       temp[m] = robust::ratio(
-          eos[m].TemperatureFromDensityInternalEnergy(rho[m], sie[m], Cache[m]), Tnorm);
+          eos[m].TemperatureFromDensityInternalEnergy(rho[m], sie[m], lambda[m]), Tnorm);
       press[m] =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * temp[m],
-                                                       sie[m], Cache[m], false),
+                                                       sie[m], lambda[m], false),
                         uscale);
     }
     Residual();

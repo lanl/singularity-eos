@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------#
-# © 2021-2024. Triad National Security, LLC. All rights reserved.  This program
+# © 2021-2025. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -24,7 +24,7 @@ endif()
 # declare the project name
 project(
   singularity-eos
-  VERSION 1.9.1
+  VERSION 1.9.2
   LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -79,8 +79,11 @@ cmake_dependent_option(
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5;SINGULARITY_USE_EOSPAC"
   OFF)
 cmake_dependent_option(
+  SINGULARITY_USE_STELLAR_COLLAPSE "Use the stellar collapse equation of state" OFF
+   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+cmake_dependent_option(
   SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER "Compile stellarcollapse2spiner" ON
-  "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+  "SINGULARITY_USE_STELLAR_COLLAPSE" OFF)
 cmake_dependent_option(
   SINGULARITY_USE_HELMHOLTZ "Include Helmholtz equation of state" OFF
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
@@ -100,7 +103,7 @@ cmake_dependent_option(
   "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_SESAME2SPINER" OFF)
 cmake_dependent_option(
   SINGULARITY_TEST_STELLAR_COLLAPSE "Test stellar collapse table readers" ON
-  "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER" OFF)
+  "SINGULARITY_USE_STELLAR_COLLAPSE" OFF)
 cmake_dependent_option(SINGULARITY_TEST_PYTHON "Test the Python bindings" ON
                        "SINGULARITY_BUILD_TESTS;SINGULARITY_BUILD_PYTHON" OFF)
 cmake_dependent_option(
@@ -187,6 +190,9 @@ add_library(singularity-eos_Interface INTERFACE)
 add_library(singularity-eos::singularity-eos_Interface ALIAS singularity-eos_Interface)
 target_link_libraries(singularity-eos_Interface INTERFACE singularity-eos_Common)
 target_link_libraries(singularity-eos INTERFACE singularity-eos_Interface)
+
+# ld has problems with Clang's libomp.so, use ldd instead
+target_link_options(singularity-eos_Interface INTERFACE $<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>)
 
 # ------------------------------------------------------------------------------#
 # Compiler & language setup
@@ -301,6 +307,10 @@ if(SINGULARITY_BUILD_SESAME2SPINER)
   add_subdirectory(sesame2spiner)
 endif()
 
+if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+  add_subdirectory(stellarcollapse2spiner)
+endif()
+
 # Define the full version as a string macro
 target_compile_definitions(singularity-eos_Interface INTERFACE
     SINGULARITY_VERSION=\"${PROJECT_VERSION}\"
@@ -338,6 +348,9 @@ if(SINGULARITY_BUILD_CLOSURE)
 endif()
 if(SINGULARITY_USE_HELMHOLTZ)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_HELMHOLTZ)
+endif()
+if(SINGULARITY_USE_STELLAR_COLLAPSE)
+  target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_STELLAR_COLLAPSE)
 endif()
 if (SINGULARITY_USE_V_AND_V_EOS)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_USE_V_AND_V_EOS)

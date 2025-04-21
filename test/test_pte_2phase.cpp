@@ -28,8 +28,8 @@
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
-#include <longtest_pte_2phase.hpp>
-#include <test_pte_2phase.hpp>
+#include <pte_longtest_2phaseVinetSn.hpp>
+#include <pte_test_2phaseVinetSn.hpp>
 
 using namespace pte_longtest_2phase;
 using singularity::PTESolverRhoT;
@@ -162,10 +162,7 @@ int main(int argc, char *argv[]) {
 
     portableFor(
         "PTE!", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
-          Real *lambda[NMAT];
-          for (int i = 0; i < NMAT; i++) {
-            lambda[i] = nullptr;
-          }
+          singularity::NullIndexer lambda;
 
           Indexer2D<decltype(rho_d)> rho(t, rho_d);
           Indexer2D<decltype(vfrac_d)> vfrac(t, vfrac_d);
