@@ -18,7 +18,9 @@
 using EOS = singularity::Variant<singularity::Vinet>;
 
 template <typename T>
-inline void set_eos(const int n, T *eos) {
+inline void set_eos(const int n, 
+		const std::vector<int> &nphases,
+		T *eos) {
 
   int numphases = 2;
 
@@ -35,10 +37,8 @@ inline void set_eos(const int n, T *eos) {
   alleos[0] = Snbeta.GetOnDevice();
   alleos[1] = Sngamma.GetOnDevice();
 
-  int phases[n] = {0, 1};
-
   for (int i = 0; i < n; i++) {
-    eos[i] = alleos[phases[i]];
+    eos[i] = alleos[nphases[i]];
   }
 
   return;

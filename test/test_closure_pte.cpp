@@ -128,12 +128,8 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   Real *pte_u_out_d = (Real *)PORTABLE_MALLOC(real_bytes);
   portableFor(
       "Device execution of PTE Test", 0, 1, PORTABLE_LAMBDA(int i) {
-<<<<<<< HEAD
-        PTESolver_t<decltype(v_EOS), Real *, Real **> method(
-=======
         CacheAccessor lambdas(lambda_memory);
         PTESolver_t<decltype(v_EOS), Real *, decltype(lambdas)> method(
->>>>>>> main
             num_pte, v_EOS, vfrac_sum, sie_bulk, v_densities, v_vol_frac, v_sies,
             v_temperatures, v_pressures, lambdas, scratch);
         auto status = PTESolver(method);
@@ -212,11 +208,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
                                           davis_p_eos.GetOnDevice()};
 
       THEN("The PTE Rho T solver should converge") {
-<<<<<<< HEAD
-        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
-=======
         EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_arr), EOS>(num_pte, eos_arr);
->>>>>>> main
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state<PTESolverRhoT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverRhoTRequiredScratch, mass_frac,
@@ -234,11 +226,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
         PORTABLE_FREE(v_EOS);
       }
       THEN("The PTE P T solver should converge") {
-<<<<<<< HEAD
-        EOS *v_EOS = copy_eos_arr_to_device(num_pte, eos_arr);
-=======
         EOS *v_EOS = copy_eos_arr_to_device<decltype(eos_arr), EOS>(num_pte, eos_arr);
->>>>>>> main
         Real u_bulk_out = std::numeric_limits<Real>::max();
         const bool pte_converged = run_PTE_from_state<PTESolverPT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverPTRequiredScratch, mass_frac,

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -28,12 +28,17 @@
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
-#include <pte_test_5phaseSesameSn.hpp>
+//#include <pte_test_3phaseSesameSn.hpp>
+#include <pte_test_2phaseVinetSn.hpp>
 
-using DataBox = Spiner::DataBox<Real>;
+//using namespace pte_test_3phase;
+using namespace pte_longtest_2phase;
+//using namespace pte_test_2phase;
+
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
-using EOS = singularity::Variant<singularity::EOSPAC>;
+
+using DataBox = Spiner::DataBox<Real>;
 
 int main(int argc, char *argv[]) {
 
@@ -53,12 +58,12 @@ int main(int argc, char *argv[]) {
     PortableMDArray<EOS> eos_v(eos_vec.data(), NMAT);
 #endif
 
-    //    set_eos(NMAT,PHASES,eos_hv.data());
-    set_eos(NMAT, eos_hv.data());
+    set_eos(NMAT, PHASES, eos_hv.data());
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(eos_v, eos_hv);
 #endif
+
     using EOSAccessor = LinearIndexer<decltype(eos_v)>;
     EOSAccessor eos(eos_v);
 
@@ -149,16 +154,10 @@ int main(int argc, char *argv[]) {
     std::cout << "The trials have input set to: " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
-      std::cout << "Trial number: " << n << std::endl;
-      std::cout << "Total Specific Internal energy: \t\t\t" << in_sie_tot[n] << std::endl;
-      std::cout << "Total density: \t\t\t\t\t\t" << in_rho_tot[n] << std::endl;
-      std::cout << "Mass fractions: beta, gamma, hcp: \t\t\t" << in_lambda[0][n] << ", "
-                << in_lambda[1][n] << ", " << in_lambda[2][n] << std::endl;
-      std::cout << "Assuming volume fractions: beta, gamma, hcp: \t\t" << vfrac_hm(n, 0)
-                << ", " << vfrac_hm(n, 1) << ", " << vfrac_hm(n, 2) << std::endl;
-      std::cout << "gives starting phase densities: beta, gamma, hcp: \t" << rho_hm(n, 0)
-                << ", " << rho_hm(n, 1) << ", " << rho_hm(n, 2) << std::endl
-                << std::endl;
+      Indexer2D<decltype(rho_hm)> r(n, rho_hm);
+      Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
+      Indexer2D<decltype(sie_hm)> e(n, sie_hm);
+      printinput(n, r, vf);
     }
 
     portableFor(
@@ -219,32 +218,14 @@ int main(int argc, char *argv[]) {
     std::cout << "Results are: " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
-      std::cout << "Trial number: " << n << std::endl;
-      std::cout << "Total Specific Internal energy: \t"
-                << sie_hm(n, 0) * in_lambda[0][n] + sie_hm(n, 1) * in_lambda[1][n] +
-                       sie_hm(n, 2) * in_lambda[2][n]
-                << ", (" << in_sie_tot[n] << ")" << std::endl;
-      std::cout << "Total density: \t\t\t\t"
-                << 1.0 / (1.0 / rho_hm(n, 0) * in_lambda[0][n] +
-                          1.0 / rho_hm(n, 1) * in_lambda[1][n] +
-                          1.0 / rho_hm(n, 2) * in_lambda[2][n])
-                << ", (" << in_rho_tot[n] << ")" << std::endl;
-      std::cout << "Volume fractions: beta, gamma, hcp: \t" << vfrac_hm(n, 0) << ", "
-                << vfrac_hm(n, 1) << ", " << vfrac_hm(n, 2) << std::endl;
-      std::cout << "Density: beta, gamma, hcp: \t\t" << rho_hm(n, 0) << ", "
-                << rho_hm(n, 1) << ", " << rho_hm(n, 2) << ", (" << out_rho0[n] << ", "
-                << out_rho1[n] << ", " << out_rho2[n] << ")" << std::endl;
-      std::cout << "Pressure: beta, gamma, hcp: \t\t" << press_hm(n, 0) << ", "
-                << press_hm(n, 1) << ", " << press_hm(n, 2) << ", (" << out_press[n]
-                << ")" << std::endl;
-      std::cout << "Temperature: beta, gamma, hcp: \t\t" << temp_hm(n, 0) << ", "
-                << temp_hm(n, 1) << ", " << temp_hm(n, 2) << ", (" << out_temp[n] << ")"
-                << std::endl;
-      std::cout << "Internal energy: beta, gamma, hcp: \t" << sie_hm(n, 0) << ", "
-                << sie_hm(n, 1) << ", " << sie_hm(n, 2) << ", (" << out_sie0[n] << ", "
-                << out_sie1[n] << ", " << out_sie2[n] << ")" << std::endl
-                << std::endl;
+	  Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
+          Indexer2D<decltype(vfrac_hm)> vfrac(n, vfrac_hm);
+          Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
+          Indexer2D<decltype(temp_hm)> temp(n, temp_hm);
+          Indexer2D<decltype(press_hm)> press(n, press_hm);
+	  printresults(n, rho, vfrac, sie, press, temp);
     }
+
 
     std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess
               << std::endl;

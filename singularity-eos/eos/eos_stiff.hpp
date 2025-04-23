@@ -166,6 +166,7 @@ class StiffGas : public EosBase<StiffGas> {
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(StiffGas)
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Stiff Gas Parameters:\nGamma = %g\nCv    = %g\nPinf  = %g\nq     = "

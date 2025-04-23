@@ -19,7 +19,7 @@ using EOS = singularity::Variant<singularity::EOSPAC>;
 
 template <typename T>
 inline void set_eos(const int n,
-                    // const int n, const std::array<std::size_t, sizeof(n)> &phases,
+                    const std::vector<int> &nphases,
                     T *eos) {
 
   int sl = symlink("/usr/projects/data/eos/eos-developmental/Sn2162/v01/sn2162-v01.bin",
@@ -49,10 +49,8 @@ inline void set_eos(const int n,
   alleos[3] = Snhcp.GetOnDevice();
   alleos[4] = Snliquid.GetOnDevice();
 
-  int phases[n] = {0, 1, 3};
-
   for (int i = 0; i < n; i++) {
-    eos[i] = alleos[phases[i]];
+    eos[i] = alleos[nphases[i]];
   }
 
   return;

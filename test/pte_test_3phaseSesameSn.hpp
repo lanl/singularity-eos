@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef _SINGULARITY_EOS_TEST_TEST_3PHASE_
-#define _SINGULARITY_EOS_TEST_TEST_3PHASE_
+#ifndef _SINGULARITY_EOS_TEST_PTE_TEST_3PHASESESAMESN_
+#define _SINGULARITY_EOS_TEST_PTE_TEST_3PHASESESAMESN_
 
 #include <stdlib.h>
 
@@ -34,8 +34,10 @@
 
 #include <material_5phaseSesameSn.hpp>
 
+namespace pte_test_3phase {
+
 constexpr int NMAT = 3;
-constexpr int PHASES[NMAT] = {0, 1, 3};
+std::vector<int> PHASES = {0, 1, 3};
 
 constexpr int NTRIAL = 5;
 constexpr int NPTS = NTRIAL * NMAT;
@@ -68,41 +70,9 @@ constexpr Real out_sie1[NTRIAL] = {1.93716882e09, 1.93864981e09, 1.93994981e09,
 constexpr Real out_sie2[NTRIAL] = {2.01473728e09, 2.01621655e09, 2.01751522e09,
                                    2.01840528e09, 2.01875845e09};
 
-using singularity::EOSPAC;
-using singularity::Variant;
-using EOS = Variant<EOSPAC>;
-
-template <typename T>
-inline void set_eos(T *eos) {
-
-  int sl = symlink("/usr/projects/data/eos/eos-developmental/Sn2162/v01/sn2162-v01.bin",
-                   "sesameu");
-
-  int SnbetaID = 2102;
-  int SngammaID = 2103;
-  // int SndeltaID = 2104;
-  int SnhcpID = 2105;
-  // int SnliquidID = 2106;
-
-  // bool invert_at_setup = true;
-
-  T Snbeta = singularity::EOSPAC(SnbetaID);
-  T Sngamma = singularity::EOSPAC(SngammaID);
-  //  EOS Sndelta = singularity::EOSPAC(SndeltaID);
-  T Snhcp = singularity::EOSPAC(SnhcpID);
-  //  EOS Snliquid = singularity::EOSPAC(SnliquidID);
-
-  eos[0] = Snbeta.GetOnDevice();
-  eos[1] = Sngamma.GetOnDevice();
-  //  eos[x] = Sndelta.GetOnDevice();
-  eos[2] = Snhcp.GetOnDevice();
-  //  eos[x] = Snliquid.GetOnDevice();
-  return;
-}
-
-template <typename RealIndexer, typename EOSIndexer>
-inline void set_trial_3state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
-                             RealIndexer &&sie, EOSIndexer &&eos) {
+template <typename RealIndexer>
+inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
+                             RealIndexer &&sie) {
 
   Real vsum = 0.;
   for (int i = 0; i < NMAT; i++) {
@@ -119,4 +89,50 @@ inline void set_trial_3state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
   return;
 }
 
-#endif // _SINGULARITY_EOS_TEST_TEST_PTE_3PHASE_
+template<typename RealIndexer>
+inline void printinput(int n, RealIndexer &&rho, RealIndexer &&vfrac){
+      std::cout << "Trial number: " << n << std::endl;
+      std::cout << "Total Specific Internal energy: \t\t\t" << in_sie_tot[n] << std::endl;
+      std::cout << "Total density: \t\t\t\t\t" << in_rho_tot[n] << std::endl;
+      std::cout << "Mass fractions: beta, gamma, hcp: \t\t\t" << in_lambda[0][n] << ", "
+                << in_lambda[1][n] << ", " << in_lambda[2][n] << std::endl;
+      std::cout << "Assuming volume fractions: beta, gamma, hcp: \t" << vfrac[0]
+                << ", " << vfrac[1] << ", " << vfrac[2] << std::endl;
+      std::cout << "gives starting phase densities: beta, gamma, hcp: \t" << rho[0]
+                << ", " << rho[1] << ", " << rho[2] << std::endl
+                << std::endl;
+}
+
+template<typename RealIndexer>
+inline void printresults(int n, RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie, RealIndexer &&press, RealIndexer &&temp){
+      std::cout << "Trial number: " << n << std::endl;
+      std::cout << "Total Specific Internal energy: \t"
+                << sie[0] * in_lambda[0][n] + sie[1] * in_lambda[1][n] +
+                       sie[2] * in_lambda[2][n]
+                << ", (" << in_sie_tot[n] << ")" << std::endl;
+      std::cout << "Total density: \t\t\t"
+                << 1.0 / (1.0 / rho[0] * in_lambda[0][n] +
+                          1.0 / rho[1] * in_lambda[1][n] +
+                          1.0 / rho[2] * in_lambda[2][n])
+                << ", (" << in_rho_tot[n] << ")" << std::endl;
+      std::cout << "Volume fractions: beta, gamma, hcp: " << vfrac[0] << ", "
+                << vfrac[1] << ", " << vfrac[2] << std::endl;
+      std::cout << "Density: beta, gamma, hcp: \t\t" << rho[0] << ", "
+                << rho[1] << ", " << rho[2] << ", (" << out_rho0[n] << ", "
+                << out_rho1[n] << ", " << out_rho2[n] << ")" << std::endl;
+      std::cout << "Pressure: beta, gamma, hcp: \t" << press[0] << ", "
+                << press[1] << ", " << press[2] << ", (" << out_press[n]
+                << ")" << std::endl;
+      std::cout << "Temperature: beta, gamma, hcp: \t" << temp[0] << ", "
+                << temp[1] << ", " << temp[2] << ", (" << out_temp[n] << ")"
+                << std::endl;
+      std::cout << "Internal energy: beta, gamma, hcp: \t" << sie[0] << ", "
+                << sie[1] << ", " << sie[2] << ", (" << out_sie0[n] << ", "
+                << out_sie1[n] << ", " << out_sie2[n] << ")" << std::endl
+                << std::endl;
+
+}
+
+} //end namespace pte_test_3phase 
+
+#endif // _SINGULARITY_EOS_TEST_PTE_TEST_3PHASESESAMESN_
