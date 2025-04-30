@@ -38,6 +38,7 @@ Date: 4/7/2025
 - [[PR491]](https://github.com/lanl/singularity-eos/pull/491) Fixed spackage logic to point at correct spiner version for piecewise grids
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR499]](https://github.com/lanl/singularity-eos/pull/499) Hide binutils behind cmake debug build
 - [[PR475]](https://github.com/lanl/singularity-eos/pull/475) Shrink the default variant. Notably moved Stiff Gas behind a flag.
 - [[PR487]](https://github.com/lanl/singularity-eos/pull/487) Added static member functions to closures for scratch size interrogation
 
