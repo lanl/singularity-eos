@@ -149,7 +149,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
         ),
         when="+rocm",
     )
-    depends_on("binutils@:2.39,2.42:+ld")
+    depends_on("binutils@:2.39,2.42:+ld", when="build_type=Debug")
 
 
     #TODO: do we need kokkos,kokkoskernels the exact same version?
