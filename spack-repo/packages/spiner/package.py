@@ -54,7 +54,7 @@ class Spiner(CMakePackage):
 
     depends_on("cmake@3.12:", when="@:1.5.1")
     depends_on("cmake@3.19:", when="@1.6.0:")
-    depends_on("catch2@3.0.1:", when="@main +test")
+    depends_on("catch2@3.7.1:", when="@1.6.3: +test")
     depends_on("catch2@2.13.4:2.13.9", when="@:1.6.2 +test")
     depends_on("ports-of-call@1.2.0:", when="@:1.5.1")
     depends_on("ports-of-call@1.5.1:", when="@1.6.0:")
