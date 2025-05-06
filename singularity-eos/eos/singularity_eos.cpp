@@ -386,6 +386,18 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id,
 }
 #endif // SINGULARITY_USE_EOSPAC
 
+int get_sg_EntropyFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
+                                            const double *sies, double *entropies,
+                                            const int len, const int stride = -1,
+                                            double *lambda_data = nullptr) {
+  if (stride != -1 && lambda_data != nullptr) {
+    lambdaIndexer2D idx(stride, lambda_data);
+    eos[matindex].EntropyFromDensityInternalEnergy(rhos, sies, entropies, len, idx);
+  } else
+    eos[matindex].EntropyFromDensityInternalEnergy(rhos, sies, entropies, len);
+
+  return 0;
+}
 int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
                                              const double *sies, double *pressures,
                                              const int len, const int stride = -1,

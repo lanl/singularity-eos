@@ -93,6 +93,11 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id, const TableSplit 
                    double *const vals);
 #endif // SINGULARITY_USE_EOSPAC
 
+int get_sg_EntropyFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
+                                            const double *sies, double *entropies,
+                                            const int len, const int stride,
+                                            double *lambda_data);
+
 int get_sg_PressureFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,
                                              const double *sies, double *pressures,
                                              const int len, const int stride,

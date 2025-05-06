@@ -35,7 +35,7 @@ index 2364c7360..7877e0a30 100644
 +  [[noreturn]] V_GPU_FUNCTION inline void throw_bad_variant_access() {
 +#if defined(MPARK_EXCEPTIONS) && !defined(__CUDACC__) && !defined(__HIPCC__)
      throw bad_variant_access{};
-+#elif  defined(__HIP_DEVICE_COMPILE__)
++#elif  defined(__HIP_DEVICE_COMPILE__) || ( defined(__clang__) && defined(__CUDA__) && defined(__CUDA_ARCH__) )
 +    __assert_fail(nullptr, nullptr, 0, nullptr);
  #else
      std::terminate();

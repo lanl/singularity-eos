@@ -186,13 +186,8 @@ class SAP_Polynomial : public EosBase<SAP_Polynomial> {
   // overloads that use the scalar versions declared here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(SAP_Polynomial)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("SAP_Polynomial EOS Parameters:\n");
     printf("    rho0  = %g\n", _rho0);

@@ -431,8 +431,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
                                         std::forward<Transform>(transform));
   }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return t_.nlambda(); }
+  constexpr static inline int nlambda() noexcept { return T::nlambda(); }
   template <typename Indexable>
   static inline constexpr bool NeedsLambda() {
     return T::template NeedsLambda<Indexable>();

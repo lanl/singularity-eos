@@ -91,6 +91,11 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
         REQUIRE(steelEOS_host.MeanAtomicNumber() == eospac.MeanAtomicNumber());
       }
 
+      AND_THEN("We get the correct density and temperature bounds") {
+        REQUIRE(std::abs(steelEOS_host.MinimumTemperature() - 1e-2) <= 1e-12);
+        REQUIRE(std::abs(steelEOS_host.MinimumDensity() - 1e-8) <= 1e-12);
+      }
+
       // TODO: this needs to be a much more rigorous test
       AND_THEN("Quantities can be read from density and temperature") {
         const Real sie_pac = eospac.InternalEnergyFromDensityTemperature(1e0, 1e6);
@@ -241,6 +246,10 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
       AND_THEN("We get the correct mean atomic mass and number") {
         REQUIRE(isClose(steelEOS_host.MeanAtomicMass(), 55.37));
         REQUIRE(isClose(steelEOS_host.MeanAtomicNumber(), 25.80));
+      }
+      AND_THEN("We get the correct density and temperature bounds") {
+        REQUIRE(std::abs(steelEOS_host.MinimumTemperature() - 1e-2) <= 1e-12);
+        REQUIRE(std::abs(steelEOS_host.MinimumDensity() - 1e-8) <= 1e-12);
       }
 
       int nw_ie2{0}, nw_te2{0};

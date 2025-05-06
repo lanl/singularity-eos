@@ -152,13 +152,8 @@ class MGUsup : public EosBase<MGUsup> {
   // overloads that use the scalar versions declared here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(MGUsup)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 0; }
+
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     static constexpr char st[]{"MGUsup Params: "};
     printf("%s rho0:%e T0:%e Cs:%e s:%e\n  G0:%e Cv0:%e E0:%e S0:%e\n", st, _rho0, _T0,

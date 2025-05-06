@@ -192,10 +192,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   Real RhoPmin(const Real temp) const;
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   int matid() const { return matid_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
@@ -218,8 +214,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const { return PMin_; }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return _n_lambda; }
+  constexpr static inline int nlambda() noexcept { return _n_lambda; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     using namespace IndexableTypes;
@@ -471,10 +466,6 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   int matid() const { return matid_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lRhoOffset() const { return lRhoOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
@@ -484,16 +475,16 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rhoMax_; }
   PORTABLE_FORCEINLINE_FUNCTION Real TMin() const {
-    return fromLog_(T_.range(0).min(), lTOffset_);
+    return fromLog_(sie_.range(0).min(), lTOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real TMax() const {
-    return fromLog_(T_.range(0).max(), lTOffset_);
+    return fromLog_(sie_.range(0).max(), lTOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const {
-    return fromLog_(sie_.range(0).min(), lEOffset_);
+    return fromLog_(T_.range(0).min(), lEOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const {
-    return fromLog_(sie_.range(0).max(), lEOffset_);
+    return fromLog_(T_.range(0).max(), lEOffset_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
@@ -506,8 +497,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     return rho_at_pmin_.interpToReal(toLog_(temp, lTOffset_));
   }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return _n_lambda; }
+  constexpr static inline int nlambda() noexcept { return _n_lambda; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     return std::is_same<T, IndexableTypes::LogDensity>::value;

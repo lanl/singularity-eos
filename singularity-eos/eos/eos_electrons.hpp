@@ -192,17 +192,12 @@ class IdealElectrons : public EosBase<IdealElectrons> {
   // here
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(_AZbar)
   SG_ADD_BASE_CLASS_USINGS(IdealElectrons)
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept { return 1; }
+  constexpr static inline int nlambda() noexcept { return 1; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     return std::is_same<T, IndexableTypes::MeanIonizationState>::value;
   }
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Ideal Electrons Parameters:\n");
     _AZbar.PrintParams();

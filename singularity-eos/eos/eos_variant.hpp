@@ -1310,19 +1310,19 @@ class Variant {
   }
 
   PORTABLE_INLINE_FUNCTION
-  unsigned long scratch_size(std::string method, unsigned int nelements) {
+  unsigned long scratch_size(const std::string method, const unsigned int nelements) {
     return mpark::visit(
         [&](const auto &eos) { return eos.scratch_size(method, nelements); }, eos_);
   }
 
   PORTABLE_INLINE_FUNCTION
-  unsigned long max_scratch_size(unsigned int nelements) {
+  unsigned long max_scratch_size(const unsigned int nelements) {
     return mpark::visit([&](const auto &eos) { return eos.max_scratch_size(nelements); },
                         eos_);
   }
 
-  PORTABLE_INLINE_FUNCTION
-  int nlambda() const noexcept {
+  PORTABLE_FORCEINLINE_FUNCTION
+  int nlambda() noexcept {
     return mpark::visit([](const auto &eos) { return eos.nlambda(); }, eos_);
   }
 

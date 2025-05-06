@@ -458,8 +458,7 @@ class Helmholtz : public EosBase<Helmholtz> {
         options_(rad, gas, coul, ion, ele, verbose, newton_raphson) {}
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const { electrons_.CheckParams(); }
-
-  PORTABLE_INLINE_FUNCTION int nlambda() const noexcept { return 3; }
+  constexpr static inline int nlambda() noexcept { return 3; }
   template <typename T>
   static inline constexpr bool NeedsLambda() {
     return std::is_same<T, IndexableTypes::MeanAtomicMass>::value ||
@@ -469,10 +468,6 @@ class Helmholtz : public EosBase<Helmholtz> {
   static constexpr unsigned long PreferredInput() {
     return thermalqs::density | thermalqs::temperature;
   }
-  static inline unsigned long scratch_size(std::string method, unsigned int nelements) {
-    return 0;
-  }
-  static inline unsigned long max_scratch_size(unsigned int nelements) { return 0; }
 
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
     printf("Helmholtz Parameters:\n"

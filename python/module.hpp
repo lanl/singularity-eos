@@ -346,7 +346,7 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
 
     .def("MinimumDensity", &T::MinimumDensity)
     .def("MinimumTemperature", &T::MinimumTemperature)
-    .def_property_readonly("nlambda", &T::nlambda)
+    .def_property_readonly_static("nlambda", [](py::object) { return T::nlambda(); })
     .def_property_readonly_static("PreferredInput", [](py::object) { return T::PreferredInput(); })
     .def("PrintParams", &T::PrintParams)
     .def("DensityEnergyFromPressureTemperature", [](const T & self, const Real press, const Real temp, py::array_t<Real> lambda) {
