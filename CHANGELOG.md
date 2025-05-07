@@ -9,6 +9,7 @@
 - [[PR496]](https://github.com/lanl/singularity-eos/pull/496) Re-enable stellarcollapse2spiner, which was disabled.
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR502]](https://github.com/lanl/singularity-eos/pull/502) Expose split tables to Fortran interface
 
 ### Infrastructure (changes irrelevant to downstream codes)
 
