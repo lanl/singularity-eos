@@ -63,7 +63,7 @@ namespace singularity {
 namespace FastMath {
 
 // TODO(JMM): switch from preprocessor macros to CMake generated C++
-enum LogType { SINGLE = -1, TRUE = 0, NQT1 = 1, NQT2 = 2 };
+enum LogType { SINGLE = -1, DOUBLE = 0, NQT1 = 1, NQT2 = 2 };
 namespace Settings {
 #ifdef SINGULARITY_USE_TRUE_LOG_GRIDDING
 constexpr bool TRUE_LOGS = true;
@@ -91,7 +91,7 @@ constexpr bool NQT_O1 = true;
 constexpr bool NQT_O1 = false;
 #endif // SINGULARITY_NQT_O1
 constexpr LogType log_type = (TRUE_LOGS && FP32)   ? LogType::SINGLE
-                             : (TRUE_LOGS && FP64) ? LogType::TRUE
+                             : (TRUE_LOGS && FP64) ? LogType::DOUBLE
                              : NQT_O1              ? LogType::NQT1
                                                    : LogType::NQT2;
 } // namespace Settings
