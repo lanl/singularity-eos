@@ -272,12 +272,11 @@ Initializes a Helmholtz equation of state model at the specified material index.
 
 .. code-block:: fortran
 
-   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, split, sg_mods_enabled, sg_mods_values) result(err)
+   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, sg_mods_enabled, sg_mods_values) result(err)
      integer(c_int), value, intent(in) :: matindex
      type(sg_eos_ary_t), intent(in)    :: eos
      character(kind=c_char), dimension(*), intent(in) :: filename
      integer(c_int), value, intent(in) :: id
-     integer(c_int), value, intent(in) :: split
      integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_SpinerDependsRhoT_f
@@ -288,18 +287,16 @@ Initializes a tabulated EOS model that depends on density (ρ) and temperature (
 - ``eos``: EOS array
 - ``filename``: Path to the HDF5 file containing the tabulated data
 - ``id``: Material ID in the HDF5 file
-- ``split``: Table split option (Total, ElectronOnly, or IonCold)
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
 
 .. code-block:: fortran
 
-   integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, split, sg_mods_enabled, sg_mods_values) result(err)
+   integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, sg_mods_enabled, sg_mods_values) result(err)
      integer(c_int), value, intent(in) :: matindex
      type(sg_eos_ary_t), intent(in)    :: eos
      character(kind=c_char), dimension(*), intent(in) :: filename
      integer(c_int), value, intent(in) :: id
-     integer(c_int), value, intent(in) :: split
      integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_SpinerDependsRhoSie_f
@@ -310,17 +307,15 @@ Initializes a tabulated EOS model that depends on density (ρ) and specific inte
 - ``eos``: EOS array
 - ``filename``: Path to the HDF5 file containing the tabulated data
 - ``id``: Material ID in the HDF5 file
-- ``split``: Table split option (Total, ElectronOnly, or IonCold)
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
 
 .. code-block:: fortran
 
-   integer function init_sg_eospac_f(matindex, eos, id, split, eospac_opts_values, sg_mods_enabled, sg_mods_values) result(err)
+   integer function init_sg_eospac_f(matindex, eos, id, eospac_opts_values, sg_mods_enabled, sg_mods_values) result(err)
      integer(c_int), value, intent(in) :: matindex
      type(sg_eos_ary_t), intent(in)    :: eos
      integer(c_int), value, intent(in) :: id
-     integer(c_int), value, intent(in) :: split
      real(kind=8), dimension(:), target, intent(in) :: eospac_opts_values
      integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
@@ -331,7 +326,6 @@ Initializes an EOSPAC equation of state model at the specified material index. A
 - ``matindex``: Material index (1-based in Fortran)
 - ``eos``: EOS array
 - ``id``: SESAME material ID
-- ``split``: Table split option (Total, ElectronOnly, or IonCold)
 - ``eospac_opts_values``: Array of EOSPAC-specific options:
 
   - ``eospac_opts_values(1)``: invert_at_setup (0/1)
@@ -579,7 +573,7 @@ This example demonstrates using tabulated EOS models with a density-temperature 
        use singularity_eos
        implicit none
    
-       integer :: nmat, res, mat, ncell, cell_dim, option, split
+       integer :: nmat, res, mat, ncell, cell_dim, option 
        type(sg_eos_ary_t) :: eos
        integer :: matid
        integer, allocatable :: eos_offsets(:), offsets(:)
@@ -607,7 +601,6 @@ This example demonstrates using tabulated EOS models with a density-temperature 
        
        cell_dim = ncell
        option = -3  ! Option flag: -3 means density and temperature as inputs
-       split = 1 ! Use ion subtable
    
        ! Allocate arrays
        allocate(eos_offsets(nmat), offsets(ncell), density(ncell))
@@ -651,7 +644,7 @@ This example demonstrates using tabulated EOS models with a density-temperature 
        ! Initialize material with EOSPAC
        mat = 1
        matid = 9999  ! Example material ID
-       res = init_sg_eospac_f(mat, eos, matid, split, eospac_opts)
+       res = init_sg_eospac_f(mat, eos, matid, eospac_opts)
        if (res /= 0) then
            print *, "Error initializing EOSPAC:", res
            stop
