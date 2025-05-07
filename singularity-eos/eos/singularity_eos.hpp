@@ -15,9 +15,11 @@
 #ifndef _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 #define _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 
+#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 using singularity::EOS;
+using singularity::TableSplit;
 
 #if defined(__cplusplus)
 extern "C" {
@@ -76,17 +78,19 @@ int init_sg_Helmholtz(const int matindex, EOS *eos, const char *filename, const 
 #endif
 
 int init_sg_SpinerDependsRhoT(const int matindex, EOS *eos, const char *filename,
-                              const int id, int const *const enabled, double *const vals);
+                              const int id, const TableSplit split,
+                              int const *const enabled, double *const vals);
 
 int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filename,
-                                const int id, int const *const enabled,
-                                double *const vals);
+                                const int id, const TableSplit split,
+                                int const *const enabled, double *const vals);
 #endif
 
 #ifdef SINGULARITY_USE_EOSPAC
 // capitalize? eospaceos Eospac Eospaceos EOSPAC EOSPACeos?
-int init_sg_eospac(const int matindex, EOS *eos, const int id, double *const eospac_vals,
-                   int const *const enabled, double *const vals);
+int init_sg_eospac(const int matindex, EOS *eos, const int id, const TableSplit split,
+                   double *const eospac_vals, int const *const enabled,
+                   double *const vals);
 #endif // SINGULARITY_USE_EOSPAC
 
 int get_sg_EntropyFromDensityInternalEnergy(int matindex, EOS *eos, const double *rhos,

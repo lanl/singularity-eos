@@ -213,11 +213,11 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_SpinerDependsRhoT(matindex, eos, filename, id, sg_mods_enabled, &
-                                sg_mods_values) &
+      init_sg_SpinerDependsRhoT(matindex, eos, filename, id, split, &
+                                sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_SpinerDependsRhoT')
       import
-      integer(c_int), value, intent(in)      :: matindex, id
+      integer(c_int), value, intent(in)      :: matindex, id, split
       type(c_ptr), value, intent(in)         :: eos
       character(kind=c_char), intent(in)     :: filename(*)
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
@@ -226,11 +226,11 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_SpinerDependsRhoSie(matindex, eos, filename, id, &
+      init_sg_SpinerDependsRhoSie(matindex, eos, filename, id, split, &
                                   sg_mods_enabled, sg_mods_values) &
       bind(C, name='init_sg_SpinerDependsRhoSie')
       import
-      integer(c_int), value, intent(in)      :: matindex, id
+      integer(c_int), value, intent(in)      :: matindex, id, split
       type(c_ptr), value, intent(in)         :: eos
       character(kind=c_char), intent(in)     :: filename(*)
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
@@ -242,11 +242,11 @@ module singularity_eos
 #ifdef SINGULARITY_USE_EOSPAC
   interface
     integer(kind=c_int) function &
-      init_sg_eospac(matindex, eos, id, eospac_opts_values, sg_mods_enabled, &
+      init_sg_eospac(matindex, eos, id, split, eospac_opts_values, sg_mods_enabled, &
                      sg_mods_values) &
       bind(C, name='init_sg_eospac')
       import
-      integer(c_int), value, intent(in) :: matindex, id
+      integer(c_int), value, intent(in) :: matindex, id, split
       type(c_ptr), value, intent(in)    :: eos
       type(c_ptr), value, intent(in)    :: sg_mods_enabled, sg_mods_values
       type(c_ptr), value, intent(in)    :: eospac_opts_values
@@ -659,7 +659,7 @@ contains
 #endif
 ! SINGULARITY_USE_HELMHOLTZ
 
-  integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, &
+  integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, split, &
                                                sg_mods_enabled, &
                                                sg_mods_values) &
     result(err)
@@ -667,43 +667,51 @@ contains
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
     integer(c_int), intent(inout)             :: id
+    integer(c_int), optional, value, intent(in)                        :: split
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
     integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
     real(kind=8), target, dimension(6)        :: sg_mods_values_use
+    integer(c_int)                            :: split_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
+    split_use = 0
     if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
     if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+    if(present(split)) split_use = split
 
     err = init_sg_SpinerDependsRhoT(matindex-1, eos%ptr,&
-                                    trim(filename)//C_NULL_CHAR, id, &
+                                    trim(filename)//C_NULL_CHAR, id, split_use, &
                                     c_loc(sg_mods_enabled_use), &
                                     c_loc(sg_mods_values_use))
   end function init_sg_SpinerDependsRhoT_f
 
-  integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, &
+  integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, split, &
                                                  sg_mods_enabled, &
                                                  sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in)         :: matindex, id
     type(sg_eos_ary_t), intent(in)            :: eos
     character(len=*, kind=c_char), intent(in) :: filename
+    integer(c_int), optional, value, intent(in)                        :: split
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
     ! local vars
     integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
     real(kind=8), target, dimension(6)        :: sg_mods_values_use
+    integer(c_int)                            :: split_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
+    split_use = 0
     if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
     if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+    if(present(split)) split_use = split
 
     err = init_sg_SpinerDependsRhoSie(matindex-1, eos%ptr,&
-                                      trim(filename)//C_NULL_CHAR, id, &
+                                      trim(filename)//C_NULL_CHAR, id, split_use, &
                                       c_loc(sg_mods_enabled_use), &
                                       c_loc(sg_mods_values_use))
   end function init_sg_SpinerDependsRhoSie_f
@@ -711,11 +719,12 @@ contains
 ! SINGULARITY_USE_SPINER_WITH_HDF5
 
 #ifdef SINGULARITY_USE_EOSPAC
-  integer function init_sg_eospac_f(matindex, eos, id, eospac_opts_values, &
+  integer function init_sg_eospac_f(matindex, eos, id, split, eospac_opts_values, &
                                     sg_mods_enabled, sg_mods_values) &
     result(err)
     integer(c_int), value, intent(in) :: matindex, id
     type(sg_eos_ary_t), intent(in)    :: eos
+    integer(c_int), optional, value, intent(in)                        :: split
     real(kind=8),        dimension(:), target, optional, intent(inout) :: eospac_opts_values
     integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
     real(kind=8),        dimension(:), target, optional, intent(inout) :: sg_mods_values
@@ -724,15 +733,18 @@ contains
     integer(kind=c_int), target, dimension(4) :: sg_mods_enabled_use
     real(kind=8), target, dimension(6)        :: sg_mods_values_use
     real(kind=8), target, dimension(6)        :: eospac_opts_values_use
+    integer(c_int)                            :: split_use
 
     sg_mods_enabled_use = 0
     sg_mods_values_use = 0.d0
     eospac_opts_values_use = 0.d0
+    split_use = 0
     if(present(eospac_opts_values)) eospac_opts_values_use = eospac_opts_values
     if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
     if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
+    if(present(split)) split_use = split
 
-    err = init_sg_eospac(matindex-1, eos%ptr, id, c_loc(eospac_opts_values_use), &
+    err = init_sg_eospac(matindex-1, eos%ptr, id, split, c_loc(eospac_opts_values_use), &
                          c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
   end function init_sg_eospac_f
 #endif
