@@ -15,8 +15,8 @@
 #ifndef _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 #define _SINGULARITY_EOS_EOS_SINGULARITY_EOS_HPP_
 
-#include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/eos/eos.hpp>
 
 using singularity::EOS;
 using singularity::TableSplit;

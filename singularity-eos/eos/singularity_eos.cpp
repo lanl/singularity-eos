@@ -325,8 +325,8 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
                                 const int matid, const TableSplit split,
                                 int const *const enabled, double *const vals) {
   assert(matindex >= 0);
-  EOS eosi = SGAPPLYMODSIMPLE(
-      SpinerEOSDependsRhoSie(std::string(filename), matid, split));
+  EOS eosi =
+      SGAPPLYMODSIMPLE(SpinerEOSDependsRhoSie(std::string(filename), matid, split));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
@@ -338,8 +338,8 @@ int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filena
 
 int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filename,
                                 const int matid, const TableSplit split) {
-  return init_sg_SpinerDependsRhoSie(
-      matindex, eos, filename, matid, split, def_en, def_v);
+  return init_sg_SpinerDependsRhoSie(matindex, eos, filename, matid, split, def_en,
+                                     def_v);
 }
 
 int init_sg_SpinerDependsRhoSie(const int matindex, EOS *eos, const char *filename,
@@ -363,25 +363,23 @@ int init_sg_eospac(const int matindex, EOS *eos, const int id, const TableSplit 
   bool linear_interp = eospac_vals[5];
 
   EOS eosi = SGAPPLYMODSIMPLE(
-      EOSPAC(id, split, invert_at_setup = invert_at_setup,
-             insert_data = insert_data, monotonicity = monotonicity,
-             apply_smoothing = apply_smoothing, apply_splitting = apply_splitting,
-             linear_interp = linear_interp));
+      EOSPAC(id, split, invert_at_setup = invert_at_setup, insert_data = insert_data,
+             monotonicity = monotonicity, apply_smoothing = apply_smoothing,
+             apply_splitting = apply_splitting, linear_interp = linear_interp));
   if (enabled[3] == 1) {
     singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
                                            vals[3], vals[4], vals[5]);
   }
   EOS eos_ = SGAPPLYMOD(
-      EOSPAC(id, split, invert_at_setup = invert_at_setup,
-             insert_data = insert_data, monotonicity = monotonicity,
-             apply_smoothing = apply_smoothing, apply_splitting = apply_splitting,
-             linear_interp = linear_interp));
+      EOSPAC(id, split, invert_at_setup = invert_at_setup, insert_data = insert_data,
+             monotonicity = monotonicity, apply_smoothing = apply_smoothing,
+             apply_splitting = apply_splitting, linear_interp = linear_interp));
   eos[matindex] = eos_.GetOnDevice();
   return 0;
 }
 
-int init_sg_eospac(const int matindex, EOS *eos, const int id,
-                   const TableSplit split, double *const eospac_vals) {
+int init_sg_eospac(const int matindex, EOS *eos, const int id, const TableSplit split,
+                   double *const eospac_vals) {
   return init_sg_eospac(matindex, eos, id, split, eospac_vals, def_en, def_v);
 }
 #endif // SINGULARITY_USE_EOSPAC
