@@ -275,6 +275,10 @@ JWL::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real 
   dvdt = robust::ratio(gm1 * cv, bmod);
 }
 
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(JWL, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_EOS_JWL_HPP_
