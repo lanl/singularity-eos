@@ -13,6 +13,7 @@
 - [[PR502]](https://github.com/lanl/singularity-eos/pull/502) Expose split tables to Fortran interface
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR504]](https://github.com/lanl/singularity-eos/pull/504) Add Fortran interface documentation
 
 ### Removed (removing behavior/API/varaibles/...)
 
