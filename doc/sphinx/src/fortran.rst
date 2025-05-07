@@ -580,6 +580,7 @@ This example demonstrates using tabulated EOS models with a density-temperature 
        real(8), allocatable :: press(:), pmax(:), vol(:), spvol(:), sie(:), temp(:)
        real(8), allocatable :: bmod(:), dpde(:), cv(:)
        real(8), allocatable :: density(:)
+       real(8), allocatable :: frac_mass(:,:), frac_vol(:,:), frac_sie(:,:)
        
        ! Grid parameters
        integer :: ndens, ntemp, idx
@@ -606,6 +607,7 @@ This example demonstrates using tabulated EOS models with a density-temperature 
        allocate(eos_offsets(nmat), offsets(ncell), density(ncell))
        allocate(press(ncell), pmax(ncell), vol(ncell), spvol(ncell))
        allocate(sie(ncell), temp(ncell), bmod(ncell), dpde(ncell), cv(ncell))
+       allocate(frac_mass(ncell, nmat), frac_vol(ncell, nmat), frac_sie(ncell, nmat))
    
        ! Initialize arrays
        eos_offsets = 1
@@ -618,6 +620,9 @@ This example demonstrates using tabulated EOS models with a density-temperature 
        bmod = 0.0d0
        dpde = 0.0d0
        cv = 0.0d0
+       frac_mass = 1.0d0
+       frac_vol = 1.0d0
+       frac_sie = 1.0d0
        
        ! Set up density-temperature grid
        idx = 0
@@ -654,7 +659,9 @@ This example demonstrates using tabulated EOS models with a density-temperature 
        ! Note: Temperature is in eV for get_sg_eos_f
        res = get_sg_eos_f(nmat, ncell, cell_dim, option, &
                          eos_offsets, eos, offsets, &
-                         press, pmax, vol, spvol, sie, temp, bmod, dpde, cv)
+                         press, pmax, vol, spvol, sie, &
+                         temp, bmod, dpde, cv, &
+                         frac_mass, frac_vol, frac_sie)
        if (res /= 0) then
            print *, "Error in get_sg_eos_f:", res
            stop
@@ -670,6 +677,7 @@ This example demonstrates using tabulated EOS models with a density-temperature 
        ! Clean up
        deallocate(eos_offsets, offsets, press, pmax, vol, spvol)
        deallocate(sie, temp, bmod, dpde, cv, density)
+       deallocate(frac_mass, frac_vol, frac_sie)
    
        res = finalize_sg_eos_f(nmat, eos)
        if (res /= 0) then
