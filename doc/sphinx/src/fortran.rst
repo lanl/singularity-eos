@@ -32,8 +32,6 @@ The ``sg_eos_ary_t`` type is a wrapper around a C pointer to the underlying EOS 
 Initialization Functions
 -----------------------
 
-The following functions are available for initializing EOS models:
-
 .. code-block:: fortran
 
    integer function init_sg_eos_f(nmat, eos) result(err)
@@ -42,6 +40,11 @@ The following functions are available for initializing EOS models:
    end function init_sg_eos_f
 
 Initializes the EOS array with the specified number of materials.
+
+The following functions are available for initializing EOS models:
+
+Ideal Gas
+^^^^^^^^^
 
 .. code-block:: fortran
 
@@ -63,6 +66,9 @@ Initializes an Ideal Gas EOS model at the specified material index.
 - ``Cv``: Specific heat at constant volume
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
+
+Gruneisen
+^^^^^^^^^
 
 .. code-block:: fortran
 
@@ -93,6 +99,9 @@ Initializes a Gruneisen EOS model at the specified material index.
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
 
+Jones-Wilkins-Lee
+^^^^^^^^^^^^^^^^^
+
 .. code-block:: fortran
 
    integer function init_sg_JWL_f(matindex, eos, A, B, R1, R2, w, rho0, Cv, &
@@ -117,6 +126,9 @@ Initializes a JWL (Jones-Wilkins-Lee) EOS model at the specified material index.
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
 
+Davis Products
+^^^^^^^^^^^^^^
+
 .. code-block:: fortran
 
    integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc, &
@@ -140,6 +152,9 @@ Initializes a Davis Products EOS model at the specified material index.
 - ``Cv``: Specific heat at constant volume
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
+
+Davis Reactants
+^^^^^^^^^^^^^^^
 
 .. code-block:: fortran
 
@@ -171,6 +186,9 @@ Initializes a Davis Reactants EOS model at the specified material index.
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
 
+Noble-Abel
+^^^^^^^^^^
+
 .. code-block:: fortran
 
    integer function init_sg_NobleAbel_f(matindex, eos, gm1, Cv, &
@@ -195,6 +213,9 @@ Initializes a Noble-Abel EOS model at the specified material index.
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
 
+Stiff Gas
+^^^^^^^^^
+
 .. code-block:: fortran
 
    integer function init_sg_StiffGas_f(matindex, eos, gm1, Cv, &
@@ -218,6 +239,9 @@ Initializes a Stiff Gas EOS model at the specified material index.
 - ``qq``: Energy shift parameter
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
+
+SAP Polynomial
+^^^^^^^^^^^^^^
 
 .. code-block:: fortran
 
@@ -245,6 +269,13 @@ Initializes a SAP (Separate Analytic Polynomials) Polynomial EOS model at the sp
 
 Additional initialization functions are available when Singularity-EOS is built with specific options:
 
+Helmholtz
+^^^^^^^^^
+
+.. note::
+
+   Only available when Singularity-eos is built with ``SINGULARITY_USE_HELMHOLTZ`` and ``SINGULARITY_USE_SPINER_WITH_HDF5``.
+
 .. code-block:: fortran
 
    integer function init_sg_Helmholtz_f(matindex, eos, filename, rad, gas, coul, ion, ele, verbose, sg_mods_enabled, sg_mods_values) result(err)
@@ -256,7 +287,7 @@ Additional initialization functions are available when Singularity-EOS is built 
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_Helmholtz_f
 
-Initializes a Helmholtz equation of state model at the specified material index. Available when built with ``SINGULARITY_USE_HELMHOLTZ`` and ``SINGULARITY_USE_SPINER_WITH_HDF5``.
+Initializes a Helmholtz equation of state model at the specified material index.
 
 - ``matindex``: Material index (1-based in Fortran)
 - ``eos``: EOS array
@@ -270,6 +301,13 @@ Initializes a Helmholtz equation of state model at the specified material index.
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
 
+Spiner
+^^^^^^
+
+.. note::
+
+   Only available when Singularity-eos is built with ``SINGULARITY_USE_SPINER_WITH_HDF5``.
+
 .. code-block:: fortran
 
    integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, sg_mods_enabled, sg_mods_values) result(err)
@@ -281,7 +319,7 @@ Initializes a Helmholtz equation of state model at the specified material index.
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_SpinerDependsRhoT_f
 
-Initializes a tabulated EOS model that depends on density (ρ) and temperature (T) using the Spiner interpolation library. Available when built with ``SINGULARITY_USE_SPINER_WITH_HDF5``.
+Initializes a tabulated EOS model that depends on density (ρ) and temperature (T) using the Spiner interpolation library.
 
 - ``matindex``: Material index (1-based in Fortran)
 - ``eos``: EOS array
@@ -301,7 +339,7 @@ Initializes a tabulated EOS model that depends on density (ρ) and temperature (
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_SpinerDependsRhoSie_f
 
-Initializes a tabulated EOS model that depends on density (ρ) and specific internal energy (sie) using the Spiner interpolation library. Available when built with ``SINGULARITY_USE_SPINER_WITH_HDF5``.
+Initializes a tabulated EOS model that depends on density (ρ) and specific internal energy (sie) using the Spiner interpolation library.
 
 - ``matindex``: Material index (1-based in Fortran)
 - ``eos``: EOS array
@@ -309,6 +347,13 @@ Initializes a tabulated EOS model that depends on density (ρ) and specific inte
 - ``id``: Material ID in the HDF5 file
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
+
+EOSPAC
+^^^^^^
+
+.. note::
+
+   Only available when Singularity-eos is built with ``SINGULARITY_USE_EOSPAC``.
 
 .. code-block:: fortran
 
@@ -321,7 +366,7 @@ Initializes a tabulated EOS model that depends on density (ρ) and specific inte
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_eospac_f
 
-Initializes an EOSPAC equation of state model at the specified material index. Available when built with ``SINGULARITY_USE_EOSPAC``.
+Initializes an EOSPAC equation of state model at the specified material index.
 
 - ``matindex``: Material index (1-based in Fortran)
 - ``eos``: EOS array
@@ -366,6 +411,10 @@ Calculates entropy from density and specific internal energy.
 - ``len``: Number of elements to process
 - ``stride``: Optional stride for processing elements
 - ``lambda_data``: Optional array for additional parameters
+
+.. warning::
+
+   Some EOS models do not support Entropy. For more details see :ref:`models <Implemented EOS models>`
 
 .. code-block:: fortran
 
