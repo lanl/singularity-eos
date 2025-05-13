@@ -41,7 +41,7 @@
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 
-// Number of equations of state to use, always 2
+// Number of equations of state to use. For this example, it's 2.
 constexpr std::size_t NEOS = 2;
 // Number of PTE solves to do
 constexpr std::size_t NTRIAL = 1;
