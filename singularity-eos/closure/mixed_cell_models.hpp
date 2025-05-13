@@ -288,7 +288,7 @@ class PTESolverBase {
       for (std::size_t m = 0; m < nmat; ++m) {
         Real sie = eos[m].InternalEnergyFromDensityTemperature(rho[m], T, lambda[m]);
         Real cv = eos[m].SpecificHeatFromDensityTemperature(rho[m], T, lambda[m]);
-        Real usum = rhobar[m] * sie;
+        usum += rhobar[m] * sie;
         dudt += rhobar[m] * cv;
       }
       return T - (usum - utotal_scale * uscale) / dudt;
