@@ -21,6 +21,12 @@ if (SINGULARITY_USE_SPINER_WITH_HDF5)
   add_executable(eos_grid eos_grid.cpp)
   target_link_libraries(eos_grid PRIVATE
     singularity-eos::singularity-eos)
+  add_executable(map_pt_space map_pt_space.cpp)
+  target_link_libraries(map_pt_space PRIVATE
+    singularity-eos::singularity-eos)
+  add_executable(pte_2mat pte_2mat.cpp)
+  target_link_libraries(pte_2mat PRIVATE
+    singularity-eos::singularity-eos)
 endif()
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_SPINER_WITH_HDF5)
