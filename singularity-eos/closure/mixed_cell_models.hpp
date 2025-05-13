@@ -782,7 +782,6 @@ class PTESolverRhoT
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
       temp[m] = Tequil;
-
       press[m] =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tequil,
                                                        sie[m], lambda[m], false),
