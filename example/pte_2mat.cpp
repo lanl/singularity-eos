@@ -50,7 +50,7 @@ constexpr std::size_t NTRIAL = 1;
 // using EOS = singularity::Variant<singularity::SpinerEOSDependsRhoT>;
 using EOS = singularity::SpinerEOSDependsRhoT;
 
-// An LAMBDA contains additional arguments to an EOS, such as cached
+// A LAMBDA contains additional arguments to an EOS, such as cached
 // variables.  It accepts TYPES rather than integers, kind of like a
 // map, as described in `IndexableTypes`. Here we use it and create a
 // pair of these.
