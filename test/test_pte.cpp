@@ -156,6 +156,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
   params.pte_rel_tolerance_p = 1e-22;
   params.pte_abs_tolerance_p = 1e-22;
   params.pte_residual_tolerance = 1.e-22;
+  params.iterate_t_guess = false;
 
   portableReduce(
       "PTE!", 0, NTRIAL,

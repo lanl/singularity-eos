@@ -39,6 +39,7 @@ namespace singularity {
 
 struct MixParams {
   bool verbose = false;
+  bool iterate_t_guess = true;
   Real derivative_eps = 3.0e-6;
   Real pte_rel_tolerance_p = 1.e-6;
   Real pte_rel_tolerance_e = 1.e-6;
@@ -297,7 +298,10 @@ class PTESolverBase {
     const Real Tfactor = 10.0;
     bool rho_fail;
     for (std::size_t i = 0; i < 3; i++) {
-      // Tguess = std::min(params_.temperature_limit, std::max(Tguess, newton_step(Tguess)));
+      if (params_.iterate_t_guess) {
+        Tguess =
+            std::min(params_.temperature_limit, std::max(Tguess, newton_step(Tguess)));
+      }
       SetVfracFromT(Tguess);
       // check to make sure the normalization didn't put us below rho_at_pmin
       rho_fail = false;
