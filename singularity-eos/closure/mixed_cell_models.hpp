@@ -58,12 +58,15 @@ struct MixParams {
   Real temperature_limit = 1.0e15;
   Real default_tguess = 300.;
   Real min_dtde = 1.0e-16;
+  std::size_t pte_small_step_tries = 2;
+  Real pte_small_step_thresh = 1e-16;
 };
 
 struct SolverStatus {
   bool converged = false;
   std::size_t max_niter = 0;
   std::size_t max_line_niter = 0;
+  std::size_t small_step_iters = 0;
   Real residual;
 };
 
@@ -1785,7 +1788,7 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
   const std::size_t pte_max_iter = s.Nmat() * params.pte_max_iter_per_mat;
   const Real residual_tol = s.Nmat() * params.pte_residual_tolerance;
   auto &niter = s.Niter();
-  Real scale_last = 1.0;
+  auto &small_step_iters = status.small_step_iters;
   for (niter = 0; niter < pte_max_iter; ++niter) {
     status.max_niter = std::max(status.max_niter, niter);
 
@@ -1812,14 +1815,14 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     // If scale is very small, we may be iterating around the regime
     // of validity and not making progress. Try to catch this, fail
     // out early, and report this as a failure, so fallbacks can take
-    // over in a host code. We check that this has happened for at
-    // least two iterations, in case we can escape in one.
-    if ((std::abs(scale) < 1e-16) && (std::abs(scale_last) < 1e-16)) {
+    // over in a host code. We check that this has happened for a few
+    // iterations, in case we can escape.
+    if (std::abs(scale) < params.pte_small_step_thresh) small_step_iters++;
+    if (small_step_iters >= params.pte_small_step_tries) {
       // printf("Failing out because scale is too small\n");
       converged = false;
       break;
     }
-    scale_last = scale;
 
     // Line search
     Real gradfdx = -2.0 * scale * err;
