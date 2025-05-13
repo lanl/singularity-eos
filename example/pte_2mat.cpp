@@ -23,7 +23,6 @@
 
 // This library contains portable utilities
 #include <ports-of-call/portability.hpp>
-#include <ports-of-call/portable_errors.hpp>
 
 // This contains logic for indexers
 #include <singularity-eos/base/indexable_types.hpp>
@@ -40,8 +39,7 @@ constexpr std::size_t NEOS = 2;
 constexpr std::size_t NTRIAL = 1;
 
 // Set the EOSs you want to use here.
-// using EOS = singularity::Variant<singularity::SpinerEOSDependsRhoT>;
-using EOS = singularity::SpinerEOSDependsRhoT;
+using EOS = singularity::Variant<singularity::SpinerEOSDependsRhoT>;
 
 // A LAMBDA contains additional arguments to an EOS, such as cached
 // variables.  It accepts TYPES rather than integers, kind of like a
