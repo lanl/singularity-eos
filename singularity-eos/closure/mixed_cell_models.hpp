@@ -275,10 +275,29 @@ class PTESolverBase {
     // check for sanity.  basically checks that the input temperatures weren't garbage
     PORTABLE_REQUIRE(Tguess < params_.temperature_limit,
                      "Very large input temperature or temperature guess");
+
+    // JMM: To get a better guess for temperature such that the
+    // energies add up, we sometimes take one Newton step, and accept
+    // if it makes the temperature larger. Empirically, we find this
+    // avoids local saddle points that the solver can have trouble
+    // navigating.
+    auto newton_step = [&](Real T) {
+      Real dudt = 0;
+      Real usum = 0;
+      for (std::size_t m = 0; m < nmat; ++m) {
+        Real sie = eos[m].InternalEnergyFromDensityTemperature(rho[m], T, lambda[m]);
+        Real cv = eos[m].SpecificHeatFromDensityTemperature(rho[m], T, lambda[m]);
+        Real usum = rhobar[m] * sie;
+        dudt += rhobar[m] * cv;
+      }
+      return T - (usum - utotal_scale * uscale) / dudt;
+    };
+
     // iteratively increase temperature guess until all rho's are above rho_at_pmin
     const Real Tfactor = 10.0;
     bool rho_fail;
     for (std::size_t i = 0; i < 3; i++) {
+      Tguess = std::min(params_.temperature_limit, std::max(Tguess, newton_step(Tguess)));
       SetVfracFromT(Tguess);
       // check to make sure the normalization didn't put us below rho_at_pmin
       rho_fail = false;
@@ -763,6 +782,7 @@ class PTESolverRhoT
       sie[m] = robust::ratio(u[m], rhobar[m]);
       u[m] = robust::ratio(u[m], uscale);
       temp[m] = Tequil;
+
       press[m] =
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tnorm * Tequil,
                                                        sie[m], lambda[m], false),
@@ -1762,6 +1782,7 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
   const std::size_t pte_max_iter = s.Nmat() * params.pte_max_iter_per_mat;
   const Real residual_tol = s.Nmat() * params.pte_residual_tolerance;
   auto &niter = s.Niter();
+  Real scale_last = 1.0;
   for (niter = 0; niter < pte_max_iter; ++niter) {
     status.max_niter = std::max(status.max_niter, niter);
 
@@ -1784,6 +1805,18 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     // possibly scale the update to stay within reasonable bounds
     Real scale = s.ScaleDx();
     PORTABLE_REQUIRE(scale <= 1.0, "PTE Solver is attempting to increase the step size");
+
+    // If scale is very small, we may be iterating around the regime
+    // of validity and not making progress. Try to catch this, fail
+    // out early, and report this as a failure, so fallbacks can take
+    // over in a host code. We check that this has happened for at
+    // least two iterations, in case we can escape in one.
+    if ((std::abs(scale) < 1e-16) && (std::abs(scale_last) < 1e-16)) {
+      // printf("Failing out because scale is too small\n");
+      converged = false;
+      break;
+    }
+    scale_last = scale;
 
     // Line search
     Real gradfdx = -2.0 * scale * err;
