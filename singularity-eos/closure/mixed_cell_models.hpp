@@ -297,7 +297,7 @@ class PTESolverBase {
     const Real Tfactor = 10.0;
     bool rho_fail;
     for (std::size_t i = 0; i < 3; i++) {
-      Tguess = std::min(params_.temperature_limit, std::max(Tguess, newton_step(Tguess)));
+      // Tguess = std::min(params_.temperature_limit, std::max(Tguess, newton_step(Tguess)));
       SetVfracFromT(Tguess);
       // check to make sure the normalization didn't put us below rho_at_pmin
       rho_fail = false;
