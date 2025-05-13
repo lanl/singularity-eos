@@ -144,26 +144,27 @@ int main(int argc, char *argv[]) {
                                                          1e-16, 1e-16, Ts(i));
           if (root_status != RootFinding1D::Status::SUCCESS) {
             printf("# Root finder failed! "
-                   "alpha1 alpha2, rho1, rho2, sie1(rho1,Tguess), sie2(rho2,Tguess) sietot = "
+                   "alpha1 alpha2, rho1, rho2, sie1(rho1,Tguess), sie2(rho2,Tguess) "
+                   "sietot = "
                    "%.14e %.14e %.14e %.14e %.14e %.14e %.14e\n",
                    alpha1, alpha2, rho1, rho2,
                    eos1.InternalEnergyFromDensityTemperature(rho1, Tguess),
-                   eos2.InternalEnergyFromDensityTemperature(rho2, Tguess),
-                   sietot);
+                   eos2.InternalEnergyFromDensityTemperature(rho2, Tguess), sietot);
             Ts(i) = Ps(i, 0) = Ps(i, 1) = -1;
             trajRes(i, 0) = trajRes(i, 1) = trajRes(i, 2) = -1;
           } else {
             // compute the pressures
             Ps(i, 0) = eos1.PressureFromDensityTemperature(rho1, Ts(i));
             Ps(i, 1) = eos2.PressureFromDensityTemperature(rho2, Ts(i));
-            
+
             trajRes(i, 0) = alpha1 + alpha2 - 1.0;
 
-            const Real u1 = rhobar1 * eos1.InternalEnergyFromDensityTemperature(rho1, Ts(i));
-            const Real u2 = rhobar2 * eos2.InternalEnergyFromDensityTemperature(rho2, Ts(i));
+            const Real u1 =
+                rhobar1 * eos1.InternalEnergyFromDensityTemperature(rho1, Ts(i));
+            const Real u2 =
+                rhobar2 * eos2.InternalEnergyFromDensityTemperature(rho2, Ts(i));
             trajRes(i, 1) = singularity::robust::ratio(u1 + u2 - utot, utot);
             trajRes(i, 2) = singularity::robust::ratio(Ps(i, 1) - Ps(i, 0), utot);
-
           }
         });
     // wait for completion
@@ -187,7 +188,7 @@ int main(int argc, char *argv[]) {
 
     // Let's make a T grid
     const Real nT = nvfrac + 1;
-    
+
     RegularGrid1D gTs(Tmin, Tmax_walked, nT);
 
     // Now we can do one more loop where we compute the energy and
@@ -249,7 +250,7 @@ int main(int argc, char *argv[]) {
     for (std::size_t j = 0; j < nT; ++j) {
       for (std::size_t i = 0; i < nvfrac; ++i) {
         Real lvfrac = lvfracs.x(i);
-        Real vfrac = std::pow(10.,lvfrac);
+        Real vfrac = std::pow(10., lvfrac);
         fprintf(file, "%ld %ld %.14e %.14e %.14e %.14e\n", j, i, gTs.x(j), vfrac,
                 residuals_h(j, i, 0), residuals_h(j, i, 1));
       }
@@ -260,9 +261,9 @@ int main(int argc, char *argv[]) {
     printf("# i alpha_1 T P_1 P_2 res_alpha res_sie res_P\n");
     for (std::size_t i = 0; i < nvfrac; ++i) {
       Real lvfrac = lvfracs.x(i);
-      Real vfrac = std::pow(10.,lvfrac);
-      printf("%ld %.14e %.14e %.14e %.14e %.14e %.14e %.14e\n", i, vfrac, Ts_h(i), Ps_h(i, 0),
-             Ps_h(i, 1), trajRes(i, 0), trajRes(i, 1), trajRes(i, 2));
+      Real vfrac = std::pow(10., lvfrac);
+      printf("%ld %.14e %.14e %.14e %.14e %.14e %.14e %.14e\n", i, vfrac, Ts_h(i),
+             Ps_h(i, 0), Ps_h(i, 1), trajRes(i, 0), trajRes(i, 1), trajRes(i, 2));
     }
 
     eos1.Finalize();
