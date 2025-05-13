@@ -154,9 +154,6 @@ int main(int argc, char *argv[]) {
           eos[0] = eos1;
           eos[1] = eos2;
 
-          const Real Tmin = 1;
-          const Real Tmax = 1e10;
-
           // Repeare lambda indexer
           MyLambdaIndexer lambda(plambda);
 
