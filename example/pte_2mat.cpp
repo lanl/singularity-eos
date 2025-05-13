@@ -29,17 +29,10 @@
 #include <singularity-eos/base/indexable_types.hpp>
 // This contains useful tools for preventing things like divide by zero
 #include <singularity-eos/base/robust_utils.hpp>
-// 1D root finding
-#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 // The PTE closures
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 // Needed to import the eos models
 #include <singularity-eos/eos/eos.hpp>
-
-// This library contains the spiner table object, which we will use to
-// store our output
-#include <spiner/databox.hpp>
-#include <spiner/interpolation.hpp>
 
 // Number of equations of state to use. For this example, it's 2.
 constexpr std::size_t NEOS = 2;
