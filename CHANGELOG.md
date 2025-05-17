@@ -5,12 +5,15 @@
 ### Added (new features/APIs/variables/...)
 
 ### Fixed (Repair bugs, etc)
+- [[PR505]](https://github.com/lanl/singularity-eos/pull/505) rename LogType::TRUE to LogType::DOUBLE
 - [[PR495]](https://github.com/lanl/singularity-eos/pull/495) Fix bug related to MinimumTemperature and MinimumDensity in SpinerEOSDependsRhoSie
 - [[PR496]](https://github.com/lanl/singularity-eos/pull/496) Re-enable stellarcollapse2spiner, which was disabled.
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR502]](https://github.com/lanl/singularity-eos/pull/502) Expose split tables to Fortran interface
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR504]](https://github.com/lanl/singularity-eos/pull/504) Add Fortran interface documentation
 
 ### Removed (removing behavior/API/varaibles/...)
 
@@ -38,6 +41,7 @@ Date: 4/7/2025
 - [[PR491]](https://github.com/lanl/singularity-eos/pull/491) Fixed spackage logic to point at correct spiner version for piecewise grids
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR499]](https://github.com/lanl/singularity-eos/pull/499) Hide binutils behind cmake debug build
 - [[PR475]](https://github.com/lanl/singularity-eos/pull/475) Shrink the default variant. Notably moved Stiff Gas behind a flag.
 - [[PR487]](https://github.com/lanl/singularity-eos/pull/487) Added static member functions to closures for scratch size interrogation
 
