@@ -1176,8 +1176,7 @@ class EOSPAC : public EosBase<EOSPAC> {
         {"GruneisenParamFromDensityTemperature", 4},
         {"GruneisenParamFromDensityInternalEnergy", 5},
         {"MinInternalEnergyFromDensity", 1},
-        {"EntropyFromDensityTemperature", 2}
-    };
+        {"EntropyFromDensityTemperature", 2}};
     return nbuffers;
   }
 };
@@ -1209,7 +1208,7 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
                                TableSelect(EOS_St_DT, EOS_Se_DT, EOS_Sic_DT)};
   std::vector<std::string> tableNames = {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT",
                                          "EOS_D_PtT", "EOS_T_DPt", "EOS_Pt_DUt",
-                                         "EOS_Uc_D", "EOS_St_DT"};
+                                         "EOS_Uc_D",  "EOS_St_DT"};
   if (split != TableSplit::Total) {
     auto rt = std::regex("t");
     std::string newstr = (split == TableSplit::ElectronOnly) ? "e" : "ic";

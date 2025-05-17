@@ -54,9 +54,9 @@ using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProdu
                                  DavisReactants, SpinerEOSDependsRhoT>;
 
 //<<<<<<< HEAD
-//template <typename EOSArrT>
-//EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
-  // Assumes that GetOnDevice() has already been called for each EOS in eos_arr
+// template <typename EOSArrT>
+// EOS *copy_eos_arr_to_device(const int num_eos, EOSArrT eos_arr) {
+// Assumes that GetOnDevice() has already been called for each EOS in eos_arr
 //  const size_t EOS_bytes = num_eos * sizeof(EOS);
 //  EOS *v_EOS = (EOS *)PORTABLE_MALLOC(EOS_bytes);
 //  const size_t bytes = num_eos * sizeof(EOS);
@@ -64,9 +64,9 @@ using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProdu
 //  return v_EOS;
 //}
 
-//template <typename EOSArrT>
-//void finalize_eos_arr(EOSArrT eos_arr) {
-  // Call Finalize on each EOS on the host
+// template <typename EOSArrT>
+// void finalize_eos_arr(EOSArrT eos_arr) {
+// Call Finalize on each EOS on the host
 //  for (auto eos : eos_arr) {
 //    eos.Finalize();
 //  }

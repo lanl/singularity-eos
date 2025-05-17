@@ -72,7 +72,7 @@ constexpr Real out_sie2[NTRIAL] = {2.01473728e09, 2.01621655e09, 2.01751522e09,
 
 template <typename RealIndexer>
 inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
-                             RealIndexer &&sie) {
+                            RealIndexer &&sie) {
 
   Real vsum = 0.;
   for (int i = 0; i < NMAT; i++) {
@@ -89,49 +89,47 @@ inline void set_trial_state(int n, RealIndexer &&rho, RealIndexer &&vfrac,
   return;
 }
 
-template<typename RealIndexer>
-inline void printinput(int n, RealIndexer &&rho, RealIndexer &&vfrac){
-      std::cout << "Trial number: " << n << std::endl;
-      std::cout << "Total Specific Internal energy: \t\t\t" << in_sie_tot[n] << std::endl;
-      std::cout << "Total density: \t\t\t\t\t" << in_rho_tot[n] << std::endl;
-      std::cout << "Mass fractions: beta, gamma, hcp: \t\t\t" << in_lambda[0][n] << ", "
-                << in_lambda[1][n] << ", " << in_lambda[2][n] << std::endl;
-      std::cout << "Assuming volume fractions: beta, gamma, hcp: \t" << vfrac[0]
-                << ", " << vfrac[1] << ", " << vfrac[2] << std::endl;
-      std::cout << "gives starting phase densities: beta, gamma, hcp: \t" << rho[0]
-                << ", " << rho[1] << ", " << rho[2] << std::endl
-                << std::endl;
+template <typename RealIndexer>
+inline void printinput(int n, RealIndexer &&rho, RealIndexer &&vfrac) {
+  std::cout << "Trial number: " << n << std::endl;
+  std::cout << "Total Specific Internal energy: \t\t\t" << in_sie_tot[n] << std::endl;
+  std::cout << "Total density: \t\t\t\t\t" << in_rho_tot[n] << std::endl;
+  std::cout << "Mass fractions: beta, gamma, hcp: \t\t\t" << in_lambda[0][n] << ", "
+            << in_lambda[1][n] << ", " << in_lambda[2][n] << std::endl;
+  std::cout << "Assuming volume fractions: beta, gamma, hcp: \t" << vfrac[0] << ", "
+            << vfrac[1] << ", " << vfrac[2] << std::endl;
+  std::cout << "gives starting phase densities: beta, gamma, hcp: \t" << rho[0] << ", "
+            << rho[1] << ", " << rho[2] << std::endl
+            << std::endl;
 }
 
-template<typename RealIndexer>
-inline void printresults(int n, RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie, RealIndexer &&press, RealIndexer &&temp){
-      std::cout << "Trial number: " << n << std::endl;
-      std::cout << "Total Specific Internal energy: \t"
-                << sie[0] * in_lambda[0][n] + sie[1] * in_lambda[1][n] +
-                       sie[2] * in_lambda[2][n]
-                << ", (" << in_sie_tot[n] << ")" << std::endl;
-      std::cout << "Total density: \t\t\t"
-                << 1.0 / (1.0 / rho[0] * in_lambda[0][n] +
-                          1.0 / rho[1] * in_lambda[1][n] +
-                          1.0 / rho[2] * in_lambda[2][n])
-                << ", (" << in_rho_tot[n] << ")" << std::endl;
-      std::cout << "Volume fractions: beta, gamma, hcp: " << vfrac[0] << ", "
-                << vfrac[1] << ", " << vfrac[2] << std::endl;
-      std::cout << "Density: beta, gamma, hcp: \t\t" << rho[0] << ", "
-                << rho[1] << ", " << rho[2] << ", (" << out_rho0[n] << ", "
-                << out_rho1[n] << ", " << out_rho2[n] << ")" << std::endl;
-      std::cout << "Pressure: beta, gamma, hcp: \t" << press[0] << ", "
-                << press[1] << ", " << press[2] << ", (" << out_press[n]
-                << ")" << std::endl;
-      std::cout << "Temperature: beta, gamma, hcp: \t" << temp[0] << ", "
-                << temp[1] << ", " << temp[2] << ", (" << out_temp[n] << ")"
-                << std::endl;
-      std::cout << "Internal energy: beta, gamma, hcp: \t" << sie[0] << ", "
-                << sie[1] << ", " << sie[2] << ", (" << out_sie0[n] << ", "
-                << out_sie1[n] << ", " << out_sie2[n] << ")" << std::endl
-                << std::endl;
+template <typename RealIndexer>
+inline void printresults(int n, RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
+                         RealIndexer &&press, RealIndexer &&temp) {
+  std::cout << "Trial number: " << n << std::endl;
+  std::cout << "Total Specific Internal energy: \t"
+            << sie[0] * in_lambda[0][n] + sie[1] * in_lambda[1][n] +
+                   sie[2] * in_lambda[2][n]
+            << ", (" << in_sie_tot[n] << ")" << std::endl;
+  std::cout << "Total density: \t\t\t"
+            << 1.0 / (1.0 / rho[0] * in_lambda[0][n] + 1.0 / rho[1] * in_lambda[1][n] +
+                      1.0 / rho[2] * in_lambda[2][n])
+            << ", (" << in_rho_tot[n] << ")" << std::endl;
+  std::cout << "Volume fractions: beta, gamma, hcp: " << vfrac[0] << ", " << vfrac[1]
+            << ", " << vfrac[2] << std::endl;
+  std::cout << "Density: beta, gamma, hcp: \t\t" << rho[0] << ", " << rho[1] << ", "
+            << rho[2] << ", (" << out_rho0[n] << ", " << out_rho1[n] << ", "
+            << out_rho2[n] << ")" << std::endl;
+  std::cout << "Pressure: beta, gamma, hcp: \t" << press[0] << ", " << press[1] << ", "
+            << press[2] << ", (" << out_press[n] << ")" << std::endl;
+  std::cout << "Temperature: beta, gamma, hcp: \t" << temp[0] << ", " << temp[1] << ", "
+            << temp[2] << ", (" << out_temp[n] << ")" << std::endl;
+  std::cout << "Internal energy: beta, gamma, hcp: \t" << sie[0] << ", " << sie[1] << ", "
+            << sie[2] << ", (" << out_sie0[n] << ", " << out_sie1[n] << ", "
+            << out_sie2[n] << ")" << std::endl
+            << std::endl;
 }
 
-} //end namespace pte_test_3phaseSesameSn 
+} // end namespace pte_test_3phaseSesameSn
 
 #endif // _SINGULARITY_EOS_TEST_PTE_TEST_3PHASESESAMESN_

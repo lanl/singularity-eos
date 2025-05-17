@@ -50,8 +50,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
     }
   }
 
-  eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Info", "EOS_Ut_DT", "EOS_Pt_DT", "EOS_St_DT"},
-              eospacWarn);
+  eosSafeLoad(NT, matid, tableType, tableHandle,
+              {"EOS_Info", "EOS_Ut_DT", "EOS_Pt_DT", "EOS_St_DT"}, eospacWarn);
 
   for (int i = 0; i < numInfoTables; i++) {
     eosSafeTableInfo(&(tableHandle[i]), NI[i], infoItems[i].data(), infoVals[i].data(),
@@ -170,7 +170,8 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
     EOS_REAL values[] = {1.};
     for (int i = 0; i < ntables; i++) {
       if (tableType[i] != EOS_Uc_D and tableType[i] != EOS_Pc_D and
-          tableType[i] != EOS_Pt_DT and tableType[i] != EOS_Ut_DT and tableType[i] != EOS_St_DT) {
+          tableType[i] != EOS_Pt_DT and tableType[i] != EOS_Ut_DT and
+          tableType[i] != EOS_St_DT) {
         eos_SetOption(&(tableHandle[i]), &EOS_INVERT_AT_SETUP, &(values[0]), &errorCode);
         eosCheckError(errorCode, "eospac options: eos_invert_at_setup", eospacWarn);
       }

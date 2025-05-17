@@ -18,9 +18,7 @@
 using EOS = singularity::Variant<singularity::Vinet>;
 
 template <typename T>
-inline void set_eos(const int n, 
-		const std::vector<int> &nphases,
-		T *eos) {
+inline void set_eos(const int n, const std::vector<int> &nphases, T *eos) {
 
   int numphases = 2;
 

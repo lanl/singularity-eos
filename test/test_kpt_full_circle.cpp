@@ -12,30 +12,30 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-//SCENARIO("Implementation of KPT: From out from hydrocode to in to hydrocode") {
-  // 1:  Massfractions, Internal energy, and density at time t0
-  // 2:  Calculate full state, at time t0
-  // 3:  This is given back to hydrocode for updated Internal energy, and density at time
-  // t1 
-  // 4:  Update mass fractions: Massfractions at t0, full state at t0, Internal energy,
-  // and density at time t1 
-  //
-  // 1 must be taken from real run. Use test_pte_3phases for a start.
-  // 1->2 multiphase EOS Initialized and used: test_pte_3phases
-  // 1->2 PTE solver parameters given. 
-  // 2 should be given by PTE solver. Compare to what real run gives. 
-  //   and calculate gibbs free energy, and compare to real run.
-  // 3 Internal energy, and density at time t1 from real run 
-  // 3->4 update model and update method needs to be initialized and used. 
-  // 4 KPT model gives this. Compare to real run
+// SCENARIO("Implementation of KPT: From out from hydrocode to in to hydrocode") {
+// 1:  Massfractions, Internal energy, and density at time t0
+// 2:  Calculate full state, at time t0
+// 3:  This is given back to hydrocode for updated Internal energy, and density at time
+// t1
+// 4:  Update mass fractions: Massfractions at t0, full state at t0, Internal energy,
+// and density at time t1
+//
+// 1 must be taken from real run. Use test_pte_3phases for a start.
+// 1->2 multiphase EOS Initialized and used: test_pte_3phases
+// 1->2 PTE solver parameters given.
+// 2 should be given by PTE solver. Compare to what real run gives.
+//   and calculate gibbs free energy, and compare to real run.
+// 3 Internal energy, and density at time t1 from real run
+// 3->4 update model and update method needs to be initialized and used.
+// 4 KPT model gives this. Compare to real run
 
-  // 1, 1->2, 2 need to be input here. Check in pte-solve testing
-  // Use pte_test_5phaseSesameSn.hpp and test_pte_3phase.cpp
-  // This is where we should try to use the fancy skipping phases thing, Indexers.
-  // Indexers are in pte_test_utils.hpp
-  // It seems better to actually start from test_pte_3phase.cpp since it has a main.
-  // Try to figure out if it can be used together with catch2.
-  // Do separate header files for 1->2 and 3->4 but include both.
+// 1, 1->2, 2 need to be input here. Check in pte-solve testing
+// Use pte_test_5phaseSesameSn.hpp and test_pte_3phase.cpp
+// This is where we should try to use the fancy skipping phases thing, Indexers.
+// Indexers are in pte_test_utils.hpp
+// It seems better to actually start from test_pte_3phase.cpp since it has a main.
+// Try to figure out if it can be used together with catch2.
+// Do separate header files for 1->2 and 3->4 but include both.
 
 #include <chrono>
 #include <iostream>
@@ -46,9 +46,9 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <test/pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <spiner/databox.hpp>
+#include <test/pte_test_utils.hpp>
 
 #include <singularity-eos/closure/kinetic_phasetransition_methods.hpp>
 #include <singularity-eos/closure/kinetic_phasetransition_models.hpp>
@@ -164,7 +164,9 @@ int main(int argc, char *argv[]) {
 #endif
 
     // setup state
-    std::cout << "Setup Initial states (from Density, Mass fractions, and Internal energy)." << std::endl;
+    std::cout
+        << "Setup Initial states (from Density, Mass fractions, and Internal energy)."
+        << std::endl;
 
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
@@ -207,7 +209,8 @@ int main(int argc, char *argv[]) {
       printinput(n, r, vf);
     }
 
-    std::cout << "Starting PTE solver for " << NTRIAL << " trials." << std::endl << std::endl;
+    std::cout << "Starting PTE solver for " << NTRIAL << " trials." << std::endl
+              << std::endl;
 
     portableFor(
         "PTE in Full Circle test", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
@@ -269,36 +272,34 @@ int main(int argc, char *argv[]) {
     std::cout << "Results from the PTE solver are: " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
-	  Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
-          Indexer2D<decltype(vfrac_hm)> vfrac(n, vfrac_hm);
-          Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
-          Indexer2D<decltype(temp_hm)> temp(n, temp_hm);
-          Indexer2D<decltype(press_hm)> press(n, press_hm);
-	  printresults(n, rho, vfrac, sie, press, temp);
+      Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
+      Indexer2D<decltype(vfrac_hm)> vfrac(n, vfrac_hm);
+      Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
+      Indexer2D<decltype(temp_hm)> temp(n, temp_hm);
+      Indexer2D<decltype(press_hm)> press(n, press_hm);
+      printresults(n, rho, vfrac, sie, press, temp);
     }
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif
     std::cout << "Getting corresponding Gibbs Free energies." << std::endl;
-    //temporary start
+    // temporary start
     for (int n = 0; n < NTRIAL; n++) {
-          Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
-          Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
-          Indexer2D<decltype(temp_hm)> temp(n, temp_hm);
-          Indexer2D<decltype(gibbsrt_hm)> gibbsrt(n, gibbsrt_hm);
-          Indexer2D<decltype(gibbsre_hm)> gibbsre(n, gibbsre_hm);
-          for (int i = 0; i < NMAT; i++) { 
-              gibbsrt[i]=eos[i].GibbsFreeEnergyFromDensityTemperature(rho[i], temp[i]);
-              gibbsre[i]=eos[i].GibbsFreeEnergyFromDensityInternalEnergy(rho[i], sie[i]);
-	  }
-	  gibbsprintresults(n, rho, temp, sie, gibbsrt, gibbsre);
+      Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
+      Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
+      Indexer2D<decltype(temp_hm)> temp(n, temp_hm);
+      Indexer2D<decltype(gibbsrt_hm)> gibbsrt(n, gibbsrt_hm);
+      Indexer2D<decltype(gibbsre_hm)> gibbsre(n, gibbsre_hm);
+      for (int i = 0; i < NMAT; i++) {
+        gibbsrt[i] = eos[i].GibbsFreeEnergyFromDensityTemperature(rho[i], temp[i]);
+        gibbsre[i] = eos[i].GibbsFreeEnergyFromDensityInternalEnergy(rho[i], sie[i]);
+      }
+      gibbsprintresults(n, rho, temp, sie, gibbsrt, gibbsre);
     }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif // PORTABILITY_STRATEGY_KOKKOS
-
-
   }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::finalize();

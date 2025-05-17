@@ -31,9 +31,9 @@
 //#include <pte_test_3phaseSesameSn.hpp>
 #include <pte_test_2phaseVinetSn.hpp>
 
-//using namespace pte_test_3phase;
+// using namespace pte_test_3phase;
 using namespace pte_longtest_2phase;
-//using namespace pte_test_2phase;
+// using namespace pte_test_2phase;
 
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
@@ -218,14 +218,13 @@ int main(int argc, char *argv[]) {
     std::cout << "Results are: " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
-	  Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
-          Indexer2D<decltype(vfrac_hm)> vfrac(n, vfrac_hm);
-          Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
-          Indexer2D<decltype(temp_hm)> temp(n, temp_hm);
-          Indexer2D<decltype(press_hm)> press(n, press_hm);
-	  printresults(n, rho, vfrac, sie, press, temp);
+      Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
+      Indexer2D<decltype(vfrac_hm)> vfrac(n, vfrac_hm);
+      Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
+      Indexer2D<decltype(temp_hm)> temp(n, temp_hm);
+      Indexer2D<decltype(press_hm)> press(n, press_hm);
+      printresults(n, rho, vfrac, sie, press, temp);
     }
-
 
     std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess
               << std::endl;
