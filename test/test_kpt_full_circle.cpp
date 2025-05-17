@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -12,6 +12,31 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+//SCENARIO("Implementation of KPT: From out from hydrocode to in to hydrocode") {
+  // 1:  Massfractions, Internal energy, and density at time t0
+  // 2:  Calculate full state, at time t0
+  // 3:  This is given back to hydrocode for updated Internal energy, and density at time
+  // t1 
+  // 4:  Update mass fractions: Massfractions at t0, full state at t0, Internal energy,
+  // and density at time t1 
+  //
+  // 1 must be taken from real run. Use test_pte_3phases for a start.
+  // 1->2 multiphase EOS Initialized and used: test_pte_3phases
+  // 1->2 PTE solver parameters given. 
+  // 2 should be given by PTE solver. Compare to what real run gives. 
+  //   and calculate gibbs free energy, and compare to real run.
+  // 3 Internal energy, and density at time t1 from real run 
+  // 3->4 update model and update method needs to be initialized and used. 
+  // 4 KPT model gives this. Compare to real run
+
+  // 1, 1->2, 2 need to be input here. Check in pte-solve testing
+  // Use pte_test_5phaseSesameSn.hpp and test_pte_3phase.cpp
+  // This is where we should try to use the fancy skipping phases thing, Indexers.
+  // Indexers are in pte_test_utils.hpp
+  // It seems better to actually start from test_pte_3phase.cpp since it has a main.
+  // Try to figure out if it can be used together with catch2.
+  // Do separate header files for 1->2 and 3->4 but include both.
+
 #include <chrono>
 #include <iostream>
 #include <memory>
@@ -21,24 +46,28 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
-#include <pte_test_utils.hpp>
+#include <test/pte_test_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <spiner/databox.hpp>
 
-#include <singularity-eos/eos/eos_models.hpp>
-#include <singularity-eos/eos/eos_variant.hpp>
+#include <singularity-eos/closure/kinetic_phasetransition_methods.hpp>
+#include <singularity-eos/closure/kinetic_phasetransition_models.hpp>
+#include <singularity-eos/closure/kinetic_phasetransition_utils.hpp>
 
-#include <pte_test_3phaseSesameSn.hpp>
-//#include <pte_test_2phaseVinetSn.hpp>
+#include <test/kpt_full_circle_test.hpp>
 
+using namespace kpt_full_circle_test;
 using namespace pte_test_3phaseSesameSn;
-//using namespace pte_longtest_2phase;
-//using namespace pte_test_2phase;
+
+using DataBox = Spiner::DataBox<Real>;
 
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
 
-using DataBox = Spiner::DataBox<Real>;
+using singularity::LogMaxTimeStep;
+using singularity::LogRatesCGModel;
+using singularity::SmallStepMFUpdate;
+using singularity::SortGibbs;
 
 int main(int argc, char *argv[]) {
 
@@ -57,12 +86,13 @@ int main(int argc, char *argv[]) {
     PortableMDArray<EOS> eos_hv(eos_vec.data(), NMAT);
     PortableMDArray<EOS> eos_v(eos_vec.data(), NMAT);
 #endif
-    
-    std::cout << "before set_eos" << std::endl;
+
+    // set-eos according to test_pte_3phaseSesameSn
+    std::cout << "Load " << NMAT << " phases" << std::endl;
 
     set_eos(NMAT, PHASES, eos_hv.data());
 
-    std::cout << "after set_eos" << std::endl;
+    std::cout << NMAT << " phases loaded" << std::endl;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(eos_v, eos_hv);
@@ -83,6 +113,8 @@ int main(int argc, char *argv[]) {
     RView sie_v("sie", NPTS);
     RView temp_v("temp", NPTS);
     RView press_v("press", NPTS);
+    RView gibbsrt_v("gibbsRT", NPTS);
+    RView gibbsre_v("gibbsRE", NPTS);
     RView scratch_v("scratch", NTRIAL * nscratch_vars);
     Kokkos::View<int *, atomic_view> hist_d("histogram", HIST_SIZE);
     auto rho_vh = Kokkos::create_mirror_view(rho_v);
@@ -90,6 +122,8 @@ int main(int argc, char *argv[]) {
     auto sie_vh = Kokkos::create_mirror_view(sie_v);
     auto temp_vh = Kokkos::create_mirror_view(temp_v);
     auto press_vh = Kokkos::create_mirror_view(press_v);
+    auto gibbsrt_vh = Kokkos::create_mirror_view(gibbsrt_v);
+    auto gibbsre_vh = Kokkos::create_mirror_view(gibbsre_v);
     auto scratch_vh = Kokkos::create_mirror_view(scratch_v);
     auto hist_vh = Kokkos::create_mirror_view(hist_d);
     DataBox rho_d(rho_v.data(), NTRIAL, NMAT);
@@ -97,12 +131,16 @@ int main(int argc, char *argv[]) {
     DataBox sie_d(sie_v.data(), NTRIAL, NMAT);
     DataBox temp_d(temp_v.data(), NTRIAL, NMAT);
     DataBox press_d(press_v.data(), NTRIAL, NMAT);
+    DataBox gibbsrt_d(gibbsrt_v.data(), NTRIAL, NMAT);
+    DataBox gibbsre_d(gibbsre_v.data(), NTRIAL, NMAT);
     DataBox scratch_d(scratch_v.data(), NTRIAL * nscratch_vars);
     DataBox rho_hm(rho_vh.data(), NTRIAL, NMAT);
     DataBox vfrac_hm(vfrac_vh.data(), NTRIAL, NMAT);
     DataBox sie_hm(sie_vh.data(), NTRIAL, NMAT);
     DataBox temp_hm(temp_vh.data(), NTRIAL, NMAT);
     DataBox press_hm(press_vh.data(), NTRIAL, NMAT);
+    DataBox gibbsrt_hm(gibbsrt_vh.data(), NTRIAL, NMAT);
+    DataBox gibbsre_hm(gibbsre_vh.data(), NTRIAL, NMAT);
     DataBox scratch_hm(scratch_vh.data(), NTRIAL * nscratch_vars);
 #else
     DataBox rho_d(NTRIAL, NMAT);
@@ -110,19 +148,23 @@ int main(int argc, char *argv[]) {
     DataBox sie_d(NTRIAL, NMAT);
     DataBox temp_d(NTRIAL, NMAT);
     DataBox press_d(NTRIAL, NMAT);
+    DataBox gibbsrt_d(NTRIAL, NMAT);
+    DataBox gibbsre_d(NTRIAL, NMAT);
     DataBox scratch_d(NTRIAL, nscratch_vars);
     DataBox rho_hm = rho_d.slice(2, 0, NTRIAL);
     DataBox vfrac_hm = vfrac_d.slice(2, 0, NTRIAL);
     DataBox sie_hm = sie_d.slice(2, 0, NTRIAL);
     DataBox temp_hm = temp_d.slice(2, 0, NTRIAL);
     DataBox press_hm = press_d.slice(2, 0, NTRIAL);
+    DataBox gibbsrt_hm = gibbsrt_d.slice(2, 0, NTRIAL);
+    DataBox gibbsre_hm = gibbsre_d.slice(2, 0, NTRIAL);
     DataBox scratch_hm = scratch_d.slice(2, 0, NTRIAL);
     int hist_vh[HIST_SIZE];
     int *hist_d = hist_vh;
 #endif
 
     // setup state
-    printf("pte_3phase setup state\n");
+    std::cout << "Setup Initial states (from Density, Mass fractions, and Internal energy)." << std::endl;
 
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
@@ -140,9 +182,11 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(sie_v, sie_vh);
     Kokkos::deep_copy(temp_v, temp_vh);
     Kokkos::deep_copy(press_v, press_vh);
+    Kokkos::deep_copy(gibbsrt_v, gibbsrt_vh);
+    Kokkos::deep_copy(gibbsre_v, gibbsre_vh);
     Kokkos::deep_copy(hist_d, hist_vh);
 #endif
-    printf("pte_3phase state set\n");
+    std::cout << "Initial states for " << NTRIAL << " trials set." << std::endl;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<int, atomic_view> nsuccess_d("n successes");
@@ -154,8 +198,7 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif
-    std::cout << "Starting PTE with " << NTRIAL << " trials." << std::endl << std::endl;
-    std::cout << "The trials have input set to: " << std::endl;
+    std::cout << "The trials have initial states: " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
@@ -164,8 +207,10 @@ int main(int argc, char *argv[]) {
       printinput(n, r, vf);
     }
 
+    std::cout << "Starting PTE solver for " << NTRIAL << " trials." << std::endl << std::endl;
+
     portableFor(
-        "PTE!", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
+        "PTE in Full Circle test", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
           Real *lambda[NMAT];
           for (int i = 0; i < NMAT; i++) {
             lambda[i] = nullptr;
@@ -211,15 +256,17 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(nsuccess, nsuccess_d);
     Kokkos::deep_copy(hist_vh, hist_d);
 #endif
-
-    Real milliseconds = sum_time.count() / 1e3;
-
-    std::cout << std::endl;
-    std::cout << "Finished " << NTRIAL << " solves in " << milliseconds << " milliseconds"
+    std::cout << "Converged: " << nsuccess << "   NOT converged: " << NTRIAL - nsuccess
               << std::endl;
-    std::cout << "Solves/ms = " << NTRIAL / milliseconds << std::endl << std::endl;
+    std::cout << "Histogram:\n"
+              << "iters\tcount\n"
+              << "----------------------\n";
+    for (int i = 0; i < HIST_SIZE; ++i) {
+      std::cout << i << "\t" << hist_vh[i] << "\n";
+    }
+    std::cout << std::endl;
 
-    std::cout << "Results are: " << std::endl;
+    std::cout << "Results from the PTE solver are: " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
 	  Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
@@ -230,16 +277,28 @@ int main(int argc, char *argv[]) {
 	  printresults(n, rho, vfrac, sie, press, temp);
     }
 
-
-    std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess
-              << std::endl;
-    std::cout << "Histogram:\n"
-              << "iters\tcount\n"
-              << "----------------------\n";
-    for (int i = 0; i < HIST_SIZE; ++i) {
-      std::cout << i << "\t" << hist_vh[i] << "\n";
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+    Kokkos::fence();
+#endif
+    std::cout << "Getting corresponding Gibbs Free energies." << std::endl;
+    //temporary start
+    for (int n = 0; n < NTRIAL; n++) {
+          Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
+          Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
+          Indexer2D<decltype(temp_hm)> temp(n, temp_hm);
+          Indexer2D<decltype(gibbsrt_hm)> gibbsrt(n, gibbsrt_hm);
+          Indexer2D<decltype(gibbsre_hm)> gibbsre(n, gibbsre_hm);
+          for (int i = 0; i < NMAT; i++) { 
+              gibbsrt[i]=eos[i].GibbsFreeEnergyFromDensityTemperature(rho[i], temp[i]);
+              gibbsre[i]=eos[i].GibbsFreeEnergyFromDensityInternalEnergy(rho[i], sie[i]);
+	  }
+	  gibbsprintresults(n, rho, temp, sie, gibbsrt, gibbsre);
     }
-    std::cout << std::endl;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+    Kokkos::fence();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+
   }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::finalize();

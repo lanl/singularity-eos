@@ -25,21 +25,22 @@
 namespace EospacWrapper {
 
 void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
-  constexpr int NT = 3;
+  constexpr int NT = 4;
   EOS_INTEGER tableHandle[NT];
-  EOS_INTEGER tableType[NT] = {EOS_Info, EOS_Ut_DT, EOS_Pt_DT};
+  EOS_INTEGER tableType[NT] = {EOS_Info, EOS_Ut_DT, EOS_Pt_DT, EOS_St_DT};
 
   EOS_INTEGER commentsHandle[1];
   EOS_INTEGER commentsType[1] = {EOS_Comment};
 
   constexpr int numInfoTables = NT;
-  constexpr int NI[] = {5, 11, 2};
+  constexpr int NI[] = {5, 11, 2, 2};
   std::array<std::vector<EOS_INTEGER>, numInfoTables> infoItems = {
       std::vector<EOS_INTEGER>{EOS_Exchange_Coeff, EOS_Mean_Atomic_Mass,
                                EOS_Mean_Atomic_Num, EOS_Modulus, EOS_Normal_Density},
       std::vector<EOS_INTEGER>{EOS_Rmin, EOS_Rmax, EOS_Tmin, EOS_Tmax, EOS_Fmin, EOS_Fmax,
                                EOS_NR, EOS_NT, EOS_X_Convert_Factor, EOS_Y_Convert_Factor,
                                EOS_F_Convert_Factor},
+      std::vector<EOS_INTEGER>{EOS_Fmin, EOS_Fmax},
       std::vector<EOS_INTEGER>{EOS_Fmin, EOS_Fmax}};
   std::vector<EOS_REAL> infoVals[numInfoTables];
   for (int i = 0; i < numInfoTables; i++) {
@@ -49,7 +50,7 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
     }
   }
 
-  eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Info", "EOS_Ut_DT", "EOS_Pt_DT"},
+  eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Info", "EOS_Ut_DT", "EOS_Pt_DT", "EOS_St_DT"},
               eospacWarn);
 
   for (int i = 0; i < numInfoTables; i++) {
@@ -70,6 +71,8 @@ void eosGetMetadata(int matid, SesameMetadata &metadata, Verbosity eospacWarn) {
   metadata.sieMax = sieFromSesame(infoVals[1][5]);
   metadata.PMin = pressureFromSesame(infoVals[2][0]);
   metadata.PMax = pressureFromSesame(infoVals[2][1]);
+  metadata.SMin = entropyFromSesame(infoVals[3][0]);
+  metadata.SMax = entropyFromSesame(infoVals[3][1]);
   metadata.numRho = static_cast<int>(infoVals[1][6]);
   metadata.numT = static_cast<int>(infoVals[1][7]);
   metadata.rhoConversionFactor = infoVals[1][8];
@@ -167,7 +170,7 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
     EOS_REAL values[] = {1.};
     for (int i = 0; i < ntables; i++) {
       if (tableType[i] != EOS_Uc_D and tableType[i] != EOS_Pc_D and
-          tableType[i] != EOS_Pt_DT and tableType[i] != EOS_Ut_DT) {
+          tableType[i] != EOS_Pt_DT and tableType[i] != EOS_Ut_DT and tableType[i] != EOS_St_DT) {
         eos_SetOption(&(tableHandle[i]), &EOS_INVERT_AT_SETUP, &(values[0]), &errorCode);
         eosCheckError(errorCode, "eospac options: eos_invert_at_setup", eospacWarn);
       }
@@ -184,6 +187,7 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
 
   // choice of which table types setOption is called on mimics SAP. Some table types are
   // incmopatible whiel others lead to numerical issues.
+  // aem: should EOS_St_DT go in here?
   if (monotonicity == eospacMonotonicity::monotonicityX ||
       monotonicity == eospacMonotonicity::monotonicityXY) {
     for (int i = 0; i < ntables; i++) {

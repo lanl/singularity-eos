@@ -1136,7 +1136,7 @@ class EOSPAC : public EosBase<EOSPAC> {
       thermalqs::density | thermalqs::temperature;
   int matid_;
   TableSplit split_;
-  static constexpr int NT = 7;
+  static constexpr int NT = 8;
   EOS_INTEGER PofRT_table_;
   EOS_INTEGER TofRE_table_;
   EOS_INTEGER EofRT_table_;
@@ -1144,6 +1144,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   EOS_INTEGER TofRP_table_;
   EOS_INTEGER PofRE_table_;
   EOS_INTEGER EcofD_table_;
+  EOS_INTEGER SofRT_table_;
   EOS_INTEGER tablehandle[NT];
   static constexpr Real temp_ref_ = 293;
   Real rho_ref_ = 1;
@@ -1175,6 +1176,7 @@ class EOSPAC : public EosBase<EOSPAC> {
         {"GruneisenParamFromDensityTemperature", 4},
         {"GruneisenParamFromDensityInternalEnergy", 5},
         {"MinInternalEnergyFromDensity", 1},
+        {"EntropyFromDensityTemperature", 2}
     };
     return nbuffers;
   }
@@ -1203,10 +1205,11 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
                                EOS_D_PtT,
                                TableSelect(EOS_T_DPt, EOS_T_DPe, EOS_T_DPic),
                                TableSelect(EOS_Pt_DUt, EOS_Pe_DUe, EOS_Pic_DUic),
-                               EOS_Uc_D};
+                               EOS_Uc_D,
+                               TableSelect(EOS_St_DT, EOS_Se_DT, EOS_Sic_DT)};
   std::vector<std::string> tableNames = {"EOS_Pt_DT", "EOS_T_DUt", "EOS_Ut_DT",
                                          "EOS_D_PtT", "EOS_T_DPt", "EOS_Pt_DUt",
-                                         "EOS_Uc_D"};
+                                         "EOS_Uc_D", "EOS_St_DT"};
   if (split != TableSplit::Total) {
     auto rt = std::regex("t");
     std::string newstr = (split == TableSplit::ElectronOnly) ? "e" : "ic";
@@ -1226,6 +1229,7 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
   TofRP_table_ = tablehandle[4];
   PofRE_table_ = tablehandle[5];
   EcofD_table_ = tablehandle[6];
+  SofRT_table_ = tablehandle[7];
 
   // Shared memory info
   {
@@ -1309,6 +1313,7 @@ inline std::size_t EOSPAC::SetDynamicMemory(char *src, const SharedMemSettings &
   TofRP_table_ = tablehandle[4];
   PofRE_table_ = tablehandle[5];
   EcofD_table_ = tablehandle[6];
+  SofRT_table_ = tablehandle[7];
   return packed_size_;
 }
 inline std::size_t EOSPAC::SharedMemorySizeInBytes() const { return shared_size_; }
@@ -1347,9 +1352,18 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::PressureFromDensityTemperature(
 
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
-    const Real rho, const Real temperature, Indexer_t &&lambda) const {
-  EntropyIsNotEnabled("EOSPAC");
-  return 1.0;
+    const Real rho, const Real temp, Indexer_t &&lambda) const {
+#if SINGULARITY_ON_DEVICE
+  PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
+  return 0; // compiler happy
+#else
+  using namespace EospacWrapper;
+  EOS_REAL R[1] = {rho}, S[1], T[1] = {temperatureToSesame(temp)}, dSdr[1], dSdT[1];
+  EOS_INTEGER nxypairs = 1;
+  EOS_INTEGER table = SofRT_table_;
+  eosSafeInterpolate(&table, nxypairs, R, T, S, dSdr, dSdT, "SofRT", Verbosity::Quiet);
+  return Real(entropyFromSesame(S[0]));
+#endif // ON DEVICE
 }
 
 template <typename Indexer_t>

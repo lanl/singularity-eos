@@ -35,6 +35,8 @@ inline void set_eos(const int n,
 
   // bool invert_at_setup = true;
 
+  std::cout << "before EOSPAC(SnbetaID)" << std::endl;
+
   EOS Snbeta = singularity::EOSPAC(SnbetaID);
   EOS Sngamma = singularity::EOSPAC(SngammaID);
   EOS Sndelta = singularity::EOSPAC(SndeltaID);
@@ -43,12 +45,16 @@ inline void set_eos(const int n,
 
   std::vector<EOS> alleos(numphases);
 
+  std::cout << "before Snbeta.GetOnDevice" << std::endl;
+
   alleos[0] = Snbeta.GetOnDevice();
   alleos[1] = Sngamma.GetOnDevice();
   alleos[2] = Sndelta.GetOnDevice();
   alleos[3] = Snhcp.GetOnDevice();
   alleos[4] = Snliquid.GetOnDevice();
 
+  std::cout << "after Snbeta.GetOnDevice" << std::endl;
+  
   for (int i = 0; i < n; i++) {
     eos[i] = alleos[nphases[i]];
   }
