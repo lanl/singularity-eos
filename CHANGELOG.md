@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR507]](https://github.com/lanl/singularity-eos/pull/507) Entropy now available from EOSPAC 
 
 ### Fixed (Repair bugs, etc)
 - [[PR505]](https://github.com/lanl/singularity-eos/pull/505) rename LogType::TRUE to LogType::DOUBLE
