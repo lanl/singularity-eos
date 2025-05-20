@@ -1809,8 +1809,8 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     }
 
     // possibly scale the update to stay within reasonable bounds
-    Real scale = s.ScaleDx();
-    PORTABLE_REQUIRE(scale <= 1.0, "PTE Solver is attempting to increase the step size");
+    Real scale = std::min(1.0, s.ScaleDx());
+    // PORTABLE_REQUIRE(scale <= 1.0, "PTE Solver is attempting to increase the step size");
 
     // If scale is very small, we may be iterating around the regime
     // of validity and not making progress. Try to catch this, fail
