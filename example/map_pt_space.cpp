@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
 
           const Real u1 = rhobar1 * eos1.InternalEnergyFromDensityTemperature(rho1, T);
           const Real u2 = rhobar2 * eos2.InternalEnergyFromDensityTemperature(rho2, T);
-          residuals(j, i, 0) = u1 + u2 - utot, utot;
+          residuals(j, i, 0) = u1 + u2 - utot;
 
           const Real P1 = eos1.PressureFromDensityTemperature(rho1, T);
           const Real P2 = eos2.PressureFromDensityTemperature(rho2, T);
