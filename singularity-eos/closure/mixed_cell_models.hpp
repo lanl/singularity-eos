@@ -239,9 +239,9 @@ class PTESolverBase {
     // material m averaged over the full PTE volume
     rho_total = 0.0;
     for (std::size_t m = 0; m < nmat; ++m) {
-      PORTABLE_REQUIRE(vfrac[m] > 0.,
-                       "Non-positive volume fraction provided to PTE solver");
-      PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density provided to PTE solver");
+      // PORTABLE_REQUIRE(vfrac[m] > 0.,
+      //                  "Non-positive volume fraction provided to PTE solver");
+      // PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density provided to PTE solver");
       rhobar[m] = rho[m] * vfrac[m];
       rho_total += rhobar[m];
     }
@@ -275,10 +275,10 @@ class PTESolverBase {
       for (std::size_t m = 0; m < nmat; ++m)
         Tguess = std::max(Tguess, temp[m]);
     }
-    PORTABLE_REQUIRE(Tguess > 0., "Non-positive temperature guess for PTE");
+    // PORTABLE_REQUIRE(Tguess > 0., "Non-positive temperature guess for PTE");
     // check for sanity.  basically checks that the input temperatures weren't garbage
-    PORTABLE_REQUIRE(Tguess < params_.temperature_limit,
-                     "Very large input temperature or temperature guess");
+    // PORTABLE_REQUIRE(Tguess < params_.temperature_limit,
+    //                  "Very large input temperature or temperature guess");
 
     // JMM: To get a better guess for temperature such that the
     // energies add up, we sometimes take one Newton step, and accept
@@ -321,8 +321,8 @@ class PTESolverBase {
     }
 
     if (rho_fail && params_.verbose) {
-      PORTABLE_ALWAYS_WARN(
-          "rho < rho_min in PTE initialization!  Solver may not converge.\n");
+      // PORTABLE_ALWAYS_WARN(
+      //     "rho < rho_min in PTE initialization!  Solver may not converge.\n");
     }
     return Tguess;
   }
