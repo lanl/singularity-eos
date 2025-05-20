@@ -158,7 +158,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
   params.pte_residual_tolerance = 1.e-22;
   params.iterate_t_guess = false;
   params.pte_small_step_thresh = 1e-22;
-  params.pte_small_step_tries = 20;
+  params.pte_small_step_tries = 100;
 
   portableReduce(
       "PTE!", 0, NTRIAL,
@@ -203,7 +203,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
           }
           ns += in_pte;
         }
-        hist_d[method.Niter()] += 1;
+        hist_d[std::min(HIST_SIZE-1,method.Niter())] += 1;
       },
       nsuccess);
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -227,10 +227,12 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
   std::cout << "Histogram:\n"
             << "iters\tcount\n"
             << "----------------------\n";
+  std::size_t tot = 0;
   for (int i = 0; i < HIST_SIZE; ++i) {
     std::cout << i << "\t" << hist_vh[i] << "\n";
+    tot += hist_vh[i];
   }
-  std::cout << std::endl;
+  std::cout << "\n\tTotal = " << tot << "\n" << std::endl;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   return rho_v;
