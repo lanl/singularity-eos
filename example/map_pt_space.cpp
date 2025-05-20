@@ -12,6 +12,21 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This example takes two materials and walks through valid sets of
+// volume fractions alpha1, alpha2, such that the volume-averaged
+// densities rhobar1 = alpha1 rho1 and rhobar2 = alpha2 rho2 are
+// conserved and the volume fractions sum to 1. Here rho1 and rho2 are
+// the microphysical densities of each material. At each volume
+// fraction pair, it computes the temperature so that the total energy
+// sums to a user specified value. When the pressures of each material
+// agree at a given pair of volume fractions, pressure temperature
+// equilibrium has been achived. This is useful for building an
+// intuition for how pressure temperature equilibrium works and also
+// seeing what it looks like for a given pairs of materials.  The
+// script also outputs the residual as well as the P/T of each
+// material at each point. This produces a "map" of the PT landscape
+// for the material pair.
+
 // C headers
 #include <cmath>
 #include <cstdio>
@@ -46,7 +61,8 @@ using Spiner::DBDeleter;
 constexpr std::size_t NEOS = 2;
 
 // Set the EOS you want to use here.
-using EOS = singularity::SpinerEOSDependsRhoT;
+// Set the EOSs you want to use here.
+using EOS = singularity::Variant<singularity::SpinerEOSDependsRhoT>;
 
 int main(int argc, char *argv[]) {
   if (argc < 6) {
@@ -181,10 +197,6 @@ int main(int argc, char *argv[]) {
     // Get max temperature achieved. Note this could have been done in
     // a single step via a portableReduce, but we split it out for clarity.
     Real Tmax_walked = Ts_h.max();
-
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-    Kokkos::fence();
-#endif
 
     // Let's make a T grid
     const Real nT = nvfrac + 1;

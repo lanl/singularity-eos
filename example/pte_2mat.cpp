@@ -12,6 +12,42 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This example demonstrates how to call the PTE solver for two
+// materials. The core idea is that you have two materials who's
+// volume averaged densities are
+//
+// rhobar1 = alpha1 rho1
+// rhobar2 = alpha2 rho2
+//
+// where alpha1 and alpha2 are volume fractions such that
+//
+// alpha1 + alpha2 = 1
+//
+// and rho1 and rho2 are the microphysical densities.
+//
+// We seek to find the alpha1, alpha2 and temperature T such that the
+// pressures P1 and P2 (of each materal 1 and 2) are equal:
+//
+// P1(rho1, T) = P2(rho2, T)
+//
+// and that the total volume-averaged energy density equals some
+// predefined total:
+//
+// utot = alpha1 rho1 e(rho1, T) + alpha2 rho2 e(rho2, T)
+//
+// where here e1 and e2 are the specific internal energies opf each
+// material. We also define
+//
+// rhobartot = rhobar1 + rhobar2
+//
+// and
+//
+// etot = utot / rhotot
+//
+// This problem is claled pressure-temperature equilibrium. And it
+// generalizes to an arbitrary number of materials. Here we show how
+// to do it with just two.
+
 // C headers
 #include <cmath>
 #include <cstdio>
