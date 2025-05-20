@@ -285,7 +285,7 @@ class PTESolverBase {
     // if it makes the temperature larger. Empirically, we find this
     // avoids local saddle points that the solver can have trouble
     // navigating.
-    auto newton_step = [&](Real T) {
+    auto newton_step = [=](Real T) {
       Real dudt = 0;
       Real usum = 0;
       for (std::size_t m = 0; m < nmat; ++m) {
