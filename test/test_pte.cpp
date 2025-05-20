@@ -203,7 +203,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
           }
           ns += in_pte;
         }
-        hist_d[std::min(HIST_SIZE-1, method.Niter())] += 1;
+        hist_d[std::min(HIST_SIZE - 1, method.Niter())] += 1;
       },
       nsuccess);
 #ifdef PORTABILITY_STRATEGY_KOKKOS
