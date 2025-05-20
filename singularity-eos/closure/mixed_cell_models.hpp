@@ -294,7 +294,7 @@ class PTESolverBase {
         usum += rhobar[m] * sie;
         dudt += rhobar[m] * cv;
       }
-      return T - (usum - utotal_scale * uscale) / dudt;
+      return T - robust::ratio((usum - utotal_scale * uscale), dudt);
     };
 
     // iteratively increase temperature guess until all rho's are above rho_at_pmin

@@ -286,5 +286,6 @@ int main(int argc, char *argv[]) {
 #endif
 
   // poor-man's ctest integration
+  printf("Return code = %d\n", (nsuccess >= 0.5 * NTRIAL) ? 0 : 1);
   return (nsuccess >= 0.5 * NTRIAL) ? 0 : 1;
 }
