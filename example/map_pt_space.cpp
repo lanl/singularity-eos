@@ -96,8 +96,8 @@ int main(int argc, char *argv[]) {
     const int matids[] = {atoi(argv[7]), atoi(argv[8])};
 
     // Now let's load up the EOS's.
-    EOS eos1 = EOS(materialsfile, matids[0]);
-    EOS eos2 = EOS(materialsfile, matids[1]);
+    EOS eos1 = singularity::SpinerEOSDependsRhoT(materialsfile, matids[0]);
+    EOS eos2 = singularity::SpinerEOSDependsRhoT(materialsfile, matids[1]);
 
     // The total bulk density
     const Real rhotot = rhobar1 + rhobar2;
