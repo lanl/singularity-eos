@@ -253,11 +253,19 @@ int main(int argc, char *argv[]) {
     auto rho_rt = TestPTE<PTESolverRhoT>("PTESolverRhoT", nscratch_vars_rt, ns_rt);
     nsuccess += ns_rt;
 
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  Kokkos::fence();
+#endif
+
     // // scratch required for PTE solver
     std::size_t ns_pt;
     auto nscratch_vars_pt = PTESolverPTRequiredScratch(NMAT);
     auto rho_pt = TestPTE<PTESolverPT>("PTESolverPT", nscratch_vars_pt, ns_pt);
     nsuccess += ns_pt;
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+  Kokkos::fence();
+#endif
 
     int nmatch = 0;
     portableReduce(
