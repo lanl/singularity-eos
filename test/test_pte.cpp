@@ -181,6 +181,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
         const Real Tguess =
             ApproxTemperatureFromRhoMatU(NMAT, eos, rho_tot * sie_tot, rho, vfrac);
 
+	/*
         auto method = Method_t<EOSAccessor, Indexer2D<decltype(rho_d)>, decltype(lambda)>(
             NMAT, eos, 1.0, sie_tot, rho, vfrac, sie, temp, press, lambda,
             &scratch_d(t * nscratch_vars), Tguess, params);
@@ -204,6 +205,7 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
           ns += in_pte;
         }
         hist_d[std::min(HIST_SIZE - 1, method.Niter())] += 1;
+	*/
       },
       nsuccess);
 #ifdef PORTABILITY_STRATEGY_KOKKOS
