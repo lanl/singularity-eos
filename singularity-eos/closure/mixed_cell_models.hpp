@@ -239,9 +239,9 @@ class PTESolverBase {
     // material m averaged over the full PTE volume
     rho_total = 0.0;
     for (std::size_t m = 0; m < nmat; ++m) {
-      // PORTABLE_REQUIRE(vfrac[m] > 0.,
-      //                  "Non-positive volume fraction provided to PTE solver");
-      // PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density provided to PTE solver");
+      PORTABLE_REQUIRE(vfrac[m] > 0.,
+                       "Non-positive volume fraction provided to PTE solver");
+      PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density provided to PTE solver");
       rhobar[m] = rho[m] * vfrac[m];
       rho_total += rhobar[m];
     }
@@ -275,10 +275,10 @@ class PTESolverBase {
       for (std::size_t m = 0; m < nmat; ++m)
         Tguess = std::max(Tguess, temp[m]);
     }
-    // PORTABLE_REQUIRE(Tguess > 0., "Non-positive temperature guess for PTE");
+    PORTABLE_REQUIRE(Tguess > 0., "Non-positive temperature guess for PTE");
     // check for sanity.  basically checks that the input temperatures weren't garbage
-    // PORTABLE_REQUIRE(Tguess < params_.temperature_limit,
-    //                  "Very large input temperature or temperature guess");
+    PORTABLE_REQUIRE(Tguess < params_.temperature_limit,
+                     "Very large input temperature or temperature guess");
 
     // JMM: To get a better guess for temperature such that the
     // energies add up, we sometimes take one Newton step, and accept
@@ -289,8 +289,9 @@ class PTESolverBase {
       Real dudt = 0;
       Real usum = 0;
       for (std::size_t m = 0; m < nmat; ++m) {
-        Real sie = eos[m].InternalEnergyFromDensityTemperature(rho[m], T, lambda[m]);
-        Real cv = eos[m].SpecificHeatFromDensityTemperature(rho[m], T, lambda[m]);
+	Real rho_max = eos[m].MaximumDensity();
+        Real sie = eos[m].InternalEnergyFromDensityTemperature(std::min(rho[m], rho_max), T, lambda[m]);
+        Real cv = eos[m].SpecificHeatFromDensityTemperature(std::min(rho[m], rho_max), T, lambda[m]);
         usum += rhobar[m] * sie;
         dudt += rhobar[m] * cv;
       }
@@ -305,12 +306,18 @@ class PTESolverBase {
         Tguess =
             std::min(params_.temperature_limit, std::max(Tguess, newton_step(Tguess)));
       }
+      for (std::size_t m = 0; m < nmat; ++m) {
+	Tguess = std::max(eos[m].MinimumTemperature(), Tguess);
+      }
       SetVfracFromT(Tguess);
       // check to make sure the normalization didn't put us below rho_at_pmin
       rho_fail = false;
       for (std::size_t m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
+	const Real rho_max = eos[m].MaximumDensity();
+	PORTABLE_REQUIRE(rho_min < rho_max, "Valid density range must exist!");
         rho[m] = robust::ratio(rhobar[m], vfrac[m]);
+	PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_min");
         if (rho[m] < rho_min) {
           rho_fail = true;
           Tguess *= Tfactor;
@@ -321,8 +328,8 @@ class PTESolverBase {
     }
 
     if (rho_fail && params_.verbose) {
-      // PORTABLE_ALWAYS_WARN(
-      //     "rho < rho_min in PTE initialization!  Solver may not converge.\n");
+      PORTABLE_ALWAYS_WARN(
+          "rho < rho_min in PTE initialization!  Solver may not converge.\n");
     }
     return Tguess;
   }
@@ -1810,7 +1817,7 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
 
     // possibly scale the update to stay within reasonable bounds
     Real scale = std::min(1.0, s.ScaleDx());
-    // PORTABLE_REQUIRE(scale <= 1.0, "PTE Solver is attempting to increase the step size");
+    PORTABLE_REQUIRE(scale <= 1.0, "PTE Solver is attempting to increase the step size");
 
     // If scale is very small, we may be iterating around the regime
     // of validity and not making progress. Try to catch this, fail
