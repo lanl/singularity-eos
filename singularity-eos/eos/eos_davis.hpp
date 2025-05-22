@@ -37,14 +37,14 @@ class DavisReactants : public EosBase<DavisReactants> {
                  const Real A, const Real B, const Real C, const Real G0, const Real Z,
                  const Real alpha, const Real Cv0,
                  const MeanAtomicProperties &AZbar = MeanAtomicProperties())
-      : _rho0(rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C), _G0(G0), _Z(Z),
-        _alpha(alpha), _Cv0(Cv0), _AZbar(AZbar) {
+    : _rho0(rho0), _irho0(robust::ratio(1.0, rho0)), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C), _G0(G0), _Z(Z),
+      _alpha(alpha), _i1pa(robust::ratio(1.0, 1.0 + _alpha)), _Cv0(Cv0), _A2oB(robust::ratio(_A*_A, _B)), _AZbar(AZbar) {
     CheckParams();
   }
   DavisReactants GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION
   void CheckParams() const {
-    PORTABLE_REQUIRE(_rho0 >= 0, "Density must be positive");
+    PORTABLE_REQUIRE(_rho0 > 0, "Density must be strictly positive");
     PORTABLE_REQUIRE(_T0 >= 0, "Temperature must be positive");
     _AZbar.CheckParams();
   }
@@ -58,7 +58,7 @@ class DavisReactants : public EosBase<DavisReactants> {
       // allow that so return zero
       return 0.;
     }
-    const Real tmp = std::pow(power_base, 1.0 / (1.0 + _alpha));
+    const Real tmp = std::pow(power_base, _i1pa);
     return Ts(rho) * tmp;
   }
   template <typename Indexer_t = Real *>
@@ -68,7 +68,7 @@ class DavisReactants : public EosBase<DavisReactants> {
     const Real t_s = Ts(rho);
     PORTABLE_REQUIRE(temp >= 0, "Negative temperature provided");
     return Es(rho) +
-           _Cv0 * t_s / (1.0 + _alpha) * (std::pow(temp / t_s, 1.0 + _alpha) - 1.0);
+      _Cv0 * t_s * _i1pa * (std::pow(robust::ratio(temp, t_s), 1.0 + _alpha) - 1.0);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
@@ -91,7 +91,7 @@ class DavisReactants : public EosBase<DavisReactants> {
     // when the base to the exponent is zero (see T(rho, e) equation)
     const Real es = Es(rho);
     const Real ts = Ts(rho);
-    return es - (_Cv0 * ts) / (1 + _alpha);
+    return es - (_Cv0 * ts) * _i1pa;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
@@ -123,7 +123,7 @@ class DavisReactants : public EosBase<DavisReactants> {
       // Return zero heat capacity instead of an imaginary value
       return 0.;
     }
-    return _Cv0 / std::pow(power_base, -_alpha / (1 + _alpha));
+    return robust::ratio(_Cv0, std::pow(power_base, -_alpha * _i1pa));
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
@@ -182,7 +182,7 @@ class DavisReactants : public EosBase<DavisReactants> {
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
-  Real _rho0, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _Cv0;
+	Real _rho0, _irho0, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _i1pa, _Cv0, _A2oB;
   MeanAtomicProperties _AZbar;
   // static constexpr const char _eos_type[] = "DavisReactants";
   static constexpr unsigned long _preferred_input =
@@ -201,7 +201,7 @@ class DavisProducts : public EosBase<DavisProducts> {
   DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
                 const Real pc, const Real Cv,
                 const MeanAtomicProperties &AZbar = MeanAtomicProperties())
-      : _a(a), _b(b), _k(k), _n(n), _vc(vc), _pc(pc), _Cv(Cv), _AZbar(AZbar) {}
+    : _a(a), _b(b), _k(k), _n(n), _aon(robust::ratio(_a, _n)), _vc(vc), _pc(pc), _Cv(Cv), _AZbar(AZbar) {}
   PORTABLE_INLINE_FUNCTION
   void CheckParams() const {
     _AZbar.CheckParams();
@@ -212,7 +212,7 @@ class DavisProducts : public EosBase<DavisProducts> {
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return Ts(rho) + (sie - Es(rho)) / _Cv;
+    return Ts(rho) + robust::ratio(sie - Es(rho), _Cv);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
@@ -325,7 +325,7 @@ class DavisProducts : public EosBase<DavisProducts> {
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
-  Real _a, _b, _k, _n, _vc, _pc, _Cv;
+  Real _a, _b, _k, _n, _vc, _pc, _Cv, _aon;
   MeanAtomicProperties _AZbar;
   // static constexpr const char _eos_type[] = "DavisProducts";
   static constexpr const unsigned long _preferred_input =
@@ -334,35 +334,35 @@ class DavisProducts : public EosBase<DavisProducts> {
     if (rho <= 0) {
       return 0.;
     }
-    const Real vvc = 1.0 / (rho * _vc);
-    return 2.0 * _a / (std::pow(vvc, 2 * _n) + 1.0);
+    const Real vvc = robust::ratio(1.0, rho * _vc);
+    return 2.0 * robust::ratio(_a, std::pow(vvc, 2 * _n) + 1.0);
   }
   PORTABLE_INLINE_FUNCTION Real Ps(const Real rho) const {
     if (rho <= 0) {
       return 0.;
     }
-    const Real vvc = 1 / (rho * _vc);
-    return _pc * std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _a / _n) /
-           std::pow(vvc, _k + _a) * (_k - 1.0 + F(rho)) / (_k - 1.0 + _a);
+    const Real vvc = robust::ratio(1, rho * _vc);
+    return _pc * robust::ratio(std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _aon),
+			       std::pow(vvc, _k + _a)) * robust::ratio(_k - 1.0 + F(rho), _k - 1.0 + _a);
   }
   PORTABLE_INLINE_FUNCTION Real Es(const Real rho) const {
     if (rho <= 0) {
       return 0.;
     }
-    const Real vvc = 1 / (rho * _vc);
-    const Real ec = _pc * _vc / (_k - 1.0 + _a);
+    const Real vvc = robust::ratio(1.0, rho * _vc);
+    const Real ec = _pc * robust::ratio(_vc, _k - 1.0 + _a);
     // const Real de = ecj-(Es(rho0)-_E0);
-    return ec * std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _a / _n) /
-           std::pow(vvc, _k - 1.0 + _a);
+    return robust::ratio(ec * std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _aon),
+			 std::pow(vvc, _k - 1.0 + _a));
   }
   PORTABLE_INLINE_FUNCTION Real Ts(const Real rho) const {
     if (rho <= 0) {
       return 0.;
     }
-    const Real vvc = 1 / (rho * _vc);
-    return std::pow(2.0, -_a * _b / _n) * _pc * _vc / (_Cv * (_k - 1 + _a)) *
-           std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _a / _n * (1 - _b)) /
-           std::pow(vvc, _k - 1.0 + _a * (1 - _b));
+    const Real vvc = robust::ratio(1.0, rho * _vc);
+    return std::pow(2.0, -_a * robust::ratio(_b, _n)) * _pc * robust::ratio(_vc, _Cv * (_k - 1 + _a)) *
+      robust::ratio(std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _aon * (1 - _b)),
+		    std::pow(vvc, _k - 1.0 + _a * (1 - _b)));
   }
   PORTABLE_INLINE_FUNCTION Real Gamma(const Real rho) const {
     return _k - 1.0 + (1.0 - _b) * F(rho);
@@ -371,39 +371,39 @@ class DavisProducts : public EosBase<DavisProducts> {
 
 PORTABLE_FORCEINLINE_FUNCTION Real DavisReactants::DimlessEdiff(const Real rho,
                                                                 const Real sie) const {
-  return (1.0 + _alpha) / (Ts(rho) * _Cv0) * (sie - Es(rho)) + 1.0;
+  return robust::ratio(1.0 + _alpha, Ts(rho) * _Cv0) * (sie - Es(rho)) + 1.0;
 }
 
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   using namespace math_utils;
   const Real y = 1.0 - robust::ratio(_rho0, std::max(rho, 0.));
-  const Real phat = 0.25 * _A * _A / _B * _rho0;
+  const Real phat = 0.25 * _A2oB * _rho0;
   const Real b4y = 4.0 * _B * y;
 
   if (rho >= _rho0) {
     return phat *
            (b4y +
             0.5 * (pow<2>(b4y) + onethird * (pow<3>(b4y) + _C * pow<4>(b4y) * 0.25)) +
-            pow<2>(y) / pow<4>(1 - y));
+            robust::ratio(pow<2>(y), pow<4>(1 - y)));
   } else {
     return phat * (std::exp(b4y) - 1.0);
   }
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const {
   const Real y = 1 - robust::ratio(_rho0, std::max(rho, 0.));
-  const Real phat = 0.25 * _A * _A / _B * _rho0;
+  const Real phat = 0.25 * _A2oB * _rho0;
   const Real b4y = 4 * _B * y;
   Real e_s;
   if (y > 0.0) {
-    const Real z = rho / _rho0 - 1;
+    const Real z = rho * _irho0 - 1;
     e_s = 0.5 * y * b4y *
               (1.0 + onethird * b4y * (1.0 + 0.25 * b4y * (1.0 + _C * 0.2 * b4y))) +
           onethird * math_utils::pow<3>(z);
   } else {
-    e_s = -y - (1.0 - std::exp(b4y)) / (4.0 * _B);
+    e_s = -y - robust::ratio(1.0 - std::exp(b4y), 4.0 * _B);
   }
-  return _e0 + _P0 * (1.0 / _rho0 - robust::ratio(1.0, std::max(rho, 0.))) +
-         phat / _rho0 * e_s;
+  return _e0 + _P0 * ( _irho0 - robust::ratio(1.0, std::max(rho, 0.))) +
+         phat * _irho0 * e_s;
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ts(const Real rho) const {
   const Real rho0overrho = robust::ratio(_rho0, std::max(rho, 0.));
@@ -424,15 +424,15 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::BulkModulusFromDensityInternalEner
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   using namespace math_utils;
   const Real y = 1 - robust::ratio(_rho0, std::max(rho, 0.));
-  const Real phat = 0.25 * _A * _A / _B * _rho0;
+  const Real phat = 0.25 * _A2oB * _rho0;
   const Real b4y = 4 * _B * y;
   const Real gamma = Gamma(std::max(rho, 0.));
   const Real esv = -Ps(std::max(rho, 0.));
   const Real psv =
       (rho >= _rho0)
           ? -phat * _rho0 *
-                (4 * _B * (1 + b4y + 0.5 * (pow<2>(b4y) + _C / 3 * pow<3>(b4y))) +
-                 3 * y / pow<4>(1 - y) + 4 * pow<2>(y) / pow<5>(1 - y))
+                (4 * _B * (1 + b4y + 0.5 * (pow<2>(b4y) + onethird * _C * pow<3>(b4y))) +
+                 3 * robust::ratio(y, pow<4>(1 - y)) + 4 * robust::ratio(pow<2>(y), pow<5>(1 - y)))
           : -phat * 4 * _B * _rho0 * std::exp(b4y);
   const Real gammav = (rho >= _rho0) ? _Z * _rho0 : 0.0;
   const Real numerator =
@@ -448,7 +448,7 @@ PORTABLE_INLINE_FUNCTION void DavisReactants::DensityEnergyFromPressureTemperatu
   // function of T
   PORTABLE_REQUIRE(temp >= 0, "Negative temperature provided");
   auto PofRatT = [&](const Real r) {
-    return (Ps(r) + Gamma(r) * r * _Cv0 * Ts(r) / (1 + _alpha) *
+    return (Ps(r) + Gamma(r) * r * _Cv0 * Ts(r) * _i1pa *
                         (std::pow(robust::ratio(temp, Ts(r)), 1 + _alpha) - 1.0));
   };
   using RootFinding1D::regula_falsi;
@@ -494,7 +494,7 @@ DavisReactants::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &p
   dpde = Gamma(_rho0) * _rho0;
   // chad please fix this. it's wrong
   Real gm1 = GruneisenParamFromDensityTemperature(_rho0, _T0) * _rho0;
-  dvdt = gm1 * cv / bmod;
+  dvdt = gm1 * robust::ratio(cv, bmod);
 }
 
 template <typename Indexer_t>
@@ -504,22 +504,22 @@ PORTABLE_INLINE_FUNCTION Real DavisProducts::BulkModulusFromDensityInternalEnerg
   if (rho <= 0) {
     return 0.;
   }
-  const Real vvc = 1 / (rho * _vc);
-  const Real Fx = -4 * _a * std::pow(vvc, 2 * _n - 1) / pow<2>(1 + std::pow(vvc, 2 * _n));
-  const Real tmp = std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _a / _n) /
-                   std::pow(vvc, _k + _a);
+  const Real vvc = robust::ratio(1.0, rho * _vc);
+  const Real Fx = -4 * _a * robust::ratio(std::pow(vvc, 2 * _n - 1), pow<2>(1 + std::pow(vvc, 2 * _n)));
+  const Real tmp = robust::ratio(std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _aon),
+				 std::pow(vvc, _k + _a));
   const Real tmp_x =
       0.5 * _a * (std::pow(vvc, _n - 1) - std::pow(vvc, -_n - 1)) *
-          std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _a / _n - 1) /
-          std::pow(vvc, _k + _a) -
-      (_k + _a) * tmp / vvc;
-  const Real psv = _pc / (_k - 1 + _a) * (tmp * Fx + (_k - 1 + F(rho)) * tmp_x) / _vc;
+    robust::ratio(std::pow(0.5 * (std::pow(vvc, _n) + std::pow(vvc, -_n)), _aon - 1),
+		  std::pow(vvc, _k + _a)) -
+    (_k + _a) * robust::ratio(tmp, vvc);
+  const Real psv = robust::ratio(_pc, _k - 1 + _a) * robust::ratio(tmp * Fx + (_k - 1 + F(rho)) * tmp_x, _vc);
   // const Real esv = _pc*_vc/(_k-1+_a)*(tmp+vvc*tmp_x)/_vc;
-  const Real esv = _pc / (_k - 1 + _a) * (tmp + vvc * tmp_x);
+  const Real esv = robust::ratio(_pc, _k - 1 + _a) * (tmp + vvc * tmp_x);
   const Real gamma = Gamma(rho);
   const Real gammav = (1 - _b) * Fx * _vc;
-  return -(psv + (sie - Es(rho)) * rho * (gammav - gamma * rho) - gamma * rho * esv) /
-         rho;
+  return -robust::ratio(psv + (sie - Es(rho)) * rho * (gammav - gamma * rho) - gamma * rho * esv,
+			rho);
 }
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperature(
@@ -530,7 +530,7 @@ PORTABLE_INLINE_FUNCTION void DavisProducts::DensityEnergyFromPressureTemperatur
   };
   using RootFinding1D::regula_falsi;
   using RootFinding1D::Status;
-  const Real rho0 = 1.0 / _vc;
+  const Real rho0 = robust::ratio(1.0, _vc);
   auto status = regula_falsi(PofRatT, press, rho0, 1.0e-5, 1.0e3, 1.0e-8, 1.0e-8, rho);
   if (status != Status::SUCCESS) {
     // Root finder failed even though the solution was bracketed... this is an error
@@ -560,7 +560,7 @@ PORTABLE_INLINE_FUNCTION void
 DavisProducts::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
                                       Real &cv, Real &bmod, Real &dpde, Real &dvdt,
                                       Indexer_t &&lambda) const {
-  rho = 1.0 / _vc;
+  rho = robust::ratio(1.0, _vc);
   sie = 2. * Es(rho);
   temp = TemperatureFromDensityInternalEnergy(rho, sie);
   press = PressureFromDensityInternalEnergy(rho, sie);
@@ -569,7 +569,7 @@ DavisProducts::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &pr
   dpde = Gamma(rho) * rho;
   // chad please fix this. it's wrong
   Real gm1 = GruneisenParamFromDensityTemperature(rho, temp) * rho;
-  dvdt = gm1 * cv / bmod;
+  dvdt = gm1 * robust::ratio(cv, bmod);
 }
 } // namespace singularity
 
