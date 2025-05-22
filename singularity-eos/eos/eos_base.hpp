@@ -200,12 +200,12 @@ class EosBase {
   // Generic evaluator
   template <typename Functor_t>
   PORTABLE_INLINE_FUNCTION void EvaluateDevice(const Functor_t f) const {
-    const CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     f(copy);
   }
   template <typename Functor_t>
   void EvaluateHost(Functor_t &f) const {
-    const CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     f(copy);
   }
 
@@ -247,7 +247,7 @@ class EosBase {
   PORTABLE_INLINE_FUNCTION Real GibbsFreeEnergyFromDensityTemperature(
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     Real sie = copy.InternalEnergyFromDensityTemperature(rho, T, lambda);
     Real P = copy.PressureFromDensityTemperature(rho, T, lambda);
     Real S = copy.EntropyFromDensityTemperature(rho, T, lambda);
@@ -257,7 +257,7 @@ class EosBase {
   PORTABLE_INLINE_FUNCTION Real GibbsFreeEnergyFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     Real T = copy.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
     Real P = copy.PressureFromDensityTemperature(rho, T, lambda);
     Real S = copy.EntropyFromDensityTemperature(rho, T, lambda);
@@ -272,7 +272,7 @@ class EosBase {
                                        LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           temperatures[i] =
@@ -307,7 +307,7 @@ class EosBase {
                                                    LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           sies[i] = copy.InternalEnergyFromDensityTemperature(rhos[i], temperatures[i],
@@ -342,7 +342,7 @@ class EosBase {
                                              LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           pressures[i] =
@@ -375,7 +375,7 @@ class EosBase {
                                                 LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           pressures[i] =
@@ -406,7 +406,7 @@ class EosBase {
                                            const int num, LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
@@ -436,7 +436,7 @@ class EosBase {
                                             LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           entropies[i] =
@@ -469,7 +469,7 @@ class EosBase {
                                                LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           entropies[i] =
@@ -501,7 +501,7 @@ class EosBase {
                                                  LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           cvs[i] = copy.SpecificHeatFromDensityTemperature(rhos[i], temperatures[i],
@@ -536,7 +536,7 @@ class EosBase {
                                                     LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           cvs[i] =
@@ -569,7 +569,7 @@ class EosBase {
                                                 LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           bmods[i] = copy.BulkModulusFromDensityTemperature(rhos[i], temperatures[i],
@@ -604,7 +604,7 @@ class EosBase {
                                                    LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           bmods[i] =
