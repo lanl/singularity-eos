@@ -21,7 +21,9 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
 #endif
   int result;
-  { result = Catch::Session().run(argc, argv); }
+  {
+    result = Catch::Session().run(argc, argv);
+  }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::finalize();
 #endif

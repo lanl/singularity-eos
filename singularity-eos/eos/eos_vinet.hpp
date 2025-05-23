@@ -222,7 +222,7 @@ inline void Vinet::InitializeVinet(const Real *d2tod40input) {
   for (int ind = VinetInternalParametersSize - 2; ind >= 2;
        ind--) { // _VIP[42]=d40=f40 given,first calculated is _VIP[41]=f39
     _VIP[ind] = _VIP[ind] - (ind) / _VIP[1] * _VIP[ind + 1]; // prefactors f40 to f0
-  }                                                          // _VIP[n+2]=fn, ind=n+2
+  } // _VIP[n+2]=fn, ind=n+2
 }
 
 PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real T,
@@ -241,7 +241,7 @@ PORTABLE_INLINE_FUNCTION void Vinet::Vinet_F_DT_func(const Real rho, const Real 
     sumP = _d2tod40[pref0vp + ind] + onemx * sumP;       //_d2tod40[38]=d40
     sumB = _d2tod40[pref0vp + ind] * ind + onemx * sumB; //_d2tod40[-2+40]=d40
     sumE = _VIP[pref0vip + ind] + onemx * sumE;          //_VIP[42]=f40
-  }                                                      //_VIP[2]=f0
+  } //_VIP[2]=f0
 #pragma unroll
   for (int ind = 1; ind >= 0; ind--) {
     sumE = _VIP[pref0vip + ind] + onemx * sumE;

@@ -14,8 +14,8 @@
 find_program(
     CLANG_FORMAT
     NAMES
-        clang-format-12 # Debian package manager, among others, provide this name
-        clang-format-mp-12.0 # MacPorts
+        clang-format-19 # Debian package manager, among others, provide this name
+        clang-format-mp-19.0 # MacPorts
         clang-format # Default name
     )
 
@@ -36,15 +36,15 @@ endif()
 if (NOT CLANG_FORMAT_VERSION)
     message(
         WARNING
-        "Couldn't determine clang-format version. clang-format 12.0 is \
+        "Couldn't determine clang-format version. clang-format 19.0 is \
         expected - results on other versions may not be stable")
 
     set(CLANG_FORMAT_VERSION "0.0.0" CACHE STRING "clang-format version not found")
-elseif (NOT (CLANG_FORMAT_VERSION VERSION_GREATER_EQUAL "12.0" AND
-         CLANG_FORMAT_VERSION VERSION_LESS "13.0"))
+elseif (NOT (CLANG_FORMAT_VERSION VERSION_GREATER_EQUAL "19.0" AND
+         CLANG_FORMAT_VERSION VERSION_LESS "20.0"))
     message(
         WARNING
-        "clang-format version 12.0 is required - results on other \
+        "clang-format version 19.0 is required - results on other \
         versions may not be stable")
 endif()
 

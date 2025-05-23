@@ -27,7 +27,7 @@ else
 fi
 
 # clang format major version
-TARGET_CF_VRSN=12
+TARGET_CF_VRSN=19
 CF_VRSN=$(${CFM} --version)
 echo "Note we assume clang format version ${TARGET_CF_VRSN}."
 echo "You are using ${CF_VRSN}."
