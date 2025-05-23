@@ -328,7 +328,7 @@ class DavisProducts : public EosBase<DavisProducts> {
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
-  Real _a, _b, _k, _n, _vc, _pc, _Cv, _aon;
+  Real _a, _b, _k, _n, _aon, _vc, _pc, _Cv;
   MeanAtomicProperties _AZbar;
   // static constexpr const char _eos_type[] = "DavisProducts";
   static constexpr const unsigned long _preferred_input =
