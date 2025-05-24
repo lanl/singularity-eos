@@ -289,9 +289,11 @@ class PTESolverBase {
       Real dudt = 0;
       Real usum = 0;
       for (std::size_t m = 0; m < nmat; ++m) {
-	Real rho_max = eos[m].MaximumDensity();
-        Real sie = eos[m].InternalEnergyFromDensityTemperature(std::min(rho[m], rho_max), T, lambda[m]);
-        Real cv = eos[m].SpecificHeatFromDensityTemperature(std::min(rho[m], rho_max), T, lambda[m]);
+        Real rho_max = eos[m].MaximumDensity();
+        Real sie = eos[m].InternalEnergyFromDensityTemperature(std::min(rho[m], rho_max),
+                                                               T, lambda[m]);
+        Real cv = eos[m].SpecificHeatFromDensityTemperature(std::min(rho[m], rho_max), T,
+                                                            lambda[m]);
         usum += rhobar[m] * sie;
         dudt += rhobar[m] * cv;
       }
@@ -307,17 +309,17 @@ class PTESolverBase {
             std::min(params_.temperature_limit, std::max(Tguess, newton_step(Tguess)));
       }
       for (std::size_t m = 0; m < nmat; ++m) {
-	Tguess = std::max(eos[m].MinimumTemperature(), Tguess);
+        Tguess = std::max(eos[m].MinimumTemperature(), Tguess);
       }
       SetVfracFromT(Tguess);
       // check to make sure the normalization didn't put us below rho_at_pmin
       rho_fail = false;
       for (std::size_t m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
-	const Real rho_max = eos[m].MaximumDensity();
-	PORTABLE_REQUIRE(rho_min < rho_max, "Valid density range must exist!");
+        const Real rho_max = eos[m].MaximumDensity();
+        PORTABLE_REQUIRE(rho_min < rho_max, "Valid density range must exist!");
         rho[m] = robust::ratio(rhobar[m], vfrac[m]);
-	PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_min");
+        PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_min");
         if (rho[m] < rho_min) {
           rho_fail = true;
           Tguess *= Tfactor;
