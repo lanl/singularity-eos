@@ -37,17 +37,19 @@ class DavisReactants : public EosBase<DavisReactants> {
                  const Real A, const Real B, const Real C, const Real G0, const Real Z,
                  const Real alpha, const Real Cv0,
                  const MeanAtomicProperties &AZbar = MeanAtomicProperties())
-      : _rho0(rho0), _irho0(robust::ratio(1.0, rho0)), _e0(e0), _P0(P0), _T0(T0), _A(A),
-        _B(B), _C(C), _G0(G0), _Z(Z), _alpha(alpha),
-        _i1pa(robust::ratio(1.0, 1.0 + _alpha)), _Cv0(Cv0),
-        _A2oB(robust::ratio(_A * _A, _B)), _AZbar(AZbar) {
+      : _rho0(rho0), _spvol(1.0 / rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C),
+        _G0(G0), _Z(Z), _alpha(alpha), _i1pa(1.0 / (1.0 + _alpha)), _Cv0(Cv0),
+        _A2oB(_A * _A / _B), _AZbar(AZbar) {
     CheckParams();
   }
   DavisReactants GetOnDevice() { return *this; }
   PORTABLE_INLINE_FUNCTION
   void CheckParams() const {
-    PORTABLE_REQUIRE(_rho0 > 0, "Density must be strictly positive");
-    PORTABLE_REQUIRE(_T0 >= 0, "Temperature must be positive");
+    PORTABLE_REQUIRE(_rho0 > robust::SMALL(),
+                     "Reference density must be strictly positive");
+    PORTABLE_REQUIRE(_T0 >= 0, "Reference temperature must be positive");
+    PORTABLE_REQUIRE(_B > robust::SMALL(), "B must be strictly positive");
+    PORTABLE_REQUIRE(_alpha >= 0, "alpha must be positive");
     _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
@@ -184,7 +186,7 @@ class DavisReactants : public EosBase<DavisReactants> {
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
-  Real _rho0, _irho0, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _i1pa, _Cv0, _A2oB;
+  Real _rho0, _spvol, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _i1pa, _Cv0, _A2oB;
   MeanAtomicProperties _AZbar;
   // static constexpr const char _eos_type[] = "DavisReactants";
   static constexpr unsigned long _preferred_input =
@@ -203,12 +205,15 @@ class DavisProducts : public EosBase<DavisProducts> {
   DavisProducts(const Real a, const Real b, const Real k, const Real n, const Real vc,
                 const Real pc, const Real Cv,
                 const MeanAtomicProperties &AZbar = MeanAtomicProperties())
-      : _a(a), _b(b), _k(k), _n(n), _aon(robust::ratio(_a, _n)), _vc(vc), _pc(pc),
-        _Cv(Cv), _AZbar(AZbar) {}
+      : _a(a), _b(b), _k(k), _n(n), _aon(_a / _n), _vc(vc), _pc(pc), _Cv(Cv),
+        _AZbar(AZbar) {
+    CheckParams();
+  }
   PORTABLE_INLINE_FUNCTION
   void CheckParams() const {
+    PORTABLE_REQUIRE(_n > robust::SMALL(), "n must be strictly positive");
+    PORTABLE_REQUIRE(_Cv > robust::SMALL(), "Cv must be strictly positive");
     _AZbar.CheckParams();
-    // TODO(JMM): Stub.
   }
   DavisProducts GetOnDevice() { return *this; }
   template <typename Indexer_t = Real *>
@@ -403,15 +408,15 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const {
   const Real b4y = 4 * _B * y;
   Real e_s;
   if (y > 0.0) {
-    const Real z = rho * _irho0 - 1;
+    const Real z = rho * _spvol - 1;
     e_s = 0.5 * y * b4y *
               (1.0 + onethird * b4y * (1.0 + 0.25 * b4y * (1.0 + _C * 0.2 * b4y))) +
           onethird * math_utils::pow<3>(z);
   } else {
     e_s = -y - robust::ratio(1.0 - std::exp(b4y), 4.0 * _B);
   }
-  return _e0 + _P0 * (_irho0 - robust::ratio(1.0, std::max(rho, 0.))) +
-         phat * _irho0 * e_s;
+  return _e0 + _P0 * (_spvol - robust::ratio(1.0, std::max(rho, 0.))) +
+         phat * _spvol * e_s;
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ts(const Real rho) const {
   const Real rho0overrho = robust::ratio(_rho0, std::max(rho, 0.));
