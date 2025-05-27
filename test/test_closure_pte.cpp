@@ -338,8 +338,8 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
             rho[0] = vfrac_sum * rhobar1 / alpha_guess1;
             rho[1] = vfrac_sum * rhobar2 / alpha_guess2;
 
-            eos[0] = eos1;
-            eos[1] = eos2;
+            eos[0] = al_eos;
+            eos[1] = foam_eos;
             MyLambdaIndexer lambda(plambda);
 
             singularity::PTESolverRhoT<EOS *, Real *, MyLambdaIndexer> method(
