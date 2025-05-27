@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_carnahan_starling.hpp>
 
-template void singularity::impl::ConcretizeType<singularity::EOS>(EOS);
+namespace singularity {
+SG_ADD_TEMPLATE_INSTANTIATIONS(CarnahanStarling, Real *)
+} // namespace singularity
