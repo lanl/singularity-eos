@@ -37,7 +37,7 @@ class DavisReactants : public EosBase<DavisReactants> {
                  const Real A, const Real B, const Real C, const Real G0, const Real Z,
                  const Real alpha, const Real Cv0,
                  const MeanAtomicProperties &AZbar = MeanAtomicProperties())
-      : _rho0(rho0), _spvol(1.0 / rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C),
+      : _rho0(rho0), _spvol0(1.0 / rho0), _e0(e0), _P0(P0), _T0(T0), _A(A), _B(B), _C(C),
         _G0(G0), _Z(Z), _alpha(alpha), _i1pa(1.0 / (1.0 + _alpha)), _Cv0(Cv0),
         _A2oB(_A * _A / _B), _AZbar(AZbar) {
     CheckParams();
@@ -186,7 +186,7 @@ class DavisReactants : public EosBase<DavisReactants> {
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
-  Real _rho0, _spvol, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _i1pa, _Cv0, _A2oB;
+  Real _rho0, _spvol0, _e0, _P0, _T0, _A, _B, _C, _G0, _Z, _alpha, _i1pa, _Cv0, _A2oB;
   MeanAtomicProperties _AZbar;
   // static constexpr const char _eos_type[] = "DavisReactants";
   static constexpr unsigned long _preferred_input =
@@ -408,15 +408,15 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const {
   const Real b4y = 4 * _B * y;
   Real e_s;
   if (y > 0.0) {
-    const Real z = rho * _spvol - 1;
+    const Real z = rho * _spvol0 - 1;
     e_s = 0.5 * y * b4y *
               (1.0 + onethird * b4y * (1.0 + 0.25 * b4y * (1.0 + _C * 0.2 * b4y))) +
           onethird * math_utils::pow<3>(z);
   } else {
     e_s = -y - robust::ratio(1.0 - std::exp(b4y), 4.0 * _B);
   }
-  return _e0 + _P0 * (_spvol - robust::ratio(1.0, std::max(rho, 0.))) +
-         phat * _spvol * e_s;
+  return _e0 + _P0 * (_spvol0 - robust::ratio(1.0, std::max(rho, 0.))) +
+         phat * _spvol0 * e_s;
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ts(const Real rho) const {
   const Real rho0overrho = robust::ratio(_rho0, std::max(rho, 0.));
