@@ -25,6 +25,7 @@
 #endif
 
 #include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
@@ -52,6 +53,23 @@ using singularity::robust::ratio;
 
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
                                  DavisReactants, SpinerEOSDependsRhoT>;
+
+template <typename... Ts>
+struct LambdaIndexer {
+ public:
+  using Lambda_t = singularity::IndexerUtils::VariadicPointerIndexer<Ts...>;
+  LambdaIndexer(Real *data) : data_(data) {}
+  PORTABLE_FORCEINLINE_FUNCTION
+  auto operator[](const std::size_t m) { return Lambda_t(data_ + Lambda_t::size() * m); }
+  static inline constexpr std::size_t size() { return NEOS * Lambda_t::size(); }
+
+ private:
+  Real *data_;
+};
+// Specialized to the EOSs we actually want
+using MyLambdaIndexer = LambdaIndexer<
+    singularity::IndexableTypes::LogDensity, singularity::IndexableTypes::LogTemperature,
+    singularity::IndexableTypes::RootStatus, singularity::IndexableTypes::TableStatus>;
 
 template <template <typename... Types> class PTESolver_t, typename Scratch_t,
           typename ArrT>
@@ -262,6 +280,98 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
     copper_eos.Finalize();  // actually does something
     davis_r_eos.Finalize(); // irrelevant because no data allocated
     davis_p_eos.Finalize(); // irrelevant because no data allocated
+  }
+
+  GIVEN("A difficult two material mixed cell") {
+    const std::string eos_file = "../materials.sp5";
+
+    constexpr int Al_matid = 3720;
+    EOS al_eos_h = SpinerEOSDependsRhoT(eos_file, Al_matid);
+    EOS al_eos = al_eos_h.GetOnDevice();
+
+    constexpr int foam_matid = 7592;
+    EOS foam_eos_h = SpinerEOSDependsRhoT(eos_file, foam_matid);
+    EOS foam_eos = foam_eos_h.GetOnDevice();
+
+    constexpr Real rhobar1 = 4.84896778419434e-04;
+    constexpr Real rhobar2 = 3.85334470246594e-02;
+    constexpr Real alpha1_guess = 1.87984334110313e-03;
+    constexpr Real alpha2_guess = 9.98120156658897e-01;
+    constexpr Real sietot = 9.38106182865728e+11;
+    constexpr Real Tguess = 1.49041098541734e+03;
+
+    WHEN("We call PTE") {
+      constexpr int NT = 1;
+      constexpr Real alpha1_true = 2.65277486969419e-03;
+      constexpr Real alpha2_true = 9.97347225130306e-01;
+      constexpr Real Ttrue = 2.10866067749579e+04;
+      constexpr Real Ptrue = 1.44504093939007e+10;
+
+      EOS *eos = (EOS *)PORTABLE_MALLOC(NEOS * sizeof(EOS));
+      Real *rho = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+      Real *alpha = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+      Real *sie = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+      Real *temp = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+      Real *press = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+      Real *plambda = (Real *)PORTABLE_MALLOC(MyLambdaIndexer::size() * sizeof(Real));
+
+      // PTE solvers require internal scratch space. However, the solver
+      // doesn't manage memory. We must provide it ourselves.
+      const std::size_t pte_scratch_size =
+          singularity::PTESolverRhoTRequiredScratch(NEOS);
+      Real *pscratch = (Real *)PORTABLE_MALLOC(pte_scratch_size * sizeof(Real));
+
+      // The pte_params object contains a number of settings you can
+      // modify for the PTE solver, such as tolerances.
+      singularity::MixParams pte_params;
+      pte_params.pte_rel_tolerance_p = 1e-12;
+      pte_params.pte_rel_tolerance_e = 1e-12;
+      pte_params.pte_abs_tolerance_p = 0;
+
+      int nsuccess = 0;
+      PortableReduce(
+          "Run a difficult 2 material state", 0, NT,
+          PORTABLE_LAMBDA(const int i, int &ns) {
+            Real vfrac_sum = alpha_guess1 + alpha_guess2;
+            alpha[0] = alpha_guess1 / vfrac_sum;
+            alpha[1] = alpha_guess2 / vfrac_sum;
+            rho[0] = vfrac_sum * rhobar1 / alpha_guess1;
+            rho[1] = vfrac_sum * rhobar2 / alpha_guess2;
+
+            eos[0] = eos1;
+            eos[1] = eos2;
+            MyLambdaIndexer lambda(plambda);
+
+            singularity::PTESolverRhoT<EOS *, Real *, MyLambdaIndexer> method(
+                NEOS, eos, 1.0, sietot, rho, alpha, sie, temp, press, lambda, pscratch,
+                Tguess, pte_params);
+            // Run the solver
+            auto status = singularity::PTESolver(method);
+
+            if (status.converged) {
+              if (isCLose(alpha[0], alpha1_true, 1e-10) &&
+                  isClose(alpha[1], alpha2_true, 1e-10) &&
+                  isClose(temp[0], Ttrue, 1e-10) && isClose(press[0], Ptrue, 1e-10)) {
+                ns += 1;
+              }
+            }
+          },
+          nsuccess);
+
+      THEN("The solver converges") { REQUIRE(nsuccess == NT); }
+
+      PORTABLE_FREE(eos);
+      PORTABLE_FREE(rho);
+      PORTABLE_FREE(alpha);
+      PORTABLE_FREE(sie);
+      PORTABLE_FREE(temp);
+      PORTABLE_FREE(press);
+      PORTABLE_FREE(plambda);
+    }
+    al_eos_h.Finalize();
+    al_eos.Finalize();
+    foam_eos_h.Finalize();
+    foam_eos.Finalize();
   }
 }
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
