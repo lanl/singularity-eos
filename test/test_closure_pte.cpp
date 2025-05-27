@@ -54,7 +54,7 @@ using singularity::robust::ratio;
 using EOS = singularity::Variant<IdealGas, ShiftedEOS<DavisProducts>, DavisProducts,
                                  DavisReactants, SpinerEOSDependsRhoT>;
 
-template <typename... Ts>
+template <int NEOS, typename... Ts>
 struct LambdaIndexer {
  public:
   using Lambda_t = singularity::IndexerUtils::VariadicPointerIndexer<Ts...>;
@@ -67,9 +67,11 @@ struct LambdaIndexer {
   Real *data_;
 };
 // Specialized to the EOSs we actually want
-using MyLambdaIndexer = LambdaIndexer<
-    singularity::IndexableTypes::LogDensity, singularity::IndexableTypes::LogTemperature,
-    singularity::IndexableTypes::RootStatus, singularity::IndexableTypes::TableStatus>;
+template <int NEOS>
+using MyLambdaIndexer = LambdaIndexer<NEOS, singularity::IndexableTypes::LogDensity,
+                                      singularity::IndexableTypes::LogTemperature,
+                                      singularity::IndexableTypes::RootStatus,
+                                      singularity::IndexableTypes::TableStatus>;
 
 template <template <typename... Types> class PTESolver_t, typename Scratch_t,
           typename ArrT>
@@ -301,6 +303,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
     constexpr Real Tguess = 1.49041098541734e+03;
 
     WHEN("We call PTE") {
+      constexpr int NEOS = 2;
       constexpr int NT = 1;
       constexpr Real alpha1_true = 2.65277486969419e-03;
       constexpr Real alpha2_true = 9.97347225130306e-01;
@@ -340,7 +343,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
 
             eos[0] = al_eos;
             eos[1] = foam_eos;
-            MyLambdaIndexer lambda(plambda);
+            MyLambdaIndexer<NEOS> lambda(plambda);
 
             singularity::PTESolverRhoT<EOS *, Real *, MyLambdaIndexer> method(
                 NEOS, eos, 1.0, sietot, rho, alpha, sie, temp, press, lambda, pscratch,
