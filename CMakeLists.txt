@@ -364,6 +364,13 @@ endif()
 if (SINGULARITY_USE_EOSPAC AND SINGULARITY_EOSPAC_ENABLE_SHMEM)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY)
 endif()
+if (SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE)
+  message(WARNING "Vector capture by reference is ON for CPU builds without Kokkos. "
+    "This is not technically valid Kokkos and may cause issues in edge cases. "
+    "To disable, set -DSINGULARITY_VECTOR_CAPTURE_BY_REFERENCE=OFF.")
+  target_compile_definitions(singularity-eos_Interface INTERFACE
+    SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE)
+endif()
 
 # ------------------------------------------------------------------------------#
 # Handle dependencies
@@ -597,13 +604,6 @@ target_compile_options(
 if (SINGULARITY_STRICT_WARNINGS)
   target_compile_options(singularity-eos_Interface INTERFACE
     -Wall -Werror -Wno-unknown-pragmas)
-endif()
-if (SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE)
-  message(WARNING "Vector capture by reference is ON for CPU builds without Kokkos. "
-    "This is not technically valid Kokkos and may cause issues in edge cases. "
-    "To disable, set -DSINGULARITY_VECTOR_CAPTURE_BY_REFERENCE=OFF.")
-  target_compile_options(singularity-eos_Interface INTERFACE
-    SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE)
 endif()
 
 if(TARGET singularity-eos_Library)

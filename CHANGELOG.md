@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR511]](https://github.com/lanl/singularity-eos/pull/511) Added ability to sometimes capture by reference in vector API
 
 ### Fixed (Repair bugs, etc)
 - [[PR505]](https://github.com/lanl/singularity-eos/pull/505) rename LogType::TRUE to LogType::DOUBLE
