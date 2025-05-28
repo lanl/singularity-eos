@@ -297,8 +297,8 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
 
     constexpr Real rhobar1 = 4.84896778419434e-04;
     constexpr Real rhobar2 = 3.85334470246594e-02;
-    constexpr Real alpha1_guess = 1.87984334110313e-03;
-    constexpr Real alpha2_guess = 9.98120156658897e-01;
+    constexpr Real alpha_guess1 = 1.87984334110313e-03;
+    constexpr Real alpha_guess2 = 9.98120156658897e-01;
     constexpr Real sietot = 9.38106182865728e+11;
     constexpr Real Tguess = 1.49041098541734e+03;
 
