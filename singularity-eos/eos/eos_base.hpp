@@ -65,11 +65,17 @@ char *StrCat(char *destination, const char *source) {
 }
 } // namespace impl
 
+// JMM: This is a little trick to skip copying EOS's when not
+// necessary. It changes the semantics of the lambda to capture by
+// reference *only* on CPU-only builds. Should buy performance, but is
+// a bit of a hack. I consider it dangerous because it changes the
+// semantics/memnory model between CPU and GPU, which may be difficult
+// to debug. It is thus off by defualt, but can be turned on.
 #if defined(SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE) && !defined(__CUDACC__) &&          \
     !defined(__HIPCC__)
 #if !defined(PORTABILITY_STRATEGY_KOKKOS) && !defined(PORTABILITY_STRATEGY_NONE)
 #error                                                                                   \
-    "Unexpected portability strategy! Please set SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE to build in this mode."
+    "Unexpected portability strategy! Please set SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE=OFF to build in this mode."
 #endif // unexpected portability strategy!
 // JMM: I am hoping that by not adding any decorators here, we will
 // catch problems with unexpected, non-Cuda, non-HIP accelerator
