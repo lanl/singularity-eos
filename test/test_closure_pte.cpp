@@ -352,13 +352,26 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
             // Run the solver
             auto status = singularity::PTESolver(method);
 
-            if (status.converged) {
-              if (isClose(alpha[0], alpha1_true, 1e-10) &&
-                  isClose(alpha[1], alpha2_true, 1e-10) &&
-                  isClose(temp[0], Ttrue, 1e-10) && isClose(press[0], Ptrue, 1e-10)) {
-                ns += 1;
+            bool success = true;
+            if (!status.converged) {
+              printf("Solver did not converge!\n");
+              success = false;
+            } else {
+              if (!(isClose(alpha[0], alpha1_true) && isClose(alpha[1], alpha2_true))) {
+                printf("Volume fractions dop not match! [%.14e %.14e], [%.14e %.14e]\n",
+                       alpha[0], alpha[1], alpha1_true, alpha2_true);
+                success = false;
+              }
+              if (!isClose(temp[0], Ttrue)) {
+                printf("Temperatures do not match! %.14e %.14e\n", temp[0], Ttrue);
+                success = false;
+              }
+              if (!isClose(press[0], Ptrue)) {
+                printf("Pressures do not match! %.14e %.1re\n", press[0], Ptrue);
+                success = false;
               }
             }
+            ns += success;
           },
           nsuccess);
 
