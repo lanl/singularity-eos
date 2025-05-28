@@ -69,6 +69,9 @@ cmake_dependent_option(
   SINGULARITY_USE_KOKKOSKERNELS "Use KokkosKernels for LA routines" ON
   "SINGULARITY_USE_KOKKOS;SINGULARITY_BUILD_CLOSURE" OFF)
 
+option(SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE
+  "Capture by reference in vector API on CPUs when possible" OFF)
+
 # extra build options
 option(SINGULARITY_BUILD_PYTHON "Compile Python bindings" OFF)
 option(SINGULARITY_BUILD_EXAMPLES "Compile examples" OFF)
@@ -360,6 +363,13 @@ if(SINGULARITY_USE_SPINER_WITH_HDF5)
 endif()
 if (SINGULARITY_USE_EOSPAC AND SINGULARITY_EOSPAC_ENABLE_SHMEM)
   target_compile_definitions(singularity-eos_Interface INTERFACE SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY)
+endif()
+if (SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE)
+  message(WARNING "Vector capture by reference is ON for CPU builds. "
+    "This is not technically valid Kokkos and may cause issues in edge cases. "
+    "To disable, set -DSINGULARITY_VECTOR_CAPTURE_BY_REFERENCE=OFF.")
+  target_compile_definitions(singularity-eos_Interface INTERFACE
+    SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE)
 endif()
 
 # ------------------------------------------------------------------------------#

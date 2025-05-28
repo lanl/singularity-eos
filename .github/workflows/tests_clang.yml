@@ -44,6 +44,7 @@ jobs:
                   -DSINGULARITY_TEST_HELMHOLTZ=ON \
                   -DSINGULARITY_FORCE_SUBMODULE_MODE=ON \
                   -DSINGULARITY_USE_V_AND_V_EOS=OFF \
+                  -DSINGULARITY_VECTOR_CAPTURE_BY_REFERENCE=ON \
                   -DSINGULARITY_USE_KOKKOS=OFF \
                   -DSINGULARITY_PLUGINS=$(pwd)/../example/plugin \
                   -DCMAKE_LINKER=ld.gold \
