@@ -100,7 +100,7 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
     vol_frac[i] /= vfrac_sum;
     densities[i] *= vfrac_sum;
   }
-  fvrac_sum = 1.0;
+  vfrac_sum = 1.0;
 
   // Copy values to device (when available)
   const size_t bytes = num_pte * sizeof(Real);
