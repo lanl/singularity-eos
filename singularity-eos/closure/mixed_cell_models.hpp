@@ -56,7 +56,7 @@ struct MixParams {
   Real line_search_fac = 0.5;
   Real vfrac_safety_fac = 0.95;
   Real temperature_limit = 1.0e15;
-  Real default_tguess = 300.;
+  Real default_tguess = 500.; // JMM: Better to approach from above
   Real min_dtde = 1.0e-16;
   std::size_t pte_small_step_tries = 2;
   Real pte_small_step_thresh = 1e-16;
