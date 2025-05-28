@@ -333,7 +333,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
       pte_params.pte_abs_tolerance_p = 0;
 
       int nsuccess = 0;
-      PortableReduce(
+      portableReduce(
           "Run a difficult 2 material state", 0, NT,
           PORTABLE_LAMBDA(const int i, int &ns) {
             Real vfrac_sum = alpha_guess1 + alpha_guess2;
@@ -353,7 +353,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
             auto status = singularity::PTESolver(method);
 
             if (status.converged) {
-              if (isCLose(alpha[0], alpha1_true, 1e-10) &&
+              if (isClose(alpha[0], alpha1_true, 1e-10) &&
                   isClose(alpha[1], alpha2_true, 1e-10) &&
                   isClose(temp[0], Ttrue, 1e-10) && isClose(press[0], Ptrue, 1e-10)) {
                 ns += 1;
