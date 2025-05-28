@@ -25,7 +25,7 @@
 constexpr int NMAT = 3;
 constexpr int NTRIAL = 100;
 constexpr int NPTS = NTRIAL * NMAT;
-constexpr int HIST_SIZE = 10;
+constexpr std::size_t HIST_SIZE = 10;
 
 using singularity::DavisProducts;
 using singularity::DavisReactants;
