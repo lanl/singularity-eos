@@ -189,6 +189,10 @@ Initializes a Davis Reactants EOS model at the specified material index.
 Noble-Abel
 ^^^^^^^^^^
 
+.. note::
+
+   This model is only available when ``SINGULARITY_USE_V_AND_V_EOS`` is ``ON``.
+
 .. code-block:: fortran
 
    integer function init_sg_NobleAbel_f(matindex, eos, gm1, Cv, &
@@ -215,6 +219,10 @@ Initializes a Noble-Abel EOS model at the specified material index.
 
 Stiff Gas
 ^^^^^^^^^
+
+.. note::
+
+   This model is only available when ``SINGULARITY_USE_V_AND_V_EOS`` is ``ON``.
 
 .. code-block:: fortran
 
@@ -243,6 +251,10 @@ Initializes a Stiff Gas EOS model at the specified material index.
 SAP Polynomial
 ^^^^^^^^^^^^^^
 
+.. note::
+
+   This model is only available when ``SINGULARITY_USE_V_AND_V_EOS`` is ``ON``.
+
 .. code-block:: fortran
 
    integer function init_sg_SAP_Polynomial_f(matindex, eos, rho0, a0, a1, a2c, &
@@ -257,7 +269,9 @@ SAP Polynomial
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_SAP_Polynomial_f
 
-Initializes a SAP (Separate Analytic Polynomials) Polynomial EOS model at the specified material index.
+Initializes a SAP Polynomial EOS model at the specified material
+index. SAP here refers to a specific implementation of a polynomial
+equation of state.
 
 - ``matindex``: Material index (1-based in Fortran)
 - ``eos``: EOS array
