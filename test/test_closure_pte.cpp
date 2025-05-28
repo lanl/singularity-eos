@@ -316,7 +316,8 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
       Real *sie = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
       Real *temp = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
       Real *press = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
-      Real *plambda = (Real *)PORTABLE_MALLOC(MyLambdaIndexer<NEOS>::size() * sizeof(Real));
+      Real *plambda =
+          (Real *)PORTABLE_MALLOC(MyLambdaIndexer<NEOS>::size() * sizeof(Real));
 
       // PTE solvers require internal scratch space. However, the solver
       // doesn't manage memory. We must provide it ourselves.
