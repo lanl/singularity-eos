@@ -70,7 +70,7 @@ cmake_dependent_option(
   "SINGULARITY_USE_KOKKOS;SINGULARITY_BUILD_CLOSURE" OFF)
 
 option(SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE
-  "Capture by reference in vector API on CPUs when possible" ON)
+  "Capture by reference in vector API on CPUs when possible" OFF)
 
 # extra build options
 option(SINGULARITY_BUILD_PYTHON "Compile Python bindings" OFF)

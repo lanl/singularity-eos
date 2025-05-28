@@ -98,30 +98,31 @@ sections detailing those build modes.
 
 The main CMake options to configure building are in the following table:
 
-====================================== ======= ===========================================
-  Option                               Default  Comment
-====================================== ======= ===========================================
- ``SINGULARITY_USE_SPINER``              ON       Enables EOS objects that use ``spiner``.
- ``SINGULARITY_USE_FORTRAN``             ON       Enable Fortran API for equation of state.
- ``SINGULARITY_USE_KOKKOS``              OFF      Uses Kokkos as the portability backend. Currently only Kokkos is supported for GPUs.
- ``SINGULARITY_USE_EOSPAC``              OFF      Link against EOSPAC. Needed for sesame2spiner and some tests.
- ``SINGULARITY_EOSPAC_ENABLE_SHMEM``     OFF      Enable shared memory support in EOSPAC backend.
- ``SINGULARITY_BUILD_CLOSURE``           OFF      Build the mixed cell closure models
- ``SINGULARITY_BUILD_TESTS``             OFF      Build test infrastructure.
- ``SINGULARITY_BUILD_PYTHON``            OFF      Build Python bindings.
- ``SINGULARITY_BUILD_EXAMPLES``          OFF      Build examples of ``singularity-eos`` in use.
- ``SINGULARITY_INVERT_AT_SETUP``         OFF      For tests, pre-invert eospac tables.
- ``SINGULARITY_BETTER_DEBUG_FLAGS``      ON       Enables nicer GPU debug flags. May interfere with in-tree builds as a submodule.
- ``SINGULARITY_HIDE_MORE_WARNINGS``      OFF      Makes warnings less verbose. May interfere with in-tree builds as a submodule.
- ``SINGULARITY_FORCE_SUBMODULE_MODE``    OFF      Force build in _submodule_ mode.
- ``SINGULARITY_USE_TRUE_LOG_GRIDDING``   OFF      Use grids that conform to logarithmic spacing.
- ``SINGULARITY_USE_SINGLE_LOGS``         OFF      Use single precision logarithms (may degrade accuracy).
- ``SINGULARITY_NQT_ORDER_1``             OFF      For fast logs, use the less accurate but faster 1st-order version.
- ``SINGULARITY_NQT_PORTABLE``            OFF      For fast logs, use the slower but endianness-independent implementation.
- ``SINGULARITY_STRICT_WARNINGS``         OFF      For testing. Adds -Wall and -Werror to builds.
- ``SINGULARITY_USE_V_AND_V_EOS``         OFF      Enables several additional EOS models and adds them to the default variant
- ``SINGULARITY_USE_STELLAR_COLLAPSE``    OFF      Adds the Stellar Collapse EOS to the default variant
-====================================== ======= ===========================================
+============================================= ======= ===========================================
+  Option                                      Default  Comment
+============================================= ======= ===========================================
+ ``SINGULARITY_USE_SPINER``                     ON       Enables EOS objects that use ``spiner``.
+ ``SINGULARITY_USE_FORTRAN``                    ON       Enable Fortran API for equation of state.
+ ``SINGULARITY_USE_KOKKOS``                     OFF      Uses Kokkos as the portability backend. Currently only Kokkos is supported for GPUs.
+ ``SINGULARITY_USE_EOSPAC``                     OFF      Link against EOSPAC. Needed for sesame2spiner and some tests.
+ ``SINGULARITY_EOSPAC_ENABLE_SHMEM``            OFF      Enable shared memory support in EOSPAC backend.
+ ``SINGULARITY_BUILD_CLOSURE``                  OFF      Build the mixed cell closure models
+ ``SINGULARITY_BUILD_TESTS``                    OFF      Build test infrastructure.
+ ``SINGULARITY_BUILD_PYTHON``                   OFF      Build Python bindings.
+ ``SINGULARITY_BUILD_EXAMPLES``                 OFF      Build examples of ``singularity-eos`` in use.
+ ``SINGULARITY_INVERT_AT_SETUP``                OFF      For tests, pre-invert eospac tables.
+ ``SINGULARITY_BETTER_DEBUG_FLAGS``             ON       Enables nicer GPU debug flags. May interfere with in-tree builds as a submodule.
+ ``SINGULARITY_HIDE_MORE_WARNINGS``             OFF      Makes warnings less verbose. May interfere with in-tree builds as a submodule.
+ ``SINGULARITY_FORCE_SUBMODULE_MODE``           OFF      Force build in _submodule_ mode.
+ ``SINGULARITY_USE_TRUE_LOG_GRIDDING``          OFF      Use grids that conform to logarithmic spacing.
+ ``SINGULARITY_USE_SINGLE_LOGS``                OFF      Use single precision logarithms (may degrade accuracy).
+ ``SINGULARITY_NQT_ORDER_1``                    OFF      For fast logs, use the less accurate but faster 1st-order version.
+ ``SINGULARITY_NQT_PORTABLE``                   OFF      For fast logs, use the slower but endianness-independent implementation.
+ ``SINGULARITY_STRICT_WARNINGS``                OFF      For testing. Adds -Wall and -Werror to builds.
+ ``SINGULARITY_USE_V_AND_V_EOS``                OFF      Enables several additional EOS models and adds them to the default variant
+ ``SINGULARITY_USE_STELLAR_COLLAPSE``           OFF      Adds the Stellar Collapse EOS to the default variant
+ ``SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE``    OFF      A performance trick for CPU-only builds. May improve vector-API calls for small vector lengths. Enable at your own risk!
+============================================= ======= ===========================================
 
 More options are available to modify only if certain other options or
 variables satisfy certain conditions (*dependent options*). *Dependent

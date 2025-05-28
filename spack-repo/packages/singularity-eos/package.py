@@ -87,7 +87,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     variant("closure", default=True, description="Build closure module")
     variant("shared", default=False, description="Build shared libs")
     variant("vandv", default=True, description="Enable V&V EOSs in default Singularity::Variant")
-    variant("vecref", default=True,
+    variant("vecref", default=False,
             description="When possible capture by reference in vector API. Performance optimization.")
 
     plugins = {}
