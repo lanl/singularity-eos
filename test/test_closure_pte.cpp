@@ -345,7 +345,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
             eos[1] = foam_eos;
             MyLambdaIndexer<NEOS> lambda(plambda);
 
-            singularity::PTESolverRhoT<EOS *, Real *, MyLambdaIndexer> method(
+            singularity::PTESolverRhoT<EOS *, Real *, MyLambdaIndexer<NEOS>> method(
                 NEOS, eos, 1.0, sietot, rho, alpha, sie, temp, press, lambda, pscratch,
                 Tguess, pte_params);
             // Run the solver
