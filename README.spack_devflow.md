@@ -19,9 +19,10 @@ $ seos-dev >
 Now, we want to create our development environment. We will make an _anonymous_ environment; the best way to think about it is that this directory will be synonymous with our development environment - that is, when we work in anything underneth this directory, it is being done in the environment we will construct.
 
 ```bash
-$ seos-dev > spack env activate .
+$ seos-dev > spack env create -d .
 ==> Created independent environment in: /home/jack/devel/seos-dev
 ==> Activate with: spack env activate .
+$ seos-dev > spack env activate .
 ```
 
 First, let's point out what we have after the environment is created
@@ -54,7 +55,7 @@ Looking ahead, we want to have access to `spiner` code, so let's explicitly add 
 $ seos-dev > spack add spiner@main
 ```
 
-We've got a basic spack environment ready. Let's take a look
+We've got a basic spack environment ready. Let's take a look at the new `spack.yaml`
 
 ```yaml
 spack:
@@ -294,18 +295,24 @@ And there we go! We have a shared environment for `spiner` and `singularity-eos`
 Well, we've done enough work for now. Let's clean up while our merges are getting approved
 
 spack undevelop spiner
+
 spack undevelop singularity-eos
 
 ## Working with another dependency
 Kokkos
+
 spack config change packages:all:variants: +hdf5+mpi+kokkos
 
 Since we are asking for a package that we don't explicitly make a spack spec for, we need to provide it here. Otherwise, this works as you should expect by now
 
 spack develop kokkos@4
+
 vi #...
 
 ## Getting a shell with an environment, manually building
+
 spack build-env singularity-eos -- bash
+
 source $SPACK_ROOT/share/spack/setup-env.sh
+
 spack cd -c singulary-eos
