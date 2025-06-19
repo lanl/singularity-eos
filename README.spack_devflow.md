@@ -8,6 +8,21 @@ Assume familiarty with basic Spack usage (for example, defining a package's depe
 ## Setup
 From my personal experience, the trivial environment and directory layout is the most difficult to adjust to, while all the iterative development that follows is natural and straightforward. That may be a personal failing, but if you see these first steps as strange, I want to assure you that: 1.) you are in good company and 2.) once we begin doing code work, it all makes perfect sense, and 3.) this approach is not required, and with a few obvious options we can work in almost any conceivable setup.
 
+### NOTE STEP ZERO using a fresh spack clone, I recommend doing this.
+
+Make a directory, everything we do will stay in this directory.
+
+```bash
+$ mkdir devel
+$ cd devel
+$ git clone https://github.com/spack/spack.git
+$ export SPACK_USER_CACHE_PATH=$(pwd)/.spack
+$ source spack/share/spack/setup-env.sh
+$ spack spec zlib
+```
+
+The last command will initiate Spack bootstraping. Since it has to be done anyway, let's go ahead and get it over with.
+
 Let's start with creating our top-level environment directory. For this exercise, all code checkouts and local installs will go beneath this directory.
 
 ```bash
@@ -16,7 +31,10 @@ $ ~ > cd devel/seos-dev
 $ seos-dev >
 ```
 
+
 Now, we want to create our development environment. We will make an _anonymous_ environment; the best way to think about it is that this directory will be synonymous with our development environment - that is, when we work in anything underneth this directory, it is being done in the environment we will construct.
+
+
 
 ```bash
 $ seos-dev > spack env create -d .
