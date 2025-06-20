@@ -1,79 +1,92 @@
-Spack has become a standard package management solution for software development HPC environments. While a powerful tool, even experienced users have found it's use to be occasionally frustrating. Furthermore, much of the downstream use of Spack tends to emphasize it's use as means to dev-ops. This is, of course, Spack's main context, but this can mislead developers looking for a flexible, extensible programming environment.
+Spack has become a standard package management solution for software development HPC environments. While a powerful tool, even experienced users have found it's use to be occasionally frustrating to navigate. Furthermore, much of the downstream use of Spack tends to emphasize it's use as means to dev-ops. This is, of course, Spack's main context, but this can mislead developers looking for a flexible, extensible programming environment.
 
+This walkthrough is intended to provide users with experience in using Spack for a developer workflow, with the goal of demonstrating how Spack works "under the hood" by demonstrating the distinct steps taking place that may, at a glance, be unclear.
 
-This walkthrough is intended to provide users with experience in using Spack for a developer workflow, with the goal of showing 
-
-Assume familiarty with basic Spack usage (for example, defining a package's dependencies and installing those dependencies)
+Assume familiarity with basic Spack usage (for example, defining a package's dependencies and installing those dependencies)
 
 ## Setup
-From my personal experience, the trivial environment and directory layout is the most difficult to adjust to, while all the iterative development that follows is natural and straightforward. That may be a personal failing, but if you see these first steps as strange, I want to assure you that: 1.) you are in good company and 2.) once we begin doing code work, it all makes perfect sense, and 3.) this approach is not required, and with a few obvious options we can work in almost any conceivable setup.
 
-### NOTE STEP ZERO using a fresh spack clone, I recommend doing this.
+### Step 0 - Directory overview and getting a new Spack instance (recommended)
 
-Make a directory, everything we do will stay in this directory.
+This guide will focus on Spack's ability to provide a modular environment, constrained to live under a single top-level directory and be "container-like".
+
+NOTE: This guide is written using a Spack 1.0, which has significant and breaking differences with current in-use Spack deployments.
+
+First let's make the directory and retrieve a fresh instance of Spack
 
 ```bash
-$ mkdir devel
-$ cd devel
-$ git clone https://github.com/spack/spack.git
-$ export SPACK_USER_CACHE_PATH=$(pwd)/.spack
-$ source spack/share/spack/setup-env.sh
-$ spack spec zlib
+$> mkdir dev_top && cd dev_top
+$> git clone -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git
 ```
 
-The last command will initiate Spack bootstraping. Since it has to be done anyway, let's go ahead and get it over with.
-
-Let's start with creating our top-level environment directory. For this exercise, all code checkouts and local installs will go beneath this directory.
+Since we want to confine our working Spack instance to our top-level directory, we want Spack to not use any existing user-level cache (`${HOME}/.spack`). To tell spack to use a separate user cache that is fixed to his directory
 
 ```bash
-$ ~ > mkdir -p devel/seos-dev
-$ ~ > cd devel/seos-dev
-$ seos-dev >
+$> export SPACK_USER_CACHE_PATH="$(pwd)/.spack"
 ```
 
-
-Now, we want to create our development environment. We will make an _anonymous_ environment; the best way to think about it is that this directory will be synonymous with our development environment - that is, when we work in anything underneth this directory, it is being done in the environment we will construct.
-
-
+Load Spack and run a trivial concretize request to bootstrap the instance. This may take a few minutes to complete.
 
 ```bash
-$ seos-dev > spack env create -d .
+$> source ./spack/share/spack/setup-env.sh
+$> spack spec zlib
+```
+
+### Create an environment
+
+Let's start with creating our top-level environment directory. For the next few sections of the guide, all code checkouts will be placed beneath this directory.
+
+```bash
+$ ~/dev_top > mkdir seos-dev && cd seos-dev
+$ ~/dev_top > cd seos-dev
+$ ~/dev_top/seos-dev >
+```
+
+Now, we want to create our development environment. We will make an _anonymous_ environment; the best way to think about it is that this directory will be synonymous with our development environment - that is, when we work in anything in this directory, it is being done in the environment we will construct.
+
+```bash
+$ ~/dev_top/seos-dev > spack env create -d .
 ==> Created independent environment in: /home/jack/devel/seos-dev
 ==> Activate with: spack env activate .
-$ seos-dev > spack env activate .
+$ ~/dev_top/seos-dev > spack env activate .
 ```
 
-First, let's point out what we have after the environment is created
+Let's look at what we have after the environment is created
 
 ```bash
-$ seos-dev > ls -la
+$ ~/dev_top/seos-dev > ls -la
 drwxr-xr-x@ 4 jack  dudes  128 Mar 28 10:29 .
 drwxr-xr-x@ 3 jack  dudes   96 Mar 28 10:29 ..
 drwxr-xr-x@ 5 jack  dudes  160 Mar 28 10:29 .spack-env
 -rw-r--r--@ 1 jack  dudes  230 Mar 28 10:29 spack.yaml
 ```
 
-`spack.yaml` will be the configuration file for our environment. Right now it's empty, but that will soon change. `.spack-env` will be a local cache, with the main data being a file-system view that collects our environment similar to a (very) lightweight container.
+`spack.yaml` will be the configuration file for our environment. Right now it's empty, but that will soon change. `.spack-env` will be a cache space local to this environment, with the main data being a file-system view that collects our environment similar to a (very) lightweight container.
 
-Adding our packages to the environment
+NOTE: The next few steps will update our `spack.yaml` file using Spack commands. This is useful for reproducibility and for allowing Spack to generate the correct schema in the file. However, you may also simply edit `spack.yaml` directly. You may even do both and switch between one or the other approach at any time.
+
+We want to be developing `singularity-eos`, so add it to the environment
+
 ```bash
-$ seos-dev > spack add singularity-eos@main
+$ ~/dev_top/seos-dev > spack add singularity-eos@main
 ```
 
 Let's assume we want `mpi` and `hdf5` on, since we might as well. While we're at it, let's fix the `mpi` provider to `openmpi`
 
 ```bash
-$ seos-dev > spack config add "packages:all:variants: +hdf5+mpi"
-$ seos-dev > spack config add "packages:mpi:require: openmpi"
+$ ~/dev_top/seos-dev > spack config add "packages:all:variants: +hdf5+mpi"
+$ ~/dev_top/seos-dev > spack config add "packages:mpi:require: openmpi"
 ```
 
-Looking ahead, we want to have access to `spiner` code, so let's explicitly add this to our packages. (NOTE: This step is not required, but shown as a demo. An example of getting a clone of a non-explicit package will be given after)
+Looking ahead, we want to have access to `spiner` code, so let's explicitly add this to our packages. 
+
+NOTE: This step is not required, but included here for demonstration. In the following sections we will show that we can also get local copies of packages even if we don't have a listed spec for them in the environment.
 
 ```bash
-$ seos-dev > spack add spiner@main
+$ ~/dev_top/seos-dev > spack add spiner@main
 ```
 
-We've got a basic spack environment ready. Let's take a look at the new `spack.yaml`
+We've got a basic spack environment ready. Let's take a look at our updated `spack.yaml`
 
 ```yaml
 spack:
@@ -99,20 +112,24 @@ Now, let's recall:
 - I want to start editing and updating `singularity-eos` code in a new clone and checkout.
 - `spiner` and `singularity-eos` have a tight coupling, and I also want a new clone and checkout of that package.
 - Perhaps another package?
+
 ## Getting and updating `singularity-eos`
-First, we will just make some updates to the core package `singularity-eos`. 
 
-The regular pipeline of spack is to go get a clone of repo into a temporary directory and execute that package's build procedure. What we want is to tell spack to get and use a non-temporary clone, preferably to a path we can easily `cd` to and start hacking.
+Let's make some updates to the core package `singularity-eos`. 
 
-This can be done with the `spack develop` command 
+The regular pipeline of Spack is to go get a clone of repo into a temporary directory and execute that package's build procedure. What we want is to tell spack to get and use a non-temporary clone, preferably to a path we can easily `cd` to and start hacking.
+
+This can be done with the `spack develop` command
+
 ```bash
-$ seos-dev > spack develop singularity-eos
+$ ~/dev_top/seos-dev > spack develop singularity-eos@main
 ==> Cloning source code for singularity-eos@=main
 ```
 
 We can see that spack has done a `git clone` for us!
+
 ```bash
-$ seos-dev > ls -la
+$ ~/dev_top/seos-dev > ls -la
 drwxr-xr-x@ 4 jack  dudes  128 Mar 28 10:29 .
 drwxr-xr-x@ 3 jack  dudes   96 Mar 28 10:29 ..
 drwxr-xr-x@ 5 jack  dudes  160 Mar 28 10:29 .spack-env
@@ -121,9 +138,12 @@ drwxrwxr-x@ 2 jack  dudes 4.0K Mar 28 11:11 singularity-eos
 -rw-r--r--@ 1 jack  dudes  230 Mar 28 10:29 spack.yaml
 ```
 
-From here, we can do regular spack things.
+NOTE: The spec version (`@main`) ensures our clone will have the `main` branch checkout, though like any `git clone`, we can (and will) change this branch as needed for development.
+
+From here, we can do regular Spack things.
+
 ```bash
-$ seos-dev > spack concretize -f
+$ ~/dev_top/seos-dev > spack concretize -f
 ==> Warning: Unable to resolve the git commit for singularity-eos. An installation of this binary won't have complete binary provenance.
 ==> Warning: Unable to resolve the git commit for spiner. An installation of this binary won't have complete binary provenance.
 ==> Concretized 2 specs:
@@ -149,15 +169,16 @@ $ seos-dev > spack concretize -f
 $ seos-dev > spack install
 ```
 
+Now, let's make an update to `singularity-eos` code in a new local branch. (I use Vim, you may use your preferred editor)
 
-Now, let's make an update.
 ```bash
-$ seos-dev > cd singularity-eos
-$ seos-dev > git checkout -b new_eos_feature
-$ seos-dev > vi singularity-eos/eos/eos_bash.hpp
+$ ~/dev_top/seos-dev > cd singularity-eos
+$ ~/dev_top/seos-dev > git checkout -b new_eos_feature
+$ ~/dev_top/seos-dev > vi singularity-eos/eos/eos_bash.hpp
 ```
 
 Here, I'll add my amazing new update
+
 ```c++
 	15   #ifndef _SINGULARITY_EOS_EOS_EOS_BASE_
     16   #define _SINGULARITY_EOS_EOS_EOS_BASE_
@@ -178,9 +199,10 @@ Here, I'll add my amazing new update
     31   static_assert(false);
 ```
 
-Instead of manually building, let's use spack to check that the build works. (We will move to a build environment later.)
+Instead of manually building, let's use Spack to check that the build works. (In the following sections, we will show how to do a more traditional build using this environment)
+
 ```bash
-$ seos-dev > spack install
+$ ~/dev_top/seos-dev > spack install
 [+] /usr (external glibc-2.28-i5ej3xmy3uonjbh2yn3lubq7xmue442j)
 [+] /projects/opt/rhel8/x86_64/openmpi/5.0.2-gcc_13.2.0 (external openmpi-5.0.2-lpanugo33x6swa22ws2gvnpt4cyjd6p4)
 [+] /usr (external pkgconf-1.4.2-ojffucqu32xqeuph3dnufdahuiqzjijl)
@@ -234,8 +256,9 @@ $ seos-dev > spack install
 ```
 
 Oops! Looks like we messed up. Let's fix it
+
 ```bash
-$ seos-dev > vi singularity-eos/eos/eos_bash.hpp
+$ ~/dev_top/seos-dev > vi singularity-eos/eos/eos_bash.hpp
 ```
 
 ```c++
@@ -293,44 +316,86 @@ Great! We can now commit and request a merge.
 
 And there we go! We've gotten a build with our expected environment, made changes and built all with spack!
 
-## Working with `spiner` 
+## Working with `spiner` and getting a build environment
 
-Now, we want to add a feature to `spiner` to enhance `singularity-eos`, but we need concurrent checkouts to update and test these together.
+Now, we want to add a feature to `spiner` to enhance `singularity-eos`.
 
-The procedure here is almost identical.
-spack develop spiner
+As before, tell Spack we want a local source directory
+
+```bash
+~/dev_top/seos-dev > spack develop spiner@main
+```
 
 NOTE: Here, we are still using our local clone of `singularity-eos`. At the end of this section we will "remove" these local clones from our environment.
 
+```bash
 ls
+vi
+```
 
-vi #...
+Before, we used `spack install` to run the build steps. Here, let's instead ask Spack for a pre-configured shell where we can manually build the code ourselves
 
-spack install
+```bash
+~/dev_top/seos-dev > spack build-env spiner@main -- bash
+~/dev_top/seos-dev >
+```
+
+Spack has launched a new Bash shell and loaded it with all the build information for us. We can now do a more traditional build routine
+
+```bash
+~/dev_top/seos-dev > cd spiner && mkdir build && cd build
+~/dev_top/seos-dev > cmake ..
+# ...
+~/dev_top/seos-dev > cmake --build .
+```
+
+Once you have finished doing your work, you can even make sure your new updates are compatible with upstream `singularity-eos`
+
+```bash
+~/dev_top/seos-dev > exit
+~/dev_top/seos-dev > spack install
+```
 
 And there we go! We have a shared environment for `spiner` and `singularity-eos`, and `singularity-eos` is using our local, updated `spiner`! Who said spack is hard?
 
-Well, we've done enough work for now. Let's clean up while our merges are getting approved
+Once your development cycle is complete, you may "reset" the environment to using the default Spack mechanics and not your local code:
 
-spack undevelop spiner
+```bash
+~/dev_top/seos-dev > spack undevelop spiner
+~/dev_top/seos-dev > spack undevelop singularity-eos
+```
 
-spack undevelop singularity-eos
+NOTE: `spack undevelop` will remove your local source directory, so make sure you're pushed your changes first! Also, any changes will not be reflected until they are merged.
 
-## Working with another dependency
-Kokkos
+## Working with other dependencies; an alternative to git submodules
 
-spack config change packages:all:variants: +hdf5+mpi+kokkos
+`singularity-eos` originally used (and to a limited extent still supports) Git submodules as a dependency solution. In this mode, key dependencies (such as `kokkos`) are configured and built "in-tree", allowing the developer to directly access and modify the source of the dependency. While not a scalable approach, many developers find this level of control useful to their workflow.
 
-Since we are asking for a package that we don't explicitly make a spack spec for, we need to provide it here. Otherwise, this works as you should expect by now
+This section will demonstrate using Spack as an alternative approach to that model that also provides the ability to directly access and modify dependency code.
 
-spack develop kokkos@4
+Let's update our Spack environment to require `kokkos`
 
-vi #...
+```bash
+~/dev_top/seos-dev > spack config change packages:all:variants: +hdf5+mpi+kokkos
+~/dev_top/seos-dev > spack concretize -f
+```
 
-## Getting a shell with an environment, manually building
+The steps here follow closely from the previous section on `spiner`, and you may follow those instructions. Here, we will introduce some additional Spack functionality.
 
-spack build-env singularity-eos -- bash
+Let's consider the case where the developer has a separate clone of `kokkos` they've been working on elsewhere on the filesystem
 
-source $SPACK_ROOT/share/spack/setup-env.sh
+```bash
+# IN THE DISTANT PAST....
+~/my_code > git clone kokkos
+~/my_code > cd kokkos
+~/my_code/kokkos > git checkout -b new_device
+# ...
+```
 
-spack cd -c singulary-eos
+Back in our Spack environment, we can tell Spack we want to use our existing clone like so
+
+```bash
+~/dev_top/seos-dev > spack develop --path $HOME/my_code/kokkos kokkos@4:
+```
+
+Spack will elide the clone step, and subsequently use the provided source path when building/installing the `kokkos` package.
