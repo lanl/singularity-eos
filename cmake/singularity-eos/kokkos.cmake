@@ -10,6 +10,11 @@ macro(singularity_import_kokkos)
     set(Kokkos_ENABLE_CUDA_LAMBDA
         ON
         CACHE BOOL "" FORCE)
+    if (SINGULARITY_INSTANTIATE_CLASSES)
+      set(Kokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE
+        ON
+        CACHE BOOL "" FORCE)
+    endif()
   endif()
 
   if(NOT TARGET Kokkos::kokkos)

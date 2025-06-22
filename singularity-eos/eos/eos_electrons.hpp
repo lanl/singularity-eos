@@ -23,6 +23,7 @@
 
 // Base stuff
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -260,6 +261,10 @@ PORTABLE_INLINE_FUNCTION void IdealElectrons::FillEos(Real &rho, Real &temp, Rea
   if (output & thermalqs::specific_heat)
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(IdealElectrons, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
 
 } // namespace singularity
 

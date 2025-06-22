@@ -23,6 +23,15 @@
 #include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
+// Provide default functionality when lambda isn't passed to vector
+// functions
+struct NullIndexer {
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real *operator[](int i) { return nullptr; }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real *operator[](int i) const { return nullptr; }
+};
+
 namespace IndexerUtils {
 // Convenience function for accessing an indexer by either type or
 // natural number index depending on what is available

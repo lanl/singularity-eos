@@ -12,6 +12,10 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#include <singularity-eos/eos/eos.hpp>
+#include <singularity-eos/eos/eos_eospac.hpp>
 
-template void singularity::impl::ConcretizeType<singularity::EOS>(EOS);
+#ifdef SINGULARITY_USE_EOSPAC
+namespace singularity {
+SG_ADD_TEMPLATE_INSTANTIATIONS(EOSPAC, Real *)
+} // namespace singularity
+#endif // SINGULARITY_USE_EOSPAC

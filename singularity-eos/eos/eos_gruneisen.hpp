@@ -21,6 +21,8 @@
 #include <limits>
 
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
@@ -565,6 +567,11 @@ Gruneisen::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press,
   Real gm1 = GruneisenParamFromDensityInternalEnergy(rho, sie, lambda) * rho;
   dvdt = gm1 * cv / bmod;
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(Gruneisen, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
+
 } // namespace singularity
 
 #endif // _SINGULARITY_EOS_EOS_GRUNEISEN_HPP_

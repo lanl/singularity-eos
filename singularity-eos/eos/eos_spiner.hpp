@@ -35,6 +35,7 @@
 
 // base
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
@@ -2003,6 +2004,11 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
   }
   return lRho;
 }
+
+#ifdef SINGULARITY_INSTANTIATE_CLASSES
+SG_ADD_TEMPLATE_EXTERNS(SpinerEOSDependsRhoT, Real *)
+SG_ADD_TEMPLATE_EXTERNS(SpinerEOSDependsRhoSie, Real *)
+#endif // SINGULARITY_INSTANTIATE_CLASSES
 
 } // namespace singularity
 

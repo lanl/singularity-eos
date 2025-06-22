@@ -19,6 +19,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
@@ -28,14 +29,6 @@ namespace singularity {
 
 template <typename... Ts>
 using eos_variant = mpark::variant<Ts...>;
-
-// Provide default functionality when lambda isn't passed to vector functions
-struct NullIndexer {
-  PORTABLE_FORCEINLINE_FUNCTION
-  Real *operator[](int i) { return nullptr; }
-  PORTABLE_FORCEINLINE_FUNCTION
-  Real *operator[](int i) const { return nullptr; }
-};
 
 template <typename... EOSs>
 class Variant {

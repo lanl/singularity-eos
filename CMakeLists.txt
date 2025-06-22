@@ -87,6 +87,9 @@ cmake_dependent_option(
 cmake_dependent_option(
   SINGULARITY_USE_HELMHOLTZ "Include Helmholtz equation of state" OFF
   "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
+cmake_dependent_option(
+  SINGULARITY_USE_STELLAR_COLLAPSE "Include StellarCollapse equation of state" OFF
+  "SINGULARITY_USE_SPINER;SINGULARITY_USE_SPINER_WITH_HDF5" OFF)
 
 # Enables polynomial, carnahan starling, and NobleAbel in variant.
 # Off by default, as they are not in the default python bindings or used
@@ -115,6 +118,12 @@ option(SINGULARITY_BETTER_DEBUG_FLAGS "Better debug flags for singularity" ON)
 option(SINGULARITY_HIDE_MORE_WARNINGS "hide more warnings" OFF)
 option(SINGULARITY_STRICT_WARNINGS "Make warnings strict" OFF)
 
+# This enables explicit instantiation of EOS classes, which can
+# significantly speed up compilation
+option(SINGULARITY_INSTANTIATE_CLASSES
+  "Instantiate classes and common templates. Speeds up compilation but can reduce runtime performance."
+  OFF)
+
 # toggle code options
 option(SINGULARITY_USE_TRUE_LOG_GRIDDING
   "Use grids that conform to log spacing." OFF)
@@ -140,7 +149,7 @@ option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
 # TODO This should depend on using offloading (`SINGULARITY_USE_CUDA` &t) Also,
 # patching in the source tree is messy, this should be done in the build dir
 option(SINGULARITY_PATCH_MPARK_VARIANT
-       "Apply GPU patch to mpark-variant submodule" ON)
+  "Apply GPU patch to mpark-variant submodule" ON)
 
 # Plugins
 set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
@@ -324,6 +333,10 @@ target_compile_definitions(singularity-eos_Interface INTERFACE
 )
 
 # defines
+if (SINGULARITY_INSTANTIATE_CLASSES)
+  target_compile_definitions(singularity-eos_Interface
+    INTERFACE SINGULARITY_INSTANTIATE_CLASSES)
+endif()
 if (SINGULARITY_USE_TRUE_LOG_GRIDDING)
   target_compile_definitions(singularity-eos_Interface
     INTERFACE SINGULARITY_USE_TRUE_LOG_GRIDDING)
