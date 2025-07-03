@@ -4,8 +4,10 @@
 
 ### Added (new features/APIs/variables/...)
 - [[PR511]](https://github.com/lanl/singularity-eos/pull/511) Added ability to sometimes capture by reference in vector API
+- [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Add two examples related to PTE
 
 ### Fixed (Repair bugs, etc)
+- [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Added some robustness checks to the PTE solvers
 - [[PR505]](https://github.com/lanl/singularity-eos/pull/505) rename LogType::TRUE to LogType::DOUBLE
 - [[PR495]](https://github.com/lanl/singularity-eos/pull/495) Fix bug related to MinimumTemperature and MinimumDensity in SpinerEOSDependsRhoSie
 - [[PR496]](https://github.com/lanl/singularity-eos/pull/496) Re-enable stellarcollapse2spiner, which was disabled.

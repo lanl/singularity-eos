@@ -569,7 +569,7 @@ set(with_cxx "$<COMPILE_LANGUAGE:CXX>")
 set(with_xlcxx "$<COMPILE_LANG_AND_ID:CXX,XL>")
 set(build_debug "$<CONFIG:Debug>")
 set(build_release "$<CONFIG:Release>")
-set(with_cuda "$<BOOL:${SINGULARITY_USE_CUDA}>")
+set(with_nvcc_cuda "$<AND:$<BOOL:${SINGULARITY_USE_CUDA}>,$<CXX_COMPILER_ID:NVIDIA>>")
 set(with_warnings "$<NOT:$<BOOL:${SINGULARITY_HIDE_MORE_WARNINGS}>>")
 set(with_better_flags "$<BOOL:${SINGULARITY_BETTER_DEBUG_FLAGS}>")
 
@@ -577,7 +577,7 @@ set(xlfix "$<${with_xlcxx}:-std=c++1y;-qxflag=disable__cplusplusOverride>")
 
 target_compile_options(
   singularity-eos_Interface
-  INTERFACE $<${with_cuda}:
+  INTERFACE $<${with_nvcc_cuda}:
          $<${with_cxx}:
          --expt-relaxed-constexpr
          $<${with_warnings}:
