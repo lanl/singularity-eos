@@ -373,7 +373,8 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
           REQUIRE(isClose(P_eospac, P_spiner_orig));
           REQUIRE(isClose(P_eospac, P_spiner_rhoT));
           REQUIRE(isClose(P_eospac, P_spiner_rhoSie));
-	  REQUIRE(isClose(eos_rhoT.MinInternalEnergyFromDensity(rho_trial),eos_rhoSie.MinInternalEnergyFromDensity(rho_trial)));
+          REQUIRE(isClose(eos_rhoT.MinInternalEnergyFromDensity(rho_trial),
+                          eos_rhoSie.MinInternalEnergyFromDensity(rho_trial)));
         }
 
         eos_eospac.Finalize();
