@@ -532,7 +532,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     return out;
     // return out < lRhoMin_ ? lRhoMin_ : out;
   }
-  
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   interpRhoT_(const Real rho, const Real T, const DataBox &db,
