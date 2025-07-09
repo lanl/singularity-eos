@@ -526,12 +526,6 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
     return FastMath::pow10(lx) - offset;
   }
-  PORTABLE_FORCEINLINE_FUNCTION
-  Real lRho_(const Real rho) const noexcept {
-    Real out = toLog_(rho, lRhoOffset_);
-    return out;
-    // return out < lRhoMin_ ? lRhoMin_ : out;
-  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
