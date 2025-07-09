@@ -532,13 +532,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     return out;
     // return out < lRhoMin_ ? lRhoMin_ : out;
   }
-  //   PORTABLE_FORCEINLINE_FUNCTION
-  //   Real lT_(const Real T) const noexcept { return toLog_(T, lTOffset_); }
-  //   PORTABLE_FORCEINLINE_FUNCTION
-  //   Real rho_(const Real lRho) const noexcept {
-  //     Real rho = fromLog_(lRho, lRhoOffset_);
-  //     return rho < 0 ? 0 : rho;
-  // }
+  
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   interpRhoT_(const Real rho, const Real T, const DataBox &db,
@@ -1817,7 +1811,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::PressureFromDensityInterna
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::MinInternalEnergyFromDensity(
     const Real rho, Indexer_t &&lambda) const {
-  const Real lRho = lRho_(rho);
+  Real lRho = toLog_(rho, lRhoOffset_);
   return sieCold_.interpToReal(lRho);
 }
 
