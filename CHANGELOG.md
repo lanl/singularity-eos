@@ -5,6 +5,7 @@
 ### Added (new features/APIs/variables/...)
 - [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Add two examples related to PTE
 - [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
+
 ### Fixed (Repair bugs, etc)
 - [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Added some robustness checks to the PTE solvers
 - [[PR505]](https://github.com/lanl/singularity-eos/pull/505) rename LogType::TRUE to LogType::DOUBLE
