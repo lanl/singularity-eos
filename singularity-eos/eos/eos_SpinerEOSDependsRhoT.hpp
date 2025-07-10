@@ -1,5 +1,43 @@
-#ifndef EOS_SPINEREOSDEPENDSRHOT_HPP_
-#define EOS_SPINEREOSDEPENDSRHOT_HPP_
+#ifndef _EOS_SPINEREOSDEPENDSRHOT_HPP_
+#define _EOS_SPINEREOSDEPENDSRHOT_HPP_
+
+#include <type_traits>
+
+#include <algorithm>
+#include <cstdlib>
+#include <iomanip>
+#include <sstream>
+#include <string>
+#include <vector>
+// #include <iostream> // debug
+// #include <stdio.h> // debug
+
+#include <hdf5.h>
+#include <hdf5_hl.h>
+
+// ports-of-call
+#include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
+
+// base
+#include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
+#include <singularity-eos/base/spiner_table_utils.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
+#include <singularity-eos/eos/eos_base.hpp>
+
+// spiner
+#include <spiner/databox.hpp>
+#include <spiner/interpolation.hpp>
+#include <spiner/sp5.hpp>
+#include <spiner/spiner_types.hpp>
+
+#define SPINER_EOS_VERBOSE (0)
+#define ROOT_FINDER (RootFinding1D::regula_falsi)
 
 namespace singularity {
 
@@ -388,7 +426,7 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   status += H5Fclose(file);
 
   if (status != H5_SUCCESS) {
-    EOS_ERROR("SpinerDependsRHoT: HDF5 error\n"); // TODO: make this better
+    EOS_ERROR("SpinerDependsRhoT: HDF5 error\n"); // TODO: make this better
   }
 
   CheckParams();
@@ -1239,44 +1277,6 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
   return whereAmI;
 }
 
-inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
-                                                      int matid, TableSplit split,
-                                                      bool reproducibility_mode)
-    : matid_(matid), split_(split), reproducible_(reproducibility_mode),
-      memoryStatus_(DataStatus::OnHost) {
-
-  std::string matid_str = std::to_string(matid);
-  hid_t file, matGroup, lTGroup, lEGroup;
-  herr_t status = H5_SUCCESS;
-
-  file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-  matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
-
-  std::string lTGroupName = SP5::Depends::logRhoLogT;
-  std::string lEGroupName = SP5::Depends::logRhoLogSie;
-  if (split == TableSplit::ElectronOnly) {
-    lTGroupName += (std::string("/") + SP5::SubTable::electronOnly);
-    lEGroupName += (std::string("/") + SP5::SubTable::electronOnly);
-  } else if (split == TableSplit::IonCold) {
-    lTGroupName += (std::string("/") + SP5::SubTable::ionCold);
-    lEGroupName += (std::string("/") + SP5::SubTable::ionCold);
-  }
-
-  lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
-  lEGroup = H5Gopen(matGroup, lEGroupName.c_str(), H5P_DEFAULT);
-
-  status += loadDataboxes_(matid_str, file, lTGroup, lEGroup);
-
-  status += H5Gclose(lTGroup);
-  status += H5Gclose(lEGroup);
-  status += H5Gclose(matGroup);
-  status += H5Fclose(file);
-
-  if (status != H5_SUCCESS) {
-    EOS_ERROR("SpinerDependsRhoSIE: HDF5 error\n");
-  }
-}
-
 } // namespace singularity
 
-#endif // EOS_SPINEREOSDEPENDSRHOT_HPP_
+#endif // _EOS_SPINEREOSDEPENDSRHOT_HPP_
