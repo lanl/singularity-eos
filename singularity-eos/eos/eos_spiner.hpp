@@ -516,7 +516,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 
  private:
   inline herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
-                               hid_t lEGroup);
+                               hid_t lEGroup, hid_t coldGroup);
   inline void calcBMod_(SP5Tables &tables);
 
   static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
@@ -526,6 +526,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
     return FastMath::pow10(lx) - offset;
   }
+
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
   interpRhoT_(const Real rho, const Real T, const DataBox &db,
@@ -541,6 +542,8 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   DataBox sie_; // depends on (rho,T)
   DataBox T_;   // depends on (rho, sie)
   DataBox rho_at_pmin_;
+  DataBox PCold_, sieCold_, bModCold_;
+  DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
   SP5Tables dependsRhoT_;
   SP5Tables dependsRhoSie_;
   int numRho_, numT_;
@@ -557,7 +560,8 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
       &(dependsRhoT_.dTdE), &(dependsRhoT_.dEdRho), &(dependsRhoSie_.P),                 \
       &(dependsRhoSie_.bMod), &(dependsRhoSie_.dPdRho), &(dependsRhoSie_.dPdE),          \
       &(dependsRhoSie_.dTdRho), &(dependsRhoSie_.dTdE), &(dependsRhoSie_.dEdRho),        \
-      &PlRhoMax_, &dPdRhoMax_
+      &PlRhoMax_, &dPdRhoMax_, &PCold_, &sieCold_, &bModCold_, &dPdRhoCold_, &dPdECold_, \
+      &dTdRhoCold_, &dTdECold_, &dEdTCold_,
   std::vector<const DataBox *> GetDataBoxPointers_() const {
     return std::vector<const DataBox *>{DBLIST};
   }
@@ -1539,7 +1543,7 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
       memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
-  hid_t file, matGroup, lTGroup, lEGroup;
+  hid_t file, matGroup, lTGroup, lEGroup, coldGroup;
   herr_t status = H5_SUCCESS;
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -1557,13 +1561,15 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
 
   lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
   lEGroup = H5Gopen(matGroup, lEGroupName.c_str(), H5P_DEFAULT);
+  coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
-  status += loadDataboxes_(matid_str, file, lTGroup, lEGroup);
+  status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
   status += H5Gclose(matGroup);
   status += H5Fclose(file);
+  status += H5Gclose(coldGroup);
 
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsTHoSIE: HDF5 error\n");
@@ -1578,7 +1584,7 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
       memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
-  hid_t file, matGroup, lTGroup, lEGroup;
+  hid_t file, matGroup, lTGroup, lEGroup, coldGroup;
   herr_t status = H5_SUCCESS;
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
@@ -1596,17 +1602,19 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
 
   lTGroup = H5Gopen(matGroup, lTGroupName.c_str(), H5P_DEFAULT);
   lEGroup = H5Gopen(matGroup, lEGroupName.c_str(), H5P_DEFAULT);
+  coldGroup = H5Gopen(matGroup, SP5::Depends::coldCurve, H5P_DEFAULT);
 
   status +=
       H5LTget_attribute_int(file, materialName.c_str(), SP5::Material::matid, &matid_);
   matid_str = std::to_string(matid_);
 
-  status += loadDataboxes_(matid_str, file, lTGroup, lEGroup);
+  status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
   status += H5Gclose(matGroup);
   status += H5Fclose(file);
+  status += H5Fclose(coldGroup);
 
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsRhoSie: HDF5 error\n");
@@ -1614,7 +1622,8 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
 }
 
 herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_t file,
-                                              hid_t lTGroup, hid_t lEGroup) {
+                                              hid_t lTGroup, hid_t lEGroup,
+                                              hid_t coldGroup) {
   herr_t status = H5_SUCCESS;
 
   // offsets
@@ -1641,6 +1650,12 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   // sometimes independent variables
   status += sie_.loadHDF(lTGroup, SP5::Fields::sie);
   status += T_.loadHDF(lEGroup, SP5::Fields::T);
+
+  // cold curves
+  status += PCold_.loadHDF(coldGroup, SP5::Fields::P);
+  status += sieCold_.loadHDF(coldGroup, SP5::Fields::sie);
+  status += bModCold_.loadHDF(coldGroup, SP5::Fields::bMod);
+  status += dPdRhoCold_.loadHDF(coldGroup, SP5::Fields::dPdRho);
 
   // dependent variables
   // depends on rho and T
@@ -1790,8 +1805,8 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::PressureFromDensityInterna
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::MinInternalEnergyFromDensity(
     const Real rho, Indexer_t &&lambda) const {
-  MinInternalEnergyIsNotEnabled("SpinerEOSDependsRhoSie");
-  return 0.0;
+  Real lRho = toLog_(rho, lRhoOffset_);
+  return sieCold_.interpToReal(lRho);
 }
 
 template <typename Indexer_t>
