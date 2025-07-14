@@ -14,6 +14,7 @@
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR502]](https://github.com/lanl/singularity-eos/pull/502) Expose split tables to Fortran interface
+- [[PR519]] (https://github.com/lanl/singularity-eos/pull/519) Split eos_spiner.hpp into eos_spiner_rho_sie.hpp and eos_spiner_rho_temp.hpp files.  
 
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR510]](https://github.com/lanl/singularity-eos/pull/510) Make Davis EOS faster and more robust
