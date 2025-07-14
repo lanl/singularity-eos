@@ -46,6 +46,7 @@
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-eos/eos/eos_spiner_common.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -332,73 +333,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   static constexpr const int _n_lambda = 2;
   static constexpr const char *_lambda_names[2] = {"log(rho)", "log(T)"};
 };
-
-// implementation details below
-// ======================================================================
-
-// TODO: we're using log-linear interpolation, not log-log
-// this may be suboptimal. We may want a way to do some variables
-// in log-log. In particular, it might be good to do:
-// pressure, energy, and bulk modulus in log-log.
-// ~JMM
-
-// replace lambdas with callable
-namespace callable_interp {
-using DataBox = SpinerEOSDependsRhoT::DataBox;
-class l_interp {
- private:
-  const DataBox &field;
-  const Real fixed;
-
- public:
-  PORTABLE_INLINE_FUNCTION
-  l_interp(const DataBox &field_, const Real fixed_) : field{field_}, fixed{fixed_} {}
-
-  PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
-    return field.interpToReal(x, fixed);
-  }
-};
-
-class r_interp {
- private:
-  const DataBox &field;
-  const Real fixed;
-
- public:
-  PORTABLE_INLINE_FUNCTION
-  r_interp(const DataBox &field_, const Real fixed_) : field{field_}, fixed{fixed_} {}
-
-  PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
-    return field.interpToReal(fixed, x);
-  }
-};
-
-class prod_interp_1d {
- private:
-  const DataBox &field1, field2;
-  const Real r;
-
- public:
-  PORTABLE_INLINE_FUNCTION
-  prod_interp_1d(const DataBox &field1_, const DataBox &field2_, const Real r_)
-      : field1{field1_}, field2{field2_}, r{r_} {}
-  PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
-    return field1.interpToReal(x) * field2.interpToReal(x) * r * x;
-  }
-};
-
-class interp {
- private:
-  const DataBox &field;
-
- public:
-  PORTABLE_INLINE_FUNCTION
-  interp(const DataBox &field_) : field(field_) {}
-  PORTABLE_INLINE_FUNCTION Real operator()(const Real x) const {
-    return field.interpToReal(x);
-  }
-};
-} // namespace callable_interp
 
 inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, int matid,
                                                   TableSplit split,
@@ -1291,5 +1225,5 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
 
 } // namespace singularity
 
-#endif //_EOS_EOS_SPINER_RHO_TEMP_HPP_
-#endif // SINGULARITY_USE_SPINER_WITH_HDF5
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5_
+#endif // _SINGULARITY_EOS_EOS_EOS_SPINER_RHO_TEMP_HPP_

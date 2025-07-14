@@ -45,7 +45,7 @@
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
-#include <singularity-eos/eos/eos_spiner_rho_temp.hpp>
+#include <singularity-eos/eos/eos_spiner_common.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -795,5 +795,5 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
 
 } // namespace singularity
 
-#endif // _EOS_SPINEREOSDEPENDSRHOSIE_HPP_
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
+#endif // SINGULARITY_EOS_EOS_EOS_SPINER_RHO_SIE_HPP_

@@ -13,11 +13,9 @@
 //------------------------------------------------------------------------------
 
 #ifndef _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
-#define _SINGULARITY_EOS_EOS_EOS_SPINER_HPP
+#define _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
 
 #include <singularity-eos/eos/eos_spiner_rho_sie.hpp>
 #include <singularity-eos/eos/eos_spiner_rho_temp.hpp>
 
-#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
-#endif // SINGULARITY_USE_SPINER_WITH_HDF5
-#endif // _SINGULARITY_EOS_EOS_EOS_SPINER_HPP
+#endif // _SINGULARITY_EOS_EOS_EOS_SPINER_HPP_
