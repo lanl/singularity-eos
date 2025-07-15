@@ -65,6 +65,26 @@ char *StrCat(char *destination, const char *source) {
 }
 } // namespace impl
 
+// JMM: This is a little trick to skip copying EOS's when not
+// necessary. It changes the semantics of the lambda to capture by
+// reference *only* on CPU-only builds. Should buy performance, but is
+// a bit of a hack. I consider it dangerous because it changes the
+// semantics/memnory model between CPU and GPU, which may be difficult
+// to debug. It is thus off by defualt, but can be turned on.
+#if defined(SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE) && !defined(__CUDACC__) &&          \
+    !defined(__HIPCC__)
+#if !defined(PORTABILITY_STRATEGY_KOKKOS) && !defined(PORTABILITY_STRATEGY_NONE)
+#error                                                                                   \
+    "Unexpected portability strategy! Please set SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE=OFF to build in this mode."
+#endif // unexpected portability strategy!
+// JMM: I am hoping that by not adding any decorators here, we will
+// catch problems with unexpected, non-Cuda, non-HIP accelerator
+// architectures.
+#define SG_VEC_LAMBDA [&]
+#else
+#define SG_VEC_LAMBDA PORTABLE_LAMBDA
+#endif // SINGULARITY_VECTOR_CAPTURE_BY_REFERENCE
+
 // This Macro adds the `using` statements that allow for the base class
 // VECTOR functionality to overload the scalar implementations in the derived
 // classes. Do not add functions here that are not overloads of derived class features.
@@ -274,7 +294,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           temperatures[i] =
               copy.TemperatureFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
@@ -309,7 +329,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           sies[i] = copy.InternalEnergyFromDensityTemperature(rhos[i], temperatures[i],
                                                               lambdas[i]);
         });
@@ -344,7 +364,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           pressures[i] =
               copy.PressureFromDensityTemperature(rhos[i], temperatures[i], lambdas[i]);
         });
@@ -377,7 +397,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           pressures[i] =
               copy.PressureFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
@@ -408,7 +428,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           sies[i] = copy.MinInternalEnergyFromDensity(rhos[i], lambdas[i]);
         });
   }
@@ -438,7 +458,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           entropies[i] =
               copy.EntropyFromDensityTemperature(rhos[i], temperatures[i], lambdas[i]);
         });
@@ -471,7 +491,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           entropies[i] =
               copy.EntropyFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
@@ -503,7 +523,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           cvs[i] = copy.SpecificHeatFromDensityTemperature(rhos[i], temperatures[i],
                                                            lambdas[i]);
         });
@@ -538,7 +558,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           cvs[i] =
               copy.SpecificHeatFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
@@ -571,7 +591,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           bmods[i] = copy.BulkModulusFromDensityTemperature(rhos[i], temperatures[i],
                                                             lambdas[i]);
         });
@@ -606,7 +626,7 @@ class EosBase {
     static auto const cname = name.c_str();
     const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           bmods[i] =
               copy.BulkModulusFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
@@ -638,7 +658,7 @@ class EosBase {
     static auto const cname = name.c_str();
     CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           gm1s[i] = copy.GruneisenParamFromDensityTemperature(rhos[i], temperatures[i],
                                                               lambdas[i]);
         });
@@ -673,7 +693,7 @@ class EosBase {
     static auto const cname = name.c_str();
     CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           gm1s[i] =
               copy.GruneisenParamFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
@@ -707,7 +727,7 @@ class EosBase {
     static auto const cname = name.c_str();
     CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           Gs[i] = copy.GibbsFreeEnergyFromDensityTemperature(rhos[i], Ts[i], lambdas[i]);
         });
   }
@@ -739,7 +759,7 @@ class EosBase {
     static auto const cname = name.c_str();
     CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           Gs[i] =
               copy.GibbsFreeEnergyFromDensityInternalEnergy(rhos[i], sies[i], lambdas[i]);
         });
@@ -774,7 +794,7 @@ class EosBase {
     static auto const cname = name.c_str();
     CRTP copy = *(static_cast<CRTP const *>(this));
     portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+        cname, 0, num, SG_VEC_LAMBDA(const int i) {
           copy.FillEos(rhos[i], temps[i], energies[i], presses[i], cvs[i], bmods[i],
                        output, lambdas[i]);
         });
@@ -1032,5 +1052,6 @@ class EosBase {
 } // namespace eos_base
 } // namespace singularity
 
+#undef SG_VEC_LAMBDA
 #undef SG_MEMBER_FUNC_NAME
 #endif
