@@ -12,8 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
-#ifndef SINGULARITY_EOS_EOS_EOS_SPINER_RHO_SIE_HPP_
-#define SINGULARITY_EOS_EOS_EOS_SPINER_RHO_SIE_HPP_
+#ifndef _SINGULARITY_EOS_EOS_EOS_SPINER_RHO_SIE_HPP_
+#define _SINGULARITY_EOS_EOS_EOS_SPINER_RHO_SIE_HPP_
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
@@ -796,4 +796,4 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
 } // namespace singularity
 
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
-#endif // SINGULARITY_EOS_EOS_EOS_SPINER_RHO_SIE_HPP_
+#endif // _SINGULARITY_EOS_EOS_EOS_SPINER_RHO_SIE_HPP_
