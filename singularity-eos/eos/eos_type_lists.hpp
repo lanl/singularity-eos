@@ -64,7 +64,7 @@ static constexpr const auto full_eos_list =
        StellarCollapse
 #endif // SINGULARITY_USE_STELLAR_COLLAPSE
        ,
-       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie
+       SpinerEOSDependsRhoT, SpinerEOSDependsRhoSie<>
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #ifdef SINGULARITY_USE_EOSPAC
        ,
