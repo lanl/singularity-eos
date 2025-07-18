@@ -70,27 +70,15 @@ static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real off
 }
 
 
-struct Transform_Data {
-  static constexpr int NGRIDS = 3;
-  using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
-  using DataBox = Spiner::DataBox<Real, Grid_t>;
-
-  Real lRhoOffset;
-  DataBox sieCold;
-
-  PORTABLE_INLINE_FUNCTION
-  Transform_Data()
-    : lRhoOffset(0.0), sieCold() 
-  {}
-
-  PORTABLE_INLINE_FUNCTION
-  Transform_Data(Real lRhoOffset_, const DataBox &sieCold_) : lRhoOffset(lRhoOffset_), sieCold(sieCold_) {}
-};
-
 template <typename Data = void>
 struct NullTransform {
+
+  template<typename... Args>
   PORTABLE_INLINE_FUNCTION
-  NullTransform(const Data& = Data{}) {}
+  NullTransform(Args&&...) {}
+
+  PORTABLE_INLINE_FUNCTION
+  NullTransform() = default;
 
   template <typename... Args>
   PORTABLE_INLINE_FUNCTION
@@ -136,8 +124,18 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<Transformer
   static constexpr int NGRIDS = 3;
   using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
   using DataBox = Spiner::DataBox<Real, Grid_t>;
-  using TransformData = Transform_Data;
-  using Transformer = TransformerT<TransformData>;
+
+  struct TransformDataContainer {
+
+  Real lRhoOffset;
+  DataBox sieCold;
+
+  PORTABLE_INLINE_FUNCTION
+  TransformDataContainer() = default;
+};
+
+  using TransformDataT = TransformDataContainer;
+  using Transformer = TransformerT<TransformDataT>;
 
   struct SP5Tables {
     DataBox P, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho;
@@ -354,7 +352,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<Transformer
   static constexpr const int _n_lambda = 1;
   static constexpr const char *_lambda_names[1] = {"log(rho)"};
   DataStatus memoryStatus_ = DataStatus::Deallocated;
-  TransformData Transform_data_;
+  TransformDataT TransformDataContainer_;
   Transformer transformer_;
 };
 template <template <class> class TransformerT>
@@ -392,8 +390,8 @@ inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(const std::s
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  Transform_data_ = TransformData(lRhoOffset_, sieCold_);
-  transformer_ = Transformer(Transform_data_);
+  TransformDataContainer_ = { lRhoOffset_, sieCold_ };
+  transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
@@ -859,8 +857,8 @@ inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(const std::s
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  Transform_data_ = TransformData(lRhoOffset_, sieCold_);
-  transformer_ = Transformer(Transform_data_);
+  TransformDataContainer_ = { lRhoOffset_, sieCold_ };
+  transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
@@ -876,11 +874,12 @@ inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(const std::s
 
 template <typename Data>
 struct ShiftTransform {
+  template<typename DataT_in>
   PORTABLE_INLINE_FUNCTION
-  ShiftTransform(const Data& data) : data_(data) {}
+  ShiftTransform(const DataT_in& data) : data_{std::forward<DataT_in>(data)} {}
 
 private:
-  const Data data_;
+  Data data_;
 
 public:
   template <typename... Args>
