@@ -80,7 +80,7 @@ struct Transform_Data {
 
   PORTABLE_INLINE_FUNCTION
   Transform_Data()
-    : lRhoOffset(0.0), sieCold() // or use appropriate default values
+    : lRhoOffset(0.0), sieCold() 
   {}
 
   PORTABLE_INLINE_FUNCTION
