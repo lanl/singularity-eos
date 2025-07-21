@@ -17,6 +17,7 @@
 - [[PR519]] (https://github.com/lanl/singularity-eos/pull/519) Split eos_spiner.hpp into eos_spiner_rho_sie.hpp and eos_spiner_rho_temp.hpp files.  
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR522]](https://github.com/lanl/singularity-eos/pull/522) Move more common functionality into spiner_eos_common.hpp
 - [[PR510]](https://github.com/lanl/singularity-eos/pull/510) Make Davis EOS faster and more robust
 - [[PR509]](https://github.com/lanl/singularity-eos/pull/509) Remove extraneous copies in base class
 - [[PR504]](https://github.com/lanl/singularity-eos/pull/504) Add Fortran interface documentation
