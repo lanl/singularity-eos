@@ -887,9 +887,7 @@ struct ShiftTransform {
   }
 };
 
-
 using SpinerEOSDependsRhoSie = SpinerEOSDependsRhoSieTransformable<NullTransform>;
-
 
 } // namespace singularity
 
