@@ -336,8 +336,8 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
   status += H5Gclose(matGroup);
-  status += H5Fclose(file);
   status += H5Gclose(coldGroup);
+  status += H5Fclose(file);
 
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsRhoSie: HDF5 error\n");
@@ -776,8 +776,8 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
   status += H5Gclose(matGroup);
+  status += H5Gclose(coldGroup);
   status += H5Fclose(file);
-  status += H5Fclose(coldGroup);
 
   if (status != H5_SUCCESS) {
     EOS_ERROR("SpinerDependsRhoSIE: HDF5 error\n");
