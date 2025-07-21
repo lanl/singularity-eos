@@ -57,31 +57,25 @@ namespace singularity {
 
 using namespace eos_base;
 
-
 template <typename Data = void>
 struct NullTransform {
 
-  template<typename... Args>
-  PORTABLE_INLINE_FUNCTION
-  NullTransform(Args&&...) {}
+  template <typename... Args>
+  PORTABLE_INLINE_FUNCTION NullTransform(Args &&...) {}
 
   PORTABLE_INLINE_FUNCTION
   NullTransform() = default;
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION
-  auto transform(Real e, Args&&...) const {
+  PORTABLE_INLINE_FUNCTION auto transform(Real e, Args &&...) const {
     return e;
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION
-  auto inverse(Real e_transformed, Args&&...) const {
+  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Args &&...) const {
     return e_transformed;
   }
 };
-
-
 
 /*
   TODO(JMM): Extrapolation Strategy
@@ -101,7 +95,7 @@ struct NullTransform {
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
 
-template <template<class> class TransformerT = NullTransform>
+template <template <class> class TransformerT = NullTransform>
 class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<TransformerT>> {
   friend class table_utils::SpinerTricks<SpinerEOSDependsRhoSie>;
 
@@ -114,12 +108,12 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<Transformer
 
   struct TransformDataContainer {
 
-  Real lRhoOffset;
-  DataBox sieCold;
+    Real lRhoOffset;
+    DataBox sieCold;
 
-  PORTABLE_INLINE_FUNCTION
-  TransformDataContainer() = default;
-};
+    PORTABLE_INLINE_FUNCTION
+    TransformDataContainer() = default;
+  };
 
   using TransformDataT = TransformDataContainer;
   using Transformer = TransformerT<TransformDataT>;
@@ -275,7 +269,9 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<Transformer
     printf("%s\n\t%s\n\t%s%i\n", s1, s2, s3, matid_);
     return;
   }
-  const Transformer& getTransformer() const { return transformer_; } //getter for tranformation structs
+  const Transformer &getTransformer() const {
+    return transformer_;
+  } // getter for tranformation structs
 
   RootFinding1D::RootCounts counts;
   static std::string EosType() { return std::string("SpinerEOSDependsRhoSie"); }
@@ -342,10 +338,9 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<Transformer
   Transformer transformer_;
 };
 template <template <class> class TransformerT>
-inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(const std::string &filename,
-                                                      const std::string &materialName,
-                                                      TableSplit split,
-                                                      bool reproducibility_mode)
+inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(
+    const std::string &filename, const std::string &materialName, TableSplit split,
+    bool reproducibility_mode)
     : split_(split), reproducible_(reproducibility_mode),
       memoryStatus_(DataStatus::OnHost) {
 
@@ -376,7 +371,7 @@ inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(const std::s
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = { lRhoOffset_, sieCold_ };
+  TransformDataContainer_ = {lRhoOffset_, sieCold_};
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
@@ -390,9 +385,10 @@ inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(const std::s
   }
 }
 template <template <class> class TransformerT>
-herr_t SpinerEOSDependsRhoSie<TransformerT>::loadDataboxes_(const std::string &matid_str, hid_t file,
-                                              hid_t lTGroup, hid_t lEGroup,
-                                              hid_t coldGroup) {
+herr_t SpinerEOSDependsRhoSie<TransformerT>::loadDataboxes_(const std::string &matid_str,
+                                                            hid_t file, hid_t lTGroup,
+                                                            hid_t lEGroup,
+                                                            hid_t coldGroup) {
   using namespace spiner_common;
   herr_t status = H5_SUCCESS;
 
@@ -528,15 +524,19 @@ inline void SpinerEOSDependsRhoSie<TransformerT>::calcBMod_(SP5Tables &tables) {
 }
 
 template <template <class> class TransformerT>
-inline SpinerEOSDependsRhoSie<TransformerT> SpinerEOSDependsRhoSie<TransformerT>::GetOnDevice() {
+inline SpinerEOSDependsRhoSie<TransformerT>
+SpinerEOSDependsRhoSie<TransformerT>::GetOnDevice() {
   return STricks::GetOnDevice(this);
 }
 
 template <template <class> class TransformerT>
-void SpinerEOSDependsRhoSie<TransformerT>::Finalize() { STricks::Finalize(this); }
+void SpinerEOSDependsRhoSie<TransformerT>::Finalize() {
+  STricks::Finalize(this);
+}
 
 template <template <class> class TransformerT>
-inline std::size_t SpinerEOSDependsRhoSie<TransformerT>::DynamicMemorySizeInBytes() const {
+inline std::size_t
+SpinerEOSDependsRhoSie<TransformerT>::DynamicMemorySizeInBytes() const {
   return STricks::DynamicMemorySizeInBytes(this);
 }
 
@@ -547,106 +547,111 @@ inline std::size_t SpinerEOSDependsRhoSie<TransformerT>::DumpDynamicMemory(char 
 
 template <template <class> class TransformerT>
 inline std::size_t
-SpinerEOSDependsRhoSie<TransformerT>::SetDynamicMemory(char *src, const SharedMemSettings &stngs) {
+SpinerEOSDependsRhoSie<TransformerT>::SetDynamicMemory(char *src,
+                                                       const SharedMemSettings &stngs) {
   if (stngs.data != nullptr) src = stngs.data;
   return STricks::SetDynamicMemory(src, this);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
-SpinerEOSDependsRhoSie<TransformerT>::TemperatureFromDensityInternalEnergy(const Real rho,
-                                                             const Real sie,
-                                                             Indexer_t &&lambda) const {
+SpinerEOSDependsRhoSie<TransformerT>::TemperatureFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   return interpRhoSie_(rho, sie, T_, lambda);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
-SpinerEOSDependsRhoSie<TransformerT>::InternalEnergyFromDensityTemperature(const Real rho, const Real T,
-                                                             Indexer_t &&lambda) const {
+SpinerEOSDependsRhoSie<TransformerT>::InternalEnergyFromDensityTemperature(
+    const Real rho, const Real T, Indexer_t &&lambda) const {
   return interpRhoT_(rho, T, sie_, lambda);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::PressureFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie<TransformerT>::PressureFromDensityTemperature(
     const Real rho, const Real T, Indexer_t &&lambda) const {
   return interpRhoT_(rho, T, dependsRhoT_.P, lambda);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::PressureFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie<TransformerT>::PressureFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   return interpRhoSie_(rho, sie, dependsRhoSie_.P, lambda);
 }
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::MinInternalEnergyFromDensity(
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie<TransformerT>::MinInternalEnergyFromDensity(
     const Real rho, Indexer_t &&lambda) const {
   Real lRho = spiner_common::to_log(rho, lRhoOffset_);
   return sieCold_.interpToReal(lRho);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::EntropyFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie<TransformerT>::EntropyFromDensityTemperature(
     const Real rho, const Real temperature, Indexer_t &&lambda) const {
   this->EntropyIsNotEnabled("SpinerEOSDependsRhoSie");
   return 1.0;
 }
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::EntropyFromDensityInternalEnergy(
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie<TransformerT>::EntropyFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
   this->EntropyIsNotEnabled("SpinerEOSDependsRhoSie");
   return 1.0;
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::SpecificHeatFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie<TransformerT>::SpecificHeatFromDensityTemperature(
     const Real rho, const Real T, Indexer_t &&lambda) const {
   return 1. / interpRhoT_(rho, T, dependsRhoT_.dTdE, lambda);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
-SpinerEOSDependsRhoSie<TransformerT>::SpecificHeatFromDensityInternalEnergy(const Real rho,
-                                                              const Real sie,
-                                                              Indexer_t &&lambda) const {
+SpinerEOSDependsRhoSie<TransformerT>::SpecificHeatFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   return 1. / interpRhoSie_(rho, sie, dependsRhoSie_.dTdE, lambda);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::BulkModulusFromDensityTemperature(
+PORTABLE_INLINE_FUNCTION Real
+SpinerEOSDependsRhoSie<TransformerT>::BulkModulusFromDensityTemperature(
     const Real rho, const Real T, Indexer_t &&lambda) const {
   return interpRhoT_(rho, T, dependsRhoT_.bMod, lambda);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
-SpinerEOSDependsRhoSie<TransformerT>::BulkModulusFromDensityInternalEnergy(const Real rho,
-                                                             const Real sie,
-                                                             Indexer_t &&lambda) const {
+SpinerEOSDependsRhoSie<TransformerT>::BulkModulusFromDensityInternalEnergy(
+    const Real rho, const Real sie, Indexer_t &&lambda) const {
   return interpRhoSie_(rho, sie, dependsRhoSie_.bMod, lambda);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
-SpinerEOSDependsRhoSie<TransformerT>::GruneisenParamFromDensityTemperature(const Real rho, const Real T,
-                                                             Indexer_t &&lambda) const {
+SpinerEOSDependsRhoSie<TransformerT>::GruneisenParamFromDensityTemperature(
+    const Real rho, const Real T, Indexer_t &&lambda) const {
   const Real dpde = interpRhoT_(rho, T, dependsRhoT_.dPdE, lambda);
   return dpde / rho;
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 SpinerEOSDependsRhoSie<TransformerT>::GruneisenParamFromDensityInternalEnergy(
@@ -657,25 +662,22 @@ SpinerEOSDependsRhoSie<TransformerT>::GruneisenParamFromDensityInternalEnergy(
   return dpde / rho;
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
-SpinerEOSDependsRhoSie<TransformerT>::DensityEnergyFromPressureTemperature(const Real press,
-                                                             const Real temp,
-                                                             Indexer_t &&lambda,
-                                                             Real &rho, Real &sie) const {
+SpinerEOSDependsRhoSie<TransformerT>::DensityEnergyFromPressureTemperature(
+    const Real press, const Real temp, Indexer_t &&lambda, Real &rho, Real &sie) const {
   Real lT = spiner_common::to_log(temp, lTOffset_);
   Real lRho = lRhoFromPlT_(press, lT, lambda);
   rho = spiner_common::from_log(lRho, lRhoOffset_);
   sie = sie_.interpToReal(lRho, lT);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void
-SpinerEOSDependsRhoSie<TransformerT>::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
-                                Real &cv, Real &bmod, const unsigned long output,
-                                Indexer_t &&lambda) const {
+PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoSie<TransformerT>::FillEos(
+    Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
+    const unsigned long output, Indexer_t &&lambda) const {
   using namespace spiner_common;
   Real lRho, lT, lE;
   if (output == thermalqs::none) {
@@ -726,11 +728,14 @@ SpinerEOSDependsRhoSie<TransformerT>::FillEos(Real &rho, Real &temp, Real &energ
   }
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoSie<TransformerT>::ValuesAtReferenceState(
-    Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod, Real &dpde,
-    Real &dvdt, Indexer_t &&lambda) const {
+PORTABLE_INLINE_FUNCTION void
+SpinerEOSDependsRhoSie<TransformerT>::ValuesAtReferenceState(Real &rho, Real &temp,
+                                                             Real &sie, Real &press,
+                                                             Real &cv, Real &bmod,
+                                                             Real &dpde, Real &dvdt,
+                                                             Indexer_t &&lambda) const {
   rho = rhoNormal_;
   temp = TNormal_;
   sie = sieNormal_;
@@ -741,7 +746,7 @@ PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoSie<TransformerT>::ValuesAtRefe
   dvdt = dVdTNormal_;
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::interpRhoT_(
     const Real rho, const Real T, const DataBox &db, Indexer_t &&lambda) const {
@@ -753,7 +758,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::interpRhoT_(
   return db.interpToReal(lRho, lT);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::interpRhoSie_(
     const Real rho, const Real sie, const DataBox &db, Indexer_t &&lambda) const {
@@ -765,7 +770,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::interpRhoSie
   return db.interpToReal(lRho, lE);
 }
 
-template <template<class> class TransformerT>
+template <template <class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::lRhoFromPlT_(
     const Real P, const Real lT, Indexer_t &&lambda) const {
@@ -816,11 +821,10 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::lRhoFromPlT_
 }
 
 template <template <class> class TransformerT>
-inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(const std::string &filename,
-                                                      int matid, TableSplit split,
-                                                      bool reproducibility_mode)
+inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(
+    const std::string &filename, int matid, TableSplit split, bool reproducibility_mode)
     : matid_(matid), split_(split), reproducible_(reproducibility_mode),
-      memoryStatus_(DataStatus::OnHost){
+      memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
   hid_t file, matGroup, lTGroup, lEGroup, coldGroup;
@@ -845,7 +849,7 @@ inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(const std::s
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = { lRhoOffset_, sieCold_ };
+  TransformDataContainer_ = {lRhoOffset_, sieCold_};
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
@@ -859,28 +863,25 @@ inline SpinerEOSDependsRhoSie<TransformerT>::SpinerEOSDependsRhoSie(const std::s
   }
 }
 
-
 template <typename Data>
 struct ShiftTransform {
-  template<typename DataT_in>
-  PORTABLE_INLINE_FUNCTION
-  ShiftTransform(const DataT_in& data) : data_{std::forward<DataT_in>(data)} {}
+  template <typename DataT_in>
+  PORTABLE_INLINE_FUNCTION ShiftTransform(const DataT_in &data)
+      : data_{std::forward<DataT_in>(data)} {}
 
-private:
+ private:
   Data data_;
 
-public:
+ public:
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION
-  auto transform(Real e, Real rho, Args&&...) const {
+  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
     Real lRho = toLog_(rho, data_.lRhoOffset);
     Real e_cold = data_.sieCold.interpToReal(lRho);
     return e - e_cold;
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION
-  auto inverse(Real e_transformed, Real lRho, Args&&...) const {
+  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Real lRho, Args &&...) const {
     Real e_cold = data_.sieCold.interpToReal(lRho);
     return e_transformed + e_cold;
   }
