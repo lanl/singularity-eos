@@ -53,21 +53,9 @@
 #include <spiner/sp5.hpp>
 #include <spiner/spiner_types.hpp>
 
-#define SPINER_EOS_VERBOSE (0)
-#define ROOT_FINDER (RootFinding1D::regula_falsi)
-
 namespace singularity {
 
 using namespace eos_base;
-
-
-static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
-   // return std::log10(std::abs(std::max(x,-offset) + offset)+robust::EPS());
-   return FastMath::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
-}
-static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
-   return FastMath::pow10(lx) - offset;
-}
 
 
 template <typename Data = void>
@@ -121,9 +109,8 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<Transformer
   struct Lambda {
     enum Index { lRho = 0 };
   };
-  static constexpr int NGRIDS = 3;
-  using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
-  using DataBox = Spiner::DataBox<Real, Grid_t>;
+  using Grid_t = spiner_common::Grid_t;
+  using DataBox = spiner_common::DataBox;
 
   struct TransformDataContainer {
 
@@ -250,20 +237,20 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<Transformer
   PORTABLE_FORCEINLINE_FUNCTION Real lTOffset() const { return lTOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real lEOffset() const { return lEOffset_; }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMin() const {
-    return fromLog_(lRhoMin_, lRhoOffset_);
+    return spiner_common::from_log(lRhoMin_, lRhoOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real rhoMax() const { return rhoMax_; }
   PORTABLE_FORCEINLINE_FUNCTION Real TMin() const {
-    return fromLog_(sie_.range(0).min(), lTOffset_);
+    return spiner_common::from_log(sie_.range(0).min(), lTOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real TMax() const {
-    return fromLog_(sie_.range(0).max(), lTOffset_);
+    return spiner_common::from_log(sie_.range(0).max(), lTOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real sieMin() const {
-    return fromLog_(T_.range(0).min(), lEOffset_);
+    return spiner_common::from_log(T_.range(0).min(), lEOffset_);
   }
   PORTABLE_FORCEINLINE_FUNCTION Real sieMax() const {
-    return fromLog_(T_.range(0).max(), lEOffset_);
+    return spiner_common::from_log(T_.range(0).max(), lEOffset_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
@@ -273,7 +260,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<Transformer
   Real MinimumPressure() const { return PMin_; }
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const {
-    return rho_at_pmin_.interpToReal(toLog_(temp, lTOffset_));
+    return rho_at_pmin_.interpToReal(spiner_common::to_log(temp, lTOffset_));
   }
 
   constexpr static inline int nlambda() noexcept { return _n_lambda; }
@@ -299,7 +286,6 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie<Transformer
   inline herr_t loadDataboxes_(const std::string &matid_str, hid_t file, hid_t lTGroup,
                                hid_t lEGroup, hid_t coldGroupd);
   inline void calcBMod_(SP5Tables &tables);
-
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
@@ -407,6 +393,7 @@ template <template <class> class TransformerT>
 herr_t SpinerEOSDependsRhoSie<TransformerT>::loadDataboxes_(const std::string &matid_str, hid_t file,
                                               hid_t lTGroup, hid_t lEGroup,
                                               hid_t coldGroup) {
+  using namespace spiner_common;
   herr_t status = H5_SUCCESS;
 
   // offsets
@@ -467,7 +454,7 @@ herr_t SpinerEOSDependsRhoSie<TransformerT>::loadDataboxes_(const std::string &m
   numT_ = sie_.dim(1);
   lRhoMin_ = sie_.range(1).min();
   lRhoMax_ = sie_.range(1).max();
-  rhoMax_ = fromLog_(lRhoMax_, lRhoOffset_);
+  rhoMax_ = from_log(lRhoMax_, lRhoOffset_);
 
   // slice to maximum of rho
   PlRhoMax_ = dependsRhoT_.P.slice(numRho_ - 1);
@@ -486,24 +473,24 @@ herr_t SpinerEOSDependsRhoSie<TransformerT>::loadDataboxes_(const std::string &m
       }
     }
     if (jmax < 0) printf("Failed to find minimum pressure.\n");
-    rho_at_pmin_(i) = fromLog_(dependsRhoT_.P.range(1).x(jmax), lRhoOffset_);
+    rho_at_pmin_(i) = from_log(dependsRhoT_.P.range(1).x(jmax), lRhoOffset_);
   }
 
   // reference state
-  Real lRhoNormal = toLog_(rhoNormal_, lRhoOffset_);
+  Real lRhoNormal = to_log(rhoNormal_, lRhoOffset_);
   // if rho normal not on the table, set it to the middle
   if (!(lRhoMin_ < lRhoNormal && lRhoNormal < lRhoMax_)) {
     lRhoNormal = 0.5 * (lRhoMin_ + lRhoMax_);
-    rhoNormal_ = fromLog_(lRhoNormal, lRhoOffset_);
+    rhoNormal_ = from_log(lRhoNormal, lRhoOffset_);
   }
   // Same for temperature. Use room temperature if it's available
   TNormal_ = ROOM_TEMPERATURE;
-  Real lTNormal = toLog_(TNormal_, lTOffset_);
+  Real lTNormal = to_log(TNormal_, lTOffset_);
   Real lTMin = sie_.range(0).min();
   Real lTMax = sie_.range(0).max();
   if (!(lTMin < lTNormal && lTNormal < lTMax)) {
     lTNormal = 0.5 * (lTMin + lTMax);
-    TNormal_ = fromLog_(lTNormal, lTOffset_);
+    TNormal_ = from_log(lTNormal, lTOffset_);
   }
   sieNormal_ = sie_.interpToReal(lRhoNormal, lTNormal);
   PNormal_ = dependsRhoT_.P.interpToReal(lRhoNormal, lTNormal);
@@ -520,7 +507,7 @@ template <template <class> class TransformerT>
 inline void SpinerEOSDependsRhoSie<TransformerT>::calcBMod_(SP5Tables &tables) {
   for (int j = 0; j < tables.bMod.dim(2); j++) {
     Real lRho = tables.bMod.range(1).x(j);
-    Real rho = fromLog_(lRho, lRhoOffset_);
+    Real rho = spiner_common::from_log(lRho, lRhoOffset_);
     for (int i = 0; i < tables.bMod.dim(1); i++) {
       Real press = tables.P(j, i);
       Real DPDR_E = tables.dPdRho(j, i);
@@ -599,7 +586,7 @@ template <template<class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::MinInternalEnergyFromDensity(
     const Real rho, Indexer_t &&lambda) const {
-  Real lRho = toLog_(rho, lRhoOffset_);
+  Real lRho = spiner_common::to_log(rho, lRhoOffset_);
   return sieCold_.interpToReal(lRho);
 }
 
@@ -664,8 +651,8 @@ template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 SpinerEOSDependsRhoSie<TransformerT>::GruneisenParamFromDensityInternalEnergy(
     const Real rho, const Real sie, Indexer_t &&lambda) const {
-  const Real lRho = toLog_(rho, lRhoOffset_);
-  const Real lE = toLog_(sie, lEOffset_);
+  const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
+  const Real lE = spiner_common::to_log(sie, lEOffset_);
   const Real dpde = dependsRhoSie_.dPdE.interpToReal(lRho, lE);
   return dpde / rho;
 }
@@ -677,9 +664,9 @@ SpinerEOSDependsRhoSie<TransformerT>::DensityEnergyFromPressureTemperature(const
                                                              const Real temp,
                                                              Indexer_t &&lambda,
                                                              Real &rho, Real &sie) const {
-  Real lT = toLog_(temp, lTOffset_);
+  Real lT = spiner_common::to_log(temp, lTOffset_);
   Real lRho = lRhoFromPlT_(press, lT, lambda);
-  rho = fromLog_(lRho, lRhoOffset_);
+  rho = spiner_common::from_log(lRho, lRhoOffset_);
   sie = sie_.interpToReal(lRho, lT);
 }
 
@@ -689,6 +676,7 @@ PORTABLE_INLINE_FUNCTION void
 SpinerEOSDependsRhoSie<TransformerT>::FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                 Real &cv, Real &bmod, const unsigned long output,
                                 Indexer_t &&lambda) const {
+  using namespace spiner_common;
   Real lRho, lT, lE;
   if (output == thermalqs::none) {
     UNDEFINED_ERROR;
@@ -698,20 +686,20 @@ SpinerEOSDependsRhoSie<TransformerT>::FillEos(Real &rho, Real &temp, Real &energ
   }
   if (output & thermalqs::density) {
     if (!(output & thermalqs::pressure || output & thermalqs::temperature)) {
-      lT = toLog_(temp, lTOffset_);
+      lT = to_log(temp, lTOffset_);
       lRho = lRhoFromPlT_(press, lT, lambda);
-      rho = fromLog_(lRho, lRhoOffset_);
+      rho = from_log(lRho, lRhoOffset_);
     } else {
       UNDEFINED_ERROR;
     }
   } else {
-    lRho = toLog_(rho, lRhoOffset_);
+    lRho = to_log(rho, lRhoOffset_);
     if (!variadic_utils::is_nullptr(lambda)) {
       IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
     }
   }
   if (output & thermalqs::temperature) {
-    lE = toLog_(energy, lEOffset_);
+    lE = to_log(energy, lEOffset_);
     temp = T_.interpToReal(lRho, lE);
     if (output & thermalqs::pressure) {
       press = dependsRhoSie_.P.interpToReal(lRho, lE);
@@ -724,7 +712,7 @@ SpinerEOSDependsRhoSie<TransformerT>::FillEos(Real &rho, Real &temp, Real &energ
     }
   }
   if (output & thermalqs::specific_internal_energy) {
-    lT = toLog_(temp, lTOffset_);
+    lT = to_log(temp, lTOffset_);
     energy = sie_.interpToReal(lRho, lT);
     if (output & thermalqs::pressure) {
       press = dependsRhoT_.P.interpToReal(lRho, lT);
@@ -757,8 +745,8 @@ template <template<class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::interpRhoT_(
     const Real rho, const Real T, const DataBox &db, Indexer_t &&lambda) const {
-  const Real lRho = toLog_(rho, lRhoOffset_);
-  const Real lT = toLog_(T, lTOffset_);
+  const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
+  const Real lT = spiner_common::to_log(T, lTOffset_);
   if (!variadic_utils::is_nullptr(lambda)) {
     IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
   }
@@ -769,8 +757,8 @@ template <template<class> class TransformerT>
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::interpRhoSie_(
     const Real rho, const Real sie, const DataBox &db, Indexer_t &&lambda) const {
-  const Real lRho = toLog_(rho, lRhoOffset_);
-  const Real lE = toLog_(sie, lEOffset_);
+  const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
+  const Real lE = spiner_common::to_log(sie, lEOffset_);
   if (!variadic_utils::is_nullptr(lambda)) {
     IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
   }
@@ -789,7 +777,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::lRhoFromPlT_
   Real PMax = PlRhoMax_.interpToReal(lT);
   if (dPdRhoMax > 0 && P > PMax) {
     Real rho = (P - PMax) / dPdRhoMax + rhoMax_;
-    lRho = toLog_(rho, lRhoOffset_);
+    lRho = spiner_common::to_log(rho, lRhoOffset_);
     if (pcounts != nullptr) {
       pcounts->increment(0);
     }
@@ -803,8 +791,8 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie<TransformerT>::lRhoFromPlT_
       }
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
-    status = ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
-                         robust::EPS(), lRho, pcounts);
+    status = SP_ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
+                            robust::EPS(), lRho, pcounts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;
