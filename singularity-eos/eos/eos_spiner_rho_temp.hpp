@@ -54,9 +54,6 @@
 #include <spiner/sp5.hpp>
 #include <spiner/spiner_types.hpp>
 
-#define SPINER_EOS_VERBOSE (0)
-#define ROOT_FINDER (RootFinding1D::regula_falsi)
-
 namespace singularity {
 
 using namespace eos_base;
@@ -76,9 +73,8 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   using SpinerTricks = table_utils::SpinerTricks<SpinerEOSDependsRhoT>;
 
  public:
-  static constexpr int NGRIDS = 3;
-  using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
-  using DataBox = Spiner::DataBox<Real, Grid_t>;
+  using Grid_t = spiner_common::Grid_t;
+  using DataBox = spiner_common::DataBox;
 
   // A weakly typed index map for lambdas
   struct Lambda {
@@ -235,29 +231,21 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   inline void fixBulkModulus_();
   inline void setlTColdCrit_();
 
-  static PORTABLE_FORCEINLINE_FUNCTION Real toLog_(const Real x, const Real offset) {
-    // return std::log10(x + offset + robust::EPS());
-    // return std::log10(std::abs(std::max(x,-offset) + offset)+robust::EPS());
-    return FastMath::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
-  }
-  static PORTABLE_FORCEINLINE_FUNCTION Real fromLog_(const Real lx, const Real offset) {
-    return FastMath::pow10(lx) - offset;
-  }
   PORTABLE_FORCEINLINE_FUNCTION
   Real lRho_(const Real rho) const noexcept {
-    Real out = toLog_(rho, lRhoOffset_);
+    Real out = spiner_common::to_log(rho, lRhoOffset_);
     return out;
     // return out < lRhoMin_ ? lRhoMin_ : out;
   }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real lT_(const Real T) const noexcept { return toLog_(T, lTOffset_); }
+  Real lT_(const Real T) const noexcept { return spiner_common::to_log(T, lTOffset_); }
   PORTABLE_FORCEINLINE_FUNCTION
   Real rho_(const Real lRho) const noexcept {
-    Real rho = fromLog_(lRho, lRhoOffset_);
+    Real rho = spiner_common::from_log(lRho, lRhoOffset_);
     return rho < 0 ? 0 : rho;
   }
   PORTABLE_FORCEINLINE_FUNCTION
-  Real T_(const Real lT) const noexcept { return fromLog_(lT, lTOffset_); }
+  Real T_(const Real lT) const noexcept { return spiner_common::from_log(lT, lTOffset_); }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
@@ -441,6 +429,7 @@ SpinerEOSDependsRhoT::SetDynamicMemory(char *src, const SharedMemSettings &stngs
 inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
                                                    hid_t file, hid_t lTGroup,
                                                    hid_t coldGroup) {
+  using namespace spiner_common;
   herr_t status = H5_SUCCESS;
 
   // offsets
@@ -483,15 +472,15 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   // set bounds
   lRhoMin_ = P_.range(1).min();
   lRhoMax_ = P_.range(1).max();
-  rhoMax_ = fromLog_(lRhoMax_, lRhoOffset_);
+  rhoMax_ = from_log(lRhoMax_, lRhoOffset_);
   lTMin_ = P_.range(0).min();
   lTMax_ = P_.range(0).max();
-  TMax_ = fromLog_(lTMax_, lTOffset_);
+  TMax_ = from_log(lTMax_, lTOffset_);
 
-  Real rhoMin = fromLog_(lRhoMin_, lRhoOffset_);
+  Real rhoMin = from_log(lRhoMin_, lRhoOffset_);
   Real rhoMinSearch = std::max(
       rhoMin, std::max(std::abs(robust::EPS()) * 10, std::abs(robust::EPS() * rhoMin)));
-  lRhoMinSearch_ = toLog_(rhoMinSearch, lRhoOffset_);
+  lRhoMinSearch_ = to_log(rhoMinSearch, lRhoOffset_);
 
   // bulk modulus can be wrong in the tables. Use FLAG's approach to
   // fix the table.
@@ -658,8 +647,8 @@ inline void SpinerEOSDependsRhoT::setlTColdCrit_() {
       Real lTlower = bMod_.range(0).x(ilast) - 1.0e-14;
       Real lTupper = bMod_.range(0).x(ilast + 1) + 1.0e-14;
       Real lTGuess = 0.5 * (lTlower + lTupper);
-      auto status = ROOT_FINDER(sieFunc, sieCold, lTGuess, lTlower, lTupper, ROOT_THRESH,
-                                ROOT_THRESH, lT);
+      auto status = SP_ROOT_FINDER(sieFunc, sieCold, lTGuess, lTlower, lTupper,
+                                   ROOT_THRESH, ROOT_THRESH, lT);
       if (status != RootFinding1D::Status::SUCCESS) {
         lT = lTGuess;
       }
@@ -950,23 +939,23 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lRhoFromPlT_(
     whereAmI = TableStatus::OffBottom;
     const callable_interp::interp PFunc(PCold_);
     status =
-        ROOT_FINDER(PFunc, P, lRhoGuess,
-                    // lRhoMin_, lRhoMax_,
-                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
+        SP_ROOT_FINDER(PFunc, P, lRhoGuess,
+                       // lRhoMin_, lRhoMax_,
+                       lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   } else if (lT >= lTMax_) { // ideal gas
     whereAmI = TableStatus::OffTop;
     const callable_interp::prod_interp_1d PFunc(gm1Max_, dEdTMax_, lT);
     status =
-        ROOT_FINDER(PFunc, P, lRhoGuess,
-                    // lRhoMin_, lRhoMax_,
-                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
+        SP_ROOT_FINDER(PFunc, P, lRhoGuess,
+                       // lRhoMin_, lRhoMax_,
+                       lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   } else { // on table
     whereAmI = TableStatus::OnTable;
     const callable_interp::l_interp PFunc(P_, lT);
     status =
-        ROOT_FINDER(PFunc, P, lRhoGuess,
-                    // lRhoMin_, lRhoMax_,
-                    lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
+        SP_ROOT_FINDER(PFunc, P, lRhoGuess,
+                       // lRhoMin_, lRhoMax_,
+                       lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   }
   if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
@@ -1029,8 +1018,8 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoSie_(
       }
     }
     const callable_interp::r_interp sieFunc(sie_, lRho);
-    status = ROOT_FINDER(sieFunc, sie, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
-                         lT, pcounts);
+    status = SP_ROOT_FINDER(sieFunc, sie, lTGuess, lTMin_, lTMax_, ROOT_THRESH,
+                            ROOT_THRESH, lT, pcounts);
 
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
@@ -1095,8 +1084,8 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoP_(
       }
     }
     const callable_interp::r_interp PFunc(P_, lRho);
-    status = ROOT_FINDER(PFunc, press, lTGuess, lTMin_, lTMax_, ROOT_THRESH, ROOT_THRESH,
-                         lT, pcounts);
+    status = SP_ROOT_FINDER(PFunc, press, lTGuess, lTMin_, lTMax_, ROOT_THRESH,
+                            ROOT_THRESH, lT, pcounts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
       std::stringstream errorMessage;

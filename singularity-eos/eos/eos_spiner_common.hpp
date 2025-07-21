@@ -27,8 +27,28 @@
 #include <spiner/sp5.hpp>
 #include <spiner/spiner_types.hpp>
 
-// implementation details below
-// ======================================================================
+// singularity-eos
+#include <singularity-eos/base/fast-math/logs.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
+
+#define SPINER_EOS_VERBOSE (0)
+#define SP_ROOT_FINDER (RootFinding1D::regula_falsi)
+
+namespace singularity {
+namespace spiner_common {
+
+static constexpr int NGRIDS = 3;
+using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
+using DataBox = Spiner::DataBox<Real, Grid_t>;
+
+PORTABLE_FORCEINLINE_FUNCTION Real to_log(const Real x, const Real offset) {
+  return FastMath::log10(std::abs(std::max(x, -offset) + offset) + robust::EPS());
+}
+PORTABLE_FORCEINLINE_FUNCTION Real from_log(const Real lx, const Real offset) {
+  return FastMath::pow10(lx) - offset;
+}
+
+} // namespace spiner_common
 
 // TODO: we're using log-linear interpolation, not log-log
 // this may be suboptimal. We may want a way to do some variables
@@ -40,9 +60,7 @@
 
 namespace callable_interp {
 
-static constexpr int NGRIDS = 3;
-using Grid_t = Spiner::PiecewiseGrid1D<Real, NGRIDS>;
-using DataBox = Spiner::DataBox<Real, Grid_t>;
+using namespace spiner_common;
 
 class l_interp {
  private:
@@ -98,6 +116,7 @@ class interp {
   }
 };
 } // namespace callable_interp
+} // namespace singularity
 
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #endif // _SINGULARITY_EOS_EOS_EOS_SPINER_COMMON_HPP_
