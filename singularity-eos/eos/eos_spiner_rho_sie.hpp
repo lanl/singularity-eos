@@ -310,6 +310,8 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
   hid_t file, matGroup, lTGroup, lEGroup, coldGroup;
   herr_t status = H5_SUCCESS;
 
+  H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
+
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   matGroup = H5Gopen(file, materialName.c_str(), H5P_DEFAULT);
 
@@ -753,6 +755,8 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filenam
   std::string matid_str = std::to_string(matid);
   hid_t file, matGroup, lTGroup, lEGroup, coldGroup;
   herr_t status = H5_SUCCESS;
+
+  H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   matGroup = H5Gopen(file, matid_str.c_str(), H5P_DEFAULT);
