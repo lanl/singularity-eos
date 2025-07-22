@@ -53,7 +53,7 @@ PORTABLE_FORCEINLINE_FUNCTION Real from_log(const Real lx, const Real offset) {
 
 inline herr_t aborting_error_handler(hid_t stack, void *client_data) {
   H5Eprint2(stack, stderr);
-  PORTABLE_ALWAYS_THROW_OR_ABORT("HDF5 error detected! Erroring out\n");
+  PORTABLE_ALWAYS_THROW_OR_ABORT("HDF5 error detected! Erroring out!");
 }
 
 } // namespace spiner_common
