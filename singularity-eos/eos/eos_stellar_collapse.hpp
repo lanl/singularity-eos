@@ -42,6 +42,7 @@
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
+#include <singularity-eos/eos/eos_spiner_common.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -475,6 +476,8 @@ inline StellarCollapse::StellarCollapse(const std::string &filename, bool use_sp
 
 // Saves to an SP5 file
 inline void StellarCollapse::Save(const std::string &filename) {
+  H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
+
   herr_t status = H5_SUCCESS;
   hid_t file = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
@@ -764,8 +767,9 @@ StellarCollapse::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &
 }
 
 inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
-  herr_t status = H5_SUCCESS;
+  H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
 
+  herr_t status = H5_SUCCESS;
   hid_t file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
 
   // Offsets
@@ -822,6 +826,7 @@ inline void StellarCollapse::LoadFromStellarCollapseFile_(const std::string &fil
                                                           bool filter_bmod) {
   // Start HDF5 stuff
   // ---------------------------------------------------------------------
+  H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
   hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   herr_t status = H5_SUCCESS;
 

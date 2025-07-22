@@ -332,6 +332,8 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
   hid_t file, matGroup, lTGroup, coldGroup;
   herr_t status = H5_SUCCESS;
 
+  H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
+
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   int log_type = FastMath::LogType::NQT1;
   if (H5LTfind_attribute(file, SP5::logType)) {
@@ -376,6 +378,8 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
   std::string matid_str;
   hid_t file, matGroup, lTGroup, subGroup, coldGroup;
   herr_t status = H5_SUCCESS;
+
+  H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
 
   file = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
   matGroup = H5Gopen(file, materialName.c_str(), H5P_DEFAULT);
