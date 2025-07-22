@@ -116,6 +116,7 @@ diff_pressures(const int n_eos, HostEOSArr eos_arr, const Real T_lookup,
   // Free device memory
   PORTABLE_FREE(v_P_of_RT);
   PORTABLE_FREE(v_P_of_RE);
+  PORTABLE_FREE(v_EOS);
 
   return std::make_tuple(P_of_RT, P_of_RE);
 }

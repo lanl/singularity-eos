@@ -91,6 +91,11 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
         REQUIRE(steelEOS_host.MeanAtomicNumber() == eospac.MeanAtomicNumber());
       }
 
+      AND_THEN("We get the correct density and temperature bounds") {
+        REQUIRE(std::abs(steelEOS_host.MinimumTemperature() - 1e-2) <= 1e-12);
+        REQUIRE(std::abs(steelEOS_host.MinimumDensity() - 1e-8) <= 1e-12);
+      }
+
       // TODO: this needs to be a much more rigorous test
       AND_THEN("Quantities can be read from density and temperature") {
         const Real sie_pac = eospac.InternalEnergyFromDensityTemperature(1e0, 1e6);
@@ -242,6 +247,10 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
         REQUIRE(isClose(steelEOS_host.MeanAtomicMass(), 55.37));
         REQUIRE(isClose(steelEOS_host.MeanAtomicNumber(), 25.80));
       }
+      AND_THEN("We get the correct density and temperature bounds") {
+        REQUIRE(std::abs(steelEOS_host.MinimumTemperature() - 1e-2) <= 1e-12);
+        REQUIRE(std::abs(steelEOS_host.MinimumDensity() - 1e-8) <= 1e-12);
+      }
 
       int nw_ie2{0}, nw_te2{0};
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -364,6 +373,17 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
           REQUIRE(isClose(P_eospac, P_spiner_orig));
           REQUIRE(isClose(P_eospac, P_spiner_rhoT));
           REQUIRE(isClose(P_eospac, P_spiner_rhoSie));
+
+          // Check that MinInternalEnergyFromDensity serializes correctly for all EOS
+          const Real ecold_eospac = eos_eospac.MinInternalEnergyFromDensity(rho_trial);
+          const Real ecold_spiner_orig =
+              rhoT_orig.MinInternalEnergyFromDensity(rho_trial);
+          const Real ecold_spiner_rhoT = eos_rhoT.MinInternalEnergyFromDensity(rho_trial);
+          const Real ecold_spiner_rhoSie =
+              eos_rhoSie.MinInternalEnergyFromDensity(rho_trial);
+          REQUIRE(isClose(ecold_eospac, ecold_spiner_orig));
+          REQUIRE(isClose(ecold_eospac, ecold_spiner_rhoT));
+          REQUIRE(isClose(ecold_eospac, ecold_spiner_rhoSie));
         }
 
         eos_eospac.Finalize();

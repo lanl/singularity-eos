@@ -3,12 +3,39 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Add two examples related to PTE
+- [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
+
+### Fixed (Repair bugs, etc)
+- [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Added some robustness checks to the PTE solvers
+- [[PR505]](https://github.com/lanl/singularity-eos/pull/505) rename LogType::TRUE to LogType::DOUBLE
+- [[PR495]](https://github.com/lanl/singularity-eos/pull/495) Fix bug related to MinimumTemperature and MinimumDensity in SpinerEOSDependsRhoSie
+- [[PR496]](https://github.com/lanl/singularity-eos/pull/496) Re-enable stellarcollapse2spiner, which was disabled.
+
+### Changed (changing behavior/API/variables/...)
+- [[PR502]](https://github.com/lanl/singularity-eos/pull/502) Expose split tables to Fortran interface
+- [[PR519]] (https://github.com/lanl/singularity-eos/pull/519) Split eos_spiner.hpp into eos_spiner_rho_sie.hpp and eos_spiner_rho_temp.hpp files.  
+
+### Infrastructure (changes irrelevant to downstream codes)
+- [[PR522]](https://github.com/lanl/singularity-eos/pull/522) Move more common functionality into spiner_eos_common.hpp
+- [[PR510]](https://github.com/lanl/singularity-eos/pull/510) Make Davis EOS faster and more robust
+- [[PR509]](https://github.com/lanl/singularity-eos/pull/509) Remove extraneous copies in base class
+- [[PR504]](https://github.com/lanl/singularity-eos/pull/504) Add Fortran interface documentation
+
+### Removed (removing behavior/API/varaibles/...)
+
+
+## Release 1.9.2
+Date: 4/7/2025
+
+### Added (new features/APIs/variables/...)
 - [[PR470]](https://github.com/lanl/singularity-eos/pull/470) Add the ability to access lambda elements by named types
 - [[PR459]](https://github.com/lanl/singularity-eos/pull/459) Add electron and ion tables to EOSPAC and SpinerEOS backends
 - [[PR453]](https://github.com/lanl/singularity-eos/pull/453) A PT space PTE solver
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)
+- [PR492](https://github.com/lanl/singularity-eos/pull/492) Fix import issue in spack's package.py.
 - [[PR485]](https://github.com/lanl/singularity-eos/pull/485) Fix segfault in Fortran interface related to EOSPAC initialization
 - [[PR478]](https://github.com/lanl/singularity-eos/pull/478) Fix bug in KPT test. Add more extensive clang build to github CI matrix.
 - [[PR473]](https://github.com/lanl/singularity-eos/pull/473) Resolve memory issue. Thanks for the catch, Richard!
@@ -18,8 +45,10 @@
 - [[PR439]](https://github.com/lanl/singularity-eos/pull/439) Add mean atomic mass and number to EOS API
 - [[PR437]](https://github.com/lanl/singularity-eos/pull/437) Fix segfault on HIP, clean up warnings, add strict sanitizer test
 - [[PR375]](https://github.com/lanl/singularity-eos/pull/375) Added energy floor modifier
+- [[PR491]](https://github.com/lanl/singularity-eos/pull/491) Fixed spackage logic to point at correct spiner version for piecewise grids
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR499]](https://github.com/lanl/singularity-eos/pull/499) Hide binutils behind cmake debug build
 - [[PR475]](https://github.com/lanl/singularity-eos/pull/475) Shrink the default variant. Notably moved Stiff Gas behind a flag.
 - [[PR487]](https://github.com/lanl/singularity-eos/pull/487) Added static member functions to closures for scratch size interrogation
 

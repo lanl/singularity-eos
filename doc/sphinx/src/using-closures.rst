@@ -17,6 +17,9 @@ compute the pressure response of the flow and how to partition the volume and
 energy between the individual materials. In this situation, one must decide how
 to compute thermodynamic quantities in that cell for each material.
 
+For an example of how to use the PTE solvers, see
+``examples/pte_2mat.cpp`` in the ``examples`` folder.
+
 Governing Equations and Assumptions
 ------------------------------------
 

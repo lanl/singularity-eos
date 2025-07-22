@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------------#
-# © 2021-2024. Triad National Security, LLC. All rights reserved.  This program
+# © 2021-2025. Triad National Security, LLC. All rights reserved.  This program
 # was produced under U.S. Government contract 89233218CNA000001 for Los Alamos
 # National Laboratory (LANL), which is operated by Triad National Security, LLC
 # for the U.S.  Department of Energy/National Nuclear Security Administration.
@@ -24,7 +24,7 @@ endif()
 # declare the project name
 project(
   singularity-eos
-  VERSION 1.9.1
+  VERSION 1.9.2
   LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -307,6 +307,10 @@ if(SINGULARITY_BUILD_SESAME2SPINER)
   add_subdirectory(sesame2spiner)
 endif()
 
+if(SINGULARITY_BUILD_STELLARCOLLAPSE2SPINER)
+  add_subdirectory(stellarcollapse2spiner)
+endif()
+
 # Define the full version as a string macro
 target_compile_definitions(singularity-eos_Interface INTERFACE
     SINGULARITY_VERSION=\"${PROJECT_VERSION}\"
@@ -555,7 +559,7 @@ set(with_cxx "$<COMPILE_LANGUAGE:CXX>")
 set(with_xlcxx "$<COMPILE_LANG_AND_ID:CXX,XL>")
 set(build_debug "$<CONFIG:Debug>")
 set(build_release "$<CONFIG:Release>")
-set(with_cuda "$<BOOL:${SINGULARITY_USE_CUDA}>")
+set(with_nvcc_cuda "$<AND:$<BOOL:${SINGULARITY_USE_CUDA}>,$<CXX_COMPILER_ID:NVIDIA>>")
 set(with_warnings "$<NOT:$<BOOL:${SINGULARITY_HIDE_MORE_WARNINGS}>>")
 set(with_better_flags "$<BOOL:${SINGULARITY_BETTER_DEBUG_FLAGS}>")
 
@@ -563,7 +567,7 @@ set(xlfix "$<${with_xlcxx}:-std=c++1y;-qxflag=disable__cplusplusOverride>")
 
 target_compile_options(
   singularity-eos_Interface
-  INTERFACE $<${with_cuda}:
+  INTERFACE $<${with_nvcc_cuda}:
          $<${with_cxx}:
          --expt-relaxed-constexpr
          $<${with_warnings}:
