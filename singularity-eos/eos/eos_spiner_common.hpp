@@ -17,6 +17,9 @@
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
+#include <hdf5.h>
+#include <hdf5_hl.h>
+
 // ports-of-call
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
@@ -46,6 +49,11 @@ PORTABLE_FORCEINLINE_FUNCTION Real to_log(const Real x, const Real offset) {
 }
 PORTABLE_FORCEINLINE_FUNCTION Real from_log(const Real lx, const Real offset) {
   return FastMath::pow10(lx) - offset;
+}
+
+inline herr_t aborting_error_handler(hid_t stack, void *client_data) {
+  H5Eprint2(stack, stderr);
+  PORTABLE_ALWAYS_THROW_OR_ABORT("HDF5 error detected! Erroring out!");
 }
 
 } // namespace spiner_common
