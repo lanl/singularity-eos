@@ -708,7 +708,10 @@ PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoSieTransformable<TransformerT>:
     }
   }
   if (output & thermalqs::temperature) {
-    lE = to_log(energy, lEOffset_);
+
+    const Real sie_transformed = getTransformer().transform(energy, rho);
+
+    lE = to_log(sie_transformed, lEOffset_);
     temp = T_.interpToReal(lRho, lE);
     if (output & thermalqs::pressure) {
       press = dependsRhoSie_.P.interpToReal(lRho, lE);
@@ -772,7 +775,8 @@ PORTABLE_INLINE_FUNCTION Real
 SpinerEOSDependsRhoSieTransformable<TransformerT>::interpRhoSie_(
     const Real rho, const Real sie, const DataBox &db, Indexer_t &&lambda) const {
   const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
-  const Real lE = spiner_common::to_log(sie, lEOffset_);
+  const Real sie_transformed = getTransformer().transform(sie, rho);
+  const Real lE = spiner_common::to_log(sie_transformed, lEOffset_);
   if (!variadic_utils::is_nullptr(lambda)) {
     IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
   }
