@@ -46,6 +46,7 @@
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_spiner_common.hpp>
+#include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
 
 // spiner
 #include <spiner/databox.hpp>
@@ -56,26 +57,6 @@
 namespace singularity {
 
 using namespace eos_base;
-
-template <typename Data = void>
-struct NullTransform {
-
-  template <typename... Args>
-  PORTABLE_INLINE_FUNCTION NullTransform(Args &&...) {}
-
-  PORTABLE_INLINE_FUNCTION
-  NullTransform() = default;
-
-  template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(Real e, Args &&...) const {
-    return e;
-  }
-
-  template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Args &&...) const {
-    return e_transformed;
-  }
-};
 
 /*
   TODO(JMM): Extrapolation Strategy
@@ -878,30 +859,6 @@ inline SpinerEOSDependsRhoSieTransformable<
     EOS_ERROR("SpinerDependsRhoSIE: HDF5 error\n");
   }
 }
-
-template <typename Data>
-struct ShiftTransform {
-  template <typename DataT_in>
-  PORTABLE_INLINE_FUNCTION ShiftTransform(const DataT_in &data)
-      : data_{std::forward<DataT_in>(data)} {}
-
- private:
-  Data data_;
-
- public:
-  template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
-    Real lRho = toLog_(rho, data_.lRhoOffset);
-    Real e_cold = data_.sieCold.interpToReal(lRho);
-    return e - e_cold;
-  }
-
-  template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Real lRho, Args &&...) const {
-    Real e_cold = data_.sieCold.interpToReal(lRho);
-    return e_transformed + e_cold;
-  }
-};
 
 using SpinerEOSDependsRhoSie = SpinerEOSDependsRhoSieTransformable<NullTransform>;
 
