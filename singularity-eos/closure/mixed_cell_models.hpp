@@ -220,7 +220,7 @@ class PTESolverBase {
                 const Real vfrac_tot, const Real sie_tot, const RealIndexer &rho_,
                 const RealIndexer &vfrac_, const RealIndexer &sie_,
                 const RealIndexer &temp_, const RealIndexer &press_,
-                LambdaIndexer &lambda_, Real *scratch, Real Tnorm,
+                LambdaIndexer &lambda_, Real *&scratch, Real Tnorm,
                 const MixParams &params = MixParams())
       : params_(params), nmat(nmats), neq(neqs), niter(0), vfrac_total(vfrac_tot),
         sie_total(sie_tot), eos(eos_), rho(rho_), vfrac(vfrac_), sie(sie_), temp(temp_),
