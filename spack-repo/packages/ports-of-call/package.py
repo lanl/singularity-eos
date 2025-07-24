@@ -52,6 +52,9 @@ class PortsOfCall(CMakePackage):
         when="@1.6.1: +test",
     )
 
+    depends_on("c", type="build", when="@:1.7.1")
+    depends_on("cxx", type="build")
+
     depends_on("cmake@3.12:")
     depends_on("catch2@3.0.1:", when="+test")
     depends_on("kokkos", when="+test test_portability_strategy=Kokkos")

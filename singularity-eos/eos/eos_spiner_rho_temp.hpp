@@ -380,7 +380,7 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
       memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
-  hid_t file, matGroup, lTGroup, subGroup, coldGroup;
+  hid_t file, matGroup, lTGroup, coldGroup;
   herr_t status = H5_SUCCESS;
 
   H5Eset_auto(H5E_DEFAULT, spiner_common::aborting_error_handler, NULL);
