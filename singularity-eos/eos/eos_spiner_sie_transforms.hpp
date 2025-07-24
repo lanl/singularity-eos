@@ -33,12 +33,12 @@ struct NullTransform {
   NullTransform() = default;
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(Real e, Args &&...) const {
+  PORTABLE_INLINE_FUNCTION auto transform(const Real e, Args &&...) const {
     return e;
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Args &&...) const {
+  PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed, Args &&...) const {
     return e_transformed;
   }
 };
@@ -55,14 +55,14 @@ struct ShiftTransform {
 
  public:
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
+  PORTABLE_INLINE_FUNCTION auto transform(const Real e,const Real rho, Args &&...) const {
     Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     Real e_cold = data_.sieCold.interpToReal(lRho);
     return e - e_cold;
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Real lRho, Args &&...) const {
+  PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed,const Real lRho, Args &&...) const {
     Real e_cold = data_.sieCold.interpToReal(lRho);
     return e_transformed + e_cold;
   }
