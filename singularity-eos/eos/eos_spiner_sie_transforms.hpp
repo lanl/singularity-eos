@@ -48,7 +48,7 @@ template <typename Data>
 struct ShiftTransform {
   template <typename DataT_in>
   PORTABLE_INLINE_FUNCTION ShiftTransform(const DataT_in &data)
-      : data_{std::forward<DataT_in>(data)} {}
+      : data_(data) {}
 
  private:
   Data data_;
@@ -56,7 +56,7 @@ struct ShiftTransform {
  public:
   template <typename... Args>
   PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
-    Real lRho = to_log(rho, data_.lRhoOffset);
+    Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     Real e_cold = data_.sieCold.interpToReal(lRho);
     return e - e_cold;
   }
