@@ -460,9 +460,13 @@ std::string getName(std::string comment) {
 }
 
 bool eosErrorCodesEqual(EOS_INTEGER lhs, EOS_INTEGER rhs) {
+#ifdef SINGULARITY_EOSPAC_USE_MODERN_ERROR_CODES
   EOS_BOOLEAN codes_equal;
   eos_ErrorCodesEqual(&lhs, &rhs, &codes_equal);
   return codes_equal;
+#else
+  return lhs == rhs;
+#endif // SINGULARITY_EOSPAC_USE_MODERN_ERROR_CODES
 }
 
 } // namespace EospacWrapper
