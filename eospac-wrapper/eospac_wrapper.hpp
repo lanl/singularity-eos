@@ -127,6 +127,7 @@ void eosCheckError(EOS_INTEGER errorCode, const std::string &name, Verbosity eos
 std::string eosErrorString(EOS_INTEGER errorCode);
 void eosSafeDestroy(int ntables, EOS_INTEGER tableHandles[], Verbosity eospacWarn);
 std::string getName(std::string comment);
+bool eosErrorCodesEqual(EOS_INTEGER lhs, EOS_INTEGER rhs);
 
 } // namespace EospacWrapper
 
