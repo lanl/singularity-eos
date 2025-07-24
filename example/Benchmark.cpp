@@ -78,7 +78,7 @@ class Bounds { //check for edge effects
   int size; 
 };
 
-// == The following function creates and fills in a csv ==
+// == The following function creates and fills in a csv of grid values ==
 void write_matrix_csv(const std::string& filename, const std::vector<std::vector<Real>>& matrix) {
             std::ofstream file(filename);
             file << std::setprecision(14);
@@ -90,6 +90,16 @@ void write_matrix_csv(const std::string& filename, const std::vector<std::vector
                 file << "\n";
             }
         }
+
+// == The following saves the rho and T values corresponding to the indices (for plotting purposes) ==
+void write_vector_csv(const std::string& filename, const std::vector<Real>& vec) {
+    std::ofstream file(filename);
+    file << std::setprecision(14);
+    for (const auto& val : vec) {
+        file << val << "\n";
+    }
+}
+
 
 
 // == Main loop ===
@@ -131,6 +141,12 @@ int main(int argc, char* argv[]) {
         std::vector<Real> rhos(nRho), temps(nT);
         for (int i = 0; i < nRho; ++i) rhos[i] = rhoBounds.i2lin(i);
         for (int j = 0; j < nT; ++j) temps[j] = TBounds.i2lin(j);
+
+        // == This will save the values of rho and T corresponding to the indices chosen ==
+        std::string rho_file = (base_output_path / ("rho_axis_" + std::to_string(matid) + "_nRho-" + std::to_string(nRho) + ".csv")).string();
+        std::string temp_file = (base_output_path / ("temp_axis_" + std::to_string(matid) + "_nT-" + std::to_string(nT) + ".csv")).string();
+        write_vector_csv(rho_file, rhos);
+        write_vector_csv(temp_file, temps);
 
         // === Load EOS Models ===
         SpinerEOSDependsRhoT eos_rt(sp5file, matid);
@@ -357,7 +373,7 @@ int main(int argc, char* argv[]) {
                 << time_T_back_rs_list[i] << "\n";
     }
 
-    std::cout << "Benchmark complete\n";
+    std::cout << "Benchmark complete for material " << std::to_string(matid) << "\n";
     }
     return 0;
 }
