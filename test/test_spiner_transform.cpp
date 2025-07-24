@@ -18,11 +18,11 @@
 
 #include <test/eos_unit_test_helpers.hpp>
 
-#ifdef SPINER_USE_HDF
+#ifdef SPINER_USE_HDF5
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #endif
 
-#ifdef SPINER_USE_HDF
+#ifdef SPINER_USE_HDF5
 #ifdef SINGULARITY_TEST_SESAME
 
 using namespace singularity;
