@@ -53,6 +53,9 @@ class Spiner(CMakePackage):
 
     variant("test", default=False, description="Build tests")
 
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
+
     depends_on("cmake@3.12:", when="@:1.5.1")
     depends_on("cmake@3.19:", when="@1.6.0:")
     depends_on("catch2@3.7.1:", when="@1.6.3: +test")
@@ -95,7 +98,6 @@ class Spiner(CMakePackage):
             )
         if self.spec.satisfies("^kokkos+rocm"):
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
-            args.append(self.define("CMAKE_C_COMPILER", self.spec["hip"].hipcc))
         if self.spec.satisfies("^kokkos+cuda"):
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
         return args
