@@ -15,7 +15,7 @@
 #------------------------------------------------------------------------------
 
 
-: ${CFM:=clang-format}
+: ${CFM:=clang-format-12}
 : ${VERBOSE:=0}
 
 if ! command -v ${CFM} &> /dev/null; then
@@ -34,11 +34,5 @@ echo "You are using ${CF_VRSN}."
 echo "If these differ, results may not be stable."
 
 echo "Formatting..."
-REPO=$(git rev-parse --show-toplevel)
-for f in $(git grep --untracked -ail res -- :/*.hpp :/*.cpp); do
-    if [ ${VERBOSE} -ge 1 ]; then
-       echo ${f}
-    fi
-    ${CFM} -style=file -i ${REPO}/${f}
-done
+git ls-files -z '*.cpp' '*.hpp' | xargs -0 ${CFM} -style=file -i
 echo "...Done"
