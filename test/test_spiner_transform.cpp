@@ -8,9 +8,6 @@
 #include <singularity-eos/eos/eos_spiner_common.hpp>
 #include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
 
-#include <spiner/databox.hpp>
-#include <spiner/interpolation.hpp>
-
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
@@ -19,11 +16,16 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 #ifdef SPINER_USE_HDF5
+#include <spiner/databox.hpp>
+#include <spiner/interpolation.hpp>
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #endif
 
+
+
 #ifdef SPINER_USE_HDF5
 #ifdef SINGULARITY_TEST_SESAME
+#ifdef SINGULARITY_USE_SPINER
 
 using namespace singularity;
 using spiner_common::DataBox;
@@ -92,5 +94,6 @@ SCENARIO("ShiftTransform behave correctly", "[TransformTest]") {
   }
 }
 
-#endif // SINGULARITY_TEST_SESAME
+#endif // SINGULARITY_USE_SPINER
+#endif // SINGULARITY_TEST_SE#SAME
 #endif // SPINER_USE_HDF5
