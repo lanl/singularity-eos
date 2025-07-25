@@ -24,6 +24,7 @@
 - [[PR510]](https://github.com/lanl/singularity-eos/pull/510) Make Davis EOS faster and more robust
 - [[PR509]](https://github.com/lanl/singularity-eos/pull/509) Remove extraneous copies in base class
 - [[PR504]](https://github.com/lanl/singularity-eos/pull/504) Add Fortran interface documentation
+- [[PR532]](https://github.com/lanl/singularity-eos/pull/532) Update clang format script to be closer to CI
 
 ### Removed (removing behavior/API/varaibles/...)
 
