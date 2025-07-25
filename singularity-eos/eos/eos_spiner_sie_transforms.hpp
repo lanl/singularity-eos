@@ -20,7 +20,6 @@
 // base
 #include <singularity-eos/eos/eos_spiner_common.hpp>
 
-
 namespace singularity {
 
 template <typename Data = void>
@@ -43,33 +42,32 @@ struct NullTransform {
   }
 };
 
-
 template <typename Data>
 struct ShiftTransform {
   template <typename DataT_in>
-  PORTABLE_INLINE_FUNCTION ShiftTransform(const DataT_in &data)
-      : data_(data) {}
+  PORTABLE_INLINE_FUNCTION ShiftTransform(const DataT_in &data) : data_(data) {}
 
  private:
   Data data_;
 
  public:
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(const Real e,const Real rho, Args &&...) const {
+  PORTABLE_INLINE_FUNCTION auto transform(const Real e, const Real rho,
+                                          Args &&...) const {
     const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real e_cold = data_.sieCold.interpToReal(lRho);
     return e - e_cold;
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed,const Real lRho, Args &&...) const {
+  PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed, const Real lRho,
+                                        Args &&...) const {
     const Real e_cold = data_.sieCold.interpToReal(lRho);
     return e_transformed + e_cold;
   }
 };
 
-} //namespace singularity
-
+} // namespace singularity
 
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
 #endif // _SINGULARITY_EOS_EOS_EOS_SPINER_SIE_TRANSFORMS_HPP_
