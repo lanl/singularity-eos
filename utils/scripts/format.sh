@@ -15,7 +15,7 @@
 #------------------------------------------------------------------------------
 
 
-: ${CFM:=clang-format-12}
+: ${CFM:=clang-format-17}
 : ${VERBOSE:=0}
 
 if ! command -v ${CFM} &> /dev/null; then
@@ -27,7 +27,7 @@ else
 fi
 
 # clang format major version
-TARGET_CF_VRSN=12
+TARGET_CF_VRSN=17
 CF_VRSN=$(${CFM} --version)
 echo "Note we assume clang format version ${TARGET_CF_VRSN}."
 echo "You are using ${CF_VRSN}."
