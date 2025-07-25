@@ -16,12 +16,10 @@
 #include <test/eos_unit_test_helpers.hpp>
 
 #ifdef SPINER_USE_HDF5
+#include <singularity-eos/base/spiner_table_utils.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
-#include <singularity-eos/base/spiner_table_utils.hpp>
 #endif
-
-
 
 #ifdef SPINER_USE_HDF5
 #ifdef SINGULARITY_TEST_SESAME
@@ -48,9 +46,7 @@ struct TestDataContainer {
       sieCold(i) = e_cold_fun(lRho);
     }
   }
-  static constexpr Real e_cold_fun(Real lRho) {
-    return 3.0 * lRho + 5.0;
-  }
+  static constexpr Real e_cold_fun(Real lRho) { return 3.0 * lRho + 5.0; }
 };
 
 SCENARIO("NullTransform behave correctly", "[TransformTest]") {
@@ -68,11 +64,9 @@ SCENARIO("NullTransform behave correctly", "[TransformTest]") {
       Real null_back = nullTransform.inverse(null_out, lRho);
       REQUIRE(isClose(null_out, e_actual, 1e-14));
       REQUIRE(isClose(null_back, e_actual, 1e-14));
-
     }
   }
 }
-
 
 SCENARIO("ShiftTransform behave correctly", "[TransformTest]") {
   TestDataContainer data;
@@ -85,7 +79,8 @@ SCENARIO("ShiftTransform behave correctly", "[TransformTest]") {
     Real cold_curve_value = data.e_cold_fun(lRho);
     Real e_actual = 42.0;
 
-    THEN("Transform subtracts cold curve correctly and Inverse adds cold curve back correctly") {
+    THEN("Transform subtracts cold curve correctly and Inverse adds cold curve back"
+         "correctly") {
       Real e_transformed = shiftTransform.transform(e_actual, rho);
       REQUIRE(isClose(e_transformed, e_actual - cold_curve_value, 1e-14));
       Real e_inverse = shiftTransform.inverse(e_transformed, lRho);
