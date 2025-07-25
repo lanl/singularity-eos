@@ -253,7 +253,7 @@ class SpinerEOSDependsRhoSieTransformable
     printf("%s\n\t%s\n\t%s%i\n", s1, s2, s3, matid_);
     return;
   }
-  const Transformer &getTransformer() const {
+  PORTABLE_INLINE_FUNCTION const Transformer &getTransformer() const {
     return transformer_;
   } // getter for tranformation structs
 
@@ -758,7 +758,7 @@ PORTABLE_INLINE_FUNCTION Real
 SpinerEOSDependsRhoSieTransformable<TransformerT>::interpRhoSie_(
     const Real rho, const Real sie, const DataBox &db, Indexer_t &&lambda) const {
   const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
-  const Real sie_transformed = getTransformer().transform(sie, rho);
+  const Real sie_transformed = transformer_.transform(sie, rho);
   const Real lE = spiner_common::to_log(sie_transformed, lEOffset_);
   if (!variadic_utils::is_nullptr(lambda)) {
     IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
