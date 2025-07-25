@@ -35,7 +35,7 @@ struct TestDataContainer {
   static constexpr Real lRho_low = 1.0;
   static constexpr Real lRho_high = 10.0;
   static constexpr size_t Npts = 100;
-  
+
   using RG = Spiner::RegularGrid1D<Real>;
   Grid_t grid{{RG(lRho_low, lRho_high, Npts)}};
   DataBox sieCold{Npts};
@@ -58,7 +58,7 @@ SCENARIO("NullTransform behave correctly", "[TransformTest]") {
     Real rho = 10.0;
     Real lRho = to_log(rho, data.lRhoOffset);
     Real e_actual = 42.0;
-  
+
     THEN("NullTransform is identity throughout") {
       Real null_out = nullTransform.transform(e_actual, rho);
       Real null_back = nullTransform.inverse(null_out, lRho);
