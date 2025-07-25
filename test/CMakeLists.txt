@@ -50,6 +50,7 @@ add_executable(
   test_eos_helmholtz.cpp
   test_eos_tabulated.cpp
   test_eos_stellar_collapse.cpp
+  test_spiner_transform.cpp
   )
 
 if (SINGULARITY_BUILD_CLOSURE)
