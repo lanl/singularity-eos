@@ -63,7 +63,7 @@ struct ShiftTransform {
 
   template <typename... Args>
   PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed,const Real lRho, Args &&...) const {
-    Real e_cold = data_.sieCold.interpToReal(lRho);
+    const Real e_cold = data_.sieCold.interpToReal(lRho);
     return e_transformed + e_cold;
   }
 };
