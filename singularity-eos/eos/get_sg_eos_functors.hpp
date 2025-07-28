@@ -58,8 +58,8 @@ struct init_functor {
         frac_vol_v{frac_vol_v_}, frac_ie_v{frac_ie_v_}, pte_mats{pte_mats_},
         vfrac_pte{vfrac_pte_}, sie_pte{sie_pte_}, temp_pte{temp_pte_},
         press_pte{press_pte_}, rho_pte{rho_pte_}, spvol_v{spvol_v_}, temp_v{temp_v_},
-        press_v{press_v_}, sie_v{sie_v_}, nmat{nmat}, mass_frac_cutoff{
-                                                          mass_frac_cutoff_} {}
+        press_v{press_v_}, sie_v{sie_v_}, nmat{nmat},
+        mass_frac_cutoff{mass_frac_cutoff_} {}
 
   PORTABLE_INLINE_FUNCTION
   void operator()(const int i, const int tid, double &mass_sum, int &npte,
