@@ -21,8 +21,6 @@
 #include <spiner/interpolation.hpp>
 #endif
 
-#ifdef SPINER_USE_HDF5
-#ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_SPINER
 
 using namespace singularity;
@@ -90,5 +88,3 @@ SCENARIO("ShiftTransform behave correctly", "[TransformTest]") {
 }
 
 #endif // SINGULARITY_USE_SPINER
-#endif // SINGULARITY_TEST_SE#SAME
-#endif // SPINER_USE_HDF5
