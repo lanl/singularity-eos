@@ -154,16 +154,16 @@ int main(int argc, char* argv[]) {
         EOSPAC eos_ref(matid); 
 
         //These vectors will store the compute time for each model for the 20 trials
-        std::vector<double> time_e_eos_ref_list, time_e_rt_list, time_e_rs_list;
+        std::vector<double> time_sie_eos_ref_list, time_sie_rt_list, time_sie_rs_list;
         std::vector<double> time_P_eos_ref_T_list, time_P_rt_T_list, time_P_rs_T_list;
         std::vector<double> time_P_eos_ref_sie_list, time_P_rt_sie_list, time_P_rs_sie_list;
         std::vector<double> time_T_back_eos_ref_list, time_T_back_rt_list, time_T_back_rs_list;
 
         //These matrices will be filled with the EOS values (overwriting for each trail)
         //Then at the end of the program, we export the matrix to a .csv to later use for accuracy tests
-        std::vector<std::vector<Real>> e_eos_ref(nRho, std::vector<Real>(nT)); 
-        std::vector<std::vector<Real>> e_rt(nRho, std::vector<Real>(nT));
-        std::vector<std::vector<Real>> e_rs(nRho, std::vector<Real>(nT));
+        std::vector<std::vector<Real>> sie_eos_ref(nRho, std::vector<Real>(nT)); 
+        std::vector<std::vector<Real>> sie_rt(nRho, std::vector<Real>(nT));
+        std::vector<std::vector<Real>> sie_rs(nRho, std::vector<Real>(nT));
 
         std::vector<std::vector<Real>> P_eos_ref_T(nRho, std::vector<Real>(nT));
         std::vector<std::vector<Real>> P_rt_T(nRho, std::vector<Real>(nT));
@@ -180,9 +180,9 @@ int main(int argc, char* argv[]) {
         // === Benchmark Loop ===
         for (int rep = 0; rep < ntimes; ++rep) {
                 // Clear matrices
-                for (auto& row : e_eos_ref) std::fill(row.begin(), row.end(), 0.0);
-                for (auto& row : e_rt) std::fill(row.begin(), row.end(), 0.0);
-                for (auto& row : e_rs) std::fill(row.begin(), row.end(), 0.0);
+                for (auto& row : sie_eos_ref) std::fill(row.begin(), row.end(), 0.0);
+                for (auto& row : sie_rt) std::fill(row.begin(), row.end(), 0.0);
+                for (auto& row : sie_rs) std::fill(row.begin(), row.end(), 0.0);
 
                 for (auto& row : P_eos_ref_T) std::fill(row.begin(), row.end(), 0.0);
                 for (auto& row : P_rt_T) std::fill(row.begin(), row.end(), 0.0);
@@ -201,10 +201,10 @@ int main(int argc, char* argv[]) {
                 auto t0 = high_resolution_clock::now(); //e(rho, T) 
                 for (int i = 0; i < nRho; ++i) { //replace these with a single for loop that loops through (i,j)
                     for (int j = 0; j < nT; ++j) { 
-                        e_eos_ref[i][j] = eos_ref.InternalEnergyFromDensityTemperature(rhos[i], temps[j]); } }
+                        sie_eos_ref[i][j] = eos_ref.InternalEnergyFromDensityTemperature(rhos[i], temps[j]); } }
                 auto t1 = high_resolution_clock::now();
                 std::chrono::duration<double, std::micro> elapsed = t1 - t0; //define "elapsed"
-                time_e_eos_ref_list.push_back(elapsed.count());
+                time_sie_eos_ref_list.push_back(elapsed.count());
 
                 t0 = high_resolution_clock::now(); // P(rho, T)
                 for (int i = 0; i < nRho; ++i) {
@@ -216,8 +216,8 @@ int main(int argc, char* argv[]) {
 
                 t0 = high_resolution_clock::now(); // P(rho, sie)
                 for (int i = 0; i < nRho; ++i) {
-                    for (int j = 0; j < nT; ++j) { //is this line supposed to still be nT, it uses e_eos_ref(i,j)
-                        P_eos_ref_sie[i][j] = eos_ref.PressureFromDensityInternalEnergy(rhos[i], e_eos_ref[i][j]);}}
+                    for (int j = 0; j < nT; ++j) { //is this line supposed to still be nT, it uses sie_eos_ref(i,j)
+                        P_eos_ref_sie[i][j] = eos_ref.PressureFromDensityInternalEnergy(rhos[i], sie_eos_ref[i][j]);}}
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
                 time_P_eos_ref_sie_list.push_back(elapsed.count());
@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
                 t0 = high_resolution_clock::now(); //T(rho, sie)
                 for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) { //same with this one
-                        T_back_eos_ref[i][j] = eos_ref.TemperatureFromDensityInternalEnergy(rhos[i], e_eos_ref[i][j]);}}
+                        T_back_eos_ref[i][j] = eos_ref.TemperatureFromDensityInternalEnergy(rhos[i], sie_eos_ref[i][j]);}}
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
                 time_T_back_eos_ref_list.push_back(elapsed.count());
@@ -236,10 +236,10 @@ int main(int argc, char* argv[]) {
                 t0 = high_resolution_clock::now(); //e(rho, T) 
                 for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) {
-                        e_rt[i][j] = eos_rt.InternalEnergyFromDensityTemperature(rhos[i], temps[j]);}}
+                        sie_rt[i][j] = eos_rt.InternalEnergyFromDensityTemperature(rhos[i], temps[j]);}}
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
-                time_e_rt_list.push_back(elapsed.count());
+                time_sie_rt_list.push_back(elapsed.count());
 
                 t0 = high_resolution_clock::now(); // P(rho, T)
                 for (int i = 0; i < nRho; ++i) {
@@ -252,7 +252,7 @@ int main(int argc, char* argv[]) {
                 t0 = high_resolution_clock::now(); // P(rho, sie)
                 for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) { //same with this one
-                        P_rt_sie[i][j] = eos_rt.PressureFromDensityInternalEnergy(rhos[i], e_rt[i][j]);}}
+                        P_rt_sie[i][j] = eos_rt.PressureFromDensityInternalEnergy(rhos[i], sie_rt[i][j]);}}
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
                 time_P_rt_sie_list.push_back(elapsed.count());
@@ -260,7 +260,7 @@ int main(int argc, char* argv[]) {
                 t0 = high_resolution_clock::now(); //T(rho, sie)
                 for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) { //same with this one
-                        T_back_rt[i][j] = eos_rt.TemperatureFromDensityInternalEnergy(rhos[i], e_rt[i][j]);}}
+                        T_back_rt[i][j] = eos_rt.TemperatureFromDensityInternalEnergy(rhos[i], sie_rt[i][j]);}}
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
                 time_T_back_rt_list.push_back(elapsed.count());
@@ -271,10 +271,10 @@ int main(int argc, char* argv[]) {
                 t0 = high_resolution_clock::now(); //e(rho, T) 
                 for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) {
-                        e_rs[i][j] = eos_rs.InternalEnergyFromDensityTemperature(rhos[i], temps[j]);}}
+                        sie_rs[i][j] = eos_rs.InternalEnergyFromDensityTemperature(rhos[i], temps[j]);}}
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
-                time_e_rs_list.push_back(elapsed.count());
+                time_sie_rs_list.push_back(elapsed.count());
                 
                 t0 = high_resolution_clock::now(); // P(rho, T)
                 for (int i = 0; i < nRho; ++i) {
@@ -287,7 +287,7 @@ int main(int argc, char* argv[]) {
                 t0 = high_resolution_clock::now(); // P(rho, sie)
                 for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) { //same with this one
-                        P_rs_sie[i][j] = eos_rs.PressureFromDensityInternalEnergy(rhos[i], e_rs[i][j]);}}
+                        P_rs_sie[i][j] = eos_rs.PressureFromDensityInternalEnergy(rhos[i], sie_rs[i][j]);}}
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
                 time_P_rs_sie_list.push_back(elapsed.count());
@@ -295,7 +295,7 @@ int main(int argc, char* argv[]) {
                 t0 = high_resolution_clock::now(); //T(rho, sie)
                 for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) { //same with this one
-                        T_back_rs[i][j] = eos_rs.TemperatureFromDensityInternalEnergy(rhos[i], e_rs[i][j]);}}
+                        T_back_rs[i][j] = eos_rs.TemperatureFromDensityInternalEnergy(rhos[i], sie_rs[i][j]);}}
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
                 time_T_back_rs_list.push_back(elapsed.count());
@@ -306,14 +306,14 @@ int main(int argc, char* argv[]) {
     std::string filename;
 
     //internal energy grids
-    filename = "e_eos_ref_" + std::to_string(matid) + "_nRho-" + std::to_string(nRho) + "_nT-" + std::to_string(nT) + ".csv";
-    write_matrix_csv((base_output_path / filename).string(), e_eos_ref);
+    filename = "sie_eos_ref_" + std::to_string(matid) + "_nRho-" + std::to_string(nRho) + "_nT-" + std::to_string(nT) + ".csv";
+    write_matrix_csv((base_output_path / filename).string(), sie_eos_ref);
 
-    filename = "e_rt_" + std::to_string(matid) + "_nRho-" + std::to_string(nRho) + "_nT-" + std::to_string(nT) + ".csv";
-    write_matrix_csv((base_output_path / filename).string(), e_rt);
+    filename = "sie_rt_" + std::to_string(matid) + "_nRho-" + std::to_string(nRho) + "_nT-" + std::to_string(nT) + ".csv";
+    write_matrix_csv((base_output_path / filename).string(), sie_rt);
 
-    filename = "e_rs_" + std::to_string(matid) + "_nRho-" + std::to_string(nRho) + "_nT-" + std::to_string(nT) + ".csv";
-    write_matrix_csv((base_output_path / filename).string(), e_rs);
+    filename = "sie_rs_" + std::to_string(matid) + "_nRho-" + std::to_string(nRho) + "_nT-" + std::to_string(nT) + ".csv";
+    write_matrix_csv((base_output_path / filename).string(), sie_rs);
 
 
 
@@ -356,12 +356,12 @@ int main(int argc, char* argv[]) {
     std::string timing_file = (base_output_path / ("timing_" + std::to_string(matid) + "_nRho-" + std::to_string(nRho) + "_nT-" + std::to_string(nT) + ".csv")).string();
     std::ofstream timing_out(timing_file);
 
-    timing_out << "e_eos_ref,e_rt,e_rs,P_eos_ref_T,P_rt_T,P_rs_T,P_eos_ref_sie,P_rt_sie,P_rs_sie,T_back_eos_ref,T_back_rt,T_back_rs\n";
+    timing_out << "sie_eos_ref,sie_rt,sie_rs,P_eos_ref_T,P_rt_T,P_rs_T,P_eos_ref_sie,P_rt_sie,P_rs_sie,T_back_eos_ref,T_back_rt,T_back_rs\n";
 
-    for (size_t i = 0; i < time_e_eos_ref_list.size(); ++i) {
-        timing_out << time_e_eos_ref_list[i] << ","
-                << time_e_rt_list[i] << ","
-                << time_e_rs_list[i] << ","
+    for (size_t i = 0; i < time_sie_eos_ref_list.size(); ++i) {
+        timing_out << time_sie_eos_ref_list[i] << ","
+                << time_sie_rt_list[i] << ","
+                << time_sie_rs_list[i] << ","
                 << time_P_eos_ref_T_list[i] << ","
                 << time_P_rt_T_list[i] << ","
                 << time_P_rs_T_list[i] << ","
