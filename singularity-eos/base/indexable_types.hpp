@@ -81,6 +81,8 @@ struct MeanAtomicNumber {};
 struct ElectronFraction {};
 struct RootStatus {};
 struct TableStatus {};
+template<int mat_idx>
+struct MassFraction {};
 } // namespace IndexableTypes
 } // namespace singularity
 #endif // SINGULARITY_EOS_BASE_INDEXABLE_TYPES_
