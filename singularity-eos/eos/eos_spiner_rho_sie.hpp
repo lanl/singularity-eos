@@ -90,8 +90,8 @@ class SpinerEOSDependsRhoSieTransformable
 
   struct TransformDataContainer {
 
-    Real lRhoOffset;
-    DataBox sieCold;
+    Real lRhoOffset, lEOffset;
+    DataBox sieCold, T;
 
     PORTABLE_INLINE_FUNCTION
     TransformDataContainer() = default;
@@ -361,7 +361,7 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = {lRhoOffset_, sieCold_};
+  TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_};
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
@@ -850,7 +850,7 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = {lRhoOffset_, sieCold_};
+  TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_};
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
