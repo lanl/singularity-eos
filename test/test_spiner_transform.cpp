@@ -103,7 +103,11 @@ struct TestDataContainer {
       Real rho, Real sie, IndexerT &&lambda = static_cast<Real *>(nullptr)) const {
     return interpRhoSie_(rho, sie, cvBox, std::forward<IndexerT>(lambda));
   }
-
+  
+  PORTABLE_INLINE_FUNCTION
+     Real heatFn(Real rho, Real sie) const {
+     return SpecificHeatFromDensityInternalEnergy(rho, sie);
+  }
 };
 
 SCENARIO("NullTransform behave correctly", "[TransformTest]") {

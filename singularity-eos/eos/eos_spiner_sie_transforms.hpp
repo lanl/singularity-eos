@@ -44,6 +44,8 @@ struct NullTransform {
 
 template <typename Data>
 struct ShiftTransform {
+  PORTABLE_INLINE_FUNCTION  ShiftTransform() = default;
+  
   template <typename DataT_in>
   PORTABLE_INLINE_FUNCTION ShiftTransform(const DataT_in &data) : data_(data) {}
 
@@ -133,8 +135,12 @@ public:
 
 template<typename Data>
 struct AllTransform {
-    template <typename DataT_in>
+PORTABLE_INLINE_FUNCTION  AllTransform() = default;
+   
+template <typename DataT_in>
 PORTABLE_INLINE_FUNCTION AllTransform(const DataT_in &data) : data_(data) {}
+
+
 
 private:
     Data data_;
@@ -155,7 +161,7 @@ public:
 
      Real e_transformed = e - e_cold;
 
-     Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e_transformed); //rho or lrho, need lambda?
+     Real Cv = data_.heatFn(rho, e_transformed); //rho or lrho, need lambda?
      Cv = fmax(Cv, min_Cv_);
      e_transformed = e_transformed / Cv;
 
@@ -173,7 +179,7 @@ public:
 
 	  
         Real e_transformed_inverse = e_orig - e_cold;
-        Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e_transformed_inverse); //rho or lrho, need lambda?
+        Real Cv = data_.heatFn(rho, e_transformed_inverse); //rho or lrho, need lambda?
         
         e_transformed = e_transformed * pow(T, 3);
 

@@ -93,6 +93,8 @@ class SpinerEOSDependsRhoSieTransformable
     Real lRhoOffset, lEOffset;
     DataBox sieCold, T;
 
+    std::function<Real(Real /*rho*/, Real /*sie*/)> heatFn;
+
     PORTABLE_INLINE_FUNCTION
     TransformDataContainer() = default;
   };
@@ -362,7 +364,13 @@ inline SpinerEOSDependsRhoSieTransformable<
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
   TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_};
+  
+  TransformDataContainer_.heatFn = [this](Real rho, Real sie) {
+  return this->SpecificHeatFromDensityInternalEnergy(rho, sie);
+};
+  
   transformer_ = Transformer(TransformDataContainer_);
+
 
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
@@ -851,6 +859,12 @@ inline SpinerEOSDependsRhoSieTransformable<
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
   TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_};
+ 
+  TransformDataContainer_.heatFn = [this](Real rho, Real sie) {
+  return this->SpecificHeatFromDensityInternalEnergy(rho, sie);
+};
+  
+
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
