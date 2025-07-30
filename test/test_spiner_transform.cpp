@@ -160,16 +160,16 @@ SCENARIO("DivideByCvTransform behaves correctly", "[TransformTest]") {
     Real e_actual = 84.0;
 
     Real lRho = to_log(rho, data.lRhoOffset);
-    Real lE = to_log(sie, data.lEOffset);
+    Real lE = to_log(e_actual, data.lEOffset);
 
     Real actual_Cv = data.cvBox.interpToReal(lRho, lE);
     Real expected_transformed = e_actual / actual_Cv;
 
     THEN("Transform yields e_actual / Cv, inverse reconstructs original") {
-      Real e_transformed = cvTransform.transform(e_actual, rho, sie);
+      Real e_transformed = cvTransform.transform(e_actual, rho);
       CHECK(isClose(e_transformed, expected_transformed, 1e-14));
 
-      Real e_inverse = cvTransform.inverse(e_transformed, rho, sie);
+      Real e_inverse = cvTransform.inverse(e_transformed, rho, e_actual);
       CHECK(isClose(e_inverse, e_actual, 1e-14));
     }
   }

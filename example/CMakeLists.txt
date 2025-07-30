@@ -23,11 +23,6 @@ target_link_libraries(Benchmark PRIVATE
   singularity-eos::singularity-eos
   stdc++fs)
 
-add_executable(test_root_thresh
-  test_root_thresh.cpp)
-target_link_libraries(test_root_thresh PRIVATE
-  singularity-eos::singularity-eos)
-
 
 if (SINGULARITY_USE_SPINER_WITH_HDF5)
   add_executable(eos_grid eos_grid.cpp)

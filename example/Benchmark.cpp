@@ -151,7 +151,8 @@ int main(int argc, char* argv[]) {
         // === Load EOS Models ===
         SpinerEOSDependsRhoT eos_rt(sp5file, matid);
         SpinerEOSDependsRhoSie eos_rs(sp5file, matid); //eventually make it SpinerEOSDependsRhoSie<NullTransfom>, for example
-        EOSPAC eos_ref(matid); 
+        SpinerEOSDependsRhoSieTransformable<ShiftTransform> eos_shift(sp5file, matid);
+	EOSPAC eos_ref(matid); 
 
         //These vectors will store the compute time for each model for the 20 trials
         std::vector<double> time_sie_eos_ref_list, time_sie_rt_list, time_sie_rs_list;
@@ -241,7 +242,7 @@ int main(int argc, char* argv[]) {
                 elapsed = t1 - t0;
                 time_sie_rt_list.push_back(elapsed.count());
 
-                t0 = high_resolution_clock::now(); // P(rho, T)
+	        t0 = high_resolution_clock::now(); // P(rho, T)
                 for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) {
                         P_rt_T[i][j] = eos_rt.PressureFromDensityTemperature(rhos[i], temps[j]);}}
@@ -275,7 +276,15 @@ int main(int argc, char* argv[]) {
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
                 time_sie_rs_list.push_back(elapsed.count());
-                
+
+		auto transformer = eos_shift.getTransformer();
+
+		for (int i = 0; i < nRho; ++i) {
+                    for (int j = 0; j < nT; ++j) {
+                            sie_rt[i][j] = transformer.transform(sie_rt[i][j], rhos[i]);}}
+
+
+
                 t0 = high_resolution_clock::now(); // P(rho, T)
                 for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) {

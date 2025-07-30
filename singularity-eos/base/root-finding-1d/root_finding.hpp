@@ -149,7 +149,6 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
   return false;
 }
 
-bool test_root_thresh = false; //added this for singularity-eos/examples/test_root_thresh.cpp
 
 // solves for f(x,params) - ytarget = 0
 template <typename T>
@@ -220,9 +219,6 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
       b = c;
     }
     iteration_count++;
-  }
-  if (test_root_thresh) { //this was added for singularity-eos/example/test_root_thresh.cpp
-  	std::cout << "Root finder iteration (regula falsi)  = " << iteration_count << std::endl;
   }
 
   auto status = Status::SUCCESS;

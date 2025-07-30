@@ -84,18 +84,18 @@ PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data)
   public:
     template <typename... Args>
     PORTABLE_INLINE_FUNCTION
-    auto transform(Real e, Real rho, Real sie, Args &&...) const {
+    auto transform(Real e, Real rho, Args &&...) const {
         const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-        Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, sie); //rho or lrho, need lambda?
+        Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e); //rho or lrho, need lambda?
         Cv = fmax(Cv, min_Cv_);
         return e / Cv;
     }
 
     template <typename... Args>
     PORTABLE_INLINE_FUNCTION
-    auto inverse(Real e_transformed, Real rho, Real sie, Args &&...) const {
+    auto inverse(Real e_transformed, Real rho, Real e_orig, Args &&...) const {
         const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-        Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, sie);
+        Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e_orig);
         Cv = fmax(Cv, min_Cv_);
         return e_transformed * Cv;
     }
