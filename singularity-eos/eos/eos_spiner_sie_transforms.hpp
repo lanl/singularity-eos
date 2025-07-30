@@ -74,8 +74,10 @@ struct ShiftTransform {
 //Divide by the heat capacity
 template<typename Data>
 struct DivideByCvTransform {
+  PORTABLE_INLINE_FUNCTION  DivideByCvTransform() = default;
+  
   template <typename DataT_in>  
-PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data) {}
+  PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data) {}
 
   private: 
     Data data_;
@@ -86,7 +88,9 @@ PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data)
     PORTABLE_INLINE_FUNCTION
     auto transform(Real e, Real rho, Args &&...) const {
         const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-        Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e); //rho or lrho, need lambda?
+	const Real lE   = spiner_common::to_log(e, data_.lEOffset);
+        Real Cv = data_.dTdE.interpToReal(lRho, lE);
+	//Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e); //rho or lrho, need lambda?
         Cv = fmax(Cv, min_Cv_);
         return e / Cv;
     }
@@ -95,7 +99,9 @@ PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data)
     PORTABLE_INLINE_FUNCTION
     auto inverse(Real e_transformed, Real rho, Real e_orig, Args &&...) const {
         const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-        Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e_orig);
+	const Real lE   = spiner_common::to_log(e_orig, data_.lEOffset);
+	Real Cv = data_.dTdE.interpToReal(lRho, lE);
+        //Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e_orig);
         Cv = fmax(Cv, min_Cv_);
         return e_transformed * Cv;
     }
@@ -106,6 +112,8 @@ PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data)
 //Divide by T^alpha
 template<typename Data>
 struct ScaleTransform {
+    PORTABLE_INLINE_FUNCTION  ScaleTransform() = default;
+    
     template <typename DataT_in>
 PORTABLE_INLINE_FUNCTION ScaleTransform(const DataT_in &data) : data_(data) {}
 

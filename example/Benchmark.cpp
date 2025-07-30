@@ -152,6 +152,8 @@ int main(int argc, char* argv[]) {
         SpinerEOSDependsRhoT eos_rt(sp5file, matid);
         SpinerEOSDependsRhoSie eos_rs(sp5file, matid); //eventually make it SpinerEOSDependsRhoSie<NullTransfom>, for example
         SpinerEOSDependsRhoSieTransformable<ShiftTransform> eos_shift(sp5file, matid);
+	SpinerEOSDependsRhoSieTransformable<ScaleTransform> eos_scale(sp5file, matid);
+	SpinerEOSDependsRhoSieTransformable<DivideByCvTransform> eos_Cv(sp5file, matid);
 	EOSPAC eos_ref(matid); 
 
         //These vectors will store the compute time for each model for the 20 trials
@@ -276,12 +278,29 @@ int main(int argc, char* argv[]) {
                 t1 = high_resolution_clock::now();
                 elapsed = t1 - t0;
                 time_sie_rs_list.push_back(elapsed.count());
-
+		//coldcurve shift
 		auto transformer = eos_shift.getTransformer();
 
 		for (int i = 0; i < nRho; ++i) {
                     for (int j = 0; j < nT; ++j) {
                             sie_rt[i][j] = transformer.transform(sie_rt[i][j], rhos[i]);}}
+
+
+		auto transformer2 = eos_Cv.getTransformer();
+
+                for (int i = 0; i < nRho; ++i) {
+                    for (int j = 0; j < nT; ++j) {
+                            sie_rt[i][j] = transformer2.transform(sie_rt[i][j], rhos[i]);}}
+
+
+
+		// scale t^3 shift
+		auto transformer3 = eos_scale.getTransformer();
+
+                for (int i = 0; i < nRho; ++i) {
+                    for (int j = 0; j < nT; ++j) {
+                            sie_rt[i][j] = transformer3.transform(sie_rt[i][j], rhos[i]);}}
+
 
 
 

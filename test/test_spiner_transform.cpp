@@ -52,7 +52,7 @@ struct TestDataContainer {
   Grid_t rhogrid{{RG(lRho_low, lRho_high, Npts)}};
   Grid_t siegrid{{RG(lE_low, lE_high, N_sie)}};
   DataBox sieCold{Npts},T{Npts};
-  DataBox cvBox{Npts, N_sie}; 
+  DataBox dTdE{Npts, N_sie}; 
   
 
   TestDataContainer() {
@@ -71,14 +71,14 @@ struct TestDataContainer {
       T(i) = T_a * lRho + T_b;  // simple linear function, ignore T_c if you want offset
     }
  
-    cvBox.setRange(0, rhogrid); // lRho
-    cvBox.setRange(1, siegrid); // lE
+    dTdE.setRange(0, rhogrid); // lRho
+    dTdE.setRange(1, siegrid); // lE
 
     for (int i = 0; i < Npts; ++i) {
       const Real lRho = rhogrid.x(i);
       for (int j = 0; j < N_sie; ++j) {
         const Real lE = siegrid.x(j);
-        cvBox(i, j) = Cv_a * lRho + Cv_b * lE + Cv_c;
+        dTdE(i, j) = Cv_a * lRho + Cv_b * lE + Cv_c;
      }
    }
  }
@@ -101,7 +101,7 @@ struct TestDataContainer {
   template <typename IndexerT = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       Real rho, Real sie, IndexerT &&lambda = static_cast<Real *>(nullptr)) const {
-    return interpRhoSie_(rho, sie, cvBox, std::forward<IndexerT>(lambda));
+    return interpRhoSie_(rho, sie, dTdE, std::forward<IndexerT>(lambda));
   }
   
   PORTABLE_INLINE_FUNCTION
@@ -162,7 +162,7 @@ SCENARIO("DivideByCvTransform behaves correctly", "[TransformTest]") {
     Real lRho = to_log(rho, data.lRhoOffset);
     Real lE = to_log(e_actual, data.lEOffset);
 
-    Real actual_Cv = data.cvBox.interpToReal(lRho, lE);
+    Real actual_Cv = data.dTdE.interpToReal(lRho, lE);
     Real expected_transformed = e_actual / actual_Cv;
 
     THEN("Transform yields e_actual / Cv, inverse reconstructs original") {
@@ -214,7 +214,7 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
 
     Real lE = to_log(e_shift_transform, data.lEOffset);
 
-    Real actual_Cv = data.cvBox.interpToReal(lRho, lE);
+    Real actual_Cv = data.dTdE.interpToReal(lRho, lE);
     Real e_CV_transformed = e_shift_transform / actual_Cv;
 
 
