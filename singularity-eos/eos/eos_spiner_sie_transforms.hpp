@@ -89,9 +89,8 @@ struct DivideByCvTransform {
     auto transform(Real e, Real rho, Args &&...) const {
         const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
 	const Real lE   = spiner_common::to_log(e, data_.lEOffset);
-        Real Cv = data_.dTdE.interpToReal(lRho, lE);
-	//Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e); //rho or lrho, need lambda?
-        Cv = fmax(Cv, min_Cv_);
+        Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
+        Cv = std::max(Cv, min_Cv_);
         return e / Cv;
     }
 
@@ -100,9 +99,8 @@ struct DivideByCvTransform {
     auto inverse(Real e_transformed, Real rho, Real e_orig, Args &&...) const {
         const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
 	const Real lE   = spiner_common::to_log(e_orig, data_.lEOffset);
-	Real Cv = data_.dTdE.interpToReal(lRho, lE);
-        //Real Cv = data_.SpecificHeatFromDensityInternalEnergy(rho, e_orig);
-        Cv = fmax(Cv, min_Cv_);
+	Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
+        Cv = std::max(Cv, min_Cv_);
         return e_transformed * Cv;
     }
 };
@@ -127,7 +125,7 @@ public:
     auto transform(Real e, Real rho, Args &&...) const {
         Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
         Real T = data_.T.interpToReal(lRho); //T?
-        T = fmax(T, min_T_);
+        T = std::max(T, min_T_);
         return e / pow(T, 3);
     }
 
@@ -136,7 +134,7 @@ public:
     auto inverse(Real e, Real rho, Args &&...) const {
         Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
         Real T = data_.T.interpToReal(lRho);
-        T = fmax(T, min_T_);
+        T = std::max(T, min_T_);
         return e * pow(T, 3);
     }
 };
@@ -162,16 +160,15 @@ public:
      auto transform(Real e, Real rho, Args &&...) const {
 
      Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-     Real lE   = spiner_common::to_log(e, data_.lEOffset);
 
      Real e_cold = data_.sieCold.interpToReal(lRho);
      Real T = data_.T.interpToReal(lRho);
-     T = fmax(T, min_T_);
-     Real Cv = data_.dTdE.interpToReal(lRho, lE);
-
+     T = std::max(T, min_T_);
 
      Real e_transformed = e - e_cold;
-     Cv = fmax(Cv, min_Cv_);
+     Real lE   = spiner_common::to_log(e_transformed, data_.lEOffset);
+     Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
+     Cv = std::max(Cv, min_Cv_);
      e_transformed = e_transformed / Cv;
 
      return e_transformed / pow(T,3);
@@ -182,18 +179,18 @@ public:
     auto inverse(Real e_transformed, Real rho, Real e_orig, Args &&...) const {
         
 	Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-        Real lE   = spiner_common::to_log(e_orig, data_.lEOffset);
 	Real e_cold = data_.sieCold.interpToReal(lRho);
         Real T = data_.T.interpToReal(lRho);
-        T = fmax(T, min_T_);
+        T = std::max(T, min_T_);
 
 	  
         Real e_transformed_inverse = e_orig - e_cold;
-        Real Cv = data_.dTdE.interpToReal(lRho, lE);
+        Real lE   = spiner_common::to_log(e_transformed_inverse, data_.lEOffset);
+	Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
 
         e_transformed = e_transformed * pow(T, 3);
 
-        Cv = fmax(Cv, min_Cv_);
+        Cv = std::max(Cv, min_Cv_);
         e_transformed = e_transformed * Cv;
 
 	return e_transformed + e_cold;

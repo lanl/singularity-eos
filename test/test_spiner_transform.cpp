@@ -162,7 +162,7 @@ SCENARIO("DivideByCvTransform behaves correctly", "[TransformTest]") {
     Real lRho = to_log(rho, data.lRhoOffset);
     Real lE = to_log(e_actual, data.lEOffset);
 
-    Real actual_Cv = data.dTdE.interpToReal(lRho, lE);
+    Real actual_Cv = 1./data.dTdE.interpToReal(lRho, lE);
     Real expected_transformed = e_actual / actual_Cv;
 
     THEN("Transform yields e_actual / Cv, inverse reconstructs original") {
@@ -214,7 +214,7 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
 
     Real lE = to_log(e_shift_transform, data.lEOffset);
 
-    Real actual_Cv = data.dTdE.interpToReal(lRho, lE);
+    Real actual_Cv = 1./data.dTdE.interpToReal(lRho, lE);
     Real e_CV_transformed = e_shift_transform / actual_Cv;
 
 
