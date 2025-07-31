@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR511]](https://github.com/lanl/singularity-eos/pull/511) Added ability to sometimes capture by reference in vector API
 - [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Add two examples related to PTE
 - [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
 
