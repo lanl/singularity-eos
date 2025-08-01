@@ -37,6 +37,7 @@
 
 // base
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/eos_error.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
@@ -92,7 +93,6 @@ class SpinerEOSDependsRhoSieTransformable
 
     Real lRhoOffset, lEOffset;
     DataBox sieCold, T, dTdE;
-  
 
     PORTABLE_INLINE_FUNCTION
     TransformDataContainer() = default;
@@ -364,7 +364,6 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_, dependsRhoSie_.dTdE};
   transformer_ = Transformer(TransformDataContainer_);
-
 
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
@@ -853,7 +852,7 @@ inline SpinerEOSDependsRhoSieTransformable<
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
   TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_, dependsRhoSie_.dTdE};
- 
+
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
