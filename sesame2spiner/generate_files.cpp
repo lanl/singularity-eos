@@ -243,9 +243,9 @@ herr_t saveAllMaterials(const std::string &savename,
 herr_t saveTablesRhoSie(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
                         const Bounds &leBounds, Verbosity eospacWarn) {
   herr_t status = 0;
-  DataBox P, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, mask;
+  DataBox P, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, sie_shift, mask;
   eosDataOfRhoSie(matid, split, lRhoBounds, leBounds, P, T, bMod, dPdRho, dPdE, dTdRho,
-                  dTdE, dEdRho, mask, eospacWarn);
+                  dTdE, dEdRho, sie_shift, mask, eospacWarn);
   status += P.saveHDF(loc, SP5::Fields::P);
   status += T.saveHDF(loc, SP5::Fields::T);
   status += bMod.saveHDF(loc, SP5::Fields::bMod);
@@ -254,6 +254,7 @@ herr_t saveTablesRhoSie(hid_t loc, int matid, TableSplit split, const Bounds &lR
   status += dTdRho.saveHDF(loc, SP5::Fields::dTdRho);
   status += dTdE.saveHDF(loc, SP5::Fields::dTdE);
   status += dEdRho.saveHDF(loc, SP5::Fields::dEdRho);
+  //status += sie_shift.saveHDF(loc, SP5::Fields::sie);
   // currently unused
   // status += mask.saveHDF(loc, SP5::Fields::mask);
   return status;
