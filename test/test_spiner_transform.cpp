@@ -144,7 +144,7 @@ SCENARIO("ShiftTransform behave correctly", "[TransformTest]") {
          "correctly") {
       Real e_transformed = shiftTransform.transform(e_actual, rho);
       REQUIRE(isClose(e_transformed, e_actual - cold_curve_value, 1e-14));
-      Real e_inverse = shiftTransform.inverse(e_transformed, lRho);
+      Real e_inverse = shiftTransform.inverse(e_transformed, rho);
       REQUIRE(isClose(e_inverse, e_actual, 1e-14));
     }
   }

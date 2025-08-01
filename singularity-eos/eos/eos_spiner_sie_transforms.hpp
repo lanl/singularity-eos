@@ -62,8 +62,9 @@ struct ShiftTransform {
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed, const Real lRho,
+  PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed, const Real rho,
                                         Args &&...) const {
+    const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);   
     const Real e_cold = data_.sieCold.interpToReal(lRho);
     return e_transformed + e_cold;
   }

@@ -121,14 +121,21 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
     sie_inv[idx] = shift.inverse(sie_shifted, lRho);
     sie_flat[idx] = sieToSesame(sie_inv[idx]);
   }
+  
 
 
-  std::vector<EOS_REAL> sie_shift_pack(nXYPairs), DEDR_shift(nXYPairs), DEDT_shift(nXYPairs);
+  std::vector<EOS_REAL> sie_shift_pack(nXYPairs), DEDR_shift(nXYPairs), DEDT_shift(nXYPairs),
+	  DTDR_tran_E(nXYPairs), DTDE_tran_R(nXYPairs), DPDR_tran_T(nXYPairs), DPDT_tran_R(nXYPairs);
  const bool no_error_shift  = eosSafeInterpolate(&eospacEofRT, nXYPairs,
                               rho_flat.data(), sie_flat.data(),
                               sie_shift_pack.data(), DEDR_shift.data(), DEDT_shift.data(), "EofRT", eospacWarn);
- const bool no_errors_final = no_error_shift && no_errors;
-
+ const bool no_errors_trantemp = eosSafeInterpolate(
+      &eospacTofRE, nXYPairs, rho_flat.data(), sie_flat.data(), T_pack.data(),
+      DTDR_tran_E.data(), DTDE_tran_R.data(), "TofRE", eospacWarn);
+  const bool no_errors_tranPres = eosSafeInterpolate(
+      &eospacPofRT, nXYPairs, rho_flat.data(), T_pack.data(), P_pack.data(),
+      DPDR_tran_T.data(), DPDT_tran_R.data(), "PofRT", eospacWarn);
+const bool no_errors_final = no_error_shift && no_errors && no_errors_trantemp && no_errors_tranPres;
 
 
   // Loop by hand to ensure ordering ordering of independent
