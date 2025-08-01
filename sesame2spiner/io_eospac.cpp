@@ -20,14 +20,14 @@
 #include <regex>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
-
+#include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
 #include "io_eospac.hpp"
 
 // TODO: more error checking of bounds?
 void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds,
                      const Bounds &leBounds, DataBox &Ps, DataBox &Ts, DataBox &bMods,
                      DataBox &dPdRho, DataBox &dPde, DataBox &dTdRho, DataBox &dTde,
-                     DataBox &dEdRho, DataBox &mask, Verbosity eospacWarn) {
+                     DataBox &dEdRho, DataBox &sie_shift, DataBox &mask, Verbosity eospacWarn) {
   using namespace EospacWrapper;
 
   constexpr int NT = 3;
@@ -66,6 +66,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   dTdRho.copyMetadata(Ps);
   dTde.copyMetadata(Ps);
   dEdRho.copyMetadata(Ps);
+  sie_shift.copyMetadata(Ps);
   mask.copyMetadata(Ps);
 
   // Interpolatable vars
@@ -81,6 +82,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       iflat++;
     }
   }
+
   const bool no_errors_tofre = eosSafeInterpolate(
       &eospacTofRE, nXYPairs, rho_flat.data(), sie_flat.data(), T_pack.data(),
       DTDR_E.data(), DTDE_R.data(), "TofRE", eospacWarn);
@@ -91,6 +93,43 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       &eospacEofRT, nXYPairs, rho_flat.data(), T_pack.data(), sie_pack.data(),
       DEDR_T.data(), DEDT_R.data(), "EofRT", eospacWarn);
   const bool no_errors = no_errors_tofre && no_errors_pofrt && no_errors_eofrt;
+
+
+
+      DataBox P_cold, sie_cold, dPdRho_cold, dEdRho_cold, bMod_cold, mask_cold;
+      eosColdCurves(matid, lRhoBounds, P_cold, sie_cold, dPdRho_cold, dEdRho_cold,
+      bMod_cold, mask_cold, Verbosity::Quiet);
+
+      using namespace singularity;
+
+
+      struct ColdCurveData { DataBox sieCold; Real lRhoOffset;};
+      ColdCurveData data;
+      data.lRhoOffset = lRhoBounds.offset;
+      data.sieCold = sie_cold;
+      ShiftTransform<ColdCurveData> shift(data);
+
+
+  std::vector<EOS_REAL> sie_inv(nXYPairs);
+  for (int idx = 0; idx < nXYPairs; ++idx) {
+    Real sie_phys = sieToSesame(sie_flat[idx]);
+    Real rho_phys = densityToSesame(rho_flat[idx]);
+    // transform to shifted domain
+    Real sie_shifted = shift.transform(sie_phys, rho_phys);
+    // inverse back to raw energy at that transformed point
+    Real lRho = spiner_common::to_log(rho_phys, data.lRhoOffset);
+    sie_inv[idx] = shift.inverse(sie_shifted, lRho);
+    sie_flat[idx] = sieToSesame(sie_inv[idx]);
+  }
+
+
+  std::vector<EOS_REAL> sie_shift_pack(nXYPairs), DEDR_shift(nXYPairs), DEDT_shift(nXYPairs);
+ const bool no_error_shift  = eosSafeInterpolate(&eospacEofRT, nXYPairs,
+                              rho_flat.data(), sie_flat.data(),
+                              sie_shift_pack.data(), DEDR_shift.data(), DEDT_shift.data(), "EofRT", eospacWarn);
+ const bool no_errors_final = no_error_shift && no_errors;
+
+
 
   // Loop by hand to ensure ordering ordering of independent
   // variables is under our control.
@@ -110,6 +149,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       dTdRho(j, i) = temperatureFromSesame(DTDR_E[iflat]);
       dTde(j, i) = sieToSesame(temperatureFromSesame(DTDE_R[iflat]));
       dEdRho(j, i) = densityToSesame(sieFromSesame(DEDR_T[iflat]));
+      sie_shift(j, i) = sieFromSesame(sie_shift_pack[iflat]);
       mask(j, i) = no_errors ? 1.0 : 0.0;
       iflat++;
     }
