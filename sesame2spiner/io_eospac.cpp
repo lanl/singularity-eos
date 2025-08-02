@@ -214,17 +214,15 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       Real bMod =
           getBulkModulus(rho, P_pack[iflat], DPDR_T[iflat], DPDE_R, DEDR_T[iflat]);
       // Fill DataBoxes
-      Databox Ts_temp(j, i) = temperatureFromSesame(T_pack[iflat]);
-      Ps(j, i) = pressureFromSesame(P_pack[iflat]);
+      DataBox Ts_temp(j, i) = temperatureFromSesame(T_pack[iflat]);
+      DataBox Ps_temp(j, i) = pressureFromSesame(P_pack[iflat]);
       bMods(j, i) = bulkModulusFromSesame(std::max(bMod, 0.0));
       dPdRho(j, i) = pressureFromSesame(DPDR_T[iflat] + DTDR_E[iflat] * DPDT_R[iflat]);
       dPde(j, i) = sieToSesame(pressureFromSesame(DPDT_R[iflat] * DTDE_R[iflat]));
       dTdRho(j, i) = temperatureFromSesame(DTDR_E[iflat]);
       dTde(j, i) = sieToSesame(temperatureFromSesame(DTDE_R[iflat]));
       dEdRho(j, i) = densityToSesame(sieFromSesame(DEDR_T[iflat]));
-      //sie_shift(j, i) = sieFromSesame(sie_shift_pack[iflat]);
       mask(j, i) = no_errors ? 1.0 : 0.0;
-
       iflat++;
     }
    }
