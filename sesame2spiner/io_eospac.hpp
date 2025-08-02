@@ -44,15 +44,15 @@ using DataBox = Spiner::DataBox<Real, Grid_t>;
 void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds,
                      const Bounds &leBounds, DataBox &P, DataBox &T, DataBox &bMods,
                      DataBox &dPdRho, DataBox &dPdE, DataBox &dTdRho, DataBox &dTdE,
-                     DataBox &dEdRho, DataBox &sie_shift, DataBox &mask,
+                     DataBox &dEdRho, DataBox &mask,
                      Verbosity eospacWarn = Verbosity::Quiet);
 inline void eosDataOfRhoSie(int matid, const Bounds &lRhoBounds, const Bounds &leBounds,
                             DataBox &P, DataBox &T, DataBox &bMods, DataBox &dPdRho,
                             DataBox &dPdE, DataBox &dTdRho, DataBox &dTdE,
-                            DataBox &dEdRho, DataBox &sie_shift, DataBox &mask,
+                            DataBox &dEdRho, DataBox &mask,
                             Verbosity eospacWarn = Verbosity::Quiet) {
   eosDataOfRhoSie(matid, TableSplit::Total, lRhoBounds, leBounds, P, T, bMods, dPdRho,
-                  dPdE, dTdRho, dTdE, dEdRho, sie_shift,  mask, eospacWarn);
+                  dPdE, dTdRho, dTdE, dEdRho, mask, eospacWarn);
 }
 
 void eosDataOfRhoT(int matid, const TableSplit split, const Bounds &lRhoBounds,
@@ -88,7 +88,19 @@ T select(TableSplit split, T a, T b, T c) {
   else // if (split == TableSplit::IonCold)
     return c;
 }
+
+
 void modifyNames(TableSplit split, std::vector<std::string> &names);
+
 } // namespace impl
+
+struct ColdCurveData {
+    DataBox sieCold;
+    Real lRhoOffset;
+
+    ColdCurveData(int matid, const Bounds& lRhoBounds, const Bounds& leBounds,
+        Verbosity eospacWarn = Verbosity::Warning);
+};
+
 
 #endif // _SESAME2SPINER_IO_EOSPAC_HPP_
