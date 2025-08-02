@@ -91,11 +91,31 @@ class SpinerEOSDependsRhoSieTransformable
 
   struct TransformDataContainer {
 
-    Real lRhoOffset, lEOffset;
-    DataBox sieCold, T, dTdE;
+    Real lRhoOffset_, lEOffset_;
+    DataBox sieCold_, T_, dTdE_;
 
     PORTABLE_INLINE_FUNCTION
     TransformDataContainer() = default;
+
+    herr_t loadFromHDF(const std::string& matid_str, hid_t file,
+        hid_t lEGroup, hid_t coldGroup) {
+        herr_t status = H5_SUCCESS;
+
+        using namespace spiner_common;
+
+        // offsets
+        status +=
+            H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::rho, &lRhoOffset_);
+        status +=
+            H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::sie, &lEOffset_);
+        lRhoOffset_ = std::abs(lRhoOffset_);
+        lEOffset_ = std::abs(lEOffset_);
+
+        status += T_.loadHDF(lEGroup, SP5::Fields::T);
+        status += sieCold_.loadHDF(coldGroup, SP5::Fields::sie);
+        status += dTdE_.loadHDF(lEGroup, SP5::Fields::dTdE);
+        return status;
+    }
   };
 
   using TransformDataT = TransformDataContainer;
@@ -362,7 +382,8 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_, dependsRhoSie_.dTdE};
+  TransformDataContainer_ = TransformDataContainer();
+  TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
@@ -851,8 +872,8 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_, dependsRhoSie_.dTdE};
-
+  TransformDataContainer_ = TransformDataContainer();
+  TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
