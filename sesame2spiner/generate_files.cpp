@@ -416,23 +416,19 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
       T[0] = temperatureToSesame(TAnchor);
       T[1] = temperatureToSesame(TSplitPoint);
 
-     //i know this is far from ideal, as we are making mutiple un needed data boxes. I have a branch working on creating just the siecold box. but this start builds.
-      DataBox P_cold, sie_cold, dPdRho_cold, dEdRho_cold, bMod_cold, mask_cold;
-      eosColdCurves(matid, lRhoBounds, P_cold, sie_cold, dPdRho_cold, dEdRho_cold,
-      bMod_cold, mask_cold, Verbosity::Quiet);
-      
       using namespace singularity;
-     
-
-      struct ColdCurveData { DataBox sieCold; Real lRhoOffset;};
-      ColdCurveData data;
-      data.lRhoOffset = lRhoBounds.offset;
-      data.sieCold = sie_cold;
-      ShiftTransform<ColdCurveData> shift(data);
 
       eosSafeInterpolate(&eospacEofRT, nXYPairs, rho, T, sie, dx, dy, "EofRT",
                          Verbosity::Quiet);
-    
+
+      const Real sieAnchor_temp = sie[0];
+      const Real sieSplitPoint_temp = [1];
+   
+      Bounds leBounds_tranform = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
+          ppdSie, ppd_factor_sie, true, shrinkleBounds);
+
+      ColdCurveData data(matid, lRhoBounds, leBounds);
+      ShiftTransform<ColdCurveData> shift(data);
 
       //std::vector<Real> sie_transformed(nXYPairs);
       for (int i = 0; i < nXYPairs; ++i) {
@@ -445,10 +441,19 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
     }
 
     const Real sieAnchor = sie_transformed[0];
-    const Real sieSplitPoint = sie_transformed[1];
+    const Real sieSplitPoint = sie_transformed[1]; //sie_tranformed when testing transformations
     leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
                       ppdSie, ppd_factor_sie, true, shrinkleBounds);
   } else {
+
+
+     
+     sieMin = shift.transform(sieMin, rhoMIn);
+     sieMax = shift.transform(sieMax, rhoMax);
+     numsie = shift.transform(numSie, numRho);
+     
+
+
     leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
   }
 
