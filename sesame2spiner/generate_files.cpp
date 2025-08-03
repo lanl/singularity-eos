@@ -427,7 +427,7 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
       Bounds leBounds_tranform = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
           ppdSie, ppd_factor_sie, true, shrinkleBounds);
 
-      TransformDataContainer data(matid, lRhoBounds, leBounds);
+      TransformDataContainer data(matid, Verbosity::Quiet);
       TransformDataContainer<ColdCurveData> shift(data);
 
       //std::vector<Real> sie_transformed(nXYPairs);
