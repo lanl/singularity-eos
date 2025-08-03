@@ -94,11 +94,11 @@ void modifyNames(TableSplit split, std::vector<std::string> &names);
 
 } // namespace impl
 
-struct ColdCurveData {
-    DataBox sieCold;
-    Real lRhoOffset;
+struct TransformDataContainer {
+    DataBox sieCold, T, dtde;
+    Real lRhoOffset, lEOffset;
 
-    ColdCurveData(int matid, const Bounds& lRhoBounds, const Bounds& leBounds,
+    TransformDataContainer(int matid, const Bounds& lRhoBounds, const Bounds& leBounds,
         Verbosity eospacWarn = Verbosity::Warning);
 };
 
