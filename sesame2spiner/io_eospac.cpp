@@ -24,19 +24,16 @@
 #include "io_eospac.hpp"
 
 
-TransformDataContainer::TransformDataContainer(int matid, const Bounds& lRhoBounds, const Bounds& leBounds,
-    Verbosity eospacWarn)
-    : lRhoOffset(lRhoBounds.offset), lEOffset(leBounds.offset) {
+TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) {
     using namespace EospacWrapper;
-        
-    //SesameMetaData metadata;
-    //eosGetMetadata(matid, metadata, Verbosity::Debug);
-    //Bounds lRhoBounds, lTBounds, leBounds;
+    SesameMetaData metadata;
+    eosGetMetadata(matid, metadata, Verbosity::Debug);
+    Bounds lRhoBounds, lTBounds, leBounds;
 
 //start odinary bounds since tranform is used in getmatbounds// need to ensure bounds for 
 //databoxes are the same as original. must obtain same metadata. if this is implemented,
 //i should be able to use this struct for ALL transforms in all files.
-/*
+
     constexpr Real TINY = std::numeric_limits<Real>::epsilon();
       auto TinyShift = [=](Real val, int sign) {
         Real shift = std::abs(std::min(10 * val * TINY, TINY));
@@ -183,7 +180,9 @@ TransformDataContainer::TransformDataContainer(int matid, const Bounds& lRhoBoun
       return;
     }
 //end bound
-*/
+    lRhoOffset_ = lRhoBounds.offset;
+    lEOffset_ = leBoundss.offset;
+
     constexpr int NT = 1;
     EOS_INTEGER tableHandle[NT];
     EOS_INTEGER tableType[NT] = {"EOS_Uc_D"};
@@ -330,7 +329,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
 
   using namespace singularity;
 
-  TransformDataContainer data(matid, lRhoBounds, leBounds);
+  TransformDataContainer data(matid, eospacWarn);
   ShiftTransform<TransformDataContainer> shift(data);
 
   // Interpolatable vars
