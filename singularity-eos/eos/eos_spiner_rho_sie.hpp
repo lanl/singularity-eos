@@ -54,6 +54,7 @@
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
 #include <spiner/spiner_types.hpp>
+#include "io_eospac.hpp"
 
 namespace singularity {
 
@@ -88,36 +89,6 @@ class SpinerEOSDependsRhoSieTransformable
   };
   using Grid_t = spiner_common::Grid_t;
   using DataBox = spiner_common::DataBox;
-
-  struct TransformDataContainer {
-
-    Real lRhoOffset_, lEOffset_;
-    DataBox sieCold_, T_, dTdE_, P_;
-
-    PORTABLE_INLINE_FUNCTION
-    TransformDataContainer() = default;
-
-    herr_t loadFromHDF(const std::string& matid_str, hid_t file,
-        hid_t lEGroup, hid_t coldGroup) {
-        herr_t status = H5_SUCCESS;
-
-        using namespace spiner_common;
-
-        // offsets
-        status +=
-            H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::rho, &lRhoOffset_);
-        status +=
-            H5LTget_attribute_double(file, matid_str.c_str(), SP5::Offsets::sie, &lEOffset_);
-        lRhoOffset_ = std::abs(lRhoOffset_);
-        lEOffset_ = std::abs(lEOffset_);
-
-        status += P_.loadHDF(lEGroup, SP5::Fields::P);
-        status += T_.loadHDF(lEGroup, SP5::Fields::T);
-        status += sieCold_.loadHDF(coldGroup, SP5::Fields::sie);
-        status += dTdE_.loadHDF(lEGroup, SP5::Fields::dTdE);
-        return status;
-    }
-  };
 
   using TransformDataT = TransformDataContainer;
   using Transformer = TransformerT<TransformDataT>;
@@ -383,8 +354,10 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = TransformDataContainer();
-  Status += TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
+  //TransformDataContainer_ = TransformDataContainer();
+  //Status += TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
+  
+  TransformDataContainer data(matid_str, Verbosity::Quiet);
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
@@ -873,8 +846,7 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = TransformDataContainer();
-  status += TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
+  TransformDataContainer data(matid_str, Verbosity::Quiet);
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
