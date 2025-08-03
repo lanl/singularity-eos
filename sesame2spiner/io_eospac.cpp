@@ -49,13 +49,6 @@ TransformDataContainer::TransformDataContainer(int matid, const Bounds& lRhoBoun
       Real sieMin = params.Get("siemin", TinyShift(metadata.sieMin, 1));
       Real sieMax = params.Get("siemax", metadata.sieMax);
     
-      checkValInMatBounds(matid, "rhoMin", rhoMin, metadata.rhoMin, metadata.rhoMax);
-      checkValInMatBounds(matid, "rhoMax", rhoMax, metadata.rhoMin, metadata.rhoMax);
-      checkValInMatBounds(matid, "TMin", TMin, metadata.TMin, metadata.TMax);
-      checkValInMatBounds(matid, "TMax", TMax, metadata.TMin, metadata.TMax);
-      checkValInMatBounds(matid, "sieMin", sieMin, metadata.sieMin, metadata.sieMax);
-      checkValInMatBounds(matid, "sieMax", sieMax, metadata.sieMin, metadata.sieMax);
-    
       Real shrinklRhoBounds = params.Get("shrinklRhoBounds", 0.);
       Real shrinklTBounds = params.Get("shrinklTBounds", 0.);
       Real shrinkleBounds = params.Get("shrinkleBounds", 0.);
