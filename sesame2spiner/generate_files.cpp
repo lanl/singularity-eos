@@ -428,7 +428,7 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
           ppdSie, ppd_factor_sie, true, shrinkleBounds);
 
       TransformDataContainer data(matid, Verbosity::Quiet);
-      TransformDataContainer<ColdCurveData> shift(data);
+      ShiftTransformr<TransformDataContainer> shift(data);
 
       //std::vector<Real> sie_transformed(nXYPairs);
       for (int i = 0; i < nXYPairs; ++i) {
