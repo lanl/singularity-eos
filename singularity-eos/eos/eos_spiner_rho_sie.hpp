@@ -92,7 +92,7 @@ class SpinerEOSDependsRhoSieTransformable
   struct TransformDataContainer {
 
     Real lRhoOffset_, lEOffset_;
-    DataBox sieCold_, T_, dTdE_;
+    DataBox sieCold_, T_, dTdE_, P_;
 
     PORTABLE_INLINE_FUNCTION
     TransformDataContainer() = default;
@@ -111,6 +111,7 @@ class SpinerEOSDependsRhoSieTransformable
         lRhoOffset_ = std::abs(lRhoOffset_);
         lEOffset_ = std::abs(lEOffset_);
 
+        status += P_.loadHDF(lEGroup, SP5::Fields::P);
         status += T_.loadHDF(lEGroup, SP5::Fields::T);
         status += sieCold_.loadHDF(coldGroup, SP5::Fields::sie);
         status += dTdE_.loadHDF(lEGroup, SP5::Fields::dTdE);
