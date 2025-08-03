@@ -98,8 +98,7 @@ struct TransformDataContainer {
     DataBox sieCold, T, dtde;
     Real lRhoOffset, lEOffset;
 
-    TransformDataContainer(int matid, const Bounds& lRhoBounds, const Bounds& leBounds,
-        Verbosity eospacWarn = Verbosity::Warning);
+    TransformDataContainer(int matid, Verbosity eospacWarn = Verbosity::Warning);
 };
 
 
