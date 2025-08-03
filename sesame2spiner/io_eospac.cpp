@@ -203,6 +203,10 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       DEDR_T.data(), DEDT_R.data(), "EofRT", eospacWarn);
   const bool no_errors = no_errors_tofre && no_errors_pofrt && no_errors_eofrt;
 
+    
+  DataBox Ts_temp, Ps_temp;
+    Ts_temp.matadata(Ps);
+    Ps_temp.metadata(Ps);
 
   // Loop by hand to ensure ordering ordering of independent
   // variables is under our control.
@@ -214,8 +218,8 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       Real bMod =
           getBulkModulus(rho, P_pack[iflat], DPDR_T[iflat], DPDE_R, DEDR_T[iflat]);
       // Fill DataBoxes
-      DataBox Ts_temp(j, i) = temperatureFromSesame(T_pack[iflat]);
-      DataBox Ps_temp(j, i) = pressureFromSesame(P_pack[iflat]);
+      Ts_temp(j, i) = temperatureFromSesame(T_pack[iflat]);
+      Ps_temp(j, i) = pressureFromSesame(P_pack[iflat]);
       bMods(j, i) = bulkModulusFromSesame(std::max(bMod, 0.0));
       dPdRho(j, i) = pressureFromSesame(DPDR_T[iflat] + DTDR_E[iflat] * DPDT_R[iflat]);
       dPde(j, i) = sieToSesame(pressureFromSesame(DPDT_R[iflat] * DTDE_R[iflat]));
@@ -228,13 +232,16 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
    }
 
   for (size_t j = 0; j < rhos.size(); j++) {
-      for (size_t i = 0; i < sies.size(); i++) {
-          Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
-          Real lE = spiner_common::to_log(sies[i], leBounds.offset);
-          Ts(j, i) = Ts_temp.interpToReal(lRho, lE);
-          Ps(j, i) = Ps_temp.interpToReal(lRho, lE);
-      }
-  }
+    for (size_t i = 0; i < sies.size(); i++) {
+        Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
+        Real lE = spiner_common::to_log(shift.inverse(sies[i]), rhos[j]), leBounds.offset);
+        Real ts_orig = Ts_temp.interpToReal(lRho, lE);
+        Real ps_orig = Ps_temp.interpToReal(lRho, lE);
+        Real letrans = spiner_common::to_log(sies[i], leBounds.offset);
+        Ts(lRho, letrans) = ts_orig;
+        Ps(lRho, letrans) = ps_orig;
+    }
+}
 
 
   eosSafeDestroy(NT, tableHandle, eospacWarn);
