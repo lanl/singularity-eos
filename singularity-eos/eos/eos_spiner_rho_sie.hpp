@@ -383,7 +383,7 @@ inline SpinerEOSDependsRhoSieTransformable<
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
   TransformDataContainer_ = TransformDataContainer();
-  TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
+  Status += TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
@@ -873,7 +873,7 @@ inline SpinerEOSDependsRhoSieTransformable<
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
   TransformDataContainer_ = TransformDataContainer();
-  TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
+  status += TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
   transformer_ = Transformer(TransformDataContainer_);
 
   status += H5Gclose(lTGroup);
