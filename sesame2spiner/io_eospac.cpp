@@ -24,7 +24,7 @@
 #include "io_eospac.hpp"
 
 
-ColdCurveData::ColdCurveData(int matid, const Bounds& lRhoBounds, const Bounds& leBounds,
+TransformDataContainer::TransformDataContainer(int matid, const Bounds& lRhoBounds, const Bounds& leBounds,
     Verbosity eospacWarn)
     : lRhoOffset(lRhoBounds.offset), lEOffset(leBounds.offset) {
     using namespace EospacWrapper;
@@ -175,8 +175,8 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
 
   using namespace singularity;
 
-  ColdCurveData data(matid, lRhoBounds, leBounds);
-  ShiftTransform<ColdCurveData> shift(data);
+  TransformDataContainer data(matid, lRhoBounds, leBounds);
+  ShiftTransform<TransformDataContainer> shift(data);
 
   // Interpolatable vars
   EOS_INTEGER nXYPairs = rhos.size() * sies.size();
