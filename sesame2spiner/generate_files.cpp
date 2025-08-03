@@ -282,6 +282,11 @@ herr_t saveTablesRhoT(hid_t loc, int matid, TableSplit split, const Bounds &lRho
 
 void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
                   Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds) {
+ 
+  //move to top of function so all if and else statements have access
+  using namespace singularity;
+  TransformDataContainer data(matid, Verbosity::Quiet);
+  ShiftTransformr<TransformDataContainer> shift(data);
 
   // The "epsilon" shifts here are required to avoid eospac
   // extrapolation errors at table bounds
@@ -415,20 +420,8 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
       rho[0] = rho[1] = densityToSesame(rhoAnchor);
       T[0] = temperatureToSesame(TAnchor);
       T[1] = temperatureToSesame(TSplitPoint);
-
-      using namespace singularity;
-
       eosSafeInterpolate(&eospacEofRT, nXYPairs, rho, T, sie, dx, dy, "EofRT",
                          Verbosity::Quiet);
-
-      const Real sieAnchor_temp = sie[0];
-      const Real sieSplitPoint_temp = [1];
-   
-      Bounds leBounds_tranform = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
-          ppdSie, ppd_factor_sie, true, shrinkleBounds);
-
-      TransformDataContainer data(matid, Verbosity::Quiet);
-      ShiftTransformr<TransformDataContainer> shift(data);
 
       //std::vector<Real> sie_transformed(nXYPairs);
       for (int i = 0; i < nXYPairs; ++i) {
