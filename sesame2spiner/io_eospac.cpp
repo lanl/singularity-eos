@@ -149,23 +149,13 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
           rho[0] = rho[1] = densityToSesame(rhoAnchor);
           T[0] = temperatureToSesame(TAnchor);
           T[1] = temperatureToSesame(TSplitPoint);
-    
-          using namespace singularity;
-    
           eosSafeInterpolate(&eospacEofRT, nXYPairs, rho, T, sie, dx, dy, "EofRT",
                              Verbosity::Quiet);
-    
-          const Real sieAnchor_temp = sie[0];
-          const Real sieSplitPoint_temp = [1];
-       
-          Bounds leBounds_tranform = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
-              ppdSie, ppd_factor_sie, true, shrinkleBounds);
-
           eosSafeDestroy(NT, tableHandle, Verbosity::Quiet);
-        }
-    
+        }    
+          
         const Real sieAnchor = sie[0];
-        const Real sieSplitPoint = sie[1]; //sie_tranformed when testing transformations
+        const Real sieSplitPoint = sie[1]; 
         leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
                           ppdSie, ppd_factor_sie, true, shrinkleBounds);
       } else {
@@ -177,11 +167,9 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
                 << lTBounds << "lSie bounds are \n"
                 << leBounds << std::endl;
     
-      return;
-    }
 //end bound
     lRhoOffset_ = lRhoBounds.offset;
-    lEOffset_ = leBoundss.offset;
+    lEOffset_ = leBounds.offset;
 
     constexpr int NT = 1;
     EOS_INTEGER tableHandle[NT];
@@ -214,16 +202,17 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
         sie_pack.data(), DEDR_T.data(), dy.data(),
         "sieCold", eospacWarn);
 
-    for (std::size_t i = 0; i < rhos.size(); ++i)
+    for (std::size_t i = 0; i < rhos.size(); ++i){
         sieCold(i) = sieFromSesame(sie_pack[i]);  
+    }
 
     EOS_INTEGER tableHandleCV[NT];
-    EOS_INTEGER tableTypeCV[NT] = { impl::select(split, EOS_T_DUt, EOS_T_DUe, EOS_T_DUc);}
+    EOS_INTEGER tableTypeCV[NT] = { impl::select(split, EOS_T_DUt, EOS_T_DUe, EOS_T_DUc)};
     //Load DTDE and T databoxes
     EospacWrapper::eospacSplit apply_splitting =
         (split == TableSplit::Total) ? eospacSplit::none : eospacSplit::splitNumProp;
 
-    std::vector<std::string> names = ["EOS_T_DUt"];
+    std::vector<std::string> names = {"EOS_T_DUt"};
     impl::modifyNames(split, names);
 
     eosSafeLoad(NT, matid, tableTypeCV, tableHandleCV, names, eospacWarn, false, 0.0,
@@ -276,7 +265,8 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
     dTde_ = dTde;
 
     eosSafeDestroy(NT, tableHandle, eospacWarn);
-}
+};
+
 
 
 
