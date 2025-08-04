@@ -29,6 +29,7 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
     SesameMetaData metadata;
     eosGetMetadata(matid, metadata, Verbosity::Debug);
     Bounds lRhoBounds, lTBounds, leBounds;
+    std::vector<Params> params;
 
 //start odinary bounds since tranform is used in getmatbounds// need to ensure bounds for 
 //databoxes are the same as original. must obtain same metadata. if this is implemented,
