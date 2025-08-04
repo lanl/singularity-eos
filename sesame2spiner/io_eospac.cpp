@@ -31,9 +31,12 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
     Bounds lRhoBounds, lTBounds, leBounds;
     Params params;
 
-//start odinary bounds since tranform is used in getmatbounds// need to ensure bounds for 
-//databoxes are the same as original. must obtain same metadata. if this is implemented,
-//i should be able to use this struct for ALL transforms in all files.
+/*start odinary bounds since tranform is used in getmatbounds. We need to ensure bounds for 
+databoxes are the same as original. Must obtain same metadata. if this is implemented,
+i should be able to use this struct for ALL transforms in all files. I created params and kept
+all of the bounds logic incase we want to have this struct include the params from .Dat files 
+in the future.
+*/
 
     constexpr Real TINY = std::numeric_limits<Real>::epsilon();
       auto TinyShift = [=](Real val, int sign) {
@@ -167,7 +170,7 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
                 << lRhoBounds << "lT bounds are\n"
                 << lTBounds << "lSie bounds are \n"
                 << leBounds << std::endl;
-    //end bounds
+    //end bounds, beginging data laoding process. store offsets for Transform use
     
     lRhoOffset = lRhoBounds.offset;
     lEOffset = leBounds.offset;
