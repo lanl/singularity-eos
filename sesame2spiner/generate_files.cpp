@@ -286,7 +286,7 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   //move to top of function so all if and else statements have access
   using namespace singularity;
   TransformDataContainer data(matid, Verbosity::Quiet);
-  ShiftTransformr<TransformDataContainer> shift(data);
+  AllTransform<TransformDataContainer> shift(data);
 
   // The "epsilon" shifts here are required to avoid eospac
   // extrapolation errors at table bounds
@@ -440,7 +440,7 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
   } else {
 
 
-     
+     //shift these as well for bounds creation in following else statemnt?
      sieMin = shift.transform(sieMin, rhoMIn);
      sieMax = shift.transform(sieMax, rhoMax);
      numsie = shift.transform(numSie, numRho);
