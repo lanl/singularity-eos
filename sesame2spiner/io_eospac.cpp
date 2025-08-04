@@ -335,7 +335,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   for (std::size_t j = 0; j < rhos.size(); ++j) {
     for (std::size_t i = 0; i < sies.size(); ++i) {
       rho_flat[iflat] = densityToSesame(rhos[j]);
-      sie_flat[iflat] = sieToSesame(shift.inverse(sies[i]),rhos[j]);
+      sie_flat[iflat] = sieToSesame(shift.inverse(sies[i],rhos[j]));
       iflat++;
     }
   }
