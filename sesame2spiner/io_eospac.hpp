@@ -95,8 +95,8 @@ void modifyNames(TableSplit split, std::vector<std::string> &names);
 } // namespace impl
 
 struct TransformDataContainer {
-    DataBox sieCold, T, dtde;
-    Real lRhoOffset, lEOffset;
+    DataBox sieCold_, T_, dtde_;
+    Real lRhoOffset_, lEOffset_;
 
     TransformDataContainer(int matid, Verbosity eospacWarn = Verbosity::Warning);
 };
