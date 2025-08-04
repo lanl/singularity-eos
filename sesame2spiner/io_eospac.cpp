@@ -167,11 +167,12 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
                 << lRhoBounds << "lT bounds are\n"
                 << lTBounds << "lSie bounds are \n"
                 << leBounds << std::endl;
+    //end bounds
     
-//end bound
     lRhoOffset = lRhoBounds.offset;
     lEOffset = leBounds.offset;
-
+    DataBox sieCold_, T_, dTde_, dy_;
+    // set up to load dat box for siecold
     constexpr int NT = 1;
     EOS_INTEGER tableHandle[NT];
     EOS_INTEGER tableType[NT] = {EOS_Uc_D};
@@ -188,7 +189,6 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
     // Interpolatable vars
     std::vector<EOS_REAL> sie_pack(rhos.size());
     std::vector<EOS_REAL> DEDR_T(rhos.size()), dy(rhos.size()); // for derivatives and dy
-    DataBox sieCold_, T_, dTde_, dy_;
     sieCold.resize(rhos.size());
     sieCold.setRange(0, lRhoBounds.grid);
 
@@ -205,8 +205,9 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
 
     for (std::size_t i = 0; i < rhos.size(); ++i){
         sieCold_(i) = sieFromSesame(sie_pack[i]);  
-    }
+    }// end siecold databox loading
 
+    //set up to load for cv databox and T databox, needed for Dividebycv and dividebyT3 transforms
     EOS_INTEGER tableHandleCV[NT];
     EOS_INTEGER tableTypeCV[NT] = { impl::select(split, EOS_T_DUt, EOS_T_DUe, EOS_T_DUc)};
     //Load DTDE and T databoxes
@@ -259,7 +260,7 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
             iflat++;
         }
     }
-
+// end datatbox loading. save databoxes to struct variables
     sieCold = sieCold_;
     T = T_;
     dTde = dTde_;
@@ -374,7 +375,8 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       iflat++;
     }
    }
-
+// get accurate values off of untransformed space. Map to transformed energy, so when look up is performed
+// on the transofrmed energy (interprhosie) it returns the correct value. 
   for (size_t j = 0; j < rhos.size(); j++) {
     for (size_t i = 0; i < sies.size(); i++) {
         Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
