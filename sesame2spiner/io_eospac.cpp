@@ -173,7 +173,7 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
 
     constexpr int NT = 1;
     EOS_INTEGER tableHandle[NT];
-    EOS_INTEGER tableType[NT] = {"EOS_Uc_D"};
+    EOS_INTEGER tableType[NT] = {EOS_Uc_D};
     EOS_INTEGER eospacSieColdCurve, eospacTofRE;
 
     // Create rho and T vectors
