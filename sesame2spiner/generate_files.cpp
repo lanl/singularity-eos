@@ -282,6 +282,11 @@ herr_t saveTablesRhoT(hid_t loc, int matid, TableSplit split, const Bounds &lRho
 
 void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params &params,
                   Bounds &lRhoBounds, Bounds &lTBounds, Bounds &leBounds) {
+ 
+  //move to top of function so all if and else statements have access
+  using namespace singularity;
+  TransformDataContainer data(matid, Verbosity::Quiet);
+  AllTransform<TransformDataContainer> shift(data);
 
   // The "epsilon" shifts here are required to avoid eospac
   // extrapolation errors at table bounds
@@ -415,24 +420,8 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
       rho[0] = rho[1] = densityToSesame(rhoAnchor);
       T[0] = temperatureToSesame(TAnchor);
       T[1] = temperatureToSesame(TSplitPoint);
-
-     //i know this is far from ideal, as we are making mutiple un needed data boxes. I have a branch working on creating just the siecold box. but this start builds.
-      DataBox P_cold, sie_cold, dPdRho_cold, dEdRho_cold, bMod_cold, mask_cold;
-      eosColdCurves(matid, lRhoBounds, P_cold, sie_cold, dPdRho_cold, dEdRho_cold,
-      bMod_cold, mask_cold, Verbosity::Quiet);
-      
-      using namespace singularity;
-     
-
-      struct ColdCurveData { DataBox sieCold; Real lRhoOffset;};
-      ColdCurveData data;
-      data.lRhoOffset = lRhoBounds.offset;
-      data.sieCold = sie_cold;
-      ShiftTransform<ColdCurveData> shift(data);
-
       eosSafeInterpolate(&eospacEofRT, nXYPairs, rho, T, sie, dx, dy, "EofRT",
                          Verbosity::Quiet);
-    
 
       //std::vector<Real> sie_transformed(nXYPairs);
       for (int i = 0; i < nXYPairs; ++i) {
@@ -445,10 +434,19 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
     }
 
     const Real sieAnchor = sie_transformed[0];
-    const Real sieSplitPoint = sie_transformed[1];
+    const Real sieSplitPoint = sie_transformed[1]; //sie_tranformed when testing transformations
     leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
                       ppdSie, ppd_factor_sie, true, shrinkleBounds);
   } else {
+
+
+     //shift these as well for bounds creation in following else statemnt?
+     sieMin = shift.transform(sieMin, rhoMIn);
+     sieMax = shift.transform(sieMax, rhoMax);
+     numsie = shift.transform(numSie, numRho);
+     
+
+
     leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
   }
 

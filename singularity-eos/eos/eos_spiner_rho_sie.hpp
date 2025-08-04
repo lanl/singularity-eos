@@ -54,6 +54,7 @@
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
 #include <spiner/spiner_types.hpp>
+#include "io_eospac.hpp"
 
 namespace singularity {
 
@@ -88,15 +89,6 @@ class SpinerEOSDependsRhoSieTransformable
   };
   using Grid_t = spiner_common::Grid_t;
   using DataBox = spiner_common::DataBox;
-
-  struct TransformDataContainer {
-
-    Real lRhoOffset, lEOffset;
-    DataBox sieCold, T, dTdE;
-
-    PORTABLE_INLINE_FUNCTION
-    TransformDataContainer() = default;
-  };
 
   using TransformDataT = TransformDataContainer;
   using Transformer = TransformerT<TransformDataT>;
@@ -362,8 +354,11 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_, dependsRhoSie_.dTdE};
-  transformer_ = Transformer(TransformDataContainer_);
+  //TransformDataContainer_ = TransformDataContainer();
+  //Status += TransformDataContainer_.loadFromHDF(matid_str, file, lEGroup, coldGroup);
+  
+  TransformDataContainer data(matid_, Verbosity::Quiet);
+  transformer_ = Transformer(data);
 
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
@@ -851,9 +846,8 @@ inline SpinerEOSDependsRhoSieTransformable<
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_, dependsRhoSie_.dTdE};
-
-  transformer_ = Transformer(TransformDataContainer_);
+  TransformDataContainer data(matid_, Verbosity::Quiet);
+  transformer_ = Transformer(data);
 
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
