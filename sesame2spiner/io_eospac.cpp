@@ -385,7 +385,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   for (size_t j = 0; j < rhos.size(); j++) {
     for (size_t i = 0; i < sies.size(); i++) {
         Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
-        Real lE = spiner_common::to_log(shift.inverse(sies[i], rhos[j]), shift.inverse.leBounds.offset);
+        Real lE = spiner_common::to_log(shift.inverse(sies[i], rhos[j]), shift.inverse(leBounds.offset, rho[j]);
         Real ts_orig = Ts_temp.interpToReal(lRho, lE);
         Real ps_orig = Ps_temp.interpToReal(lRho, lE);
         Real letrans = spiner_common::to_log(sies[i], leBounds.offset);
