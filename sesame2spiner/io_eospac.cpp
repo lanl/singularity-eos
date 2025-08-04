@@ -351,7 +351,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       DEDR_T.data(), DEDT_R.data(), "EofRT", eospacWarn);
   const bool no_errors = no_errors_tofre && no_errors_pofrt && no_errors_eofrt;
 
-    
+   //need temporary databox's of the appropriate size to interpolate on 
   DataBox Ts_temp, Ps_temp;
     Ts_temp.copyMetadata(Ps);
     Ps_temp.copyMetadata(Ps);
