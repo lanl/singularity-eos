@@ -94,9 +94,10 @@ void modifyNames(TableSplit split, std::vector<std::string> &names);
 
 } // namespace impl
 
+//allows other files to acces this struct
 struct TransformDataContainer {
-    DataBox sieCold_, T_, dtde_;
-    Real lRhoOffset_, lEOffset_;
+    DataBox sieCold, T, dtde;
+    Real lRhoOffset, lEOffset;
 
     TransformDataContainer(int matid, Verbosity eospacWarn = Verbosity::Warning);
 };
