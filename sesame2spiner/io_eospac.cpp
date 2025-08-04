@@ -30,6 +30,21 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
                      DataBox &dEdRho, DataBox &sie_shift, DataBox &mask, Verbosity eospacWarn) {
   using namespace EospacWrapper;
 
+
+      DataBox P_cold, sie_cold, dPdRho_cold, dEdRho_cold, bMod_cold, mask_cold;
+      eosColdCurves(matid, lRhoBounds, P_cold, sie_cold, dPdRho_cold, dEdRho_cold,
+      bMod_cold, mask_cold, Verbosity::Quiet);
+
+
+      using namespace singularity;
+
+
+      struct ColdCurveData { DataBox sieCold; Real lRhoOffset;};
+      ColdCurveData data;
+      data.lRhoOffset = lRhoBounds.offset;
+      data.sieCold = sie_cold;
+      ShiftTransform<ColdCurveData> shift(data);
+
   constexpr int NT = 3;
   EOS_INTEGER tableHandle[NT];
   EOS_INTEGER eospacPofRT, eospacTofRE, eospacEofRT;
@@ -78,7 +93,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   for (std::size_t j = 0; j < rhos.size(); ++j) {
     for (std::size_t i = 0; i < sies.size(); ++i) {
       rho_flat[iflat] = densityToSesame(rhos[j]);
-      sie_flat[iflat] = sieToSesame(sies[i]);
+      sie_flat[iflat] = sieToSesame(shift.inverse(sies[i],rhos[j]));
       iflat++;
     }
   }
@@ -95,48 +110,10 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   const bool no_errors = no_errors_tofre && no_errors_pofrt && no_errors_eofrt;
 
 
-
-      DataBox P_cold, sie_cold, dPdRho_cold, dEdRho_cold, bMod_cold, mask_cold;
-      eosColdCurves(matid, lRhoBounds, P_cold, sie_cold, dPdRho_cold, dEdRho_cold,
-      bMod_cold, mask_cold, Verbosity::Quiet);
-
-      using namespace singularity;
-
-
-      struct ColdCurveData { DataBox sieCold; Real lRhoOffset;};
-      ColdCurveData data;
-      data.lRhoOffset = lRhoBounds.offset;
-      data.sieCold = sie_cold;
-      ShiftTransform<ColdCurveData> shift(data);
-
-
-  std::vector<EOS_REAL> sie_inv(nXYPairs);
-  for (int idx = 0; idx < nXYPairs; ++idx) {
-    Real sie_phys = sieToSesame(sie_flat[idx]);
-    Real rho_phys = densityToSesame(rho_flat[idx]);
-    // transform to shifted domain
-    Real sie_shifted = shift.transform(sie_phys, rho_phys);
-    // inverse back to raw energy at that transformed point
-    Real lRho = spiner_common::to_log(rho_phys, data.lRhoOffset);
-    sie_inv[idx] = shift.inverse(sie_shifted, lRho);
-    sie_flat[idx] = sieToSesame(sie_inv[idx]);
-  }
-  
-
-
-  std::vector<EOS_REAL> sie_shift_pack(nXYPairs), DEDR_shift(nXYPairs), DEDT_shift(nXYPairs),
-	  DTDR_tran_E(nXYPairs), DTDE_tran_R(nXYPairs), DPDR_tran_T(nXYPairs), DPDT_tran_R(nXYPairs);
- const bool no_error_shift  = eosSafeInterpolate(&eospacEofRT, nXYPairs,
-                              rho_flat.data(), sie_flat.data(),
-                              sie_shift_pack.data(), DEDR_shift.data(), DEDT_shift.data(), "EofRT", eospacWarn);
- const bool no_errors_trantemp = eosSafeInterpolate(
-      &eospacTofRE, nXYPairs, rho_flat.data(), sie_flat.data(), T_pack.data(),
-      DTDR_tran_E.data(), DTDE_tran_R.data(), "TofRE", eospacWarn);
-  const bool no_errors_tranPres = eosSafeInterpolate(
-      &eospacPofRT, nXYPairs, rho_flat.data(), T_pack.data(), P_pack.data(),
-      DPDR_tran_T.data(), DPDT_tran_R.data(), "PofRT", eospacWarn);
-const bool no_errors_final = no_error_shift && no_errors && no_errors_trantemp && no_errors_tranPres;
-
+ DataBox Ts_temp, Ps_temp, Sies_temp;
+    Sies_temp.copyMetadata(Ps); //might not be needed, unsure?
+    Ts_temp.copyMetadata(Ps);
+    Ps_temp.copyMetadata(Ps);
 
   // Loop by hand to ensure ordering ordering of independent
   // variables is under our control.
@@ -148,19 +125,32 @@ const bool no_errors_final = no_error_shift && no_errors && no_errors_trantemp &
       Real bMod =
           getBulkModulus(rho, P_pack[iflat], DPDR_T[iflat], DPDE_R, DEDR_T[iflat]);
       // Fill DataBoxes
-      Ts(j, i) = temperatureFromSesame(T_pack[iflat]);
-      Ps(j, i) = pressureFromSesame(P_pack[iflat]);
+      Ts_temp(j, i) = temperatureFromSesame(T_pack[iflat]);
+      Ps_temp(j, i) = pressureFromSesame(P_pack[iflat]);
       bMods(j, i) = bulkModulusFromSesame(std::max(bMod, 0.0));
       dPdRho(j, i) = pressureFromSesame(DPDR_T[iflat] + DTDR_E[iflat] * DPDT_R[iflat]);
       dPde(j, i) = sieToSesame(pressureFromSesame(DPDT_R[iflat] * DTDE_R[iflat]));
       dTdRho(j, i) = temperatureFromSesame(DTDR_E[iflat]);
       dTde(j, i) = sieToSesame(temperatureFromSesame(DTDE_R[iflat]));
       dEdRho(j, i) = densityToSesame(sieFromSesame(DEDR_T[iflat]));
-      sie_shift(j, i) = sieFromSesame(sie_shift_pack[iflat]);
+      sie_shift(j, i) = sieFromSesame(sie_pack[iflat]);
       mask(j, i) = no_errors ? 1.0 : 0.0;
       iflat++;
     }
   }
+
+   for (size_t j = 0; j < rhos.size(); j++) {
+    for (size_t i = 0; i < sies.size(); i++) {
+        Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
+        Real lE = spiner_common::to_log(shift.inverse(sies[i], rhos[j]), leBounds.offset);
+        Real ts_orig = Ts_temp.interpToReal(lRho, lE);
+        Real ps_orig = Ps_temp.interpToReal(lRho, lE);
+        Real letrans = spiner_common::to_log(sies[i], leBounds.offset);
+        Ts(lRho, letrans) = ts_orig;
+        Ps(lRho, letrans) = ps_orig;
+    }
+}
+
 
   eosSafeDestroy(NT, tableHandle, eospacWarn);
 }
