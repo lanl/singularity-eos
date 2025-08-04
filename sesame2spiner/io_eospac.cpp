@@ -352,7 +352,8 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   const bool no_errors = no_errors_tofre && no_errors_pofrt && no_errors_eofrt;
 
    //need temporary databox's of the appropriate size to interpolate on 
-  DataBox Ts_temp, Ps_temp;
+  DataBox Ts_temp, Ps_temp, Sies_temp;
+    Sies_temp.copyMetaData(Ps);
     Ts_temp.copyMetadata(Ps);
     Ps_temp.copyMetadata(Ps);
 
@@ -375,12 +376,13 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       dTde(j, i) = sieToSesame(temperatureFromSesame(DTDE_R[iflat]));
       dEdRho(j, i) = densityToSesame(sieFromSesame(DEDR_T[iflat]));
       mask(j, i) = no_errors ? 1.0 : 0.0;
+      Sies_temp(j, i) = sieFromSesame(sie_pack[iflat]); //unsure if we ant to loop over this or the sies, and rhos from bounds?
       iflat++;
     }
    }
 /* get accurate values off of untransformed space. Map to transformed energy, so when look up is performed
    on the transofrmed energy (interprhosie) it returns the correct value. The bounds were created from 
-   transformed space as well.
+   transformed space as well. do we use sies and rhos? or maybe the sie_temp dataebox?
     */
   for (size_t j = 0; j < rhos.size(); j++) {
     for (size_t i = 0; i < sies.size(); i++) {
