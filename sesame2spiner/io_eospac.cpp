@@ -169,8 +169,8 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
                 << leBounds << std::endl;
     
 //end bound
-    lRhoOffset_ = lRhoBounds.offset;
-    lEOffset_ = leBounds.offset;
+    lRhoOffset = lRhoBounds.offset;
+    lEOffset = leBounds.offset;
 
     constexpr int NT = 1;
     EOS_INTEGER tableHandle[NT];
@@ -188,7 +188,7 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
     // Interpolatable vars
     std::vector<EOS_REAL> sie_pack(rhos.size());
     std::vector<EOS_REAL> DEDR_T(rhos.size()), dy(rhos.size()); // for derivatives and dy
-    DataBox sieCold;
+    DataBox sieCold_, T_, dTde_, dy_;
     sieCold.resize(rhos.size());
     sieCold.setRange(0, lRhoBounds.grid);
 
@@ -204,7 +204,7 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
         "sieCold", eospacWarn);
 
     for (std::size_t i = 0; i < rhos.size(); ++i){
-        sieCold(i) = sieFromSesame(sie_pack[i]);  
+        sieCold_(i) = sieFromSesame(sie_pack[i]);  
     }
 
     EOS_INTEGER tableHandleCV[NT];
@@ -220,7 +220,6 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
         eospacMonotonicity::none, false, apply_splitting, false);
     eospacTofRE = tableHandleCV[0];
 
-    DataBox T, dTde, dy;
     T.resize(rhos.size(), sies.size());
     T.setRange(0, leBounds.grid);
     T.setRange(1, lRhoBounds.grid);
@@ -261,9 +260,9 @@ TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) 
         }
     }
 
-    sieCold_ = sieCold;
-    T_ = T;
-    dTde_ = dTde;
+    sieCold = sieCold_;
+    T = T_;
+    dTde = dTde_;
 
     eosSafeDestroy(NT, tableHandle, eospacWarn);
 };
@@ -319,9 +318,9 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   mask.copyMetadata(Ps);
 
   using namespace singularity;
-
+//create transformer and data struct needed.
   TransformDataContainer data(matid, eospacWarn);
-  ShiftTransform<TransformDataContainer> shift(data);
+  AllTransform<TransformDataContainer> shift(data);
 
   // Interpolatable vars
   EOS_INTEGER nXYPairs = rhos.size() * sies.size();
@@ -350,8 +349,8 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
 
     
   DataBox Ts_temp, Ps_temp;
-    Ts_temp.matadata(Ps);
-    Ps_temp.metadata(Ps);
+    Ts_temp.copyMetadata(Ps);
+    Ps_temp.copyMetadata(Ps);
 
   // Loop by hand to ensure ordering ordering of independent
   // variables is under our control.
@@ -379,7 +378,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   for (size_t j = 0; j < rhos.size(); j++) {
     for (size_t i = 0; i < sies.size(); i++) {
         Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
-        Real lE = spiner_common::to_log(shift.inverse(sies[i]), rhos[j]), leBounds.offset);
+        Real lE = spiner_common::to_log(shift.inverse(sies[i], rhos[j]), leBounds.offset);
         Real ts_orig = Ts_temp.interpToReal(lRho, lE);
         Real ps_orig = Ps_temp.interpToReal(lRho, lE);
         Real letrans = spiner_common::to_log(sies[i], leBounds.offset);
