@@ -378,12 +378,14 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       iflat++;
     }
    }
-// get accurate values off of untransformed space. Map to transformed energy, so when look up is performed
-// on the transofrmed energy (interprhosie) it returns the correct value. 
+/* get accurate values off of untransformed space. Map to transformed energy, so when look up is performed
+   on the transofrmed energy (interprhosie) it returns the correct value. The bounds were created from 
+   transformed space as well.
+    */
   for (size_t j = 0; j < rhos.size(); j++) {
     for (size_t i = 0; i < sies.size(); i++) {
         Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
-        Real lE = spiner_common::to_log(shift.inverse(sies[i], rhos[j]), leBounds.offset);
+        Real lE = spiner_common::to_log(shift.inverse(sies[i], rhos[j]), shift.inverse.leBounds.offset);
         Real ts_orig = Ts_temp.interpToReal(lRho, lE);
         Real ps_orig = Ps_temp.interpToReal(lRho, lE);
         Real letrans = spiner_common::to_log(sies[i], leBounds.offset);
