@@ -353,7 +353,7 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
 
    //need temporary databox's of the appropriate size to interpolate on 
   DataBox Ts_temp, Ps_temp, Sies_temp;
-    Sies_temp.copyMetaData(Ps);
+    Sies_temp.copyMetaData(Ps); //might not be needed, unsure?
     Ts_temp.copyMetadata(Ps);
     Ps_temp.copyMetadata(Ps);
 
