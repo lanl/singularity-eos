@@ -223,7 +223,7 @@ in the future.
     eosSafeLoad(NT, matid, tableTypeCV, tableHandleCV, names, eospacWarn, false, 0.0,
         eospacMonotonicity::none, false, apply_splitting, false);
     eospacTofRE = tableHandleCV[0];
-
+//unsure if i can use the copyMetaData here?
     T.resize(rhos.size(), sies.size());
     T.setRange(0, leBounds.grid);
     T.setRange(1, lRhoBounds.grid);
