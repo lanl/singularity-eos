@@ -95,12 +95,12 @@ void modifyNames(TableSplit split, std::vector<std::string> &names);
 } // namespace impl
 
 //allows other files to acces this struct
-struct TransformDataContainer {
-    DataBox sieCold, T, dtde;
-    Real lRhoOffset, lEOffset;
+struct ColdCurveData {
+    DataBox sieCold, T, dTdE;
+    Real lRhoOffset, leOffset;
 
-    TransformDataContainer(int matid, Verbosity eospacWarn = Verbosity::Warning);
+    ColdCurveData(int matid, const Bounds& lRhoBounds, const Bounds& leBounds,
+        Verbosity eospacWarn = Verbosity::Warning); 
 };
-
 
 #endif // _SESAME2SPINER_IO_EOSPAC_HPP_
