@@ -31,7 +31,7 @@ ColdCurveData::ColdCurveData(int matid, const Bounds& lRhoBounds, const Bounds& 
 
     constexpr int NT = 1;
     EOS_INTEGER tableHandle[NT];
-    EOS_INTEGER tableType[NT] = {"EOS_Uc_D"};
+    EOS_INTEGER tableType[NT] = {EOS_Uc_D};
     EOS_INTEGER eospacSieColdCurve, eospacTofRE;
 
     // Create rho and T vectors
@@ -46,8 +46,8 @@ ColdCurveData::ColdCurveData(int matid, const Bounds& lRhoBounds, const Bounds& 
     std::vector<EOS_REAL> sie_pack(rhos.size());
     std::vector<EOS_REAL> DEDR_T(rhos.size()), dy(rhos.size()); // for derivatives and dy
     DataBox sieCold_;
-    sieCold.resize(rhos.size());
-    sieCold.setRange(0, lRhoBounds.grid);
+    sieCold_.resize(rhos.size());
+    sieCold_.setRange(0, lRhoBounds.grid);
 
     for (std::size_t i = 0; i < rhos.size(); ++i){
     rhos[i] = densityToSesame(rhos[i]);
@@ -61,21 +61,14 @@ ColdCurveData::ColdCurveData(int matid, const Bounds& lRhoBounds, const Bounds& 
         "sieCold", eospacWarn);
 
     for (std::size_t i = 0; i < rhos.size(); ++i)
-        sieCold(i) = sieFromSesame(sie_pack[i]);  
+        sieCold_(i) = sieFromSesame(sie_pack[i]);  
 
     EOS_INTEGER tableHandleCV[NT];
-    EOS_INTEGER tableTypeCV[NT] = { impl::select(split, EOS_T_DUt, EOS_T_DUe, EOS_T_DUc);}
+    EOS_INTEGER tableTypeCV[NT] = {EOS_T_DUt}
     //Load DTDE and T databoxes
-    EospacWrapper::eospacSplit apply_splitting =
-        (split == TableSplit::Total) ? eospacSplit::none : eospacSplit::splitNumProp;
-
-    std::vector<std::string> names = ["EOS_T_DUt"];
-    impl::modifyNames(split, names);
-
-    eosSafeLoad(NT, matid, tableTypeCV, tableHandleCV, names, eospacWarn, false, 0.0,
-        eospacMonotonicity::none, false, apply_splitting, false);
-    eospacTofRE = tableHandleCV[0];
-
+   
+    eosSafeLoad(NT, matid, tableTypeCV, tableHandleCV, {"EOS_T_DUt"}, eospacWarn);
+    eospacTofRE = tableHandleCV[0]
     DataBox T_, dTde_, dy_;
     T_.resize(rhos.size(), sies.size());
     T_.setRange(0, leBounds.grid);
@@ -117,7 +110,7 @@ ColdCurveData::ColdCurveData(int matid, const Bounds& lRhoBounds, const Bounds& 
         }
     }
 
-    sieCold = sieCold;
+    sieCold = sieCold_;
     T = T;
     dTde = dTdE_;
 
