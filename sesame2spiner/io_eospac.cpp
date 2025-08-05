@@ -24,161 +24,14 @@
 #include "io_eospac.hpp"
 
 
-TransformDataContainer::TransformDataContainer(int matid, Verbosity eospacWarn) {
+ColdCurveData::ColdCurveData(int matid, const Bounds& lRhoBounds, const Bounds& leBounds,
+    Verbosity eospacWarn)
+    : lRhoOffset(lRhoBounds.offset), lEOffset(leBounds.offset) {
     using namespace EospacWrapper;
-    SesameMetaData metadata;
-    eosGetMetadata(matid, metadata, Verbosity::Debug);
-    Bounds lRhoBounds, lTBounds, leBounds;
-    Params params;
 
-/*start odinary bounds since tranform is used in getmatbounds. We need to ensure bounds for 
-databoxes are the same as original. Must obtain same metadata. if this is implemented,
-i should be able to use this struct for ALL transforms in all files. I created params and kept
-all of the bounds logic incase we want to have this struct include the params from .Dat files 
-in the future.
-*/
-
-    constexpr Real TINY = std::numeric_limits<Real>::epsilon();
-      auto TinyShift = [=](Real val, int sign) {
-        Real shift = std::abs(std::min(10 * val * TINY, TINY));
-        return val + sign * shift;
-      };
-      Real rhoMin = params.Get("rhomin", TinyShift(metadata.rhoMin, 1));
-      Real rhoMax = params.Get("rhomax", metadata.rhoMax);
-      Real TMin = params.Get("Tmin", TinyShift(metadata.TMin, 1));
-      Real TMax = params.Get("Tmax", metadata.TMax);
-      Real sieMin = params.Get("siemin", TinyShift(metadata.sieMin, 1));
-      Real sieMax = params.Get("siemax", metadata.sieMax);
-    
-      Real shrinklRhoBounds = params.Get("shrinklRhoBounds", 0.);
-      Real shrinklTBounds = params.Get("shrinklTBounds", 0.);
-      Real shrinkleBounds = params.Get("shrinkleBounds", 0.);
-    
-      shrinklRhoBounds = std::min(1., std::max(shrinklRhoBounds, 0.));
-      shrinklTBounds = std::min(1., std::max(shrinklTBounds, 0.));
-      shrinkleBounds = std::min(1., std::max(shrinkleBounds, 0.));
-    
-      if (shrinklRhoBounds > 0 && (params.Contains("rhomin") || params.Contains("rhomax"))) {
-        std::cerr << "WARNING [" << matid << "]: "
-                  << "shrinklRhoBounds > 0 and rhomin or rhomax set" << std::endl;
-      }
-      if (shrinklTBounds > 0 && (params.Contains("Tmin") || params.Contains("Tmax"))) {
-        std::cerr << "WARNING [" << matid << "]: "
-                  << "shrinklTBounds > 0 and Tmin or Tmax set" << std::endl;
-      }
-      if (shrinkleBounds > 0 && (params.Contains("siemin") || params.Contains("siemax"))) {
-        std::cerr << "WARNING [" << matid << "]: "
-                  << "shrinkleBounds > 0 and siemin or siemax set" << std::endl;
-      }
-    
-      int ppdRho = params.Get("numrho/decade", PPD_DEFAULT_RHO);
-      int numRhoDefault = Bounds::getNumPointsFromPPD(rhoMin, rhoMax, ppdRho);
-    
-      int ppdT = params.Get("numT/decade", PPD_DEFAULT_T);
-      int numTDefault = Bounds::getNumPointsFromPPD(TMin, TMax, ppdT);
-    
-      int ppdSie = params.Get("numSie/decade", PPD_DEFAULT_T);
-      int numSieDefault = Bounds::getNumPointsFromPPD(sieMin, sieMax, ppdSie);
-    
-      int numRho = params.Get("numrho", numRhoDefault);
-      int numT = params.Get("numT", numTDefault);
-      int numSie = params.Get("numsie", numSieDefault);
-    
-      constexpr Real TAnchor = 298.15;
-      Real rhoAnchor = params.Get("rho_fine_center", metadata.normalDensity);
-      if (std::isnan(rhoAnchor) || rhoAnchor <= 0 || rhoAnchor > 1e8) {
-        std::cerr << "WARNING [" << matid << "] "
-                  << "normal density ill defined. Setting it to a sensible default."
-                  << std::endl;
-        rhoAnchor = 1;
-      }
-    
-      // Piecewise grids stuff
-      const bool piecewiseRho = params.Get("piecewiseRho", true);
-      const bool piecewiseT = params.Get("piecewiseT", true);
-      const bool piecewiseSie = params.Get("piecewiseSie", true);
-    
-      const Real ppd_factor_rho_lo =
-          params.Get("rhoCoarseFactorLo", COARSE_FACTOR_DEFAULT_RHO_LO);
-      const Real ppd_factor_rho_hi =
-          params.Get("rhoCoarseFactorHi", COARSE_FACTOR_DEFAULT_RHO_HI);
-      const Real ppd_factor_T = params.Get("TCoarseFactor", COARSE_FACTOR_DEFAULT_T);
-      const Real ppd_factor_sie = params.Get("sieCoarseFactor", COARSE_FACTOR_DEFAULT_T);
-      const Real rho_fine_diameter =
-          params.Get("rhoFineDiameterDecades", RHO_FINE_DIAMETER_DEFAULT);
-      const Real TSplitPoint = params.Get("TSplitPoint", T_SPLIT_POINT_DEFAULT);
-      const Real rho_fine_center = rhoAnchor;
-    
-      // These override the rho center/diameter settings
-      Real rho_fine_min = params.Get("rhoFineMin", -1);
-      Real rho_fine_max = params.Get("rhoFineMax", -1);
-      if (rho_fine_min * rho_fine_max < 0) {
-        std::cerr << "WARNING [" << matid << "]: "
-                  << "Either rhoFineMin or rhoFineMax is set while the other is still unset."
-                  << " Both must be set to be sensible. Ignoring." << std::endl;
-        rho_fine_min = rho_fine_max = -1;
-      }
-      if (rhoMin < STRICTLY_POS_MIN_RHO) rhoMin = STRICTLY_POS_MIN_RHO;
-      if (TMin < STRICTLY_POS_MIN_T) TMin = STRICTLY_POS_MIN_T;
-    
-      if (piecewiseRho) {
-        if (rho_fine_min > 0) {
-          lRhoBounds = Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center,
-                              rho_fine_min, rho_fine_max, ppdRho, ppd_factor_rho_lo,
-                              ppd_factor_rho_hi, true, shrinklRhoBounds);
-        } else {
-          lRhoBounds =
-              Bounds(Bounds::ThreeGrids(), rhoMin, rhoMax, rho_fine_center, rho_fine_diameter,
-                     ppdRho, ppd_factor_rho_lo, ppd_factor_rho_hi, true, shrinklRhoBounds);
-        }
-      } else {
-        lRhoBounds = Bounds(rhoMin, rhoMax, numRho, true, shrinklRhoBounds, rhoAnchor);
-      }
-      if (piecewiseT) {
-        lTBounds = Bounds(Bounds::TwoGrids(), TMin, TMax, TAnchor, TSplitPoint, ppdT,
-                          ppd_factor_T, true, shrinklTBounds);
-      } else {
-        lTBounds = Bounds(TMin, TMax, numT, true, shrinklTBounds, TAnchor);
-      }
-      if (piecewiseSie) {
-        // compute temperature as a reasonable anchor point
-        constexpr int NT = 1;
-        constexpr EOS_INTEGER nXYPairs = 2;
-        EOS_INTEGER tableHandle[NT];
-        EOS_INTEGER tableType[NT] = {EOS_Ut_DT};
-        EOS_REAL rho[2], T[2], sie[2], dx[2], dy[2], sie_transformed[2];
-        {
-          eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Ut_DT"}, Verbosity::Quiet);
-          EOS_INTEGER eospacEofRT = tableHandle[0];
-          rho[0] = rho[1] = densityToSesame(rhoAnchor);
-          T[0] = temperatureToSesame(TAnchor);
-          T[1] = temperatureToSesame(TSplitPoint);
-          eosSafeInterpolate(&eospacEofRT, nXYPairs, rho, T, sie, dx, dy, "EofRT",
-                             Verbosity::Quiet);
-          eosSafeDestroy(NT, tableHandle, Verbosity::Quiet);
-        }    
-          
-        const Real sieAnchor = sie[0];
-        const Real sieSplitPoint = sie[1]; 
-        leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
-                          ppdSie, ppd_factor_sie, true, shrinkleBounds);
-      } else {
-        leBounds = Bounds(sieMin, sieMax, numSie, true, shrinkleBounds);
-      }
-    
-      std::cout << "lRho bounds are\n"
-                << lRhoBounds << "lT bounds are\n"
-                << lTBounds << "lSie bounds are \n"
-                << leBounds << std::endl;
-    //end bounds, beginging data laoding process. store offsets for Transform use
-    
-    lRhoOffset = lRhoBounds.offset;
-    lEOffset = leBounds.offset;
-    DataBox sieCold_, T_, dTde_, dy_;
-    // set up to load dat box for siecold
     constexpr int NT = 1;
     EOS_INTEGER tableHandle[NT];
-    EOS_INTEGER tableType[NT] = {EOS_Uc_D};
+    EOS_INTEGER tableType[NT] = {"EOS_Uc_D"};
     EOS_INTEGER eospacSieColdCurve, eospacTofRE;
 
     // Create rho and T vectors
@@ -192,6 +45,7 @@ in the future.
     // Interpolatable vars
     std::vector<EOS_REAL> sie_pack(rhos.size());
     std::vector<EOS_REAL> DEDR_T(rhos.size()), dy(rhos.size()); // for derivatives and dy
+    DataBox sieCold_;
     sieCold.resize(rhos.size());
     sieCold.setRange(0, lRhoBounds.grid);
 
@@ -206,35 +60,34 @@ in the future.
         sie_pack.data(), DEDR_T.data(), dy.data(),
         "sieCold", eospacWarn);
 
-    for (std::size_t i = 0; i < rhos.size(); ++i){
-        sieCold_(i) = sieFromSesame(sie_pack[i]);  
-    }// end siecold databox loading
+    for (std::size_t i = 0; i < rhos.size(); ++i)
+        sieCold(i) = sieFromSesame(sie_pack[i]);  
 
-    //set up to load for cv databox and T databox, needed for Dividebycv and dividebyT3 transforms
     EOS_INTEGER tableHandleCV[NT];
-    EOS_INTEGER tableTypeCV[NT] = { impl::select(split, EOS_T_DUt, EOS_T_DUe, EOS_T_DUc)};
+    EOS_INTEGER tableTypeCV[NT] = { impl::select(split, EOS_T_DUt, EOS_T_DUe, EOS_T_DUc);}
     //Load DTDE and T databoxes
     EospacWrapper::eospacSplit apply_splitting =
         (split == TableSplit::Total) ? eospacSplit::none : eospacSplit::splitNumProp;
 
-    std::vector<std::string> names = {"EOS_T_DUt"};
+    std::vector<std::string> names = ["EOS_T_DUt"];
     impl::modifyNames(split, names);
 
     eosSafeLoad(NT, matid, tableTypeCV, tableHandleCV, names, eospacWarn, false, 0.0,
         eospacMonotonicity::none, false, apply_splitting, false);
     eospacTofRE = tableHandleCV[0];
-//unsure if i can use the copyMetaData here?
-    T.resize(rhos.size(), sies.size());
-    T.setRange(0, leBounds.grid);
-    T.setRange(1, lRhoBounds.grid);
 
-    dTde.resize(rhos.size(), sies.size());
-    dTde.setRange(0, leBounds.grid);
-    dTde.setRange(1, lRhoBounds.grid);
+    DataBox T_, dTde_, dy_;
+    T_.resize(rhos.size(), sies.size());
+    T_.setRange(0, leBounds.grid);
+    T_.setRange(1, lRhoBounds.grid);
 
-    dy.resize(rhos.size(), sies.size());
-    dy.setRange(0, leBounds.grid);
-    dy.setRange(1, lRhoBounds.grid);
+    dTdE.resize(rhos.size(), sies.size());
+    dTdE_.setRange(0, leBounds.grid);
+    dTdE_.setRange(1, lRhoBounds.grid);
+
+    dy_.resize(rhos.size(), sies.size());
+    dy_.setRange(0, leBounds.grid);
+    dy_.setRange(1, lRhoBounds.grid);
 
     EOS_INTEGER nXYPairs = rhos.size() * sies.size();
 
@@ -258,18 +111,20 @@ in the future.
     for (size_t j = 0; j < rhos.size(); j++) {
         Real rho = densityToSesame(rhos[j]);
         for (size_t i = 0; i < sies.size(); i++) {
-            T(j, i) = temperatureFromSesame(T_pack[iflat]);
-            dTde(j, i) = sieToSesame(temperatureFromSesame(DTDE_R[iflat]));
+            T_(j, i) = temperatureFromSesame(T_pack[iflat]);
+            dTdE_(j, i) = sieToSesame(temperatureFromSesame(DTDE_R[iflat]));
             iflat++;
         }
     }
-// end datatbox loading. save databoxes to struct variables
-    sieCold = sieCold_;
-    T = T_;
-    dTde = dTde_;
+
+    sieCold = sieCold;
+    T = T;
+    dTde = dTdE_;
 
     eosSafeDestroy(NT, tableHandle, eospacWarn);
-};
+}
+
+
 
 
 
@@ -321,10 +176,6 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   dEdRho.copyMetadata(Ps);
   mask.copyMetadata(Ps);
 
-  using namespace singularity;
-//create transformer and data struct needed.
-  TransformDataContainer data(matid, eospacWarn);
-  AllTransform<TransformDataContainer> shift(data);
 
   // Interpolatable vars
   EOS_INTEGER nXYPairs = rhos.size() * sies.size();
@@ -339,6 +190,10 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       iflat++;
     }
   }
+    using namespace singularity;
+
+  ColdCurveData data(matid, lRhoBounds, leBounds);
+  ShiftTransform<ColdCurveData> shift(data);
 
   const bool no_errors_tofre = eosSafeInterpolate(
       &eospacTofRE, nXYPairs, rho_flat.data(), sie_flat.data(), T_pack.data(),
