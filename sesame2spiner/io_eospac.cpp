@@ -190,10 +190,6 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       iflat++;
     }
   }
-    using namespace singularity;
-
-  ColdCurveData data(matid, lRhoBounds, leBounds);
-  ShiftTransform<ColdCurveData> shift(data);
 
   const bool no_errors_tofre = eosSafeInterpolate(
       &eospacTofRE, nXYPairs, rho_flat.data(), sie_flat.data(), T_pack.data(),
@@ -205,6 +201,10 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       &eospacEofRT, nXYPairs, rho_flat.data(), T_pack.data(), sie_pack.data(),
       DEDR_T.data(), DEDT_R.data(), "EofRT", eospacWarn);
   const bool no_errors = no_errors_tofre && no_errors_pofrt && no_errors_eofrt;
+
+    ColdCurveData data(matid, lRhoBounds, leBounds, Verbosity::Quiet);
+      ShiftTransform<ColdCurveData> shift(data);
+    
 
    //need temporary databox's of the appropriate size to interpolate on 
   DataBox Ts_temp, Ps_temp, Sies_temp;
@@ -222,8 +222,8 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       Real bMod =
           getBulkModulus(rho, P_pack[iflat], DPDR_T[iflat], DPDE_R, DEDR_T[iflat]);
       // Fill DataBoxes
-      Ts_temp(j, i) = temperatureFromSesame(T_pack[iflat]);
-      Ps_temp(j, i) = pressureFromSesame(P_pack[iflat]);
+      Ts(j, i) = temperatureFromSesame(T_pack[iflat]);
+      Ps(j, i) = pressureFromSesame(P_pack[iflat]);
       bMods(j, i) = bulkModulusFromSesame(std::max(bMod, 0.0));
       dPdRho(j, i) = pressureFromSesame(DPDR_T[iflat] + DTDR_E[iflat] * DPDT_R[iflat]);
       dPde(j, i) = sieToSesame(pressureFromSesame(DPDT_R[iflat] * DTDE_R[iflat]));
@@ -239,17 +239,17 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
    on the transofrmed energy (interprhosie) it returns the correct value. The bounds were created from 
    transformed space as well. do we use sies and rhos? or maybe the sie_temp dataebox?
     */
-  for (size_t j = 0; j < rhos.size(); j++) {
-    for (size_t i = 0; i < sies.size(); i++) {
-        Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
-        Real lE = spiner_common::to_log(shift.inverse(sies[i], rhos[j]), shift.inverse(leBounds.offset, rho[j]);
-        Real ts_orig = Ts_temp.interpToReal(lRho, lE);
-        Real ps_orig = Ps_temp.interpToReal(lRho, lE);
-        Real letrans = spiner_common::to_log(sies[i], leBounds.offset);
-        Ts(lRho, letrans) = ts_orig;
-        Ps(lRho, letrans) = ps_orig;
-    }
-}
+//  for (size_t j = 0; j < rhos.size(); j++) {
+//    for (size_t i = 0; i < sies.size(); i++) {
+//        Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
+//        Real lE = spiner_common::to_log(shift.inverse(sies[i], rhos[j]), shift.inverse(leBounds.offset, rho[j]);
+//        Real ts_orig = Ts_temp.interpToReal(lRho, lE);
+//        Real ps_orig = Ps_temp.interpToReal(lRho, lE);
+//        Real letrans = spiner_common::to_log(sies[i], leBounds.offset);
+//        Ts(lRho, letrans) = ts_orig;
+//        Ps(lRho, letrans) = ps_orig;
+//    }
+//}
 
 
   eosSafeDestroy(NT, tableHandle, eospacWarn);
