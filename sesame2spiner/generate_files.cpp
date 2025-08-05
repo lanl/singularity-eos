@@ -422,10 +422,10 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
       const Real sieAnchor_temp = sie[0];
       const Real sieSplitPoint_temp = [1];
 
-      Bounds leBounds_tranform = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
+      Bounds leBounds_original = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
           ppdSie, ppd_factor_sie, true, shrinkleBounds);
       
-       ColdCurveData data(matid, lRhoBounds, leBounds, Verbosity::Quiet);
+       ColdCurveData data(matid, lRhoBounds, leBounds_original, Verbosity::Quiet);
        ShiftTransform<ColdCurveData> shift(data);
 
       //std::vector<Real> sie_transformed(nXYPairs);
