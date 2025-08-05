@@ -304,10 +304,15 @@ class PTESolverBase {
       // fraction that sums to 1
       return FAIL;
     }
+
     // start normalized
     NormalizeVfrac();
 
-    // JMM: Formal maximum number of iterations required is nmat
+    // JMM: Idea here is keep a running tally of how much volume we've
+    // had to subtract from a given material to keep vfrac <
+    // vfrac_max. We will distribute this excess volume accross all
+    // materials that haven't hit their max yet, and then
+    // repeat. Formal maximum number of iterations required is nmat
     for (std::size_t niter = 0; niter < nmat; ++niter) {
       Real remaining_vfrac = 0;
       std::size_t n_uncapped_materials = nmat;
