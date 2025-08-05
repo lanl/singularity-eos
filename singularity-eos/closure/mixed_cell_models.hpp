@@ -276,6 +276,7 @@ class PTESolverBase {
   bool SetVfracFromT(const Real T) {
     constexpr bool FAIL = true;
     constexpr bool SUCCESS = false;
+    constexpr Real min_dv = 1e-12;
 
     // TODO(JMM): Stash this somewhere rather than recomputing it?
     auto get_vmax = [=](const std::size_t m) {
@@ -320,13 +321,13 @@ class PTESolverBase {
         const Real dv = get_dv(m);
         vfrac[m] -= dv;
         remaining_vfrac += dv;
-        n_uncapped_materials -= (dv > 0);
+        n_uncapped_materials -= (dv > min_dv);
       }
-      if (std::abs(remaining_vfrac) < 1e-12) {
+      if (std::abs(remaining_vfrac) < min_dv) {
         break;
       }
       for (std::size_t m = 0; m < nmat; ++m) {
-        const bool uncapped = ((get_vmax(m) - vfrac[m]) > 1e-12);
+        const bool uncapped = ((get_vmax(m) - vfrac[m]) > min_dv);
         if (uncapped) {
           vfrac[m] += robust::ratio(remaining_vfrac, n_uncapped_materials);
         }
