@@ -164,7 +164,7 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
 // TODO(JMM): Clean this up to account for these two differetn APIs
 inline bool RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alpha_guess1,
                        Real alpha_guess2, Real sietot, Real Tguess, Real alpha1_true,
-                       Real alpha2_true, Rela Ttrue, Real Ptrue) {
+                       Real alpha2_true, Real Ttrue, Real Ptrue) {
   constexpr int NT = 1;
   constexpr int NEOS = 2;
 
@@ -397,7 +397,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
 
       bool success =
           RunPTE2Mat(al_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
-                     sietot, Tguess, alpha1_ture, alpha2_true, Ttrue, Ptrue);
+                     sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue);
 
       THEN("The solver converges") { REQUIRE(success); }
     }
@@ -409,6 +409,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
   }
 
   GIVEN("A cell containing a difficult mixture with a tabulated and ideal gas EOS") {
+    const std::string eos_file = "../materials.sp5";
     constexpr Real gm1 = 0.666666666666667;
     constexpr Real Cv = 3.1e7;
     EOS He_eos_h = IdealGas(gm1, Cv);
@@ -433,7 +434,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
 
       int nsuccess =
           RunPTE2Mat(al_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
-                     sietot, Tguess, alpha1_ture, alpha2_true, Ttrue, Ptrue);
+                     sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue);
 
       THEN("The solver converges") { REQUIRE(success); }
     }
