@@ -33,7 +33,6 @@
 #include <ports-of-call/portability.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/sp5/singularity_eos_sp5.hpp>
-#include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
 #include <spiner/sp5.hpp>
@@ -243,9 +242,9 @@ herr_t saveAllMaterials(const std::string &savename,
 herr_t saveTablesRhoSie(hid_t loc, int matid, TableSplit split, const Bounds &lRhoBounds,
                         const Bounds &leBounds, Verbosity eospacWarn) {
   herr_t status = 0;
-  DataBox P, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, sie_shift, mask;
+  DataBox P, T, bMod, dPdRho, dPdE, dTdRho, dTdE, dEdRho, mask;
   eosDataOfRhoSie(matid, split, lRhoBounds, leBounds, P, T, bMod, dPdRho, dPdE, dTdRho,
-                  dTdE, dEdRho, sie_shift, mask, eospacWarn);
+                  dTdE, dEdRho, mask, eospacWarn);
   status += P.saveHDF(loc, SP5::Fields::P);
   status += T.saveHDF(loc, SP5::Fields::T);
   status += bMod.saveHDF(loc, SP5::Fields::bMod);
@@ -254,7 +253,6 @@ herr_t saveTablesRhoSie(hid_t loc, int matid, TableSplit split, const Bounds &lR
   status += dTdRho.saveHDF(loc, SP5::Fields::dTdRho);
   status += dTdE.saveHDF(loc, SP5::Fields::dTdE);
   status += dEdRho.saveHDF(loc, SP5::Fields::dEdRho);
-  //status += sie_shift.saveHDF(loc, SP5::Fields::sie);
   // currently unused
   // status += mask.saveHDF(loc, SP5::Fields::mask);
   return status;
@@ -408,44 +406,19 @@ void getMatBounds(int i, int matid, const SesameMetadata &metadata, const Params
     constexpr EOS_INTEGER nXYPairs = 2;
     EOS_INTEGER tableHandle[NT];
     EOS_INTEGER tableType[NT] = {EOS_Ut_DT};
-    EOS_REAL rho[2], T[2], sie[2], dx[2], dy[2], sie_transformed[2];
+    EOS_REAL rho[2], T[2], sie[2], dx[2], dy[2];
     {
       eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_Ut_DT"}, Verbosity::Quiet);
       EOS_INTEGER eospacEofRT = tableHandle[0];
       rho[0] = rho[1] = densityToSesame(rhoAnchor);
       T[0] = temperatureToSesame(TAnchor);
       T[1] = temperatureToSesame(TSplitPoint);
-
-     //i know this is far from ideal, as we are making mutiple un needed data boxes. I have a branch working on creating just the siecold box. but this start builds.
-      DataBox P_cold, sie_cold, dPdRho_cold, dEdRho_cold, bMod_cold, mask_cold;
-      eosColdCurves(matid, lRhoBounds, P_cold, sie_cold, dPdRho_cold, dEdRho_cold,
-      bMod_cold, mask_cold, Verbosity::Quiet);
-      
-      using namespace singularity;
-     
-
-      struct ColdCurveData { DataBox sieCold; Real lRhoOffset;};
-      ColdCurveData data;
-      data.lRhoOffset = lRhoBounds.offset;
-      data.sieCold = sie_cold;
-      ShiftTransform<ColdCurveData> shift(data);
-
       eosSafeInterpolate(&eospacEofRT, nXYPairs, rho, T, sie, dx, dy, "EofRT",
                          Verbosity::Quiet);
-    
-
-      //std::vector<Real> sie_transformed(nXYPairs);
-      for (int i = 0; i < nXYPairs; ++i) {
-        Real sie_phys = sieToSesame(sie[i]);
-        Real rho_phys = densityToSesame(rho[i]);
-        sie_transformed[i] = shift.transform(sie_phys, rho_phys);
-    }
-     
       eosSafeDestroy(NT, tableHandle, Verbosity::Quiet);
     }
-
-    const Real sieAnchor = sie_transformed[0];
-    const Real sieSplitPoint = sie_transformed[1];
+    const Real sieAnchor = sie[0];
+    const Real sieSplitPoint = sie[1];
     leBounds = Bounds(Bounds::TwoGrids(), sieMin, sieMax, sieAnchor, sieSplitPoint,
                       ppdSie, ppd_factor_sie, true, shrinkleBounds);
   } else {

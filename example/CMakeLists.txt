@@ -15,15 +15,6 @@ add_executable(get_sound_speed_press get_sound_speed_press.cpp)
 target_link_libraries(get_sound_speed_press
                       PRIVATE singularity-eos::singularity-eos)
 
-add_executable(Benchmark Benchmark.cpp)
-target_link_libraries(Benchmark PRIVATE singularity-eos::singularity-eos
-                                        stdc++fs)
-
-if(SINGULARITY_USE_KOKKOS)
-  add_executable(Benchmark_kokkos Benchmark_kokkos.cpp)
-  target_link_libraries(Benchmark_kokkos
-                        PRIVATE singularity-eos::singularity-eos stdc++fs)
-endif()
 
 if(SINGULARITY_USE_SPINER_WITH_HDF5)
   add_executable(eos_grid eos_grid.cpp)
@@ -41,4 +32,15 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_SPINER_WITH_HDF5)
   add_executable(get_spiner_bounds get_spiner_bounds.cpp)
   target_link_libraries(get_spiner_bounds
                         PRIVATE singularity-eos::singularity-eos)
-endif()
+
+
+  add_executable(Benchmark Benchmark.cpp)
+  target_link_libraries(Benchmark PRIVATE singularity-eos::singularity-eos
+                                        stdc++fs)
+
+if(SINGULARITY_USE_KOKKOS)
+  add_executable(Benchmark_kokkos Benchmark_kokkos.cpp)
+  target_link_libraries(Benchmark_kokkos
+                        PRIVATE singularity-eos::singularity-eos stdc++fs)
+endif()# //SINGULARITY_USE_KOKKOS
+endif()# //SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_SPINER_WITH_HDF5

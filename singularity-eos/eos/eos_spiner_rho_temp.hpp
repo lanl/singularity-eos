@@ -73,9 +73,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   using SpinerTricks = table_utils::SpinerTricks<SpinerEOSDependsRhoT>;
 
  public:
-  void Root_Thresh_Print() const {
-    std::cout << "ROOT_THRESH = " << ROOT_THRESH << "\n"; // written for test_root_thresh.cpp
-  }
 
   using Grid_t = spiner_common::Grid_t;
   using DataBox = spiner_common::DataBox;

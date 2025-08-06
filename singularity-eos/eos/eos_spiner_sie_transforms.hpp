@@ -21,6 +21,9 @@
 #include <singularity-eos/eos/eos_spiner_common.hpp>
 
 namespace singularity {
+namespace transformations {
+
+
 
 template <typename Data = void>
 struct NullTransform {
@@ -204,7 +207,7 @@ public:
 
 
 
-
+} // namespce transforms
 } // namespace singularity
 
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5

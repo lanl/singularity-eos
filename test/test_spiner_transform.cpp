@@ -25,6 +25,7 @@
 #ifdef SINGULARITY_USE_SPINER
 
 using namespace singularity;
+using namespace transformations;
 using spiner_common::DataBox;
 using spiner_common::Grid_t;
 using spiner_common::to_log;

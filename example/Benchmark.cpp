@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
 
         // === Load EOS Models ===
         SpinerEOSDependsRhoT eos_rt(sp5file, matid);
-        SpinerEOSDependsRhoSieTransformable<ShiftTransform> eos_rs(sp5file, matid); //eventually make it SpinerEOSDependsRhoSie<NullTransfom>, for example
+        SpinerEOSDependsRhoSie eos_rs(sp5file, matid); //eventually make it SpinerEOSDependsRhoSie<NullTransfom>, for example
 	EOSPAC eos_ref(matid); 
 
         //These vectors will store the compute time for each model for the 20 trials

@@ -58,7 +58,7 @@
 namespace singularity {
 
 using namespace eos_base;
-
+using namespace transformations;
 /*
   TODO(JMM): Extrapolation Strategy
   ----------------------------------

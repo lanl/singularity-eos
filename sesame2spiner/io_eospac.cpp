@@ -20,30 +20,15 @@
 #include <regex>
 
 #include <eospac-wrapper/eospac_wrapper.hpp>
-#include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
+
 #include "io_eospac.hpp"
 
 // TODO: more error checking of bounds?
 void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds,
                      const Bounds &leBounds, DataBox &Ps, DataBox &Ts, DataBox &bMods,
                      DataBox &dPdRho, DataBox &dPde, DataBox &dTdRho, DataBox &dTde,
-                     DataBox &dEdRho, DataBox &sie_shift, DataBox &mask, Verbosity eospacWarn) {
+                     DataBox &dEdRho, DataBox &mask, Verbosity eospacWarn) {
   using namespace EospacWrapper;
-
-
-      DataBox P_cold, sie_cold, dPdRho_cold, dEdRho_cold, bMod_cold, mask_cold;
-      eosColdCurves(matid, lRhoBounds, P_cold, sie_cold, dPdRho_cold, dEdRho_cold,
-      bMod_cold, mask_cold, Verbosity::Quiet);
-
-
-      using namespace singularity;
-
-
-      struct ColdCurveData { DataBox sieCold; Real lRhoOffset;};
-      ColdCurveData data;
-      data.lRhoOffset = lRhoBounds.offset;
-      data.sieCold = sie_cold;
-      ShiftTransform<ColdCurveData> shift(data);
 
   constexpr int NT = 3;
   EOS_INTEGER tableHandle[NT];
@@ -81,7 +66,6 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   dTdRho.copyMetadata(Ps);
   dTde.copyMetadata(Ps);
   dEdRho.copyMetadata(Ps);
-  sie_shift.copyMetadata(Ps);
   mask.copyMetadata(Ps);
 
   // Interpolatable vars
@@ -93,11 +77,10 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
   for (std::size_t j = 0; j < rhos.size(); ++j) {
     for (std::size_t i = 0; i < sies.size(); ++i) {
       rho_flat[iflat] = densityToSesame(rhos[j]);
-      sie_flat[iflat] = sieToSesame(shift.inverse(sies[i],rhos[j]));
+      sie_flat[iflat] = sieToSesame(sies[i]);
       iflat++;
     }
   }
-
   const bool no_errors_tofre = eosSafeInterpolate(
       &eospacTofRE, nXYPairs, rho_flat.data(), sie_flat.data(), T_pack.data(),
       DTDR_E.data(), DTDE_R.data(), "TofRE", eospacWarn);
@@ -109,12 +92,6 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       DEDR_T.data(), DEDT_R.data(), "EofRT", eospacWarn);
   const bool no_errors = no_errors_tofre && no_errors_pofrt && no_errors_eofrt;
 
-
- DataBox Ts_temp, Ps_temp, Sies_temp;
-    Sies_temp.copyMetadata(Ps); //might not be needed, unsure?
-    Ts_temp.copyMetadata(Ps);
-    Ps_temp.copyMetadata(Ps);
-
   // Loop by hand to ensure ordering ordering of independent
   // variables is under our control.
   iflat = 0;
@@ -125,32 +102,18 @@ void eosDataOfRhoSie(int matid, const TableSplit split, const Bounds &lRhoBounds
       Real bMod =
           getBulkModulus(rho, P_pack[iflat], DPDR_T[iflat], DPDE_R, DEDR_T[iflat]);
       // Fill DataBoxes
-      Ts_temp(j, i) = temperatureFromSesame(T_pack[iflat]);
-      Ps_temp(j, i) = pressureFromSesame(P_pack[iflat]);
+      Ts(j, i) = temperatureFromSesame(T_pack[iflat]);
+      Ps(j, i) = pressureFromSesame(P_pack[iflat]);
       bMods(j, i) = bulkModulusFromSesame(std::max(bMod, 0.0));
       dPdRho(j, i) = pressureFromSesame(DPDR_T[iflat] + DTDR_E[iflat] * DPDT_R[iflat]);
       dPde(j, i) = sieToSesame(pressureFromSesame(DPDT_R[iflat] * DTDE_R[iflat]));
       dTdRho(j, i) = temperatureFromSesame(DTDR_E[iflat]);
       dTde(j, i) = sieToSesame(temperatureFromSesame(DTDE_R[iflat]));
       dEdRho(j, i) = densityToSesame(sieFromSesame(DEDR_T[iflat]));
-      sie_shift(j, i) = sieFromSesame(sie_pack[iflat]);
       mask(j, i) = no_errors ? 1.0 : 0.0;
       iflat++;
     }
   }
-
-   for (size_t j = 0; j < rhos.size(); j++) {
-    for (size_t i = 0; i < sies.size(); i++) {
-        Real lRho = spiner_common::to_log(rhos[j], lRhoBounds.offset);
-        Real lE = spiner_common::to_log(shift.inverse(sies[i], rhos[j]), leBounds.offset);
-        Real ts_orig = Ts_temp.interpToReal(lRho, lE);
-        Real ps_orig = Ps_temp.interpToReal(lRho, lE);
-        Real letrans = spiner_common::to_log(sies[i], leBounds.offset);
-        Ts(lRho, letrans) = ts_orig;
-        Ps(lRho, letrans) = ps_orig;
-    }
-}
-
 
   eosSafeDestroy(NT, tableHandle, eospacWarn);
 }
@@ -383,4 +346,4 @@ void modifyNames(TableSplit split, std::vector<std::string> &names) {
     }
   }
 }
-} // namespace impl
+} // namespace impl // namespace impl

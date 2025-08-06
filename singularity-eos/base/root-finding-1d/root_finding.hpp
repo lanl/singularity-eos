@@ -41,6 +41,7 @@ constexpr const int BISECT_NITER_MAX{1000};
 constexpr const int BISECT_REG_MAX{1000};
 constexpr const int NEWTON_RAPHSON_NITER_MAX{100};
 enum class Status { SUCCESS = 0, FAIL = 1 };
+
 /*
   // TODO: Something like this would be nice
   friend std::ostream& operator<< (std::ostream& os, const RootCounts& c) {
@@ -149,7 +150,6 @@ PORTABLE_INLINE_FUNCTION bool set_bracket(const T &f, Real &a, const Real guess,
   return false;
 }
 
-
 // solves for f(x,params) - ytarget = 0
 template <typename T>
 PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
@@ -220,7 +220,6 @@ PORTABLE_INLINE_FUNCTION Status regula_falsi(const T &f, const Real ytarget,
     }
     iteration_count++;
   }
-
   auto status = Status::SUCCESS;
   if (iteration_count == max_iter) {
     if (verbose) {
