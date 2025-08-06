@@ -121,7 +121,7 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
   // view of matrix
   Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
   // view of RHS
-  vec_t B(b, n);
+  Kokkos::View<Real **, Lrgt, Unmgd> B(b, n, 1);
   // view of reflectors
   vec_t t(scr, n);
   // view of workspace

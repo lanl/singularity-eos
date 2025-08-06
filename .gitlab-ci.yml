@@ -102,6 +102,24 @@ openmpi_cuda_gcc_volta:
     SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
     SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
 
+openmpi_cuda_clang_ampere:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: openmpi-cuda-clang-ampere
+    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p shared-gpu-ampere"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
+
+openmpi_cuda_clang_volta:
+  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
+  needs:
+   - prereq_offline_deps
+  variables:
+    SPACK_ENV_NAME: openmpi-cuda-clang-volta
+    SCHEDULER_PARAMETERS: "-N 1 --qos=debug -p volta-x86 -C cpu_family:haswell"
+    SUBMIT_TO_CDASH: "${ENABLE_CDASH}"
+
 # currently disabled due to very long compilation times
 #openmpi_fortran_cuda_gcc_ampere:
 #  extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
