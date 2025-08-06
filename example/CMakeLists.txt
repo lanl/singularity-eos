@@ -34,8 +34,8 @@ if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_SPINER_WITH_HDF5)
                         PRIVATE singularity-eos::singularity-eos)
 
 
-  add_executable(Benchmark Benchmark.cpp)
-  target_link_libraries(Benchmark PRIVATE singularity-eos::singularity-eos
+  add_executable(Benchmark_spiner Benchmark_spiner.cpp)
+  target_link_libraries(Benchmark_spiner PRIVATE singularity-eos::singularity-eos
                                         stdc++fs)
 
 if(SINGULARITY_USE_KOKKOS)
