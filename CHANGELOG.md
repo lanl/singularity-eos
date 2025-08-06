@@ -7,6 +7,7 @@
 - [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
 
 ### Fixed (Repair bugs, etc)
+- [[PR512]](https://github.com/lanl/singularity-eos/pull/512) Cleanup fortran docs
 - [[PR523]](https://github.com/lanl/singularity-eos/pull/523) Fix reading order in SpinerEOSDependsRhoSie
 - [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Added some robustness checks to the PTE solvers
 - [[PR505]](https://github.com/lanl/singularity-eos/pull/505) rename LogType::TRUE to LogType::DOUBLE
