@@ -301,7 +301,6 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
             u_bulk_out);
         CHECK(pte_converged);
         AND_THEN("The solution satisfies the bulk internal energy constraint") {
-          // NOTE(@pdmullen): The following fails prior to PR401
           const Real u_bulk = ratio(sie_bulk, spvol_bulk);
           const Real u_scale = std::abs(u_bulk);
           const Real u_bulk_scale = ratio(u_bulk, u_scale);
@@ -319,7 +318,6 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
             u_bulk_out);
         CHECK(pte_converged);
         AND_THEN("The solution satisfies the bulk internal energy constraint") {
-          // NOTE(@pdmullen): The following fails prior to PR401
           const Real u_bulk = ratio(sie_bulk, spvol_bulk);
           const Real u_scale = std::abs(u_bulk);
           const Real u_bulk_scale = ratio(u_bulk, u_scale);
