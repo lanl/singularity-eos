@@ -298,9 +298,14 @@ class PTESolverBase {
 
     // Do an initial sweep of volume fractions to account for missing
     // initial guesses
+    // TODO(JMM): I'm not sure it's possible to pass in a missing
+    // initial guess, since then rhobar would be undefined, which
+    // would make the system underconstrained.
     Real vfrac_max_sum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
       const Real vfrac_max = get_vfrac_max(m);
+      // This chooses the smallest allowed density, since vfrac is
+      // inversely proportional to rho.
       if (vfrac[m] <= 0) vfrac[m] = vfrac_max;
       // Tally this to check if a valid non-tension state is possible
       vfrac_max_sum += vfrac_max;
