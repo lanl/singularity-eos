@@ -254,7 +254,7 @@ class SpinerEOSDependsRhoSieTransformable
     printf("%s\n\t%s\n\t%s%i\n", s1, s2, s3, matid_);
     return;
   }
-  PORTABLE_INLINE_FUNCTION const Transformer &getTransformer() const {
+  PORTABLE_INLINE_FUNCTION const Transformer &getSieTransformer() const {
     return transformer_;
   } // getter for tranformation structs
 
@@ -693,7 +693,7 @@ PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoSieTransformable<TransformerT>:
   }
   if (output & thermalqs::temperature) {
 
-    const Real sie_transformed = getTransformer().transform(energy, rho);
+    const Real sie_transformed = transformer_.transform(energy, rho);
 
     lE = to_log(sie_transformed, lEOffset_);
     temp = T_.interpToReal(lRho, lE);

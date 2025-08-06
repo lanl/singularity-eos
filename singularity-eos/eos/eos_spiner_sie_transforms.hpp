@@ -1,3 +1,16 @@
+//------------------------------------------------------------------------------
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// program was produced under U.S. Government contract 89233218CNA000001
+// for Los Alamos National Laboratory (LANL), which is operated by Triad
+// National Security, LLC for the U.S.  Department of Energy/National
+// Nuclear Security Administration. All rights in the program are
+// reserved by Triad National Security, LLC, and the U.S. Department of
+// Energy/National Nuclear Security Administration. The Government is
+// granted for itself and others acting on its behalf a nonexclusive,
+// paid-up, irrevocable worldwide license in this material to reproduce,
+// prepare derivative works, distribute copies to the public, perform
+// publicly and display publicly, and to permit others to do so.
+//------------------------------------------------------------------------------
 #ifndef _SINGULARITY_EOS_EOS_EOS_SPINER_SIE_TRANSFORMS_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_SPINER_SIE_TRANSFORMS_HPP_
 
@@ -22,8 +35,6 @@
 
 namespace singularity {
 namespace transformations {
-
-
 
 template <typename Data = void>
 struct NullTransform {
@@ -73,9 +84,7 @@ struct ShiftTransform {
   }
 };
 
-
-
-//Divide by the heat capacity
+// Divide by the heat capacity
 template<typename Data>
 struct DivideByCvTransform {
   PORTABLE_INLINE_FUNCTION  DivideByCvTransform() = default;
@@ -85,7 +94,8 @@ struct DivideByCvTransform {
 
   private: 
     Data data_;
-    Real min_Cv_ = 1.0e-08;
+    static constexpr Real min_Cv_ = 1.0e-08;
+    static constexpr Real min_iCv_ = 1.0e-08;
 
   public:
     template <typename... Args>
@@ -93,9 +103,9 @@ struct DivideByCvTransform {
     auto transform(Real e, Real rho, Args &&...) const {
         const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
 	const Real lE   = spiner_common::to_log(e, data_.lEOffset);
-        Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
-        Cv = std::max(Cv, min_Cv_);
-        return e / Cv;
+        Real iCv = data_.dTdE.interpToReal(lRho, lE);
+        iCv = std::max(iCv, min_iCv_);
+        return e * iCv;
     }
 
     template <typename... Args>
@@ -109,9 +119,51 @@ struct DivideByCvTransform {
     }
 };
 
+template<typename Data>
+struct ShiftandDivideByCvTransform {
+  PORTABLE_INLINE_FUNCTION  ShiftandDivideByCvTransform() = default;
 
 
-//Divide by T^alpha
+  template <typename DataT_in>
+  PORTABLE_INLINE_FUNCTION ShiftandDivideByCvTransform(const DataT_in &data) : data_(data) {}
+
+  private:
+    Data data_;
+    static constexpr Real min_Cv_ = 1.0e-08;
+    static constexpr Real min_iCv_ = 1.0e-08;
+
+  public:
+    template <typename... Args>
+    PORTABLE_INLINE_FUNCTION
+    auto transform(Real e, Real rho, Args &&...) const {
+        const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+	const Real e_cold = data_.sieCold.interpToReal(lRho);
+        const Real lE   = spiner_common::to_log(e, data_.lEOffset);
+        Real e_coldshift = e - e_cold;
+	Real iCv = data_.dTdE.interpToReal(lRho, lE);
+	iCv = std::max(iCv, min_iCv_);
+	return e_coldshift * iCv;
+
+    }
+
+    template <typename... Args>
+    PORTABLE_INLINE_FUNCTION
+    auto inverse(Real e_transformed, Real rho, Real e_orig, Args &&...) const {
+        const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+        const Real e_cold = data_.sieCold.interpToReal(lRho);
+	const Real lE   = spiner_common::to_log(e_orig, data_.lEOffset);
+        Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
+        Cv = std::max(Cv, min_Cv_);
+        const Real e_inverse_cv = e_transformed * Cv;	
+	return e_inverse_cv + e_cold;
+
+    }
+};
+
+
+
+// TO DO: T table would depend on rho and sie, need to change in order to work
+// Divide by T^alpha
 template<typename Data>
 struct ScaleTransform {
     PORTABLE_INLINE_FUNCTION  ScaleTransform() = default;
@@ -121,7 +173,7 @@ PORTABLE_INLINE_FUNCTION ScaleTransform(const DataT_in &data) : data_(data) {}
 
 private:
     Data data_;
-    Real min_T_ = 1.0e-08; //Good minimum temperature? 
+    static constexpr Real min_T_ = 1.0e-08; //Good minimum temperature? 
 
 public: 
     template <typename... Args>
@@ -143,6 +195,8 @@ public:
     }
 };
 
+// TO DO: Do to T table depending on rho and sie, this transformation does
+// not work as intended
 template<typename Data>
 struct AllTransform {
 PORTABLE_INLINE_FUNCTION  AllTransform() = default;
@@ -154,9 +208,9 @@ PORTABLE_INLINE_FUNCTION AllTransform(const DataT_in &data) : data_(data) {}
 
 private:
     Data data_;
-    Real min_T_ = 1.0e-08; //Good minimum temperature? 
-    Real min_Cv_ = 1.0e-08;
-
+static constexpr Real min_T_ = 1.0e-08; //Good minimum temperature? 
+static constexpr Real min_Cv_ = 1.0e-08;
+static constexpr Real min_iCv_ = 1.0e-08;
 
 public:
     template <typename... Args>
@@ -171,9 +225,9 @@ public:
 
      Real e_transformed = e - e_cold;
      Real lE   = spiner_common::to_log(e_transformed, data_.lEOffset);
-     Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
-     Cv = std::max(Cv, min_Cv_);
-     e_transformed = e_transformed / Cv;
+     Real iCv = data_.dTdE.interpToReal(lRho, lE);
+     iCv = std::max(iCv, min_iCv_);
+     e_transformed = e_transformed * iCv;
 
      return e_transformed / pow(T,3);
      }
@@ -203,11 +257,7 @@ public:
     }
 };
 
-
-
-
-
-} // namespce transforms
+} // namespce transformations
 } // namespace singularity
 
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5

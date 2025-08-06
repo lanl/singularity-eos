@@ -163,8 +163,8 @@ SCENARIO("DivideByCvTransform behaves correctly", "[TransformTest]") {
     Real lRho = to_log(rho, data.lRhoOffset);
     Real lE = to_log(e_actual, data.lEOffset);
 
-    Real actual_Cv = 1./data.dTdE.interpToReal(lRho, lE);
-    Real expected_transformed = e_actual / actual_Cv;
+    Real actual_iCv = data.dTdE.interpToReal(lRho, lE);
+    Real expected_transformed = e_actual * actual_iCv;
 
     THEN("Transform yields e_actual / Cv, inverse reconstructs original") {
       Real e_transformed = cvTransform.transform(e_actual, rho);
@@ -175,6 +175,33 @@ SCENARIO("DivideByCvTransform behaves correctly", "[TransformTest]") {
     }
   }
 }
+
+SCENARIO("ShiftandDivideByCvTransform behaves correctly", "[TransformTest]") {
+  TestDataContainer data;
+  ShiftandDivideByCvTransform<TestDataContainer> shiftAndCvTransform(data);
+
+  GIVEN("An internal energy, density and sie with known constant Cv") {
+    Real rho = 10.0;
+    Real sie = 42.0;
+    Real e_actual = 84.0;
+
+    Real lRho = to_log(rho, data.lRhoOffset);
+    Real lE = to_log(e_actual, data.lEOffset);
+    Real cold_curve_value = data.e_cold_fun(lRho);
+    Real e_shifted = e_actual - cold_curve_value;
+    Real actual_iCv = data.dTdE.interpToReal(lRho, lE);
+    Real expected_transformed = e_shifted * actual_iCv;
+
+    THEN("Transform yields e_actual / Cv, inverse reconstructs original") {
+      Real e_transformed = shiftAndCvTransform.transform(e_actual, rho);
+      CHECK(isClose(e_transformed, expected_transformed, 1e-14));
+
+      Real e_inverse = shiftAndCvTransform.inverse(e_transformed, rho, e_actual);
+      CHECK(isClose(e_inverse, e_actual, 1e-14));
+    }
+  }
+}
+
 
 
 SCENARIO("ScaleTransform behaves correctly", "[TransformTest]") {
