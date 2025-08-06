@@ -73,6 +73,7 @@ using MyLambdaIndexer = LambdaIndexer<NEOS, singularity::IndexableTypes::LogDens
                                       singularity::IndexableTypes::RootStatus,
                                       singularity::IndexableTypes::TableStatus>;
 
+// TODO(JMM): Clean this up to account for these two differetn APIs
 template <template <typename... Types> class PTESolver_t, typename Scratch_t,
           typename ArrT>
 bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
@@ -160,10 +161,11 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   return pte_converged;
 }
 
-constexpr int NT = 1;
-inline int RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alpha_guess1,
-                      Real alpha_guess2, Real sietot, Real Tguess, Real alpha1_true,
-                      Real alpha2_true, Rela Ttrue, Real Ptrue) {
+// TODO(JMM): Clean this up to account for these two differetn APIs
+inline bool RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alpha_guess1,
+                       Real alpha_guess2, Real sietot, Real Tguess, Real alpha1_true,
+                       Real alpha2_true, Rela Ttrue, Real Ptrue) {
+  constexpr int NT = 1;
   constexpr int NEOS = 2;
 
   EOS *eos = (EOS *)PORTABLE_MALLOC(NEOS * sizeof(EOS));
@@ -237,7 +239,7 @@ inline int RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alpha
   PORTABLE_FREE(press);
   PORTABLE_FREE(plambda);
 
-  return nsuccess;
+  return (nsuccess == NT);
 }
 
 SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
@@ -393,11 +395,11 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
       constexpr Real Ttrue = 2.10866067749579e+04;
       constexpr Real Ptrue = 1.44504093939007e+10;
 
-      int nsuccess =
+      bool success =
           RunPTE2Mat(al_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
                      sietot, Tguess, alpha1_ture, alpha2_true, Ttrue, Ptrue);
 
-      THEN("The solver converges") { REQUIRE(nsuccess == NT); }
+      THEN("The solver converges") { REQUIRE(success); }
     }
 
     al_eos_h.Finalize();
@@ -433,7 +435,7 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
           RunPTE2Mat(al_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
                      sietot, Tguess, alpha1_ture, alpha2_true, Ttrue, Ptrue);
 
-      THEN("The solver converges") { REQUIRE(nsuccess == NT); }
+      THEN("The solver converges") { REQUIRE(success); }
     }
 
     He_eos_h.Finalize();

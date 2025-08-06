@@ -262,8 +262,9 @@ class PTESolverBase {
   /* JMM: Find the volume fractions that:
    * 1) Best respect initial guesses
    * 2) Sum to 1
-   * 3) Are bounded from above such that no material is in tension (if
-   * possible)
+   * 3) Are bounded from above such that no material has density less
+   * than the density at minimum pressure, which avoids scenarios
+   * where dP/drho < 0, where the solver can stuck.
    *
    * If these are not all possible to respect, error out and expect
    * the GetTguess function to save us by picking a higher
@@ -277,32 +278,36 @@ class PTESolverBase {
     constexpr bool FAIL = true;
     constexpr bool SUCCESS = false;
     constexpr Real min_dv = 1e-12;
+    // Safety factor in maximum volume fraction keeps us on the dense
+    // side of rho at P min, so that roundoff can't send us in to the
+    // dP/drho < 0 region.
+    constexpr Real safety = 0.9;
 
     // TODO(JMM): Stash this somewhere rather than recomputing it?
-    auto get_vmax = [=](const std::size_t m) {
+    auto get_vfrac_max = [=](const std::size_t m) {
       const Real rho_min = eos[m].RhoPmin(T);
-      const Real vmax = std::min(0.9 * robust::ratio(rhobar[m], rho_min), 1.0);
-      return vmax;
+      const Real vfrac_max = std::min(safety * robust::ratio(rhobar[m], rho_min), 1.0);
+      return vfrac_max;
     };
     auto get_dv = [=](const std::size_t m) {
-      const Real vmax = get_vmax(m);
-      const Real vnew = std::min(vmax, vfrac[m]);
+      const Real vfrac_max = get_vfrac_max(m);
+      const Real vnew = std::min(vfrac_max, vfrac[m]);
       const Real dv = vfrac[m] - vnew;
       return dv;
     };
 
     // Do an initial sweep of volume fractions to account for missing
     // initial guesses
-    Real vmax_sum = 0;
+    Real vfrac_max_sum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
-      const Real vmax = get_vmax(m);
-      if (vfrac[m] <= 0) vfrac[m] = vmax;
+      const Real vfrac_max = get_vfrac_max(m);
+      if (vfrac[m] <= 0) vfrac[m] = vfrac_max;
       // Tally this to check if a valid non-tension state is possible
-      vmax_sum += vmax;
+      vfrac_max_sum += vfrac_max;
     }
-    if (vmax_sum < vfrac_total) {
-      // no way to keep all materials out of tension with a volume
-      // fraction that sums to 1
+    if (vfrac_max_sum < vfrac_total) {
+      // No way to have all volume fractions less than their allowed
+      // maxima and sum to the correct total.
       return FAIL;
     }
 
@@ -327,7 +332,7 @@ class PTESolverBase {
         break;
       }
       for (std::size_t m = 0; m < nmat; ++m) {
-        const bool uncapped = ((get_vmax(m) - vfrac[m]) > min_dv);
+        const bool uncapped = ((get_vfrac_max(m) - vfrac[m]) > min_dv);
         if (uncapped) {
           vfrac[m] += robust::ratio(remaining_vfrac, n_uncapped_materials);
         }
@@ -379,7 +384,7 @@ class PTESolverBase {
 
     // iteratively increase temperature guess until all rho's are above rho_at_pmin
     const Real Tfactor = 10.0;
-    bool rho_fail;
+    bool bad_vfrac_guess;
     for (std::size_t i = 0; i < 3; i++) {
       if (params_.iterate_t_guess) {
         Tguess =
@@ -388,8 +393,8 @@ class PTESolverBase {
       for (std::size_t m = 0; m < nmat; ++m) {
         Tguess = std::max(eos[m].MinimumTemperature(), Tguess);
       }
-      rho_fail = SetVfracFromT(Tguess);
-      if (rho_fail) {
+      bad_vfrac_guess = SetVfracFromT(Tguess);
+      if (bad_vfrac_guess) {
         Tguess *= Tfactor;
         continue;
       }
@@ -397,22 +402,22 @@ class PTESolverBase {
         rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       }
       // check to make sure the normalization didn't put us below rho_at_pmin
-      rho_fail = false;
+      bad_vfrac_guess = false;
       for (std::size_t m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
         const Real rho_max = eos[m].MaximumDensity();
         PORTABLE_REQUIRE(rho_min < rho_max, "Valid density range must exist!");
         PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_max");
         if (rho[m] < rho_min) {
-          rho_fail = true;
+          bad_vfrac_guess = true;
           Tguess *= Tfactor;
           break;
         }
       }
-      if (!rho_fail) break;
+      if (!bad_vfrac_guess) break;
     }
 
-    if (rho_fail && params_.verbose) {
+    if (bad_vfrac_guess && params_.verbose) {
       PORTABLE_ALWAYS_WARN(
           "rho < rho_min in PTE initialization!  Solver may not converge.\n");
     }
