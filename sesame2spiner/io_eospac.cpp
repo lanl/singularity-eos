@@ -346,4 +346,4 @@ void modifyNames(TableSplit split, std::vector<std::string> &names) {
     }
   }
 }
-} // namespace impl // namespace impl
+} // namespace impl 
