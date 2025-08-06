@@ -223,7 +223,7 @@ inline bool RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alph
             success = false;
           }
           if (!isClose(press[0], Ptrue)) {
-            printf("Pressures do not match! %.14e %.1re\n", press[0], Ptrue);
+            printf("Pressures do not match! %.14e %.14e\n", press[0], Ptrue);
             success = false;
           }
         }
@@ -432,8 +432,8 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
       constexpr Real Ttrue = 3.02477729062119e+02;
       constexpr Real Ptrue = 9.98701227398616e+05;
 
-      int nsuccess =
-          RunPTE2Mat(al_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
+      bool success =
+          RunPTE2Mat(He_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
                      sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue);
 
       THEN("The solver converges") { REQUIRE(success); }
