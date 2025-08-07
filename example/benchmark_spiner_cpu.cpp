@@ -62,7 +62,8 @@
 using namespace singularity;
 using namespace EospacWrapper;
 using namespace std::chrono;
-#include <experimental/filesystem> //not sure why I had to do this
+// https://en.cppreference.com/w/cpp/header/experimental/filesystem
+#include <experimental/filesystem> 
 namespace fs = std::experimental::filesystem;
 using DataBox = Spiner::DataBox<Real>;
 using RegularGrid1D = Spiner::RegularGrid1D<Real>;
