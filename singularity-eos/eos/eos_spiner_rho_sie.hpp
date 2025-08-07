@@ -58,7 +58,6 @@
 namespace singularity {
 
 using namespace eos_base;
-using namespace transformations;
 /*
   TODO(JMM): Extrapolation Strategy
   ----------------------------------
@@ -77,7 +76,7 @@ using namespace transformations;
   mitigated by Ye and (1-Ye) to control how important each term is.
  */
 
-template <template <class> class TransformerT = NullTransform>
+template <template <class> class TransformerT = transformations::NullTransform>
 class SpinerEOSDependsRhoSieTransformable
     : public EosBase<SpinerEOSDependsRhoSieTransformable<TransformerT>> {
   friend class table_utils::SpinerTricks<SpinerEOSDependsRhoSieTransformable>;
@@ -866,7 +865,7 @@ inline SpinerEOSDependsRhoSieTransformable<
   }
 }
 
-using SpinerEOSDependsRhoSie = SpinerEOSDependsRhoSieTransformable<NullTransform>;
+using SpinerEOSDependsRhoSie = SpinerEOSDependsRhoSieTransformable<transformations::NullTransform>;
 
 } // namespace singularity
 
