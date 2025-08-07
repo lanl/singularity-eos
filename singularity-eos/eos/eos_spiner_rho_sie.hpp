@@ -415,14 +415,17 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   PlRhoMax_ = dependsRhoT_.P.slice(numRho_ - 1);
   dPdRhoMax_ = dependsRhoT_.dPdRho.slice(numRho_ - 1);
 
-  // fill in minimum pressure as a function of temperature
+  // Fill in minimum pressure as a function of temperature
+  // Note this is intended to find the rightmost point around EITHER a
+  // Maxwell constructed region OR a spinodal region
   rho_at_pmin_.resize(numT_);
   rho_at_pmin_.setRange(0, sie_.range(0));
   for (int i = 0; i < numT_; i++) {
     // sweep left to right to get the rightmost minimum pressure
     int jmax = -1;
     PMin_ = std::numeric_limits<Real>::max();
-    Real P0 = dependsRhoT_.P(0, i) for (int j = 0; j < numRho_; j++) {
+    Real P0 = dependsRhoT_.P(0, i);
+    for (int j = 0; j < numRho_; j++) {
       Real P = dependsRhoT_.P(j, i);
       PMin_ = std::min(P, PMin_);
       if (P <= PMin_ || std::abs(P - PMin_) < SOFT_THRESH) {
