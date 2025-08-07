@@ -261,15 +261,14 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   DataBox sie_; // depends on (rho,T)
   DataBox T_;   // depends on (rho, sie)
   DataBox rho_at_pmin_;
-  DataBox PCold_, sieCold_, bModCold_;
-  DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
   SP5Tables dependsRhoT_;
   SP5Tables dependsRhoSie_;
+  DataBox PlRhoMax_, dPdRhoMax_;
+  DataBox PCold_, sieCold_, bModCold_, dPdRhoCold_;
   int numRho_, numT_;
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
-  DataBox PlRhoMax_, dPdRhoMax_;
   Real PMin_;
   Real lRhoOffset_, lTOffset_, lEOffset_; // offsets must be non-negative
 
@@ -279,8 +278,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
       &(dependsRhoT_.dTdE), &(dependsRhoT_.dEdRho), &(dependsRhoSie_.P),                 \
       &(dependsRhoSie_.bMod), &(dependsRhoSie_.dPdRho), &(dependsRhoSie_.dPdE),          \
       &(dependsRhoSie_.dTdRho), &(dependsRhoSie_.dTdE), &(dependsRhoSie_.dEdRho),        \
-      &PlRhoMax_, &dPdRhoMax_, &PCold_, &sieCold_, &bModCold_, &dPdRhoCold_, &dPdECold_, \
-      &dTdRhoCold_, &dTdECold_, &dEdTCold_,
+      &PlRhoMax_, &dPdRhoMax_, &PCold_, &sieCold_, &bModCold_, &dPdRhoCold_
   std::vector<const DataBox *> GetDataBoxPointers_() const {
     return std::vector<const DataBox *>{DBLIST};
   }
@@ -296,6 +294,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   bool reproducible_;
   static constexpr const int _n_lambda = 1;
   static constexpr const char *_lambda_names[1] = {"log(rho)"};
+  static constexpr const Real SOFT_THRESH = 1e-8;
   DataStatus memoryStatus_ = DataStatus::Deallocated;
 };
 
@@ -420,16 +419,29 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   rho_at_pmin_.resize(numT_);
   rho_at_pmin_.setRange(0, sie_.range(0));
   for (int i = 0; i < numT_; i++) {
-    PMin_ = std::numeric_limits<Real>::max();
+    // sweep left to right to get the rightmost minimum pressure
     int jmax = -1;
-    for (int j = 0; j < numRho_; j++) {
-      if (dependsRhoT_.P(j, i) < PMin_) {
-        PMin_ = dependsRhoT_.P(j, i);
+    PMin_ = std::numeric_limits<Real>::max();
+    Real P0 = dependsRhoT_.P(0, i) for (int j = 0; j < numRho_; j++) {
+      Real P = dependsRhoT_.P(j, i);
+      PMin_ = std::min(P, PMin_);
+      if (P <= PMin_ || std::abs(P - PMin_) < SOFT_THRESH) {
+        jmax = j;
+      }
+      // Also look for the rightmost point with a small change iwth
+      // respect to the minimum density point
+      if (std::abs(P - P0) < SOFT_THRESH) {
         jmax = j;
       }
     }
-    if (jmax < 0) printf("Failed to find minimum pressure.\n");
+    PORTABLE_REQUIRE(jmax >= 0, "A minimum pressure was found");
     rho_at_pmin_(i) = from_log(dependsRhoT_.P.range(1).x(jmax), lRhoOffset_);
+  }
+  // Finally enforce that rho_at_pmin(T) must be non-increasing in T
+  for (int i = 0; i < numT_ - 1; ++i) {
+    if (rho_at_pmin_(i) < rho_at_pmin_(i + 1)) {
+      rho_at_pmin_(i) = rho_at_pmin_(i + 1);
+    }
   }
 
   // reference state

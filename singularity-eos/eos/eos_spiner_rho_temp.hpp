@@ -208,6 +208,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
     printf("%s\n\t%s\n\t%s\n\t%s%i\n\t%s\n", s1, s2, s3, s4, matid_, s5);
     return;
   }
+  PORTABLE_INLINE_FUNCTION void PrintRhoPMin() const;
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
@@ -498,16 +499,30 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   rho_at_pmin_.resize(numT_);
   rho_at_pmin_.setRange(0, P_.range(0));
   for (int i = 0; i < numT_; i++) {
-    PMin_ = std::numeric_limits<Real>::max();
+    // sweep left to right to get the rightmost minimum pressure
     int jmax = -1;
+    PMin_ = std::numeric_limits<Real>::max();
+    Real P0 = P_(j0, i);
     for (int j = 0; j < numRho_; j++) {
-      if (P_(j, i) < PMin_) {
-        PMin_ = P_(j, i);
+      Real P = P_(j, i);
+      PMin_ = std::min(P, PMin_);
+      if (P <= PMin_ || std::abs(P - PMin_) < SOFT_THRESH) {
+        jmax = j;
+      }
+      // also look for the rightmost point with a small change in
+      // pressure with respect to the minimum density point
+      if (std::abs(P - P0) < SOFT_THRESH) {
         jmax = j;
       }
     }
-    if (jmax < 0) printf("Failed to find minimum pressure.\n");
+    PORTABLE_REQUIRE(jmax >= 0, "A minimum pressure was found");
     rho_at_pmin_(i) = rho_(P_.range(1).x(jmax));
+  }
+  // Finally enforce that rho_at_pmin(T) must be non-increasing in T
+  for (int i = 0; i < numT_ - 1; ++i) {
+    if (rho_at_pmin_(i) < rho_at_pmin_(i + 1)) {
+      rho_at_pmin_(i) = rho_at_pmin_(i + 1);
+    }
   }
 
   // fill in Gruneisen parameter and bulk modulus on cold curves
@@ -1214,6 +1229,16 @@ SpinerEOSDependsRhoT::getLocDependsRhoT_(const Real lRho, const Real lT) const {
   else
     whereAmI = TableStatus::OnTable;
   return whereAmI;
+}
+
+PORTABLE_INLINE_FUNCTION
+void SpinerEOSDependsRhoT::PrintRhoPMin() const {
+  const auto &range = rho_at_pmin_.range(0);
+  for (std::size_t i = 0; i < numT_; ++i) {
+    const Real lT = range.x(i);
+    const Real rho = rho_at_pmin_(i);
+    printf("%ld %.14e %.14e\n", i, T_(lT), rho);
+  }
 }
 
 } // namespace singularity
