@@ -142,8 +142,9 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
 #warning "Eigen should not be used with Kokkos."
 #endif
   // Eigen VERSION
-  Eigen::Map<Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> A(a, n,
-                                                                                     n);
+  using Matrix_t = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+  Eigen::Map<Matrix_t> A(a, n, n);
+
   Eigen::Map<Eigen::VectorXd> B(b, n);
   Eigen::Map<Eigen::VectorXd> X(scr, n);
   X = A.lu().solve(B);
@@ -248,19 +249,105 @@ class PTESolverBase {
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
-  void SetVfracFromT(const Real T) {
-    Real vsum = 0.0;
-    // set volume fractions
+  void NormalizeVfrac() {
+    Real vfrac_sum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
+      vfrac_sum += vfrac[m];
+    }
+    for (std::size_t m = 0; m < nmat; ++m) {
+      vfrac[m] *= robust::ratio(vfrac_total, vfrac_sum);
+    }
+  }
+
+  /* JMM: Find the volume fractions that:
+   * 1) Best respect initial guesses
+   * 2) Sum to 1
+   * 3) Are bounded from above such that no material has density less
+   * than the density at minimum pressure, which avoids scenarios
+   * where dP/drho < 0, where the solver can stuck.
+   *
+   * If these are not all possible to respect, error out and expect
+   * the GetTguess function to save us by picking a higher
+   * temperature.
+   *
+   * If this is possible to achieve, we can do so by using the "water
+   * filling" algorithm. See, e.g., Gallager, 1968.
+   */
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool SetVfracFromT(const Real T) {
+    constexpr bool FAIL = true;
+    constexpr bool SUCCESS = false;
+    constexpr Real min_dv = 1e-12;
+    // Safety factor in maximum volume fraction keeps us on the dense
+    // side of rho at P min, so that roundoff can't send us in to the
+    // dP/drho < 0 region.
+    constexpr Real safety = 0.9;
+
+    // TODO(JMM): Stash this somewhere rather than recomputing it?
+    auto get_vfrac_max = [=](const std::size_t m) {
       const Real rho_min = eos[m].RhoPmin(T);
-      const Real vmax = std::min(0.9 * robust::ratio(rhobar[m], rho_min), 1.0);
-      vfrac[m] = (vfrac[m] > 0.0 ? std::min(vmax, vfrac[m]) : vmax);
-      vsum += vfrac[m];
-    }
-    // Normalize vfrac
+      const Real vfrac_max = std::min(safety * robust::ratio(rhobar[m], rho_min), 1.0);
+      return vfrac_max;
+    };
+    auto get_dv = [=](const std::size_t m) {
+      const Real vfrac_max = get_vfrac_max(m);
+      const Real vnew = std::min(vfrac_max, vfrac[m]);
+      const Real dv = vfrac[m] - vnew;
+      return dv;
+    };
+
+    // Do an initial sweep of volume fractions to account for missing
+    // initial guesses
+    // TODO(JMM): I'm not sure it's possible to pass in a missing
+    // initial guess, since then rhobar would be undefined, which
+    // would make the system underconstrained.
+    Real vfrac_max_sum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
-      vfrac[m] *= robust::ratio(vfrac_total, vsum);
+      const Real vfrac_max = get_vfrac_max(m);
+      // This chooses the smallest allowed density, since vfrac is
+      // inversely proportional to rho.
+      if (vfrac[m] <= 0) vfrac[m] = vfrac_max;
+      // Tally this to check if a valid non-tension state is possible
+      vfrac_max_sum += vfrac_max;
     }
+    if (vfrac_max_sum < vfrac_total) {
+      // No way to have all volume fractions less than their allowed
+      // maxima and sum to the correct total.
+      return FAIL;
+    }
+
+    // start normalized
+    NormalizeVfrac();
+
+    // JMM: Idea here is keep a running tally of how much volume we've
+    // had to subtract from a given material to keep vfrac <
+    // vfrac_max. We will distribute this excess volume accross all
+    // materials that haven't hit their max yet, and then
+    // repeat. Formal maximum number of iterations required is nmat
+    for (std::size_t niter = 0; niter < nmat; ++niter) {
+      Real remaining_vfrac = 0;
+      std::size_t n_uncapped_materials = nmat;
+      for (std::size_t m = 0; m < nmat; ++m) {
+        const Real dv = get_dv(m);
+        vfrac[m] -= dv;
+        remaining_vfrac += dv;
+        n_uncapped_materials -= (dv > min_dv);
+      }
+      if (std::abs(remaining_vfrac) < min_dv) {
+        break;
+      }
+      for (std::size_t m = 0; m < nmat; ++m) {
+        const bool uncapped = ((get_vfrac_max(m) - vfrac[m]) > min_dv);
+        if (uncapped) {
+          vfrac[m] += robust::ratio(remaining_vfrac, n_uncapped_materials);
+        }
+      }
+    }
+
+    // One more normalization, to be safe
+    NormalizeVfrac();
+
+    return SUCCESS;
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -302,7 +389,7 @@ class PTESolverBase {
 
     // iteratively increase temperature guess until all rho's are above rho_at_pmin
     const Real Tfactor = 10.0;
-    bool rho_fail;
+    bool bad_vfrac_guess;
     for (std::size_t i = 0; i < 3; i++) {
       if (params_.iterate_t_guess) {
         Tguess =
@@ -311,28 +398,35 @@ class PTESolverBase {
       for (std::size_t m = 0; m < nmat; ++m) {
         Tguess = std::max(eos[m].MinimumTemperature(), Tguess);
       }
-      SetVfracFromT(Tguess);
+      bad_vfrac_guess = SetVfracFromT(Tguess);
+      if (bad_vfrac_guess) {
+        Tguess *= Tfactor;
+        continue;
+      }
+      for (std::size_t m = 0; m < nmat; ++m) {
+        rho[m] = robust::ratio(rhobar[m], vfrac[m]);
+      }
       // check to make sure the normalization didn't put us below rho_at_pmin
-      rho_fail = false;
+      bad_vfrac_guess = false;
       for (std::size_t m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
         const Real rho_max = eos[m].MaximumDensity();
         PORTABLE_REQUIRE(rho_min < rho_max, "Valid density range must exist!");
-        rho[m] = robust::ratio(rhobar[m], vfrac[m]);
-        PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_min");
+        PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_max");
         if (rho[m] < rho_min) {
-          rho_fail = true;
+          bad_vfrac_guess = true;
           Tguess *= Tfactor;
           break;
         }
       }
-      if (!rho_fail) break;
+      if (!bad_vfrac_guess) break;
     }
 
-    if (rho_fail && params_.verbose) {
+    if (bad_vfrac_guess && params_.verbose) {
       PORTABLE_ALWAYS_WARN(
           "rho < rho_min in PTE initialization!  Solver may not converge.\n");
     }
+
     return Tguess;
   }
 
@@ -364,8 +458,8 @@ class PTESolverBase {
     // intialize rhobar array and final density
     InitRhoBarandRho();
     const Real utotal = rho_total * sie_total;
-    uscale = std::abs(utotal);
-    // TODO(): Consider edge case when utotal \simeq 0
+    // TODO(): Consider more carefully edge case when utotal \simeq 0
+    uscale = std::max(std::abs(utotal), 1.0e-14);
     utotal_scale = robust::ratio(utotal, uscale);
 
     // guess some non-zero temperature to start
@@ -711,6 +805,7 @@ class PTESolverRhoT
                         uscale);
       dpdv[m] = robust::ratio((p_pert - press[m]), dv);
       dedv[m] = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dv);
+
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
