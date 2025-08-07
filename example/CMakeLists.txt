@@ -27,15 +27,15 @@ if (SINGULARITY_USE_SPINER_WITH_HDF5)
   add_executable(pte_2mat pte_2mat.cpp)
   target_link_libraries(pte_2mat PRIVATE
     singularity-eos::singularity-eos)
+  add_executable(get_spiner_bounds
+    get_spiner_bounds.cpp)
+  target_link_libraries(get_spiner_bounds PRIVATE
+    singularity-eos::singularity-eos)
 endif()
 
 if(SINGULARITY_USE_EOSPAC AND SINGULARITY_USE_SPINER_WITH_HDF5)
   add_executable(get_sesame_state
     get_sesame_state.cpp)
   target_link_libraries(get_sesame_state PRIVATE
-    singularity-eos::singularity-eos)
-  add_executable(get_spiner_bounds
-    get_spiner_bounds.cpp)
-  target_link_libraries(get_spiner_bounds PRIVATE
     singularity-eos::singularity-eos)
 endif()

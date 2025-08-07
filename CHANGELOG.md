@@ -7,6 +7,7 @@
 - [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
 
 ### Fixed (Repair bugs, etc)
+- [[PR538]](https://github.com/lanl/singularity-eos/pull/538) Ensure RhoPMin for spiner models also finds edge of Maxwell-constructed regions
 - [[PR537]](https://github.com/lanl/singularity-eos/pull/537) Fix pathological initial guesses in PTE solvers
 - [[PR523]](https://github.com/lanl/singularity-eos/pull/523) Fix reading order in SpinerEOSDependsRhoSie
 - [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Added some robustness checks to the PTE solvers

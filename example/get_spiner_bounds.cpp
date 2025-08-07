@@ -30,7 +30,6 @@ int main(int argc, char *argv[]) {
   { // begin kokkos scope
     if (argc < 3) {
       std::cerr << "Usage: " << argv[0] << " matid sp5_filename" << std::endl;
-      // std::cerr << "Arguments given: " << argc << std::endl;
       std::exit(1);
     }
 
@@ -40,14 +39,17 @@ int main(int argc, char *argv[]) {
     singularity::SpinerEOSDependsRhoT deprt(filename, matid);
     singularity::SpinerEOSDependsRhoSie depre(filename, matid);
 
-    printf("rho bounds, depends(r, T): %.14e %.14e\n", deprt.MinimumDensity(),
+    printf("# rho bounds, depends(r, T): %.14e %.14e\n", deprt.MinimumDensity(),
            deprt.rhoMax());
-    printf("rho bounds, depends(r, sie): %.14e %.14e\n", depre.MinimumDensity(),
+    printf("# rho bounds, depends(r, sie): %.14e %.14e\n", depre.MinimumDensity(),
            depre.rhoMax());
-    printf("T bounds, depends(r, T): %.14e %.14e\n", deprt.MinimumTemperature(),
+    printf("# T bounds, depends(r, T): %.14e %.14e\n", deprt.MinimumTemperature(),
            deprt.TMax());
-    printf("T bounds, depends(r, sie): %.14e %.14e\n", depre.MinimumTemperature(),
+    printf("# T bounds, depends(r, sie): %.14e %.14e\n", depre.MinimumTemperature(),
            depre.TMax());
+    printf("\n");
+    printf("# [0]: iT, [1]: T, [2] rho(Pmin, T)\n");
+    deprt.PrintRhoPMin();
 
     deprt.Finalize();
     depre.Finalize();
