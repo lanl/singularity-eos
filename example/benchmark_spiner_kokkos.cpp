@@ -13,7 +13,8 @@
 //------------------------------------------------------------------------------
 
 /*
-  Example usage: ./example/benchmark_spiner_gpu  path/for/results nRho nT ./materials.sp5 [matids]
+  Example usage: ./example/benchmark_spiner_gpu  path/for/results nRho nT ./materials.sp5
+  [matids]
 
   Authors: Erin O'Neil and Joshua Basabe
  */
@@ -187,8 +188,8 @@ int main(int argc, char *argv[]) {
     Kokkos::parallel_for(
         "sie_rt", Kokkos::MDRangePolicy({0, 0}, {nT, nRho}),
         KOKKOS_LAMBDA(const int it, const int ir) {
-          sie_rt_gpu(it, ir) =
-              eos_rt.InternalEnergyFromDensityTemperature(rhos_gpu(ir), temps_gpu(it)); //start with only 1 inversion
+          sie_rt_gpu(it, ir) = eos_rt.InternalEnergyFromDensityTemperature(
+              rhos_gpu(ir), temps_gpu(it)); // start with only 1 inversion
           //          sie_rt_gpu(ir, it) =
           //              eos_rt.InternalEnergyFromDensityTemperature(rhos_gpu(ir),
           //              temps_gpu(it));
@@ -210,20 +211,25 @@ int main(int argc, char *argv[]) {
         sie_matrix[i][j] = sie_rt_h(i, j);
 
     // Build filenames and write files
-    std::string sie_filename = (base_output_path / ("sie_rt_matid" + std::to_string(matid) + ".csv")).string();
+    std::string sie_filename =
+        (base_output_path / ("sie_rt_matid" + std::to_string(matid) + ".csv")).string();
     write_matrix_csv(sie_filename, sie_matrix);
 
-    // Save rho and T if desired (you could move these outside the loop if the same for all matids)
+    // Save rho and T if desired (you could move these outside the loop if the same for
+    // all matids)
     std::vector<Real> rho_vals(nRho), T_vals(nT);
-    for (int i = 0; i < nRho; ++i) rho_vals[i] = rhos_h(i);
-    for (int j = 0; j < nT; ++j) T_vals[j] = temps_h(j);
+    for (int i = 0; i < nRho; ++i)
+      rho_vals[i] = rhos_h(i);
+    for (int j = 0; j < nT; ++j)
+      T_vals[j] = temps_h(j);
 
     write_vector_csv((base_output_path / "rho.csv").string(), rho_vals);
     write_vector_csv((base_output_path / "T.csv").string(), T_vals);
 
-    std::string timing_filename = (base_output_path / ("timing_sie_rt_matid" + std::to_string(matid) + ".csv")).string();
+    std::string timing_filename =
+        (base_output_path / ("timing_sie_rt_matid" + std::to_string(matid) + ".csv"))
+            .string();
     write_vector_csv(timing_filename, time_sie_rt_list);
-
 
     std::cout << "Benchmark complete for material " << std::to_string(matid) << "\n";
   }

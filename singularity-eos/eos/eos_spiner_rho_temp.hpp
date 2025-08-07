@@ -73,7 +73,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   using SpinerTricks = table_utils::SpinerTricks<SpinerEOSDependsRhoT>;
 
  public:
-
   using Grid_t = spiner_common::Grid_t;
   using DataBox = spiner_common::DataBox;
 

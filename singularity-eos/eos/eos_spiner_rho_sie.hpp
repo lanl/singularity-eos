@@ -865,7 +865,8 @@ inline SpinerEOSDependsRhoSieTransformable<
   }
 }
 
-using SpinerEOSDependsRhoSie = SpinerEOSDependsRhoSieTransformable<transformations::NullTransform>;
+using SpinerEOSDependsRhoSie =
+    SpinerEOSDependsRhoSieTransformable<transformations::NullTransform>;
 
 } // namespace singularity
 

@@ -49,7 +49,6 @@ struct TestDataContainer {
   static constexpr Real lRho_high = 10.0;
   static constexpr size_t Npts = 100;
 
-
   static constexpr Real lEOffset = 0.1;
   static constexpr Real lE_low = 0.1;
   static constexpr Real lE_high = 5.0;
@@ -58,20 +57,18 @@ struct TestDataContainer {
   static constexpr Real Cv_a = 0.1;
   static constexpr Real Cv_b = 0.2;
   static constexpr Real Cv_c = 1.0;
-  
+
   static constexpr Real T_a = 2.0;
   static constexpr Real T_b = 5.0;
 
   using RG = Spiner::RegularGrid1D<Real>;
   Grid_t rhogrid{{RG(lRho_low, lRho_high, Npts)}};
   Grid_t siegrid{{RG(lE_low, lE_high, N_sie)}};
-  DataBox sieCold{Npts},T{Npts};
-  DataBox dTdE{Npts, N_sie}; 
-  
+  DataBox sieCold{Npts}, T{Npts};
+  DataBox dTdE{Npts, N_sie};
 
   TestDataContainer() {
-    sieCold.setRange(0,rhogrid);
-
+    sieCold.setRange(0, rhogrid);
 
     for (int i = 0; i < Npts; ++i) {
       const Real lRho = rhogrid.x(i);
@@ -82,9 +79,9 @@ struct TestDataContainer {
 
     for (size_t i = 0; i < Npts; ++i) {
       Real lRho = rhogrid.x(i);
-      T(i) = T_a * lRho + T_b;  // simple linear function, ignore T_c if you want offset
+      T(i) = T_a * lRho + T_b; // simple linear function, ignore T_c if you want offset
     }
- 
+
     dTdE.setRange(0, rhogrid); // lRho
     dTdE.setRange(1, siegrid); // lE
 
@@ -93,17 +90,16 @@ struct TestDataContainer {
       for (int j = 0; j < N_sie; ++j) {
         const Real lE = siegrid.x(j);
         dTdE(i, j) = Cv_a * lRho + Cv_b * lE + Cv_c;
-     }
-   }
- }
+      }
+    }
+  }
   static constexpr Real e_cold_fun(Real lRho) { return 3.0 * lRho + 5.0; }
 
-
   template <typename IndexerT>
-  PORTABLE_INLINE_FUNCTION Real interpRhoSie_(
-      Real rho, Real sie, const DataBox &db, IndexerT &&lambda) const {
+  PORTABLE_INLINE_FUNCTION Real interpRhoSie_(Real rho, Real sie, const DataBox &db,
+                                              IndexerT &&lambda) const {
     const Real lRho = spiner_common::to_log(rho, lRhoOffset);
-    const Real lE   = spiner_common::to_log(sie, lEOffset);
+    const Real lE = spiner_common::to_log(sie, lEOffset);
     // If we wanted to mock the lambda write-back (optional)
     if (!variadic_utils::is_nullptr(lambda)) {
       IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, 0) = lRho;
@@ -111,16 +107,15 @@ struct TestDataContainer {
     return db.interpToReal(lRho, lE);
   }
 
-
   template <typename IndexerT = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       Real rho, Real sie, IndexerT &&lambda = static_cast<Real *>(nullptr)) const {
     return interpRhoSie_(rho, sie, dTdE, std::forward<IndexerT>(lambda));
   }
-  
+
   PORTABLE_INLINE_FUNCTION
-     Real heatFn(Real rho, Real sie) const {
-     return SpecificHeatFromDensityInternalEnergy(rho, sie);
+  Real heatFn(Real rho, Real sie) const {
+    return SpecificHeatFromDensityInternalEnergy(rho, sie);
   }
 };
 
@@ -215,8 +210,6 @@ SCENARIO("ShiftandDivideByCvTransform behaves correctly", "[TransformTest]") {
   }
 }
 
-
-
 SCENARIO("ScaleTransform behaves correctly", "[TransformTest]") {
   TestDataContainer data;
   ScaleTransform<TestDataContainer> scaleTransform(data);
@@ -243,7 +236,8 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
   TestDataContainer data;
   AllTransform<TestDataContainer> Alltest(data);
 
-  GIVEN("An internal energy, density, sie,  with linear T(rho), known constant Cv, and a known linear cold-curve in log-space") {
+  GIVEN("An internal energy, density, sie,  with linear T(rho), known constant Cv, and a "
+        "known linear cold-curve in log-space") {
     Real rho = 10.0;
     Real sie = 42.0;
     Real e_actual = 100.0;
@@ -255,13 +249,11 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
 
     Real lE = to_log(e_shift_transform, data.lEOffset);
 
-    Real actual_Cv = 1./data.dTdE.interpToReal(lRho, lE);
+    Real actual_Cv = 1. / data.dTdE.interpToReal(lRho, lE);
     Real e_CV_transformed = e_shift_transform / actual_Cv;
 
-
     Real Tval = data.T.interpToReal(lRho);
-    Real e_final_transformed = e_CV_transformed/ std::pow(Tval, 3);
-
+    Real e_final_transformed = e_CV_transformed / std::pow(Tval, 3);
 
     THEN("Transform correctly applies all transform, and inverse reconstructs original") {
       Real e_transformed = Alltest.transform(e_actual, rho);
@@ -272,8 +264,5 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
     }
   }
 }
-
-
-
 
 #endif // SINGULARITY_USE_SPINER

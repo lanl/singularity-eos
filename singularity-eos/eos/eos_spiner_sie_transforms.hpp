@@ -58,8 +58,8 @@ struct NullTransform {
 
 template <typename Data>
 struct ShiftTransform {
-  PORTABLE_INLINE_FUNCTION  ShiftTransform() = default;
-  
+  PORTABLE_INLINE_FUNCTION ShiftTransform() = default;
+
   template <typename DataT_in>
   PORTABLE_INLINE_FUNCTION ShiftTransform(const DataT_in &data) : data_(data) {}
 
@@ -78,186 +78,172 @@ struct ShiftTransform {
   template <typename... Args>
   PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed, const Real rho,
                                         Args &&...) const {
-    const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);   
+    const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real e_cold = data_.sieCold.interpToReal(lRho);
     return e_transformed + e_cold;
   }
 };
 
 // Divide by the heat capacity
-template<typename Data>
+template <typename Data>
 struct DivideByCvTransform {
-  PORTABLE_INLINE_FUNCTION  DivideByCvTransform() = default;
-  
-  template <typename DataT_in>  
-  PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data) {}
-
-  private: 
-    Data data_;
-    static constexpr Real min_Cv_ = 1.0e-08;
-    static constexpr Real min_iCv_ = 1.0e-08;
-
-  public:
-    template <typename... Args>
-    PORTABLE_INLINE_FUNCTION
-    auto transform(Real e, Real rho, Args &&...) const {
-        const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-	const Real lE   = spiner_common::to_log(e, data_.lEOffset);
-        Real iCv = data_.dTdE.interpToReal(lRho, lE);
-        iCv = std::max(iCv, min_iCv_);
-        return e * iCv;
-    }
-
-    template <typename... Args>
-    PORTABLE_INLINE_FUNCTION
-    auto inverse(Real e_transformed, Real rho, Real e_orig, Args &&...) const {
-        const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-	const Real lE   = spiner_common::to_log(e_orig, data_.lEOffset);
-	Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
-        Cv = std::max(Cv, min_Cv_);
-        return e_transformed * Cv;
-    }
-};
-
-template<typename Data>
-struct ShiftandDivideByCvTransform {
-  PORTABLE_INLINE_FUNCTION  ShiftandDivideByCvTransform() = default;
-
+  PORTABLE_INLINE_FUNCTION DivideByCvTransform() = default;
 
   template <typename DataT_in>
-  PORTABLE_INLINE_FUNCTION ShiftandDivideByCvTransform(const DataT_in &data) : data_(data) {}
+  PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data) {}
 
-  private:
-    Data data_;
-    static constexpr Real min_Cv_ = 1.0e-08;
-    static constexpr Real min_iCv_ = 1.0e-08;
+ private:
+  Data data_;
+  static constexpr Real min_Cv_ = 1.0e-08;
+  static constexpr Real min_iCv_ = 1.0e-08;
 
-  public:
-    template <typename... Args>
-    PORTABLE_INLINE_FUNCTION
-    auto transform(Real e, Real rho, Args &&...) const {
-        const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-	const Real e_cold = data_.sieCold.interpToReal(lRho);
-        const Real lE   = spiner_common::to_log(e, data_.lEOffset);
-        Real e_coldshift = e - e_cold;
-	Real iCv = data_.dTdE.interpToReal(lRho, lE);
-	iCv = std::max(iCv, min_iCv_);
-	return e_coldshift * iCv;
+ public:
+  template <typename... Args>
+  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
+    const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+    const Real lE = spiner_common::to_log(e, data_.lEOffset);
+    Real iCv = data_.dTdE.interpToReal(lRho, lE);
+    iCv = std::max(iCv, min_iCv_);
+    return e * iCv;
+  }
 
-    }
-
-    template <typename... Args>
-    PORTABLE_INLINE_FUNCTION
-    auto inverse(Real e_transformed, Real rho, Real e_orig, Args &&...) const {
-        const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-        const Real e_cold = data_.sieCold.interpToReal(lRho);
-	const Real lE   = spiner_common::to_log(e_orig, data_.lEOffset);
-        Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
-        Cv = std::max(Cv, min_Cv_);
-        const Real e_inverse_cv = e_transformed * Cv;	
-	return e_inverse_cv + e_cold;
-
-    }
+  template <typename... Args>
+  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Real rho, Real e_orig,
+                                        Args &&...) const {
+    const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+    const Real lE = spiner_common::to_log(e_orig, data_.lEOffset);
+    Real Cv = 1. / data_.dTdE.interpToReal(lRho, lE);
+    Cv = std::max(Cv, min_Cv_);
+    return e_transformed * Cv;
+  }
 };
 
+template <typename Data>
+struct ShiftandDivideByCvTransform {
+  PORTABLE_INLINE_FUNCTION ShiftandDivideByCvTransform() = default;
 
+  template <typename DataT_in>
+  PORTABLE_INLINE_FUNCTION ShiftandDivideByCvTransform(const DataT_in &data)
+      : data_(data) {}
+
+ private:
+  Data data_;
+  static constexpr Real min_Cv_ = 1.0e-08;
+  static constexpr Real min_iCv_ = 1.0e-08;
+
+ public:
+  template <typename... Args>
+  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
+    const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+    const Real e_cold = data_.sieCold.interpToReal(lRho);
+    const Real lE = spiner_common::to_log(e, data_.lEOffset);
+    Real e_coldshift = e - e_cold;
+    Real iCv = data_.dTdE.interpToReal(lRho, lE);
+    iCv = std::max(iCv, min_iCv_);
+    return e_coldshift * iCv;
+  }
+
+  template <typename... Args>
+  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Real rho, Real e_orig,
+                                        Args &&...) const {
+    const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+    const Real e_cold = data_.sieCold.interpToReal(lRho);
+    const Real lE = spiner_common::to_log(e_orig, data_.lEOffset);
+    Real Cv = 1. / data_.dTdE.interpToReal(lRho, lE);
+    Cv = std::max(Cv, min_Cv_);
+    const Real e_inverse_cv = e_transformed * Cv;
+    return e_inverse_cv + e_cold;
+  }
+};
 
 // TO DO: T table would depend on rho and sie, need to change in order to work
 // Divide by T^alpha
-template<typename Data>
+template <typename Data>
 struct ScaleTransform {
-    PORTABLE_INLINE_FUNCTION  ScaleTransform() = default;
-    
-    template <typename DataT_in>
-PORTABLE_INLINE_FUNCTION ScaleTransform(const DataT_in &data) : data_(data) {}
+  PORTABLE_INLINE_FUNCTION ScaleTransform() = default;
 
-private:
-    Data data_;
-    static constexpr Real min_T_ = 1.0e-08; //Good minimum temperature? 
+  template <typename DataT_in>
+  PORTABLE_INLINE_FUNCTION ScaleTransform(const DataT_in &data) : data_(data) {}
 
-public: 
-    template <typename... Args>
-    PORTABLE_INLINE_FUNCTION
-    auto transform(Real e, Real rho, Args &&...) const {
-        Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-        Real T = data_.T.interpToReal(lRho); //T?
-        T = std::max(T, min_T_);
-        return e / pow(T, 3);
-    }
+ private:
+  Data data_;
+  static constexpr Real min_T_ = 1.0e-08; // Good minimum temperature?
 
-    template <typename... Args>
-    PORTABLE_INLINE_FUNCTION
-    auto inverse(Real e, Real rho, Args &&...) const {
-        Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-        Real T = data_.T.interpToReal(lRho);
-        T = std::max(T, min_T_);
-        return e * pow(T, 3);
-    }
+ public:
+  template <typename... Args>
+  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
+    Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+    Real T = data_.T.interpToReal(lRho); // T?
+    T = std::max(T, min_T_);
+    return e / pow(T, 3);
+  }
+
+  template <typename... Args>
+  PORTABLE_INLINE_FUNCTION auto inverse(Real e, Real rho, Args &&...) const {
+    Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+    Real T = data_.T.interpToReal(lRho);
+    T = std::max(T, min_T_);
+    return e * pow(T, 3);
+  }
 };
 
 // TO DO: Do to T table depending on rho and sie, this transformation does
 // not work as intended
-template<typename Data>
+template <typename Data>
 struct AllTransform {
-PORTABLE_INLINE_FUNCTION  AllTransform() = default;
-   
-template <typename DataT_in>
-PORTABLE_INLINE_FUNCTION AllTransform(const DataT_in &data) : data_(data) {}
+  PORTABLE_INLINE_FUNCTION AllTransform() = default;
 
+  template <typename DataT_in>
+  PORTABLE_INLINE_FUNCTION AllTransform(const DataT_in &data) : data_(data) {}
 
+ private:
+  Data data_;
+  static constexpr Real min_T_ = 1.0e-08; // Good minimum temperature?
+  static constexpr Real min_Cv_ = 1.0e-08;
+  static constexpr Real min_iCv_ = 1.0e-08;
 
-private:
-    Data data_;
-static constexpr Real min_T_ = 1.0e-08; //Good minimum temperature? 
-static constexpr Real min_Cv_ = 1.0e-08;
-static constexpr Real min_iCv_ = 1.0e-08;
+ public:
+  template <typename... Args>
+  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
 
-public:
-    template <typename... Args>
-    PORTABLE_INLINE_FUNCTION
-     auto transform(Real e, Real rho, Args &&...) const {
+    Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
 
-     Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+    Real e_cold = data_.sieCold.interpToReal(lRho);
+    Real T = data_.T.interpToReal(lRho);
+    T = std::max(T, min_T_);
 
-     Real e_cold = data_.sieCold.interpToReal(lRho);
-     Real T = data_.T.interpToReal(lRho);
-     T = std::max(T, min_T_);
+    Real e_transformed = e - e_cold;
+    Real lE = spiner_common::to_log(e_transformed, data_.lEOffset);
+    Real iCv = data_.dTdE.interpToReal(lRho, lE);
+    iCv = std::max(iCv, min_iCv_);
+    e_transformed = e_transformed * iCv;
 
-     Real e_transformed = e - e_cold;
-     Real lE   = spiner_common::to_log(e_transformed, data_.lEOffset);
-     Real iCv = data_.dTdE.interpToReal(lRho, lE);
-     iCv = std::max(iCv, min_iCv_);
-     e_transformed = e_transformed * iCv;
+    return e_transformed / pow(T, 3);
+  }
 
-     return e_transformed / pow(T,3);
-     }
+  template <typename... Args>
+  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Real rho, Real e_orig,
+                                        Args &&...) const {
 
-    template <typename... Args>
-    PORTABLE_INLINE_FUNCTION
-    auto inverse(Real e_transformed, Real rho, Real e_orig, Args &&...) const {
-        
-	Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
-	Real e_cold = data_.sieCold.interpToReal(lRho);
-        Real T = data_.T.interpToReal(lRho);
-        T = std::max(T, min_T_);
+    Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
+    Real e_cold = data_.sieCold.interpToReal(lRho);
+    Real T = data_.T.interpToReal(lRho);
+    T = std::max(T, min_T_);
 
-	  
-        Real e_transformed_inverse = e_orig - e_cold;
-        Real lE   = spiner_common::to_log(e_transformed_inverse, data_.lEOffset);
-	Real Cv = 1./data_.dTdE.interpToReal(lRho, lE);
+    Real e_transformed_inverse = e_orig - e_cold;
+    Real lE = spiner_common::to_log(e_transformed_inverse, data_.lEOffset);
+    Real Cv = 1. / data_.dTdE.interpToReal(lRho, lE);
 
-        e_transformed = e_transformed * pow(T, 3);
+    e_transformed = e_transformed * pow(T, 3);
 
-        Cv = std::max(Cv, min_Cv_);
-        e_transformed = e_transformed * Cv;
+    Cv = std::max(Cv, min_Cv_);
+    e_transformed = e_transformed * Cv;
 
-	return e_transformed + e_cold;
-	
-        
-    }
+    return e_transformed + e_cold;
+  }
 };
 
-} // namespce transformations
+} // namespace transformations
 } // namespace singularity
 
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
