@@ -315,7 +315,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   int matid_;
   TableSplit split_;
   bool reproducible_;
-  static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
+  static constexpr const Real ROOT_THRESH = 1e-14;
   static constexpr const Real SOFT_THRESH = 1e-8;
   DataStatus memoryStatus_ = DataStatus::Deallocated;
   static constexpr const int _n_lambda = 2;
