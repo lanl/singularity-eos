@@ -42,8 +42,7 @@ struct NullTransform {
   template <typename... Args>
   PORTABLE_INLINE_FUNCTION NullTransform(Args &&...) {}
 
-  PORTABLE_INLINE_FUNCTION
-  NullTransform() = default;
+
 
   template <typename... Args>
   PORTABLE_INLINE_FUNCTION auto transform(const Real e, Args &&...) const {
@@ -58,7 +57,7 @@ struct NullTransform {
 
 template <typename Data>
 struct ShiftTransform {
-  PORTABLE_INLINE_FUNCTION ShiftTransform() = default;
+
 
   template <typename DataT_in>
   PORTABLE_INLINE_FUNCTION ShiftTransform(const DataT_in &data) : data_(data) {}
@@ -87,7 +86,7 @@ struct ShiftTransform {
 // Divide by the heat capacity
 template <typename Data>
 struct DivideByCvTransform {
-  PORTABLE_INLINE_FUNCTION DivideByCvTransform() = default;
+
 
   template <typename DataT_in>
   PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data) {}
@@ -120,7 +119,7 @@ struct DivideByCvTransform {
 
 template <typename Data>
 struct ShiftandDivideByCvTransform {
-  PORTABLE_INLINE_FUNCTION ShiftandDivideByCvTransform() = default;
+
 
   template <typename DataT_in>
   PORTABLE_INLINE_FUNCTION ShiftandDivideByCvTransform(const DataT_in &data)
@@ -160,7 +159,7 @@ struct ShiftandDivideByCvTransform {
 // Divide by T^alpha
 template <typename Data>
 struct ScaleTransform {
-  PORTABLE_INLINE_FUNCTION ScaleTransform() = default;
+
 
   template <typename DataT_in>
   PORTABLE_INLINE_FUNCTION ScaleTransform(const DataT_in &data) : data_(data) {}
@@ -191,7 +190,7 @@ struct ScaleTransform {
 // not work as intended
 template <typename Data>
 struct AllTransform {
-  PORTABLE_INLINE_FUNCTION AllTransform() = default;
+
 
   template <typename DataT_in>
   PORTABLE_INLINE_FUNCTION AllTransform(const DataT_in &data) : data_(data) {}
