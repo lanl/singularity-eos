@@ -92,7 +92,6 @@ class SpinerEOSDependsRhoSieTransformable
 
     Real lRhoOffset, lEOffset;
     DataBox sieCold, T, dTdE;
-
   };
 
   using TransformDataT = TransformDataContainer;

@@ -125,7 +125,7 @@ struct TestDataContainer {
   }
 };
 
-template<typename TransformerT>
+template <typename TransformerT>
 void test_transformer(const TransformerT transformer, const Real e_actual, const Real rho,
                       const Real expected_transformed) {
   constexpr size_t real_bytes = 1 * sizeof(Real);
@@ -133,10 +133,11 @@ void test_transformer(const TransformerT transformer, const Real e_actual, const
   Real e_inverse;
   Real *e_transformed_d = (Real *)PORTABLE_MALLOC(real_bytes);
   Real *e_inverse_d = (Real *)PORTABLE_MALLOC(real_bytes);
-  portableFor("Device execution of transform", 0, 1, PORTABLE_LAMBDA(int i) {
-    e_transformed_d[0] = transformer.transform(e_actual, rho);
-    e_inverse_d[0] = transformer.inverse(e_transformed_d[0], rho, e_actual);
-  });
+  portableFor(
+      "Device execution of transform", 0, 1, PORTABLE_LAMBDA(int i) {
+        e_transformed_d[0] = transformer.transform(e_actual, rho);
+        e_inverse_d[0] = transformer.inverse(e_transformed_d[0], rho, e_actual);
+      });
   portableCopyToHost(&e_transformed, e_transformed_d, real_bytes);
   portableCopyToHost(&e_inverse, e_inverse_d, real_bytes);
   PORTABLE_FREE(e_transformed_d);
@@ -147,9 +148,9 @@ void test_transformer(const TransformerT transformer, const Real e_actual, const
 }
 
 // Same as above but runs on host
-template<typename TransformerT>
-void test_transformer_host(const TransformerT transformer, const Real e_actual, const Real rho,
-                      const Real expected_transformed) {
+template <typename TransformerT>
+void test_transformer_host(const TransformerT transformer, const Real e_actual,
+                           const Real rho, const Real expected_transformed) {
   constexpr size_t real_bytes = 1 * sizeof(Real);
   Real e_transformed;
   Real e_inverse;
@@ -232,7 +233,8 @@ SCENARIO("ShiftandDivideByCvTransform behaves correctly", "[TransformTest]") {
     Real actual_iCv = data.dTdE.interpToReal(lRho, lE);
     Real expected_transformed = e_shifted * actual_iCv;
 
-    THEN("Transform yields e_actual / Cv, inverse reconstructs original when run on device") {
+    THEN("Transform yields e_actual / Cv, inverse reconstructs original when run on "
+         "device") {
       // data = data.GetOnDevice();
       ShiftandDivideByCvTransform<TestDataContainer> shiftAndCvTransform(data);
       // test_transformer(shiftAndCvTransform, e_actual, rho, expected_transformed);
@@ -252,7 +254,8 @@ SCENARIO("ScaleTransform behaves correctly", "[TransformTest]") {
     Real Tval = data.T.interpToReal(lRho);
     Real expected_transformed = e_actual / std::pow(Tval, 3);
 
-    THEN("Transform divides by T³, and inverse reconstructs original when run on device") {
+    THEN(
+        "Transform divides by T³, and inverse reconstructs original when run on device") {
       // data = data.GetOnDevice();
       ScaleTransform<TestDataContainer> scaleTransform(data);
       // test_transformer(scaleTransform, e_actual, rho, expected_transformed);
@@ -282,7 +285,8 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
     Real Tval = data.T.interpToReal(lRho);
     Real e_final_transformed = e_CV_transformed / std::pow(Tval, 3);
 
-    THEN("Transform correctly applies all transform, and inverse reconstructs original when run on device") {
+    THEN("Transform correctly applies all transform, and inverse reconstructs original "
+         "when run on device") {
       // data = data.GetOnDevice();
       AllTransform<TestDataContainer> Alltest(data);
       // test_transformer(Alltest, e_actual, rho, e_final_transformed);
