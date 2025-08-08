@@ -40,17 +40,17 @@ template <typename Data = void>
 struct NullTransform {
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION NullTransform(Args &&...) {}
+  constexpr NullTransform(Args &&...) {}
 
 
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(const Real e, Args &&...) const {
+  constexpr auto transform(const Real e, Args &&...) const {
     return e;
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed, Args &&...) const {
+  constexpr auto inverse(const Real e_transformed, Args &&...) const {
     return e_transformed;
   }
 };
@@ -60,14 +60,14 @@ struct ShiftTransform {
 
 
   template <typename DataT_in>
-  PORTABLE_INLINE_FUNCTION ShiftTransform(const DataT_in &data) : data_(data) {}
+  constexpr ShiftTransform(const DataT_in &data) : data_(data) {}
 
  private:
   Data data_;
 
  public:
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(const Real e, const Real rho,
+  constexpr auto transform(const Real e, const Real rho,
                                           Args &&...) const {
     const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real e_cold = data_.sieCold.interpToReal(lRho);
@@ -75,7 +75,7 @@ struct ShiftTransform {
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(const Real e_transformed, const Real rho,
+  constexpr auto inverse(const Real e_transformed, const Real rho,
                                         Args &&...) const {
     const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real e_cold = data_.sieCold.interpToReal(lRho);
@@ -84,12 +84,13 @@ struct ShiftTransform {
 };
 
 // Divide by the heat capacity
+// TODO: Get working on device
 template <typename Data>
 struct DivideByCvTransform {
 
 
   template <typename DataT_in>
-  PORTABLE_INLINE_FUNCTION DivideByCvTransform(const DataT_in &data) : data_(data) {}
+  constexpr DivideByCvTransform(const DataT_in &data) : data_(data) {}
 
  private:
   Data data_;
@@ -98,7 +99,7 @@ struct DivideByCvTransform {
 
  public:
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
+  constexpr auto transform(Real e, Real rho, Args &&...) const {
     const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real lE = spiner_common::to_log(e, data_.lEOffset);
     Real iCv = data_.dTdE.interpToReal(lRho, lE);
@@ -107,7 +108,7 @@ struct DivideByCvTransform {
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Real rho, Real e_orig,
+  constexpr auto inverse(Real e_transformed, Real rho, Real e_orig,
                                         Args &&...) const {
     const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real lE = spiner_common::to_log(e_orig, data_.lEOffset);
@@ -117,12 +118,13 @@ struct DivideByCvTransform {
   }
 };
 
+// TODO: Get working on device
 template <typename Data>
 struct ShiftandDivideByCvTransform {
 
 
   template <typename DataT_in>
-  PORTABLE_INLINE_FUNCTION ShiftandDivideByCvTransform(const DataT_in &data)
+  constexpr ShiftandDivideByCvTransform(const DataT_in &data)
       : data_(data) {}
 
  private:
@@ -132,7 +134,7 @@ struct ShiftandDivideByCvTransform {
 
  public:
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
+  constexpr auto transform(Real e, Real rho, Args &&...) const {
     const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real e_cold = data_.sieCold.interpToReal(lRho);
     const Real lE = spiner_common::to_log(e, data_.lEOffset);
@@ -143,7 +145,7 @@ struct ShiftandDivideByCvTransform {
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Real rho, Real e_orig,
+  constexpr auto inverse(Real e_transformed, Real rho, Real e_orig,
                                         Args &&...) const {
     const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real e_cold = data_.sieCold.interpToReal(lRho);
@@ -157,12 +159,13 @@ struct ShiftandDivideByCvTransform {
 
 // TO DO: T table would depend on rho and sie, need to change in order to work
 // Divide by T^alpha
+// TODO: Get working on device
 template <typename Data>
 struct ScaleTransform {
 
 
   template <typename DataT_in>
-  PORTABLE_INLINE_FUNCTION ScaleTransform(const DataT_in &data) : data_(data) {}
+  constexpr ScaleTransform(const DataT_in &data) : data_(data) {}
 
  private:
   Data data_;
@@ -170,7 +173,7 @@ struct ScaleTransform {
 
  public:
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
+  constexpr auto transform(Real e, Real rho, Args &&...) const {
     Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     Real T = data_.T.interpToReal(lRho); // T?
     T = std::max(T, min_T_);
@@ -178,7 +181,7 @@ struct ScaleTransform {
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(Real e, Real rho, Args &&...) const {
+  constexpr auto inverse(Real e, Real rho, Args &&...) const {
     Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     Real T = data_.T.interpToReal(lRho);
     T = std::max(T, min_T_);
@@ -188,12 +191,13 @@ struct ScaleTransform {
 
 // TO DO: Do to T table depending on rho and sie, this transformation does
 // not work as intended
+// TODO: Get working on device
 template <typename Data>
 struct AllTransform {
 
 
   template <typename DataT_in>
-  PORTABLE_INLINE_FUNCTION AllTransform(const DataT_in &data) : data_(data) {}
+  constexpr AllTransform(const DataT_in &data) : data_(data) {}
 
  private:
   Data data_;
@@ -203,7 +207,7 @@ struct AllTransform {
 
  public:
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto transform(Real e, Real rho, Args &&...) const {
+  constexpr auto transform(Real e, Real rho, Args &&...) const {
 
     Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
 
@@ -221,7 +225,7 @@ struct AllTransform {
   }
 
   template <typename... Args>
-  PORTABLE_INLINE_FUNCTION auto inverse(Real e_transformed, Real rho, Real e_orig,
+  constexpr auto inverse(Real e_transformed, Real rho, Real e_orig,
                                         Args &&...) const {
 
     Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
