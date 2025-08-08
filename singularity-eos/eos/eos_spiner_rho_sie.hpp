@@ -93,8 +93,6 @@ class SpinerEOSDependsRhoSieTransformable
     Real lRhoOffset, lEOffset;
     DataBox sieCold, T, dTdE;
 
-    PORTABLE_INLINE_FUNCTION
-    TransformDataContainer() = default;
   };
 
   using TransformDataT = TransformDataContainer;
