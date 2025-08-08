@@ -265,7 +265,7 @@ PORTABLE_INLINE_FUNCTION Status newton_raphson(const T &f, const Real ytarget,
     std::tie(yg, dfunc) = f(_x); // C++11 tuple unpacking
 
     // check if we are converged already
-    if (std::abs(yg - ytarget) < (ytol * ytarget)) break;
+    if (std::abs(yg - ytarget) < std::abs(ytol * ytarget)) break;
 
     // not converged; compute the next step
     _xold = _x;
