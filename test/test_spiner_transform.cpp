@@ -117,30 +117,54 @@ struct TestDataContainer {
   Real heatFn(Real rho, Real sie) const {
     return SpecificHeatFromDensityInternalEnergy(rho, sie);
   }
+
+  TestDataContainer GetOnDevice() {
+    sieCold = sieCold.getOnDevice();
+    dTdE = dTdE.getOnDevice();
+    return *this;
+  }
 };
+
+template<typename TransformerT>
+void test_transformer(const TransformerT transformer, const Real e_actual, const Real rho,
+                      const Real expected_transformed) {
+  constexpr size_t real_bytes = 1 * sizeof(Real);
+  Real e_transformed;
+  Real e_inverse;
+  Real *e_transformed_d = (Real *)PORTABLE_MALLOC(real_bytes);
+  Real *e_inverse_d = (Real *)PORTABLE_MALLOC(real_bytes);
+  portableFor("Device execution of transform", 0, 1, PORTABLE_LAMBDA(int i) {
+    e_transformed_d[0] = transformer.transform(e_actual, rho);
+    e_inverse_d[0] = transformer.inverse(e_transformed_d[0], rho, e_actual);
+  });
+  portableCopyToHost(&e_transformed, e_transformed_d, real_bytes);
+  portableCopyToHost(&e_inverse, e_inverse_d, real_bytes);
+  PORTABLE_FREE(e_transformed_d);
+  PORTABLE_FREE(e_inverse_d);
+
+  CHECK(isClose(e_transformed, expected_transformed, 1e-14));
+  CHECK(isClose(e_inverse, e_actual, 1e-14));
+}
 
 SCENARIO("NullTransform behave correctly", "[TransformTest]") {
   TestDataContainer data;
-
-  NullTransform<> nullTransform;
+  data = data.GetOnDevice();
+  NullTransform<TestDataContainer> nullTransform;
 
   GIVEN("A density with a known linear cold-curve in log-space") {
     Real rho = 10.0;
     Real lRho = to_log(rho, data.lRhoOffset);
     Real e_actual = 42.0;
 
-    THEN("NullTransform is identity throughout") {
-      Real null_out = nullTransform.transform(e_actual, rho);
-      Real null_back = nullTransform.inverse(null_out, lRho);
-      REQUIRE(isClose(null_out, e_actual, 1e-14));
-      REQUIRE(isClose(null_back, e_actual, 1e-14));
+    THEN("NullTransform is identity throughout when run on device") {
+      test_transformer(nullTransform, e_actual, rho, e_actual);
     }
   }
 }
 
 SCENARIO("ShiftTransform behave correctly", "[TransformTest]") {
   TestDataContainer data;
-
+  data = data.GetOnDevice();
   ShiftTransform<TestDataContainer> shiftTransform(data);
 
   GIVEN("A density with a known linear cold-curve in log-space") {
@@ -148,24 +172,22 @@ SCENARIO("ShiftTransform behave correctly", "[TransformTest]") {
     Real lRho = to_log(rho, data.lRhoOffset);
     Real cold_curve_value = data.e_cold_fun(lRho);
     Real e_actual = 42.0;
+    Real expected_transformed = e_actual - cold_curve_value;
 
     THEN("Transform subtracts cold curve correctly and Inverse adds cold curve back "
-         "correctly") {
-      Real e_transformed = shiftTransform.transform(e_actual, rho);
-      REQUIRE(isClose(e_transformed, e_actual - cold_curve_value, 1e-14));
-      Real e_inverse = shiftTransform.inverse(e_transformed, rho);
-      REQUIRE(isClose(e_inverse, e_actual, 1e-14));
+         "correctly when run on device") {
+      test_transformer(shiftTransform, e_actual, rho, expected_transformed);
     }
   }
 }
 
 SCENARIO("DivideByCvTransform behaves correctly", "[TransformTest]") {
   TestDataContainer data;
+  data = data.GetOnDevice();
   DivideByCvTransform<TestDataContainer> cvTransform(data);
 
   GIVEN("An internal energy, density and sie with known constant Cv") {
     Real rho = 10.0;
-    Real sie = 42.0;
     Real e_actual = 84.0;
 
     Real lRho = to_log(rho, data.lRhoOffset);
@@ -174,23 +196,20 @@ SCENARIO("DivideByCvTransform behaves correctly", "[TransformTest]") {
     Real actual_iCv = data.dTdE.interpToReal(lRho, lE);
     Real expected_transformed = e_actual * actual_iCv;
 
-    THEN("Transform yields e_actual / Cv, inverse reconstructs original") {
-      Real e_transformed = cvTransform.transform(e_actual, rho);
-      CHECK(isClose(e_transformed, expected_transformed, 1e-14));
-
-      Real e_inverse = cvTransform.inverse(e_transformed, rho, e_actual);
-      CHECK(isClose(e_inverse, e_actual, 1e-14));
+    THEN("Transform yields e_actual / Cv, inverse reconstructs original when run on "
+         "device") {
+      test_transformer(cvTransform, e_actual, rho, expected_transformed);
     }
   }
 }
 
 SCENARIO("ShiftandDivideByCvTransform behaves correctly", "[TransformTest]") {
   TestDataContainer data;
+  data = data.GetOnDevice();
   ShiftandDivideByCvTransform<TestDataContainer> shiftAndCvTransform(data);
 
   GIVEN("An internal energy, density and sie with known constant Cv") {
     Real rho = 10.0;
-    Real sie = 42.0;
     Real e_actual = 84.0;
 
     Real lRho = to_log(rho, data.lRhoOffset);
@@ -200,18 +219,15 @@ SCENARIO("ShiftandDivideByCvTransform behaves correctly", "[TransformTest]") {
     Real actual_iCv = data.dTdE.interpToReal(lRho, lE);
     Real expected_transformed = e_shifted * actual_iCv;
 
-    THEN("Transform yields e_actual / Cv, inverse reconstructs original") {
-      Real e_transformed = shiftAndCvTransform.transform(e_actual, rho);
-      CHECK(isClose(e_transformed, expected_transformed, 1e-14));
-
-      Real e_inverse = shiftAndCvTransform.inverse(e_transformed, rho, e_actual);
-      CHECK(isClose(e_inverse, e_actual, 1e-14));
+    THEN("Transform yields e_actual / Cv, inverse reconstructs original when run on device") {
+      test_transformer(shiftAndCvTransform, e_actual, rho, expected_transformed);
     }
   }
 }
 
 SCENARIO("ScaleTransform behaves correctly", "[TransformTest]") {
   TestDataContainer data;
+  data = data.GetOnDevice();
   ScaleTransform<TestDataContainer> scaleTransform(data);
 
   GIVEN("An internal energy and density, with linear T(rho)") {
@@ -222,24 +238,20 @@ SCENARIO("ScaleTransform behaves correctly", "[TransformTest]") {
     Real Tval = data.T.interpToReal(lRho);
     Real expected_transformed = e_actual / std::pow(Tval, 3);
 
-    THEN("Transform divides by T³, and inverse reconstructs original") {
-      Real e_transformed = scaleTransform.transform(e_actual, rho);
-      REQUIRE(isClose(e_transformed, expected_transformed, 1e-14));
-
-      Real e_inverse = scaleTransform.inverse(e_transformed, rho);
-      REQUIRE(isClose(e_inverse, e_actual, 1e-14));
+    THEN("Transform divides by T³, and inverse reconstructs original when run on device") {
+      test_transformer(scaleTransform, e_actual, rho, expected_transformed);
     }
   }
 }
 
 SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
   TestDataContainer data;
+  data = data.GetOnDevice();
   AllTransform<TestDataContainer> Alltest(data);
 
   GIVEN("An internal energy, density, sie,  with linear T(rho), known constant Cv, and a "
         "known linear cold-curve in log-space") {
     Real rho = 10.0;
-    Real sie = 42.0;
     Real e_actual = 100.0;
 
     Real lRho = to_log(rho, data.lRhoOffset);
@@ -255,12 +267,8 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
     Real Tval = data.T.interpToReal(lRho);
     Real e_final_transformed = e_CV_transformed / std::pow(Tval, 3);
 
-    THEN("Transform correctly applies all transform, and inverse reconstructs original") {
-      Real e_transformed = Alltest.transform(e_actual, rho);
-      REQUIRE(isClose(e_transformed, e_final_transformed, 1e-14));
-
-      Real e_inverse = Alltest.inverse(e_transformed, rho, e_actual);
-      REQUIRE(isClose(e_inverse, e_actual, 1e-14));
+    THEN("Transform correctly applies all transform, and inverse reconstructs original when run on device") {
+      test_transformer(Alltest, e_actual, rho, e_final_transformed);
     }
   }
 }
