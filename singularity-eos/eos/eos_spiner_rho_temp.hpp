@@ -521,7 +521,7 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
     rho_at_pmin_(i) = rho_(P_.range(1).x(jmax));
   }
   // Finally enforce that rho_at_pmin(T) must be non-increasing in T
-  for (int i = 0; i < numT_ - 1; ++i) {
+  for (int i = numT_ - 2; i >= 0; i--) {
     if (rho_at_pmin_(i) < rho_at_pmin_(i + 1)) {
       rho_at_pmin_(i) = rho_at_pmin_(i + 1);
     }
