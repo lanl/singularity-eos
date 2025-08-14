@@ -417,6 +417,16 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
     EOS foam_eos_h = SpinerEOSDependsRhoT(eos_file, foam_matid);
     EOS foam_eos = foam_eos_h.GetOnDevice();
 
+    WHEN("We request density at minimum pressure") {
+      Real rhopmin_100 = foam_eos_h.RhoPmin(100);
+      Real rhopmin_300 = foam_eos_h.RhoPmin(100);
+      THEN("it is close to normal density and non-increasing at low temperature") {
+        REQUIRE(rhopmin_100 > 0.2);
+        REQUIRE(rhopmin_300 > 0.2);
+        REQUIRE(rhopmin_100 >= rhopmin_300);
+      }
+    }
+
     constexpr Real rhobar1 = 1.59761356859602e-04;
     constexpr Real rhobar2 = 7.81928505957464e-09;
     constexpr Real alpha_guess1 = 9.99999776549350e-01;
