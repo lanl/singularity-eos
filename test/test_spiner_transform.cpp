@@ -64,7 +64,8 @@ struct TestDataContainer {
   using RG = Spiner::RegularGrid1D<Real>;
   Grid_t rhogrid{{RG(lRho_low, lRho_high, Npts)}};
   Grid_t siegrid{{RG(lE_low, lE_high, N_sie)}};
-  DataBox sieCold{Npts}, T{Npts};
+  DataBox sieCold{Npts};
+  DataBox T{Npts};
   DataBox dTdE{Npts, N_sie};
 
   TestDataContainer() {
@@ -121,6 +122,7 @@ struct TestDataContainer {
   TestDataContainer GetOnDevice() {
     sieCold = sieCold.getOnDevice();
     dTdE = dTdE.getOnDevice();
+    T = T.getOnDevice();
     return *this;
   }
 };
