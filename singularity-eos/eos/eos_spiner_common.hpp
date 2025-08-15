@@ -17,6 +17,8 @@
 
 #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
+#include <limits>
+
 #include <hdf5.h>
 #include <hdf5_hl.h>
 
@@ -49,6 +51,65 @@ PORTABLE_FORCEINLINE_FUNCTION Real to_log(const Real x, const Real offset) {
 }
 PORTABLE_FORCEINLINE_FUNCTION Real from_log(const Real lx, const Real offset) {
   return FastMath::pow10(lx) - offset;
+}
+
+PORTABLE_INLINE_FUNCTION Real SetRhoPMin(DataBox &P, DataBox &rho_at_pmin,
+                                         const bool pmin_vapor_dome,
+                                         const Real VAPOR_DPDR_THRESH,
+                                         const Real lRhoOffset) {
+  Real PMin = std::numeric_limits<Real>::max();
+  const auto lTs = P.range(0);
+  const auto lRs = P.range(1);
+  const Real NT = lTs.nPoints();
+  const Real NR = lRs.nPoints();
+  rho_at_pmin.resize(NT);
+  rho_at_pmin.setRange(0, lTs);
+  for (int i = 0; i < NT; ++i) {
+    Real PMin_at_T = std::numeric_limits<Real>::max();
+    int jmax = 0;
+    for (int j = 0; j < NR; ++j) {
+      if (P(j, i) < PMin_at_T) {
+        PMin_at_T = P(j, i);
+        jmax = j;
+      }
+      // check gradient if excluding vapor dome
+      if ((j > 0) && pmin_vapor_dome) {
+        Real dP = P(j, i) - P(j - 1, i);
+        Real dr = from_log(lRs.x(j), lRhoOffset) - from_log(lRs.x(j - 1), lRhoOffset);
+        Real dpdr = robust::ratio(dP, dr);
+        if (dpdr < VAPOR_DPDR_THRESH) {
+          jmax = j;
+        }
+      }
+    }
+    if ((PMin_at_T > 0) && !pmin_vapor_dome) {
+      rho_at_pmin(i) = 0;
+      PMin_at_T = 0;
+    } else {
+      rho_at_pmin(i) = from_log(lRs.x(jmax), lRhoOffset);
+    }
+    PMin = std::min(PMin_at_T, PMin);
+  }
+
+  // enforce monotonicity of rho_at_pmin vs T
+  for (int i = NT - 2; i >= 0; i--) {
+    if (rho_at_pmin(i) < rho_at_pmin(i + 1)) {
+      rho_at_pmin(i) = rho_at_pmin(i + 1);
+    }
+  }
+
+  return PMin;
+}
+
+PORTABLE_INLINE_FUNCTION void PrintRhoPMin(const DataBox &rho_at_pmin,
+                                           const Real lTOffset) {
+  const auto &range = rho_at_pmin.range(0);
+  for (std::size_t i = 0; i < range.nPoints(); ++i) {
+    const Real lT = range.x(i);
+    const Real T = from_log(lT, lTOffset);
+    const Real rho = rho_at_pmin(i);
+    printf("%ld %.14e %.14e\n", i, T, rho);
+  }
 }
 
 inline herr_t aborting_error_handler(hid_t stack, void *client_data) {

@@ -95,19 +95,23 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSie()
       : memoryStatus_(DataStatus::Deallocated) {}
   inline SpinerEOSDependsRhoSie(const std::string &filename, int matid, TableSplit split,
-                                bool reproducibility_mode = false);
+                                bool reproducibility_mode = false,
+                                bool pmin_vapor_dome = false);
   inline SpinerEOSDependsRhoSie(const std::string &filename, int matid,
-                                bool reproducibility_mode = false)
-      : SpinerEOSDependsRhoSie(filename, matid, TableSplit::Total, reproducibility_mode) {
-  }
+                                bool reproducibility_mode = false,
+                                bool pmin_vapor_dome = false)
+      : SpinerEOSDependsRhoSie(filename, matid, TableSplit::Total, reproducibility_mode,
+                               pmin_vapor_dome) {}
   inline SpinerEOSDependsRhoSie(const std::string &filename,
                                 const std::string &materialName, TableSplit split,
-                                bool reproducibility_mode = false);
+                                bool reproducibility_mode = false,
+                                bool pmin_vapor_dome = false);
   inline SpinerEOSDependsRhoSie(const std::string &filename,
                                 const std::string &materialName,
-                                bool reproducibility_mode = false)
+                                bool reproducibility_mode = false,
+                                bool pmin_vapor_dome = false)
       : SpinerEOSDependsRhoSie(filename, materialName, TableSplit::Total,
-                               reproducibility_mode) {}
+                               reproducibility_mode, pmin_vapor_dome) {}
   inline SpinerEOSDependsRhoSie GetOnDevice();
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
@@ -214,6 +218,9 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
     return spiner_common::from_log(T_.range(0).max(), lEOffset_);
   }
 
+  PORTABLE_FORCEINLINE_FUNCTION void PrintRhoPMin() const {
+    return spiner_common::PrintRhoPMin(rho_at_pmin_, lTOffset_);
+  }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return TMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
@@ -261,15 +268,14 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   DataBox sie_; // depends on (rho,T)
   DataBox T_;   // depends on (rho, sie)
   DataBox rho_at_pmin_;
-  DataBox PCold_, sieCold_, bModCold_;
-  DataBox dPdRhoCold_, dPdECold_, dTdRhoCold_, dTdECold_, dEdTCold_;
   SP5Tables dependsRhoT_;
   SP5Tables dependsRhoSie_;
+  DataBox PlRhoMax_, dPdRhoMax_;
+  DataBox PCold_, sieCold_, bModCold_, dPdRhoCold_;
   int numRho_, numT_;
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
   Real CvNormal_, bModNormal_, dPdENormal_, dVdTNormal_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
-  DataBox PlRhoMax_, dPdRhoMax_;
   Real PMin_;
   Real lRhoOffset_, lTOffset_, lEOffset_; // offsets must be non-negative
 
@@ -279,8 +285,7 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
       &(dependsRhoT_.dTdE), &(dependsRhoT_.dEdRho), &(dependsRhoSie_.P),                 \
       &(dependsRhoSie_.bMod), &(dependsRhoSie_.dPdRho), &(dependsRhoSie_.dPdE),          \
       &(dependsRhoSie_.dTdRho), &(dependsRhoSie_.dTdE), &(dependsRhoSie_.dEdRho),        \
-      &PlRhoMax_, &dPdRhoMax_, &PCold_, &sieCold_, &bModCold_, &dPdRhoCold_, &dPdECold_, \
-      &dTdRhoCold_, &dTdECold_, &dEdTCold_,
+      &PlRhoMax_, &dPdRhoMax_, &PCold_, &sieCold_, &bModCold_, &dPdRhoCold_
   std::vector<const DataBox *> GetDataBoxPointers_() const {
     return std::vector<const DataBox *>{DBLIST};
   }
@@ -293,7 +298,10 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
   int matid_;
   TableSplit split_;
   MeanAtomicProperties AZbar_;
-  bool reproducible_;
+  bool reproducible_ = false;
+  bool pmin_vapor_dome_ = false;
+  // only used to exclude vapor dome
+  static constexpr const Real VAPOR_DPDR_THRESH = 1e-8;
   static constexpr const int _n_lambda = 1;
   static constexpr const char *_lambda_names[1] = {"log(rho)"};
   DataStatus memoryStatus_ = DataStatus::Deallocated;
@@ -302,9 +310,10 @@ class SpinerEOSDependsRhoSie : public EosBase<SpinerEOSDependsRhoSie> {
 inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
                                                       const std::string &materialName,
                                                       TableSplit split,
-                                                      bool reproducibility_mode)
+                                                      bool reproducibility_mode,
+                                                      bool pmin_vapor_dome)
     : split_(split), reproducible_(reproducibility_mode),
-      memoryStatus_(DataStatus::OnHost) {
+      pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
   hid_t file, matGroup, lTGroup, lEGroup, coldGroup;
@@ -417,20 +426,8 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   dPdRhoMax_ = dependsRhoT_.dPdRho.slice(numRho_ - 1);
 
   // fill in minimum pressure as a function of temperature
-  rho_at_pmin_.resize(numT_);
-  rho_at_pmin_.setRange(0, sie_.range(0));
-  for (int i = 0; i < numT_; i++) {
-    PMin_ = std::numeric_limits<Real>::max();
-    int jmax = -1;
-    for (int j = 0; j < numRho_; j++) {
-      if (dependsRhoT_.P(j, i) < PMin_) {
-        PMin_ = dependsRhoT_.P(j, i);
-        jmax = j;
-      }
-    }
-    if (jmax < 0) printf("Failed to find minimum pressure.\n");
-    rho_at_pmin_(i) = from_log(dependsRhoT_.P.range(1).x(jmax), lRhoOffset_);
-  }
+  SetRhoPMin(dependsRhoT_.P, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH,
+             lRhoOffset_);
 
   // reference state
   Real lRhoNormal = to_log(rhoNormal_, lRhoOffset_);
@@ -748,9 +745,10 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoSie::lRhoFromPlT_(
 
 inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSie(const std::string &filename,
                                                       int matid, TableSplit split,
-                                                      bool reproducibility_mode)
+                                                      bool reproducibility_mode,
+                                                      bool pmin_vapor_dome)
     : matid_(matid), split_(split), reproducible_(reproducibility_mode),
-      memoryStatus_(DataStatus::OnHost) {
+      pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
   hid_t file, matGroup, lTGroup, lEGroup, coldGroup;
