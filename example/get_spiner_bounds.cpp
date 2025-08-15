@@ -29,15 +29,18 @@ int main(int argc, char *argv[]) {
 #endif
   { // begin kokkos scope
     if (argc < 3) {
-      std::cerr << "Usage: " << argv[0] << " matid sp5_filename" << std::endl;
+      std::cerr << "Usage: " << argv[0] << " matid sp5_filename [avoid vapor dome]"
+                << std::endl;
       std::exit(1);
     }
-
     const int matid = std::atoi(argv[1]);
     const std::string filename = argv[2];
-
-    singularity::SpinerEOSDependsRhoT deprt(filename, matid);
-    singularity::SpinerEOSDependsRhoSie depre(filename, matid);
+    bool pmin_vapor_dome = false;
+    if (argc >= 4) {
+      pmin_vapor_dome = atoi(argv[3]);
+    }
+    singularity::SpinerEOSDependsRhoT deprt(filename, matid, false, pmin_vapor_dome);
+    singularity::SpinerEOSDependsRhoSie depre(filename, matid, false, pmin_vapor_dome);
 
     printf("# rho bounds, depends(r, T): %.14e %.14e\n", deprt.MinimumDensity(),
            deprt.rhoMax());
