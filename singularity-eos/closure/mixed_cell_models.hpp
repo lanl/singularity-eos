@@ -97,60 +97,68 @@ bool check_nans(Real const *const a, const std::size_t n, const bool verbose = f
 
 PORTABLE_INLINE_FUNCTION
 bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
+  if (n == 2) {
+    Real *x = scr;
+    x[0] = robust::ratio(a[3] * b[0] - a[1] * b[1], a[0] * a[3] - a[1] * a[2]);
+    x[1] = robust::ratio(a[2] * b[0] - a[0] * b[1], a[1] * a[2] - a[0] * a[3]);
+    b[0] = x[0];
+    b[1] = x[1];
+  } else {
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
 #ifndef PORTABILITY_STRATEGY_KOKKOS
 #error "Kokkos Kernels requires Kokkos."
 #endif
-  // aliases for kokkos views
-  using Unmgd = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
-  using Lrgt = Kokkos::LayoutRight;
-  using vec_t = Kokkos::View<Real *, Unmgd>;
-  // aliases for QR solve template params
-  using QR_alg = KokkosBatched::Algo::QR::Unblocked;
-  using Lft = KokkosBatched::Side::Left;
-  using Trs = KokkosBatched::Trans::Transpose;
-  using nTrs = KokkosBatched::Trans::NoTranspose;
-  using ApQ_alg = KokkosBatched::Algo::ApplyQ::Unblocked;
-  using UP = KokkosBatched::Uplo::Upper;
-  using NonU = KokkosBatched::Diag::NonUnit;
-  using Tr_alg = KokkosBatched::Algo::Trsv::Unblocked;
-  // aliases for solver structs ('invoke' member of the struct is the
-  // actual function call)
-  using QR_factor = KokkosBatched::SerialQR<QR_alg>;
-  using ApplyQ_transpose = KokkosBatched::SerialApplyQ<Lft, Trs, ApQ_alg>;
-  using InvertR = KokkosBatched::SerialTrsv<UP, nTrs, NonU, Tr_alg>;
-  // view of matrix
-  Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
-  // view of RHS
-  Kokkos::View<Real **, Lrgt, Unmgd> B(b, n, 1);
-  // view of reflectors
-  vec_t t(scr, n);
-  // view of workspace
-  vec_t w(scr + n, n);
-  // QR factor A, A x = B -> Q R x = B
-  // store result in A and t
-  QR_factor::invoke(A, t, w);
-  // Apply Q^T from the left to both sides
-  // Q^T Q R x = Q^T B -> R x = Q^T B
-  // store result of Q^T B in B
-  ApplyQ_transpose::invoke(A, t, B, w);
-  // Apply R^-1 from the left to both sides
-  // R^-1 R x = R^-1 Q^T B -> x = R^-1 Q^T B
-  // store solution vector x in B
-  InvertR::invoke(1.0, A, B);
+    // aliases for kokkos views
+    using Unmgd = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
+    using Lrgt = Kokkos::LayoutRight;
+    using vec_t = Kokkos::View<Real *, Unmgd>;
+    // aliases for QR solve template params
+    using QR_alg = KokkosBatched::Algo::QR::Unblocked;
+    using Lft = KokkosBatched::Side::Left;
+    using Trs = KokkosBatched::Trans::Transpose;
+    using nTrs = KokkosBatched::Trans::NoTranspose;
+    using ApQ_alg = KokkosBatched::Algo::ApplyQ::Unblocked;
+    using UP = KokkosBatched::Uplo::Upper;
+    using NonU = KokkosBatched::Diag::NonUnit;
+    using Tr_alg = KokkosBatched::Algo::Trsv::Unblocked;
+    // aliases for solver structs ('invoke' member of the struct is the
+    // actual function call)
+    using QR_factor = KokkosBatched::SerialQR<QR_alg>;
+    using ApplyQ_transpose = KokkosBatched::SerialApplyQ<Lft, Trs, ApQ_alg>;
+    using InvertR = KokkosBatched::SerialTrsv<UP, nTrs, NonU, Tr_alg>;
+    // view of matrix
+    Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
+    // view of RHS
+    Kokkos::View<Real **, Lrgt, Unmgd> B(b, n, 1);
+    // view of reflectors
+    vec_t t(scr, n);
+    // view of workspace
+    vec_t w(scr + n, n);
+    // QR factor A, A x = B -> Q R x = B
+    // store result in A and t
+    QR_factor::invoke(A, t, w);
+    // Apply Q^T from the left to both sides
+    // Q^T Q R x = Q^T B -> R x = Q^T B
+    // store result of Q^T B in B
+    ApplyQ_transpose::invoke(A, t, B, w);
+    // Apply R^-1 from the left to both sides
+    // R^-1 R x = R^-1 Q^T B -> x = R^-1 Q^T B
+    // store solution vector x in B
+    InvertR::invoke(1.0, A, B);
 #else
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 #warning "Eigen should not be used with Kokkos."
 #endif
-  // Eigen VERSION
-  using Matrix_t = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-  Eigen::Map<Matrix_t> A(a, n, n);
+    // Eigen VERSION
+    using Matrix_t = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    Eigen::Map<Matrix_t> A(a, n, n);
 
-  Eigen::Map<Eigen::VectorXd> B(b, n);
-  Eigen::Map<Eigen::VectorXd> X(scr, n);
-  X = A.lu().solve(B);
-  B = X;
+    Eigen::Map<Eigen::VectorXd> B(b, n);
+    Eigen::Map<Eigen::VectorXd> X(scr, n);
+    X = A.lu().solve(B);
+    B = X;
 #endif // SINGULARITY_USE_KOKKOSKERNELS
+  }
   bool retval = check_nans(b, n);
   return retval;
 }
@@ -671,11 +679,31 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
   return FastMath::pow2((1.0 - alpha) * lTlo + alpha * lThi);
 }
 
+// clang-format off
+/*
+ * Indep variables are: T, and volume fractions for materials 1 through nmat - 1
+ * Residual equations are:
+ *   sum(u_m) - utotal = 0
+ *   P_m - P_0 = 0 for all m > 0
+ * subject to the constraint
+ *   alpha_0 = 1 - sum_{m=1)^{nmat - 1} alpha_m
+ * where alpha is volume fraction
+ *
+ * Jacobian is
+ *
+ * [ sum(du/dT)         du_1/dalpha_1 - du_0/dalpha_0 ... du_m/dalpha_m - du_0/dalpha_0 ]
+ * [ dP_1/dT - dP_0/dT  dP_1/dalpha_1 + dP_0/dalpha_0 0                ...              ]
+ * [ .                                                                  0               ]
+ * [ .                                0                                 .               ]
+ * [ dP_m/dT - dP_0/dT                0                  dP_n/dalpha_n + dP_0/dalpha_0  ]
+ *
+ */
+// clang-format on
 // ======================================================================
 // PTE Solver RhoT
 // ======================================================================
 constexpr inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
-  std::size_t neq = nmat + 1;
+  std::size_t neq = nmat;
   return neq * neq   // jacobian
          + 4 * neq   // dx, residual, and sol_scratch
          + 6 * nmat; // all the nmat sized arrays
@@ -724,7 +752,7 @@ class PTESolverRhoT
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
                 const Real Tnorm = 0.0, const MixParams &params = MixParams())
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
-            nmat, nmat + 1, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+            nmat, nmat, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
             scratch, Tnorm, params) {
     dpdv = AssignIncrement(scratch, nmat);
     dedv = AssignIncrement(scratch, nmat);
@@ -756,16 +784,13 @@ class PTESolverRhoT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
     Real esum = 0.0;
     for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
       esum += u[m];
     }
-    residual[0] = vfrac_total - vsum;
-    residual[1] = utotal_scale - esum;
-    for (std::size_t m = 0; m < nmat - 1; ++m) {
-      residual[2 + m] = press[m + 1] - press[m];
+    residual[0] = utotal_scale - esum;
+    for (std::size_t m = 1; m < nmat; ++m) {
+      residual[m] = press[0] - press[m];
     }
   }
 
@@ -825,16 +850,18 @@ class PTESolverRhoT
     // Fill in the Jacobian
     for (std::size_t i = 0; i < neq * neq; ++i)
       jacobian[i] = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      jacobian[m] = 1.0;
-      jacobian[neq + m] = dedv[m];
+    // first row is energy residual eqn
+    jacobian[0] = dedT_sum;
+    for (std::size_t m = 1; m < nmat; ++m) {
+      jacobian[m] = dedv[m] - dedv[0];
     }
-    jacobian[neq + nmat] = dedT_sum;
-    for (std::size_t m = 0; m < nmat - 1; m++) {
-      const std::size_t ind = MatIndex(2 + m, m);
-      jacobian[ind] = dpdv[m];
-      jacobian[ind + 1] = -dpdv[m + 1];
-      jacobian[MatIndex(2 + m, nmat)] = dpdT[m] - dpdT[m + 1];
+    // remaining rows are pressure residual
+    for (std::size_t m = 1; m < nmat; m++) {
+      // 0th column of rows 1+ is temp derivative
+      jacobian[MatIndex(m, 0)] = dpdT[m] - dpdT[0];
+      // diagonal of J[1:,1:] is dpdvs.
+      // + sign here is because dp_0/dalpha_i = -dp_0/dalpha_0
+      jacobian[MatIndex(m, m)] = dpdv[m] + dpdv[0];
     }
   }
 
@@ -843,12 +870,22 @@ class PTESolverRhoT
     // Each check reduces the scale further if necessary
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
-    for (std::size_t m = 0; m < nmat; ++m) {
+    // 0th material is special as delta volume fraction for it is
+    // minus the sum of the deltas for the others
+    Real dalpha0 = 0;
+    for (std::size_t m = 1; m < nmat; ++m) {
+      dalpha0 -= dx[m];
       if (scale * dx[m] < -params_.vfrac_safety_fac * vfrac[m]) {
-        scale = -params_.vfrac_safety_fac * robust::ratio(vfrac[m], dx[m]);
+        scale = std::min(
+            scale, std::abs(params_.vfrac_safety_fac * robust::ratio(vfrac[m], dx[m])));
       }
     }
-    const Real Tnew = Tequil + scale * dx[nmat];
+    if (scale * dalpha0 < -params_.vfrac_safety_fac * vfrac[0]) {
+      scale = std::min(
+          scale, std::abs(params_.vfrac_safety_fac * robust::ratio(vfrac[0], dalpha0)));
+    }
+
+    const Real Tnew = Tequil + scale * dx[0];
     // control how big of a step toward rho = rho(Pmin) is allowed
     for (std::size_t m = 0; m < nmat; m++) {
       const Real rho_min =
@@ -861,13 +898,14 @@ class PTESolverRhoT
         // should be skipped.
         continue;
       }
-      if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
+      Real mydx = (m == 0) ? dalpha0 : dx[m];
+      if (scale * mydx > 0.5 * (alpha_max - vfrac[m])) {
+        scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), mydx);
       }
     }
     // control how big of a step toward T = 0 is allowed
-    if (scale * dx[nmat] < -0.95 * Tequil) {
-      scale = robust::ratio(-0.95 * Tequil, dx[nmat]);
+    if (scale * dx[0] < -0.95 * Tequil) {
+      scale = robust::ratio(-0.95 * Tequil, dx[0]);
     }
     // Now apply the overall scaling
     for (std::size_t i = 0; i < neq; ++i)
@@ -886,9 +924,13 @@ class PTESolverRhoT
       for (std::size_t m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
     }
-    Tequil = Ttemp + scale * dx[nmat];
-    for (std::size_t m = 0; m < nmat; ++m) {
+    Tequil = Ttemp + scale * dx[0];
+    vfrac[0] = 1;
+    for (std::size_t m = 1; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
+      vfrac[0] -= vfrac[m];
+    }
+    for (std::size_t m = 0; m < nmat; ++m) {
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
                              rho[m], Tnorm * Tequil, lambda[m]);
@@ -1136,17 +1178,6 @@ class PTESolverPT
     }
     Residual();
     return ResidualNorm();
-  }
-
-  // Solve the linear system for the update dx
-  // Customized because this system can invert its jacobian analytically
-  PORTABLE_INLINE_FUNCTION
-  bool Solve() const {
-    dx[0] = robust::ratio(jacobian[3] * residual[0] - jacobian[1] * residual[1],
-                          jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2]);
-    dx[1] = robust::ratio(jacobian[2] * residual[0] - jacobian[0] * residual[1],
-                          jacobian[1] * jacobian[2] - jacobian[0] * jacobian[3]);
-    return mix_impl::check_nans(dx, 2);
   }
 
  private:
