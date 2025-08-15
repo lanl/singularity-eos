@@ -560,7 +560,6 @@ contains the following member fields, with default values:
     std::size_t pte_small_step_tries = 2;
     Real pte_small_step_thresh = 1e-16;
     Real pte_max_dpdv = -1e-8;
-    Real pte_min_drdp = 1e-8;
   };
 
 where here ``verbose`` enables verbose output in the PTE solve is,
@@ -602,9 +601,7 @@ make the system impossible to solve. This threshold floors this
 Jacobian so that it can always be inverted. The threshold is the
 gradient of the pressure with respect to **volume fraction** and must
 be negative. If a positive threshold is entered, it will be made
-negative. ``pte_min_drdp`` is the equivalent threshold for the
-PT-space solver, which computes a gradient with respect to pressure of
-density.
+negative.
 
 .. note::
 

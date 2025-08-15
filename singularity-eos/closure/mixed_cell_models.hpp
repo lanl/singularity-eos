@@ -60,10 +60,6 @@ struct MixParams {
   Real min_dtde = 1.0e-16;
   std::size_t pte_small_step_tries = 2;
   Real pte_small_step_thresh = 1e-16;
-  // JMM: Smaller magnitude here means slower convergence for Maxwell
-  // constructed EOS's, but more faithfulness to the table.  This is
-  // assumed to be a negative number, and singularity-eos will make it
-  // negative if you forget.
   Real pte_max_dpdv = -1e-8;
 };
 
