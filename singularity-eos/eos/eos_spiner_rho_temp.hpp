@@ -507,7 +507,7 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   setlTColdCrit_();
 
   // fill in minimum pressure as a function of temperature
-  SetRhoPMin(P_, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH, lRhoOffset_);
+  PMin_ = SetRhoPMin(P_, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH, lRhoOffset_);
 
   // fill in Gruneisen parameter and bulk modulus on cold curves
   // unfortunately, EOSPAC's output for these parameters appears

@@ -91,13 +91,6 @@ PORTABLE_INLINE_FUNCTION Real SetRhoPMin(DataBox &P, DataBox &rho_at_pmin,
     PMin = std::min(PMin_at_T, PMin);
   }
 
-  // enforce monotonicity of rho_at_pmin vs T
-  for (int i = NT - 2; i >= 0; i--) {
-    if (rho_at_pmin(i) < rho_at_pmin(i + 1)) {
-      rho_at_pmin(i) = rho_at_pmin(i + 1);
-    }
-  }
-
   return PMin;
 }
 

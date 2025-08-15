@@ -419,10 +419,8 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
 
     WHEN("We request density at minimum pressure") {
       Real rhopmin_100 = foam_eos_h.RhoPmin(100);
-      Real rhopmin_300 = foam_eos_h.RhoPmin(300);
       THEN("It's zero, as appropriate for a Maxwell constructed EOS") {
         REQUIRE(rhopmin_100 == 0);
-        REQUIRE(rhopmin_300 == 0);
       }
     }
 

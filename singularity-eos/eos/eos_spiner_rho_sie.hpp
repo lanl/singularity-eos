@@ -426,8 +426,8 @@ herr_t SpinerEOSDependsRhoSie::loadDataboxes_(const std::string &matid_str, hid_
   dPdRhoMax_ = dependsRhoT_.dPdRho.slice(numRho_ - 1);
 
   // fill in minimum pressure as a function of temperature
-  SetRhoPMin(dependsRhoT_.P, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH,
-             lRhoOffset_);
+  PMin_ = SetRhoPMin(dependsRhoT_.P, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH,
+                     lRhoOffset_);
 
   // reference state
   Real lRhoNormal = to_log(rhoNormal_, lRhoOffset_);
