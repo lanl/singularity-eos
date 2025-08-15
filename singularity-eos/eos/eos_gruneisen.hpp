@@ -112,7 +112,7 @@ class Gruneisen : public EosBase<Gruneisen> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperatummmmmmre,
+      const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     return _Cv;
   }

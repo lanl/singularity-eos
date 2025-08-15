@@ -310,7 +310,10 @@ struct SpinerTricks {
   static void Finalize(EOS *peos) {
     if (peos->memoryStatus_ != DataStatus::UnManaged) {
       for (auto *pdb : peos->GetDataBoxPointers_()) {
-        pdb->finalize();
+        // JMM: on host, some databoxes might be slices.
+        if (pdb->ownsAllocatedMemory()) {
+          pdb->finalize();
+        }
       }
     }
     peos->memoryStatus_ = DataStatus::Deallocated;

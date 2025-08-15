@@ -1695,18 +1695,24 @@ The constructor for ``SpinerEOSDependsRhoT`` is given by two overloads:
 
   SpinerEOSDependsRhoT(const std::string &filename, int matid,
                        const singularity::TableSplit = singularity::TableSplit::Total,
-                       bool reproduciblity_mode = false);
+                       bool reproduciblity_mode = false,
+                       bool pmin_vapor_dome = false);
   SpinerEOSDependsRhoT(const std::string &filename, const std::string &materialName,
                        const singularity::TableSplit = singularity::TableSplit::Total,
-                       bool reproducibility_mode = false);
+                       bool reproducibility_mode = false,
+                       bool pmin_vapor_dome = false);
 
 where here ``filename`` is the input file, ``matid`` is the unique
 material ID in the database in the file, ``materialName`` is the name
 of the material in the file, and ``reproducability_mode`` is a boolean
 which slightly changes how initial guesses for root finds are
 computed. The ``TableSplit`` option selects electron, ion, or total
-equation of state tables for partial ionization. The constructor for
-``SpinerEOSDependsRhoSie`` is identical.
+equation of state tables for partial ionization. ``pmin_vapor_dome``
+specifies how to interpret the ``RhoPMin`` function. If it is false
+(the default), it is the usual interpretation. If it is ``true`` and
+the equation of state is Maxwell constructed, then ``RhoPMin`` for
+this EOS will return compression edge of the vapor dome. The
+constructor for ``SpinerEOSDependsRhoSie`` is identical.
 
 .. note::
 
