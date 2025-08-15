@@ -60,6 +60,11 @@ struct MixParams {
   Real min_dtde = 1.0e-16;
   std::size_t pte_small_step_tries = 2;
   Real pte_small_step_thresh = 1e-16;
+  // JMM: Smaller magnitude here means slower convergence for Maxwell
+  // constructed EOS's, but more faithfulness to the table.  This is
+  // assumed to be a negative number, and singularity-eos will make it
+  // negative if you forget.
+  Real pte_max_dpdv = -1e-8;
 };
 
 struct SolverStatus {
@@ -803,7 +808,8 @@ class PTESolverRhoT
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
                                                        e_pert, lambda[m], false),
                         uscale);
-      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
+      dpdv[m] = std::min(robust::ratio((p_pert - press[m]), dv),
+                         -std::abs(params_.pte_max_dpdv));
       dedv[m] = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dv);
 
       //////////////////////////////
@@ -1298,7 +1304,8 @@ class PTESolverFixedT
 
       Real p_pert = robust::ratio(
           eos[m].PressureFromDensityTemperature(rho_pert, Tequil, lambda[m]), uscale);
-      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
+      dpdv[m] = std::min(robust::ratio((p_pert - press[m]), dv),
+                         -std::abs(params_.pte_max_dpdv));
     }
 
     // Fill in the Jacobian
@@ -1522,7 +1529,8 @@ class PTESolverFixedP
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
                                                        e_pert, lambda[m], true),
                         uscale);
-      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
+      dpdv[m] = std::min(robust::ratio((p_pert - press[m]), dv),
+                         -std::abs(params_.pte_max_dpdv));
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
@@ -1757,7 +1765,8 @@ class PTESolverRhoU
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * t_pert,
                                                        sie[m], lambda[m], false),
                         uscale);
-      dpdv[m] = robust::ratio(p_pert - press[m], dv);
+      dpdv[m] =
+          std::min(robust::ratio(p_pert - press[m], dv), -std::abs(params_.pte_max_dpdv));
       dtdv[m] = robust::ratio(t_pert - temp[m], dv);
       //////////////////////////////
       // perturb energies
