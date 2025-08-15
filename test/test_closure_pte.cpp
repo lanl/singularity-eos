@@ -442,6 +442,20 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
                      sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue);
 
       THEN("The solver converges") { REQUIRE(success); }
+
+      AND_WHEN("We call PTE but with a wildly incorrect temperature guess, deep in the "
+               "Maxwell constructed region") {
+        constexpr Real alpha1_true = 9.99999989159325e-01;
+        constexpr Real alpha2_true = 1.08406754944454e-08;
+        constexpr Real Ttrue = 3.02477729062119e+02;
+        constexpr Real Ptrue = 9.98701227398616e+05;
+
+        bool success =
+            RunPTE2Mat(He_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
+                       sietot, 5, alpha1_true, alpha2_true, Ttrue, Ptrue);
+
+        THEN("The solver converges") { REQUIRE(success); }
+      }
     }
 
     He_eos_h.Finalize();
