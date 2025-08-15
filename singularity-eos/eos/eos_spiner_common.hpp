@@ -73,9 +73,11 @@ PORTABLE_INLINE_FUNCTION Real SetRhoPMin(DataBox &P, DataBox &rho_at_pmin,
         jmax = j;
       }
       // check gradient if excluding vapor dome
-      if ((j > 0) && pmin_vapor_dome) {
-        Real dP = P(j, i) - P(j - 1, i);
-        Real dr = from_log(lRs.x(j), lRhoOffset) - from_log(lRs.x(j - 1), lRhoOffset);
+      if ((j > 1) && pmin_vapor_dome) {
+        // JMM: Use width of 2 points here because width 1 could
+        // accidentally catch hierarchical grid overlap points
+        Real dP = P(j, i) - P(j - 2, i);
+        Real dr = from_log(lRs.x(j), lRhoOffset) - from_log(lRs.x(j - 2), lRhoOffset);
         Real dpdr = robust::ratio(dP, dr);
         if (dpdr < VAPOR_DPDR_THRESH) {
           jmax = j;
@@ -89,6 +91,17 @@ PORTABLE_INLINE_FUNCTION Real SetRhoPMin(DataBox &P, DataBox &rho_at_pmin,
       rho_at_pmin(i) = from_log(lRs.x(jmax), lRhoOffset);
     }
     PMin = std::min(PMin_at_T, PMin);
+  }
+
+  // IF we are looking for the edge of the vapor dome, try to capture
+  // multiple Van der Waals loops by enforcing monotonicity of
+  // rho_at_pmin with respect to T.
+  if (pmin_vapor_dome) {
+    for (int i = NT - 2; i >= 0; i--) {
+      if (rho_at_pmin(i) < rho_at_pmin(i + 1)) {
+        rho_at_pmin(i) = rho_at_pmin(i + 1);
+      }
+    }
   }
 
   return PMin;
