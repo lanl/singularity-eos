@@ -126,12 +126,10 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     // std::abs(eval[0]) < std::abs(eval[1]) ? 0 : 1;
     const std::size_t e_drop = std::abs(evals[1]) < std::abs(evals[0]);
     const Real cond = robust::ratio(max_eval, min_eval);
-    printf("Cond = %.14e, %ld\n", cond, e_drop);
     const bool use_pseudo_inverse = std::abs(cond) >= 1e12;
 
     Real *x = scr;
     if (use_pseudo_inverse) {
-      printf("Using pseudo-inverse\n");
       if (e_drop == 0) {
         const Real denom = rdisc * (a[0] + a[3] + rdisc);
         x[0] = robust::ratio(2 * a[1] * b[1] + b[0] * (a[0] + rdisc - a[3]), denom);
@@ -845,7 +843,7 @@ class PTESolverRhoT
     Real error_p = 0.0;
     for (std::size_t m = 1; m < nmat; ++m) {
       mean_p += vfrac[m] * press[m];
-      error_p += residual[m + 1] * residual[m + 1];
+      error_p += residual[m] * residual[m];
     }
     error_p = std::sqrt(error_p);
     Real error_u = std::abs(residual[1]);
