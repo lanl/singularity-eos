@@ -97,6 +97,19 @@ bool check_nans(Real const *const a, const std::size_t n, const bool verbose = f
 
 PORTABLE_INLINE_FUNCTION
 bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
+  // Simple Jacobi preconditioner
+  for (std::size_t row = 0; row < n; ++row) {
+    Real maxabs = 0;
+    for (std::size_t column = 0; column < n; ++column) {
+      maxabs = std::max(std::abs(a[row * n + column]), maxabs);
+    }
+    if (maxabs == 0) return false;
+    for (std::size_t column = 0; column < n; ++column) {
+      a[row * n + column] /= maxabs;
+    }
+    b[row] /= maxabs;
+  }
+
   if (n == 2) {
     Real *x = scr;
     x[0] = robust::ratio(a[3] * b[0] - a[1] * b[1], a[0] * a[3] - a[1] * a[2]);
