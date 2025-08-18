@@ -199,11 +199,34 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     Eigen::Map<Eigen::VectorXd> B(b, n);
     Eigen::Map<Eigen::VectorXd> X(scr, n);
     X = A.lu().solve(B);
+
     B = X;
 #endif // SINGULARITY_USE_KOKKOSKERNELS
   }
   bool retval = check_nans(b, n);
   return retval;
+}
+
+/*
+ * Kahan summation, with the Neumaier correction
+ * https://onlinelibrary.wiley.com/doi/10.1002/zamm.19740540106
+ */
+template <typename Data_t>
+PORTABLE_INLINE_FUNCTION Real sum_neumaier(Data_t &&data, std::size_t n,
+                                           std::size_t offset = 0) {
+  Real sum = 0;
+  Real c = 0; // correction
+  for (std::size_t i = 0; i < n; ++i) {
+    Real x = data[i + offset];
+    Real t = sum + x;
+    if (std::abs(sum) >= std::abs(x)) {
+      c += (sum - t) + x;
+    } else {
+      c += (x - t) + sum;
+    }
+    sum = t;
+  }
+  return sum + c;
 }
 
 class CacheAccessor {
@@ -239,10 +262,7 @@ class PTESolverBase {
   // volume fractions, which is useful to deal with roundoff error.
   PORTABLE_INLINE_FUNCTION
   virtual void Fixup() const {
-    Real vsum = 0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-    }
+    Real vsum = sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m)
       vfrac[m] *= robust::ratio(vfrac_total, vsum);
   }
@@ -290,22 +310,18 @@ class PTESolverBase {
   void InitRhoBarandRho() {
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
-    rho_total = 0.0;
     for (std::size_t m = 0; m < nmat; ++m) {
       PORTABLE_REQUIRE(vfrac[m] > 0.,
                        "Non-positive volume fraction provided to PTE solver");
       PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density provided to PTE solver");
       rhobar[m] = rho[m] * vfrac[m];
-      rho_total += rhobar[m];
     }
+    rho_total = sum_neumaier(rhobar, nmat);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
   void NormalizeVfrac() {
-    Real vfrac_sum = 0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vfrac_sum += vfrac[m];
-    }
+    Real vfrac_sum = sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m) {
       vfrac[m] *= robust::ratio(vfrac_total, vfrac_sum);
     }
@@ -359,7 +375,7 @@ class PTESolverBase {
       // This chooses the smallest allowed density, since vfrac is
       // inversely proportional to rho.
       if (vfrac[m] <= 0) vfrac[m] = vfrac_max;
-      // Tally this to check if a valid non-tension state is possible
+      // Tally this to check if a valid state is possible
       vfrac_max_sum += vfrac_max;
     }
     if (vfrac_max_sum < vfrac_total) {
@@ -735,10 +751,10 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
  * Jacobian is
  *
  * [ sum(du/dT)         du_1/dalpha_1 - du_0/dalpha_0 ... du_m/dalpha_m - du_0/dalpha_0 ]
- * [ dP_1/dT - dP_0/dT  dP_1/dalpha_1 + dP_0/dalpha_0 0                ...              ]
- * [ .                                                                  0               ]
- * [ .                                0                                 .               ]
- * [ dP_m/dT - dP_0/dT                0                  dP_n/dalpha_n + dP_0/dalpha_0  ]
+ * [ dP_1/dT - dP_0/dT  dP_1/dalpha_1 + dP_0/dalpha_0 dP_0/dalpha_0    ...              ]
+ * [ .                                                            dP_0/dalpha_0         ]
+ * [ .                            dP_0/dalpha_0                         .               ]
+ * [ dP_m/dT - dP_0/dT            dP_0/dalpha_0          dP_n/dalpha_n + dP_0/dalpha_0  ]
  *
  */
 // clang-format on
@@ -827,10 +843,7 @@ class PTESolverRhoT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real esum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      esum += u[m];
-    }
+    Real esum = mix_impl::sum_neumaier(u, nmat);
     residual[0] = utotal_scale - esum;
     for (std::size_t m = 1; m < nmat; ++m) {
       residual[m] = press[0] - press[m];
@@ -846,7 +859,7 @@ class PTESolverRhoT
       error_p += residual[m] * residual[m];
     }
     error_p = std::sqrt(error_p);
-    Real error_u = std::abs(residual[1]);
+    Real error_u = std::abs(residual[0]);
     // Check for convergence
     bool converged_p = (error_p < params_.pte_rel_tolerance_p * std::abs(mean_p) ||
                         error_p < params_.pte_abs_tolerance_p);
@@ -904,7 +917,11 @@ class PTESolverRhoT
       jacobian[MatIndex(m, 0)] = dpdT[m] - dpdT[0];
       // diagonal of J[1:,1:] is dpdvs.
       // + sign here is because dp_0/dalpha_i = -dp_0/dalpha_0
-      jacobian[MatIndex(m, m)] = dpdv[m] + dpdv[0];
+      // ALL off diagonal terms in J[1:,1:] are dpdv[0] because P0
+      // depends on ALL the independent volume fractions
+      for (std::size_t mm = 1; mm < nmat; ++mm) {
+        jacobian[MatIndex(m, mm)] = (m == mm) ? dpdv[m] + dpdv[0] : dpdv[0];
+      }
     }
   }
 
@@ -915,9 +932,8 @@ class PTESolverRhoT
     // control how big of a step toward vfrac = 0 is allowed
     // 0th material is special as delta volume fraction for it is
     // minus the sum of the deltas for the others
-    Real dalpha0 = 0;
+    Real dalpha0 = -mix_impl::sum_neumaier(dx, nmat - 1, 1);
     for (std::size_t m = 1; m < nmat; ++m) {
-      dalpha0 -= dx[m];
       if (scale * dx[m] < -params_.vfrac_safety_fac * vfrac[m]) {
         scale = std::min(
             scale, std::abs(params_.vfrac_safety_fac * robust::ratio(vfrac[m], dx[m])));
@@ -943,12 +959,12 @@ class PTESolverRhoT
       }
       Real mydx = (m == 0) ? dalpha0 : dx[m];
       if (scale * mydx > 0.5 * (alpha_max - vfrac[m])) {
-        scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), mydx);
+        scale = std::min(robust::ratio(0.5 * (alpha_max - vfrac[m]), mydx), scale);
       }
     }
     // control how big of a step toward T = 0 is allowed
     if (scale * dx[0] < -0.95 * Tequil) {
-      scale = robust::ratio(-0.95 * Tequil, dx[0]);
+      scale = std::min(scale, robust::ratio(-0.95 * Tequil, dx[0]));
     }
     // Now apply the overall scaling
     for (std::size_t i = 0; i < neq; ++i)
@@ -968,11 +984,11 @@ class PTESolverRhoT
         vtemp[m] = vfrac[m];
     }
     Tequil = Ttemp + scale * dx[0];
-    vfrac[0] = 1;
     for (std::size_t m = 1; m < nmat; ++m) {
       vfrac[m] = vtemp[m] + scale * dx[m];
-      vfrac[0] -= vfrac[m];
     }
+    vfrac[0] = mix_impl::sum_neumaier(vfrac, nmat - 1, 1);
+    vfrac[0] = 1 - vfrac[0];
     for (std::size_t m = 0; m < nmat; ++m) {
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
@@ -986,6 +1002,7 @@ class PTESolverRhoT
                         uscale);
     }
     Residual();
+
     return ResidualNorm();
   }
 
@@ -1072,12 +1089,11 @@ class PTESolverPT
     // guess. Worth keeping in mind for the future maybe if the
     // iteration count becomes an issue.
     Pequil = 0;
-    Real vsum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
       // always approach from >0 side
       Pequil += std::abs(press[m]) * vfrac[m];
-      vsum += vfrac[m];
     }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
     Pequil /= vsum;
     Tequil = 1; // Because it's = Tnorm = initial guess
 
@@ -1098,12 +1114,8 @@ class PTESolverPT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
-    Real esum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-      esum += u[m];
-    }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
+    Real esum = mix_impl::sum_neumaier(u, nmat);
     residual[RV] = vfrac_total - vsum;
     residual[RSIE] = utotal_scale - esum;
   }
@@ -1334,10 +1346,7 @@ class PTESolverFixedT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-    }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
     residual[0] = vfrac_total - vsum;
     for (std::size_t m = 0; m < nmat - 1; ++m) {
       residual[1 + m] = press[m] - press[m + 1];
@@ -1558,9 +1567,8 @@ class PTESolverFixedP
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
       residual[m] = robust::ratio(Pequil, uscale) - press[m];
     }
     residual[nmat] = vfrac_total - vsum;
@@ -1778,12 +1786,8 @@ class PTESolverRhoU
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
-    Real esum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-      esum += u[m];
-    }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
+    Real esum = mix_impl::sum_neumaier(u, nmat);
     residual[0] = vfrac_total - vsum;
     residual[1] = utotal_scale - esum;
     for (std::size_t m = 0; m < nmat - 1; ++m) {
