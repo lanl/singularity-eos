@@ -103,7 +103,10 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     for (std::size_t column = 0; column < n; ++column) {
       maxabs = std::max(std::abs(a[row * n + column]), maxabs);
     }
-    if (maxabs == 0) return false;
+    if (maxabs == 0) {
+      // row is all zeros. Matrix is not invertible.
+      return false;
+    }
     for (std::size_t column = 0; column < n; ++column) {
       a[row * n + column] /= maxabs;
     }
@@ -111,9 +114,38 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
   }
 
   if (n == 2) {
+    const Real a0ma3 = a[0] - a[3];
+    // JMM: not really a discriminant. This avoids dealing with complex numbers
+    const Real disc = 4 * a[1] * a[2] + a0ma3 * a0ma3;
+    const Real rdisc = std::sqrt(std::abs(disc));
+    const Real evals[2] = {a[0] + a[3] - rdisc, a[0] + a[3] + rdisc};
+    const Real min_eval = std::min(std::abs(evals[0]), std::abs(evals[1]));
+    const Real max_eval = std::max(std::abs(evals[0]), std::abs(evals[1]));
+
+    // which eigenvalue to drop in psuedo-inverse?
+    // std::abs(eval[0]) < std::abs(eval[1]) ? 0 : 1;
+    const std::size_t e_drop = std::abs(evals[1]) < std::abs(evals[0]);
+    const Real cond = robust::ratio(max_eval, min_eval);
+    printf("Cond = %.14e, %ld\n", cond, e_drop);
+    const bool use_pseudo_inverse = std::abs(cond) >= 1e12;
+
     Real *x = scr;
-    x[0] = robust::ratio(a[3] * b[0] - a[1] * b[1], a[0] * a[3] - a[1] * a[2]);
-    x[1] = robust::ratio(a[2] * b[0] - a[0] * b[1], a[1] * a[2] - a[0] * a[3]);
+    if (use_pseudo_inverse) {
+      printf("Using pseudo-inverse\n");
+      if (e_drop == 0) {
+        const Real denom = rdisc * (a[0] + a[3] + rdisc);
+        x[0] = robust::ratio(2 * a[1] * b[1] + b[0] * (a[0] + rdisc - a[3]), denom);
+        x[1] = robust::ratio(2 * a[2] * b[0] + b[1] * (-a[0] + rdisc + a[3]), denom);
+      } else { // e_drop == 1
+        const Real denom = rdisc * (a[0] + a[3] - rdisc);
+        x[0] =
+            robust::ratio(b[0] * (rdisc + a[3]) - 2 * a[1] * b[1] - a[0] * b[0], denom);
+        x[1] = robust::ratio(b[1] * (a[0] - a[3] + rdisc) - 2 * a[2] * b[0], denom);
+      }
+    } else {
+      x[0] = robust::ratio(a[3] * b[0] - a[1] * b[1], a[0] * a[3] - a[1] * a[2]);
+      x[1] = robust::ratio(a[2] * b[0] - a[0] * b[1], a[1] * a[2] - a[0] * a[3]);
+    }
     b[0] = x[0];
     b[1] = x[1];
   } else {
