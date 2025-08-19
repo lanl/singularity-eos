@@ -58,6 +58,7 @@ if (SINGULARITY_BUILD_CLOSURE)
     catch2_define.cpp
     test_closure_pte.cpp
     test_kpt_models.cpp
+    test_solver_utils.cpp
     )
 endif()
 
