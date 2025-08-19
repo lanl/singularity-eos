@@ -149,20 +149,6 @@ void test_transformer(const TransformerT transformer, const Real e_actual, const
   CHECK(isClose(e_inverse, e_actual, 1e-14));
 }
 
-// Same as above but runs on host
-template <typename TransformerT>
-void test_transformer_host(const TransformerT transformer, const Real e_actual,
-                           const Real rho, const Real expected_transformed) {
-  constexpr size_t real_bytes = 1 * sizeof(Real);
-  Real e_transformed;
-  Real e_inverse;
-  e_transformed = transformer.transform(e_actual, rho);
-  e_inverse = transformer.inverse(e_transformed, rho, e_actual);
-
-  CHECK(isClose(e_transformed, expected_transformed, 1e-14));
-  CHECK(isClose(e_inverse, e_actual, 1e-14));
-}
-
 SCENARIO("NullTransform behave correctly", "[TransformTest]") {
   TestDataContainer data;
 
@@ -173,7 +159,7 @@ SCENARIO("NullTransform behave correctly", "[TransformTest]") {
 
     THEN("NullTransform is identity throughout when run on device") {
       data = data.GetOnDevice();
-      NullTransform<TestDataContainer> nullTransform;
+      NullTransform<TestDataContainer> nullTransform(data);
       test_transformer(nullTransform, e_actual, rho, e_actual);
     }
   }
@@ -213,7 +199,7 @@ SCENARIO("DivideByCvTransform behaves correctly", "[TransformTest]") {
 
     THEN("Transform yields e_actual / Cv, inverse reconstructs original when run on "
          "device") {
-      // data = data.GetOnDevice();
+      data = data.GetOnDevice();
       DivideByCvTransform<TestDataContainer> cvTransform(data);
       test_transformer(cvTransform, e_actual, rho, expected_transformed);
     }
@@ -236,7 +222,7 @@ SCENARIO("ShiftandDivideByCvTransform behaves correctly", "[TransformTest]") {
 
     THEN("Transform yields e_actual / Cv, inverse reconstructs original when run on "
          "device") {
-      // data = data.GetOnDevice();
+      data = data.GetOnDevice();
       ShiftandDivideByCvTransform<TestDataContainer> shiftAndCvTransform(data);
       test_transformer(shiftAndCvTransform, e_actual, rho, expected_transformed);
     }
@@ -256,7 +242,7 @@ SCENARIO("ScaleTransform behaves correctly", "[TransformTest]") {
 
     THEN(
         "Transform divides by T³, and inverse reconstructs original when run on device") {
-      // data = data.GetOnDevice();
+      data = data.GetOnDevice();
       ScaleTransform<TestDataContainer> scaleTransform(data);
       test_transformer(scaleTransform, e_actual, rho, expected_transformed);
     }
@@ -286,7 +272,7 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
 
     THEN("Transform correctly applies all transform, and inverse reconstructs original "
          "when run on device") {
-      // data = data.GetOnDevice();
+      data = data.GetOnDevice();
       AllTransform<TestDataContainer> Alltest(data);
       test_transformer(Alltest, e_actual, rho, e_final_transformed);    }
   }
