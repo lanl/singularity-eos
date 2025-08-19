@@ -97,7 +97,7 @@ struct DivideByCvTransform {
     const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real lE = spiner_common::to_log(e, data_.lEOffset);
     Real iCv = data_.dTdE.interpToReal(lRho, lE);
-    iCv = std::max(iCv, min_iCv_);
+    iCv = iCv > min_iCv_ ? iCv : min_iCv_;
     return e * iCv;
   }
 
@@ -106,7 +106,7 @@ struct DivideByCvTransform {
     const Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     const Real lE = spiner_common::to_log(e_orig, data_.lEOffset);
     Real Cv = 1. / data_.dTdE.interpToReal(lRho, lE);
-    Cv = std::max(Cv, min_Cv_);
+    Cv = Cv > min_Cv_ ? Cv : min_Cv_;
     return e_transformed * Cv;
   }
 };
@@ -131,7 +131,7 @@ struct ShiftandDivideByCvTransform {
     const Real lE = spiner_common::to_log(e, data_.lEOffset);
     Real e_coldshift = e - e_cold;
     Real iCv = data_.dTdE.interpToReal(lRho, lE);
-    iCv = std::max(iCv, min_iCv_);
+    iCv = iCv > min_iCv_ ? iCv : min_iCv_;
     return e_coldshift * iCv;
   }
 
@@ -141,7 +141,7 @@ struct ShiftandDivideByCvTransform {
     const Real e_cold = data_.sieCold.interpToReal(lRho);
     const Real lE = spiner_common::to_log(e_orig, data_.lEOffset);
     Real Cv = 1. / data_.dTdE.interpToReal(lRho, lE);
-    Cv = std::max(Cv, min_Cv_);
+    Cv = Cv > min_Cv_ ? Cv : min_Cv_;
     const Real e_inverse_cv = e_transformed * Cv;
     return e_inverse_cv + e_cold;
   }
@@ -165,7 +165,7 @@ struct ScaleTransform {
   constexpr auto transform(Real e, Real rho, Args &&...) const {
     Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     Real T = data_.T.interpToReal(lRho); // T?
-    T = std::max(T, min_T_);
+    T = T > min_T_ ? T : min_T_;
     return e / pow(T, 3);
   }
 
@@ -173,7 +173,7 @@ struct ScaleTransform {
   constexpr auto inverse(Real e, Real rho, Args &&...) const {
     Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     Real T = data_.T.interpToReal(lRho);
-    T = std::max(T, min_T_);
+    T = T > min_T_ ? T : min_T_;
     return e * pow(T, 3);
   }
 };
@@ -201,12 +201,12 @@ struct AllTransform {
 
     Real e_cold = data_.sieCold.interpToReal(lRho);
     Real T = data_.T.interpToReal(lRho);
-    T = std::max(T, min_T_);
+    T = T > min_T_ ? T : min_T_;
 
     Real e_transformed = e - e_cold;
     Real lE = spiner_common::to_log(e_transformed, data_.lEOffset);
     Real iCv = data_.dTdE.interpToReal(lRho, lE);
-    iCv = std::max(iCv, min_iCv_);
+    iCv = iCv > min_iCv_ ? iCv : min_iCv_;
     e_transformed = e_transformed * iCv;
 
     return e_transformed / pow(T, 3);
@@ -218,7 +218,7 @@ struct AllTransform {
     Real lRho = spiner_common::to_log(rho, data_.lRhoOffset);
     Real e_cold = data_.sieCold.interpToReal(lRho);
     Real T = data_.T.interpToReal(lRho);
-    T = std::max(T, min_T_);
+    T = T > min_T_ ? T : min_T_;
 
     Real e_transformed_inverse = e_orig - e_cold;
     Real lE = spiner_common::to_log(e_transformed_inverse, data_.lEOffset);
@@ -226,7 +226,7 @@ struct AllTransform {
 
     e_transformed = e_transformed * pow(T, 3);
 
-    Cv = std::max(Cv, min_Cv_);
+    Cv = Cv > min_Cv_ ? Cv : min_Cv_;
     e_transformed = e_transformed * Cv;
 
     return e_transformed + e_cold;
