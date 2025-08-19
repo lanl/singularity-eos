@@ -259,6 +259,11 @@ class SpinerEOSDependsRhoSieTransformable
     return transformer_;
   } // getter for tranformation structs
 
+  inline void InitializeTransformer() {
+    TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_, dependsRhoSie_.dTdE};
+    transformer_ = Transformer(TransformDataContainer_);
+  }
+
   RootFinding1D::RootCounts counts;
   static std::string EosType() {
     return std::string("SpinerEOSDependsRhoSieTransformable");
@@ -327,7 +332,8 @@ class SpinerEOSDependsRhoSieTransformable
   Transformer transformer_;
 };
 
-inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSieTransformable(const std::string &filename,
+template <template <class> class TransformerT>
+inline SpinerEOSDependsRhoSieTransformable<TransformerT>::SpinerEOSDependsRhoSieTransformable(const std::string &filename,
                                                       const std::string &materialName,
                                                       TableSplit split,
                                                       bool reproducibility_mode,
@@ -364,8 +370,7 @@ inline SpinerEOSDependsRhoSie::SpinerEOSDependsRhoSieTransformable(const std::st
 
   status += loadDataboxes_(matid_str, file, lTGroup, lEGroup, coldGroup);
 
-  TransformDataContainer_ = {lRhoOffset_, lEOffset_, sieCold_, T_, dependsRhoSie_.dTdE};
-  transformer_ = Transformer(TransformDataContainer_);
+  InitializeTransformer();
 
   status += H5Gclose(lTGroup);
   status += H5Gclose(lEGroup);
@@ -507,7 +512,9 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::calcBMod_(SP5Tables &tables) 
 template <template <class> class TransformerT>
 inline SpinerEOSDependsRhoSieTransformable<TransformerT>
 SpinerEOSDependsRhoSieTransformable<TransformerT>::GetOnDevice() {
-  return STricks::GetOnDevice(this);
+  auto eos_d = STricks::GetOnDevice(this);
+  eos_d.InitializeTransformer();
+  return eos_d;
 }
 
 template <template <class> class TransformerT>
