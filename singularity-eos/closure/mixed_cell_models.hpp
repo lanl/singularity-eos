@@ -203,10 +203,12 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
  */
 template <typename Data_t>
 PORTABLE_INLINE_FUNCTION Real sum_neumaier(Data_t &&data, std::size_t n,
-                                           std::size_t offset = 0) {
+                                           std::size_t offset = 0,
+                                           std::size_t iskip = -1) {
   Real sum = 0;
   Real c = 0; // correction
   for (std::size_t i = 0; i < n; ++i) {
+    if (i == iskip) continue;
     Real x = data[i + offset];
     Real t = sum + x;
     if (std::abs(sum) >= std::abs(x)) {
@@ -730,21 +732,22 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
 
 // clang-format off
 /*
- * Indep variables are: T, and volume fractions for materials 1 through nmat - 1
+ * Indep variables are: T, and volume fractions for materials 0 through nmat-1
+ * excluding one material index s
  * Residual equations are:
  *   sum(u_m) - utotal = 0
- *   P_m - P_0 = 0 for all m > 0
+ *   P_m - P_s = 0 for all m > 0, m != s
  * subject to the constraint
- *   alpha_0 = 1 - sum_{m=1)^{nmat - 1} alpha_m
+ *   alpha_s = 1 - sum_{m=0, m!=s)^{nmat - 1} alpha_m
  * where alpha is volume fraction
  *
  * Jacobian is
  *
- * [ sum(du/dT)         du_1/dalpha_1 - du_0/dalpha_0 ... du_m/dalpha_m - du_0/dalpha_0 ]
- * [ dP_1/dT - dP_0/dT  dP_1/dalpha_1 + dP_0/dalpha_0 dP_0/dalpha_0    ...              ]
- * [ .                                                            dP_0/dalpha_0         ]
- * [ .                            dP_0/dalpha_0                         .               ]
- * [ dP_m/dT - dP_0/dT            dP_0/dalpha_0          dP_n/dalpha_n + dP_0/dalpha_0  ]
+ * [ sum(du/dT)         du_1/dalpha_1 - du_s/dalpha_s ... du_m/dalpha_m - du_s/dalpha_s ]
+ * [ dP_1/dT - dP_s/dT  dP_1/dalpha_1 + dP_s/dalpha_s dP_s/dalpha_s    ...              ]
+ * [ .                                                            dP_s/dalpha_s         ]
+ * [ .                            dP_s/dalpha_s                         .               ]
+ * [ dP_m/dT - dP_s/dT            dP_s/dalpha_s          dP_n/dalpha_n + dP_s/dalpha_s  ]
  *
  */
 // clang-format on
@@ -822,9 +825,25 @@ class PTESolverRhoT
   PORTABLE_INLINE_FUNCTION
   Real Init() {
     InitBase();
+
+    // Decide which material's volume fraction should be set by the
+    // sum of the others. We probably want to exclude the material
+    // with the largest volume fraction, but we don't know which one
+    // that will be. We guestimate it as the material with the largest
+    // mass fraction, though this may not always be correct.
+    ms = 0;
+    Real xmax = 0;
+    Real alphamax = 0;
+    for (std::size_t m = 0; m < nmat; ++m) {
+      Real x = robust::ratio(rhobar[m], rho_total);
+      if (x > xmax) {
+        xmax = x;
+        ms = m;
+      }
+    }
+
     Residual();
-    // Leave this in for now, but comment out because I'm not sure it's a good idea
-    // TryIdealPTE(this);
+
     // Set the current guess for the equilibrium temperature.  Note that this is already
     // scaled.
     Tequil = temp[0];
@@ -835,8 +854,10 @@ class PTESolverRhoT
   void Residual() const {
     Real esum = mix_impl::sum_neumaier(u, nmat);
     residual[0] = utotal_scale - esum;
-    for (std::size_t m = 1; m < nmat; ++m) {
-      residual[m] = press[0] - press[m];
+    std::size_t ires = 1;
+    for (std::size_t m = 0; m < nmat; ++m) {
+      if (m == ms) continue;
+      residual[ires++] = press[ms] - press[m];
     }
   }
 
@@ -898,20 +919,28 @@ class PTESolverRhoT
       jacobian[i] = 0.0;
     // first row is energy residual eqn
     jacobian[0] = dedT_sum;
-    for (std::size_t m = 1; m < nmat; ++m) {
-      jacobian[m] = dedv[m] - dedv[0];
+    std::size_t col = 1;
+    for (std::size_t m = 0; m < nmat; ++m) {
+      if (m == ms) continue;
+      jacobian[col++] = dedv[m] - dedv[ms];
     }
     // remaining rows are pressure residual
-    for (std::size_t m = 1; m < nmat; m++) {
+    std::size_t row = 1;
+    for (std::size_t m = 0; m < nmat; m++) {
+      if (m == ms) continue;
       // 0th column of rows 1+ is temp derivative
-      jacobian[MatIndex(m, 0)] = dpdT[m] - dpdT[0];
+      jacobian[MatIndex(row, 0)] = dpdT[m] - dpdT[ms];
       // diagonal of J[1:,1:] is dpdvs.
-      // + sign here is because dp_0/dalpha_i = -dp_0/dalpha_0
-      // ALL off diagonal terms in J[1:,1:] are dpdv[0] because P0
+      // + sign here is because dp_s/dalpha_i = -dp_s/dalpha_s
+      // ALL off diagonal terms in J[1:,1:] are dpdv[s] because Ps
       // depends on ALL the independent volume fractions
-      for (std::size_t mm = 1; mm < nmat; ++mm) {
-        jacobian[MatIndex(m, mm)] = (m == mm) ? dpdv[m] + dpdv[0] : dpdv[0];
+      std::size_t col = 1;
+      for (std::size_t mm = 0; mm < nmat; ++mm) {
+        if (mm == ms) continue;
+        jacobian[MatIndex(row, col)] = (mm == m) ? dpdv[m] + dpdv[ms] : dpdv[ms];
+        col++;
       }
+      row++;
     }
   }
 
@@ -922,20 +951,19 @@ class PTESolverRhoT
     // control how big of a step toward vfrac = 0 is allowed
     // 0th material is special as delta volume fraction for it is
     // minus the sum of the deltas for the others
-    Real dalpha0 = -mix_impl::sum_neumaier(dx, nmat - 1, 1);
-    for (std::size_t m = 1; m < nmat; ++m) {
-      if (scale * dx[m] < -params_.vfrac_safety_fac * vfrac[m]) {
+    Real dalphaskip = -mix_impl::sum_neumaier(dx, nmat - 1, 1);
+    std::size_t idx = 1;
+    for (std::size_t m = 0; m < nmat; ++m) {
+      Real mydx = (m == ms) ? dalphaskip : dx[idx++];
+      if (scale * mydx < -params_.vfrac_safety_fac * vfrac[m]) {
         scale = std::min(
-            scale, std::abs(params_.vfrac_safety_fac * robust::ratio(vfrac[m], dx[m])));
+            scale, std::abs(params_.vfrac_safety_fac * robust::ratio(vfrac[m], mydx)));
       }
-    }
-    if (scale * dalpha0 < -params_.vfrac_safety_fac * vfrac[0]) {
-      scale = std::min(
-          scale, std::abs(params_.vfrac_safety_fac * robust::ratio(vfrac[0], dalpha0)));
     }
 
     const Real Tnew = Tequil + scale * dx[0];
     // control how big of a step toward rho = rho(Pmin) is allowed
+    idx = 1;
     for (std::size_t m = 0; m < nmat; m++) {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
@@ -947,7 +975,7 @@ class PTESolverRhoT
         // should be skipped.
         continue;
       }
-      Real mydx = (m == 0) ? dalpha0 : dx[m];
+      Real mydx = (m == ms) ? dalphaskip : dx[idx++];
       if (scale * mydx > 0.5 * (alpha_max - vfrac[m])) {
         scale = std::min(robust::ratio(0.5 * (alpha_max - vfrac[m]), mydx), scale);
       }
@@ -974,11 +1002,13 @@ class PTESolverRhoT
         vtemp[m] = vfrac[m];
     }
     Tequil = Ttemp + scale * dx[0];
-    for (std::size_t m = 1; m < nmat; ++m) {
-      vfrac[m] = vtemp[m] + scale * dx[m];
+    std::size_t idx = 1;
+    for (std::size_t m = 0; m < nmat; ++m) {
+      if (ms == m) continue;
+      vfrac[m] = vtemp[m] + scale * dx[idx++];
     }
-    vfrac[0] = mix_impl::sum_neumaier(vfrac, nmat - 1, 1);
-    vfrac[0] = 1 - vfrac[0];
+    vfrac[ms] = mix_impl::sum_neumaier(vfrac, nmat, 0, ms);
+    vfrac[ms] = 1 - vfrac[ms];
     for (std::size_t m = 0; m < nmat; ++m) {
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
@@ -999,6 +1029,7 @@ class PTESolverRhoT
  private:
   Real *dpdv, *dedv, *dpdT, *vtemp;
   Real Tequil, Ttemp;
+  std::size_t ms;
 };
 
 // ======================================================================
