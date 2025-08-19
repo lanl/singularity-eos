@@ -323,7 +323,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   TableSplit split_;
   bool reproducible_ = false;
   bool pmin_vapor_dome_ = false;
-  static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
+  static constexpr const Real ROOT_THRESH = 1e-14;
   static constexpr const Real SOFT_THRESH = 1e-8;
   // only used to exclude vapor dome
   static constexpr const Real VAPOR_DPDR_THRESH = 1e-8;
