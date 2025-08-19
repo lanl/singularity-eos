@@ -844,7 +844,6 @@ class PTESolverRhoT
     } else {
       ms = 0;
       Real xmax = 0;
-      Real alphamax = 0;
       for (std::size_t m = 0; m < nmat; ++m) {
         Real x = robust::ratio(rhobar[m], rho_total);
         if (x > xmax) {
