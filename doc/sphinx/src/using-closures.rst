@@ -175,12 +175,13 @@ convenient way to specify an initial guess for the closure state.
 
   Note that many real materials may go in to *tension* states, where
   the pressure is negative. Because pressure must vanish at zero
-  density, and to infinity at infinite density, this also necessitates
-  that at low density :math:`\partial P/\partial \rho < 0` until the
-  pressure reaches some minimum, at a critical density :math:`\rho_c`
-  such that for :math:`\rho > \rho_c`, :math:`\partial P/\partial\rho
-  \geq 0`. This makes pressure a multi-valued quantity and a poor
-  independent variable for representations of equation of state space.
+  density, and go to infinity at infinite density, this also
+  necessitates that at low density :math:`\partial P/\partial \rho <
+  0` until the pressure reaches some minimum, at a critical density
+  :math:`\rho_c` such that for :math:`\rho > \rho_c`, :math:`\partial
+  P/\partial\rho \geq 0`. This makes pressure a multi-valued quantity
+  and a poor independent variable for representations of equation of
+  state space.
 
   This tension region is challenging for PTE solvers, since the solver
   seeks a unique pressure and a double-valued pressure is
