@@ -191,11 +191,11 @@ convenient way to specify an initial guess for the closure state.
   accessing tension states, :math:`\rho > \rho_c`. In
   ``singularity-eos`` parlance, we call :math:`\rho_c` "rho at Pmin,"
   which is exposed by each equation of state as a function of
-  temperature. A minimum density :math:`\rho_c` corresponds to a
-  *maximum* volume fraction :math:`f_c`. The ``singularity-eos``
-  solvers will enforce, to the best of their ability, that each
-  material with a critical density has volume fractions less than the
-  critical volume fraction.
+  temperature. For a given :math:`\overline{\rho}`, A minimum density
+  :math:`\rho_c` corresponds to a *maximum* volume fraction
+  :math:`f_c`. The ``singularity-eos`` solvers will enforce, to the
+  best of their ability, that each material with a critical density
+  has volume fractions less than the critical volume fraction.
 
   Note that this treatment does *not* preclude access to tension
   states (although the combination of materials participating in a
