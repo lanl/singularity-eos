@@ -37,7 +37,7 @@ SCENARIO("Kahan summation", "[Kahan]") {
       portableReduce(
           "compute Kahan sum", 0, 1,
           PORTABLE_LAMBDA(const int, Real &s) {
-            s = singularity::mix_impl::sum_neumaier(A, N-1, 1); // with offset
+            s = singularity::mix_impl::sum_neumaier(A, N - 1, 1); // with offset
           },
           sum);
       THEN("The total is what we expect within machine epsilon") {
