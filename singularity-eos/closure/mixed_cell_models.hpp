@@ -98,6 +98,16 @@ bool check_nans(Real const *const a, const std::size_t n, const bool verbose = f
 PORTABLE_INLINE_FUNCTION
 bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
   // Simple Jacobi preconditioner
+  //
+  // JMM: This DOES seem to reliably reduce the condition number of
+  // our matrices, suggesting they can be reliably transformed into a
+  // diagonally dominant form. However, it's unclear to me if it
+  // actually helps us solve difficult mixed cells. It seems to me
+  // that when the matrix is ill-conditioned there is some other
+  // feature of the problem making the solve difficult, perhaps the
+  // shape of the residual space, or some source of catastrophic
+  // cancellation we haven't been able to eliminate. That said, it's
+  // basically free, so I decided to keep it.
   for (std::size_t row = 0; row < n; ++row) {
     Real maxabs = 0;
     for (std::size_t column = 0; column < n; ++column) {
@@ -113,44 +123,20 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     b[row] /= maxabs;
   }
 
+  // JMM: Special case Cramer's rule for 2x2 matrices, where it is
+  // both more efficient and more accurate. Note that at 3x3 and
+  // greater, it becomes worse in both efficiency and
+  // accuracy.
   if (n == 2) {
-    const Real a0ma3 = a[0] - a[3];
-    // JMM: not really a discriminant. This avoids dealing with complex numbers
-    const Real disc = 4 * a[1] * a[2] + a0ma3 * a0ma3;
-    const Real rdisc = std::sqrt(std::abs(disc));
-    const Real evals[2] = {a[0] + a[3] - rdisc, a[0] + a[3] + rdisc};
-    const Real min_eval = std::min(std::abs(evals[0]), std::abs(evals[1]));
-    const Real max_eval = std::max(std::abs(evals[0]), std::abs(evals[1]));
-
-    // which eigenvalue to drop in psuedo-inverse?
-    // std::abs(eval[0]) < std::abs(eval[1]) ? 0 : 1;
-    const std::size_t e_drop = std::abs(evals[1]) < std::abs(evals[0]);
-    const Real cond = robust::ratio(max_eval, min_eval);
-    const Real det = a[0]*a[3] - a[1]*a[2];
-    const bool use_pseudo_inverse = (std::abs(cond) >= 1e12)
-      || (std::abs(det) <= robust::EPS() * std::abs(a[0]*a[3]))
-      || (std::abs(det) <= robust::EPS() * std::abs(a[1]*a[2]));
-
     Real *x = scr;
-    if (use_pseudo_inverse) {
-      printf("Use pseudo inverse\n");
-      if (e_drop == 0) {
-        const Real denom = rdisc * (a[0] + a[3] + rdisc);
-        x[0] = robust::ratio(2 * a[1] * b[1] + b[0] * (a[0] + rdisc - a[3]), denom);
-        x[1] = robust::ratio(2 * a[2] * b[0] + b[1] * (-a[0] + rdisc + a[3]), denom);
-      } else { // e_drop == 1
-        const Real denom = rdisc * (a[0] + a[3] - rdisc);
-        x[0] =
-            robust::ratio(b[0] * (rdisc + a[3]) - 2 * a[1] * b[1] - a[0] * b[0], denom);
-        x[1] = robust::ratio(b[1] * (a[0] - a[3] + rdisc) - 2 * a[2] * b[0], denom);
-      }
-    } else {
-      x[0] = robust::ratio(a[3] * b[0] - a[1] * b[1], det);
-      x[1] = robust::ratio(a[2] * b[0] - a[0] * b[1], -det);
-    }
+    const Real det = a[0] * a[3] - a[1] * a[2];
+    x[0] = robust::ratio(a[3] * b[0] - a[1] * b[1], det);
+    x[1] = robust::ratio(a[0] * b[1] - a[2] * b[0], det);
     b[0] = x[0];
     b[1] = x[1];
   } else {
+    // TODO(JMM): Should we switch to an SVD-based psuedo-inverse for
+    // larger matrices?
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
 #ifndef PORTABILITY_STRATEGY_KOKKOS
 #error "Kokkos Kernels requires Kokkos."
