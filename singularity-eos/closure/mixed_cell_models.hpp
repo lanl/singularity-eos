@@ -127,11 +127,13 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     b[row] /= maxabs;
   }
 
-  // JMM: Special case Cramer's rule for 2x2 matrices, where it is
-  // both more efficient and more accurate. Note that at 3x3 and
-  // greater, it becomes worse in both efficiency and
-  // accuracy.
-  if (n == 2) {
+  if (n == 1) {                       // JMM: Just in case
+    b[0] = robust::ratio(b[0], a[0]); // re-use b as x
+    // JMM: Special case Cramer's rule for 2x2 matrices, where it is
+    // both more efficient and more accurate. Note that at 3x3 and
+    // greater, it becomes worse in both efficiency and
+    // accuracy.
+  } else if (n == 2) {
     Real *x = scr;
     const Real det = a[0] * a[3] - a[1] * a[2];
     x[0] = robust::ratio(a[3] * b[0] - a[1] * b[1], det);
