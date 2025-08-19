@@ -215,8 +215,7 @@ SCENARIO("DivideByCvTransform behaves correctly", "[TransformTest]") {
          "device") {
       // data = data.GetOnDevice();
       DivideByCvTransform<TestDataContainer> cvTransform(data);
-      // test_transformer(cvTransform, e_actual, rho, expected_transformed);
-      test_transformer_host(cvTransform, e_actual, rho, expected_transformed);
+      test_transformer(cvTransform, e_actual, rho, expected_transformed);
     }
   }
 }
@@ -239,8 +238,7 @@ SCENARIO("ShiftandDivideByCvTransform behaves correctly", "[TransformTest]") {
          "device") {
       // data = data.GetOnDevice();
       ShiftandDivideByCvTransform<TestDataContainer> shiftAndCvTransform(data);
-      // test_transformer(shiftAndCvTransform, e_actual, rho, expected_transformed);
-      test_transformer_host(shiftAndCvTransform, e_actual, rho, expected_transformed);
+      test_transformer(shiftAndCvTransform, e_actual, rho, expected_transformed);
     }
   }
 }
@@ -260,8 +258,7 @@ SCENARIO("ScaleTransform behaves correctly", "[TransformTest]") {
         "Transform divides by T³, and inverse reconstructs original when run on device") {
       // data = data.GetOnDevice();
       ScaleTransform<TestDataContainer> scaleTransform(data);
-      // test_transformer(scaleTransform, e_actual, rho, expected_transformed);
-      test_transformer_host(scaleTransform, e_actual, rho, expected_transformed);
+      test_transformer(scaleTransform, e_actual, rho, expected_transformed);
     }
   }
 }
@@ -291,9 +288,7 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
          "when run on device") {
       // data = data.GetOnDevice();
       AllTransform<TestDataContainer> Alltest(data);
-      // test_transformer(Alltest, e_actual, rho, e_final_transformed);
-      test_transformer_host(Alltest, e_actual, rho, e_final_transformed);
-    }
+      test_transformer(Alltest, e_actual, rho, e_final_transformed);    }
   }
 }
 
