@@ -31,8 +31,8 @@
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-// #ifdef SINGULARITY_TEST_SESAME
-// #ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_TEST_SESAME
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
 
 constexpr Real GPa = 1.0e10;
 constexpr Real MJ_per_kg = 1.0e10;
@@ -458,6 +458,6 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
     foam_eos.Finalize();
   }
 }
-// #endif // SINGULARITY_USE_SPINER_WITH_HDF5
-// #endif // SINGULARITY_TEST_SESAME
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5
+#endif // SINGULARITY_TEST_SESAME
 #endif // SINGULARITY_BUILD_CLOSURE
