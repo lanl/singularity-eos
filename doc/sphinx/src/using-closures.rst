@@ -557,6 +557,9 @@ contains the following member fields, with default values:
     Real temperature_limit = 1.0e15;
     Real default_tguess = 300.;
     Real min_dtde = 1.0e-16;
+    std::size_t pte_small_step_tries = 2;
+    Real pte_small_step_thresh = 1e-16;
+    Real pte_max_dpdv = -1e-8;
   };
 
 where here ``verbose`` enables verbose output in the PTE solve is,
@@ -581,6 +584,24 @@ maximum temperature allowed by the solver. ``default_tguess`` is used
 as an initial guess for temperature if a better guess is not passed in
 or cannot be inferred. ``min_dtde`` is the minmum that temperature is
 allowed to change with respect to energy when computing Jacobians.
+
+The parameters ``pte_small_step_tries`` and ``pte_small_step_thresh``
+guard against the PTE solver taking tiny steps forever and not
+converging. ``pte_small_step_thresh`` is the size of step the PTE
+solver considers too small and ``pte_small_step_tries`` is the number
+of very small steps the solver will take before erroring out.
+
+``pte_max_dpdv`` is designed to guard against difficult-to-handle
+regions of a multi-phase equation of state, such as a vapor dome that
+contains Van der Waals loops or a region that has been Maxwell
+constructed to remove such loops. In these regions, the slope of
+pressure with respect to microphysical density can vanish, which can
+cause the Jacobian of a solver to have a non-trivial Kernel, and thus
+make the system impossible to solve. This threshold floors this
+Jacobian so that it can always be inverted. The threshold is the
+gradient of the pressure with respect to **volume fraction** and must
+be negative. If a positive threshold is entered, it will be made
+negative.
 
 .. note::
 
