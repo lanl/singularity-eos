@@ -61,6 +61,10 @@ struct MixParams {
   std::size_t pte_small_step_tries = 2;
   Real pte_small_step_thresh = 1e-16;
   Real pte_max_dpdv = -1e-8;
+  // JMM: note the deliberate integer here. Negative value means do
+  // the default. Assuming here that we never have a problem with 2^63
+  // materials...
+  std::int64_t pte_reduced_system_exclude_idx = -1;
 };
 
 struct SolverStatus {
@@ -827,20 +831,30 @@ class PTESolverRhoT
     InitBase();
 
     // Decide which material's volume fraction should be set by the
-    // sum of the others. We probably want to exclude the material
-    // with the largest volume fraction, but we don't know which one
-    // that will be. We guestimate it as the material with the largest
-    // mass fraction, though this may not always be correct.
-    ms = 0;
-    Real xmax = 0;
-    Real alphamax = 0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      Real x = robust::ratio(rhobar[m], rho_total);
-      if (x > xmax) {
-        xmax = x;
-        ms = m;
+    // sum of the others. If an index is passed in through mix params,
+    // we use that. Otherwise we do our best.
+    //
+    // We probably want to exclude the material with the largest
+    // volume fraction, but we don't know which one that will be. We
+    // guestimate it as the material with the largest mass fraction,
+    // though this may not always be correct.
+    //
+    if (params_.pte_reduced_system_exclude_idx >= 0) {
+      ms = params_.pte_reduced_system_exclude_idx;
+    } else {
+      ms = 0;
+      Real xmax = 0;
+      Real alphamax = 0;
+      for (std::size_t m = 0; m < nmat; ++m) {
+        Real x = robust::ratio(rhobar[m], rho_total);
+        if (x > xmax) {
+          xmax = x;
+          ms = m;
+        }
       }
     }
+    PORTABLE_REQUIRE(ms < nmat, "Index of material whose volume fraction will depend on "
+                                "the others must be less than nmat");
 
     Residual();
 
