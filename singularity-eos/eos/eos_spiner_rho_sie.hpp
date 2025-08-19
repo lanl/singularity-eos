@@ -106,24 +106,26 @@ class SpinerEOSDependsRhoSieTransformable
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoSieTransformable);
   PORTABLE_INLINE_FUNCTION SpinerEOSDependsRhoSieTransformable()
       : memoryStatus_(DataStatus::Deallocated) {}
-  inline SpinerEOSDependsRhoSieTransformable(const std::string &filename, int matid, TableSplit split,
-                                bool reproducibility_mode = false,
-                                bool pmin_vapor_dome = false);
   inline SpinerEOSDependsRhoSieTransformable(const std::string &filename, int matid,
-                                bool reproducibility_mode = false,
-                                bool pmin_vapor_dome = false)
-      : SpinerEOSDependsRhoSieTransformable(filename, matid, TableSplit::Total, reproducibility_mode,
-                               pmin_vapor_dome) {}
+                                             TableSplit split,
+                                             bool reproducibility_mode = false,
+                                             bool pmin_vapor_dome = false);
+  inline SpinerEOSDependsRhoSieTransformable(const std::string &filename, int matid,
+                                             bool reproducibility_mode = false,
+                                             bool pmin_vapor_dome = false)
+      : SpinerEOSDependsRhoSieTransformable(filename, matid, TableSplit::Total,
+                                            reproducibility_mode, pmin_vapor_dome) {}
   inline SpinerEOSDependsRhoSieTransformable(const std::string &filename,
-                                const std::string &materialName, TableSplit split,
-                                bool reproducibility_mode = false,
-                                bool pmin_vapor_dome = false);
+                                             const std::string &materialName,
+                                             TableSplit split,
+                                             bool reproducibility_mode = false,
+                                             bool pmin_vapor_dome = false);
   inline SpinerEOSDependsRhoSieTransformable(const std::string &filename,
-                                const std::string &materialName,
-                                bool reproducibility_mode = false,
-                                bool pmin_vapor_dome = false)
+                                             const std::string &materialName,
+                                             bool reproducibility_mode = false,
+                                             bool pmin_vapor_dome = false)
       : SpinerEOSDependsRhoSieTransformable(filename, materialName, TableSplit::Total,
-                               reproducibility_mode, pmin_vapor_dome) {}
+                                            reproducibility_mode, pmin_vapor_dome) {}
   inline SpinerEOSDependsRhoSieTransformable GetOnDevice();
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
@@ -333,11 +335,12 @@ class SpinerEOSDependsRhoSieTransformable
 };
 
 template <template <class> class TransformerT>
-inline SpinerEOSDependsRhoSieTransformable<TransformerT>::SpinerEOSDependsRhoSieTransformable(const std::string &filename,
-                                                      const std::string &materialName,
-                                                      TableSplit split,
-                                                      bool reproducibility_mode,
-                                                      bool pmin_vapor_dome)
+inline SpinerEOSDependsRhoSieTransformable<
+    TransformerT>::SpinerEOSDependsRhoSieTransformable(const std::string &filename,
+                                                       const std::string &materialName,
+                                                       TableSplit split,
+                                                       bool reproducibility_mode,
+                                                       bool pmin_vapor_dome)
     : split_(split), reproducible_(reproducibility_mode),
       pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
@@ -818,9 +821,9 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::lRhoFromPlT_(
 template <template <class> class TransformerT>
 inline SpinerEOSDependsRhoSieTransformable<
     TransformerT>::SpinerEOSDependsRhoSieTransformable(const std::string &filename,
-                                                      int matid, TableSplit split,
-                                                      bool reproducibility_mode,
-                                                      bool pmin_vapor_dome)
+                                                       int matid, TableSplit split,
+                                                       bool reproducibility_mode,
+                                                       bool pmin_vapor_dome)
     : matid_(matid), split_(split), reproducible_(reproducibility_mode),
       pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 

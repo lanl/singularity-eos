@@ -274,7 +274,8 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
          "when run on device") {
       data = data.GetOnDevice();
       AllTransform<TestDataContainer> Alltest(data);
-      test_transformer(Alltest, e_actual, rho, e_final_transformed);    }
+      test_transformer(Alltest, e_actual, rho, e_final_transformed);
+    }
   }
 }
 
