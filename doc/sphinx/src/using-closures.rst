@@ -460,7 +460,7 @@ Jacobian for this formulation is thus completely dense and of the rough form:
   \begin{pmatrix}
    \sum_m \frac{\partial u_m}{\partial T} & \frac{\partial u_0}{\partial f_0} - \frac{\partial u_s}{\partial f_s} &\cdots &\frac{\partial u_{N-1}}{\partial f_{N-1}} - \frac{\partial u_s}{\partial f_s}\\
    \frac{\partial P_0}{\partial T} - \frac{\partial P_s}{\partial T} & \frac{\partial P_0}{\partial f_0} + \frac{\partial P_s}{\partial f_s} & \frac{\partial P_s}{\partial f_s} & \cdots\\
-   \vdots & \ddots & &\\
+   \vdots & &\ddots & \vdots\\
    \frac{\partial P_{N-1}}{\partial T} - \frac{\partial P_s}{\partial T} & \cdots & \frac{\partial P_s}{\partial f_s} & \frac{\partial P_{N-1}}{\partial f_{N-1}} + \frac{\partial P_s}{\partial f_s}
   \end{pmatrix}
 
