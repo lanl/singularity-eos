@@ -866,7 +866,10 @@ class PTESolverRhoT
 
   PORTABLE_INLINE_FUNCTION
   void Fixup() {
-    NormalizeVfrac();
+    // Volume fractions normalized by construction in this
+    // formulation, so no reason to normalize them here the way
+    // PTESolverBase does.
+    //
     // Re-pick the material to exclude based on largest volume
     // fraction, now that perhaps the volume fractions have been
     // updated
@@ -879,10 +882,10 @@ class PTESolverRhoT
           ms = m;
         }
       }
+      // With the excluded material changed, the residual must be
+      // recomputed
+      Residual();
     }
-    // With the excluded material changed, the residual must be
-    // recomputed
-    Residual();
   }
 
   PORTABLE_INLINE_FUNCTION
