@@ -184,7 +184,7 @@ convenient way to specify an initial guess for the closure state.
   state space.
 
   This tension region is challenging for PTE solvers, since the solver
-  seeks a unique pressure and a double-valued pressure is
+  seeks a unique pressure and a multi-valued pressure is
   problematic. Moreover, the sign flip for :math:`\partial P/\partial
   \rho` can be difficult for a Newton-like solver to traverse. As
   such, most of our PTE solvers enforce that, for materials capable of
@@ -446,23 +446,42 @@ In this treatment, the pressure differences are written as
 
   P_s - P_m = 0, 0 \leq m < N, m \neq s.
 
-Note this does not make derivatives with respect to :math:`f_s`
-vanish. On the contrary:
+and the volume fraction constraint equation is eliminated, as it is
+satisfied by construction. Note that, although :math:`f_s` is no
+longer a state variable, derivatives of thermodynamic quantities of
+material :math:`s` with respect to :math:`f_s` still appear, as
+:math:`f_s` enters through its dependence on all of the other volume
+fractions. For example, for the pressure :math:`P_s` in the pressure
+difference constraints:
 
 .. math::
 
-  \frac{\partial Q_s}{\partial f_i} = \frac{\partial Q_s}{\partial f_s} \frac{\partial f_s}{\partial f_i} = -\frac{\partial Q_s}{\partial f_s}
+  \frac{\partial P_s}{\partial f_i} = \frac{\partial P_s}{\partial f_s} \frac{\partial P_s}{\partial P_i} = -\frac{\partial P_s}{\partial f_s}
 
-for any thermodynamic quantity indexed by material :math:`Q_m`. The
-Jacobian for this formulation is thus completely dense and of the rough form:
+and indeed this holds for any thermodynamic quantity indexed by
+material :math:`Q_m`. The Jacobian :math:`J_{ij}` for this formulation
+is thus completely dense with
+
+.. math::
+   
+  \begin{aligned}[t]
+   J_{00} &= \sum_m\frac{\partial u_m}{\partial T}\\
+   J_{0i} &= \frac{\partial u_i}{\partial f_i} - \frac{\partial u_s}{\partial f_s}\\
+   J_{j0} &= \frac{\partial P_j}{\partial T} - \frac{\partial P_s}{\partial T}\\
+   J_{ij} &= \frac{\partial P_s}{\partial f_s} + \delta_{ij} \frac{\partial P_i}{\partial f_i}
+  \end{aligned}
+
+where here :math:`i` and :math:`j` range from 1 to :math:`nmat-1` and
+index all materials excluding material :math:`s`. In matrix form this
+is roughly:
 
 .. math::
 
   \begin{pmatrix}
-   \sum_m \frac{\partial u_m}{\partial T} & \frac{\partial u_0}{\partial f_0} - \frac{\partial u_s}{\partial f_s} &\cdots &\frac{\partial u_{N-1}}{\partial f_{N-1}} - \frac{\partial u_s}{\partial f_s}\\
-   \frac{\partial P_0}{\partial T} - \frac{\partial P_s}{\partial T} & \frac{\partial P_0}{\partial f_0} + \frac{\partial P_s}{\partial f_s} & \frac{\partial P_s}{\partial f_s} & \cdots\\
-   \vdots & &\ddots & \vdots\\
-   \frac{\partial P_{N-1}}{\partial T} - \frac{\partial P_s}{\partial T} & \cdots & \frac{\partial P_s}{\partial f_s} & \frac{\partial P_{N-1}}{\partial f_{N-1}} + \frac{\partial P_s}{\partial f_s}
+   \sum_m \frac{\partial u_m}{\partial T} & \frac{\partial u_0}{\partial f_0} - \frac{\partial u_s}{\partial f_s} &&\cdots &\frac{\partial u_{N-1}}{\partial f_{N-1}} - \frac{\partial u_s}{\partial f_s}\\
+   \frac{\partial P_0}{\partial T} - \frac{\partial P_s}{\partial T} & \frac{\partial P_0}{\partial f_0} + \frac{\partial P_s}{\partial f_s} & \frac{\partial P_s}{\partial f_s} & \cdots & \frac{\partial P_s}{\partial f_s} \\
+   \vdots & &\ddots & \ddots&\vdots\\
+   \frac{\partial P_{N-1}}{\partial T} - \frac{\partial P_s}{\partial T} & \frac{\partial P_s}{\partial f_s} & \cdots & \frac{\partial P_s}{\partial f_s} & \frac{\partial P_{N-1}}{\partial f_{N-1}} + \frac{\partial P_s}{\partial f_s}
   \end{pmatrix}
 
 This reduced formulation has the significant advantage (over an
