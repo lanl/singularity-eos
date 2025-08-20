@@ -61,6 +61,10 @@ struct MixParams {
   std::size_t pte_small_step_tries = 2;
   Real pte_small_step_thresh = 1e-16;
   Real pte_max_dpdv = -1e-8;
+  // JMM: note the deliberate integer here. Negative value means do
+  // the default. Assuming here that we never have a problem with 2^63
+  // materials...
+  std::int64_t pte_reduced_system_exclude_idx = -1;
 };
 
 struct SolverStatus {
@@ -97,62 +101,130 @@ bool check_nans(Real const *const a, const std::size_t n, const bool verbose = f
 
 PORTABLE_INLINE_FUNCTION
 bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
+  // Simple Jacobi preconditioner
+  //
+  // JMM: This DOES seem to reliably reduce the condition number of
+  // our matrices, suggesting they can be reliably transformed into a
+  // diagonally dominant form. However, it's unclear to me if it
+  // actually helps us solve difficult mixed cells. It seems to me
+  // that when the matrix is ill-conditioned there is some other
+  // feature of the problem making the solve difficult, perhaps the
+  // shape of the residual space, or some source of catastrophic
+  // cancellation we haven't been able to eliminate. That said, it's
+  // basically free, so I decided to keep it.
+  for (std::size_t row = 0; row < n; ++row) {
+    Real maxabs = 0;
+    for (std::size_t column = 0; column < n; ++column) {
+      maxabs = std::max(std::abs(a[row * n + column]), maxabs);
+    }
+    if (maxabs == 0) {
+      // row is all zeros. Matrix is not invertible.
+      return false;
+    }
+    for (std::size_t column = 0; column < n; ++column) {
+      a[row * n + column] /= maxabs;
+    }
+    b[row] /= maxabs;
+  }
+
+  if (n == 1) {                       // JMM: Just in case
+    b[0] = robust::ratio(b[0], a[0]); // re-use b as x
+  } else if (n == 2) {
+    // JMM: Special case Cramer's rule for 2x2 matrices, where it is
+    // both more efficient and more accurate. Note that at 3x3 and
+    // greater, it becomes worse in both efficiency and
+    // accuracy.
+    Real *x = scr;
+    const Real det = a[0] * a[3] - a[1] * a[2];
+    x[0] = robust::ratio(a[3] * b[0] - a[1] * b[1], det);
+    x[1] = robust::ratio(a[0] * b[1] - a[2] * b[0], det);
+    b[0] = x[0];
+    b[1] = x[1];
+  } else {
+    // TODO(JMM): Should we switch to an SVD-based psuedo-inverse for
+    // larger matrices?
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
 #ifndef PORTABILITY_STRATEGY_KOKKOS
 #error "Kokkos Kernels requires Kokkos."
 #endif
-  // aliases for kokkos views
-  using Unmgd = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
-  using Lrgt = Kokkos::LayoutRight;
-  using vec_t = Kokkos::View<Real *, Unmgd>;
-  // aliases for QR solve template params
-  using QR_alg = KokkosBatched::Algo::QR::Unblocked;
-  using Lft = KokkosBatched::Side::Left;
-  using Trs = KokkosBatched::Trans::Transpose;
-  using nTrs = KokkosBatched::Trans::NoTranspose;
-  using ApQ_alg = KokkosBatched::Algo::ApplyQ::Unblocked;
-  using UP = KokkosBatched::Uplo::Upper;
-  using NonU = KokkosBatched::Diag::NonUnit;
-  using Tr_alg = KokkosBatched::Algo::Trsv::Unblocked;
-  // aliases for solver structs ('invoke' member of the struct is the
-  // actual function call)
-  using QR_factor = KokkosBatched::SerialQR<QR_alg>;
-  using ApplyQ_transpose = KokkosBatched::SerialApplyQ<Lft, Trs, ApQ_alg>;
-  using InvertR = KokkosBatched::SerialTrsv<UP, nTrs, NonU, Tr_alg>;
-  // view of matrix
-  Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
-  // view of RHS
-  Kokkos::View<Real **, Lrgt, Unmgd> B(b, n, 1);
-  // view of reflectors
-  vec_t t(scr, n);
-  // view of workspace
-  vec_t w(scr + n, n);
-  // QR factor A, A x = B -> Q R x = B
-  // store result in A and t
-  QR_factor::invoke(A, t, w);
-  // Apply Q^T from the left to both sides
-  // Q^T Q R x = Q^T B -> R x = Q^T B
-  // store result of Q^T B in B
-  ApplyQ_transpose::invoke(A, t, B, w);
-  // Apply R^-1 from the left to both sides
-  // R^-1 R x = R^-1 Q^T B -> x = R^-1 Q^T B
-  // store solution vector x in B
-  InvertR::invoke(1.0, A, B);
+    // aliases for kokkos views
+    using Unmgd = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
+    using Lrgt = Kokkos::LayoutRight;
+    using vec_t = Kokkos::View<Real *, Unmgd>;
+    // aliases for QR solve template params
+    using QR_alg = KokkosBatched::Algo::QR::Unblocked;
+    using Lft = KokkosBatched::Side::Left;
+    using Trs = KokkosBatched::Trans::Transpose;
+    using nTrs = KokkosBatched::Trans::NoTranspose;
+    using ApQ_alg = KokkosBatched::Algo::ApplyQ::Unblocked;
+    using UP = KokkosBatched::Uplo::Upper;
+    using NonU = KokkosBatched::Diag::NonUnit;
+    using Tr_alg = KokkosBatched::Algo::Trsv::Unblocked;
+    // aliases for solver structs ('invoke' member of the struct is the
+    // actual function call)
+    using QR_factor = KokkosBatched::SerialQR<QR_alg>;
+    using ApplyQ_transpose = KokkosBatched::SerialApplyQ<Lft, Trs, ApQ_alg>;
+    using InvertR = KokkosBatched::SerialTrsv<UP, nTrs, NonU, Tr_alg>;
+    // view of matrix
+    Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
+    // view of RHS
+    Kokkos::View<Real **, Lrgt, Unmgd> B(b, n, 1);
+    // view of reflectors
+    vec_t t(scr, n);
+    // view of workspace
+    vec_t w(scr + n, n);
+    // QR factor A, A x = B -> Q R x = B
+    // store result in A and t
+    QR_factor::invoke(A, t, w);
+    // Apply Q^T from the left to both sides
+    // Q^T Q R x = Q^T B -> R x = Q^T B
+    // store result of Q^T B in B
+    ApplyQ_transpose::invoke(A, t, B, w);
+    // Apply R^-1 from the left to both sides
+    // R^-1 R x = R^-1 Q^T B -> x = R^-1 Q^T B
+    // store solution vector x in B
+    InvertR::invoke(1.0, A, B);
 #else
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 #warning "Eigen should not be used with Kokkos."
 #endif
-  // Eigen VERSION
-  using Matrix_t = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-  Eigen::Map<Matrix_t> A(a, n, n);
+    // Eigen VERSION
+    using Matrix_t = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    Eigen::Map<Matrix_t> A(a, n, n);
 
-  Eigen::Map<Eigen::VectorXd> B(b, n);
-  Eigen::Map<Eigen::VectorXd> X(scr, n);
-  X = A.lu().solve(B);
-  B = X;
+    Eigen::Map<Eigen::VectorXd> B(b, n);
+    Eigen::Map<Eigen::VectorXd> X(scr, n);
+    X = A.lu().solve(B);
+
+    B = X;
 #endif // SINGULARITY_USE_KOKKOSKERNELS
+  }
   bool retval = check_nans(b, n);
   return retval;
+}
+
+/*
+ * Kahan summation, with the Neumaier correction
+ * https://onlinelibrary.wiley.com/doi/10.1002/zamm.19740540106
+ */
+template <typename Data_t>
+PORTABLE_INLINE_FUNCTION Real sum_neumaier(Data_t &&data, std::size_t n,
+                                           std::size_t offset = 0,
+                                           std::size_t iskip = -1) {
+  Real sum = 0;
+  Real c = 0; // correction
+  for (std::size_t i = 0; i < n; ++i) {
+    if (i == iskip) continue;
+    Real x = data[i + offset];
+    Real t = sum + x;
+    if (std::abs(sum) >= std::abs(x)) {
+      c += (sum - t) + x;
+    } else {
+      c += (x - t) + sum;
+    }
+    sum = t;
+  }
+  return sum + c;
 }
 
 class CacheAccessor {
@@ -188,10 +260,7 @@ class PTESolverBase {
   // volume fractions, which is useful to deal with roundoff error.
   PORTABLE_INLINE_FUNCTION
   virtual void Fixup() const {
-    Real vsum = 0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-    }
+    Real vsum = sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m)
       vfrac[m] *= robust::ratio(vfrac_total, vsum);
   }
@@ -239,22 +308,18 @@ class PTESolverBase {
   void InitRhoBarandRho() {
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
-    rho_total = 0.0;
     for (std::size_t m = 0; m < nmat; ++m) {
       PORTABLE_REQUIRE(vfrac[m] > 0.,
                        "Non-positive volume fraction provided to PTE solver");
       PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density provided to PTE solver");
       rhobar[m] = rho[m] * vfrac[m];
-      rho_total += rhobar[m];
     }
+    rho_total = sum_neumaier(rhobar, nmat);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
   void NormalizeVfrac() {
-    Real vfrac_sum = 0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vfrac_sum += vfrac[m];
-    }
+    Real vfrac_sum = sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m) {
       vfrac[m] *= robust::ratio(vfrac_total, vfrac_sum);
     }
@@ -308,7 +373,7 @@ class PTESolverBase {
       // This chooses the smallest allowed density, since vfrac is
       // inversely proportional to rho.
       if (vfrac[m] <= 0) vfrac[m] = vfrac_max;
-      // Tally this to check if a valid non-tension state is possible
+      // Tally this to check if a valid state is possible
       vfrac_max_sum += vfrac_max;
     }
     if (vfrac_max_sum < vfrac_total) {
@@ -671,11 +736,32 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
   return FastMath::pow2((1.0 - alpha) * lTlo + alpha * lThi);
 }
 
+// clang-format off
+/*
+ * Indep variables are: T, and volume fractions for materials 0 through nmat-1
+ * excluding one material index s
+ * Residual equations are:
+ *   sum(u_m) - utotal = 0
+ *   P_m - P_s = 0 for all m > 0, m != s
+ * subject to the constraint
+ *   alpha_s = 1 - sum_{m=0, m!=s)^{nmat - 1} alpha_m
+ * where alpha is volume fraction
+ *
+ * Jacobian is
+ *
+ * [ sum(du/dT)         du_1/dalpha_1 - du_s/dalpha_s ... du_m/dalpha_m - du_s/dalpha_s ]
+ * [ dP_1/dT - dP_s/dT  dP_1/dalpha_1 + dP_s/dalpha_s dP_s/dalpha_s    ...              ]
+ * [ .                                                            dP_s/dalpha_s         ]
+ * [ .                            dP_s/dalpha_s                         .               ]
+ * [ dP_m/dT - dP_s/dT            dP_s/dalpha_s          dP_n/dalpha_n + dP_s/dalpha_s  ]
+ *
+ */
+// clang-format on
 // ======================================================================
 // PTE Solver RhoT
 // ======================================================================
 constexpr inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
-  std::size_t neq = nmat + 1;
+  std::size_t neq = nmat;
   return neq * neq   // jacobian
          + 4 * neq   // dx, residual, and sol_scratch
          + 6 * nmat; // all the nmat sized arrays
@@ -724,7 +810,7 @@ class PTESolverRhoT
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
                 const Real Tnorm = 0.0, const MixParams &params = MixParams())
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
-            nmat, nmat + 1, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+            nmat, nmat, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
             scratch, Tnorm, params) {
     dpdv = AssignIncrement(scratch, nmat);
     dedv = AssignIncrement(scratch, nmat);
@@ -745,9 +831,34 @@ class PTESolverRhoT
   PORTABLE_INLINE_FUNCTION
   Real Init() {
     InitBase();
+
+    // Decide which material's volume fraction should be set by the
+    // sum of the others. If an index is passed in through mix params,
+    // we use that. Otherwise we do our best.
+    //
+    // We probably want to exclude the material with the largest
+    // volume fraction, but we don't know which one that will be. We
+    // guestimate it as the material with the largest mass fraction,
+    // though this may not always be correct.
+    //
+    if (params_.pte_reduced_system_exclude_idx >= 0) {
+      ms = params_.pte_reduced_system_exclude_idx;
+    } else {
+      ms = 0;
+      Real xmax = 0;
+      for (std::size_t m = 0; m < nmat; ++m) {
+        Real x = robust::ratio(rhobar[m], rho_total);
+        if (x > xmax) {
+          xmax = x;
+          ms = m;
+        }
+      }
+    }
+    PORTABLE_REQUIRE(ms < nmat, "Index of material whose volume fraction will depend on "
+                                "the others must be less than nmat");
+
     Residual();
-    // Leave this in for now, but comment out because I'm not sure it's a good idea
-    // TryIdealPTE(this);
+
     // Set the current guess for the equilibrium temperature.  Note that this is already
     // scaled.
     Tequil = temp[0];
@@ -756,16 +867,12 @@ class PTESolverRhoT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
-    Real esum = 0.0;
+    Real esum = mix_impl::sum_neumaier(u, nmat);
+    residual[0] = utotal_scale - esum;
+    std::size_t ires = 1;
     for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-      esum += u[m];
-    }
-    residual[0] = vfrac_total - vsum;
-    residual[1] = utotal_scale - esum;
-    for (std::size_t m = 0; m < nmat - 1; ++m) {
-      residual[2 + m] = press[m + 1] - press[m];
+      if (m == ms) continue;
+      residual[ires++] = press[ms] - press[m];
     }
   }
 
@@ -775,10 +882,10 @@ class PTESolverRhoT
     Real error_p = 0.0;
     for (std::size_t m = 1; m < nmat; ++m) {
       mean_p += vfrac[m] * press[m];
-      error_p += residual[m + 1] * residual[m + 1];
+      error_p += residual[m] * residual[m];
     }
     error_p = std::sqrt(error_p);
-    Real error_u = std::abs(residual[1]);
+    Real error_u = std::abs(residual[0]);
     // Check for convergence
     bool converged_p = (error_p < params_.pte_rel_tolerance_p * std::abs(mean_p) ||
                         error_p < params_.pte_abs_tolerance_p);
@@ -825,16 +932,30 @@ class PTESolverRhoT
     // Fill in the Jacobian
     for (std::size_t i = 0; i < neq * neq; ++i)
       jacobian[i] = 0.0;
+    // first row is energy residual eqn
+    jacobian[0] = dedT_sum;
+    std::size_t col = 1;
     for (std::size_t m = 0; m < nmat; ++m) {
-      jacobian[m] = 1.0;
-      jacobian[neq + m] = dedv[m];
+      if (m == ms) continue;
+      jacobian[col++] = dedv[m] - dedv[ms];
     }
-    jacobian[neq + nmat] = dedT_sum;
-    for (std::size_t m = 0; m < nmat - 1; m++) {
-      const std::size_t ind = MatIndex(2 + m, m);
-      jacobian[ind] = dpdv[m];
-      jacobian[ind + 1] = -dpdv[m + 1];
-      jacobian[MatIndex(2 + m, nmat)] = dpdT[m] - dpdT[m + 1];
+    // remaining rows are pressure residual
+    std::size_t row = 1;
+    for (std::size_t m = 0; m < nmat; m++) {
+      if (m == ms) continue;
+      // 0th column of rows 1+ is temp derivative
+      jacobian[MatIndex(row, 0)] = dpdT[m] - dpdT[ms];
+      // diagonal of J[1:,1:] is dpdvs.
+      // + sign here is because dp_s/dalpha_i = -dp_s/dalpha_s
+      // ALL off diagonal terms in J[1:,1:] are dpdv[s] because Ps
+      // depends on ALL the independent volume fractions
+      std::size_t col = 1;
+      for (std::size_t mm = 0; mm < nmat; ++mm) {
+        if (mm == ms) continue;
+        jacobian[MatIndex(row, col)] = (mm == m) ? dpdv[m] + dpdv[ms] : dpdv[ms];
+        col++;
+      }
+      row++;
     }
   }
 
@@ -843,13 +964,21 @@ class PTESolverRhoT
     // Each check reduces the scale further if necessary
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
+    // 0th material is special as delta volume fraction for it is
+    // minus the sum of the deltas for the others
+    Real dalphaskip = -mix_impl::sum_neumaier(dx, nmat - 1, 1);
+    std::size_t idx = 1;
     for (std::size_t m = 0; m < nmat; ++m) {
-      if (scale * dx[m] < -params_.vfrac_safety_fac * vfrac[m]) {
-        scale = -params_.vfrac_safety_fac * robust::ratio(vfrac[m], dx[m]);
+      Real mydx = (m == ms) ? dalphaskip : dx[idx++];
+      if (scale * mydx < -params_.vfrac_safety_fac * vfrac[m]) {
+        scale = std::min(
+            scale, std::abs(params_.vfrac_safety_fac * robust::ratio(vfrac[m], mydx)));
       }
     }
-    const Real Tnew = Tequil + scale * dx[nmat];
+
+    const Real Tnew = Tequil + scale * dx[0];
     // control how big of a step toward rho = rho(Pmin) is allowed
+    idx = 1;
     for (std::size_t m = 0; m < nmat; m++) {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
@@ -861,13 +990,14 @@ class PTESolverRhoT
         // should be skipped.
         continue;
       }
-      if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
+      Real mydx = (m == ms) ? dalphaskip : dx[idx++];
+      if (scale * mydx > 0.5 * (alpha_max - vfrac[m])) {
+        scale = std::min(robust::ratio(0.5 * (alpha_max - vfrac[m]), mydx), scale);
       }
     }
     // control how big of a step toward T = 0 is allowed
-    if (scale * dx[nmat] < -0.95 * Tequil) {
-      scale = robust::ratio(-0.95 * Tequil, dx[nmat]);
+    if (scale * dx[0] < -0.95 * Tequil) {
+      scale = std::min(scale, robust::ratio(-0.95 * Tequil, dx[0]));
     }
     // Now apply the overall scaling
     for (std::size_t i = 0; i < neq; ++i)
@@ -886,9 +1016,15 @@ class PTESolverRhoT
       for (std::size_t m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
     }
-    Tequil = Ttemp + scale * dx[nmat];
+    Tequil = Ttemp + scale * dx[0];
+    std::size_t idx = 1;
     for (std::size_t m = 0; m < nmat; ++m) {
-      vfrac[m] = vtemp[m] + scale * dx[m];
+      if (ms == m) continue;
+      vfrac[m] = vtemp[m] + scale * dx[idx++];
+    }
+    vfrac[ms] = mix_impl::sum_neumaier(vfrac, nmat, 0, ms);
+    vfrac[ms] = 1 - vfrac[ms];
+    for (std::size_t m = 0; m < nmat; ++m) {
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
                              rho[m], Tnorm * Tequil, lambda[m]);
@@ -901,12 +1037,14 @@ class PTESolverRhoT
                         uscale);
     }
     Residual();
+
     return ResidualNorm();
   }
 
  private:
   Real *dpdv, *dedv, *dpdT, *vtemp;
   Real Tequil, Ttemp;
+  std::size_t ms;
 };
 
 // ======================================================================
@@ -987,12 +1125,11 @@ class PTESolverPT
     // guess. Worth keeping in mind for the future maybe if the
     // iteration count becomes an issue.
     Pequil = 0;
-    Real vsum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
       // always approach from >0 side
       Pequil += std::abs(press[m]) * vfrac[m];
-      vsum += vfrac[m];
     }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
     Pequil /= vsum;
     Tequil = 1; // Because it's = Tnorm = initial guess
 
@@ -1013,12 +1150,8 @@ class PTESolverPT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
-    Real esum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-      esum += u[m];
-    }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
+    Real esum = mix_impl::sum_neumaier(u, nmat);
     residual[RV] = vfrac_total - vsum;
     residual[RSIE] = utotal_scale - esum;
   }
@@ -1138,17 +1271,6 @@ class PTESolverPT
     return ResidualNorm();
   }
 
-  // Solve the linear system for the update dx
-  // Customized because this system can invert its jacobian analytically
-  PORTABLE_INLINE_FUNCTION
-  bool Solve() const {
-    dx[0] = robust::ratio(jacobian[3] * residual[0] - jacobian[1] * residual[1],
-                          jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2]);
-    dx[1] = robust::ratio(jacobian[2] * residual[0] - jacobian[0] * residual[1],
-                          jacobian[1] * jacobian[2] - jacobian[0] * jacobian[3]);
-    return mix_impl::check_nans(dx, 2);
-  }
-
  private:
   // TODO(JMM): Should these have trailing underscores?
   // Current P, T state
@@ -1260,10 +1382,7 @@ class PTESolverFixedT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-    }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
     residual[0] = vfrac_total - vsum;
     for (std::size_t m = 0; m < nmat - 1; ++m) {
       residual[1 + m] = press[m] - press[m + 1];
@@ -1484,9 +1603,8 @@ class PTESolverFixedP
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
       residual[m] = robust::ratio(Pequil, uscale) - press[m];
     }
     residual[nmat] = vfrac_total - vsum;
@@ -1704,12 +1822,8 @@ class PTESolverRhoU
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
-    Real esum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-      esum += u[m];
-    }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
+    Real esum = mix_impl::sum_neumaier(u, nmat);
     residual[0] = vfrac_total - vsum;
     residual[1] = utotal_scale - esum;
     for (std::size_t m = 0; m < nmat - 1; ++m) {
