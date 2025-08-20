@@ -471,7 +471,7 @@ is thus completely dense with
    J_{ij} &= \frac{\partial P_s}{\partial f_s} + \delta_{ij} \frac{\partial P_i}{\partial f_i}
   \end{aligned}
 
-where here :math:`i` and :math:`j` range from 1 to :math:`nmat-1` and
+where here :math:`i` and :math:`j` range from 1 to :math:`N-1` and
 index all materials excluding material :math:`s`. In matrix form this
 is roughly:
 
