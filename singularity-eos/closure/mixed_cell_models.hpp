@@ -207,15 +207,18 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
  * Kahan summation, with the Neumaier correction
  * https://onlinelibrary.wiley.com/doi/10.1002/zamm.19740540106
  */
-template <typename Data_t>
+struct IdentityOperator {
+  PORTABLE_FORCEINLINE_FUNCTION Real operator()(const Real x) const { return x; }
+};
+template <typename Data_t, typename Operator_t = IdentityOperator>
 PORTABLE_INLINE_FUNCTION Real sum_neumaier(Data_t &&data, std::size_t n,
-                                           std::size_t offset = 0,
-                                           std::size_t iskip = -1) {
+                                           std::size_t offset = 0, std::size_t iskip = -1,
+                                           const Operator_t &op = IdentityOperator()) {
   Real sum = 0;
   Real c = 0; // correction
   for (std::size_t i = 0; i < n; ++i) {
     if (i == iskip) continue;
-    Real x = data[i + offset];
+    Real x = op(data[i + offset]);
     Real t = sum + x;
     if (std::abs(sum) >= std::abs(x)) {
       c += (sum - t) + x;
@@ -259,11 +262,7 @@ class PTESolverBase {
   // after each iteration of the Newton solver.  This version just renormalizes the
   // volume fractions, which is useful to deal with roundoff error.
   PORTABLE_INLINE_FUNCTION
-  virtual void Fixup() const {
-    Real vsum = sum_neumaier(vfrac, nmat);
-    for (std::size_t m = 0; m < nmat; ++m)
-      vfrac[m] *= robust::ratio(vfrac_total, vsum);
-  }
+  virtual void Fixup() const { NormalizeVfrac(); }
   // Finalize restores the temperatures, energies, and pressures to unscaled values from
   // the internally scaled quantities used by the solvers
   PORTABLE_INLINE_FUNCTION
@@ -318,7 +317,7 @@ class PTESolverBase {
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
-  void NormalizeVfrac() {
+  void NormalizeVfrac() const {
     Real vfrac_sum = sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m) {
       vfrac[m] *= robust::ratio(vfrac_total, vfrac_sum);
@@ -550,10 +549,7 @@ class PTESolverBase {
 
   PORTABLE_INLINE_FUNCTION
   Real ResidualNorm() const {
-    Real norm = 0.0;
-    for (std::size_t m = 0; m < neq; m++)
-      norm += residual[m] * residual[m];
-    return 0.5 * norm;
+    return 0.5 * sum_neumaier(residual, neq, 0, -1, [](const Real x) { return x * x; });
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -779,6 +775,7 @@ class PTESolverRhoT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::neq;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::ResidualNorm;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::NormalizeVfrac;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie_total;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::eos;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho;
@@ -841,6 +838,8 @@ class PTESolverRhoT
     // guestimate it as the material with the largest mass fraction,
     // though this may not always be correct.
     //
+    // At later iterations we will check the volume fractions again
+    // and pick the material with the largest one.
     if (params_.pte_reduced_system_exclude_idx >= 0) {
       ms = params_.pte_reduced_system_exclude_idx;
     } else {
@@ -866,6 +865,27 @@ class PTESolverRhoT
   }
 
   PORTABLE_INLINE_FUNCTION
+  void Fixup() {
+    NormalizeVfrac();
+    // Re-pick the material to exclude based on largest volume
+    // fraction, now that perhaps the volume fractions have been
+    // updated
+    if (params_.pte_reduced_system_exclude_idx < 0) {
+      Real alphamax = 0;
+      ms = 0;
+      for (std::size_t m = 0; m < nmat; ++m) {
+        if (vfrac[m] > alphamax) {
+          alphamax = vfrac[m];
+          ms = m;
+        }
+      }
+    }
+    // With the excluded material changed, the residual must be
+    // recomputed
+    Residual();
+  }
+
+  PORTABLE_INLINE_FUNCTION
   void Residual() const {
     Real esum = mix_impl::sum_neumaier(u, nmat);
     residual[0] = utotal_scale - esum;
@@ -878,13 +898,13 @@ class PTESolverRhoT
 
   PORTABLE_INLINE_FUNCTION
   bool CheckPTE() const {
-    Real mean_p = vfrac[0] * press[0];
-    Real error_p = 0.0;
-    for (std::size_t m = 1; m < nmat; ++m) {
+    using namespace mix_impl;
+    Real mean_p = 0;
+    for (std::size_t m = 0; m < nmat; ++m) {
       mean_p += vfrac[m] * press[m];
-      error_p += residual[m] * residual[m];
     }
-    error_p = std::sqrt(error_p);
+    Real error_p = std::sqrt(
+        sum_neumaier(residual, neq - 1, 1, -1, [](const Real x) { return x * x; }));
     Real error_u = std::abs(residual[0]);
     // Check for convergence
     bool converged_p = (error_p < params_.pte_rel_tolerance_p * std::abs(mean_p) ||
@@ -982,7 +1002,7 @@ class PTESolverRhoT
     for (std::size_t m = 0; m < nmat; m++) {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
-      const Real alpha_max = robust::ratio(rhobar[m], rho_min);
+      const Real alpha_max = std::min(1.0, robust::ratio(rhobar[m], rho_min));
       if (alpha_max < vfrac[m]) {
         // Despite our best efforts, we're already in the unstable regime (i.e.
         // dPdV_T > 0) so we would actually want to *increase* the step instead

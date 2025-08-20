@@ -443,11 +443,10 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
 
       THEN("The solver converges") { REQUIRE(success); }
 
-      AND_WHEN("We call PTE but with a wildly incorrect temperature guess, deep in the "
+      AND_WHEN("We call PTE but with wildly incorrect initial guesses, deep in the "
                "Maxwell constructed region") {
-        bool success =
-            RunPTE2Mat(He_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
-                       sietot, 5, alpha1_true, alpha2_true, Ttrue, Ptrue);
+        bool success = RunPTE2Mat(He_eos, foam_eos, rhobar1, rhobar2, 1e-9, 1, sietot, 5,
+                                  alpha1_true, alpha2_true, Ttrue, Ptrue);
         THEN("The solver converges") { REQUIRE(success); }
       }
     }
