@@ -680,7 +680,7 @@ contains the following member fields, with default values:
     std::size_t pte_small_step_tries = 2;
     Real pte_small_step_thresh = 1e-16;
     Real pte_max_dpdv = -1e-8;
-    std::int64_t pte_reduced_system_exclude_idx = -1;
+    std::int64_t pte_reduced_system_exclude_idx = -1;  // choose index with largest mass fraction
   };
 
 where here ``verbose`` enables verbose output in the PTE solve is,
@@ -727,10 +727,10 @@ negative.
 The ``pte_reduced_system_exclude_idx`` parameter is specific to
 ``PTESolverRhoT`` and selects which material is used as material
 :math:`s`, whose volume fraction is set by the difference between the
-total volume and the volumes of the remaining materials. Any number
+total volume and the volumes of the remaining materials. Any negative number
 requests the default behavior, which is that ``singularity-eos`` will
 choose the material with the largest mass fraction. However, by
-setting this parameter to a positive number, you can choose the index
+setting this parameter to a non-negative number, you can choose the index
 :math:`s` by hand.
 
 .. note::
