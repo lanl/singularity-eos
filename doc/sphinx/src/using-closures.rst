@@ -711,7 +711,7 @@ The ``pte_reduced_system_exclude_idx`` parameter is specific to
 total volume and the volumes of the remaining materials. Any negative number
 requests the default behavior, which is that ``singularity-eos`` will
 choose the material with the largest mass fraction. However, by
-setting this parameter to a positive number, you can choose the index
+setting this parameter to a non-negative number, you can choose the index
 :math:`s` by hand.
 
 .. note::
