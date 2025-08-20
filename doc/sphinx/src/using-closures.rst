@@ -661,7 +661,7 @@ contains the following member fields, with default values:
     std::size_t pte_small_step_tries = 2;
     Real pte_small_step_thresh = 1e-16;
     Real pte_max_dpdv = -1e-8;
-    std::int64_t pte_reduced_system_exclude_idx = -1;
+    std::int64_t pte_reduced_system_exclude_idx = -1;  // choose index with largest mass fraction
   };
 
 where here ``verbose`` enables verbose output in the PTE solve is,
