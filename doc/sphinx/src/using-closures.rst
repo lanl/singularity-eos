@@ -708,7 +708,7 @@ negative.
 The ``pte_reduced_system_exclude_idx`` parameter is specific to
 ``PTESolverRhoT`` and selects which material is used as material
 :math:`s`, whose volume fraction is set by the difference between the
-total volume and the volumes of the remaining materials. Any number
+total volume and the volumes of the remaining materials. Any negative number
 requests the default behavior, which is that ``singularity-eos`` will
 choose the material with the largest mass fraction. However, by
 setting this parameter to a positive number, you can choose the index
