@@ -30,11 +30,16 @@ jobs:
             repository: lanl/spiner
             path: build/spiner
             fetch-depth: 0
-        - name: copy over spack-repo/packages
+        - name: copy over spack-repo v1 packages
           run: |
             # assume ports-of-call may be newer than spiner
-            cp -R build/spiner/spack-repo/packages/* spack-repo/packages/
-            cp -R build/ports-of-call/spack-repo/packages/* spack-repo/packages/
+            cp -R build/spiner/spack-repo/v1/packages/* spack-repo/v1/packages/
+            cp -R build/ports-of-call/spack-repo/v1/packages/* spack-repo/v1/packages/
+        - name: copy over spack-repo v2 packages
+          run: |
+            # assume ports-of-call may be newer than spiner
+            cp -R build/spiner/spack-repo/v2/spiner/packages/* spack-repo/v2/singularity_eos/packages/
+            cp -R build/ports-of-call/spack-repo/v2/ports_of_call/packages/* spack-repo/v2/singularity_eos/packages/
         - name: is there a difference?
           run: git diff --exit-code --compact-summary
           id: no_change

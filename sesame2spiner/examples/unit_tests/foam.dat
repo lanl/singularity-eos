@@ -17,3 +17,5 @@
 
 matid=7592
 name=Foam
+numrho/decade = 200
+numT/decade = 200
