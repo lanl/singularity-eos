@@ -51,11 +51,11 @@ struct MixParams {
 
   Real pte_slow_convergence_thresh = 0.99;
   Real pte_rel_tolerance_p_sufficient = 1.e2 * pte_rel_tolerance_p;
-  Real pte_rel_tolerance_t_sufficient = 1.e2 * pte_rel_tolerance_t;
+  Real pte_rel_tolerance_t_sufficient = 10 * pte_rel_tolerance_t;
   Real pte_rel_tolerance_e_sufficient = 1.e2 * pte_rel_tolerance_e;
   Real pte_rel_tolerance_v_sufficient = 1.e2 * pte_rel_tolerance_v;
   Real pte_abs_tolerance_p_sufficient = 1.e2 * pte_abs_tolerance_p;
-  Real pte_abs_tolerance_t_sufficient = 1.e2 * pte_abs_tolerance_t;
+  Real pte_abs_tolerance_t_sufficient = 10 * pte_abs_tolerance_t;
 
   std::size_t pte_max_iter_per_mat = 128;
   Real line_search_alpha = 1.e-2;
