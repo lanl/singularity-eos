@@ -2070,7 +2070,11 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     status.max_niter = std::max(status.max_niter, niter);
 
     // Check for convergence
-    std::tie(converged, close_enough) = s.CheckPTE();
+    // TODO(JMM): I wish I could use std::tie or structured binding,
+    // but our clang-based toolchain does not like it
+    auto check = s.CheckPTE(); 
+    converged = check.first;
+    close_enough = check.second;
     if (converged) break;
 
     // compute the Jacobian
