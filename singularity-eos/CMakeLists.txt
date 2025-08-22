@@ -49,6 +49,7 @@ register_headers(
     eos/eos_spiner_rho_sie.hpp
     eos/eos_spiner_rho_temp.hpp
     eos/eos_spiner_common.hpp
+    eos/eos_spiner_sie_transforms.hpp
     eos/eos_davis.hpp
     eos/eos_gruneisen.hpp
     eos/eos_vinet.hpp

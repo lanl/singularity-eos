@@ -13,7 +13,7 @@
 //------------------------------------------------------------------------------
 
 // TODO: Need to make this working on GPUs
-//#ifdef PORTABILITY_STRATEGY_NONE
+// #ifdef PORTABILITY_STRATEGY_NONE
 #ifndef PORTABILITY_STRATEGY_KOKKOS
 
 #include <array>
@@ -279,5 +279,5 @@ SCENARIO("Testing the KPT framework") {
     }
   }
 }
-//#endif // PORTABILITY_STRATEGY_NONE
+// #endif // PORTABILITY_STRATEGY_NONE
 #endif // PORTABILITY_STRATEGY_KOKKOS

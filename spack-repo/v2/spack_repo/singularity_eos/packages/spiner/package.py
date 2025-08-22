@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+from spack_repo.builtin.build_systems.cmake import CMakePackage
+
 from spack.package import *
 
 
@@ -13,7 +15,9 @@ class Spiner(CMakePackage):
     url = "https://github.com/lanl/spiner/archive/refs/tags/1.6.4.tar.gz"
     git = "https://github.com/lanl/spiner.git"
 
-    maintainers = ["rbberger"]
+    maintainers("rbberger")
+
+    license("BSD-3-Clause")
 
     version("main", branch="main")
     version("1.6.4", sha256="a51de69e438f5e3893958736d246c41ca87fd6442ee1e0a9cc5d442861ac5404")
@@ -40,11 +44,7 @@ class Spiner(CMakePackage):
     # When overriding/overloading varaints, the last variant is always used, except for
     # "when" clauses. Therefore, call the whens FIRST then the non-whens.
     # https://spack.readthedocs.io/en/latest/packaging_guide.html#overriding-variants
-    variant(
-        "kokkos",
-        default=False,
-        description="Enable kokkos",
-    )
+    variant("kokkos", default=False, description="Enable kokkos")
 
     variant("hdf5", default=False, description="Enable hdf5")
     variant("mpi", default=False, description="Support parallel hdf5")
@@ -52,6 +52,9 @@ class Spiner(CMakePackage):
     variant("python", default=False, description="Python, Numpy & Matplotlib Support")
 
     variant("test", default=False, description="Build tests")
+
+    depends_on("c", type="build")
+    depends_on("cxx", type="build")
 
     depends_on("cmake@3.12:", when="@:1.5.1")
     depends_on("cmake@3.19:", when="@1.6.0:")
@@ -85,17 +88,21 @@ class Spiner(CMakePackage):
         args = [
             self.define("BUILD_TESTING", self.run_tests),
             self.define("SPINER_BUILD_TESTS", self.run_tests),
-            self.define("SPINER_TEST_USE_KOKKOS", self.run_tests and self.spec.satisfies("+kokkos")),
+            self.define(
+                "SPINER_TEST_USE_KOKKOS", self.run_tests and self.spec.satisfies("+kokkos")
+            ),
             self.define_from_variant(use_kokkos_option, "kokkos"),
             self.define_from_variant("SPINER_USE_HDF", "hdf5"),
         ]
         if self.spec.satisfies("^kokkos+cuda"):
             args.append(
-                self.define("CMAKE_CUDA_ARCHITECTURES", self.spec["kokkos"].variants["cuda_arch"].value)
+                self.define(
+                    "CMAKE_CUDA_ARCHITECTURES", self.spec["kokkos"].variants["cuda_arch"].value
+                )
             )
         if self.spec.satisfies("^kokkos+rocm"):
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
             args.append(self.define("CMAKE_C_COMPILER", self.spec["hip"].hipcc))
         if self.spec.satisfies("^kokkos+cuda"):
-            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
+            args.append(self.define("CMAKE_CXX_COMPILER", self["kokkos"].kokkos_cxx))
         return args
