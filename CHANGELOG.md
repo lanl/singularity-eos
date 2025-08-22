@@ -16,6 +16,7 @@
 - [[PR524]](https://github.com/lanl/singularity-eos/pull/524) Fix future kokkos-kernels compatibility in PTE solver
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR548]](https://github.com/lanl/singularity-eos/pull/548) Change which tolerances are available for the PTE solver and how they are interpreted to hopefully provide more clarity
 - [[PR545]](https://github.com/lanl/singularity-eos/pull/545) Implement reduced system for PTESolverRhoT
 - [[PR543]](https://github.com/lanl/singularity-eos/pull/543) Made PTE solvers more robust for Maxwell constructed tables
 - [[PR502]](https://github.com/lanl/singularity-eos/pull/502) Expose split tables to Fortran interface
