@@ -28,6 +28,10 @@
 #include <KokkosBatched_ApplyQ_Decl.hpp>
 #include <KokkosBatched_QR_Decl.hpp>
 #include <KokkosBatched_Trsv_Decl.hpp>
+
+#include <KokkosBatched_SVD_Decl.hpp>
+#include <KokkosBlas2_gemv.hpp>
+
 #else
 #include <Eigen/Dense>
 #endif // SINGULARITY_USE_KOKKOSKERNELS
@@ -160,10 +164,13 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     using Unmgd = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
     using Lrgt = Kokkos::LayoutRight;
     using vec_t = Kokkos::View<Real *, Unmgd>;
+    using mat_t = Kokkos::View<Real **, Lrgt, Unmgd>;
+
+    using Trs = KokkosBatched::Trans::Transpose;
+    /*
     // aliases for QR solve template params
     using QR_alg = KokkosBatched::Algo::QR::Unblocked;
     using Lft = KokkosBatched::Side::Left;
-    using Trs = KokkosBatched::Trans::Transpose;
     using nTrs = KokkosBatched::Trans::NoTranspose;
     using ApQ_alg = KokkosBatched::Algo::ApplyQ::Unblocked;
     using UP = KokkosBatched::Uplo::Upper;
@@ -174,10 +181,13 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     using QR_factor = KokkosBatched::SerialQR<QR_alg>;
     using ApplyQ_transpose = KokkosBatched::SerialApplyQ<Lft, Trs, ApQ_alg>;
     using InvertR = KokkosBatched::SerialTrsv<UP, nTrs, NonU, Tr_alg>;
+    */
     // view of matrix
-    Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
+    mat_t A(a, n, n);
     // view of RHS
-    Kokkos::View<Real **, Lrgt, Unmgd> B(b, n, 1);
+    vec_t B(b, n);
+    // Kokkos::View<Real **, Lrgt, Unmgd> B(b, n, 1);
+    /*
     // view of reflectors
     vec_t t(scr, n);
     // view of workspace
@@ -193,6 +203,33 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     // R^-1 R x = R^-1 Q^T B -> x = R^-1 Q^T B
     // store solution vector x in B
     InvertR::invoke(1.0, A, B);
+    */
+    // SVD
+    using SVD_factor = KokkosBatched::SerialSVD;
+    const KokkosBatched::SVD_USV_Tag tag;
+    using Gemv_algo = KokkosBatched::Algo::Gemv::Unblocked;
+    using ApplyTranspose = KokkosBlas::SerialGemv<Trs, Gemv_algo>;
+    // Required scatch:
+    // U, VT = 2n^2
+    // S = N
+    // w = n^2
+    // X reuses
+    // = 3 n^2 + N
+    mat_t U(scr, n, n);                  // U
+    vec_t S(scr + n * n, n);             // S
+    mat_t VT(scr + n * n + n, n, n);     // V^T
+    vec_t w(scr + 2 * n * n + n, n * n); // workspace
+    vec_t X(scr + 2 * n * n + n, n);     // re-use the SVD workspace as x
+    SVD_factor::invoke(tag, A, U, S, VT, w);
+    // X = U^T B, store in X
+    ApplyTranspose::invoke(1.0, U, B, 0.0, X);
+    // Rescale X by 1/S. throw away smallest singular values
+    Real tol = S(0) * robust::EPS();
+    for (std::size_t i = 0; i < n; ++i) {
+      X(i) = S(i) > tol ? X(i) / S(i) : 0;
+    }
+    // X = V X, store in B
+    ApplyTranspose::invoke(1.0, VT, X, 0.0, B);
 #else
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 #warning "Eigen should not be used with Kokkos."
@@ -767,9 +804,10 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
 // ======================================================================
 constexpr inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat;
-  return neq * neq   // jacobian
-         + 4 * neq   // dx, residual, and sol_scratch
-         + 6 * nmat; // all the nmat sized arrays
+  return neq * neq // jacobian
+    // dx, residual, and sol_scratch
+    + (neq == 2 ? 4*neq : 2 * neq + 3 * neq * neq  + neq)
+    + 6 * nmat; // all the nmat sized arrays
 }
 constexpr inline size_t PTESolverRhoTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverRhoTRequiredScratch(nmat) * sizeof(Real);
@@ -1331,10 +1369,11 @@ class PTESolverPT
 // ======================================================================
 constexpr inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat;
-  return neq * neq   // jacobian
-         + 4 * neq   // dx, residual, and sol_scratch
-         + 2 * nmat  // rhobar and u in base
-         + 2 * nmat; // nmat sized arrays in fixed T solver
+  return neq * neq                 // jacobian
+                                   //         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * neq + 3 * neq * neq + neq // dx, residual, and sol_scratch
+         + 2 * nmat                // rhobar and u in base
+         + 2 * nmat;               // nmat sized arrays in fixed T solver
 }
 constexpr inline size_t PTESolverFixedTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverFixedTRequiredScratch(nmat) * sizeof(Real);
@@ -1547,10 +1586,11 @@ class PTESolverFixedT
 // ======================================================================
 constexpr inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
-  return neq * neq   // jacobian
-         + 4 * neq   // dx, residual, and sol_scratch
-         + 2 * nmat  // all the nmat sized arrays in base
-         + 3 * nmat; // all the nmat sized arrays in fixedP
+  return neq * neq                 // jacobian
+                                   //         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * neq + 3 * neq * neq  + neq // dx, residual, and sol_scratch
+         + 2 * nmat                // all the nmat sized arrays in base
+         + 3 * nmat;               // all the nmat sized arrays in fixedP
 }
 constexpr inline size_t PTESolverFixedPRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverFixedPRequiredScratch(nmat) * sizeof(Real);
@@ -1793,9 +1833,10 @@ class PTESolverFixedP
 // ======================================================================
 constexpr inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat) {
   std::size_t neq = 2 * nmat;
-  return neq * neq   // jacobian
-         + 4 * neq   // dx, residual, and sol_scratch
-         + 8 * nmat; // all the nmat sized arrays
+  return neq * neq                 // jacobian
+                                   //         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * neq + 3 * neq * neq + neq // dx, residual, and sol_scratch
+         + 8 * nmat;               // all the nmat sized arrays
 }
 constexpr inline size_t PTESolverRhoURequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverRhoURequiredScratch(nmat) * sizeof(Real);
@@ -2072,7 +2113,7 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     // Check for convergence
     // TODO(JMM): I wish I could use std::tie or structured binding,
     // but our clang-based toolchain does not like it
-    auto check = s.CheckPTE(); 
+    auto check = s.CheckPTE();
     converged = check.first;
     close_enough = check.second;
     if (converged) break;

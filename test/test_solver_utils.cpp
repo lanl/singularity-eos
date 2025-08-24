@@ -97,9 +97,9 @@ SCENARIO("3x3 matrix solve", "[Matrix][3x3]") {
     constexpr Real B2_true = 2 * (1 + delta) / denom;
     Real *A = (Real *)PORTABLE_MALLOC(N * N * sizeof(Real));
     Real *B = (Real *)PORTABLE_MALLOC(N * sizeof(Real));
-    // Kokkos QR requires 2 scratch vectors, instead of the 1 required
-    // by Cramer's rule or Eigen
-    Real *scr = (Real *)PORTABLE_MALLOC(2 * N * sizeof(Real));
+    // Get too much scratch by just requesting required size in bytes
+    std::size_t scratchsize_bytes = singularity::PTESolverRhoTRequiredScratchInBytes(N);
+    Real *scr = (Real *)PORTABLE_MALLOC(scratchsize_bytes);
     portableFor(
         "Set values of A and B", 0, 1, PORTABLE_LAMBDA(const int) {
           for (std::size_t row = 0; row < N; ++row) {
