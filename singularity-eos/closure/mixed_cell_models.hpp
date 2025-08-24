@@ -112,6 +112,17 @@ bool check_nans(Real const *const a, const std::size_t n, const bool verbose = f
   return retval;
 }
 
+template <typename Matrix_t, typename Vector_t>
+KOKKOS_INLINE_FUNCTION void TransposeMultiply(std::size_t n, Matrix_t &A, Vector_t &B,
+                                              Vector_t &X) {
+  for (std::size_t row = 0; row < n; ++row) {
+    X(row) = 0;
+    for (std::size_t col = 0; col < n; ++col) {
+      X(row) += B(col) * A(col, row);
+    }
+  }
+}
+
 PORTABLE_INLINE_FUNCTION
 bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
   // Simple Jacobi preconditioner
@@ -222,14 +233,16 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     vec_t X(scr + 2 * n * n + n, n);     // re-use the SVD workspace as x
     SVD_factor::invoke(tag, A, U, S, VT, w);
     // X = U^T B, store in X
-    ApplyTranspose::invoke(1.0, U, B, 0.0, X);
+    // ApplyTranspose::invoke(1.0, U, B, 0.0, X);
+    TransposeMultiply(n, U, B, X);
     // Rescale X by 1/S. throw away smallest singular values
     Real tol = S(0) * robust::EPS();
     for (std::size_t i = 0; i < n; ++i) {
       X(i) = S(i) > tol ? X(i) / S(i) : 0;
     }
     // X = V X, store in B
-    ApplyTranspose::invoke(1.0, VT, X, 0.0, B);
+    // ApplyTranspose::invoke(1.0, VT, X, 0.0, B);
+    TransposeMultiply(n, VT, X, B);
 #else
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 #warning "Eigen should not be used with Kokkos."
@@ -805,9 +818,9 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
 constexpr inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat;
   return neq * neq // jacobian
-    // dx, residual, and sol_scratch
-    + (neq == 2 ? 4*neq : 2 * neq + 3 * neq * neq  + neq)
-    + 6 * nmat; // all the nmat sized arrays
+                   // dx, residual, and sol_scratch
+         + (neq == 2 ? 4 * neq : 2 * neq + 3 * neq * neq + neq) +
+         6 * nmat; // all the nmat sized arrays
 }
 constexpr inline size_t PTESolverRhoTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverRhoTRequiredScratch(nmat) * sizeof(Real);
@@ -1369,11 +1382,11 @@ class PTESolverPT
 // ======================================================================
 constexpr inline std::size_t PTESolverFixedTRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat;
-  return neq * neq                 // jacobian
-                                   //         + 4 * neq   // dx, residual, and sol_scratch
+  return neq * neq // jacobian
+                   //         + 4 * neq   // dx, residual, and sol_scratch
          + 2 * neq + 3 * neq * neq + neq // dx, residual, and sol_scratch
-         + 2 * nmat                // rhobar and u in base
-         + 2 * nmat;               // nmat sized arrays in fixed T solver
+         + 2 * nmat                      // rhobar and u in base
+         + 2 * nmat;                     // nmat sized arrays in fixed T solver
 }
 constexpr inline size_t PTESolverFixedTRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverFixedTRequiredScratch(nmat) * sizeof(Real);
@@ -1586,11 +1599,11 @@ class PTESolverFixedT
 // ======================================================================
 constexpr inline std::size_t PTESolverFixedPRequiredScratch(const std::size_t nmat) {
   std::size_t neq = nmat + 1;
-  return neq * neq                 // jacobian
-                                   //         + 4 * neq   // dx, residual, and sol_scratch
-         + 2 * neq + 3 * neq * neq  + neq // dx, residual, and sol_scratch
-         + 2 * nmat                // all the nmat sized arrays in base
-         + 3 * nmat;               // all the nmat sized arrays in fixedP
+  return neq * neq // jacobian
+                   //         + 4 * neq   // dx, residual, and sol_scratch
+         + 2 * neq + 3 * neq * neq + neq // dx, residual, and sol_scratch
+         + 2 * nmat                      // all the nmat sized arrays in base
+         + 3 * nmat;                     // all the nmat sized arrays in fixedP
 }
 constexpr inline size_t PTESolverFixedPRequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverFixedPRequiredScratch(nmat) * sizeof(Real);
@@ -1833,10 +1846,10 @@ class PTESolverFixedP
 // ======================================================================
 constexpr inline std::size_t PTESolverRhoURequiredScratch(const std::size_t nmat) {
   std::size_t neq = 2 * nmat;
-  return neq * neq                 // jacobian
-                                   //         + 4 * neq   // dx, residual, and sol_scratch
+  return neq * neq // jacobian
+                   //         + 4 * neq   // dx, residual, and sol_scratch
          + 2 * neq + 3 * neq * neq + neq // dx, residual, and sol_scratch
-         + 8 * nmat;               // all the nmat sized arrays
+         + 8 * nmat;                     // all the nmat sized arrays
 }
 constexpr inline size_t PTESolverRhoURequiredScratchInBytes(const std::size_t nmat) {
   return PTESolverRhoURequiredScratch(nmat) * sizeof(Real);
