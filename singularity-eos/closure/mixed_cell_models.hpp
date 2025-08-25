@@ -271,7 +271,7 @@ class PTESolverBase {
   // after each iteration of the Newton solver.  This version just renormalizes the
   // volume fractions, which is useful to deal with roundoff error.
   PORTABLE_INLINE_FUNCTION
-  virtual void Fixup() const { NormalizeVfrac(); }
+  virtual void Fixup() { NormalizeVfrac(); }
   // Finalize restores the temperatures, energies, and pressures to unscaled values from
   // the internally scaled quantities used by the solvers
   PORTABLE_INLINE_FUNCTION
@@ -874,7 +874,7 @@ class PTESolverRhoT
   }
 
   PORTABLE_INLINE_FUNCTION
-  virtual void Fixup() {
+  void Fixup() {
     // Volume fractions normalized by construction in this
     // formulation, so no reason to normalize them here the way
     // PTESolverBase does.
