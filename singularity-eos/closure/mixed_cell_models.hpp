@@ -199,7 +199,7 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
 #endif
     // Eigen VERSION
     using Matrix_t = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-    Eigen::Map<Matrix_t> A(alu, n, n);
+    Eigen::Map<Matrix_t> A(a, n, n);
 
     Eigen::Map<Eigen::VectorXd> B(b, n);
     Eigen::Map<Eigen::VectorXd> X(scr, n);
