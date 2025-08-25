@@ -112,17 +112,6 @@ bool check_nans(Real const *const a, const std::size_t n, const bool verbose = f
   return retval;
 }
 
-template <typename Matrix_t, typename Vector_t>
-KOKKOS_INLINE_FUNCTION void TransposeMultiply(std::size_t n, Matrix_t &A, Vector_t &B,
-                                              Vector_t &X) {
-  for (std::size_t row = 0; row < n; ++row) {
-    X(row) = 0;
-    for (std::size_t col = 0; col < n; ++col) {
-      X(row) += B(col) * A(col, row);
-    }
-  }
-}
-
 PORTABLE_INLINE_FUNCTION
 bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
   // Simple Jacobi preconditioner
@@ -217,7 +206,7 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     */
     // SVD
     using SVD_factor = KokkosBatched::SerialSVD;
-    const KokkosBatched::SVD_USV_Tag tag;
+    const KokkosBatched::SVD_USV_Tag USV_tag;
     using Gemv_algo = KokkosBatched::Algo::Gemv::Unblocked;
     using ApplyTranspose = KokkosBlas::SerialGemv<Trs, Gemv_algo>;
     // Required scatch:
@@ -231,18 +220,32 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
     mat_t VT(scr + n * n + n, n, n);     // V^T
     vec_t w(scr + 2 * n * n + n, n * n); // workspace
     vec_t X(scr + 2 * n * n + n, n);     // re-use the SVD workspace as x
-    SVD_factor::invoke(tag, A, U, S, VT, w);
+    // guesstimate for Frobenius norm, which is a lower bound on
+    // maximum singular value
+    // formally norm is |A| = sqrt(sum_{i,j} a_{ij}^2)
+    // we approximate as n |A|_1 > |A|
+    // for L_1 norm |A|_1
+    Real frob = 0;
+    for (std::size_t i = 0; i < n*n; ++i) {
+      frob = n * std::max(std::abs(a[i]), frob);
+    }
+    PORTABLE_REQUIRE(frob > 0, "Matrix cannot be all zeros");
+    // Safety should be roughly the maximum condition number we're
+    // willing to accept times machine epsilon. I.e., the log10 is the
+    // minimum number of digits we want to keep
+    constexpr Real SAFETY = 1e2; 
+    Real tol = SAFETY *robust::EPS()*frob;
+    SVD_factor::invoke(USV_tag, A, U, S, VT, w, tol);
+    // Tighten tolerance with actual singular values available
+    tol = S(0) * robust::EPS();
     // X = U^T B, store in X
-    // ApplyTranspose::invoke(1.0, U, B, 0.0, X);
-    TransposeMultiply(n, U, B, X);
+    ApplyTranspose::invoke(1.0, U, B, 0.0, X);
     // Rescale X by 1/S. throw away smallest singular values
-    Real tol = S(0) * robust::EPS();
     for (std::size_t i = 0; i < n; ++i) {
       X(i) = S(i) > tol ? X(i) / S(i) : 0;
     }
     // X = V X, store in B
-    // ApplyTranspose::invoke(1.0, VT, X, 0.0, B);
-    TransposeMultiply(n, VT, X, B);
+    ApplyTranspose::invoke(1.0, VT, X, 0.0, B);
 #else
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 #warning "Eigen should not be used with Kokkos."
