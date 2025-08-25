@@ -19,6 +19,7 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #include <cmath>
@@ -275,7 +276,7 @@ class PTESolverBase {
   // Finalize restores the temperatures, energies, and pressures to unscaled values from
   // the internally scaled quantities used by the solvers
   PORTABLE_INLINE_FUNCTION
-  void Finalize() {
+  virtual void Finalize() {
     for (std::size_t m = 0; m < nmat; m++) {
       temp[m] *= Tnorm;
       u[m] *= uscale;
@@ -1186,9 +1187,15 @@ class PTESolverPT
   PORTABLE_INLINE_FUNCTION
   void Finalize() {
     for (std::size_t m = 0; m < nmat; m++) {
-      press[m] = Pequil * uscale;
-      temp[m] = Tequil * Tnorm;
-      u[m] *= uscale;
+      if (!variadic_utils::is_nullptr(press)) {
+        press[m] = Pequil * uscale;
+      }
+      if (!variadic_utils::is_nullptr(temp)) {
+        temp[m] = Tequil * Tnorm;
+      }
+      if (!variadic_utils::is_nullptr(u)) {
+        u[m] *= uscale;
+      }
     }
   }
 
