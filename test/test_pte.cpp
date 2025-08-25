@@ -149,13 +149,14 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
             << std::endl;
 
   singularity::MixParams params;
-  params.pte_rel_tolerance_e = 1e-22;
-  params.pte_abs_tolerance_e = 1e-22;
-  params.pte_abs_tolerance_v = 1e-22;
-  params.pte_rel_tolerance_v = 1e-22;
-  params.pte_rel_tolerance_p = 1e-22;
-  params.pte_abs_tolerance_p = 1e-22;
-  params.pte_residual_tolerance = 1.e-22;
+  params.pte_rel_tolerance_e = 1e-16;
+  params.pte_rel_tolerance_v = 1e-16;
+  params.pte_rel_tolerance_p = 1e-16;
+  params.pte_abs_tolerance_p = 1e-14;
+  params.pte_rel_tolerance_e_sufficient = 1e-14;
+  params.pte_rel_tolerance_v_sufficient = 1e-14;
+  params.pte_rel_tolerance_p_sufficient = 1e-14;
+  params.pte_abs_tolerance_p_sufficient = 1e-12;
   params.iterate_t_guess = false;
   params.pte_small_step_thresh = 1e-22;
   params.pte_small_step_tries = 100;

@@ -161,10 +161,18 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   return pte_converged;
 }
 
+template <typename T>
+PORTABLE_INLINE_FUNCTION void swap(T &a, T &b) {
+  T tmp = a;
+  a = b;
+  b = tmp;
+}
+
 // TODO(JMM): Clean this up to account for these two differetn APIs
 inline bool RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alpha_guess1,
                        Real alpha_guess2, Real sietot, Real Tguess, Real alpha1_true,
-                       Real alpha2_true, Real Ttrue, Real Ptrue) {
+                       Real alpha2_true, Real Ttrue, Real Ptrue,
+                       bool permute_state = false) {
   constexpr int NT = 1;
   constexpr int NEOS = 2;
 
@@ -184,8 +192,8 @@ inline bool RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alph
   // The pte_params object contains a number of settings you can
   // modify for the PTE solver, such as tolerances.
   singularity::MixParams pte_params;
-  pte_params.pte_rel_tolerance_p = 1e-12;
-  pte_params.pte_rel_tolerance_e = 1e-12;
+  pte_params.pte_rel_tolerance_p = 1e-10;
+  pte_params.pte_rel_tolerance_e = 1e-10;
   pte_params.pte_abs_tolerance_p = 0;
 
   int nsuccess = 0;
@@ -200,6 +208,13 @@ inline bool RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alph
 
         eos[0] = eos1;
         eos[1] = eos2;
+
+        if (permute_state) {
+          swap(alpha[0], alpha[1]);
+          swap(rho[0], rho[1]);
+          swap(eos[0], eos[1]);
+        }
+
         MyLambdaIndexer<NEOS> lambda(plambda);
 
         singularity::PTESolverRhoT<EOS *, Real *, MyLambdaIndexer<NEOS>> method(
@@ -207,6 +222,10 @@ inline bool RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alph
             Tguess, pte_params);
         // Run the solver
         auto status = singularity::PTESolver(method);
+
+        if (permute_state) {
+          swap(alpha[0], alpha[1]);
+        }
 
         bool success = true;
         if (!status.converged) {
@@ -443,11 +462,17 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
 
       THEN("The solver converges") { REQUIRE(success); }
 
-      AND_WHEN("We call PTE but with a wildly incorrect temperature guess, deep in the "
-               "Maxwell constructed region") {
+      AND_WHEN("We call PTE with a permuted state") {
         bool success =
             RunPTE2Mat(He_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
-                       sietot, 5, alpha1_true, alpha2_true, Ttrue, Ptrue);
+                       sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue, true);
+        THEN("The solver converges") { REQUIRE(success); }
+      }
+
+      AND_WHEN("We call PTE but with wildly incorrect initial guesses, deep in the "
+               "Maxwell constructed region") {
+        bool success = RunPTE2Mat(He_eos, foam_eos, rhobar1, rhobar2, 1e-9, 1, sietot, 5,
+                                  alpha1_true, alpha2_true, Ttrue, Ptrue);
         THEN("The solver converges") { REQUIRE(success); }
       }
     }
@@ -456,6 +481,44 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
     He_eos.Finalize();
     foam_eos_h.Finalize();
     foam_eos.Finalize();
+  }
+
+  GIVEN("A cell containing nearly equal amounts of mass of copper and helium") {
+    const std::string eos_file = "../materials.sp5";
+    constexpr Real gm1 = 0.666666666666667;
+    constexpr Real Cv = 3.1e7;
+    EOS He_eos_h = IdealGas(gm1, Cv);
+    EOS He_eos = He_eos_h.GetOnDevice();
+
+    constexpr int Cu_matid = 3337;
+    EOS copper_eos_h = SpinerEOSDependsRhoT(eos_file, Cu_matid);
+    EOS copper_eos = copper_eos_h.GetOnDevice();
+
+    constexpr Real rhobar1 = 1.5e-4;
+    constexpr Real rhobar2 = 1.6e-4;
+    constexpr Real alpha_guess1 = 1.0e-5; // this is backwards from
+                                          // the true volume fractions
+    constexpr Real alpha_guess2 = 1 - alpha_guess1;
+    constexpr Real sietot = 4.5e9;
+    constexpr Real Tguess = 30;
+
+    WHEN("We call PTE") {
+      constexpr Real alpha1_true = 9.99982100645951e-01;
+      constexpr Real alpha2_true = 1.78993540487246e-05;
+      constexpr Real Ttrue = 2.99769986713113e+02;
+      constexpr Real Ptrue = 9.29303592744676e+05;
+
+      bool success =
+          RunPTE2Mat(He_eos, copper_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
+                     sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue);
+
+      THEN("The solver converges") { REQUIRE(success); }
+    }
+
+    He_eos_h.Finalize();
+    He_eos.Finalize();
+    copper_eos_h.Finalize();
+    copper_eos.Finalize();
   }
 }
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5

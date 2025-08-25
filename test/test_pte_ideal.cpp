@@ -101,12 +101,13 @@ int ComparePTEs(EOS_Indexer_t eoss, const std::size_t NEOS, const std::size_t NT
 
   singularity::MixParams params;
   params.pte_rel_tolerance_e = 1e-14;
-  params.pte_abs_tolerance_e = 1e-14;
-  params.pte_abs_tolerance_v = 1e-14;
   params.pte_rel_tolerance_v = 1e-14;
   params.pte_rel_tolerance_p = 1e-14;
   params.pte_abs_tolerance_p = 1e-14;
-  params.pte_residual_tolerance = 1.e-14;
+  params.pte_rel_tolerance_e_sufficient = 1e-22;
+  params.pte_rel_tolerance_v_sufficient = 1e-22;
+  params.pte_rel_tolerance_p_sufficient = 1e-22;
+  params.pte_abs_tolerance_p_sufficient = 1e-22;
 
   int nsuccess = 0;
   portableReduce(
