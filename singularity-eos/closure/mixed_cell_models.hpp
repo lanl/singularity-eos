@@ -874,7 +874,7 @@ class PTESolverRhoT
   }
 
   PORTABLE_INLINE_FUNCTION
-  void Fixup() {
+  virtual void Fixup() {
     // Volume fractions normalized by construction in this
     // formulation, so no reason to normalize them here the way
     // PTESolverBase does.
@@ -2072,7 +2072,7 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     // Check for convergence
     // TODO(JMM): I wish I could use std::tie or structured binding,
     // but our clang-based toolchain does not like it
-    auto check = s.CheckPTE(); 
+    auto check = s.CheckPTE();
     converged = check.first;
     close_enough = check.second;
     if (converged) break;
