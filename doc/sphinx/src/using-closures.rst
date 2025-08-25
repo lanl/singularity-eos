@@ -690,7 +690,7 @@ struct MixParams {
   Real pte_small_step_thresh = 1e-16;
   Real pte_max_dpdv = -1e-8;
 
-  // choose index with largest mass fraction
+  // choose index with largest volume fraction
   std::int64_t pte_reduced_system_exclude_idx = -1;
 };
 
