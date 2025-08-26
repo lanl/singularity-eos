@@ -21,6 +21,7 @@
 #include <map>
 #include <regex>
 #include <string>
+#include <sstream>
 #include <vector>
 
 #include <eos_Interface.h>
@@ -482,7 +483,6 @@ class EOSPAC : public EosBase<EOSPAC> {
 
   // TODO(JMM): Add performant entropy and Gibbs Free Energy
   using EosBase<EOSPAC>::FillEos;
-  using EosBase<EOSPAC>::EntropyIsNotEnabled;
 
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
 
@@ -1136,6 +1136,7 @@ class EOSPAC : public EosBase<EOSPAC> {
       thermalqs::density | thermalqs::temperature;
   int matid_;
   TableSplit split_;
+  bool entropy_available_ = true;
   static constexpr int NT = 8;
   EOS_INTEGER PofRT_table_;
   EOS_INTEGER TofRE_table_;
@@ -1218,7 +1219,7 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
       }
     }
   }
-  eosSafeLoad(NT, matid, tableType, tablehandle, tableNames, Verbosity::Debug,
+  auto error_code = eosSafeLoad(NT, matid, tableType, tablehandle, tableNames, Verbosity::Quiet,
               invert_at_setup, insert_data, monotonicity, apply_smoothing,
               apply_splitting, linear_interp);
   PofRT_table_ = tablehandle[0];
@@ -1228,7 +1229,31 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
   TofRP_table_ = tablehandle[4];
   PofRE_table_ = tablehandle[5];
   EcofD_table_ = tablehandle[6];
-  SofRT_table_ = tablehandle[7];
+  SofRT_table_ = tablehandle[7]; // this is currently NT.
+
+  if (error_code != EOS_OK) {
+    EOS_INTEGER tableHandleErrorCode = EOS_OK;
+    for (int i = 0; i < NT - 1; ++i) { // treat entropy separately
+      std::stringstream msg;
+      EOS_CHAR errorMessage[EOS_MaxErrMsgLen];
+      eos_GetErrorCode(&tablehandle[i], &tableHandleErrorCode);
+      eos_GetErrorMessage(&tableHandleErrorCode, errorMessage);
+      if (tableHandleErrorCode != EOS_OK) {
+        msg << "EOSPAC error when creating tables " << tableHandleErrorCode
+	    << " for table " << tableNames[i]
+	    << ":\n"
+	    << errorMessage
+	    << std::endl;
+        PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
+      }
+    }
+    eos_GetErrorCode(&SofRT_table_, &tableHandleErrorCode);
+    if (tableHandleErrorCode != EOS_OK) {
+      // Entropy not available. Note this and move on. If entropy is
+      // requested, we'll complain.
+      entropy_available_ = false;
+    }
+  }
 
   // Shared memory info
   {
@@ -1356,6 +1381,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
   PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
   return 0; // compiler happy
 #else
+  PORTABLE_ALWAYS_REQUIRE(entropy_available_, "This table supports entropy");
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, S[1], T[1] = {temperatureToSesame(temp)}, dSdr[1], dSdT[1];
   EOS_INTEGER nxypairs = 1;
@@ -1549,6 +1575,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
   PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
   return 0; // compiler happy
 #else
+  PORTABLE_ALWAYS_REQUIRE(entropy_available_, "This table supports entropy");
   using namespace EospacWrapper;
   const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return EntropyFromDensityTemperature(rho, temp, lambda);
