@@ -20,8 +20,8 @@
 #include <cstdio>
 #include <map>
 #include <regex>
-#include <string>
 #include <sstream>
+#include <string>
 #include <vector>
 
 #include <eos_Interface.h>
@@ -556,8 +556,8 @@ class EOSPAC : public EosBase<EOSPAC> {
 
   template <typename LambdaIndexer>
   inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
-                                            Real *entropies, Real *scratch,
-                                            const int num, LambdaIndexer /*lambdas*/,
+                                            Real *entropies, Real *scratch, const int num,
+                                            LambdaIndexer /*lambdas*/,
                                             Transform &&transform = Transform()) const {
     using namespace EospacWrapper;
     EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
@@ -1258,9 +1258,9 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
       }
     }
   }
-  auto error_code = eosSafeLoad(NT, matid, tableType, tablehandle, tableNames, Verbosity::Quiet,
-              invert_at_setup, insert_data, monotonicity, apply_smoothing,
-              apply_splitting, linear_interp);
+  auto error_code = eosSafeLoad(
+      NT, matid, tableType, tablehandle, tableNames, Verbosity::Quiet, invert_at_setup,
+      insert_data, monotonicity, apply_smoothing, apply_splitting, linear_interp);
   PofRT_table_ = tablehandle[0];
   TofRE_table_ = tablehandle[1];
   EofRT_table_ = tablehandle[2];
@@ -1279,10 +1279,8 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
       eos_GetErrorMessage(&tableHandleErrorCode, errorMessage);
       if (tableHandleErrorCode != EOS_OK) {
         msg << "EOSPAC error when creating tables " << tableHandleErrorCode
-	    << " for table " << tableNames[i]
-	    << ":\n"
-	    << errorMessage
-	    << std::endl;
+            << " for table " << tableNames[i] << ":\n"
+            << errorMessage << std::endl;
         PORTABLE_ALWAYS_THROW_OR_ABORT(msg);
       }
     }
