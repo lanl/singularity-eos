@@ -53,6 +53,7 @@
 #include <cstdio>
 
 // C++ headers
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -69,13 +70,17 @@
 // Needed to import the eos models
 #include <singularity-eos/eos/eos.hpp>
 
+using duration = std::chrono::microseconds;
+inline auto now() { return std::chrono::high_resolution_clock::now(); }
+
 // Number of equations of state to use. For this example, it's 2.
 constexpr std::size_t NEOS = 2;
 // Number of PTE solves to do
 constexpr std::size_t NTRIAL = 1;
 
 // Set the EOSs you want to use here.
-using EOS = singularity::Variant<singularity::SpinerEOSDependsRhoT>;
+using EOS =
+    singularity::Variant<singularity::SpinerEOSDependsRhoT, singularity::IdealGas>;
 
 // A LAMBDA contains additional arguments to an EOS, such as cached
 // variables.  It accepts TYPES rather than integers, kind of like a
@@ -121,14 +126,15 @@ int main(int argc, char *argv[]) {
     const Real rhotot = rhobar1 + rhobar2;
     const Real utot = sietot * rhotot;
 
-    // state. Here I'm assuming SpinerEOSDependsRhoT but you could
     // modify for your needs.
     const std::string materialsfile = argv[7];
-    const int matids[] = {atoi(argv[8]), atoi(argv[9])};
+    const Real gm1 = atof(argv[8]);
+    const Real Cv = atof(argv[9]);
+    const int matid = atoi(argv[10]);
 
     // Now let's load up the EOS's.
-    EOS eos1 = singularity::SpinerEOSDependsRhoT(materialsfile, matids[0]);
-    EOS eos2 = singularity::SpinerEOSDependsRhoT(materialsfile, matids[1]);
+    EOS eos1 = singularity::IdealGas(gm1, Cv);
+    EOS eos2 = singularity::SpinerEOSDependsRhoT(materialsfile, matid);
 
     // and move them to device
     eos1 = eos1.GetOnDevice();
@@ -161,11 +167,20 @@ int main(int argc, char *argv[]) {
     // The pte_params object contains a number of settings you can
     // modify for the PTE solver, such as tolerances.
     singularity::MixParams pte_params;
-    pte_params.pte_rel_tolerance_p = 1e-12;
-    pte_params.pte_rel_tolerance_e = 1e-12;
+    pte_params.pte_rel_tolerance_p = 1e-10;
+    pte_params.pte_rel_tolerance_e = 1e-10;
+    pte_params.pte_rel_tolerance_t = 1e-10;
+    pte_params.pte_rel_tolerance_p_sufficient = 1e-10;
+    pte_params.pte_rel_tolerance_e_sufficient = 1e-10;
+    pte_params.pte_rel_tolerance_t_sufficient = 1e-10;
     pte_params.pte_abs_tolerance_p = 0;
+    pte_params.pte_abs_tolerance_t = 0;
+    pte_params.pte_abs_tolerance_p_sufficient = 0;
+    pte_params.pte_abs_tolerance_t_sufficient = 0;
+    pte_params.pte_reduced_system_exclude_idx = -1;
 
     // Now we call the device kernel
+    auto start = now();
     portableFor(
         "Run a PTE solve", 0, NTRIAL, PORTABLE_LAMBDA(const int i) {
           // Prepare microphysical densities and initial guesses.  We
@@ -199,12 +214,18 @@ int main(int argc, char *argv[]) {
               pte_params);
           // Run the solver
           auto status = singularity::PTESolver(method);
-          printf("Solver succeeded: %d\n"
-                 "Volume fractions: %.14e %.14e\n"
-                 "Temperature:      %.14e\n"
-                 "Pressure:         %.14e\n",
-                 status.converged, alpha[0], alpha[1], temp[0], press[0]);
+          printf("Solver succeeded:      %d\n"
+                 "Slow descent detected: %d\n"
+                 "Num iterations:        %ld\n"
+                 "Volume fractions:      %.14e %.14e\n"
+                 "Temperature:           %.14e\n"
+                 "Pressure:              %.14e\n",
+                 status.converged, status.slow_convergence_detected, status.max_niter,
+                 alpha[0], alpha[1], temp[0], press[0]);
         });
+    auto stop = now();
+    printf("Time in us = %ld\n",
+           std::chrono::duration_cast<duration>(stop - start).count());
 
     eos1.Finalize();
     eos2.Finalize();
