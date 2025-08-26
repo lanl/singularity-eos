@@ -252,6 +252,7 @@ class EOSPAC : public EosBase<EOSPAC> {
   TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&temperatures, const int num,
                                        LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::TemperatureFromDensityInternalEnergy(rhos, sies, temperatures, num,
                                                           lambdas);
   }
@@ -270,6 +271,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                    ConstRealIndexer &&temperatures,
                                                    RealIndexer &&sies, const int num,
                                                    LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::InternalEnergyFromDensityTemperature(rhos, temperatures, sies, num,
                                                           lambdas);
   }
@@ -289,6 +291,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                              ConstRealIndexer &&temperatures,
                                              RealIndexer &&pressures, const int num,
                                              LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::PressureFromDensityTemperature(rhos, temperatures, pressures, num,
                                                     lambdas);
   }
@@ -339,6 +342,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                             ConstRealIndexer &&temperatures,
                                             RealIndexer &&entropies, const int num,
                                             LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::EntropyFromDensityTemperature(rhos, temperatures, entropies, num,
                                                    lambdas);
   }
@@ -357,6 +361,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                ConstRealIndexer &&sies,
                                                RealIndexer &&entropies, const int num,
                                                LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::EntropyFromDensityInternalEnergy(rhos, sies, entropies, num,
                                                       lambdas);
   }
@@ -375,6 +380,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                  ConstRealIndexer &&temperatures,
                                                  RealIndexer &&cvs, const int num,
                                                  LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::SpecificHeatFromDensityTemperature(rhos, temperatures, cvs, num,
                                                         lambdas);
   }
@@ -394,6 +400,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                     ConstRealIndexer &&sies,
                                                     RealIndexer &&cvs, const int num,
                                                     LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::SpecificHeatFromDensityInternalEnergy(rhos, sies, cvs, num, lambdas);
   }
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer,
@@ -410,6 +417,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                 ConstRealIndexer &&temperatures,
                                                 RealIndexer &&bmods, const int num,
                                                 LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::BulkModulusFromDensityTemperature(rhos, temperatures, bmods, num,
                                                        lambdas);
   }
@@ -429,6 +437,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                    ConstRealIndexer &&sies,
                                                    RealIndexer &&bmods, const int num,
                                                    LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::BulkModulusFromDensityInternalEnergy(rhos, sies, bmods, num,
                                                           lambdas);
   }
@@ -447,6 +456,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                    ConstRealIndexer &&temperatures,
                                                    RealIndexer &&gm1s, const int num,
                                                    LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::GruneisenParamFromDensityTemperature(rhos, temperatures, gm1s, num,
                                                           lambdas);
   }
@@ -466,6 +476,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                       ConstRealIndexer &&sies,
                                                       RealIndexer &&gm1s, const int num,
                                                       LambdaIndexer &&lambdas) const {
+    PORTABLE_WARN("Not providing scratch memory will trigger scalar EOSPAC lookups");
     EosBase<EOSPAC>::GruneisenParamFromDensityInternalEnergy(rhos, sies, gm1s, num,
                                                              lambdas);
   }
@@ -481,7 +492,7 @@ class EOSPAC : public EosBase<EOSPAC> {
                                                              lambdas);
   }
 
-  // TODO(JMM): Add performant entropy and Gibbs Free Energy
+  // TODO(JMM): Add performant Gibbs Free Energy
   using EosBase<EOSPAC>::FillEos;
 
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
@@ -540,6 +551,34 @@ class EOSPAC : public EosBase<EOSPAC> {
                                           pressureFromSesame(1.0));
 
     eosSafeInterpolate(&table, num, R, T, P, dPdr, dPdT, "PofRT", Verbosity::Quiet,
+                       options, values, nopts);
+  }
+
+  template <typename LambdaIndexer>
+  inline void EntropyFromDensityTemperature(const Real *rhos, const Real *temperatures,
+                                            Real *entropies, Real *scratch,
+                                            const int num, LambdaIndexer /*lambdas*/,
+                                            Transform &&transform = Transform()) const {
+    using namespace EospacWrapper;
+    EOS_REAL *R = const_cast<EOS_REAL *>(&rhos[0]);
+    EOS_REAL *T = const_cast<EOS_REAL *>(&temperatures[0]);
+    EOS_REAL *S = &entropies[0];
+    EOS_REAL *dSdr = scratch + 0 * num;
+    EOS_REAL *dSdT = scratch + 1 * num;
+
+    EOS_INTEGER table = SofRT_table_;
+    EOS_INTEGER options[3];
+    EOS_REAL values[3];
+    EOS_INTEGER nopts = 0;
+
+    // Set up density/temperature unit scaling
+    impl_eospac::SetUpDensityTemperatureScalingOptions(options, values, nopts, transform);
+
+    // Entropy units differ from singularity so always convert
+    impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
+                                          sieFromSesame(1.0));
+
+    eosSafeInterpolate(&table, num, R, T, P, dSdr, dSdT, "SofRT", Verbosity::Quiet,
                        options, values, nopts);
   }
 
@@ -1381,7 +1420,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityTemperature(
   PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
   return 0; // compiler happy
 #else
-  PORTABLE_ALWAYS_REQUIRE(entropy_available_, "This table supports entropy");
+  PORTABLE_ALWAYS_REQUIRE(entropy_available_, "This table does not support entropy");
   using namespace EospacWrapper;
   EOS_REAL R[1] = {rho}, S[1], T[1] = {temperatureToSesame(temp)}, dSdr[1], dSdT[1];
   EOS_INTEGER nxypairs = 1;
@@ -1575,7 +1614,7 @@ PORTABLE_INLINE_FUNCTION Real EOSPAC::EntropyFromDensityInternalEnergy(
   PORTABLE_ALWAYS_ABORT("EOSPAC calls not supported on device\n");
   return 0; // compiler happy
 #else
-  PORTABLE_ALWAYS_REQUIRE(entropy_available_, "This table supports entropy");
+  PORTABLE_ALWAYS_REQUIRE(entropy_available_, "This table does not support entropy");
   using namespace EospacWrapper;
   const Real temp = TemperatureFromDensityInternalEnergy(rho, sie, lambda);
   return EntropyFromDensityTemperature(rho, temp, lambda);

@@ -169,6 +169,7 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
   if (invert_at_setup) {
     EOS_REAL values[] = {1.};
     for (int i = 0; i < ntables; i++) {
+      // Most tables shouldn't be inverted at setup
       if (tableType[i] != EOS_Uc_D and tableType[i] != EOS_Pc_D and
           tableType[i] != EOS_Pt_DT and tableType[i] != EOS_Ut_DT and
           tableType[i] != EOS_St_DT) {
@@ -187,13 +188,13 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
   }
 
   // choice of which table types setOption is called on mimics SAP. Some table types are
-  // incmopatible whiel others lead to numerical issues.
-  // aem: should EOS_St_DT go in here?
+  // incompatible while others lead to numerical issues.
   if (monotonicity == eospacMonotonicity::monotonicityX ||
       monotonicity == eospacMonotonicity::monotonicityXY) {
     for (int i = 0; i < ntables; i++) {
+      // Some of these table types shouldn't accept the monotonic option
       if (tableType[i] != EOS_Uc_D and tableType[i] != EOS_Ut_DT and
-          tableType[i] != EOS_Ut_DPt) {
+          tableType[i] != EOS_Ut_DPt and tableType[i] != EOS_St_DT) {
         eos_SetOption(&(tableHandle[i]), &EOS_MONOTONIC_IN_X, &(EOS_NullVal), &errorCode);
         eosCheckError(errorCode, "eospac options: eos_monotonic_in_x", eospacWarn);
       }
@@ -208,10 +209,11 @@ EOS_INTEGER eosSafeLoad(int ntables, int matid, EOS_INTEGER tableType[],
     }
   }
 
+  // Some of these table types shouldn't accept the smoothing option
   if (apply_smoothing) {
     for (int i = 0; i < ntables; i++) {
-      if (tableType[i] == EOS_Pt_DUt || tableType[i] == EOS_T_DUt ||
-          tableType[i] == EOS_Ut_DPt) {
+      if (tableType[i] != EOS_Uc_D and tableType[i] != EOS_Ut_DT and
+          tableType[i] != EOS_Ut_DPt and tableType[i] != EOS_St_DT) {
         eos_SetOption(&(tableHandle[i]), &EOS_SMOOTH, &(EOS_NullVal), &errorCode);
         eosCheckError(errorCode, "eospac options: eos_smooth", eospacWarn);
       }
