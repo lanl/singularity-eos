@@ -373,6 +373,17 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
           REQUIRE(isClose(P_eospac, P_spiner_orig));
           REQUIRE(isClose(P_eospac, P_spiner_rhoT));
           REQUIRE(isClose(P_eospac, P_spiner_rhoSie));
+
+          // Check that MinInternalEnergyFromDensity serializes correctly for all EOS
+          const Real ecold_eospac = eos_eospac.MinInternalEnergyFromDensity(rho_trial);
+          const Real ecold_spiner_orig =
+              rhoT_orig.MinInternalEnergyFromDensity(rho_trial);
+          const Real ecold_spiner_rhoT = eos_rhoT.MinInternalEnergyFromDensity(rho_trial);
+          const Real ecold_spiner_rhoSie =
+              eos_rhoSie.MinInternalEnergyFromDensity(rho_trial);
+          REQUIRE(isClose(ecold_eospac, ecold_spiner_orig));
+          REQUIRE(isClose(ecold_eospac, ecold_spiner_rhoT));
+          REQUIRE(isClose(ecold_eospac, ecold_spiner_rhoSie));
         }
 
         eos_eospac.Finalize();

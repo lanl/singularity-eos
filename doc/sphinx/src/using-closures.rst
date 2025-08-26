@@ -17,6 +17,9 @@ compute the pressure response of the flow and how to partition the volume and
 energy between the individual materials. In this situation, one must decide how
 to compute thermodynamic quantities in that cell for each material.
 
+For an example of how to use the PTE solvers, see
+``examples/pte_2mat.cpp`` in the ``examples`` folder.
+
 Governing Equations and Assumptions
 ------------------------------------
 
@@ -60,18 +63,27 @@ for a material in the total volume is
 
   \overline{\rho}_i = \rho_i f_i,
 
-where :math:`\rho_i` is the physical density (i.e. material mass per *material*
-volume). It is important to note here that while the densities, :math:`\rho_i`,
-and the volume fractions, :math:`f_i`, will vary as the closure model is
-applied, the average densities, :math:`\overline{\rho}_i`, will all remain
-constant, motiviating their internal use in the closure solvers. The total
-density (mass of *participating* materials per total volume) is then
+where :math:`\rho_i` is the physical density (i.e. material mass per
+*material* volume). It is important to note here that while the
+densities, :math:`\rho_i`, and the volume fractions, :math:`f_i`, will
+vary as the closure model is applied, the average densities,
+:math:`\overline{\rho}_i`, will all remain constant, motiviating their
+internal use in the closure solvers. The total density (mass of
+*participating* materials per total volume) is then
 
 .. math::
 
   \rho = \sum_{i=0}^{N - 1} \overline{\rho}_i = \sum_{i=0}^{N-1} \rho_i f_i
 
-Similarly the energy can be summed in a similar way so that
+The mass fraction of a material, defined as
+
+.. math::
+
+  \mu_i = \frac{\overline{\rho}_i}{\rho}
+
+is also independent of the closure model and stays invariant while it
+is applied. Similarly the energy can be summed in a similar way so
+that
 
 .. math::
 
@@ -100,12 +112,12 @@ that in essence the PTE solver has the form
           \rho_1, ..., \rho_i, ..., \rho_{N-1})
 
 
-The important nuance here is that **the volume fractions and densities are both
-inputs and outputs** in the current ``singularity-eos`` formulation of the
-closure models. From physics perspective this can be confusing, but from a code
-perspective this limits the number of variables that need to be passed to the
-PTE solver and provides a convenient way to specify an initial guess for the
-closure state.
+The important nuance here is that **the volume fractions and densities
+are both inputs and outputs** in the current ``singularity-eos``
+formulation of the closure models. From a physics perspective this can
+be confusing, but from a code perspective this limits the number of
+variables that need to be passed to the PTE solver and provides a
+convenient way to specify an initial guess for the closure state.
 
 .. warning::
 
@@ -147,7 +159,7 @@ closure state.
     f_i = \frac{1}{N}.
 
   It is important to note though that this may not be sufficient in *many*
-  cases. A better guess just use the mass fractions so that
+  cases. A better guess might just use the mass fractions so that
 
   .. math::
 
@@ -157,6 +169,38 @@ closure state.
   compressibilities. A further improvement could be made by weighting the mass
   fractions by the material bulk moduli to reflect the relative
   compressibilities.
+
+.. _validvolumefractions:
+.. note::
+
+  Note that many real materials may go in to *tension* states, where
+  the pressure is negative. Because pressure must vanish at zero
+  density, and go to infinity at infinite density, this also
+  necessitates that at low density :math:`\partial P/\partial \rho <
+  0` until the pressure reaches some minimum, at a critical density
+  :math:`\rho_c` such that for :math:`\rho > \rho_c`, :math:`\partial
+  P/\partial\rho \geq 0`. This makes pressure a multi-valued quantity
+  and a poor independent variable for representations of equation of
+  state space.
+
+  This tension region is challenging for PTE solvers, since the solver
+  seeks a unique pressure and a multi-valued pressure is
+  problematic. Moreover, the sign flip for :math:`\partial P/\partial
+  \rho` can be difficult for a Newton-like solver to traverse. As
+  such, most of our PTE solvers enforce that, for materials capable of
+  accessing tension states, :math:`\rho > \rho_c`. In
+  ``singularity-eos`` parlance, we call :math:`\rho_c` "rho at Pmin,"
+  which is exposed by each equation of state as a function of
+  temperature. For a given :math:`\overline{\rho}`, A minimum density
+  :math:`\rho_c` corresponds to a *maximum* volume fraction
+  :math:`f_c`. The ``singularity-eos`` solvers will enforce, to the
+  best of their ability, that each material with a critical density
+  has volume fractions less than the critical volume fraction.
+
+  Note that this treatment does *not* preclude access to tension
+  states (although the combination of materials participating in a
+  mixture may). It does, however, require that tension states be
+  accessed only from the *compression* side of :math:`\rho_c`.
 
 Pressure-Temperature Equilibrium
 --------------------------------
@@ -386,6 +430,85 @@ no additional equations. The energy residual equation then takes the form
 where the temperature difference can be factored out of the sum since it doesn't
 depend on material index.
 
+This formulation naively has :math:`N+1` independent variables: The
+temperature :math:`T` and the :math:`N` volume fractions. However, one
+may reduce the system to :math:`N` independent variables by choosing
+one material, indexed :math:`s`, whose volume fraction is computed
+from the other materials:
+
+.. math::
+
+  f_s = 1 - \sum_{m = 0, m \neq s}^{N-1} f_m
+
+In this treatment, the pressure differences are written as
+
+.. math::
+
+  P_s - P_m = 0, 0 \leq m < N, m \neq s.
+
+and the volume fraction constraint equation is eliminated, as it is
+satisfied by construction. Note that, although :math:`f_s` is no
+longer a state variable, derivatives of thermodynamic quantities of
+material :math:`s` with respect to :math:`f_s` still appear, as
+:math:`f_s` enters through its dependence on all of the other volume
+fractions. For example, for the pressure :math:`P_s` in the pressure
+difference constraints:
+
+.. math::
+
+  \frac{\partial P_s}{\partial f_i} = \frac{\partial P_s}{\partial f_s} \frac{\partial P_s}{\partial P_i} = -\frac{\partial P_s}{\partial f_s}
+
+and indeed this holds for any thermodynamic quantity indexed by
+material :math:`Q_m`. The Jacobian :math:`J_{ij}` for this formulation
+is thus completely dense with
+
+.. math::
+   
+  \begin{aligned}[t]
+   J_{00} &= \sum_m\frac{\partial u_m}{\partial T}\\
+   J_{0i} &= \frac{\partial u_i}{\partial f_i} - \frac{\partial u_s}{\partial f_s}\\
+   J_{j0} &= \frac{\partial P_j}{\partial T} - \frac{\partial P_s}{\partial T}\\
+   J_{ij} &= \frac{\partial P_s}{\partial f_s} + \delta_{ij} \frac{\partial P_i}{\partial f_i}
+  \end{aligned}
+
+where here :math:`i` and :math:`j` range from 1 to :math:`N-1` and
+index all materials excluding material :math:`s`. In matrix form this
+is roughly:
+
+.. math::
+
+  \begin{pmatrix}
+   \sum_m \frac{\partial u_m}{\partial T} & \frac{\partial u_0}{\partial f_0} - \frac{\partial u_s}{\partial f_s} &&\cdots &\frac{\partial u_{N-1}}{\partial f_{N-1}} - \frac{\partial u_s}{\partial f_s}\\
+   \frac{\partial P_0}{\partial T} - \frac{\partial P_s}{\partial T} & \frac{\partial P_0}{\partial f_0} + \frac{\partial P_s}{\partial f_s} & \frac{\partial P_s}{\partial f_s} & \cdots & \frac{\partial P_s}{\partial f_s} \\
+   \vdots & &\ddots & \ddots&\vdots\\
+   \frac{\partial P_{N-1}}{\partial T} - \frac{\partial P_s}{\partial T} & \frac{\partial P_s}{\partial f_s} & \cdots & \frac{\partial P_s}{\partial f_s} & \frac{\partial P_{N-1}}{\partial f_{N-1}} + \frac{\partial P_s}{\partial f_s}
+  \end{pmatrix}
+
+This reduced formulation has the significant advantage (over an
+equivalent sized :math:`N+1` system) that in the 2-material case the
+Jacobian is a 2x2 matrix, similar to the ``PTESolverPT``. In many
+cases the number of materials participating in a mixed cell will be
+small, and the difference between :math:`N` equations and :math:`N+1`
+equuations may be be significant from a performance
+perspective. However, special care must be taken (and has been taken
+in our implementation) to ensure that all volume fractions remain
+within their regime of validity as the solver iterates.
+
+.. note::
+
+  **Which material to skip?** The material chosen for index :math:`s`
+  impacts the solver in several key ways. Most obviously, gradients of
+  material :math:`s` show up in almost every term of the
+  Jacobian. Less obviously, catastrophic cancellation (due to finite
+  floating point precision) may occur when computing the volume
+  fraction :math:`f_s` unless care is taken. Ideally the material with
+  the largest volume fraction should be chosen as :math:`s`. However,
+  which material this will be is not known ahead of time. By default
+  ``singularity-eos`` uses the mass fraction as a proxy for the volume
+  fraction and chooses the material with the largest mass fraction as
+  :math:`s`. This can, however, be set by user-code through the
+  ``MixParams``, as discussed below.
+
 In the code this is referred to as the ``PTESolverRhoT``.
 
 Fixed Pressure or Temperature
@@ -536,25 +659,40 @@ contains the following member fields, with default values:
 
 .. code-block:: cpp
 
-  struct MixParams {
-    bool verbose = false; // verbosity
-    Real derivative_eps = 3.0e-6;
-    Real pte_rel_tolerance_p = 1.e-6;
-    Real pte_rel_tolerance_e = 1.e-6;
-    Real pte_rel_tolerance_t = 1.e-4;
-    Real pte_abs_tolerance_p = 0.0;
-    Real pte_abs_tolerance_e = 1.e-4;
-    Real pte_abs_tolerance_t = 0.0;
-    Real pte_residual_tolerance = 1.e-8;
-    std::size_t pte_max_iter_per_mat = 128;
-    Real line_search_alpha = 1.e-2;
-    std::size_t line_search_max_iter = 6;
-    Real line_search_fac = 0.5;
-    Real vfrac_safety_fac = 0.95;
-    Real temperature_limit = 1.0e15;
-    Real default_tguess = 300.;
-    Real min_dtde = 1.0e-16;
-  };
+struct MixParams {
+  bool verbose = false;
+  bool iterate_t_guess = true;
+  Real derivative_eps = 3.0e-6;
+  Real pte_rel_tolerance_p = 1.0e-6;
+  Real pte_rel_tolerance_t = 1.0e-4;
+  Real pte_rel_tolerance_e = 1.0e-6;
+  Real pte_rel_tolerance_v = 1.0e-6;
+  Real pte_abs_tolerance_p = 1.0e-6;
+  Real pte_abs_tolerance_t = 1.0e-4;
+
+  Real pte_slow_convergence_thresh = 0.99;
+  Real pte_rel_tolerance_p_sufficient = 1.e2 * pte_rel_tolerance_p;
+  Real pte_rel_tolerance_t_sufficient = 10 * pte_rel_tolerance_t;
+  Real pte_rel_tolerance_e_sufficient = 1.e2 * pte_rel_tolerance_e;
+  Real pte_rel_tolerance_v_sufficient = 1.e2 * pte_rel_tolerance_v;
+  Real pte_abs_tolerance_p_sufficient = 1.e2 * pte_abs_tolerance_p;
+  Real pte_abs_tolerance_t_sufficient = 10 * pte_abs_tolerance_t;
+
+  std::size_t pte_max_iter_per_mat = 128;
+  Real line_search_alpha = 1.e-2;
+  std::size_t line_search_max_iter = 6;
+  Real line_search_fac = 0.5;
+  Real vfrac_safety_fac = 0.95;
+  Real temperature_limit = 1.0e15;
+  Real default_tguess = 300.;
+  Real min_dtde = 1.0e-16;
+  std::size_t pte_small_step_tries = 2;
+  Real pte_small_step_thresh = 1e-16;
+  Real pte_max_dpdv = -1e-8;
+
+  // choose index with largest volume fraction
+  std::int64_t pte_reduced_system_exclude_idx = -1;
+};
 
 where here ``verbose`` enables verbose output in the PTE solve is,
 ``derivative_eps`` is the spacing used for finite differences
@@ -563,8 +701,31 @@ evaluations of equations of state when building a jacobian. The
 ``pte_rel_tolerance_t`` variables are relative tolerances for the
 error in the pressure, energy, temperature respectively. The
 ``pte_abs_tolerance_*`` variables are the same but are absolute,
-rather than relative tolerances. ``pte_residual_tolerance`` is the
-absolute tolerance for the residual.
+rather than relative tolerances. There are no absolute tolerances for
+energy and volume fraction, as the solver works on these in a
+normalized space.
+
+Sometimes the PTE solver may find something that looks very much like
+a solution, but not meet the set tolerances, due to the limits of
+floating point arithmetic at that point in the residual space. For
+example, digits may be lost in the Jacobian inversion or the residual
+itself may suffer catastrophic cancellation. In these cases, the user
+may still wish to call this a success. This is the reason for the
+``pte_slow_convergence_thresh`` and ``pte_*_tolerance_*_sufficient``
+variables. If between two iterations the residual does not decrease to
+``pte_slow_convergence_thresh`` times its previous value or smaller,
+**and** the errors in the relevant variables are within the
+``_sufficient`` tolerances, the solver will consider that "good
+enough" and report succesful convergence. In general these should be
+set to an order of magnitude or two less strict than the desired
+tolerance.
+
+.. note::
+
+  The default tolerances are relatively loose. A user may wish to
+  enforce stricter tolerances. Relative/tolerances of :math:`10^{-12}`
+  for the desired and :math:`10^{-10}` may converge more slowly but
+  are expected to converge in most contexts.
 
 The maximum number of iterations the solver is allowed to take before
 giving up is ``pte_max_iter_per_mat`` multiplied by the number of
@@ -578,6 +739,33 @@ maximum temperature allowed by the solver. ``default_tguess`` is used
 as an initial guess for temperature if a better guess is not passed in
 or cannot be inferred. ``min_dtde`` is the minmum that temperature is
 allowed to change with respect to energy when computing Jacobians.
+
+The parameters ``pte_small_step_tries`` and ``pte_small_step_thresh``
+guard against the PTE solver taking tiny steps forever and not
+converging. ``pte_small_step_thresh`` is the size of step the PTE
+solver considers too small and ``pte_small_step_tries`` is the number
+of very small steps the solver will take before erroring out.
+
+``pte_max_dpdv`` is designed to guard against difficult-to-handle
+regions of a multi-phase equation of state, such as a vapor dome that
+contains Van der Waals loops or a region that has been Maxwell
+constructed to remove such loops. In these regions, the slope of
+pressure with respect to microphysical density can vanish, which can
+cause the Jacobian of a solver to have a non-trivial Kernel, and thus
+make the system impossible to solve. This threshold floors this
+Jacobian so that it can always be inverted. The threshold is the
+gradient of the pressure with respect to **volume fraction** and must
+be negative. If a positive threshold is entered, it will be made
+negative.
+
+The ``pte_reduced_system_exclude_idx`` parameter is specific to
+``PTESolverRhoT`` and selects which material is used as material
+:math:`s`, whose volume fraction is set by the difference between the
+total volume and the volumes of the remaining materials. Any negative number
+requests the default behavior, which is that ``singularity-eos`` will
+choose the material with the largest mass fraction. However, by
+setting this parameter to a non-negative number, you can choose the index
+:math:`s` by hand.
 
 .. note::
 

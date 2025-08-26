@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: (Apache-2.0 OR MIT)
 
+from spack_repo.builtin.build_systems.cmake import CMakePackage
+
 from spack.package import *
 
 
@@ -12,7 +14,9 @@ class PortsOfCall(CMakePackage):
     url = "https://github.com/lanl/ports-of-call/archive/refs/tags/v1.1.0.tar.gz"
     git = "https://github.com/lanl/ports-of-call.git"
 
-    maintainers = ["rbberger"]
+    maintainers("rbberger")
+
+    license("BSD-3-Clause")
 
     version("main", branch="main")
     version("1.7.1", sha256="18b0b99370ef2adf3374248f653461606f826fe4076d0f19ac8c72d46035fdf5")
@@ -49,8 +53,11 @@ class PortsOfCall(CMakePackage):
         values=("Kokkos", "Cuda", "None"),
         multi=False,
         default="None",
-        when="@1.6.1: +test",
+        when="@1.7.0: +test",
     )
+
+    depends_on("c", type="build", when="@:1.7.1")
+    depends_on("cxx", type="build")
 
     depends_on("cmake@3.12:")
     depends_on("catch2@3.0.1:", when="+test")
@@ -59,7 +66,9 @@ class PortsOfCall(CMakePackage):
     def cmake_args(self):
         args = [
             self.define_from_variant("PORTS_OF_CALL_BUILD_TESTING", "test"),
-            self.define_from_variant("PORTS_OF_CALL_TEST_PORTABILITY_STRATEGY", "test_portability_strategy"),
+            self.define_from_variant(
+                "PORTS_OF_CALL_TEST_PORTABILITY_STRATEGY", "test_portability_strategy"
+            ),
         ]
         if self.spec.satisfies("@:1.2.0"):
             args.append(self.define_from_variant("PORTABILITY_STRATEGY", "portability_strategy"))
@@ -67,5 +76,5 @@ class PortsOfCall(CMakePackage):
             args.append(self.define("CMAKE_CXX_COMPILER", self.spec["hip"].hipcc))
             args.append(self.define("CMAKE_C_COMPILER", self.spec["hip"].hipcc))
         if self.spec.satisfies("test_portability_strategy=Kokkos ^kokkos+cuda"):
-            args.append(self.define("CMAKE_CXX_COMPILER", self.spec["kokkos"].kokkos_cxx))
+            args.append(self.define("CMAKE_CXX_COMPILER", self["kokkos"].kokkos_cxx))
         return args

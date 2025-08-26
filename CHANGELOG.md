@@ -3,18 +3,33 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
-- [[PR507]](https://github.com/lanl/singularity-eos/pull/507) Entropy now available from EOSPAC 
+- [[PR507]](https://github.com/lanl/singularity-eos/pull/507) Entropy now available from EOSPAC
+- [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Add two examples related to PTE
+- [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
 
 ### Fixed (Repair bugs, etc)
+- [[PR537]](https://github.com/lanl/singularity-eos/pull/537) Fix pathological initial guesses in PTE solvers
+- [[PR523]](https://github.com/lanl/singularity-eos/pull/523) Fix reading order in SpinerEOSDependsRhoSie
+- [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Added some robustness checks to the PTE solvers
 - [[PR505]](https://github.com/lanl/singularity-eos/pull/505) rename LogType::TRUE to LogType::DOUBLE
 - [[PR495]](https://github.com/lanl/singularity-eos/pull/495) Fix bug related to MinimumTemperature and MinimumDensity in SpinerEOSDependsRhoSie
 - [[PR496]](https://github.com/lanl/singularity-eos/pull/496) Re-enable stellarcollapse2spiner, which was disabled.
+- [[PR524]](https://github.com/lanl/singularity-eos/pull/524) Fix future kokkos-kernels compatibility in PTE solver
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR548]](https://github.com/lanl/singularity-eos/pull/548) Change which tolerances are available for the PTE solver and how they are interpreted to hopefully provide more clarity
+- [[PR545]](https://github.com/lanl/singularity-eos/pull/545) Implement reduced system for PTESolverRhoT
+- [[PR543]](https://github.com/lanl/singularity-eos/pull/543) Made PTE solvers more robust for Maxwell constructed tables
 - [[PR502]](https://github.com/lanl/singularity-eos/pull/502) Expose split tables to Fortran interface
+- [[PR519]] (https://github.com/lanl/singularity-eos/pull/519) Split eos_spiner.hpp into eos_spiner_rho_sie.hpp and eos_spiner_rho_temp.hpp files.  
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR528]](https://github.com/lanl/singularity-eos/pull/528) Remove unused variable subGroup in SpinerEOSDependsRhoT
+- [[PR522]](https://github.com/lanl/singularity-eos/pull/522) Move more common functionality into spiner_eos_common.hpp
+- [[PR510]](https://github.com/lanl/singularity-eos/pull/510) Make Davis EOS faster and more robust
+- [[PR509]](https://github.com/lanl/singularity-eos/pull/509) Remove extraneous copies in base class
 - [[PR504]](https://github.com/lanl/singularity-eos/pull/504) Add Fortran interface documentation
+- [[PR532]](https://github.com/lanl/singularity-eos/pull/532) Update clang format script to be closer to CI
 
 ### Removed (removing behavior/API/varaibles/...)
 
