@@ -3,6 +3,19 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+
+### Fixed (Repair bugs, etc)
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.10.0
+Date: 8/27/2025
+
+### Added (new features/APIs/variables/...)
 - [[PR507]](https://github.com/lanl/singularity-eos/pull/507) Entropy now available from EOSPAC
 - [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Add two examples related to PTE
 - [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
