@@ -578,7 +578,7 @@ class EOSPAC : public EosBase<EOSPAC> {
     impl_eospac::SetUpOutputScalingOption(options, values, nopts, transform,
                                           sieFromSesame(1.0));
 
-    eosSafeInterpolate(&table, num, R, T, P, dSdr, dSdT, "SofRT", Verbosity::Quiet,
+    eosSafeInterpolate(&table, num, R, T, S, dSdr, dSdT, "SofRT", Verbosity::Quiet,
                        options, values, nopts);
   }
 
