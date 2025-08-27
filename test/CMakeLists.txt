@@ -126,18 +126,24 @@ if(SINGULARITY_BUILD_CLOSURE)
     target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(pte test_pte)
 
-    add_executable(test_pte_2phase test_pte_2phase.cpp)
+    add_executable(test_pte_2phase test_pte_2phaseVinetSn.cpp)
     target_link_libraries(test_pte_2phase PRIVATE Catch2::Catch2
                                          singularity-eos::singularity-eos)
     target_include_directories(test_pte_2phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
     add_test(pte_2phase test_pte_2phase)
 
     if(SINGULARITY_USE_EOSPAC)
-      add_executable(test_pte_3phase test_pte_3phase.cpp)
+      add_executable(test_pte_3phase test_pte_3phaseSesameSn.cpp)
       target_link_libraries(test_pte_3phase PRIVATE Catch2::Catch2
                                            singularity-eos::singularity-eos)
       target_include_directories(test_pte_3phase PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
       add_test(pte_3phase test_pte_3phase)
+
+      add_executable(test_kpt_full_circle test_kpt_full_circle.cpp)
+      target_link_libraries(test_kpt_full_circle PRIVATE Catch2::Catch2
+                                           singularity-eos::singularity-eos)
+      target_include_directories(test_kpt_full_circle PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+      add_test(kpt_full_circle test_kpt_full_circle)
     endif()
   endif()
   # disable fortran tests when using OpenMP due to segfaults
