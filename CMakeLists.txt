@@ -24,7 +24,7 @@ endif()
 # declare the project name
 project(
   singularity-eos
-  VERSION 1.9.2
+  VERSION 1.10.0
   LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
