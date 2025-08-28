@@ -74,16 +74,23 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real v = 1.0 / rho;
-    return PressureColdCurve(v) + PressureThermalPortion(v, temperature);
+    return PressureColdCurve(1.0 / rho) + PressureThermalPortion(rho, temperature);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const v = 1.0 / rho;
+    const Real v = 1.0 / rho;
     return PressureColdCurve(v) + _Gc * rho * (sie - SieColdCurve(v));
   }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
+      const Real rho, const Real P,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real v = robust::ratio(1.0, rho);
+    return SieColdCurve(v) + robust::ratio(v * (P - PressureColdCurve(v)), _Gc);
+  }
+
 
   // Entropy member functions
   template <typename Indexer_t = Real *>
@@ -123,9 +130,11 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureThermalPortion(
-      const Real v, const Real T,
+      const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return rho * _Cvinf * _Gc * pow<2>(T) / (_T0 * std::pow(rho * _v0, _Gc) + T);
+      const Real numerator = rho * _Cvinf * _Gc * math_utils::pow<2>(T);
+      const Real denominator = _T0 * std::pow(rho * _v0, _Gc) + T;
+    return robust::ratio(numerator, denominator);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real TemperatureScale(
@@ -133,15 +142,15 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
     return _T0 * std::pow(rho * _v0, _Gc);
   }
 
-  // Thermodynamic derivatives
+  // Specific heat capacity at constant volume
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real tau = robust::ratio(temperature, TemperatureScale(rho));
-    const Real numerator = pow<2>(tau) + 2.0 * tau;
-    const Real denominator = pow<2>(tau + 1.0);
-    return _Cvinf * robust::ratio(numerator / denominator);
+    const Real numerator = math_utils::pow<2>(tau) + 2.0 * tau;
+    const Real denominator = math_utils::pow<2>(tau + 1.0);
+    return _Cvinf * robust::ratio(numerator, denominator);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
@@ -150,20 +159,23 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
     const Real T = TemperatureFromDensityInternalEnergy(rho, sie);
     return SpecificHeatFromDensityTemperature(rho, T);
   }
+  // Isentropic bulk modulus 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return std::max(robust::SMALL(), _gm1 * (_gm1 + 1.0) * rho * _Cv * temperature);
+    const Real sie = InternalEnergyFromDensityTemperature(rho, temperature);
+    return BulkModulusFromDensityInternalEnergy(rho, sie);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real term1 = _A * _B * (_B + 1.0) * std::pow(rho * _v0, _B + 1.0) 
-                       + _Gc * (_Gc + 1.0) * rho * (sie - SieColdCurve(1.0 / rho));
-    return std::max(robust::SMALL(), _gm1 * (_gm1 + 1.0) * (rho * (sie - _qq) - _Pinf));
+    const Real term1 = _A * _B * (_B + 1.0) * std::pow(rho * _v0, _B + 1.0);
+    const Real term2 = _Gc * (_Gc + 1.0) * rho * (sie - SieColdCurve(1.0 / rho));
+    return term1 + term2;
   }
+  // Gruneisen parameter
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature,
@@ -211,10 +223,9 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
-    sie = std::max(
-        _qq,
-        robust::ratio(press + (_gm1 + 1.0) * _Pinf, press + _Pinf) * _Cv * temp + _qq);
-    rho = std::max(robust::SMALL(), robust::ratio(press + _Pinf, _gm1 * _Cv * temp));
+    // Solving for rho requires a Newton method...
+    sie = 0.0;
+    rho = 0.0;
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("SimpleMACAW"); }
@@ -231,7 +242,7 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
 
 template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION void
-StiffGas::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
+SimpleMACAW::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
                   const unsigned long output, Indexer_t &&lambda) const {
   if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
     if (output & thermalqs::pressure || output & thermalqs::temperature) {
@@ -246,7 +257,7 @@ StiffGas::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real 
     sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
   }
   if (output & thermalqs::temperature && output & thermalqs::specific_internal_energy) {
-    sie = robust::ratio(press + (_gm1 + 1.0) * _Pinf, _gm1 * rho) + _qq;
+    sie = InternalEnergyFromDensityPressure(rho, press);
   }
   if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
   if (output & thermalqs::temperature)
