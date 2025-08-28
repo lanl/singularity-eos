@@ -17,12 +17,13 @@
 namespace singularity {
 namespace tuple_utils {
 
-// Should this actually live in variadic utils?
 namespace impl {
 
-// Helper to transform a tuple into a new tuple by applying a function on each element.
+// Helper that copies a tuple into a new tuple while also applying a
+// transformation function to each element. Wrapped in `impl` namespace due to
+// index sequence and called below with a more normal function signature
 template <typename TupleT, typename FunctionT, std::size_t... I>
-constexpr auto tuple_transform_iteration(TupleT&& tup, FunctionT function,
+constexpr auto tuple_transform_iteration(TupleT&& tup, FunctionT&& function,
                                          std::index_sequence<I...>) {
     return std::make_tuple(function(std::get<I>(std::forward<TupleT>(tup)))...);
 }
@@ -30,9 +31,10 @@ constexpr auto tuple_transform_iteration(TupleT&& tup, FunctionT function,
 
 // Returns a copy of the tuple with a transform function called on each element
 template <typename TupleT, typename FunctionT>
-constexpr auto tuple_transform(TupleT&& tup, FunctionT function) {
+constexpr auto tuple_transform(TupleT&& tup, FunctionT&& function) {
     constexpr std::size_t N = std::tuple_size_v<std::remove_reference_t<TupleT>>;
-    return impl::tuple_transform_iteration(std::forward<TupleT>(tup), function,
+    return impl::tuple_transform_iteration(std::forward<TupleT>(tup),
+                                           std::forward<FunctionT>(function),
                                            std::make_index_sequence<N>{});
 }
 
