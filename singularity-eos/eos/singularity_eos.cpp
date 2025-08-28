@@ -124,6 +124,26 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
   return init_sg_JWL(matindex, eos, A, B, R1, R2, w, rho0, Cv, def_en, def_v);
 }
 
+int init_sg_SimpleMACAW(const int matindex, EOS *eos, const double A, const double B,
+                        const double Cinf, const double v0, const double T0, const double Gc,
+                        int const *const enabled, double *const vals) {
+  assert(matindex >= 0);
+  EOS eosi = SGAPPLYMODSIMPLE(SimpleMACAW(A, B, Cvinf, v0, T0, Gc));
+  if (enabled[3] == 1) {
+    singularity::pAlpha2BilinearRampParams(eosi, vals[2], vals[3], vals[4], vals[2],
+                                           vals[3], vals[4], vals[5]);
+  }
+  EOS eos_ = SGAPPLYMOD(SimpleMACAW(A, B, Cvinf, v0, T0, Gc));
+  eos[matindex] = eos_.GetOnDevice();
+  return 0;
+}
+
+int init_sg_SimpleMACAW(const int matindex, EOS *eos, const double A, const double B,
+                        const double Cvinf, const double v0, const double T0, const double Gc) {
+  return init_sg_JWL(matindex, eos, A, B, Cvinf, v0, T0, Gc, def_en, def_v);
+}
+
+
 int init_sg_DavisProducts(const int matindex, EOS *eos, const double a, const double b,
                           const double k, const double n, const double vc,
                           const double pc, const double Cv, int const *const enabled,
