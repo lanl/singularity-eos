@@ -74,7 +74,7 @@ register_headers(
     eos/variant_utils.hpp
     eos/eos_carnahan_starling.hpp
     eos/eos_electrons.hpp
-    eos/multi_eos.hpp
+    eos/eos_multi_eos.hpp
 )
 
 if (SINGULARITY_BUILD_CLOSURE)

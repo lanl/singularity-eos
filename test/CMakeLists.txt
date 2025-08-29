@@ -25,7 +25,7 @@ add_executable(
   test_eos_mgusup.cpp
   test_eos_powermg.cpp
   $<$<BOOL:${SINGULARITY_BUILD_CLOSURE}>:test_pte_ideal.cpp>
-  $<$<BOOL:${SINGULARITY_BUILD_CLOSURE}>:test_modifier_multi_eos.cpp>
+  $<$<BOOL:${SINGULARITY_BUILD_CLOSURE}>:test_eos_modifier_multi_eos.cpp>
   test_eos_zsplit.cpp
   )
 
