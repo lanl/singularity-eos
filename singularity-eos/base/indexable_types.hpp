@@ -25,7 +25,7 @@
 // SFINAE helper macro that checks if a given indexer object has the requested
 // indexable type. TODO: Is the error this generates readable?
 #define SINGULARITY_INDEXER_HAS_INDEXABLE_TYPE(Indexer, IndexableType)                   \
-  typename std::enable_if<variadic_utils::is_indexable_v<Indexer, IndexableType>> > ::type
+  typename std::enable_if<variadic_utils::is_indexable_v<Indexer, IndexableType>>::type
 
 // Just a small wrapper for the above macro specifically for mass fractions
 #define SINGULARITY_INDEXER_HAS_MASS_FRAC(Indexer, matnum)                               \
