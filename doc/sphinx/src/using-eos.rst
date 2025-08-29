@@ -1148,19 +1148,6 @@ specific internal energy in :math:`erg/g`.
   will be too. If you call an entropy for a model that does not
   provide it, ``singularity-eos`` will return an error.
 
-.. code-block:: cpp
-
-   template <template <class> typename Container_t = std::set>
-   static inline Container_t<std::string> AvailableEOSs();
-
-returns a container of strings representing all equation of state models available in the variant. By default, returns a ``std::set<std::string>``.
-
-.. code-block:: cpp
-
-   static inline constexpr auto AvailableEOSTypes();
-
-returns a compile-time type list containing all the equation of state types available in the variant as a ``variadic_utils::type_list<EOSs...>``.
-
 The function
 
 .. code-block:: cpp
@@ -1210,6 +1197,21 @@ function that drops the dependence is available:
   For materials where the mean atomic mass and number **do** vary with
   density and temperature, the convenience call without this
   dependence will produce an error.
+
+The method
+
+.. code-block:: cpp
+
+   template <template <class> typename Container_t = std::set>
+   static inline Container_t<std::string> AvailableEOSs();
+
+returns a container of strings representing all equation of state models available in the variant. By default, returns a ``std::set<std::string>``.
+
+.. code-block:: cpp
+
+   static inline constexpr auto AvailableEOSTypes();
+
+returns a compile-time type list containing all the equation of state types available in the variant as a ``variadic_utils::type_list<EOSs...>``.
 
 The function
 
