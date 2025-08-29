@@ -78,8 +78,9 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     auto multi_eos = make_MultiEOS(davis_r_eos, davis_p_eos);
 
     THEN("The MultiEOS object can also be placed in an EOS Variant") {
-      using EOS = Variant<DavisReactants, ShiftedEOS<DavisProducts>,
-                          decltype(make_MultiEOS(DavisReactants{}, ShiftedEOS<DavisProducts>{}))>;
+      using EOS =
+          Variant<DavisReactants, ShiftedEOS<DavisProducts>,
+                  decltype(make_MultiEOS(DavisReactants{}, ShiftedEOS<DavisProducts>{}))>;
       EOS multi_eos_in_variant = make_MultiEOS(davis_r_eos, davis_p_eos);
     }
     WHEN("The EosType function is called") {
