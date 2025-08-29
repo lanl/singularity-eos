@@ -12,6 +12,9 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#ifndef SINGULARITY_EOS_BASE_TUPLE_UTILS_HPP_
+#define SINGULARITY_EOS_BASE_TUPLE_UTILS_HPP_
+
 #include <tuple>
 
 namespace singularity {
@@ -40,3 +43,5 @@ constexpr auto tuple_transform(TupleT&& tup, FunctionT&& function) {
 
 } // namespace tuple_utils
 } // namespace singularity
+
+#endif // #ifndef SINGULARITY_EOS_BASE_TUPLE_UTILS_HPP_
