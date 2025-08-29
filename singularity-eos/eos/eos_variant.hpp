@@ -1348,6 +1348,14 @@ class Variant {
     return mpark::visit([](const auto &eos) { return eos.PrintParams(); }, eos_);
   }
 
+  inline std::string EosType() const {
+    return mpark::visit([](const auto &eos) { return eos.EosType(); }, eos_);
+  }
+
+  inline std::string EosPyType() const {
+    return mpark::visit([](const auto &eos) { return eos.EosPyType(); }, eos_);
+  }
+
   inline void Finalize() noexcept {
     return mpark::visit([](auto &eos) { return eos.Finalize(); }, eos_);
   }
