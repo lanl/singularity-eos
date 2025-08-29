@@ -23,6 +23,10 @@ add_library(eospac-wrapper
 )
 add_library(singularity-eos::singularity-eos_EospacWrapper ALIAS eospac-wrapper)
 
+if (SINGULARITY_EOSPAC_USE_MODERN_ERROR_CODES)
+  target_compile_definitions(eospac-wrapper PUBLIC SINGULARITY_EOSPAC_USE_MODERN_ERROR_CODES)
+endif()
+
 target_include_directories(eospac-wrapper
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

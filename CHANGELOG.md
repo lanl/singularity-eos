@@ -3,6 +3,20 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+
+### Fixed (Repair bugs, etc)
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.10.0
+Date: 8/27/2025
+
+### Added (new features/APIs/variables/...)
+- [[PR507]](https://github.com/lanl/singularity-eos/pull/507) Entropy now available from EOSPAC
 - [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Add two examples related to PTE
 - [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
 
@@ -16,6 +30,7 @@
 - [[PR524]](https://github.com/lanl/singularity-eos/pull/524) Fix future kokkos-kernels compatibility in PTE solver
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR548]](https://github.com/lanl/singularity-eos/pull/548) Change which tolerances are available for the PTE solver and how they are interpreted to hopefully provide more clarity
 - [[PR545]](https://github.com/lanl/singularity-eos/pull/545) Implement reduced system for PTESolverRhoT
 - [[PR543]](https://github.com/lanl/singularity-eos/pull/543) Made PTE solvers more robust for Maxwell constructed tables
 - [[PR502]](https://github.com/lanl/singularity-eos/pull/502) Expose split tables to Fortran interface

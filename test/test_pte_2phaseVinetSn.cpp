@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -28,13 +28,17 @@
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
-#include <pte_longtest_2phaseVinetSn.hpp>
+// TODO: Clean up commented include and namespaces
+
+// #include <pte_test_3phaseSesameSn.hpp>
 #include <pte_test_2phaseVinetSn.hpp>
 
-using namespace pte_longtest_2phaseVinetSn;
+// using namespace pte_test_3phase;
+using namespace pte_longtest_2phase;
+// using namespace pte_test_2phase;
+
 using singularity::PTESolverRhoT;
 using singularity::PTESolverRhoTRequiredScratch;
-using EOS = singularity::Variant<singularity::Vinet>;
 
 using DataBox = Spiner::DataBox<Real>;
 
@@ -44,7 +48,8 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::initialize();
 #endif
-  {
+  // JMM: EOSPAC tests do not work on device.
+  if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
     // EOS
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<EOS *> eos_v("eos", NMAT);
@@ -55,8 +60,7 @@ int main(int argc, char *argv[]) {
     PortableMDArray<EOS> eos_v(eos_vec.data(), NMAT);
 #endif
 
-    LinearIndexer<decltype(eos_hv)> eos_h(eos_hv);
-    set_eos(eos_hv.data());
+    set_eos(NMAT, PHASES, eos_hv.data());
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(eos_v, eos_hv);
@@ -116,12 +120,14 @@ int main(int argc, char *argv[]) {
 #endif
 
     // setup state
+    printf("pte_3phase setup state\n");
+
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
       Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
       Indexer2D<decltype(sie_hm)> e(n, sie_hm);
-      set_trial_state(n, r, vf, e, eos_h);
+      set_trial_state(n, r, vf, e);
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;
@@ -134,6 +140,7 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(press_v, press_vh);
     Kokkos::deep_copy(hist_d, hist_vh);
 #endif
+    printf("pte_3phase state set\n");
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<int, atomic_view> nsuccess_d("n successes");
@@ -149,21 +156,18 @@ int main(int argc, char *argv[]) {
     std::cout << "The trials have input set to: " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
-      std::cout << "Trial number: " << n << std::endl;
-      std::cout << "Total Specific Internal energy: \t\t" << in_sie_tot[n] << std::endl;
-      std::cout << "Total density: \t\t\t\t\t" << in_rho_tot[n] << std::endl;
-      std::cout << "Mass fractions: beta, gamma: \t\t\t" << in_lambda[0] << ", "
-                << in_lambda[1] << std::endl;
-      std::cout << "Assuming volume fractions: beta, gamma: \t" << vfrac_hm(n, 0) << ", "
-                << vfrac_hm(n, 1) << std::endl;
-      std::cout << "gives starting phase densities: beta, gamma: \t" << rho_hm(n, 0)
-                << ", " << rho_hm(n, 1) << std::endl
-                << std::endl;
+      Indexer2D<decltype(rho_hm)> r(n, rho_hm);
+      Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
+      Indexer2D<decltype(sie_hm)> e(n, sie_hm);
+      printinput(n, r, vf);
     }
 
     portableFor(
         "PTE!", 0, NTRIAL, PORTABLE_LAMBDA(const int &t) {
-          singularity::NullIndexer lambda;
+          Real *lambda[NMAT];
+          for (int i = 0; i < NMAT; i++) {
+            lambda[i] = nullptr;
+          }
 
           Indexer2D<decltype(rho_d)> rho(t, rho_d);
           Indexer2D<decltype(vfrac_d)> vfrac(t, vfrac_d);
@@ -216,23 +220,12 @@ int main(int argc, char *argv[]) {
     std::cout << "Results are: " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
-      std::cout << "Trial number: " << n << std::endl;
-      std::cout << "Total Specific Internal energy: \t"
-                << sie_hm(n, 0) * in_lambda[0] + sie_hm(n, 1) * in_lambda[1] << ", ("
-                << in_sie_tot[n] << ")" << std::endl;
-      std::cout << "Total density: \t\t\t\t"
-                << 1.0 / (1.0 / rho_hm(n, 0) * in_lambda[0] +
-                          1.0 / rho_hm(n, 1) * in_lambda[1])
-                << ", (" << in_rho_tot[n] << ")" << std::endl;
-      std::cout << "Volume fractions: beta, gamma: \t\t" << vfrac_hm(n, 0) << ", "
-                << vfrac_hm(n, 1) << std::endl;
-      std::cout << "Density: beta, gamma: \t\t\t" << rho_hm(n, 0) << ", " << rho_hm(n, 1)
-                << ", (" << out_rho0[n] << ", " << out_rho1[n] << ")" << std::endl;
-      std::cout << "Pressure: beta, gamma: \t\t\t" << press_hm(n, 0) << ", "
-                << press_hm(n, 1) << ", (" << out_press[n] << ")" << std::endl;
-      std::cout << "Temperature: beta, gamma: \t\t" << temp_hm(n, 0) << ", "
-                << temp_hm(n, 1) << ", (" << out_temp[n] << ")" << std::endl
-                << std::endl;
+      Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
+      Indexer2D<decltype(vfrac_hm)> vfrac(n, vfrac_hm);
+      Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
+      Indexer2D<decltype(temp_hm)> temp(n, temp_hm);
+      Indexer2D<decltype(press_hm)> press(n, press_hm);
+      printresults(n, rho, vfrac, sie, press, temp);
     }
 
     std::cout << "Success: " << nsuccess << "   Failure: " << NTRIAL - nsuccess
@@ -250,5 +243,9 @@ int main(int argc, char *argv[]) {
 #endif
 
   // poor-man's ctest integration
-  return (nsuccess >= 0.5 * NTRIAL) ? 0 : 1;
+  if constexpr (PortsOfCall::EXECUTION_IS_HOST) {
+    return (nsuccess >= 0.5 * NTRIAL) ? 0 : 1;
+  } else {
+    return 0;
+  }
 }

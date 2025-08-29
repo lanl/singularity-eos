@@ -659,29 +659,40 @@ contains the following member fields, with default values:
 
 .. code-block:: cpp
 
-  struct MixParams {
-    bool verbose = false; // verbosity
-    Real derivative_eps = 3.0e-6;
-    Real pte_rel_tolerance_p = 1.e-6;
-    Real pte_rel_tolerance_e = 1.e-6;
-    Real pte_rel_tolerance_t = 1.e-4;
-    Real pte_abs_tolerance_p = 0.0;
-    Real pte_abs_tolerance_e = 1.e-4;
-    Real pte_abs_tolerance_t = 0.0;
-    Real pte_residual_tolerance = 1.e-8;
-    std::size_t pte_max_iter_per_mat = 128;
-    Real line_search_alpha = 1.e-2;
-    std::size_t line_search_max_iter = 6;
-    Real line_search_fac = 0.5;
-    Real vfrac_safety_fac = 0.95;
-    Real temperature_limit = 1.0e15;
-    Real default_tguess = 300.;
-    Real min_dtde = 1.0e-16;
-    std::size_t pte_small_step_tries = 2;
-    Real pte_small_step_thresh = 1e-16;
-    Real pte_max_dpdv = -1e-8;
-    std::int64_t pte_reduced_system_exclude_idx = -1;  // choose index with largest mass fraction
-  };
+struct MixParams {
+  bool verbose = false;
+  bool iterate_t_guess = true;
+  Real derivative_eps = 3.0e-6;
+  Real pte_rel_tolerance_p = 1.0e-6;
+  Real pte_rel_tolerance_t = 1.0e-4;
+  Real pte_rel_tolerance_e = 1.0e-6;
+  Real pte_rel_tolerance_v = 1.0e-6;
+  Real pte_abs_tolerance_p = 1.0e-6;
+  Real pte_abs_tolerance_t = 1.0e-4;
+
+  Real pte_slow_convergence_thresh = 0.99;
+  Real pte_rel_tolerance_p_sufficient = 1.e2 * pte_rel_tolerance_p;
+  Real pte_rel_tolerance_t_sufficient = 10 * pte_rel_tolerance_t;
+  Real pte_rel_tolerance_e_sufficient = 1.e2 * pte_rel_tolerance_e;
+  Real pte_rel_tolerance_v_sufficient = 1.e2 * pte_rel_tolerance_v;
+  Real pte_abs_tolerance_p_sufficient = 1.e2 * pte_abs_tolerance_p;
+  Real pte_abs_tolerance_t_sufficient = 10 * pte_abs_tolerance_t;
+
+  std::size_t pte_max_iter_per_mat = 128;
+  Real line_search_alpha = 1.e-2;
+  std::size_t line_search_max_iter = 6;
+  Real line_search_fac = 0.5;
+  Real vfrac_safety_fac = 0.95;
+  Real temperature_limit = 1.0e15;
+  Real default_tguess = 300.;
+  Real min_dtde = 1.0e-16;
+  std::size_t pte_small_step_tries = 2;
+  Real pte_small_step_thresh = 1e-16;
+  Real pte_max_dpdv = -1e-8;
+
+  // choose index with largest volume fraction
+  std::int64_t pte_reduced_system_exclude_idx = -1;
+};
 
 where here ``verbose`` enables verbose output in the PTE solve is,
 ``derivative_eps`` is the spacing used for finite differences
@@ -690,8 +701,31 @@ evaluations of equations of state when building a jacobian. The
 ``pte_rel_tolerance_t`` variables are relative tolerances for the
 error in the pressure, energy, temperature respectively. The
 ``pte_abs_tolerance_*`` variables are the same but are absolute,
-rather than relative tolerances. ``pte_residual_tolerance`` is the
-absolute tolerance for the residual.
+rather than relative tolerances. There are no absolute tolerances for
+energy and volume fraction, as the solver works on these in a
+normalized space.
+
+Sometimes the PTE solver may find something that looks very much like
+a solution, but not meet the set tolerances, due to the limits of
+floating point arithmetic at that point in the residual space. For
+example, digits may be lost in the Jacobian inversion or the residual
+itself may suffer catastrophic cancellation. In these cases, the user
+may still wish to call this a success. This is the reason for the
+``pte_slow_convergence_thresh`` and ``pte_*_tolerance_*_sufficient``
+variables. If between two iterations the residual does not decrease to
+``pte_slow_convergence_thresh`` times its previous value or smaller,
+**and** the errors in the relevant variables are within the
+``_sufficient`` tolerances, the solver will consider that "good
+enough" and report succesful convergence. In general these should be
+set to an order of magnitude or two less strict than the desired
+tolerance.
+
+.. note::
+
+  The default tolerances are relatively loose. A user may wish to
+  enforce stricter tolerances. Relative/tolerances of :math:`10^{-12}`
+  for the desired and :math:`10^{-10}` may converge more slowly but
+  are expected to converge in most contexts.
 
 The maximum number of iterations the solver is allowed to take before
 giving up is ``pte_max_iter_per_mat`` multiplied by the number of

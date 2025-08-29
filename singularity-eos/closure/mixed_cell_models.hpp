@@ -20,9 +20,11 @@
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #include <cmath>
+#include <utility>
 
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
 #include <KokkosBatched_ApplyQ_Decl.hpp>
@@ -42,15 +44,21 @@ struct MixParams {
   bool verbose = false;
   bool iterate_t_guess = true;
   Real derivative_eps = 3.0e-6;
-  Real pte_rel_tolerance_p = 1.e-6;
-  Real pte_rel_tolerance_e = 1.e-6;
-  Real pte_rel_tolerance_t = 1.e-4;
-  Real pte_abs_tolerance_p = 0.0;
-  Real pte_abs_tolerance_e = 1.e-4;
-  Real pte_abs_tolerance_t = 0.0;
-  Real pte_rel_tolerance_v = 1e-6;
-  Real pte_abs_tolerance_v = 1e-6;
-  Real pte_residual_tolerance = 1.e-8;
+  Real pte_rel_tolerance_p = 1.0e-6;
+  Real pte_rel_tolerance_t = 1.0e-4;
+  Real pte_rel_tolerance_e = 1.0e-6;
+  Real pte_rel_tolerance_v = 1.0e-6;
+  Real pte_abs_tolerance_p = 1.0e-6;
+  Real pte_abs_tolerance_t = 1.0e-4;
+
+  Real pte_slow_convergence_thresh = 0.99;
+  Real pte_rel_tolerance_p_sufficient = 1.e2 * pte_rel_tolerance_p;
+  Real pte_rel_tolerance_t_sufficient = 10 * pte_rel_tolerance_t;
+  Real pte_rel_tolerance_e_sufficient = 1.e2 * pte_rel_tolerance_e;
+  Real pte_rel_tolerance_v_sufficient = 1.e2 * pte_rel_tolerance_v;
+  Real pte_abs_tolerance_p_sufficient = 1.e2 * pte_abs_tolerance_p;
+  Real pte_abs_tolerance_t_sufficient = 10 * pte_abs_tolerance_t;
+
   std::size_t pte_max_iter_per_mat = 128;
   Real line_search_alpha = 1.e-2;
   std::size_t line_search_max_iter = 6;
@@ -62,6 +70,7 @@ struct MixParams {
   std::size_t pte_small_step_tries = 2;
   Real pte_small_step_thresh = 1e-16;
   Real pte_max_dpdv = -1e-8;
+
   // JMM: note the deliberate integer here. Negative value means do
   // the default. Assuming here that we never have a problem with 2^63
   // materials...
@@ -70,6 +79,7 @@ struct MixParams {
 
 struct SolverStatus {
   bool converged = false;
+  bool slow_convergence_detected = false;
   std::size_t max_niter = 0;
   std::size_t max_line_niter = 0;
   std::size_t small_step_iters = 0;
@@ -195,7 +205,7 @@ bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
 
     Eigen::Map<Eigen::VectorXd> B(b, n);
     Eigen::Map<Eigen::VectorXd> X(scr, n);
-    X = A.lu().solve(B);
+    X = A.colPivHouseholderQr().solve(B);
 
     B = X;
 #endif // SINGULARITY_USE_KOKKOSKERNELS
@@ -236,15 +246,11 @@ class PTESolverBase {
   // after each iteration of the Newton solver.  This version just renormalizes the
   // volume fractions, which is useful to deal with roundoff error.
   PORTABLE_INLINE_FUNCTION
-  virtual void Fixup() const {
-    Real vsum = math_utils::sum_neumaier(vfrac, nmat);
-    for (std::size_t m = 0; m < nmat; ++m)
-      vfrac[m] *= robust::ratio(vfrac_total, vsum);
-  }
+  virtual void Fixup() { NormalizeVfrac(); }
   // Finalize restores the temperatures, energies, and pressures to unscaled values from
   // the internally scaled quantities used by the solvers
   PORTABLE_INLINE_FUNCTION
-  void Finalize() {
+  virtual void Finalize() {
     for (std::size_t m = 0; m < nmat; m++) {
       temp[m] *= Tnorm;
       u[m] *= uscale;
@@ -295,8 +301,13 @@ class PTESolverBase {
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
+<<<<<<< HEAD
   void NormalizeVfrac() {
     Real vfrac_sum = math_utils::sum_neumaier(vfrac, nmat);
+=======
+  void NormalizeVfrac() const {
+    Real vfrac_sum = sum_neumaier(vfrac, nmat);
+>>>>>>> 3517f5355c5b76d68d18e9a4f82365c7afcfc02a
     for (std::size_t m = 0; m < nmat; ++m) {
       vfrac[m] *= robust::ratio(vfrac_total, vfrac_sum);
     }
@@ -527,10 +538,7 @@ class PTESolverBase {
 
   PORTABLE_INLINE_FUNCTION
   Real ResidualNorm() const {
-    Real norm = 0.0;
-    for (std::size_t m = 0; m < neq; m++)
-      norm += residual[m] * residual[m];
-    return 0.5 * norm;
+    return 0.5 * sum_neumaier(residual, neq, 0, -1, [](const Real x) { return x * x; });
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -756,6 +764,7 @@ class PTESolverRhoT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::neq;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::ResidualNorm;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::NormalizeVfrac;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie_total;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::eos;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho;
@@ -818,6 +827,8 @@ class PTESolverRhoT
     // guestimate it as the material with the largest mass fraction,
     // though this may not always be correct.
     //
+    // At later iterations we will check the volume fractions again
+    // and pick the material with the largest one.
     if (params_.pte_reduced_system_exclude_idx >= 0) {
       ms = params_.pte_reduced_system_exclude_idx;
     } else {
@@ -843,6 +854,30 @@ class PTESolverRhoT
   }
 
   PORTABLE_INLINE_FUNCTION
+  void Fixup() {
+    // Volume fractions normalized by construction in this
+    // formulation, so no reason to normalize them here the way
+    // PTESolverBase does.
+    //
+    // Re-pick the material to exclude based on largest volume
+    // fraction, now that perhaps the volume fractions have been
+    // updated
+    if (params_.pte_reduced_system_exclude_idx < 0) {
+      Real alphamax = 0;
+      ms = 0;
+      for (std::size_t m = 0; m < nmat; ++m) {
+        if (vfrac[m] > alphamax) {
+          alphamax = vfrac[m];
+          ms = m;
+        }
+      }
+      // With the excluded material changed, the residual must be
+      // recomputed
+      Residual();
+    }
+  }
+
+  PORTABLE_INLINE_FUNCTION
   void Residual() const {
     Real esum = mix_impl::math_utils::sum_neumaier(u, nmat);
     residual[0] = utotal_scale - esum;
@@ -854,21 +889,24 @@ class PTESolverRhoT
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
-    Real mean_p = vfrac[0] * press[0];
-    Real error_p = 0.0;
-    for (std::size_t m = 1; m < nmat; ++m) {
+  auto CheckPTE() const {
+    using namespace mix_impl;
+    Real mean_p = 0;
+    for (std::size_t m = 0; m < nmat; ++m) {
       mean_p += vfrac[m] * press[m];
-      error_p += residual[m] * residual[m];
     }
-    error_p = std::sqrt(error_p);
+    Real error_p = std::sqrt(
+        sum_neumaier(residual, neq - 1, 1, -1, [](const Real x) { return x * x; }));
     Real error_u = std::abs(residual[0]);
     // Check for convergence
     bool converged_p = (error_p < params_.pte_rel_tolerance_p * std::abs(mean_p) ||
                         error_p < params_.pte_abs_tolerance_p);
-    bool converged_u =
-        (error_u < params_.pte_rel_tolerance_e || error_u < params_.pte_abs_tolerance_e);
-    return converged_p && converged_u;
+    bool converged_u = (error_u < params_.pte_rel_tolerance_e);
+    bool acceptable_p =
+        (error_p < params_.pte_rel_tolerance_p_sufficient * std::abs(mean_p) ||
+         error_p < params_.pte_abs_tolerance_p_sufficient);
+    bool acceptable_u = (error_u < params_.pte_rel_tolerance_e_sufficient);
+    return std::make_pair(converged_p && converged_u, acceptable_p && acceptable_u);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -959,7 +997,7 @@ class PTESolverRhoT
     for (std::size_t m = 0; m < nmat; m++) {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
-      const Real alpha_max = robust::ratio(rhobar[m], rho_min);
+      const Real alpha_max = std::min(1.0, robust::ratio(rhobar[m], rho_min));
       if (alpha_max < vfrac[m]) {
         // Despite our best efforts, we're already in the unstable regime (i.e.
         // dPdV_T > 0) so we would actually want to *increase* the step instead
@@ -1126,6 +1164,21 @@ class PTESolverPT
   }
 
   PORTABLE_INLINE_FUNCTION
+  void Finalize() {
+    for (std::size_t m = 0; m < nmat; m++) {
+      if (!variadic_utils::is_nullptr(press)) {
+        press[m] = Pequil * uscale;
+      }
+      if (!variadic_utils::is_nullptr(temp)) {
+        temp[m] = Tequil * Tnorm;
+      }
+      if (!variadic_utils::is_nullptr(u)) {
+        u[m] *= uscale;
+      }
+    }
+  }
+
+  PORTABLE_INLINE_FUNCTION
   void Residual() const {
     Real vsum = mix_impl::math_utils::sum_neumaier(vfrac, nmat);
     Real esum = mix_impl::math_utils::sum_neumaier(u, nmat);
@@ -1134,17 +1187,17 @@ class PTESolverPT
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
+  auto CheckPTE() const {
     Real error_v = std::abs(residual[RV]);
     Real error_u = std::abs(residual[RSIE]);
     // this may not be quite right as we may need an energy scaling factor
     // Check for convergence
-    bool converged_u = (error_u < params_.pte_rel_tolerance_e ||
-                        uscale * error_u < params_.pte_abs_tolerance_e);
-    bool converged_v =
-        (error_v < params_.pte_rel_tolerance_v || error_v < params_.pte_abs_tolerance_v);
+    bool converged_u = error_u < params_.pte_rel_tolerance_e;
+    bool converged_v = error_v < params_.pte_rel_tolerance_v;
+    bool acceptable_u = error_u < params_.pte_rel_tolerance_e_sufficient;
+    bool acceptable_v = error_v < params_.pte_rel_tolerance_v_sufficient;
 
-    return converged_v && converged_u;
+    return std::make_pair(converged_v && converged_u, acceptable_u && acceptable_v);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1367,7 +1420,7 @@ class PTESolverFixedT
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
+  auto CheckPTE() const {
     Real mean_p = vfrac[0] * press[0];
     Real error_p = 0;
     for (std::size_t m = 1; m < nmat; ++m) {
@@ -1379,9 +1432,12 @@ class PTESolverFixedT
     // Check for convergence
     bool converged_p = (error_p < params_.pte_rel_tolerance_p * std::abs(mean_p) ||
                         error_p < params_.pte_abs_tolerance_p);
-    bool converged_v =
-        (error_v < params_.pte_rel_tolerance_e || error_v < params_.pte_abs_tolerance_e);
-    return converged_p && converged_v;
+    bool converged_v = error_v < params_.pte_rel_tolerance_v;
+    bool acceptable_p =
+        (error_p < params_.pte_rel_tolerance_p_sufficient * std::abs(mean_p) ||
+         error_p < params_.pte_abs_tolerance_p_sufficient);
+    bool acceptable_v = error_v < params_.pte_rel_tolerance_v_sufficient;
+    return std::make_pair(converged_p && converged_v, acceptable_p && acceptable_v);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1588,7 +1644,7 @@ class PTESolverFixedP
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
+  auto CheckPTE() const {
     Real error_p = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
       error_p += residual[m] * residual[m];
@@ -1599,9 +1655,11 @@ class PTESolverFixedP
     // Check for convergence
     bool converged_p =
         (error_p < params_.pte_rel_tolerance_p || error_p < params_.pte_abs_tolerance_p);
-    bool converged_v =
-        (error_v < params_.pte_rel_tolerance_e || error_v < params_.pte_abs_tolerance_e);
-    return converged_p && converged_v;
+    bool converged_v = error_v < params_.pte_rel_tolerance_v;
+    bool acceptable_p = (error_p < params_.pte_rel_tolerance_p_sufficient ||
+                         error_p < params_.pte_abs_tolerance_p_sufficient);
+    bool acceptable_v = error_v < params_.pte_rel_tolerance_v_sufficient;
+    return std::make_pair(converged_p && converged_v, acceptable_p && acceptable_v);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1812,7 +1870,7 @@ class PTESolverRhoU
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
+  auto CheckPTE() const {
     Real mean_p = vfrac[0] * press[0];
     Real mean_t = rhobar[0] * temp[0];
     Real error_p = 0.0;
@@ -1831,7 +1889,12 @@ class PTESolverRhoU
                         error_p < params_.pte_abs_tolerance_p);
     bool converged_t = (error_t < params_.pte_rel_tolerance_t * mean_t ||
                         error_t < params_.pte_abs_tolerance_t);
-    return (converged_p && converged_t);
+    bool acceptable_p =
+        (error_p < params_.pte_rel_tolerance_p_sufficient * std::abs(mean_p) ||
+         error_p < params_.pte_abs_tolerance_p_sufficient);
+    bool acceptable_t = (error_t < params_.pte_rel_tolerance_t_sufficient * mean_t ||
+                         error_t < params_.pte_abs_tolerance_t_sufficient);
+    return std::make_pair(converged_p && converged_t, acceptable_p && acceptable_t);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1977,6 +2040,7 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
   SolverStatus status;
   Real &err = status.residual;
   bool &converged = status.converged;
+  bool close_enough = false;
 
   // initialize the system, fill in residual, and get its norm
   err = s.Init();
@@ -1986,14 +2050,17 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
 
   converged = false;
   const std::size_t pte_max_iter = s.Nmat() * params.pte_max_iter_per_mat;
-  const Real residual_tol = s.Nmat() * params.pte_residual_tolerance;
   auto &niter = s.Niter();
   auto &small_step_iters = status.small_step_iters;
   for (niter = 0; niter < pte_max_iter; ++niter) {
     status.max_niter = std::max(status.max_niter, niter);
 
     // Check for convergence
-    converged = s.CheckPTE();
+    // TODO(JMM): I wish I could use std::tie or structured binding,
+    // but our clang-based toolchain does not like it
+    auto check = s.CheckPTE();
+    converged = check.first;
+    close_enough = check.second;
     if (converged) break;
 
     // compute the Jacobian
@@ -2053,16 +2120,19 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     // apply fixes post update, e.g. renormalize volume fractions to deal with round-off
     s.Fixup();
 
-    // check for the case where we have converged as much as precision allows
-    if (err > 0.5 * err_old && err < residual_tol) {
+    // check for the case where the solver is no longer moving towards
+    // a descent direction sufficiently rapidly, but we believe we
+    // have converged to an acceptable level This can also happen if
+    // the residual is so small we are at the limits of floating point
+    // precision.
+    if (((err > params.pte_slow_convergence_thresh * err_old) ||
+         niter == pte_max_iter - 1) &&
+        close_enough) {
       converged = true;
+      status.slow_convergence_detected = true;
       break;
     }
   }
-  // Call it converged even though CheckPTE never said it was because the residual is
-  // small.  Helps to avoid "failures" where things have actually converged as well as
-  // finite precision allows
-  if (!converged && err < residual_tol) converged = true;
   // undo any scaling that was applied internally for the solver
   s.Finalize();
   return status;

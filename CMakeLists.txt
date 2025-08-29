@@ -24,7 +24,7 @@ endif()
 # declare the project name
 project(
   singularity-eos
-  VERSION 1.9.2
+  VERSION 1.10.0
   LANGUAGES NONE)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
@@ -59,6 +59,9 @@ option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
 option(SINGULARITY_EOSPAC_ENABLE_SHMEM
   "Support shared memory with EOSPAC backend. Requires EOSPAC version 6.5.7."
   OFF)
+option(SINGULARITY_EOSPAC_USE_MODERN_ERROR_CODES
+  "Use the current eospac implementation of error codes, which must be compared with a function. Requires EOSPAC version 6.3.0 or greater."
+  ON)
 
 # TODO This should be dependent option (or fortran option)
 option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON)
