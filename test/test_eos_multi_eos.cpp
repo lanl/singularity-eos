@@ -26,7 +26,7 @@
 
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
-#include <singularity-eos/eos/modifiers/multi_eos.hpp>
+#include <singularity-eos/eos/multi_eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::DavisProducts;
