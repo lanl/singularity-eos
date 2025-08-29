@@ -16,6 +16,7 @@
 #include <ports-of-call/portable_arrays.hpp>
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/math_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
@@ -37,7 +38,7 @@ SCENARIO("Kahan summation", "[Kahan]") {
       portableReduce(
           "compute Kahan sum", 0, 1,
           PORTABLE_LAMBDA(const int, Real &s) {
-            s = singularity::mix_impl::sum_neumaier(A, N - 1, 1); // with offset
+            s = singularity::math_utils::sum_neumaier(A, N - 1, 1); // with offset
           },
           sum);
       THEN("The total is what we expect within machine epsilon") {
