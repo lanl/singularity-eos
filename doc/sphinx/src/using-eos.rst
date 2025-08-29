@@ -1202,8 +1202,8 @@ The method
 
 .. code-block:: cpp
 
-   template <template <class> typename Container_t = std::set>
-   static inline Container_t<std::string> AvailableEOSs();
+   template <typename Container_t = std::set<std::string>>
+   static inline Container_t AvailableEOSs();
 
 returns a container of strings representing all equation of state models available in the variant. By default, returns a ``std::set<std::string>``.
 

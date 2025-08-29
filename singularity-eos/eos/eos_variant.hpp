@@ -1362,8 +1362,8 @@ class Variant {
     return mpark::visit([](const auto &eos) { return eos.EosPyType(); }, eos_);
   }
 
-  template <template <class> typename Container_t = std::set>
-  static inline Container_t<std::string> AvailableEOSs() {
+  template <typename Container_t = std::set<std::string>>
+  static inline Container_t AvailableEOSs() {
     return {EOSs::EosType()...};
   }
   static inline constexpr auto AvailableEOSTypes() {
