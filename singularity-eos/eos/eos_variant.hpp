@@ -107,7 +107,7 @@ class Variant {
     return mpark::visit(
         [&](const auto &eos) {
           auto modified = eos.template ConditionallyModify<Mod>(
-              variadic_utils::type_list<EOSs...>(), std::forward<Args>(args)...);
+              AvailableEOSTypes(), std::forward<Args>(args)...);
           return eos_variant<EOSs...>(modified);
         },
         eos_);
@@ -1363,6 +1363,9 @@ class Variant {
   template <template <class> typename Container_t = std::set>
   static inline Container_t<std::string> AvailableEOSs() {
     return {EOSs::EosType()...};
+  }
+  static inline constexpr auto AvailableEOSTypes() {
+    return variadic_utils::type_list<EOSs...>();
   }
 
   inline void Finalize() noexcept {
