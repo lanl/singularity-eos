@@ -15,6 +15,10 @@
 #ifndef EOS_VARIANT_HPP
 #define EOS_VARIANT_HPP
 
+#include <set>
+#include <string>
+#include <vector>
+
 #include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
@@ -1356,13 +1360,9 @@ class Variant {
     return mpark::visit([](const auto &eos) { return eos.EosPyType(); }, eos_);
   }
 
-  template <typename... Ts>
-  static inline std::vector<std::string> AvailableEOSs() {
-    return {Ts::EosType()...};
-  }
-
-  static inline std::vector<std::string> AvailableEOSs() {
-    return AvailableEOSs<EOSs...>();
+  template <template <class> typename Container_t = std::set>
+  static inline Container_t<std::string> AvailableEOSs() {
+    return {EOSs::EosType()...};
   }
 
   inline void Finalize() noexcept {
