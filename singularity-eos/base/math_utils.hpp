@@ -58,6 +58,30 @@ PORTABLE_FORCEINLINE_FUNCTION auto pow10(const Real x) {
   return std::exp(ln10 * x);
 }
 
+/*
+ * Kahan summation, with the Neumaier correction
+ * https://onlinelibrary.wiley.com/doi/10.1002/zamm.19740540106
+ */
+template <typename Data_t>
+PORTABLE_INLINE_FUNCTION Real sum_neumaier(Data_t &&data, std::size_t n,
+                                           std::size_t offset = 0,
+                                           std::size_t iskip = -1) {
+  Real sum = 0;
+  Real c = 0; // correction
+  for (std::size_t i = 0; i < n; ++i) {
+    if (i == iskip) continue;
+    Real x = data[i + offset];
+    Real t = sum + x;
+    if (std::abs(sum) >= std::abs(x)) {
+      c += (sum - t) + x;
+    } else {
+      c += (x - t) + sum;
+    }
+    sum = t;
+  }
+  return sum + c;
+}
+
 } // namespace math_utils
 } // namespace singularity
 
