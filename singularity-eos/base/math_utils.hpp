@@ -15,6 +15,8 @@
 #ifndef SINGULARITY_EOS_BASE_MATH_UTILS_HPP_
 #define SINGULARITY_EOS_BASE_MATH_UTILS_HPP_
 
+#include <cmath>
+
 #include <ports-of-call/portability.hpp>
 
 namespace singularity {
