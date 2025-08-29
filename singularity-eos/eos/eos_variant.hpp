@@ -1356,6 +1356,15 @@ class Variant {
     return mpark::visit([](const auto &eos) { return eos.EosPyType(); }, eos_);
   }
 
+  template <typename... Ts>
+  static inline std::vector<std::string> GetPossibleEosTypes() {
+    return {Ts::EosType()...};
+  }
+
+  static inline std::vector<std::string> GetPossibleEosTypes() {
+    return GetPossibleEosTypes<EOSs...>();
+  }
+
   inline void Finalize() noexcept {
     return mpark::visit([](auto &eos) { return eos.Finalize(); }, eos_);
   }
