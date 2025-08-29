@@ -301,13 +301,8 @@ class PTESolverBase {
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
-<<<<<<< HEAD
   void NormalizeVfrac() {
     Real vfrac_sum = math_utils::sum_neumaier(vfrac, nmat);
-=======
-  void NormalizeVfrac() const {
-    Real vfrac_sum = sum_neumaier(vfrac, nmat);
->>>>>>> 3517f5355c5b76d68d18e9a4f82365c7afcfc02a
     for (std::size_t m = 0; m < nmat; ++m) {
       vfrac[m] *= robust::ratio(vfrac_total, vfrac_sum);
     }
@@ -538,7 +533,7 @@ class PTESolverBase {
 
   PORTABLE_INLINE_FUNCTION
   Real ResidualNorm() const {
-    return 0.5 * sum_neumaier(residual, neq, 0, -1, [](const Real x) { return x * x; });
+    return 0.5 * math_utils::sum_neumaier(residual, neq, 0, -1, [](const Real x) { return x * x; });
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -879,7 +874,7 @@ class PTESolverRhoT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real esum = mix_impl::math_utils::sum_neumaier(u, nmat);
+    Real esum = math_utils::sum_neumaier(u, nmat);
     residual[0] = utotal_scale - esum;
     std::size_t ires = 1;
     for (std::size_t m = 0; m < nmat; ++m) {
@@ -896,7 +891,7 @@ class PTESolverRhoT
       mean_p += vfrac[m] * press[m];
     }
     Real error_p = std::sqrt(
-        sum_neumaier(residual, neq - 1, 1, -1, [](const Real x) { return x * x; }));
+        math_utils::sum_neumaier(residual, neq - 1, 1, -1, [](const Real x) { return x * x; }));
     Real error_u = std::abs(residual[0]);
     // Check for convergence
     bool converged_p = (error_p < params_.pte_rel_tolerance_p * std::abs(mean_p) ||
@@ -981,7 +976,7 @@ class PTESolverRhoT
     // control how big of a step toward vfrac = 0 is allowed
     // 0th material is special as delta volume fraction for it is
     // minus the sum of the deltas for the others
-    Real dalphaskip = -mix_impl::math_utils::sum_neumaier(dx, nmat - 1, 1);
+    Real dalphaskip = -math_utils::sum_neumaier(dx, nmat - 1, 1);
     std::size_t idx = 1;
     for (std::size_t m = 0; m < nmat; ++m) {
       Real mydx = (m == ms) ? dalphaskip : dx[idx++];
@@ -1037,7 +1032,7 @@ class PTESolverRhoT
       if (ms == m) continue;
       vfrac[m] = vtemp[m] + scale * dx[idx++];
     }
-    vfrac[ms] = mix_impl::math_utils::sum_neumaier(vfrac, nmat, 0, ms);
+    vfrac[ms] = math_utils::sum_neumaier(vfrac, nmat, 0, ms);
     vfrac[ms] = 1 - vfrac[ms];
     for (std::size_t m = 0; m < nmat; ++m) {
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
@@ -1144,7 +1139,7 @@ class PTESolverPT
       // always approach from >0 side
       Pequil += std::abs(press[m]) * vfrac[m];
     }
-    Real vsum = mix_impl::math_utils::sum_neumaier(vfrac, nmat);
+    Real vsum = math_utils::sum_neumaier(vfrac, nmat);
     Pequil /= vsum;
     Tequil = 1; // Because it's = Tnorm = initial guess
 
@@ -1180,8 +1175,8 @@ class PTESolverPT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = mix_impl::math_utils::sum_neumaier(vfrac, nmat);
-    Real esum = mix_impl::math_utils::sum_neumaier(u, nmat);
+    Real vsum = math_utils::sum_neumaier(vfrac, nmat);
+    Real esum = math_utils::sum_neumaier(u, nmat);
     residual[RV] = vfrac_total - vsum;
     residual[RSIE] = utotal_scale - esum;
   }
@@ -1412,7 +1407,7 @@ class PTESolverFixedT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = mix_impl::math_utils::sum_neumaier(vfrac, nmat);
+    Real vsum = math_utils::sum_neumaier(vfrac, nmat);
     residual[0] = vfrac_total - vsum;
     for (std::size_t m = 0; m < nmat - 1; ++m) {
       residual[1 + m] = press[m] - press[m + 1];
@@ -1636,7 +1631,7 @@ class PTESolverFixedP
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = mix_impl::math_utils::sum_neumaier(vfrac, nmat);
+    Real vsum = math_utils::sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m) {
       residual[m] = robust::ratio(Pequil, uscale) - press[m];
     }
@@ -1857,8 +1852,8 @@ class PTESolverRhoU
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = mix_impl::math_utils::sum_neumaier(vfrac, nmat);
-    Real esum = mix_impl::math_utils::sum_neumaier(u, nmat);
+    Real vsum = math_utils::sum_neumaier(vfrac, nmat);
+    Real esum = math_utils::sum_neumaier(u, nmat);
     residual[0] = vfrac_total - vsum;
     residual[1] = utotal_scale - esum;
     for (std::size_t m = 0; m < nmat - 1; ++m) {
