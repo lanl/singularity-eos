@@ -62,15 +62,18 @@ PORTABLE_FORCEINLINE_FUNCTION auto pow10(const Real x) {
  * Kahan summation, with the Neumaier correction
  * https://onlinelibrary.wiley.com/doi/10.1002/zamm.19740540106
  */
-template <typename Data_t>
-PORTABLE_INLINE_FUNCTION Real sum_neumaier(Data_t &&data, std::size_t n,
-                                           std::size_t offset = 0,
-                                           std::size_t iskip = -1) {
+struct IdentityOperator {
+  PORTABLE_FORCEINLINE_FUNCTION Real operator()(const Real x) const { return x; }
+};
+template <typename Data_t, typename Operator_t = IdentityOperator>
+PORTABLE_FORCEINLINE_FUNCTION Real
+sum_neumaier(Data_t &&data, std::size_t n, std::size_t offset = 0, std::size_t iskip = -1,
+             const Operator_t &op = IdentityOperator()) {
   Real sum = 0;
   Real c = 0; // correction
   for (std::size_t i = 0; i < n; ++i) {
     if (i == iskip) continue;
-    Real x = data[i + offset];
+    Real x = op(data[i + offset]);
     Real t = sum + x;
     if (std::abs(sum) >= std::abs(x)) {
       c += (sum - t) + x;
