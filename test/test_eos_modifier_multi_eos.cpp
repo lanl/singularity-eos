@@ -29,10 +29,9 @@
 #include <singularity-eos/eos/modifiers/multi_eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::DavisReactants;
 using singularity::DavisProducts;
+using singularity::DavisReactants;
 using singularity::ShiftedEOS;
-
 
 SCENARIO("Test the multi-eos modifier with reactants and products EOS",
          "[MultiEOS][DavisReactants][DavisProducts]") {
@@ -45,11 +44,11 @@ SCENARIO("Test the multi-eos modifier with reactants and products EOS",
     constexpr Real MJ_per_kg = 1.0e10;
 
     // Davis Reactants EOS
-    constexpr Real rho0_DP = 1.890;           // g/cm^3
-    constexpr Real e0_DP = 0.;                // erg / g
-    constexpr Real P0_DP = 0.;                // microbar
-    constexpr Real T0_DP = 297;               // K
-    constexpr Real A = 1.8 * std::sqrt(GPa);  // sqrt(microbar)
+    constexpr Real rho0_DP = 1.890;          // g/cm^3
+    constexpr Real e0_DP = 0.;               // erg / g
+    constexpr Real P0_DP = 0.;               // microbar
+    constexpr Real T0_DP = 297;              // K
+    constexpr Real A = 1.8 * std::sqrt(GPa); // sqrt(microbar)
     constexpr Real B = 4.6;
     constexpr Real C = 0.34;
     constexpr Real G0 = 0.56;

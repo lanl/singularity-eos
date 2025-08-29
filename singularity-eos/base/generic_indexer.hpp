@@ -20,29 +20,28 @@
 namespace singularity {
 
 // Index into an arbitrary array with an arbitrary map
-template<typename arrT, typename mapT>
+template <typename arrT, typename mapT>
 struct GenericIndexer {
   arrT arr_;
   mapT map_;
 
-  template<typename arrT_, typename mapT_>
-  constexpr
-  GenericIndexer(arrT_&& arr_in, mapT_&& map_in)
-      : arr_{std::forward<arrT_>(arr_in)}
-      , map_{std::forward<mapT_>(map_in)}
-  {}
+  template <typename arrT_, typename mapT_>
+  constexpr GenericIndexer(arrT_ &&arr_in, mapT_ &&map_in)
+      : arr_{std::forward<arrT_>(arr_in)}, map_{std::forward<mapT_>(map_in)} {}
 
-  template<typename idxT>
-  constexpr
-  auto &operator[](const idxT i) { return arr_[map_[i]]; }
+  template <typename idxT>
+  constexpr auto &operator[](const idxT i) {
+    return arr_[map_[i]];
+  }
 
-  template<typename idxT>
-  constexpr
-  const auto &operator[](const idxT i) const { return arr_[map_[i]]; }
+  template <typename idxT>
+  constexpr const auto &operator[](const idxT i) const {
+    return arr_[map_[i]];
+  }
 };
 // CTAD
-template<typename arrT_, typename mapT_>
-GenericIndexer(arrT_&& arr_in, mapT_&& map_in) -> GenericIndexer<arrT_, mapT_>;
+template <typename arrT_, typename mapT_>
+GenericIndexer(arrT_ &&arr_in, mapT_ &&map_in) -> GenericIndexer<arrT_, mapT_>;
 
 } // namespace singularity
 
