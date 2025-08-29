@@ -12,6 +12,8 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was made in part with generative AI.
+
 #ifndef EOS_VARIANT_HPP
 #define EOS_VARIANT_HPP
 
