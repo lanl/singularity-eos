@@ -65,7 +65,6 @@ register_headers(
     eos/modifiers/shifted_eos.hpp
     eos/modifiers/eos_unitsystem.hpp
     eos/modifiers/floored_energy.hpp
-    eos/modifiers/multi_eos.hpp
     eos/modifiers/zsplit_eos.hpp
     eos/eos_base.hpp
     eos/eos_eospac.hpp
@@ -75,6 +74,7 @@ register_headers(
     eos/variant_utils.hpp
     eos/eos_carnahan_starling.hpp
     eos/eos_electrons.hpp
+    eos/multi_eos.hpp
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
