@@ -1131,16 +1131,16 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // Use injected average functions for gruneisen and bulk modulus averaging
     GruneisenAvgT g_avg_funct{};
     auto avg_gruneisen = g_avg_funct(
-    [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-       LambdaIndexer lambda) {
-      if constexpr (eos.PreferredInput() == thermalqs::density |
-                    thermalqs::temperature) {
-        return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
-      } else {
-        return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
-      }
-    },
-    density_mat, sie_mat, temp, lambda, std::make_index_sequence<nmat_>{});
+        [](auto const &eos, Real const rho, Real const sie, Real const temperature,
+           LambdaIndexer lambda) {
+          if constexpr (eos.PreferredInput() == thermalqs::density |
+                        thermalqs::temperature) {
+            return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
+          } else {
+            return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
+          }
+        },
+        density_mat, sie_mat, temp, lambda, std::make_index_sequence<nmat_>{});
     dpde = rho * avg_gruneisen;
 
     BulkModAvgT b_avg_funct{};

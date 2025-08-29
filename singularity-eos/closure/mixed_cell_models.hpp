@@ -533,7 +533,8 @@ class PTESolverBase {
 
   PORTABLE_INLINE_FUNCTION
   Real ResidualNorm() const {
-    return 0.5 * math_utils::sum_neumaier(residual, neq, 0, -1, [](const Real x) { return x * x; });
+    return 0.5 * math_utils::sum_neumaier(residual, neq, 0, -1,
+                                          [](const Real x) { return x * x; });
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -890,8 +891,8 @@ class PTESolverRhoT
     for (std::size_t m = 0; m < nmat; ++m) {
       mean_p += vfrac[m] * press[m];
     }
-    Real error_p = std::sqrt(
-        math_utils::sum_neumaier(residual, neq - 1, 1, -1, [](const Real x) { return x * x; }));
+    Real error_p = std::sqrt(math_utils::sum_neumaier(
+        residual, neq - 1, 1, -1, [](const Real x) { return x * x; }));
     Real error_u = std::abs(residual[0]);
     // Check for convergence
     bool converged_p = (error_p < params_.pte_rel_tolerance_p * std::abs(mean_p) ||
