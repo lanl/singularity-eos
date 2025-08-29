@@ -12,6 +12,9 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+#ifndef SINGULARITY_EOS_BASE_GENERIC_INDEXER_HPP_
+#define SINGULARITY_EOS_BASE_GENERIC_INDEXER_HPP_
+
 #include <utility>
 
 namespace singularity {
@@ -42,3 +45,5 @@ template<typename arrT_, typename mapT_>
 GenericIndexer(arrT_&& arr_in, mapT_&& map_in) -> GenericIndexer<arrT_, mapT_>;
 
 } // namespace singularity
+
+#endif // #ifndef SINGULARITY_EOS_BASE_GENERIC_INDEXER_HPP_
