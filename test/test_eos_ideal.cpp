@@ -279,6 +279,44 @@ SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
   }
 }
 
+SCENARIO("Variant EOS type information", "[Variant][EosType]") {
+  GIVEN("A variant containing an ideal gas") {
+    constexpr Real Cv = 2.0;
+    constexpr Real gm1 = 0.5;
+    EOS eos_variant = IdealGas(gm1, Cv);
+    
+    THEN("EosType returns the correct type string") {
+      REQUIRE(eos_variant.EosType() == "IdealGas");
+    }
+    
+    THEN("EosPyType returns the correct Python type string") {
+      REQUIRE(eos_variant.EosPyType() == "IdealGas");
+    }
+    
+    THEN("AvailableEOSs returns a vector containing all possible EOS types") {
+      auto types = eos_variant.AvailableEOSs();
+      REQUIRE(types.size() == 2);
+      REQUIRE(std::find(types.begin(), types.end(), "IdealGas") != types.end());
+      REQUIRE(std::find(types.begin(), types.end(), "IdealElectrons") != types.end());
+    }
+  }
+  
+  GIVEN("A variant containing ideal electrons") {
+    constexpr Real Abar = 26;
+    constexpr Real Zbar = 55.8;
+    MeanAtomicProperties AZbar(Abar, Zbar);
+    EOS eos_variant = IdealElectrons(AZbar);
+    
+    THEN("EosType returns the correct type string") {
+      REQUIRE(eos_variant.EosType() == "IdealElectrons");
+    }
+    
+    THEN("EosPyType returns the correct Python type string") {
+      REQUIRE(eos_variant.EosPyType() == "IdealElectrons");
+    }
+  }
+}
+
 SCENARIO("Ideal electron gas", "[IdealGas][IdealEelctrons]") {
   GIVEN("An ideal electron gas from partially ionized iron") {
     constexpr Real Abar = 26;
