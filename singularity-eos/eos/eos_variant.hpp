@@ -1357,12 +1357,12 @@ class Variant {
   }
 
   template <typename... Ts>
-  static inline std::vector<std::string> GetPossibleEosTypes() {
+  static inline std::vector<std::string> AvailableTypes() {
     return {Ts::EosType()...};
   }
 
-  static inline std::vector<std::string> GetPossibleEosTypes() {
-    return GetPossibleEosTypes<EOSs...>();
+  static inline std::vector<std::string> AvailableTypes() {
+    return AvailableTypes<EOSs...>();
   }
 
   inline void Finalize() noexcept {
