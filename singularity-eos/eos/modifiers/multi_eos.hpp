@@ -48,13 +48,13 @@ struct VolumeFracHarmonicAverageFunctor {
                             LambdaIndexer const& lambda,
                             std::index_sequence<Is...>) const {
     // Note that the function should appropriately invert any quantity that
-    return robust_ratio(
+    return robust::ratio(
       1.0,
       (
         ( /* volume fraction */
           lambda[IndexableTypes::MassFraction<Is>{}] * density / density_arr[Is]
           /* Inverse value to be volume-averaged */
-           * robust_ratio(
+           * robust::ratio(
               1.0,
               f(
                 std::get<Is>(models),
@@ -166,7 +166,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   // given by input1 and input2
   template<typename Func, typename LambdaIndexer,
            std::size_t... Is>
-  Real massFracAvgQuantityAtOneState(Func&& f, Real input1, Real input2,
+  Real massFracAverageQuantityAtOneState(Func&& f, Real input1, Real input2,
                                   LambdaIndexer const& lambda,
                                   std::index_sequence<Is...>) const {
     // Note that the function signature should take the EOS as its first argument
@@ -283,7 +283,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
   static std::string EosPyType() {
     // Use a left fold expression to sum the model names (C++17)
-    std::string all_models = (std::string() + ... + EOSModelsT::EosType());
+    std::string all_models = (std::string() + ... + EOSModelsT::EosPyType());
     return "MultiEOS" + all_models;
   }
 
@@ -344,13 +344,13 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   // Compute volume fractions and possibily material densities from mass
   // fractions and total density
   template<typename MassFracT, typename VolFracT, typename DensityT, typename SieT,
-           typename PTEMatT>
+           typename PTEMatT, typename EosArrT>
   PORTABLE_FORCEINLINE_FUNCTION
   void SetUpPTE(MassFracT mass_fracs, VolFracT vol_fracs,
                 DensityT density_mat, SieT sie_mat, PTEMatT pte_mats, size_t &npte,
-                Real &vfrac_tot, const Real density_tot, const Real sie_tot) const {
+                Real &vfrac_tot, const Real density_tot, const Real sie_tot,
+                EosArrT eos_arr) const {
     npte = 0;
-    vfrac_tot = 0;
     for (size_t m = 0; m < nmat_; m++) {
 
       // Check whether a material is present or not
@@ -370,14 +370,12 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       npte += 1;
 
       // Calculate volume fraction from input density to decide whether it was
-      // sane or not. The volume fraction lower bound is essentially the volume
-      // fraction of a material at the mass fraction limit whose specific
-      // volume is `volume_factor_max` more dense than the average material
-      // density.
+      // sane or not. The volume fraction lower bound is given by the maximum
+      // density from the EOS
       const auto vol_frac_test = mass_fracs[m]
         * robust::ratio(density_tot, density_mat[m]);
-      constexpr auto volume_factor_max = 1.0e-6;
-      const auto vol_frac_cutoff = mass_frac_cutoff_ * volume_factor_max;
+      const auto vol_frac_cutoff = mass_frac_cutoff_
+        * robust::ratio(density_tot, eos_arr[m].MaximumDensity());
       if (!std::isnormal(density_mat[m]) || vol_frac_test > 1.0
           || vol_frac_test < vol_frac_cutoff) {
         // Bad density guess... fall back to average value
@@ -388,9 +386,9 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
         vol_fracs[m] = vol_frac_test;
       }
 
-      // This ensures volume fractions are consistent with material densities
-      vfrac_tot += vol_fracs[m];
     }
+
+    vfrac_tot = math_utils::sum_neumaier(vol_fracs, nmat_);
 
     // JHP: I think we should always test this unless it is proven to be a performance
     // bottleneck
@@ -427,12 +425,15 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // Extract the mass fractions from the lambdas
     PopulateMassFracArray(mass_fracs, lambdas); // Guarantees sum = 1
 
+    // Create array of pointers to EOS models
+    const auto eos_arr = CreateEOSArray()
+
     // Compute volume fractions from mass fractions and densities. Mark
     // materials to participate in PTE
     size_t npte = 0;
     Real vfrac_tot = 0;
     SetUpPTE(mass_fracs, vol_fracs, density_mat, sie_mat, pte_mats, npte, vfrac_tot,
-             density_tot, sie_tot);
+             density_tot, sie_tot, eos_arr);
 
     // Initialize solver scratch memory (including cache)
     constexpr int pte_solver_scratch_size = PTESolverPTRequiredScratch(nmat_) + nmat_
@@ -445,7 +446,6 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                                                neq * (neq + 4) + 2 * npte);
 
     // Create indexers for the EOS
-    const auto eos_arr = CreateEOSArray()
     const auto eos_idxr = GenericIndexer(eos_arr, pte_mats);
 
     // Solve for PTE state
@@ -519,6 +519,9 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // Extract the mass fractions from the lambdas
     PopulateMassFracArray(mass_fracs, lambdas); // Guarantees sum = 1
 
+    // Create array of pointers to EOS models
+    const auto eos_arr = CreateEOSArray()
+
     // Compute volume fractions from mass fractions and densities. Mark
     // materials to participate in PTE
     size_t npte = 0;
@@ -526,7 +529,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     sie_tot = 0;  // Initialize to some value for bad guesses or non-participating
                   // materials
     SetUpPTE(mass_fracs, vol_fracs, density_mat, pte_mats, npte, vfrac_tot, density_tot,
-             sie_tot);
+             sie_tot, eos_arr);
 
     // Initialize solver scratch memory (including cache)
     constexpr int pte_solver_scratch_size = PTESolverFixedTRequiredScratch(nmat_) + nmat_
@@ -539,8 +542,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                                                neq * (neq + 4) + 2 * npte);
 
     // Create indexers for the EOS
-    const auto eos_idxr = GenericIndexer(CreateEOSArray(), pte_mats);
-
+    const auto eos_idxr = GenericIndexer(eos_arr, pte_mats);
 
     // Initialize tempeature array to the fixed temperature. This likely isn't
     // necessary since the scalar temperature guess _should_ be used in favor
@@ -625,6 +627,9 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // Extract the mass fractions from the lambdas
     PopulateMassFracArray(mass_fracs, lambdas); // Guarantees sum = 1
 
+    // Create array of pointers to EOS models
+    const auto eos_arr = CreateEOSArray()
+
     // Compute volume fractions from mass fractions and densities. Mark
     // materials to participate in PTE
     size_t npte = 0;
@@ -632,7 +637,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     sie_tot = 0;  // Initialize to some value for bad guesses or non-participating
                   // materials
     SetUpPTE(mass_fracs, vol_fracs, density_mat, pte_mats, npte, vfrac_tot, density_tot,
-             sie_tot);
+             sie_tot, eos_arr);
 
     // Initialize solver scratch memory (including cache)
     constexpr int pte_solver_scratch_size = PTESolverFixedPRequiredScratch(nmat_) + nmat_
@@ -645,7 +650,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                                                neq * (neq + 4) + 2 * npte);
 
     // Create indexers for the EOS
-    const auto eos_idxr = GenericIndexer(CreateEOSArray(), pte_mats);
+    const auto eos_idxr = GenericIndexer(eos_arr, pte_mats);
 
 
     // Initialize pressure array to the fixed pressure. This likely isn't
@@ -778,10 +783,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     assign_mass_fractions(mass_fracs, lambdas, std::make_index_sequence<nmat_>{});
 
     // Normalize the mass fractions. JHP: Is this necessary?
-    Real mass_frac_sum = 0.;
-    for (size_t m = 0; m < nmat_ ; m++) {
-      mass_frac_sum += mass_fracs[m];
-    }
+    Real mass_frac_sum = math_utils::sum_neumaier(mass_fracs, nmat_);
     PORTABLE_REQUIRE(mass_frac_sum > 0., "Mass fractions sum to zero");
     for (size_t m = 0; m < nmat_; m++) {
       mass_fracs[m] /= mass_frac_sum;
@@ -1265,62 +1267,151 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   // 3T member functions
   template <typename LambdaIndexer, SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
-      const Real rho, const Real temperature,
+      const Real density, const Real temperature,
       LambdaIndexer &&lambda = static_cast<Real *>(nullptr)) const {
-    // TODO
-    // Average over the contributions from each EOS
+    return massFracAverageQuantityAtOneState(
+        [&](auto const& eos, Real R, Real T, LambdaIndexer lambda) {
+          return eos.MeanAtomicMassFromDensityTemperature(R, T, lambda);
+        },
+        rho,
+        temperature,
+        lambda,
+        std::make_index_sequence<nmat_>()
+    );
   }
   template <typename LambdaIndexer, SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
       const Real rho, const Real temperature,
       LambdaIndexer &&lambda = static_cast<Real *>(nullptr)) const {
-    // TODO
-    // Average over the contributions from each EOS
+    return massFracAverageQuantityAtOneState(
+        [&](auto const& eos, Real R, Real T, LambdaIndexer lambda) {
+          return eos.MeanAtomicNumberFromDensityTemperature(R, T, lambda);
+        },
+        rho,
+        temperature,
+        lambda,
+        std::make_index_sequence<nmat_>()
+    );
   }
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicMass() const {
-    // TODO
-    // Average over the contributions from each EOS
+    // Since we have no mass fraction information, assume equal weights in this
+    // instance
+    return = (0. + ... + EOSModelsT::MeanAtomicMass()) / nmat_;
   }
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicNumber() const {
-    // TODO
-    // Average over the contributions from each EOS
+    // Since we have no mass fraction information, assume equal weights in this
+    // instance
+    return = (0. + ... + EOSModelsT::MeanAtomicNumber()) / nmat_;
   }
 
   // Modifier member functions
   static inline constexpr bool IsModified() {
-    return true;
+    // Even though this class could be considered a modifier, there is no clean
+    // way to return an "unmodified object" since this class takes a collection
+    // of EOS objects. So we'll claim this isn't a modifier for this purpose
+    return false;
   }
-  inline constexpr const std::tuple<EOSModelsT...> UnmodifyOnce() {
-    return models_;
+  inline constexpr const auto UnmodifyOnce() {
+    // Even though this class could be considered a modifier, there is no clean
+    // way to return an "unmodified object" since this class takes a collection
+    // of EOS objects. So we'll claim this isn't a modifier for this purpose
+    return *this;
   }
 
   // Dynamic and shared memory member functions (normally included via macro)
   std::size_t DynamicMemorySizeInBytes() const {
-    // TODO
-    // Add the contributions from each EOS
+    return = (0 + ... + EOSModelsT::DynamicMemorySizeInBytes());
   }
   std::size_t SharedMemorySizeInBytes() const {
-    // TODO
-    // Add the contributions from each EOS
+    return = (0 + ... + EOSModelsT::SharedMemorySizeInBytes());
   }
-  std::size_t DumpDynamicMemory(char *dst) {
-    // TODO
-    // It seems like we'll need to dump from each EOS and then advance the
-    // pointer to the next stretch of available memory
+
+  std::size_t DumpDynamicMemory(char* dst) {
+    // Call each model's DumpDynamicMemory(dst_i) in order and return total
+    // bytes written
+    std::size_t total = 0;
+
+    std::apply(
+      [&](auto&... eos) {
+        // Each term updates 'total' before the next term sees it.
+        (( total += eos.DumpDynamicMemory(dst + total) ), ...);
+      },
+      models_
+    );
+
+    return total;
   }
-  std::size_t SetDynamicMemory(char *src,
-                               const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
-    // TODO
-    // I think I should loop through the source memory and provide each EOS with
-    // a pointer to where its memory begins
+
+  std::size_t SetDynamicMemory(char* src, SharedMemSettings stngs = DEFAULT_SHMEM_STNGS) {
+
+    // Source and shared memory pointers
+    char* p_src = src;
+    char* p_shared = stngs.data;
+
+    // Work on a local, mutable copy in order to increment the shared memory pointer
+    SharedMemSettings current_shared_stngs = stngs;
+
+    // Snapshot the base of the shared memory block (may be nullptr).
+    char* shm_base = stngs.data;
+
+    // We keep track of how far we increment in data space
+    std::size_t total = 0;
+
+    std::apply(
+      [&p_src, &p_shared, &current_shared_stngs](auto&... eos) {
+        std::size_t shared_increment = 0;
+        std::size_t src_increment;
+        // One iteration per EOS, left-to-right.
+        ((
+          (
+            // 1) Increment the per-EOS shared-memory pointer
+            current_shared_stngs.data = p_shared == nullptr
+              ? (p_shared + shared_increment) : nullptr,
+
+            // 2) Set the dynamic memory and record how much was used
+            src_increment = eos.SetDynamicMemory(p_src, current_shared_stngs),
+
+            // 3) Bump the shared-memory offset by the model's declared size.
+            //    This _may_ be different from the  src_increment
+            shared_increment = eos.SharedMemorySizeInBytes(),
+
+            // 4) We need to figure out how much to incremennt the src pointer
+            //    depending on the output of `AllDynamicMemoryIsShareable()`:
+            //    - Spiner either points to shared memory or the src memory, but
+            //      not both, so its shared memory size is the same as its
+            //      dynamic memory size. So if shared memory is used, the src
+            //      memory shouldn't be incremented. For spiner,
+            //      `AllDynamicMemoryIsShareable()` returns true.
+            //    - EOSPAC reads from the src memory and then either writes some
+            //      of this data to the shared memory pointer on the root node
+            //      or just points to the shared memory. Either way, both the
+            //      shared memory and src memory pointers need to be
+            //      incremented. For EOSPAC, `AllDynamicMemoryIsShareable()`
+            //      returns false.
+            p_src = p_shared == nullptr || eos.AllDynamicMemoryIsShareable()
+              ? p_src : p_src + src_increment,
+
+            // 5) Our output should reflect how much we've read
+            total += src_increment;
+          ),
+          void()  // make the subexpression a valid comma-fold operand
+        ), ... );
+      },
+      models_
+    );
+
+    return total;
   }
+
   constexpr bool AllDynamicMemoryIsShareable() const {
     return std::apply(
     [](auto const&... eos){
       // AND operation across all individual models. Returns true IFF all models
-      // have sharable dynamic memory
+      // have sharable dynamic memory. If this isn't true, then the user needs
+      // to keep track of SharedMemorySizeInBytes and DynamicMemorySizeInBytes
+      // separately
       return (eos.AllDynamicMemoryIsShareable() && ...);
     },
     models_
@@ -1347,7 +1438,7 @@ auto make_MultiEOS(EOSModelsT&&... eos_models) {
 }
 
 // Factory function helper to group EOS together and provide default averaging
-// behavior
+// behavior but including the mass fraction cutoff as a constructor argument
 template<
       typename BulkModAvgT = VolumeFracHarmonicAverageFunctor
     , typename GrunesienAvgT = VolumeFracHarmonicAverageFunctor
