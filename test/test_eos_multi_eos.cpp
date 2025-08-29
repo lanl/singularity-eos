@@ -19,6 +19,7 @@
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #endif
 
 #include <ports-of-call/portability.hpp>
@@ -32,10 +33,14 @@
 using singularity::DavisProducts;
 using singularity::DavisReactants;
 using singularity::ShiftedEOS;
+using singularity::Variant;
 
-SCENARIO("Test the multi-eos modifier with reactants and products EOS",
+using Catch::Matchers::ContainsSubstring;
+
+SCENARIO("Test the MultiEOS object with reactants and products EOS",
          "[MultiEOS][DavisReactants][DavisProducts]") {
-  GIVEN("A pair of EOS for reactants and products") {
+  GIVEN("A pair of EOS for reactants and products and a resulting MultiEOS "
+        "object") {
     // Unit conversions
     constexpr Real cm = 1.;
     constexpr Real us = 1e-06;
@@ -71,5 +76,31 @@ SCENARIO("Test the multi-eos modifier with reactants and products EOS",
 
     // Create the multiEOS object
     auto multi_eos = make_MultiEOS(davis_r_eos, davis_p_eos);
+
+    THEN("The MultiEOS object can also be placed in an EOS Variant") {
+      using EOS = Variant<DavisReactants, ShiftedEOS<DavisProducts>,
+                          decltype(make_MultiEOS(DavisReactants{}, ShiftedEOS<DavisProducts>{}))>;
+      EOS multi_eos_in_variant = make_MultiEOS(davis_r_eos, davis_p_eos);
+    }
+    WHEN("The EosType function is called") {
+      auto davis_r_eostype = davis_r_eos.EosType();
+      auto davis_p_eostype = davis_r_eos.EosType();
+      auto multi_eostype = multi_eos.EosType();
+      THEN("The MultiEOS EosType should contain the component EOS names") {
+        CHECK_THAT(multi_eostype, ContainsSubstring(davis_r_eostype));
+        CHECK_THAT(multi_eostype, ContainsSubstring(davis_p_eostype));
+        CHECK_THAT(multi_eostype, ContainsSubstring("MultiEOS"));
+      }
+    }
+    WHEN("The EosPyType function is called") {
+      auto davis_r_eospytype = davis_r_eos.EosPyType();
+      auto davis_p_eospytype = davis_r_eos.EosPyType();
+      auto multi_eospytype = multi_eos.EosPyType();
+      THEN("The MultiEOS EosType should contain the component EOS names") {
+        CHECK_THAT(multi_eospytype, ContainsSubstring(davis_r_eospytype));
+        CHECK_THAT(multi_eospytype, ContainsSubstring(davis_p_eospytype));
+        CHECK_THAT(multi_eospytype, ContainsSubstring("MultiEOS"));
+      }
+    }
   }
 }
