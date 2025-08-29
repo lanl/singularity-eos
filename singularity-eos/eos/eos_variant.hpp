@@ -12,8 +12,14 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was made in part with generative AI.
+
 #ifndef EOS_VARIANT_HPP
 #define EOS_VARIANT_HPP
+
+#include <set>
+#include <string>
+#include <vector>
 
 #include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
@@ -103,7 +109,7 @@ class Variant {
     return mpark::visit(
         [&](const auto &eos) {
           auto modified = eos.template ConditionallyModify<Mod>(
-              variadic_utils::type_list<EOSs...>(), std::forward<Args>(args)...);
+              AvailableEOSTypes(), std::forward<Args>(args)...);
           return eos_variant<EOSs...>(modified);
         },
         eos_);
@@ -1346,6 +1352,22 @@ class Variant {
   PORTABLE_INLINE_FUNCTION
   void PrintParams() const noexcept {
     return mpark::visit([](const auto &eos) { return eos.PrintParams(); }, eos_);
+  }
+
+  inline std::string EosType() const {
+    return mpark::visit([](const auto &eos) { return eos.EosType(); }, eos_);
+  }
+
+  inline std::string EosPyType() const {
+    return mpark::visit([](const auto &eos) { return eos.EosPyType(); }, eos_);
+  }
+
+  template <typename Container_t = std::set<std::string>>
+  static inline Container_t AvailableEOSs() {
+    return {EOSs::EosType()...};
+  }
+  static inline constexpr auto AvailableEOSTypes() {
+    return variadic_utils::type_list<EOSs...>();
   }
 
   inline void Finalize() noexcept {

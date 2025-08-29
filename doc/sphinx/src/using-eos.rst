@@ -1198,6 +1198,21 @@ function that drops the dependence is available:
   density and temperature, the convenience call without this
   dependence will produce an error.
 
+The method
+
+.. code-block:: cpp
+
+   template <typename Container_t = std::set<std::string>>
+   static inline Container_t AvailableEOSs();
+
+returns a container of strings representing all equation of state models available in the variant. By default, returns a ``std::set<std::string>``.
+
+.. code-block:: cpp
+
+   static inline constexpr auto AvailableEOSTypes();
+
+returns a compile-time type list containing all the equation of state types available in the variant as a ``variadic_utils::type_list<EOSs...>``.
+
 The function
 
 .. code-block:: cpp
@@ -1311,3 +1326,4 @@ will use it.
   an initialized variable, even if it is zero-initialized. Do not pass
   uninitialized memory into this function!
 
+This file was made in part with generative AI.
