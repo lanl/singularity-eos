@@ -279,6 +279,17 @@ SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
   }
 }
 
+SCENARIO("Variant EOS type information", "[Variant][EosType]") {
+  GIVEN("The EOS variant") {
+    THEN("AvailableEOSs returns a vector containing all possible EOS types") {
+      auto types = EOS::AvailableEOSs();
+      REQUIRE(types.size() == 2);
+      REQUIRE(std::find(types.begin(), types.end(), "IdealGas") != types.end());
+      REQUIRE(std::find(types.begin(), types.end(), "IdealElectrons") != types.end());
+    }
+  }
+}
+
 SCENARIO("Ideal electron gas", "[IdealGas][IdealEelctrons]") {
   GIVEN("An ideal electron gas from partially ionized iron") {
     constexpr Real Abar = 26;
