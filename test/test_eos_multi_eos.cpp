@@ -83,6 +83,7 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
                   decltype(make_MultiEOS(DavisReactants{}, ShiftedEOS<DavisProducts>{}))>;
       EOS multi_eos_in_variant = make_MultiEOS(davis_r_eos, davis_p_eos);
     }
+
     WHEN("The EosType function is called") {
       auto davis_r_eostype = davis_r_eos.EosType();
       auto davis_p_eostype = davis_r_eos.EosType();
@@ -93,6 +94,7 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         CHECK_THAT(multi_eostype, ContainsSubstring("MultiEOS"));
       }
     }
+
     WHEN("The EosPyType function is called") {
       auto davis_r_eospytype = davis_r_eos.EosPyType();
       auto davis_p_eospytype = davis_r_eos.EosPyType();
