@@ -46,14 +46,15 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     constexpr Real us = 1e-06;
     constexpr Real Mbcc_per_g = 1e12;
     constexpr Real GPa = 1.0e10;
+    constexpr Real sqrtGPa = 1.0e5; // sqrt isn't constexpr...
     constexpr Real MJ_per_kg = 1.0e10;
 
     // Davis Reactants EOS
-    constexpr Real rho0_DP = 1.890;          // g/cm^3
-    constexpr Real e0_DP = 0.;               // erg / g
-    constexpr Real P0_DP = 0.;               // microbar
-    constexpr Real T0_DP = 297;              // K
-    constexpr Real A = 1.8 * std::sqrt(GPa); // sqrt(microbar)
+    constexpr Real rho0_DP = 1.890;   // g/cm^3
+    constexpr Real e0_DP = 0.;        // erg / g
+    constexpr Real P0_DP = 0.;        // microbar
+    constexpr Real T0_DP = 297;       // K
+    constexpr Real A = 1.8 * sqrtGPa; // sqrt(microbar)
     constexpr Real B = 4.6;
     constexpr Real C = 0.34;
     constexpr Real G0 = 0.56;

@@ -252,8 +252,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
   template <typename... EOSModelsT_>
   MultiEOS(Real mass_frac_cutoff_in, EOSModelsT_ &&...eos_models)
-      : models_(std::forward<EOSModelsT_>(eos_models)...),
-        mass_frac_cutoff_{std::forward<Real>(mass_frac_cutoff_in)} {
+      : mass_frac_cutoff_{std::forward<Real>(mass_frac_cutoff_in)},
+        models_(std::forward<EOSModelsT_>(eos_models)...) {
     CheckParams();
   }
 
@@ -1260,9 +1260,6 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
     // Work on a local, mutable copy in order to increment the shared memory pointer
     SharedMemSettings current_shared_stngs = stngs;
-
-    // Snapshot the base of the shared memory block (may be nullptr).
-    char *shm_base = stngs.data;
 
     // We keep track of how far we increment in data space
     std::size_t total = 0;
