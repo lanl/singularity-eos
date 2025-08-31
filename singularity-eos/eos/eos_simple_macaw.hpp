@@ -193,20 +193,21 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
-  //template <typename Indexer_t = Real *>
-  //PORTABLE_INLINE_FUNCTION void
-  //ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
-  //                       Real &bmod, Real &dpde, Real &dvdt,
-  //                       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-  //  // use STP: 1 atmosphere, room temperature
-  //  rho = _rho0;
-  //  temp = _T0;
-  //  sie = _sie0;
-  //  press = _P0;
-  //  cv = _Cv;
-  //  bmod = _bmod0;
-  //  dpde = _dpde0;
-  //}
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void
+  ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
+                         Real &bmod, Real &dpde, Real &dvdt,
+                         Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    // use STP: 1 atmosphere, room temperature
+    rho = 1.0 / _v0;
+    temp = _T0;
+    // TODO: Need to use the Newton solver for the density and energy here...
+    sie = 0.0;
+    press = PressureFromDensityTemperature(rho, temp);
+    cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
+    bmod = BulkdModulusFromDensityInternalEnergy(rho, sie);
+    dpde = _Gc * rho;
+  }
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
   SG_ADD_BASE_CLASS_USINGS(SimpleMACAW)
@@ -223,6 +224,21 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
+    // Setup lambda function for rho
+    auto f = [](const Real x){
+      const Real term1 = _A * _B * std::pow(_v0 * x, _B+1.0) - press - _A * _B;
+      const Real term2 = (_T0 * std::pow(_v0 * x, _Gc) + temp) / x;
+      const Real term3 = _Cvinf * _Gc * math_utils::pow<2>(temp);
+      return term1 * term2 + term3;
+    }
+
+    RootCounts root_info;
+
+    regula_falsi(f, 0.0 /*target*/, 1.0 /*guess*/, 
+                 1.0e-10 /*left bracket*/, 1.0e+6 /*right bracket*/,
+                 1.0e-6 /*x? tol*/, 1.0e-6 /*y? tol*/,
+                 rho, root_info, true);
+
     // Solving for rho requires a Newton method...
     sie = 0.0;
     rho = 0.0;

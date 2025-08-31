@@ -34,6 +34,10 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
                 const double R1, const double R2, const double w, const double rho0,
                 const double Cv, int const *const enabled, double *const vals);
 
+int init_sg_simple_MACAW(const int matindex, EOS *eos, const double A, const double B,
+                         const double Cvinf, const double v0, const double T0, const double Gc,
+                         int const *const enabled, double *const vals);
+
 int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const double s1,
                       const double s2, const double s3, const double G0, const double b,
                       const double rho0, const double T0, const double P0,
