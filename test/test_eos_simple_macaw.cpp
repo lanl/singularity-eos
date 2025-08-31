@@ -29,10 +29,6 @@
 using singularity::SimpleMACAW;
 using EOS = singularity::Variant<SimpleMACAW>;
 
-PORTABLE_INLINE_FUNCTION Real QuadFormulaMinus(Real a, Real b, Real c) {
-  return (-b - std::sqrt(b * b - 4 * a * c)) / (2 * a);
-}
-
 constexpr Real REAL_TOL = std::numeric_limits<Real>::epsilon() * 1e4; // 1e-12 for double
 
 // Only run exception checking when we aren't offloading to the GPUs
@@ -51,7 +47,7 @@ SCENARIO("Zero temperature on cold curve", "[SimpleMACAWEOS][Temperature]") {
     constexpr Real Gc = 0.5;
     // Create the EOS
     EOS host_eos = SimpleMACAW(A, B, Cvinf, v0, T0, Gc);
-    EOS eos = host_eos.GetOnDevice();
+    //EOS eos = host_eos.GetOnDevice();
     Real rho = 0.5;
     for (int i = 0; i < 10; i++) {
       rho += rho + i; // cylce through a variety of densities
