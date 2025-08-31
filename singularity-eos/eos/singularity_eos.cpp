@@ -125,7 +125,7 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
 }
 
 int init_sg_SimpleMACAW(const int matindex, EOS *eos, const double A, const double B,
-                        const double Cinf, const double v0, const double T0, const double Gc,
+                        const double Cvinf, const double v0, const double T0, const double Gc,
                         int const *const enabled, double *const vals) {
   assert(matindex >= 0);
   EOS eosi = SGAPPLYMODSIMPLE(SimpleMACAW(A, B, Cvinf, v0, T0, Gc));
@@ -140,7 +140,7 @@ int init_sg_SimpleMACAW(const int matindex, EOS *eos, const double A, const doub
 
 int init_sg_SimpleMACAW(const int matindex, EOS *eos, const double A, const double B,
                         const double Cvinf, const double v0, const double T0, const double Gc) {
-  return init_sg_JWL(matindex, eos, A, B, Cvinf, v0, T0, Gc, def_en, def_v);
+  return init_sg_simple_MACAW(matindex, eos, A, B, Cvinf, v0, T0, Gc, def_en, def_v);
 }
 
 
