@@ -262,8 +262,9 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       : MultiEOS(
             /*mass_frac_cutoff=*/1e-8, std::forward<EOSModelsT_>(eos_models)...) {}
 
-  // Overload that makes copying the models easier (e.g. GetOnDevice()). Make
-  // explicit to avoid accidentally storing a tuple of a tuple
+  // Constructor overload that makes copying the models easier (e.g.
+  // GetOnDevice()). Make explicit to avoid accidentally storing a tuple of a
+  // tuple
   explicit MultiEOS(Real mass_frac_cutoff_in, std::tuple<EOSModelsT...> model_tuple)
       : models_(std::move(model_tuple)), mass_frac_cutoff_{mass_frac_cutoff_in} {
     CheckParams();
@@ -272,9 +273,12 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
     // Again we're using a fold expression now with std::apply to call
     // CheckParams() on each model (C++17)
-    PORTABLE_ALWAYS_REQUIRE(mass_frac_cutoff_ > 0.,
-                            "Mass fracton cutoff must be non-negative");
-    PORTABLE_ALWAYS_REQUIRE(mass_frac_cutoff_ < 1., "Mass fractons must be less than 1");
+    if (mass_frac_cutoff_ < 0.) {
+      PORTABLE_ALWAYS_THROW_OR_ABORT("Mass fracton cutoff must be non-negative");
+    }
+    if (mass_frac_cutoff_ >= 1.) {
+      PORTABLE_ALWAYS_THROW_OR_ABORT("Mass fractons must be less than 1");
+    }
     std::apply([](const auto &...eos_models) { (eos_models.CheckParams(), ...); },
                models_);
   }
