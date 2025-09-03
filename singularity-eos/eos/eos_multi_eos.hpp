@@ -17,6 +17,7 @@
 
 #include "stdio.h"
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <iostream>
 #include <tuple>
@@ -28,6 +29,7 @@
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/base/tuple_utils.hpp>
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -122,7 +124,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   // get the 'Is' template parameter to specify the index sequence
   template <typename RealIndexer, typename LambdaIndexer, size_t... Is,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
-  constexpr void assign_mass_fractions(RealIndexer mass_fracs, const LambdaIndexer lambda,
+  constexpr void assign_mass_fractions(RealIndexer& mass_fracs, LambdaIndexer const lambda,
                                        std::index_sequence<Is...>) const {
     ((mass_fracs[Is] = lambda[IndexableTypes::MassFraction<Is>{}]), ...);
   }
@@ -132,12 +134,11 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename RealIndexer, typename LambdaIndexer, size_t... Is,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   constexpr void callDensityEnergyFromPressureTemperatureAll(
-      const Real pressure, const Real temperature, LambdaIndexer &&lambdas,
+      const Real pressure, const Real temperature, LambdaIndexer &lambdas,
       RealIndexer &density_mat, RealIndexer &energy_mat,
       std::index_sequence<Is...>) const {
     ((std::get<Is>(models_).DensityEnergyFromPressureTemperature(
-         pressure, temperature, std::forward<LambdaIndexer>(lambdas), density_mat[Is],
-         energy_mat[Is])),
+         pressure, temperature, lambdas, density_mat[Is], energy_mat[Is])),
      ...);
   }
 
@@ -145,7 +146,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   // given by input1 and input2
   template <typename Func, typename LambdaIndexer, std::size_t... Is>
   Real massFracAverageQuantityAtOneState(Func &&f, Real input1, Real input2,
-                                         LambdaIndexer const &lambda,
+                                         LambdaIndexer &lambda,
                                          std::index_sequence<Is...>) const {
     // Note that the function signature should take the EOS as its first argument
     // and then the two independent variables and the lambda
@@ -162,7 +163,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             std::size_t... Is>
   Real massFracAverageQuantityAtManyStates(Func &&f, RealIndexer density_arr,
                                            RealIndexer sie_arr, Real temperature,
-                                           LambdaIndexer const &lambda) const {
+                                           LambdaIndexer &lambda) const {
     MassFracAverageFunctor avg_funct{};
     // Note that the f function signature should take the EOS as its first argument
     // followed by the lookup state and lambda
@@ -175,10 +176,10 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename RealIndexer, typename LambdaIndexer, size_t... Is,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   constexpr void getMaterialBulkModulusFromDensityTemperature(
-      const Real temperature, LambdaIndexer &&lambdas, RealIndexer &density_mat,
+      const Real temperature, LambdaIndexer &lambdas, RealIndexer const &density_mat,
       RealIndexer &bmod_mat, std::index_sequence<Is...>) const {
     ((bmod_mat[Is] = std::get<Is>(models_).BulkModulusFromDensityTemperature(
-          density_mat[Is], temperature, std::forward<LambdaIndexer>(lambdas))),
+          density_mat[Is], temperature, lambdas)),
      ...);
   }
 
@@ -187,10 +188,10 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename RealIndexer, typename LambdaIndexer, size_t... Is,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   constexpr void getMaterialBulkModulusFromDensityInternalEnergy(
-      LambdaIndexer &&lambdas, RealIndexer &density_mat, RealIndexer &sie_mat,
+      LambdaIndexer &lambdas, RealIndexer const &density_mat, RealIndexer const &sie_mat,
       RealIndexer &bmod_mat, std::index_sequence<Is...>) const {
     ((bmod_mat[Is] = std::get<Is>(models_).BulkModulusFromDensityInternalEnergy(
-          density_mat[Is], sie_mat[Is], std::forward<LambdaIndexer>(lambdas))),
+          density_mat[Is], sie_mat[Is], lambdas)),
      ...);
   }
 
@@ -303,9 +304,9 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename MassFracT, typename VolFracT, typename DensityT, typename SieT,
             typename PTEMatT, typename EosArrT>
   PORTABLE_FORCEINLINE_FUNCTION void
-  SetUpPTE(MassFracT mass_fracs, VolFracT vol_fracs, DensityT density_mat, SieT sie_mat,
-           PTEMatT pte_mats, size_t &npte, Real &vfrac_tot, const Real density_tot,
-           const Real sie_tot, EosArrT eos_arr) const {
+  SetUpPTE(MassFracT const mass_fracs, VolFracT& vol_fracs, DensityT& density_mat, SieT& sie_mat,
+           PTEMatT& pte_mats, size_t &npte, Real &vfrac_tot, Real const density_tot,
+           Real const sie_tot, EosArrT const eos_arr) const {
     npte = 0;
     for (size_t m = 0; m < nmat_; m++) {
 
@@ -366,7 +367,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityEnergy(
       const Real density_tot, const Real sie_tot, Real &pressure, Real &temperature,
-      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &&lambdas,
+      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas,
       bool small_mass_mat_consistency = false) const {
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
@@ -394,6 +395,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, pte_solver_scratch_size> solver_scratch{};
 
     // Get cache from offsets into scratch
+    // TODO: How do we pass meaningful Lambda information to the EOS in the PTE
+    // solver that _isn't_ cache?
     const int neq = npte + 1;
     singularity::mix_impl::CacheAccessor cache(solver_scratch.data() + neq * (neq + 4) +
                                                2 * npte);
@@ -447,8 +450,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
           continue;
         }
         eos_arr[m].DensityEnergyFromPressureTemperature(
-            pressure, temperature, std::forward<LambdaIndexer>(lambdas), density_mat[m],
-            sie_mat[m]);
+            pressure, temperature, lambdas, density_mat[m], sie_mat[m]);
       }
     }
 
@@ -459,7 +461,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityTemperature(
       const Real density_tot, Real &sie_tot, Real &pressure, const Real temperature,
-      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &&lambdas) const {
+      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas) const {
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
     std::array<Real, nmat_> vol_fracs{};
@@ -547,8 +549,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
           continue;
         }
         eos_arr[m].DensityEnergyFromPressureTemperature(
-            pressure, temperature, std::forward<LambdaIndexer>(lambdas), density_mat[m],
-            sie_mat[m]);
+            pressure, temperature, lambdas, density_mat[m], sie_mat[m]);
       }
     }
 
@@ -565,7 +566,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityPressure(
       const Real density_tot, Real &sie_tot, const Real pressure, Real &temperature,
-      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &&lambdas) const {
+      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas) const {
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
     std::array<Real, nmat_> vol_fracs{};
@@ -670,8 +671,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
           continue;
         }
         eos_arr[m].DensityEnergyFromPressureTemperature(
-            pressure, temperature, std::forward<LambdaIndexer>(lambdas), density_mat[m],
-            sie_mat[m]);
+            pressure, temperature, lambdas, density_mat[m], sie_mat[m]);
       }
     }
 
@@ -705,7 +705,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real spvol_tot = 0;
     for (size_t m = 0; m < nmat_; m++) {
       spvol_tot += robust::ratio(mass_fracs[m], density_mat[m]);
-      sie_tot += robust::ratio(mass_fracs[m], sie_mat[m]);
+      sie_tot += mass_fracs[m] * sie_mat[m];
     }
     PORTABLE_REQUIRE(spvol_tot > 0., "Material volumes sum to zero");
     density_tot = robust::ratio(1.0, spvol_tot);
@@ -721,7 +721,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename RealIndexer, typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION void PopulateMassFracArray(RealIndexer &mass_fracs,
-                                                      LambdaIndexer &lambdas) const {
+                                                      LambdaIndexer const &lambdas) const {
 
     // Wrap the implementation function so we don't have index sequences elsewhere
     assign_mass_fractions(mass_fracs, lambdas, std::make_index_sequence<nmat_>{});
@@ -737,7 +737,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real TemperatureFromDensityInternalEnergy(
-      const Real rho, const Real sie, LambdaIndexer &&lambda) const {
+      const Real rho, const Real sie, LambdaIndexer &lambda) const {
 
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
@@ -750,7 +750,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real PressureFromDensityInternalEnergy(const Real rho, const Real sie,
-                                                           LambdaIndexer &&lambda) const {
+                                                           LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
@@ -762,7 +762,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real MinInternalEnergyFromDensity(const Real rho,
-                                                      LambdaIndexer &&lambda) const {
+                                                      LambdaIndexer &lambda) const {
     // Technically this question is ill-defined since we need another thermodynamic
     // variable to constrain the volume fractions of the individual components
     // that combine to give the desired density. Instead we can interpret this
@@ -773,7 +773,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real EntropyFromDensityInternalEnergy(const Real rho, const Real sie,
-                                                          LambdaIndexer &&lambda) const {
+                                                          LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
@@ -794,7 +794,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
-      const Real rho, const Real sie, LambdaIndexer &&lambda) const {
+      const Real rho, const Real sie, LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
@@ -803,7 +803,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer &&lambda) {
+           LambdaIndexer &lambda) {
           if constexpr (eos.PreferredInput() ==
                         (thermalqs::density | thermalqs::temperature)) {
             return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
@@ -816,7 +816,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
-      const Real rho, const Real sie, LambdaIndexer &&lambda) const {
+      const Real rho, const Real sie, LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
@@ -826,7 +826,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     BulkModAvgT avg_funct{};
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer &&lambda) {
+           LambdaIndexer &lambda) {
           if constexpr (eos.PreferredInput() ==
                         (thermalqs::density | thermalqs::temperature)) {
             return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
@@ -839,7 +839,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
-      const Real rho, const Real sie, LambdaIndexer &&lambda) const {
+      const Real rho, const Real sie, LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
@@ -849,7 +849,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     GruneisenAvgT avg_funct{};
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer &&lambda) {
+           LambdaIndexer &lambda) {
           if constexpr (eos.PreferredInput() ==
                         (thermalqs::density | thermalqs::temperature)) {
             return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
@@ -862,7 +862,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real InternalEnergyFromDensityTemperature(
-      const Real rho, const Real temperature, LambdaIndexer &&lambda) const {
+      const Real rho, const Real temperature, LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
@@ -875,7 +875,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real PressureFromDensityTemperature(const Real rho,
                                                         const Real temperature,
-                                                        LambdaIndexer &&lambda) const {
+                                                        LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
@@ -888,7 +888,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real EntropyFromDensityTemperature(const Real rho,
                                                        const Real temperature,
-                                                       LambdaIndexer &&lambda) const {
+                                                       LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
@@ -909,7 +909,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real SpecificHeatFromDensityTemperature(
-      const Real rho, const Real temperature, LambdaIndexer &&lambda) const {
+      const Real rho, const Real temperature, LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
@@ -931,7 +931,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real BulkModulusFromDensityTemperature(const Real rho,
                                                            const Real temperature,
-                                                           LambdaIndexer &&lambda) const {
+                                                           LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
@@ -953,7 +953,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION Real GruneisenParamFromDensityTemperature(
-      const Real rho, const Real temperature, LambdaIndexer &&lambda) const {
+      const Real rho, const Real temperature, LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
@@ -976,7 +976,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
-                                 LambdaIndexer &&lambda) const {
+                                 LambdaIndexer &lambda) const {
     const unsigned long input = ~output;
     PORTABLE_ALWAYS_REQUIRE(input != thermalqs::none, "No input provided");
 
@@ -988,7 +988,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
           output & thermalqs::density && output & thermalqs::specific_internal_energy,
           "Internal energy and density must be defined as outputs when pressure and "
           "temperature are inputs");
-      GetStatesFromPressureTemperature(energy, rho, press, temp, density_mat, sie_mat,
+      GetStatesFromPressureTemperature(rho, energy, press, temp, density_mat, sie_mat,
                                        lambda);
     } else if (input & thermalqs::density && input & thermalqs::temperature) {
       PORTABLE_REQUIRE(
@@ -1098,11 +1098,11 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
-                                       LambdaIndexer &&lambda, Real &rho,
+                                       LambdaIndexer &lambda, Real &rho,
                                        Real &sie) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
-    GetStatesFromPressureTemperature(sie, rho, press, temp, density_mat, sie_mat, lambda);
+    GetStatesFromPressureTemperature(rho, sie, press, temp, density_mat, sie_mat, lambda);
   }
 
   template <typename LambdaIndexer,
@@ -1110,7 +1110,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   PORTABLE_FUNCTION void ValuesAtReferenceState(Real &rho, Real &temp, Real &sie,
                                                 Real &press, Real &cv, Real &bmod,
                                                 Real &dpde, Real &dvdt,
-                                                LambdaIndexer &&lambda) const {
+                                                LambdaIndexer &lambda) const {
     // Assume a reference state of 298K and 1 bar
     temp = 298;
     press = 1e5;
@@ -1118,7 +1118,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // Get the mixture properties
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
-    GetStatesFromPressureTemperature(sie, rho, press, temp, density_mat, sie_mat, lambda);
+    GetStatesFromPressureTemperature(rho, sie, press, temp, density_mat, sie_mat, lambda);
 
     // Mass-fraction average the heat capacity
     cv = massFracAverageQuantityAtManyStates(
@@ -1189,7 +1189,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
       const Real density, const Real temperature,
-      LambdaIndexer &&lambda = static_cast<Real *>(nullptr)) const {
+      LambdaIndexer const lambda = static_cast<Real *>(nullptr)) const {
     return massFracAverageQuantityAtOneState(
         [&](auto const &eos, Real R, Real T, LambdaIndexer lambda) {
           return eos.MeanAtomicMassFromDensityTemperature(R, T, lambda);
@@ -1200,7 +1200,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
       const Real density, const Real temperature,
-      LambdaIndexer &&lambda = static_cast<Real *>(nullptr)) const {
+      LambdaIndexer const lambda = static_cast<Real *>(nullptr)) const {
     return massFracAverageQuantityAtOneState(
         [&](auto const &eos, Real R, Real T, LambdaIndexer lambda) {
           return eos.MeanAtomicNumberFromDensityTemperature(R, T, lambda);
@@ -1333,9 +1333,9 @@ template <typename BulkModAvgT = VolumeFracHarmonicAverageFunctor,
           typename GruneisenAvgT = VolumeFracHarmonicAverageFunctor,
           typename... EOSModelsT>
 inline auto make_MultiEOS(EOSModelsT &&...eos_models) {
-  return MultiEOS<std::remove_cv_t<std::remove_reference_t<BulkModAvgT>>,
-                  std::remove_cv_t<std::remove_reference_t<GruneisenAvgT>>,
-                  std::remove_cv_t<std::remove_reference_t<EOSModelsT>>...>(
+  return MultiEOS<variadic_utils::remove_cvref_t<BulkModAvgT>,
+                  variadic_utils::remove_cvref_t<GruneisenAvgT>,
+                  variadic_utils::remove_cvref_t<EOSModelsT>...>(
       std::forward<EOSModelsT>(eos_models)...);
 }
 
@@ -1345,9 +1345,9 @@ template <typename BulkModAvgT = VolumeFracHarmonicAverageFunctor,
           typename GruneisenAvgT = VolumeFracHarmonicAverageFunctor,
           typename... EOSModelsT>
 inline auto make_MultiEOS(Real mass_frac_cutoff_in, EOSModelsT &&...eos_models) {
-  return MultiEOS<std::remove_cv_t<std::remove_reference_t<BulkModAvgT>>,
-                  std::remove_cv_t<std::remove_reference_t<GruneisenAvgT>>,
-                  std::remove_cv_t<std::remove_reference_t<EOSModelsT>>...>(
+  return MultiEOS<variadic_utils::remove_cvref_t<BulkModAvgT>,
+                  variadic_utils::remove_cvref_t<GruneisenAvgT>,
+                  variadic_utils::remove_cvref_t<EOSModelsT>...>(
       mass_frac_cutoff_in, std::forward<EOSModelsT>(eos_models)...);
 }
 
