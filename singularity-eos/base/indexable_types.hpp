@@ -35,8 +35,7 @@
 // NOTE: it's assumed that matnum is a count, not an index (hence the minus 1)
 #define SINGULARITY_INDEXER_HAS_MASS_FRAC(Indexer, matnum)                               \
   SINGULARITY_INDEXER_HAS_INDEXABLE_TYPE(                                                \
-      Indexer,                                                                           \
-      singularity::IndexableTypes::MassFraction<matnum - 1>)
+      Indexer, singularity::IndexableTypes::MassFraction<matnum - 1>)
 
 namespace singularity {
 namespace IndexerUtils {

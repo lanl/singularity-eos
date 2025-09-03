@@ -96,11 +96,9 @@ SCENARIO("IndexableTypes and ManualLambda", "[IndexableTypes]") {
   }
 }
 
-template<int nmat>
+template <int nmat>
 struct ATestForMassFraction {
-  template<typename Lambda_t,
-           SINGULARITY_INDEXER_HAS_MASS_FRAC(Lambda_t, nmat)
-  >
+  template <typename Lambda_t, SINGULARITY_INDEXER_HAS_MASS_FRAC(Lambda_t, nmat)>
   constexpr bool has_mass_frac(Lambda_t) const {
     return true;
   }
@@ -109,9 +107,8 @@ struct ATestForMassFraction {
 SCENARIO("Mass fraction indexable types SFINAE macro", "[IndexableTypes]") {
   GIVEN("A lambda type that contains a mass fraction") {
     constexpr size_t num_mat = 3;
-    using MassFracLambda_t = VariadicIndexer<
-        MeanIonizationState, ElectronFraction, LogDensity, MassFraction<num_mat - 1>
-    >;
+    using MassFracLambda_t = VariadicIndexer<MeanIonizationState, ElectronFraction,
+                                             LogDensity, MassFraction<num_mat - 1>>;
     THEN("The lambda will be indexable with the mass fraction") {
       // Really this will fail to compile so this runtime check is just for the
       // sake of executing the code
