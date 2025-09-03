@@ -56,12 +56,12 @@ cmake_dependent_option(SINGULARITY_BUILD_FORTRAN_BACKEND
 
 option(SINGULARITY_USE_KOKKOS "Use Kokkos for portability" OFF)
 option(SINGULARITY_USE_EOSPAC "Enable eospac backend" OFF)
-option(SINGULARITY_EOSPAC_ENABLE_SHMEM
+cmake_dependent_option(SINGULARITY_EOSPAC_ENABLE_SHMEM
   "Support shared memory with EOSPAC backend. Requires EOSPAC version 6.5.7."
-  OFF)
+  OFF "SINGULARITY_USE_EOSPAC" OFF)
 cmake_dependent_option(SINGULARITY_EOSPAC_USE_MODERN_ERROR_CODES
   "Use the current eospac implementation of error codes, which must be compared with a function. Requires EOSPAC version 6.3.0 or greater."
-  OFF "SINGULARITY_USE_EOSPAC" ON)
+  ON "SINGULARITY_USE_EOSPAC" OFF)
 
 # TODO This should be dependent option (or fortran option)
 option(SINGULARITY_BUILD_CLOSURE "Mixed Cell Closure" ON)
