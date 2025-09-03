@@ -715,7 +715,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   PORTABLE_FORCEINLINE_FUNCTION
   auto CreateEOSArray() const {
     return std::apply(
-        [this](auto &&...eos_models) { return std::array<eosT_, nmat_>{eos_models...}; },
+        [](auto &&...eos_models) { return std::array<eosT_, nmat_>{eos_models...}; },
         models_);
   }
 
