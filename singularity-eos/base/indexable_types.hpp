@@ -70,7 +70,9 @@ class VariadicIndexerBase {
     constexpr std::size_t idx = variadic_utils::GetIndexInTL<T, Ts...>();
     return data_[idx];
   }
-  constexpr const Real &operator[](const std::size_t idx) const noexcept { return data_[idx]; }
+  constexpr const Real &operator[](const std::size_t idx) const noexcept {
+    return data_[idx];
+  }
   static inline constexpr std::size_t size() { return sizeof...(Ts); }
 
  private:
