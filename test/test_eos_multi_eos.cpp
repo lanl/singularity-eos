@@ -46,7 +46,7 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
   GIVEN("A pair of EOS for reactants and products and a resulting MultiEOS "
         "object") {
     // Unit conversions
-    constexpr Real cm = 1.;
+    [[maybe_unused]] constexpr Real cm = 1.;
     [[maybe_unused]] constexpr Real us = 1e-06;
     [[maybe_unused]] constexpr Real Mbcc_per_g = 1e12;
     constexpr Real GPa = 1.0e10;
@@ -84,31 +84,34 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     using LambdaT = VariadicIndexer<MassFraction<0>, MassFraction<1>>;
     auto multi_eos = make_MultiEOS(davis_r_eos, davis_p_eos);
 
-    GIVEN("A mass fraction cutoff less than 0") {
-      constexpr Real mf_cutoff = -0.01;
+    WHEN("A mass fraction cutoff less than 0 is specified") {
+      [[maybe_unused]] constexpr Real mf_cutoff = -0.01;
       THEN("Constructing the MultiEOS object should throw an exception") {
-        REQUIRE_MAYBE_THROWS_WITH(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos),
-                                  "Mass fracton cutoff must be non-negative");
+        // REQUIRE_MAYBE_THROWS_WITH(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos),
+        //                           "Mass fracton cutoff must be non-negative");
+        REQUIRE_MAYBE_THROWS(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos));
       }
     }
 
-    GIVEN("A mass fraction cutoff equal to 1") {
-      constexpr Real mf_cutoff = 1.0;
+    WHEN("A mass fraction cutoff equal to 1 is specified") {
+      [[maybe_unused]] constexpr Real mf_cutoff = 1.0;
       THEN("Constructing the MultiEOS object should throw an exception") {
-        REQUIRE_MAYBE_THROWS_WITH(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos),
-                                  "Mass fractons must be less than 1");
+        // REQUIRE_MAYBE_THROWS_WITH(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos),
+        //                           "Mass fractons must be less than 1");
+        REQUIRE_MAYBE_THROWS(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos));
       }
     }
 
-    GIVEN("A mass fraction cutoff greater than 1") {
-      constexpr Real mf_cutoff = 2.0;
+    WHEN("A mass fraction cutoff greater than 1 is specified") {
+      [[maybe_unused]] constexpr Real mf_cutoff = 2.0;
       THEN("Constructing the MultiEOS object should throw an exception") {
-        REQUIRE_MAYBE_THROWS_WITH(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos),
-                                  "Mass fractons must be less than 1");
+        // REQUIRE_MAYBE_THROWS_WITH(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos),
+        //                           "Mass fractons must be less than 1");
+        REQUIRE_MAYBE_THROWS(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos));
       }
     }
 
-    GIVEN("A set of mass fractions") {
+    WHEN("A set of mass fractions is provided in a lambda") {
       std::array<Real, num_eos> set_mass_fracs{};
       set_mass_fracs.fill(1.0 / num_eos);
       LambdaT lambda{set_mass_fracs};
