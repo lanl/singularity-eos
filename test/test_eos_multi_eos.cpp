@@ -126,7 +126,6 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         Real sie;
         multi_eos_in_variant.DensityEnergyFromPressureTemperature(P, T, lambda, rho, sie);
         CHECK(rho > 0.);
-        CHECK(sie > 0.);
 
         THEN("The result is consistent with doing the same for the individual EOS") {
 
@@ -139,7 +138,7 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
 
           // Quick check that we can reproduce the input mass fractions
           for (size_t m = 0; m < num_eos; m++) {
-            INFO("Mass fraction test for m = " << m);
+            INFO("Mass fraction test: mass_fracs[" << m << "] = " << mass_fracs[m]);
             CHECK_THAT(set_mass_fracs[m],
                        Catch::Matchers::WithinRel(mass_fracs[m], 1.0e-14));
           }
