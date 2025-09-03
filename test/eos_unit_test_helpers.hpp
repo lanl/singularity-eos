@@ -201,8 +201,10 @@ CheckRhoSieFromPT(EOS eos, Real rho, Real T,
 // whether or not a non-serial backend is supplied
 #ifdef PORTABILITY_STRATEGY_NONE
 #define REQUIRE_MAYBE_THROWS(...) REQUIRE_THROWS(__VA_ARGS__)
+#define REQUIRE_MAYBE_THROWS_WITH(...) REQUIRE_THROWS_WITH(__VA_ARGS__)
 #else
 #define REQUIRE_MAYBE_THROWS(...) ((void)0)
+#define REQUIRE_MAYBE_THROWS_WITH(...) ((void)0)
 #endif // PORTABILITY_STRATEGY_NONE
 
 #endif // _SINGULARITY_EOS_TEST_TEST_HELPERS_
