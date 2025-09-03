@@ -24,6 +24,7 @@
 
 using namespace singularity::IndexerUtils;
 using namespace singularity::IndexableTypes;
+using namespace singularity::variadic_utils;
 
 using Lambda_t = VariadicIndexer<MeanIonizationState, ElectronFraction, LogDensity>;
 
@@ -91,6 +92,36 @@ SCENARIO("IndexableTypes and ManualLambda", "[IndexableTypes]") {
         REQUIRE(Zbar == static_cast<Real>(0));
         REQUIRE(lRho == static_cast<Real>(2));
       }
+    }
+  }
+}
+
+template<int nmat>
+struct ATestForMassFraction {
+  template<typename Lambda_t,
+           SINGULARITY_INDEXER_HAS_MASS_FRAC(Lambda_t, nmat)
+  >
+  constexpr bool has_mass_frac(Lambda_t) const {
+    return true;
+  }
+};
+
+SCENARIO("Mass fraction indexable types SFINAE macro", "[IndexableTypes]") {
+  GIVEN("A lambda type that contains a mass fraction") {
+    constexpr size_t num_mat = 3;
+    using MassFracLambda_t = VariadicIndexer<
+        MeanIonizationState, ElectronFraction, LogDensity, MassFraction<num_mat - 1>
+    >;
+    THEN("The lambda will be indexable with the mass fraction") {
+      // Really this will fail to compile so this runtime check is just for the
+      // sake of executing the code
+      STATIC_REQUIRE(is_indexable_v<MassFracLambda_t, MassFraction<num_mat - 1>>);
+    }
+    AND_WHEN("The SINGULARITY_INDEXER_HAS_MASS_FRAC macro is used with SFINAE in a "
+             "class") {
+      constexpr ATestForMassFraction<num_mat> test{};
+      constexpr MassFracLambda_t lambda{};
+      STATIC_REQUIRE(test.has_mass_frac(lambda));
     }
   }
 }
