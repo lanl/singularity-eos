@@ -110,7 +110,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
  private:
   Real mass_frac_cutoff_;
   std::tuple<EOSModelsT...> models_;
-  using eosT_ = Variant<EOSModelsT *...>;
+  using eosT_ = Variant<EOSModelsT...>;
 
   static constexpr std::size_t nmat_ = sizeof...(EOSModelsT); // for convenience
 
@@ -123,7 +123,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   template <typename RealIndexer, typename LambdaIndexer, size_t... Is,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   constexpr void assign_mass_fractions(RealIndexer mass_fracs, const LambdaIndexer lambda,
-                                       std::index_sequence<Is...>) {
+                                       std::index_sequence<Is...>) const {
     ((mass_fracs[Is] = lambda[IndexableTypes::MassFraction<Is>{}]), ...);
   }
 
@@ -133,7 +133,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   constexpr void callDensityEnergyFromPressureTemperatureAll(
       const Real pressure, const Real temperature, LambdaIndexer &&lambdas,
-      RealIndexer &density_mat, RealIndexer &energy_mat, std::index_sequence<Is...>) {
+      RealIndexer &density_mat, RealIndexer &energy_mat,
+      std::index_sequence<Is...>) const {
     ((std::get<Is>(models_).DensityEnergyFromPressureTemperature(
          pressure, temperature, std::forward<LambdaIndexer>(lambdas), density_mat[Is],
          energy_mat[Is])),
@@ -175,7 +176,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   constexpr void getMaterialBulkModulusFromDensityTemperature(
       const Real temperature, LambdaIndexer &&lambdas, RealIndexer &density_mat,
-      RealIndexer &bmod_mat, std::index_sequence<Is...>) {
+      RealIndexer &bmod_mat, std::index_sequence<Is...>) const {
     ((bmod_mat[Is] = std::get<Is>(models_).BulkModulusFromDensityTemperature(
           density_mat[Is], temperature, std::forward<LambdaIndexer>(lambdas))),
      ...);
@@ -187,7 +188,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   constexpr void getMaterialBulkModulusFromDensityInternalEnergy(
       LambdaIndexer &&lambdas, RealIndexer &density_mat, RealIndexer &sie_mat,
-      RealIndexer &bmod_mat, std::index_sequence<Is...>) {
+      RealIndexer &bmod_mat, std::index_sequence<Is...>) const {
     ((bmod_mat[Is] = std::get<Is>(models_).BulkModulusFromDensityInternalEnergy(
           density_mat[Is], sie_mat[Is], std::forward<LambdaIndexer>(lambdas))),
      ...);
@@ -352,7 +353,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   // Helper function to volume-average an array
   template <typename arrT, typename vfracT>
   PORTABLE_FORCEINLINE_FUNCTION Real VolumeAverageMatArray(arrT arr, vfracT vfracs,
-                                                           int num = nmat_) {
+                                                           int num = nmat_) const {
     Real avg = 0;
     for (size_t i = 0; i < num; i++) {
       avg += vfracs[i] * arr[i];
@@ -703,17 +704,17 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     density_tot = 0;
     Real spvol_tot = 0;
     for (size_t m = 0; m < nmat_; m++) {
-      spvol_tot += robust::ratio(mass_fracs, density_mat[m]);
-      sie_tot += robust::ratio(mass_fracs, sie_mat[m]);
+      spvol_tot += robust::ratio(mass_fracs[m], density_mat[m]);
+      sie_tot += robust::ratio(mass_fracs[m], sie_mat[m]);
     }
     PORTABLE_REQUIRE(spvol_tot > 0., "Material volumes sum to zero");
     density_tot = robust::ratio(1.0, spvol_tot);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
-  auto CreateEOSArray() {
+  auto CreateEOSArray() const {
     return std::apply(
-        [this](auto &&...eos_models) { return std::array<eosT_, nmat_>{&eos_models...}; },
+        [this](auto &&...eos_models) { return std::array<eosT_, nmat_>{eos_models...}; },
         models_);
   }
 
@@ -1226,7 +1227,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // of EOS objects. So we'll claim this isn't a modifier for this purpose
     return false;
   }
-  inline constexpr const auto UnmodifyOnce() {
+  inline constexpr const auto UnmodifyOnce() const {
     // Even though this class could be considered a modifier, there is no clean
     // way to return an "unmodified object" since this class takes a collection
     // of EOS objects. So we'll claim this isn't a modifier for this purpose
@@ -1241,7 +1242,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return (0 + ... + EOSModelsT::SharedMemorySizeInBytes());
   }
 
-  std::size_t DumpDynamicMemory(char *dst) {
+  std::size_t DumpDynamicMemory(char *dst) const {
     // Call each model's DumpDynamicMemory(dst_i) in order and return total
     // bytes written
     std::size_t total = 0;
