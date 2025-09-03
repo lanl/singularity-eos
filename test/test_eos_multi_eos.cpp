@@ -108,6 +108,22 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
       }
     }
 
+    GIVEN("A set of mass fractions") {
+      std::array<Real, num_eos> set_mass_fracs{};
+      set_mass_fracs.fill(1.0 / num_eos);
+      LambdaT lambda{set_mass_fracs};
+
+      THEN("The MultiEOS object can translate these from the lambda to an array") {
+        std::array<Real, num_eos> mass_fracs{};
+        multi_eos.PopulateMassFracArray(mass_fracs, lambda);
+        for (size_t m = 0; m < num_eos; m++) {
+          INFO("Mass fraction test: mass_fracs[" << m << "] = " << mass_fracs[m]);
+          CHECK_THAT(set_mass_fracs[m],
+                     Catch::Matchers::WithinRel(mass_fracs[m], 1.0e-14));
+        }
+      }
+    }
+
     THEN("The MultiEOS object can be placed in an EOS Variant") {
       using EOS =
           Variant<DavisReactants, ShiftedEOS<DavisProducts>,
@@ -116,8 +132,9 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
 
       AND_WHEN("A pressure-temperature lookup is performed") {
         // Populate lambda with mass fractions (only)
-        constexpr std::array<Real, num_eos> set_mass_fracs{1.0 / num_eos};
-        constexpr LambdaT lambda{set_mass_fracs};
+        std::array<Real, num_eos> set_mass_fracs{};
+        set_mass_fracs.fill(1.0 / num_eos);
+        LambdaT lambda{set_mass_fracs};
 
         // A high pressure and temperature
         constexpr Real P = 8.0e10;
@@ -125,7 +142,10 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         Real rho;
         Real sie;
         multi_eos_in_variant.DensityEnergyFromPressureTemperature(P, T, lambda, rho, sie);
+        INFO("MultiEOS density: " << rho << "   sie: " << sie);
         CHECK(rho > 0.);
+        CHECK(std::isnormal(rho));
+        CHECK(std::isnormal(sie));
 
         THEN("The result is consistent with doing the same for the individual EOS") {
 
@@ -135,13 +155,6 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
           // Create an array of mass fractions for adding up the individual values
           std::array<Real, num_eos> mass_fracs{};
           multi_eos.PopulateMassFracArray(mass_fracs, lambda);
-
-          // Quick check that we can reproduce the input mass fractions
-          for (size_t m = 0; m < num_eos; m++) {
-            INFO("Mass fraction test: mass_fracs[" << m << "] = " << mass_fracs[m]);
-            CHECK_THAT(set_mass_fracs[m],
-                       Catch::Matchers::WithinRel(mass_fracs[m], 1.0e-14));
-          }
 
           // Sum the individual EOS contributions weighted by mass fractions
           Real spvol_bulk = 0.;
@@ -169,7 +182,7 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     }
 
     WHEN("A mass fraction cutoff is specified in the constructor") {
-      constexpr Real mf_cutoff = 0.01;
+      constexpr Real mf_cutoff = 0.001;
       auto multi_eos_largeMF = make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos);
 
       THEN("The 'SetUpPTE' member function will correctly determine which materials are "
@@ -182,7 +195,8 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         constexpr Real sie_tot = 1.0e10;
 
         // Arrays
-        std::array<Real, num_eos> mass_fracs{large_mf};
+        std::array<Real, num_eos> mass_fracs{};
+        mass_fracs.fill(large_mf);
         std::array<Real, num_eos> vol_fracs{};   // zero initialized
         std::array<Real, num_eos> density_mat{}; // zero initialized
         std::array<Real, num_eos> sie_mat{};     // zero initialized
