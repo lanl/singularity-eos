@@ -19,12 +19,14 @@
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #endif
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 
+#include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_multi_eos.hpp>
@@ -34,6 +36,8 @@ using singularity::DavisProducts;
 using singularity::DavisReactants;
 using singularity::ShiftedEOS;
 using singularity::Variant;
+using singularity::IndexableTypes::MassFraction;
+using singularity::IndexerUtils::VariadicIndexer;
 
 using Catch::Matchers::ContainsSubstring;
 
@@ -43,8 +47,8 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         "object") {
     // Unit conversions
     constexpr Real cm = 1.;
-    constexpr Real us = 1e-06;
-    constexpr Real Mbcc_per_g = 1e12;
+    [[maybe_unused]] constexpr Real us = 1e-06;
+    [[maybe_unused]] constexpr Real Mbcc_per_g = 1e12;
     constexpr Real GPa = 1.0e10;
     constexpr Real sqrtGPa = 1.0e5; // sqrt isn't constexpr...
     constexpr Real MJ_per_kg = 1.0e10;
@@ -76,19 +80,138 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     auto davis_p_eos = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
 
     // Create the multiEOS object
+    constexpr size_t num_eos = 2;
+    using LambdaT = VariadicIndexer<MassFraction<0>, MassFraction<1>>;
     auto multi_eos = make_MultiEOS(davis_r_eos, davis_p_eos);
 
-    THEN("The MultiEOS object can also be placed in an EOS Variant") {
+    GIVEN("A mass fraction cutoff less than 0") {
+      constexpr Real mf_cutoff = -0.01;
+      THEN("Constructing the MultiEOS object should throw an exception") {
+        REQUIRE_THROWS_WITH(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos),
+                            "Mass fracton cutoff must be non-negative");
+      }
+    }
+
+    GIVEN("A mass fraction cutoff equal to 1") {
+      constexpr Real mf_cutoff = 1.0;
+      THEN("Constructing the MultiEOS object should throw an exception") {
+        REQUIRE_THROWS_WITH(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos),
+                            "Mass fractons must be less than 1");
+      }
+    }
+
+    GIVEN("A mass fraction cutoff greater than 1") {
+      constexpr Real mf_cutoff = 2.0;
+      THEN("Constructing the MultiEOS object should throw an exception") {
+        REQUIRE_THROWS_WITH(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos),
+                            "Mass fractons must be less than 1");
+      }
+    }
+
+    THEN("The MultiEOS object can be placed in an EOS Variant") {
       using EOS =
           Variant<DavisReactants, ShiftedEOS<DavisProducts>,
                   decltype(make_MultiEOS(DavisReactants{}, ShiftedEOS<DavisProducts>{}))>;
       EOS multi_eos_in_variant = make_MultiEOS(davis_r_eos, davis_p_eos);
+
+      AND_WHEN("A pressure-temperature lookup is performed") {
+        // Populate lambda with mass fractions (only)
+        constexpr std::array<Real, num_eos> set_mass_fracs{1.0 / num_eos};
+        constexpr LambdaT lambda{set_mass_fracs};
+
+        // A high pressure and temperature
+        constexpr Real P = 8.0e10;
+        constexpr Real T = 8000;
+        Real rho;
+        Real sie;
+        multi_eos_in_variant.DensityEnergyFromPressureTemperature(P, T, lambda, rho, sie);
+        CHECK(rho > 0.);
+        CHECK(sie > 0.);
+
+        THEN("The result is consistent with doing the same for the individual EOS") {
+
+          // Create an array of EOS
+          const auto eos_arr = multi_eos.CreateEOSArray();
+
+          // Create an array of mass fractions for adding up the individual values
+          std::array<Real, num_eos> mass_fracs{};
+          multi_eos.PopulateMassFracArray(mass_fracs, lambda);
+
+          // Quick check that we can reproduce the input mass fractions
+          for (size_t m = 0; m < num_eos; m++) {
+            INFO("Mass fraction test for m = " << m);
+            CHECK_THAT(set_mass_fracs[m],
+                       Catch::Matchers::WithinRel(mass_fracs[m], 1.0e-14));
+          }
+
+          // Sum the individual EOS contributions weighted by mass fractions
+          Real spvol_bulk = 0.;
+          Real sie_bulk = 0.;
+          for (size_t m = 0; m < num_eos; m++) {
+            Real rho_m;
+            Real sie_m;
+            eos_arr[m].DensityEnergyFromPressureTemperature(P, T, nullptr, rho_m, sie_m);
+            INFO("EOS[" << m << "]:\n" << eos_arr[m].EosType());
+            CHECK(rho_m > 0.);
+            CHECK(sie_m != 0.);
+            spvol_bulk += mass_fracs[m] / rho_m;
+            sie_bulk += mass_fracs[m] * sie_m;
+          }
+
+          // Quick check that we can invert the specific volume
+          REQUIRE(spvol_bulk > 0.);
+          Real rho_bulk = 1.0 / spvol_bulk;
+
+          // Make sure the weighted sums add up to the result from the MultiEOS
+          CHECK_THAT(rho_bulk, Catch::Matchers::WithinRel(rho, 1.0e-12));
+          CHECK_THAT(sie_bulk, Catch::Matchers::WithinRel(sie, 1.0e-12));
+        }
+      }
+    }
+
+    WHEN("A mass fraction cutoff is specified in the constructor") {
+      constexpr Real mf_cutoff = 0.01;
+      auto multi_eos_largeMF = make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos);
+
+      THEN("The 'SetUpPTE' member function will correctly determine which materials are "
+           "participating in PTE") {
+        constexpr auto small_mf = mf_cutoff / 10.;
+        constexpr auto large_mf = (1.0 - small_mf) / (num_eos - 1);
+
+        // Somewhat realistic but irrelvant values
+        constexpr Real density_tot = 1.5;
+        constexpr Real sie_tot = 1.0e10;
+
+        // Arrays
+        std::array<Real, num_eos> mass_fracs{large_mf};
+        std::array<Real, num_eos> vol_fracs{};   // zero initialized
+        std::array<Real, num_eos> density_mat{}; // zero initialized
+        std::array<Real, num_eos> sie_mat{};     // zero initialized
+        std::array<size_t, num_eos> pte_mats{};  // zero initialized
+        size_t npte = 0;
+        Real vfrac_tot = 0;
+        auto eos_arr = multi_eos_largeMF.CreateEOSArray();
+
+        // Select first index to have a small mass fraction so that it won't
+        // participate
+        mass_fracs[0] = small_mf;
+
+        multi_eos_largeMF.SetUpPTE(mass_fracs, vol_fracs, density_mat, sie_mat, pte_mats,
+                                   npte, vfrac_tot, density_tot, sie_tot, eos_arr);
+
+        INFO("mass_fracs[0] = " << mass_fracs[0]);
+        INFO("Small Mass Fraction = " << small_mf);
+        INFO("Mass Fraction Cutoff = " << mf_cutoff);
+        CHECK(npte == num_eos - 1);
+        CHECK(pte_mats[0] != 0); // First PTE material should not be index 0
+      }
     }
 
     WHEN("The EosType function is called") {
       auto davis_r_eostype = davis_r_eos.EosType();
       auto davis_p_eostype = davis_r_eos.EosType();
       auto multi_eostype = multi_eos.EosType();
+
       THEN("The MultiEOS EosType should contain the component EOS names") {
         CHECK_THAT(multi_eostype, ContainsSubstring(davis_r_eostype));
         CHECK_THAT(multi_eostype, ContainsSubstring(davis_p_eostype));
@@ -100,6 +223,7 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
       auto davis_r_eospytype = davis_r_eos.EosPyType();
       auto davis_p_eospytype = davis_r_eos.EosPyType();
       auto multi_eospytype = multi_eos.EosPyType();
+
       THEN("The MultiEOS EosType should contain the component EOS names") {
         CHECK_THAT(multi_eospytype, ContainsSubstring(davis_r_eospytype));
         CHECK_THAT(multi_eospytype, ContainsSubstring(davis_p_eospytype));
