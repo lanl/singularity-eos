@@ -24,6 +24,7 @@ Date: 8/27/2025
 - [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
 
 ### Fixed (Repair bugs, etc)
+- [[PR512]](https://github.com/lanl/singularity-eos/pull/512) Cleanup fortran docs
 - [[PR537]](https://github.com/lanl/singularity-eos/pull/537) Fix pathological initial guesses in PTE solvers
 - [[PR523]](https://github.com/lanl/singularity-eos/pull/523) Fix reading order in SpinerEOSDependsRhoSie
 - [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Added some robustness checks to the PTE solvers
