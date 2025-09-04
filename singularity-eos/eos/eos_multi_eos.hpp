@@ -37,6 +37,10 @@
 
 namespace singularity {
 
+// TODO: mauneyc has a tuple extension that would abstract away a lot of these
+// complicated fold expressions by e.g. providing a square bracket interface
+// to a tuple.
+
 // This functor essentially wraps a fold expression so that each term in the
 // fold can be injected via the functor f. The functor should take the EOS
 // followed by the density, internal energy, and temperature so that it can
@@ -727,6 +731,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
   PORTABLE_FORCEINLINE_FUNCTION
   auto CreateEOSArray() const {
+    // TODO: Consider using the experimental C++ `make_array()`
     return std::apply(
         [](auto &&...eos_models) { return std::array<eosT_, nmat_>{eos_models...}; },
         models_);
