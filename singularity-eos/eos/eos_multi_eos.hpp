@@ -799,8 +799,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.EntropyFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.EntropyFromDensityInternalEnergy(rho, sie, lambda);
@@ -821,8 +820,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer &lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
@@ -844,8 +842,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer &lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
@@ -868,8 +865,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer &lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
@@ -916,8 +912,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.EntropyFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.EntropyFromDensityInternalEnergy(rho, sie, lambda);
@@ -938,8 +933,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
@@ -961,8 +955,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
@@ -984,8 +977,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
@@ -1039,8 +1031,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       cv = massFracAverageQuantityAtManyStates(
           [](auto const &eos, Real const rho, Real const sie, Real const temperature,
              LambdaIndexer lambda) {
-            if constexpr (eos.PreferredInput() ==
-                          (thermalqs::density | thermalqs::temperature)) {
+            if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
               return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
             } else {
               return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
@@ -1054,8 +1045,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       bmod = avg_funct(
           [](auto const &eos, Real const rho, Real const sie, Real const temperature,
              LambdaIndexer lambda) {
-            if constexpr (eos.PreferredInput() ==
-                          (thermalqs::density | thermalqs::temperature)) {
+            if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
               return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
             } else {
               return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
@@ -1147,8 +1137,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     cv = massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
@@ -1161,8 +1150,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     auto avg_gruneisen = g_avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
@@ -1176,8 +1164,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     bmod = b_avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer lambda) {
-          if constexpr (eos.PreferredInput() ==
-                        (thermalqs::density | thermalqs::temperature)) {
+          if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
           } else {
             return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
