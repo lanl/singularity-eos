@@ -268,6 +268,13 @@ class PTESolverBase {
   PTESolverBase() = delete;
   PORTABLE_INLINE_FUNCTION std::size_t Nmat() const { return nmat; }
   PORTABLE_INLINE_FUNCTION std::size_t &Niter() { return niter; }
+
+  // A note on the virtual functions below. We are NOT using runtime
+  // polymorphism. The point of these virtual functions is to provide
+  // default implementations for functions that are shared between
+  // solvers. But a given solver should be treated by value, not with
+  // pointers, and avoid relocatable device code.
+
   // Fixup is meant to be a hook for derived classes to provide arbitrary manipulations
   // after each iteration of the Newton solver.  This version just renormalizes the
   // volume fractions, which is useful to deal with roundoff error.
