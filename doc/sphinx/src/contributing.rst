@@ -384,6 +384,18 @@ contributor to the existing EOS as examples.
 Notes for Contributors on navigating/developing code features
 -------------------------------------------------------------
 
+On generative AI
+`````````````````
+
+We require that any file that was modified with the assistance of
+generative AI should have some text indicating that such a tool was
+used. For example, you might add a comment like this one:
+
+..code-block:: c++
+
+  // This file was made in part with generative AI.
+
+
 Some notes on style and code architecture
 ``````````````````````````````````````````
 
@@ -620,6 +632,12 @@ function for that particular EOS.
 Also note that any new functionality added to the base class needs to be
 mirrored in the :ref:`Variant class <variant section>` so that it is accessable
 when using the ``EOS`` type.
+
+The solvers in ``closure/mixed_cell_models.hpp`` also use inheritence
+but again here the intent is **not** to use run-time polymorphism. The
+base class simply provides (potentially overridable) functionality to
+the derived classes. But you should always instantiate a derived
+class, **not** a pointer to a base class.
 
 .. _CRTP: https://www.fluentcpp.com/2017/05/12/curiously-recurring-template-pattern/
 

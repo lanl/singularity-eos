@@ -12,6 +12,9 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 
+// This file was made in part with generative AI.
+
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -276,6 +279,25 @@ SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
     // cleanup
     eos_bare.Finalize();
     eos_variant.Finalize();
+  }
+}
+
+SCENARIO("Variant EOS type information", "[Variant][EosType]") {
+  GIVEN("The EOS variant") {
+    THEN("AvailableEOSs returns a container containing all possible EOS types") {
+      auto types = EOS::AvailableEOSs();
+      REQUIRE(types.size() == 2);
+      REQUIRE(types.count(IdealGas::EosType()) > 0);
+      REQUIRE(types.count(IdealElectrons::EosType()) > 0);
+      AND_THEN("If I specify the container type, it still works") {
+        auto types2 = EOS::AvailableEOSs<std::vector<std::string>>();
+        REQUIRE(types2.size() == 2);
+        REQUIRE(std::find(types2.begin(), types2.end(), IdealGas::EosType()) !=
+                types2.end());
+        REQUIRE(std::find(types2.begin(), types2.end(), IdealElectrons::EosType()) !=
+                types2.end());
+      }
+    }
   }
 }
 

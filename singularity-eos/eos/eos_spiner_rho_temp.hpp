@@ -1,4 +1,3 @@
-
 //------------------------------------------------------------------------------
 // © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
@@ -84,18 +83,23 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
   SG_ADD_BASE_CLASS_USINGS(SpinerEOSDependsRhoT);
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid, TableSplit split,
-                              bool reproducibility_mode = false);
+                              bool reproducibility_mode = false,
+                              bool pmin_vapor_dome = false);
   inline SpinerEOSDependsRhoT(const std::string &filename, int matid,
-                              bool reproducibility_mode = false)
-      : SpinerEOSDependsRhoT(filename, matid, TableSplit::Total, reproducibility_mode) {}
+                              bool reproducibility_mode = false,
+                              bool pmin_vapor_dome = false)
+      : SpinerEOSDependsRhoT(filename, matid, TableSplit::Total, reproducibility_mode,
+                             pmin_vapor_dome) {}
   inline SpinerEOSDependsRhoT(const std::string &filename,
                               const std::string &materialName, TableSplit split,
-                              bool reproducibility_mode = false);
+                              bool reproducibility_mode = false,
+                              bool pmin_vapor_dome = false);
   inline SpinerEOSDependsRhoT(const std::string &filename,
                               const std::string &materialName,
-                              bool reproducibility_mode = false)
+                              bool reproducibility_mode = false,
+                              bool pmin_vapor_dome = false)
       : SpinerEOSDependsRhoT(filename, materialName, TableSplit::Total,
-                             reproducibility_mode) {}
+                             reproducibility_mode, pmin_vapor_dome) {}
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT()
       : memoryStatus_(DataStatus::Deallocated), split_(TableSplit::Total) {}
@@ -208,6 +212,9 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
     printf("%s\n\t%s\n\t%s\n\t%s%i\n\t%s\n", s1, s2, s3, s4, matid_, s5);
     return;
   }
+  PORTABLE_FORCEINLINE_FUNCTION void PrintRhoPMin() const {
+    return spiner_common::PrintRhoPMin(rho_at_pmin_, lTOffset_);
+  }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const { return rhoMin(); }
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumTemperature() const { return T_(lTMin_); }
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumDensity() const { return rhoMax(); }
@@ -314,9 +321,12 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
   MeanAtomicProperties AZbar_;
   int matid_;
   TableSplit split_;
-  bool reproducible_;
-  static constexpr const Real ROOT_THRESH = 1e-14; // TODO: experiment
+  bool reproducible_ = false;
+  bool pmin_vapor_dome_ = false;
+  static constexpr const Real ROOT_THRESH = 1e-14;
   static constexpr const Real SOFT_THRESH = 1e-8;
+  // only used to exclude vapor dome
+  static constexpr const Real VAPOR_DPDR_THRESH = 1e-8;
   DataStatus memoryStatus_ = DataStatus::Deallocated;
   static constexpr const int _n_lambda = 2;
   static constexpr const char *_lambda_names[2] = {"log(rho)", "log(T)"};
@@ -324,9 +334,10 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
 inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, int matid,
                                                   TableSplit split,
-                                                  bool reproducibility_mode)
+                                                  bool reproducibility_mode,
+                                                  bool pmin_vapor_dome)
     : matid_(matid), split_(split), reproducible_(reproducibility_mode),
-      memoryStatus_(DataStatus::OnHost) {
+      pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str = std::to_string(matid);
   hid_t file, matGroup, lTGroup, coldGroup;
@@ -371,9 +382,10 @@ inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename, i
 inline SpinerEOSDependsRhoT::SpinerEOSDependsRhoT(const std::string &filename,
                                                   const std::string &materialName,
                                                   TableSplit split,
-                                                  bool reproducibility_mode)
+                                                  bool reproducibility_mode,
+                                                  bool pmin_vapor_dome)
     : split_(split), reproducible_(reproducibility_mode),
-      memoryStatus_(DataStatus::OnHost) {
+      pmin_vapor_dome_(pmin_vapor_dome), memoryStatus_(DataStatus::OnHost) {
 
   std::string matid_str;
   hid_t file, matGroup, lTGroup, coldGroup;
@@ -495,20 +507,7 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   setlTColdCrit_();
 
   // fill in minimum pressure as a function of temperature
-  rho_at_pmin_.resize(numT_);
-  rho_at_pmin_.setRange(0, P_.range(0));
-  for (int i = 0; i < numT_; i++) {
-    PMin_ = std::numeric_limits<Real>::max();
-    int jmax = -1;
-    for (int j = 0; j < numRho_; j++) {
-      if (P_(j, i) < PMin_) {
-        PMin_ = P_(j, i);
-        jmax = j;
-      }
-    }
-    if (jmax < 0) printf("Failed to find minimum pressure.\n");
-    rho_at_pmin_(i) = rho_(P_.range(1).x(jmax));
-  }
+  PMin_ = SetRhoPMin(P_, rho_at_pmin_, pmin_vapor_dome_, VAPOR_DPDR_THRESH, lRhoOffset_);
 
   // fill in Gruneisen parameter and bulk modulus on cold curves
   // unfortunately, EOSPAC's output for these parameters appears

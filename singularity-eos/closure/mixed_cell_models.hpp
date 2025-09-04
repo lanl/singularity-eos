@@ -19,9 +19,11 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 
 #include <cmath>
+#include <utility>
 
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
 #include <KokkosBatched_ApplyQ_Decl.hpp>
@@ -41,15 +43,21 @@ struct MixParams {
   bool verbose = false;
   bool iterate_t_guess = true;
   Real derivative_eps = 3.0e-6;
-  Real pte_rel_tolerance_p = 1.e-6;
-  Real pte_rel_tolerance_e = 1.e-6;
-  Real pte_rel_tolerance_t = 1.e-4;
-  Real pte_abs_tolerance_p = 0.0;
-  Real pte_abs_tolerance_e = 1.e-4;
-  Real pte_abs_tolerance_t = 0.0;
-  Real pte_rel_tolerance_v = 1e-6;
-  Real pte_abs_tolerance_v = 1e-6;
-  Real pte_residual_tolerance = 1.e-8;
+  Real pte_rel_tolerance_p = 1.0e-6;
+  Real pte_rel_tolerance_t = 1.0e-4;
+  Real pte_rel_tolerance_e = 1.0e-6;
+  Real pte_rel_tolerance_v = 1.0e-6;
+  Real pte_abs_tolerance_p = 1.0e-6;
+  Real pte_abs_tolerance_t = 1.0e-4;
+
+  Real pte_slow_convergence_thresh = 0.99;
+  Real pte_rel_tolerance_p_sufficient = 1.e2 * pte_rel_tolerance_p;
+  Real pte_rel_tolerance_t_sufficient = 10 * pte_rel_tolerance_t;
+  Real pte_rel_tolerance_e_sufficient = 1.e2 * pte_rel_tolerance_e;
+  Real pte_rel_tolerance_v_sufficient = 1.e2 * pte_rel_tolerance_v;
+  Real pte_abs_tolerance_p_sufficient = 1.e2 * pte_abs_tolerance_p;
+  Real pte_abs_tolerance_t_sufficient = 10 * pte_abs_tolerance_t;
+
   std::size_t pte_max_iter_per_mat = 128;
   Real line_search_alpha = 1.e-2;
   std::size_t line_search_max_iter = 6;
@@ -60,10 +68,17 @@ struct MixParams {
   Real min_dtde = 1.0e-16;
   std::size_t pte_small_step_tries = 2;
   Real pte_small_step_thresh = 1e-16;
+  Real pte_max_dpdv = -1e-8;
+
+  // JMM: note the deliberate integer here. Negative value means do
+  // the default. Assuming here that we never have a problem with 2^63
+  // materials...
+  std::int64_t pte_reduced_system_exclude_idx = -1;
 };
 
 struct SolverStatus {
   bool converged = false;
+  bool slow_convergence_detected = false;
   std::size_t max_niter = 0;
   std::size_t max_line_niter = 0;
   std::size_t small_step_iters = 0;
@@ -96,61 +111,133 @@ bool check_nans(Real const *const a, const std::size_t n, const bool verbose = f
 
 PORTABLE_INLINE_FUNCTION
 bool solve_Ax_b_wscr(const std::size_t n, Real *a, Real *b, Real *scr) {
+  // Simple Jacobi preconditioner
+  //
+  // JMM: This DOES seem to reliably reduce the condition number of
+  // our matrices, suggesting they can be reliably transformed into a
+  // diagonally dominant form. However, it's unclear to me if it
+  // actually helps us solve difficult mixed cells. It seems to me
+  // that when the matrix is ill-conditioned there is some other
+  // feature of the problem making the solve difficult, perhaps the
+  // shape of the residual space, or some source of catastrophic
+  // cancellation we haven't been able to eliminate. That said, it's
+  // basically free, so I decided to keep it.
+  for (std::size_t row = 0; row < n; ++row) {
+    Real maxabs = 0;
+    for (std::size_t column = 0; column < n; ++column) {
+      maxabs = std::max(std::abs(a[row * n + column]), maxabs);
+    }
+    if (maxabs == 0) {
+      // row is all zeros. Matrix is not invertible.
+      return false;
+    }
+    for (std::size_t column = 0; column < n; ++column) {
+      a[row * n + column] /= maxabs;
+    }
+    b[row] /= maxabs;
+  }
+
+  if (n == 1) {                       // JMM: Just in case
+    b[0] = robust::ratio(b[0], a[0]); // re-use b as x
+  } else if (n == 2) {
+    // JMM: Special case Cramer's rule for 2x2 matrices, where it is
+    // both more efficient and more accurate. Note that at 3x3 and
+    // greater, it becomes worse in both efficiency and
+    // accuracy.
+    Real *x = scr;
+    const Real det = a[0] * a[3] - a[1] * a[2];
+    x[0] = robust::ratio(a[3] * b[0] - a[1] * b[1], det);
+    x[1] = robust::ratio(a[0] * b[1] - a[2] * b[0], det);
+    b[0] = x[0];
+    b[1] = x[1];
+  } else {
+    // TODO(JMM): Should we switch to an SVD-based psuedo-inverse for
+    // larger matrices?
 #ifdef SINGULARITY_USE_KOKKOSKERNELS
 #ifndef PORTABILITY_STRATEGY_KOKKOS
 #error "Kokkos Kernels requires Kokkos."
 #endif
-  // aliases for kokkos views
-  using Unmgd = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
-  using Lrgt = Kokkos::LayoutRight;
-  using vec_t = Kokkos::View<Real *, Unmgd>;
-  // aliases for QR solve template params
-  using QR_alg = KokkosBatched::Algo::QR::Unblocked;
-  using Lft = KokkosBatched::Side::Left;
-  using Trs = KokkosBatched::Trans::Transpose;
-  using nTrs = KokkosBatched::Trans::NoTranspose;
-  using ApQ_alg = KokkosBatched::Algo::ApplyQ::Unblocked;
-  using UP = KokkosBatched::Uplo::Upper;
-  using NonU = KokkosBatched::Diag::NonUnit;
-  using Tr_alg = KokkosBatched::Algo::Trsv::Unblocked;
-  // aliases for solver structs ('invoke' member of the struct is the
-  // actual function call)
-  using QR_factor = KokkosBatched::SerialQR<QR_alg>;
-  using ApplyQ_transpose = KokkosBatched::SerialApplyQ<Lft, Trs, ApQ_alg>;
-  using InvertR = KokkosBatched::SerialTrsv<UP, nTrs, NonU, Tr_alg>;
-  // view of matrix
-  Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
-  // view of RHS
-  Kokkos::View<Real **, Lrgt, Unmgd> B(b, n, 1);
-  // view of reflectors
-  vec_t t(scr, n);
-  // view of workspace
-  vec_t w(scr + n, n);
-  // QR factor A, A x = B -> Q R x = B
-  // store result in A and t
-  QR_factor::invoke(A, t, w);
-  // Apply Q^T from the left to both sides
-  // Q^T Q R x = Q^T B -> R x = Q^T B
-  // store result of Q^T B in B
-  ApplyQ_transpose::invoke(A, t, B, w);
-  // Apply R^-1 from the left to both sides
-  // R^-1 R x = R^-1 Q^T B -> x = R^-1 Q^T B
-  // store solution vector x in B
-  InvertR::invoke(1.0, A, B);
+    // aliases for kokkos views
+    using Unmgd = Kokkos::MemoryTraits<Kokkos::Unmanaged>;
+    using Lrgt = Kokkos::LayoutRight;
+    using vec_t = Kokkos::View<Real *, Unmgd>;
+    // aliases for QR solve template params
+    using QR_alg = KokkosBatched::Algo::QR::Unblocked;
+    using Lft = KokkosBatched::Side::Left;
+    using Trs = KokkosBatched::Trans::Transpose;
+    using nTrs = KokkosBatched::Trans::NoTranspose;
+    using ApQ_alg = KokkosBatched::Algo::ApplyQ::Unblocked;
+    using UP = KokkosBatched::Uplo::Upper;
+    using NonU = KokkosBatched::Diag::NonUnit;
+    using Tr_alg = KokkosBatched::Algo::Trsv::Unblocked;
+    // aliases for solver structs ('invoke' member of the struct is the
+    // actual function call)
+    using QR_factor = KokkosBatched::SerialQR<QR_alg>;
+    using ApplyQ_transpose = KokkosBatched::SerialApplyQ<Lft, Trs, ApQ_alg>;
+    using InvertR = KokkosBatched::SerialTrsv<UP, nTrs, NonU, Tr_alg>;
+    // view of matrix
+    Kokkos::View<Real **, Lrgt, Unmgd> A(a, n, n);
+    // view of RHS
+    Kokkos::View<Real **, Lrgt, Unmgd> B(b, n, 1);
+    // view of reflectors
+    vec_t t(scr, n);
+    // view of workspace
+    vec_t w(scr + n, n);
+    // QR factor A, A x = B -> Q R x = B
+    // store result in A and t
+    QR_factor::invoke(A, t, w);
+    // Apply Q^T from the left to both sides
+    // Q^T Q R x = Q^T B -> R x = Q^T B
+    // store result of Q^T B in B
+    ApplyQ_transpose::invoke(A, t, B, w);
+    // Apply R^-1 from the left to both sides
+    // R^-1 R x = R^-1 Q^T B -> x = R^-1 Q^T B
+    // store solution vector x in B
+    InvertR::invoke(1.0, A, B);
 #else
 #ifdef PORTABILITY_STRATEGY_KOKKOS
 #warning "Eigen should not be used with Kokkos."
 #endif
-  // Eigen VERSION
-  Eigen::Map<Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> A(a, n,
-                                                                                     n);
-  Eigen::Map<Eigen::VectorXd> B(b, n);
-  Eigen::Map<Eigen::VectorXd> X(scr, n);
-  X = A.lu().solve(B);
-  B = X;
+    // Eigen VERSION
+    using Matrix_t = Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    Eigen::Map<Matrix_t> A(a, n, n);
+
+    Eigen::Map<Eigen::VectorXd> B(b, n);
+    Eigen::Map<Eigen::VectorXd> X(scr, n);
+    X = A.colPivHouseholderQr().solve(B);
+
+    B = X;
 #endif // SINGULARITY_USE_KOKKOSKERNELS
+  }
   bool retval = check_nans(b, n);
   return retval;
+}
+
+/*
+ * Kahan summation, with the Neumaier correction
+ * https://onlinelibrary.wiley.com/doi/10.1002/zamm.19740540106
+ */
+struct IdentityOperator {
+  PORTABLE_FORCEINLINE_FUNCTION Real operator()(const Real x) const { return x; }
+};
+template <typename Data_t, typename Operator_t = IdentityOperator>
+PORTABLE_FORCEINLINE_FUNCTION Real
+sum_neumaier(Data_t &&data, std::size_t n, std::size_t offset = 0, std::size_t iskip = -1,
+             const Operator_t &op = IdentityOperator()) {
+  Real sum = 0;
+  Real c = 0; // correction
+  for (std::size_t i = 0; i < n; ++i) {
+    if (i == iskip) continue;
+    Real x = op(data[i + offset]);
+    Real t = sum + x;
+    if (std::abs(sum) >= std::abs(x)) {
+      c += (sum - t) + x;
+    } else {
+      c += (x - t) + sum;
+    }
+    sum = t;
+  }
+  return sum + c;
 }
 
 class CacheAccessor {
@@ -181,22 +268,24 @@ class PTESolverBase {
   PTESolverBase() = delete;
   PORTABLE_INLINE_FUNCTION std::size_t Nmat() const { return nmat; }
   PORTABLE_INLINE_FUNCTION std::size_t &Niter() { return niter; }
+
+  // A note on the virtual functions below. We are NOT using runtime
+  // polymorphism. The point of these virtual functions is to provide
+  // default implementations for functions that are shared between
+  // solvers. But a given solver should be treated by value, not with
+  // pointers, and avoid relocatable device code.
+
   // Fixup is meant to be a hook for derived classes to provide arbitrary manipulations
   // after each iteration of the Newton solver.  This version just renormalizes the
   // volume fractions, which is useful to deal with roundoff error.
+  // See comment above about virtual keyword
   PORTABLE_INLINE_FUNCTION
-  virtual void Fixup() const {
-    Real vsum = 0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-    }
-    for (std::size_t m = 0; m < nmat; ++m)
-      vfrac[m] *= robust::ratio(vfrac_total, vsum);
-  }
+  virtual void Fixup() { NormalizeVfrac(); }
   // Finalize restores the temperatures, energies, and pressures to unscaled values from
   // the internally scaled quantities used by the solvers
+  // See comment above about virtual keyword
   PORTABLE_INLINE_FUNCTION
-  void Finalize() {
+  virtual void Finalize() {
     for (std::size_t m = 0; m < nmat; m++) {
       temp[m] *= Tnorm;
       u[m] *= uscale;
@@ -237,30 +326,112 @@ class PTESolverBase {
   void InitRhoBarandRho() {
     // rhobar is a fixed quantity: the average density of
     // material m averaged over the full PTE volume
-    rho_total = 0.0;
     for (std::size_t m = 0; m < nmat; ++m) {
       PORTABLE_REQUIRE(vfrac[m] > 0.,
                        "Non-positive volume fraction provided to PTE solver");
       PORTABLE_REQUIRE(rho[m] > 0., "Non-positive density provided to PTE solver");
       rhobar[m] = rho[m] * vfrac[m];
-      rho_total += rhobar[m];
     }
+    rho_total = sum_neumaier(rhobar, nmat);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
-  void SetVfracFromT(const Real T) {
-    Real vsum = 0.0;
-    // set volume fractions
+  void NormalizeVfrac() const {
+    Real vfrac_sum = sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m) {
+      vfrac[m] *= robust::ratio(vfrac_total, vfrac_sum);
+    }
+  }
+
+  /* JMM: Find the volume fractions that:
+   * 1) Best respect initial guesses
+   * 2) Sum to 1
+   * 3) Are bounded from above such that no material has density less
+   * than the density at minimum pressure, which avoids scenarios
+   * where dP/drho < 0, where the solver can stuck.
+   *
+   * If these are not all possible to respect, error out and expect
+   * the GetTguess function to save us by picking a higher
+   * temperature.
+   *
+   * If this is possible to achieve, we can do so by using the "water
+   * filling" algorithm. See, e.g., Gallager, 1968.
+   */
+  PORTABLE_FORCEINLINE_FUNCTION
+  bool SetVfracFromT(const Real T) {
+    constexpr bool FAIL = true;
+    constexpr bool SUCCESS = false;
+    constexpr Real min_dv = 1e-12;
+    // Safety factor in maximum volume fraction keeps us on the dense
+    // side of rho at P min, so that roundoff can't send us in to the
+    // dP/drho < 0 region.
+    constexpr Real safety = 0.9;
+
+    // TODO(JMM): Stash this somewhere rather than recomputing it?
+    auto get_vfrac_max = [=](const std::size_t m) {
       const Real rho_min = eos[m].RhoPmin(T);
-      const Real vmax = std::min(0.9 * robust::ratio(rhobar[m], rho_min), 1.0);
-      vfrac[m] = (vfrac[m] > 0.0 ? std::min(vmax, vfrac[m]) : vmax);
-      vsum += vfrac[m];
-    }
-    // Normalize vfrac
+      const Real vfrac_max = std::min(safety * robust::ratio(rhobar[m], rho_min), 1.0);
+      return vfrac_max;
+    };
+    auto get_dv = [=](const std::size_t m) {
+      const Real vfrac_max = get_vfrac_max(m);
+      const Real vnew = std::min(vfrac_max, vfrac[m]);
+      const Real dv = vfrac[m] - vnew;
+      return dv;
+    };
+
+    // Do an initial sweep of volume fractions to account for missing
+    // initial guesses
+    // TODO(JMM): I'm not sure it's possible to pass in a missing
+    // initial guess, since then rhobar would be undefined, which
+    // would make the system underconstrained.
+    Real vfrac_max_sum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
-      vfrac[m] *= robust::ratio(vfrac_total, vsum);
+      const Real vfrac_max = get_vfrac_max(m);
+      // This chooses the smallest allowed density, since vfrac is
+      // inversely proportional to rho.
+      if (vfrac[m] <= 0) vfrac[m] = vfrac_max;
+      // Tally this to check if a valid state is possible
+      vfrac_max_sum += vfrac_max;
     }
+    if (vfrac_max_sum < vfrac_total) {
+      // No way to have all volume fractions less than their allowed
+      // maxima and sum to the correct total.
+      return FAIL;
+    }
+
+    // start normalized
+    NormalizeVfrac();
+
+    // JMM: Idea here is keep a running tally of how much volume we've
+    // had to subtract from a given material to keep vfrac <
+    // vfrac_max. We will distribute this excess volume accross all
+    // materials that haven't hit their max yet, and then
+    // repeat. Formal maximum number of iterations required is nmat
+    for (std::size_t niter = 0; niter < nmat; ++niter) {
+      Real remaining_vfrac = 0;
+      std::size_t n_uncapped_materials = nmat;
+      for (std::size_t m = 0; m < nmat; ++m) {
+        const Real dv = get_dv(m);
+        vfrac[m] -= dv;
+        remaining_vfrac += dv;
+        n_uncapped_materials -= (dv > min_dv);
+      }
+      if (std::abs(remaining_vfrac) < min_dv) {
+        break;
+      }
+      for (std::size_t m = 0; m < nmat; ++m) {
+        const bool uncapped = ((get_vfrac_max(m) - vfrac[m]) > min_dv);
+        if (uncapped) {
+          vfrac[m] += robust::ratio(remaining_vfrac, n_uncapped_materials);
+        }
+      }
+    }
+
+    // One more normalization, to be safe
+    NormalizeVfrac();
+
+    return SUCCESS;
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -302,7 +473,7 @@ class PTESolverBase {
 
     // iteratively increase temperature guess until all rho's are above rho_at_pmin
     const Real Tfactor = 10.0;
-    bool rho_fail;
+    bool bad_vfrac_guess;
     for (std::size_t i = 0; i < 3; i++) {
       if (params_.iterate_t_guess) {
         Tguess =
@@ -311,28 +482,35 @@ class PTESolverBase {
       for (std::size_t m = 0; m < nmat; ++m) {
         Tguess = std::max(eos[m].MinimumTemperature(), Tguess);
       }
-      SetVfracFromT(Tguess);
+      bad_vfrac_guess = SetVfracFromT(Tguess);
+      if (bad_vfrac_guess) {
+        Tguess *= Tfactor;
+        continue;
+      }
+      for (std::size_t m = 0; m < nmat; ++m) {
+        rho[m] = robust::ratio(rhobar[m], vfrac[m]);
+      }
       // check to make sure the normalization didn't put us below rho_at_pmin
-      rho_fail = false;
+      bad_vfrac_guess = false;
       for (std::size_t m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
         const Real rho_max = eos[m].MaximumDensity();
         PORTABLE_REQUIRE(rho_min < rho_max, "Valid density range must exist!");
-        rho[m] = robust::ratio(rhobar[m], vfrac[m]);
-        PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_min");
+        PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_max");
         if (rho[m] < rho_min) {
-          rho_fail = true;
+          bad_vfrac_guess = true;
           Tguess *= Tfactor;
           break;
         }
       }
-      if (!rho_fail) break;
+      if (!bad_vfrac_guess) break;
     }
 
-    if (rho_fail && params_.verbose) {
+    if (bad_vfrac_guess && params_.verbose) {
       PORTABLE_ALWAYS_WARN(
           "rho < rho_min in PTE initialization!  Solver may not converge.\n");
     }
+
     return Tguess;
   }
 
@@ -364,8 +542,8 @@ class PTESolverBase {
     // intialize rhobar array and final density
     InitRhoBarandRho();
     const Real utotal = rho_total * sie_total;
-    uscale = std::abs(utotal);
-    // TODO(): Consider edge case when utotal \simeq 0
+    // TODO(): Consider more carefully edge case when utotal \simeq 0
+    uscale = std::max(std::abs(utotal), 1.0e-14);
     utotal_scale = robust::ratio(utotal, uscale);
 
     // guess some non-zero temperature to start
@@ -390,10 +568,7 @@ class PTESolverBase {
 
   PORTABLE_INLINE_FUNCTION
   Real ResidualNorm() const {
-    Real norm = 0.0;
-    for (std::size_t m = 0; m < neq; m++)
-      norm += residual[m] * residual[m];
-    return 0.5 * norm;
+    return 0.5 * sum_neumaier(residual, neq, 0, -1, [](const Real x) { return x * x; });
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -576,11 +751,32 @@ PORTABLE_INLINE_FUNCTION Real ApproxTemperatureFromRhoMatU(
   return FastMath::pow2((1.0 - alpha) * lTlo + alpha * lThi);
 }
 
+// clang-format off
+/*
+ * Indep variables are: T, and volume fractions for materials 0 through nmat-1
+ * excluding one material index s
+ * Residual equations are:
+ *   sum(u_m) - utotal = 0
+ *   P_m - P_s = 0 for all m > 0, m != s
+ * subject to the constraint
+ *   alpha_s = 1 - sum_{m=0, m!=s)^{nmat - 1} alpha_m
+ * where alpha is volume fraction
+ *
+ * Jacobian is
+ *
+ * [ sum(du/dT)         du_1/dalpha_1 - du_s/dalpha_s ... du_m/dalpha_m - du_s/dalpha_s ]
+ * [ dP_1/dT - dP_s/dT  dP_1/dalpha_1 + dP_s/dalpha_s dP_s/dalpha_s    ...              ]
+ * [ .                                                            dP_s/dalpha_s         ]
+ * [ .                            dP_s/dalpha_s                         .               ]
+ * [ dP_m/dT - dP_s/dT            dP_s/dalpha_s          dP_n/dalpha_n + dP_s/dalpha_s  ]
+ *
+ */
+// clang-format on
 // ======================================================================
 // PTE Solver RhoT
 // ======================================================================
 constexpr inline int PTESolverRhoTRequiredScratch(const std::size_t nmat) {
-  std::size_t neq = nmat + 1;
+  std::size_t neq = nmat;
   return neq * neq   // jacobian
          + 4 * neq   // dx, residual, and sol_scratch
          + 6 * nmat; // all the nmat sized arrays
@@ -598,6 +794,7 @@ class PTESolverRhoT
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::neq;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::ResidualNorm;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::vfrac_total;
+  using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::NormalizeVfrac;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::sie_total;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::eos;
   using mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>::rho;
@@ -629,7 +826,7 @@ class PTESolverRhoT
                 Real_t &&temp, Real_t &&press, Lambda_t &&lambda, Real *scratch,
                 const Real Tnorm = 0.0, const MixParams &params = MixParams())
       : mix_impl::PTESolverBase<EOSIndexer, RealIndexer, LambdaIndexer>(
-            nmat, nmat + 1, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
+            nmat, nmat, eos, vfrac_tot, sie_tot, rho, vfrac, sie, temp, press, lambda,
             scratch, Tnorm, params) {
     dpdv = AssignIncrement(scratch, nmat);
     dedv = AssignIncrement(scratch, nmat);
@@ -650,9 +847,36 @@ class PTESolverRhoT
   PORTABLE_INLINE_FUNCTION
   Real Init() {
     InitBase();
+
+    // Decide which material's volume fraction should be set by the
+    // sum of the others. If an index is passed in through mix params,
+    // we use that. Otherwise we do our best.
+    //
+    // We probably want to exclude the material with the largest
+    // volume fraction, but we don't know which one that will be. We
+    // guestimate it as the material with the largest mass fraction,
+    // though this may not always be correct.
+    //
+    // At later iterations we will check the volume fractions again
+    // and pick the material with the largest one.
+    if (params_.pte_reduced_system_exclude_idx >= 0) {
+      ms = params_.pte_reduced_system_exclude_idx;
+    } else {
+      ms = 0;
+      Real xmax = 0;
+      for (std::size_t m = 0; m < nmat; ++m) {
+        Real x = robust::ratio(rhobar[m], rho_total);
+        if (x > xmax) {
+          xmax = x;
+          ms = m;
+        }
+      }
+    }
+    PORTABLE_REQUIRE(ms < nmat, "Index of material whose volume fraction will depend on "
+                                "the others must be less than nmat");
+
     Residual();
-    // Leave this in for now, but comment out because I'm not sure it's a good idea
-    // TryIdealPTE(this);
+
     // Set the current guess for the equilibrium temperature.  Note that this is already
     // scaled.
     Tequil = temp[0];
@@ -660,36 +884,59 @@ class PTESolverRhoT
   }
 
   PORTABLE_INLINE_FUNCTION
-  void Residual() const {
-    Real vsum = 0.0;
-    Real esum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-      esum += u[m];
-    }
-    residual[0] = vfrac_total - vsum;
-    residual[1] = utotal_scale - esum;
-    for (std::size_t m = 0; m < nmat - 1; ++m) {
-      residual[2 + m] = press[m + 1] - press[m];
+  void Fixup() {
+    // Volume fractions normalized by construction in this
+    // formulation, so no reason to normalize them here the way
+    // PTESolverBase does.
+    //
+    // Re-pick the material to exclude based on largest volume
+    // fraction, now that perhaps the volume fractions have been
+    // updated
+    if (params_.pte_reduced_system_exclude_idx < 0) {
+      Real alphamax = 0;
+      ms = 0;
+      for (std::size_t m = 0; m < nmat; ++m) {
+        if (vfrac[m] > alphamax) {
+          alphamax = vfrac[m];
+          ms = m;
+        }
+      }
+      // With the excluded material changed, the residual must be
+      // recomputed
+      Residual();
     }
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
-    Real mean_p = vfrac[0] * press[0];
-    Real error_p = 0.0;
-    for (std::size_t m = 1; m < nmat; ++m) {
-      mean_p += vfrac[m] * press[m];
-      error_p += residual[m + 1] * residual[m + 1];
+  void Residual() const {
+    Real esum = mix_impl::sum_neumaier(u, nmat);
+    residual[0] = utotal_scale - esum;
+    std::size_t ires = 1;
+    for (std::size_t m = 0; m < nmat; ++m) {
+      if (m == ms) continue;
+      residual[ires++] = press[ms] - press[m];
     }
-    error_p = std::sqrt(error_p);
-    Real error_u = std::abs(residual[1]);
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  auto CheckPTE() const {
+    using namespace mix_impl;
+    Real mean_p = 0;
+    for (std::size_t m = 0; m < nmat; ++m) {
+      mean_p += vfrac[m] * press[m];
+    }
+    Real error_p = std::sqrt(
+        sum_neumaier(residual, neq - 1, 1, -1, [](const Real x) { return x * x; }));
+    Real error_u = std::abs(residual[0]);
     // Check for convergence
     bool converged_p = (error_p < params_.pte_rel_tolerance_p * std::abs(mean_p) ||
                         error_p < params_.pte_abs_tolerance_p);
-    bool converged_u =
-        (error_u < params_.pte_rel_tolerance_e || error_u < params_.pte_abs_tolerance_e);
-    return converged_p && converged_u;
+    bool converged_u = (error_u < params_.pte_rel_tolerance_e);
+    bool acceptable_p =
+        (error_p < params_.pte_rel_tolerance_p_sufficient * std::abs(mean_p) ||
+         error_p < params_.pte_abs_tolerance_p_sufficient);
+    bool acceptable_u = (error_u < params_.pte_rel_tolerance_e_sufficient);
+    return std::make_pair(converged_p && converged_u, acceptable_p && acceptable_u);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -709,8 +956,10 @@ class PTESolverRhoT
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
                                                        e_pert, lambda[m], false),
                         uscale);
-      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
+      dpdv[m] = std::min(robust::ratio((p_pert - press[m]), dv),
+                         -std::abs(params_.pte_max_dpdv));
       dedv[m] = robust::ratio(rhobar[m] * robust::ratio(e_pert, uscale) - u[m], dv);
+
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
@@ -728,16 +977,30 @@ class PTESolverRhoT
     // Fill in the Jacobian
     for (std::size_t i = 0; i < neq * neq; ++i)
       jacobian[i] = 0.0;
+    // first row is energy residual eqn
+    jacobian[0] = dedT_sum;
+    std::size_t col = 1;
     for (std::size_t m = 0; m < nmat; ++m) {
-      jacobian[m] = 1.0;
-      jacobian[neq + m] = dedv[m];
+      if (m == ms) continue;
+      jacobian[col++] = dedv[m] - dedv[ms];
     }
-    jacobian[neq + nmat] = dedT_sum;
-    for (std::size_t m = 0; m < nmat - 1; m++) {
-      const std::size_t ind = MatIndex(2 + m, m);
-      jacobian[ind] = dpdv[m];
-      jacobian[ind + 1] = -dpdv[m + 1];
-      jacobian[MatIndex(2 + m, nmat)] = dpdT[m] - dpdT[m + 1];
+    // remaining rows are pressure residual
+    std::size_t row = 1;
+    for (std::size_t m = 0; m < nmat; m++) {
+      if (m == ms) continue;
+      // 0th column of rows 1+ is temp derivative
+      jacobian[MatIndex(row, 0)] = dpdT[m] - dpdT[ms];
+      // diagonal of J[1:,1:] is dpdvs.
+      // + sign here is because dp_s/dalpha_i = -dp_s/dalpha_s
+      // ALL off diagonal terms in J[1:,1:] are dpdv[s] because Ps
+      // depends on ALL the independent volume fractions
+      std::size_t col = 1;
+      for (std::size_t mm = 0; mm < nmat; ++mm) {
+        if (mm == ms) continue;
+        jacobian[MatIndex(row, col)] = (mm == m) ? dpdv[m] + dpdv[ms] : dpdv[ms];
+        col++;
+      }
+      row++;
     }
   }
 
@@ -746,17 +1009,25 @@ class PTESolverRhoT
     // Each check reduces the scale further if necessary
     Real scale = 1.0;
     // control how big of a step toward vfrac = 0 is allowed
+    // 0th material is special as delta volume fraction for it is
+    // minus the sum of the deltas for the others
+    Real dalphaskip = -mix_impl::sum_neumaier(dx, nmat - 1, 1);
+    std::size_t idx = 1;
     for (std::size_t m = 0; m < nmat; ++m) {
-      if (scale * dx[m] < -params_.vfrac_safety_fac * vfrac[m]) {
-        scale = -params_.vfrac_safety_fac * robust::ratio(vfrac[m], dx[m]);
+      Real mydx = (m == ms) ? dalphaskip : dx[idx++];
+      if (scale * mydx < -params_.vfrac_safety_fac * vfrac[m]) {
+        scale = std::min(
+            scale, std::abs(params_.vfrac_safety_fac * robust::ratio(vfrac[m], mydx)));
       }
     }
-    const Real Tnew = Tequil + scale * dx[nmat];
+
+    const Real Tnew = Tequil + scale * dx[0];
     // control how big of a step toward rho = rho(Pmin) is allowed
+    idx = 1;
     for (std::size_t m = 0; m < nmat; m++) {
       const Real rho_min =
           std::max(eos[m].RhoPmin(Tnorm * Tequil), eos[m].RhoPmin(Tnorm * Tnew));
-      const Real alpha_max = robust::ratio(rhobar[m], rho_min);
+      const Real alpha_max = std::min(1.0, robust::ratio(rhobar[m], rho_min));
       if (alpha_max < vfrac[m]) {
         // Despite our best efforts, we're already in the unstable regime (i.e.
         // dPdV_T > 0) so we would actually want to *increase* the step instead
@@ -764,13 +1035,14 @@ class PTESolverRhoT
         // should be skipped.
         continue;
       }
-      if (scale * dx[m] > 0.5 * (alpha_max - vfrac[m])) {
-        scale = robust::ratio(0.5 * (alpha_max - vfrac[m]), dx[m]);
+      Real mydx = (m == ms) ? dalphaskip : dx[idx++];
+      if (scale * mydx > 0.5 * (alpha_max - vfrac[m])) {
+        scale = std::min(robust::ratio(0.5 * (alpha_max - vfrac[m]), mydx), scale);
       }
     }
     // control how big of a step toward T = 0 is allowed
-    if (scale * dx[nmat] < -0.95 * Tequil) {
-      scale = robust::ratio(-0.95 * Tequil, dx[nmat]);
+    if (scale * dx[0] < -0.95 * Tequil) {
+      scale = std::min(scale, robust::ratio(-0.95 * Tequil, dx[0]));
     }
     // Now apply the overall scaling
     for (std::size_t i = 0; i < neq; ++i)
@@ -789,9 +1061,15 @@ class PTESolverRhoT
       for (std::size_t m = 0; m < nmat; ++m)
         vtemp[m] = vfrac[m];
     }
-    Tequil = Ttemp + scale * dx[nmat];
+    Tequil = Ttemp + scale * dx[0];
+    std::size_t idx = 1;
     for (std::size_t m = 0; m < nmat; ++m) {
-      vfrac[m] = vtemp[m] + scale * dx[m];
+      if (ms == m) continue;
+      vfrac[m] = vtemp[m] + scale * dx[idx++];
+    }
+    vfrac[ms] = mix_impl::sum_neumaier(vfrac, nmat, 0, ms);
+    vfrac[ms] = 1 - vfrac[ms];
+    for (std::size_t m = 0; m < nmat; ++m) {
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       u[m] = rhobar[m] * eos[m].InternalEnergyFromDensityTemperature(
                              rho[m], Tnorm * Tequil, lambda[m]);
@@ -804,12 +1082,14 @@ class PTESolverRhoT
                         uscale);
     }
     Residual();
+
     return ResidualNorm();
   }
 
  private:
   Real *dpdv, *dedv, *dpdT, *vtemp;
   Real Tequil, Ttemp;
+  std::size_t ms;
 };
 
 // ======================================================================
@@ -890,12 +1170,11 @@ class PTESolverPT
     // guess. Worth keeping in mind for the future maybe if the
     // iteration count becomes an issue.
     Pequil = 0;
-    Real vsum = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
       // always approach from >0 side
       Pequil += std::abs(press[m]) * vfrac[m];
-      vsum += vfrac[m];
     }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
     Pequil /= vsum;
     Tequil = 1; // Because it's = Tnorm = initial guess
 
@@ -915,29 +1194,40 @@ class PTESolverPT
   }
 
   PORTABLE_INLINE_FUNCTION
-  void Residual() const {
-    Real vsum = 0.0;
-    Real esum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-      esum += u[m];
+  void Finalize() {
+    for (std::size_t m = 0; m < nmat; m++) {
+      if (!variadic_utils::is_nullptr(press)) {
+        press[m] = Pequil * uscale;
+      }
+      if (!variadic_utils::is_nullptr(temp)) {
+        temp[m] = Tequil * Tnorm;
+      }
+      if (!variadic_utils::is_nullptr(u)) {
+        u[m] *= uscale;
+      }
     }
+  }
+
+  PORTABLE_INLINE_FUNCTION
+  void Residual() const {
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
+    Real esum = mix_impl::sum_neumaier(u, nmat);
     residual[RV] = vfrac_total - vsum;
     residual[RSIE] = utotal_scale - esum;
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
+  auto CheckPTE() const {
     Real error_v = std::abs(residual[RV]);
     Real error_u = std::abs(residual[RSIE]);
     // this may not be quite right as we may need an energy scaling factor
     // Check for convergence
-    bool converged_u = (error_u < params_.pte_rel_tolerance_e ||
-                        uscale * error_u < params_.pte_abs_tolerance_e);
-    bool converged_v =
-        (error_v < params_.pte_rel_tolerance_v || error_v < params_.pte_abs_tolerance_v);
+    bool converged_u = error_u < params_.pte_rel_tolerance_e;
+    bool converged_v = error_v < params_.pte_rel_tolerance_v;
+    bool acceptable_u = error_u < params_.pte_rel_tolerance_e_sufficient;
+    bool acceptable_v = error_v < params_.pte_rel_tolerance_v_sufficient;
 
-    return converged_v && converged_u;
+    return std::make_pair(converged_v && converged_u, acceptable_u && acceptable_v);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1039,17 +1329,6 @@ class PTESolverPT
     }
     Residual();
     return ResidualNorm();
-  }
-
-  // Solve the linear system for the update dx
-  // Customized because this system can invert its jacobian analytically
-  PORTABLE_INLINE_FUNCTION
-  bool Solve() const {
-    dx[0] = robust::ratio(jacobian[3] * residual[0] - jacobian[1] * residual[1],
-                          jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2]);
-    dx[1] = robust::ratio(jacobian[2] * residual[0] - jacobian[0] * residual[1],
-                          jacobian[1] * jacobian[2] - jacobian[0] * jacobian[3]);
-    return mix_impl::check_nans(dx, 2);
   }
 
  private:
@@ -1163,10 +1442,7 @@ class PTESolverFixedT
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-    }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
     residual[0] = vfrac_total - vsum;
     for (std::size_t m = 0; m < nmat - 1; ++m) {
       residual[1 + m] = press[m] - press[m + 1];
@@ -1174,7 +1450,7 @@ class PTESolverFixedT
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
+  auto CheckPTE() const {
     Real mean_p = vfrac[0] * press[0];
     Real error_p = 0;
     for (std::size_t m = 1; m < nmat; ++m) {
@@ -1186,9 +1462,12 @@ class PTESolverFixedT
     // Check for convergence
     bool converged_p = (error_p < params_.pte_rel_tolerance_p * std::abs(mean_p) ||
                         error_p < params_.pte_abs_tolerance_p);
-    bool converged_v =
-        (error_v < params_.pte_rel_tolerance_e || error_v < params_.pte_abs_tolerance_e);
-    return converged_p && converged_v;
+    bool converged_v = error_v < params_.pte_rel_tolerance_v;
+    bool acceptable_p =
+        (error_p < params_.pte_rel_tolerance_p_sufficient * std::abs(mean_p) ||
+         error_p < params_.pte_abs_tolerance_p_sufficient);
+    bool acceptable_v = error_v < params_.pte_rel_tolerance_v_sufficient;
+    return std::make_pair(converged_p && converged_v, acceptable_p && acceptable_v);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1203,7 +1482,8 @@ class PTESolverFixedT
 
       Real p_pert = robust::ratio(
           eos[m].PressureFromDensityTemperature(rho_pert, Tequil, lambda[m]), uscale);
-      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
+      dpdv[m] = std::min(robust::ratio((p_pert - press[m]), dv),
+                         -std::abs(params_.pte_max_dpdv));
     }
 
     // Fill in the Jacobian
@@ -1386,16 +1666,15 @@ class PTESolverFixedP
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
     for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
       residual[m] = robust::ratio(Pequil, uscale) - press[m];
     }
     residual[nmat] = vfrac_total - vsum;
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
+  auto CheckPTE() const {
     Real error_p = 0;
     for (std::size_t m = 0; m < nmat; ++m) {
       error_p += residual[m] * residual[m];
@@ -1406,9 +1685,11 @@ class PTESolverFixedP
     // Check for convergence
     bool converged_p =
         (error_p < params_.pte_rel_tolerance_p || error_p < params_.pte_abs_tolerance_p);
-    bool converged_v =
-        (error_v < params_.pte_rel_tolerance_e || error_v < params_.pte_abs_tolerance_e);
-    return converged_p && converged_v;
+    bool converged_v = error_v < params_.pte_rel_tolerance_v;
+    bool acceptable_p = (error_p < params_.pte_rel_tolerance_p_sufficient ||
+                         error_p < params_.pte_abs_tolerance_p_sufficient);
+    bool acceptable_v = error_v < params_.pte_rel_tolerance_v_sufficient;
+    return std::make_pair(converged_p && converged_v, acceptable_p && acceptable_v);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1427,7 +1708,8 @@ class PTESolverFixedP
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * Tequil,
                                                        e_pert, lambda[m], true),
                         uscale);
-      dpdv[m] = robust::ratio((p_pert - press[m]), dv);
+      dpdv[m] = std::min(robust::ratio((p_pert - press[m]), dv),
+                         -std::abs(params_.pte_max_dpdv));
       //////////////////////////////
       // perturb temperature
       //////////////////////////////
@@ -1605,12 +1887,8 @@ class PTESolverRhoU
 
   PORTABLE_INLINE_FUNCTION
   void Residual() const {
-    Real vsum = 0.0;
-    Real esum = 0.0;
-    for (std::size_t m = 0; m < nmat; ++m) {
-      vsum += vfrac[m];
-      esum += u[m];
-    }
+    Real vsum = mix_impl::sum_neumaier(vfrac, nmat);
+    Real esum = mix_impl::sum_neumaier(u, nmat);
     residual[0] = vfrac_total - vsum;
     residual[1] = utotal_scale - esum;
     for (std::size_t m = 0; m < nmat - 1; ++m) {
@@ -1622,7 +1900,7 @@ class PTESolverRhoU
   }
 
   PORTABLE_INLINE_FUNCTION
-  bool CheckPTE() const {
+  auto CheckPTE() const {
     Real mean_p = vfrac[0] * press[0];
     Real mean_t = rhobar[0] * temp[0];
     Real error_p = 0.0;
@@ -1641,7 +1919,12 @@ class PTESolverRhoU
                         error_p < params_.pte_abs_tolerance_p);
     bool converged_t = (error_t < params_.pte_rel_tolerance_t * mean_t ||
                         error_t < params_.pte_abs_tolerance_t);
-    return (converged_p && converged_t);
+    bool acceptable_p =
+        (error_p < params_.pte_rel_tolerance_p_sufficient * std::abs(mean_p) ||
+         error_p < params_.pte_abs_tolerance_p_sufficient);
+    bool acceptable_t = (error_t < params_.pte_rel_tolerance_t_sufficient * mean_t ||
+                         error_t < params_.pte_abs_tolerance_t_sufficient);
+    return std::make_pair(converged_p && converged_t, acceptable_p && acceptable_t);
   }
 
   PORTABLE_INLINE_FUNCTION
@@ -1662,7 +1945,8 @@ class PTESolverRhoU
           robust::ratio(this->GetPressureFromPreferred(eos[m], rho_pert, Tnorm * t_pert,
                                                        sie[m], lambda[m], false),
                         uscale);
-      dpdv[m] = robust::ratio(p_pert - press[m], dv);
+      dpdv[m] =
+          std::min(robust::ratio(p_pert - press[m], dv), -std::abs(params_.pte_max_dpdv));
       dtdv[m] = robust::ratio(t_pert - temp[m], dv);
       //////////////////////////////
       // perturb energies
@@ -1786,6 +2070,7 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
   SolverStatus status;
   Real &err = status.residual;
   bool &converged = status.converged;
+  bool close_enough = false;
 
   // initialize the system, fill in residual, and get its norm
   err = s.Init();
@@ -1795,14 +2080,17 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
 
   converged = false;
   const std::size_t pte_max_iter = s.Nmat() * params.pte_max_iter_per_mat;
-  const Real residual_tol = s.Nmat() * params.pte_residual_tolerance;
   auto &niter = s.Niter();
   auto &small_step_iters = status.small_step_iters;
   for (niter = 0; niter < pte_max_iter; ++niter) {
     status.max_niter = std::max(status.max_niter, niter);
 
     // Check for convergence
-    converged = s.CheckPTE();
+    // TODO(JMM): I wish I could use std::tie or structured binding,
+    // but our clang-based toolchain does not like it
+    auto check = s.CheckPTE();
+    converged = check.first;
+    close_enough = check.second;
     if (converged) break;
 
     // compute the Jacobian
@@ -1862,16 +2150,19 @@ PORTABLE_INLINE_FUNCTION SolverStatus PTESolver(System &s) {
     // apply fixes post update, e.g. renormalize volume fractions to deal with round-off
     s.Fixup();
 
-    // check for the case where we have converged as much as precision allows
-    if (err > 0.5 * err_old && err < residual_tol) {
+    // check for the case where the solver is no longer moving towards
+    // a descent direction sufficiently rapidly, but we believe we
+    // have converged to an acceptable level This can also happen if
+    // the residual is so small we are at the limits of floating point
+    // precision.
+    if (((err > params.pte_slow_convergence_thresh * err_old) ||
+         niter == pte_max_iter - 1) &&
+        close_enough) {
       converged = true;
+      status.slow_convergence_detected = true;
       break;
     }
   }
-  // Call it converged even though CheckPTE never said it was because the residual is
-  // small.  Helps to avoid "failures" where things have actually converged as well as
-  // finite precision allows
-  if (!converged && err < residual_tol) converged = true;
   // undo any scaling that was applied internally for the solver
   s.Finalize();
   return status;

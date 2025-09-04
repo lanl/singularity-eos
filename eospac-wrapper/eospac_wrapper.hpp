@@ -39,6 +39,7 @@ inline double pressureFromSesame(const double SesPress) { return 1e10 * SesPress
 inline double pressureToSesame(const double CodePress) { return 1e-10 * CodePress; }
 inline double sieToSesame(const double CodeSie) { return 1e-10 * CodeSie; }
 inline double sieFromSesame(const double SesSie) { return 1e10 * SesSie; }
+inline double entropyFromSesame(const double SesS) { return 1e10 * SesS; }
 inline double cvFromSesame(const double SesCv) { return 1e10 * SesCv; }
 inline double bulkModulusFromSesame(const double SesBmod) { return 1e10 * SesBmod; }
 inline double getBulkModulus(const double rho, const double P, const double DPDR_T,
@@ -60,6 +61,7 @@ class SesameMetadata {
   double TMin, TMax;
   double sieMin, sieMax;
   double PMin, PMax;
+  double SMin, SMax;
   double rhoConversionFactor;
   double TConversionFactor;
   double sieConversionFactor;
@@ -125,6 +127,7 @@ void eosCheckError(EOS_INTEGER errorCode, const std::string &name, Verbosity eos
 std::string eosErrorString(EOS_INTEGER errorCode);
 void eosSafeDestroy(int ntables, EOS_INTEGER tableHandles[], Verbosity eospacWarn);
 std::string getName(std::string comment);
+bool eosErrorCodesEqual(EOS_INTEGER lhs, EOS_INTEGER rhs);
 
 } // namespace EospacWrapper
 

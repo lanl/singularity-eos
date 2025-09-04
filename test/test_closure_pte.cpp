@@ -73,6 +73,7 @@ using MyLambdaIndexer = LambdaIndexer<NEOS, singularity::IndexableTypes::LogDens
                                       singularity::IndexableTypes::RootStatus,
                                       singularity::IndexableTypes::TableStatus>;
 
+// TODO(JMM): Clean this up to account for these two differetn APIs
 template <template <typename... Types> class PTESolver_t, typename Scratch_t,
           typename ArrT>
 bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
@@ -160,6 +161,106 @@ bool run_PTE_from_state(const int num_pte, EOS *v_EOS, const Real spvol_bulk,
   return pte_converged;
 }
 
+template <typename T>
+PORTABLE_INLINE_FUNCTION void swap(T &a, T &b) {
+  T tmp = a;
+  a = b;
+  b = tmp;
+}
+
+// TODO(JMM): Clean this up to account for these two differetn APIs
+inline bool RunPTE2Mat(EOS eos1, EOS eos2, Real rhobar1, Real rhobar2, Real alpha_guess1,
+                       Real alpha_guess2, Real sietot, Real Tguess, Real alpha1_true,
+                       Real alpha2_true, Real Ttrue, Real Ptrue,
+                       bool permute_state = false) {
+  constexpr int NT = 1;
+  constexpr int NEOS = 2;
+
+  EOS *eos = (EOS *)PORTABLE_MALLOC(NEOS * sizeof(EOS));
+  Real *rho = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+  Real *alpha = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+  Real *sie = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+  Real *temp = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+  Real *press = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
+  Real *plambda = (Real *)PORTABLE_MALLOC(MyLambdaIndexer<NEOS>::size() * sizeof(Real));
+
+  // PTE solvers require internal scratch space. However, the solver
+  // doesn't manage memory. We must provide it ourselves.
+  const std::size_t pte_scratch_size = singularity::PTESolverRhoTRequiredScratch(NEOS);
+  Real *pscratch = (Real *)PORTABLE_MALLOC(pte_scratch_size * sizeof(Real));
+
+  // The pte_params object contains a number of settings you can
+  // modify for the PTE solver, such as tolerances.
+  singularity::MixParams pte_params;
+  pte_params.pte_rel_tolerance_p = 1e-10;
+  pte_params.pte_rel_tolerance_e = 1e-10;
+  pte_params.pte_abs_tolerance_p = 0;
+
+  int nsuccess = 0;
+  portableReduce(
+      "Run a difficult 2 material state", 0, NT,
+      PORTABLE_LAMBDA(const int i, int &ns) {
+        Real vfrac_sum = alpha_guess1 + alpha_guess2;
+        alpha[0] = alpha_guess1 / vfrac_sum;
+        alpha[1] = alpha_guess2 / vfrac_sum;
+        rho[0] = vfrac_sum * rhobar1 / alpha_guess1;
+        rho[1] = vfrac_sum * rhobar2 / alpha_guess2;
+
+        eos[0] = eos1;
+        eos[1] = eos2;
+
+        if (permute_state) {
+          swap(alpha[0], alpha[1]);
+          swap(rho[0], rho[1]);
+          swap(eos[0], eos[1]);
+        }
+
+        MyLambdaIndexer<NEOS> lambda(plambda);
+
+        singularity::PTESolverRhoT<EOS *, Real *, MyLambdaIndexer<NEOS>> method(
+            NEOS, eos, 1.0, sietot, rho, alpha, sie, temp, press, lambda, pscratch,
+            Tguess, pte_params);
+        // Run the solver
+        auto status = singularity::PTESolver(method);
+
+        if (permute_state) {
+          swap(alpha[0], alpha[1]);
+        }
+
+        bool success = true;
+        if (!status.converged) {
+          printf("Solver did not converge!\n");
+          success = false;
+        } else {
+          if (!(isClose(alpha[0], alpha1_true) && isClose(alpha[1], alpha2_true))) {
+            printf("Volume fractions dop not match! [%.14e %.14e], [%.14e %.14e]\n",
+                   alpha[0], alpha[1], alpha1_true, alpha2_true);
+            success = false;
+          }
+          if (!isClose(temp[0], Ttrue)) {
+            printf("Temperatures do not match! %.14e %.14e\n", temp[0], Ttrue);
+            success = false;
+          }
+          if (!isClose(press[0], Ptrue)) {
+            printf("Pressures do not match! %.14e %.14e\n", press[0], Ptrue);
+            success = false;
+          }
+        }
+        ns += success;
+      },
+      nsuccess);
+
+  PORTABLE_FREE(eos);
+  PORTABLE_FREE(rho);
+  PORTABLE_FREE(alpha);
+  PORTABLE_FREE(sie);
+  PORTABLE_FREE(temp);
+  PORTABLE_FREE(press);
+  PORTABLE_FREE(plambda);
+
+  return (nsuccess == NT);
+}
+
 SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
 
   GIVEN("Four equations of state") {
@@ -219,7 +320,6 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
             u_bulk_out);
         CHECK(pte_converged);
         AND_THEN("The solution satisfies the bulk internal energy constraint") {
-          // NOTE(@pdmullen): The following fails prior to PR401
           const Real u_bulk = ratio(sie_bulk, spvol_bulk);
           const Real u_scale = std::abs(u_bulk);
           const Real u_bulk_scale = ratio(u_bulk, u_scale);
@@ -237,7 +337,6 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
             u_bulk_out);
         CHECK(pte_converged);
         AND_THEN("The solution satisfies the bulk internal energy constraint") {
-          // NOTE(@pdmullen): The following fails prior to PR401
           const Real u_bulk = ratio(sie_bulk, spvol_bulk);
           const Real u_scale = std::abs(u_bulk);
           const Real u_bulk_scale = ratio(u_bulk, u_scale);
@@ -266,16 +365,16 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
         const bool pte_converged = run_PTE_from_state<PTESolverRhoT>(
             num_pte, v_EOS, spvol_bulk, sie_bulk, PTESolverRhoTRequiredScratch, mass_frac,
             u_bulk_out);
+        CHECK(pte_converged);
         const MixParams params;
-        // CHECK(pte_converged);
-        // AND_THEN("The solution satisfies the bulk internal energy constraint") {
-        //   // NOTE(@pdmullen): The following fails prior to PR401
-        //   const Real u_bulk = ratio(sie_bulk, spvol_bulk);
-        //   const Real u_scale = std::abs(u_bulk);
-        //   const Real u_bulk_scale = ratio(u_bulk, u_scale);
-        //   const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
-        //   CHECK(residual < params.pte_rel_tolerance_e);
-        // }
+        AND_THEN("The solution satisfies the bulk internal energy constraint") {
+          // NOTE(@pdmullen): The following fails prior to PR401
+          const Real u_bulk = ratio(sie_bulk, spvol_bulk);
+          const Real u_scale = std::abs(u_bulk);
+          const Real u_bulk_scale = ratio(u_bulk, u_scale);
+          const Real residual = std::abs(u_bulk_scale - ratio(u_bulk_out, u_scale));
+          CHECK(residual < params.pte_rel_tolerance_e);
+        }
         // Free EOS copies on device
         PORTABLE_FREE(v_EOS);
       }
@@ -308,92 +407,118 @@ SCENARIO("Density- and Pressure-Temperature PTE Solvers", "[PTE]") {
     constexpr Real Tguess = 1.49041098541734e+03;
 
     WHEN("We call PTE") {
-      constexpr int NEOS = 2;
-      constexpr int NT = 1;
       constexpr Real alpha1_true = 2.65277486969419e-03;
       constexpr Real alpha2_true = 9.97347225130306e-01;
       constexpr Real Ttrue = 2.10866067749579e+04;
       constexpr Real Ptrue = 1.44504093939007e+10;
 
-      EOS *eos = (EOS *)PORTABLE_MALLOC(NEOS * sizeof(EOS));
-      Real *rho = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
-      Real *alpha = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
-      Real *sie = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
-      Real *temp = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
-      Real *press = (Real *)PORTABLE_MALLOC(NEOS * sizeof(Real *));
-      Real *plambda =
-          (Real *)PORTABLE_MALLOC(MyLambdaIndexer<NEOS>::size() * sizeof(Real));
+      bool success =
+          RunPTE2Mat(al_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
+                     sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue);
 
-      // PTE solvers require internal scratch space. However, the solver
-      // doesn't manage memory. We must provide it ourselves.
-      const std::size_t pte_scratch_size =
-          singularity::PTESolverRhoTRequiredScratch(NEOS);
-      Real *pscratch = (Real *)PORTABLE_MALLOC(pte_scratch_size * sizeof(Real));
-
-      // The pte_params object contains a number of settings you can
-      // modify for the PTE solver, such as tolerances.
-      singularity::MixParams pte_params;
-      pte_params.pte_rel_tolerance_p = 1e-12;
-      pte_params.pte_rel_tolerance_e = 1e-12;
-      pte_params.pte_abs_tolerance_p = 0;
-
-      int nsuccess = 0;
-      portableReduce(
-          "Run a difficult 2 material state", 0, NT,
-          PORTABLE_LAMBDA(const int i, int &ns) {
-            Real vfrac_sum = alpha_guess1 + alpha_guess2;
-            alpha[0] = alpha_guess1 / vfrac_sum;
-            alpha[1] = alpha_guess2 / vfrac_sum;
-            rho[0] = vfrac_sum * rhobar1 / alpha_guess1;
-            rho[1] = vfrac_sum * rhobar2 / alpha_guess2;
-
-            eos[0] = al_eos;
-            eos[1] = foam_eos;
-            MyLambdaIndexer<NEOS> lambda(plambda);
-
-            singularity::PTESolverRhoT<EOS *, Real *, MyLambdaIndexer<NEOS>> method(
-                NEOS, eos, 1.0, sietot, rho, alpha, sie, temp, press, lambda, pscratch,
-                Tguess, pte_params);
-            // Run the solver
-            auto status = singularity::PTESolver(method);
-
-            bool success = true;
-            if (!status.converged) {
-              printf("Solver did not converge!\n");
-              success = false;
-            } else {
-              if (!(isClose(alpha[0], alpha1_true) && isClose(alpha[1], alpha2_true))) {
-                printf("Volume fractions dop not match! [%.14e %.14e], [%.14e %.14e]\n",
-                       alpha[0], alpha[1], alpha1_true, alpha2_true);
-                success = false;
-              }
-              if (!isClose(temp[0], Ttrue)) {
-                printf("Temperatures do not match! %.14e %.14e\n", temp[0], Ttrue);
-                success = false;
-              }
-              if (!isClose(press[0], Ptrue)) {
-                printf("Pressures do not match! %.14e %.1re\n", press[0], Ptrue);
-                success = false;
-              }
-            }
-            ns += success;
-          },
-          nsuccess);
-
-      THEN("The solver converges") { REQUIRE(nsuccess == NT); }
-
-      PORTABLE_FREE(eos);
-      PORTABLE_FREE(rho);
-      PORTABLE_FREE(alpha);
-      PORTABLE_FREE(sie);
-      PORTABLE_FREE(temp);
-      PORTABLE_FREE(press);
-      PORTABLE_FREE(plambda);
+      THEN("The solver converges") { REQUIRE(success); }
     }
+
     al_eos_h.Finalize();
     al_eos.Finalize();
     foam_eos_h.Finalize();
     foam_eos.Finalize();
+  }
+
+  GIVEN("A cell containing a difficult mixture with a tabulated and ideal gas EOS") {
+    const std::string eos_file = "../materials.sp5";
+    constexpr Real gm1 = 0.666666666666667;
+    constexpr Real Cv = 3.1e7;
+    EOS He_eos_h = IdealGas(gm1, Cv);
+    EOS He_eos = He_eos_h.GetOnDevice();
+
+    constexpr int foam_matid = 7592;
+    EOS foam_eos_h = SpinerEOSDependsRhoT(eos_file, foam_matid);
+    EOS foam_eos = foam_eos_h.GetOnDevice();
+
+    WHEN("We request density at minimum pressure") {
+      Real rhopmin_100 = foam_eos_h.RhoPmin(100);
+      THEN("It's zero, as appropriate for a Maxwell constructed EOS") {
+        REQUIRE(rhopmin_100 == 0);
+      }
+    }
+
+    constexpr Real rhobar1 = 1.59761356859602e-04;
+    constexpr Real rhobar2 = 7.81928505957464e-09;
+    constexpr Real alpha_guess1 = 9.99999776549350e-01;
+    constexpr Real alpha_guess2 = 2.23450650410351e-07;
+    constexpr Real sietot = 9.37635921815154e+09;
+    constexpr Real Tguess = 293;
+
+    WHEN("We call PTE") {
+      constexpr Real alpha1_true = 9.99999989159325e-01;
+      constexpr Real alpha2_true = 1.08406754944454e-08;
+      constexpr Real Ttrue = 3.02477729062119e+02;
+      constexpr Real Ptrue = 9.98701227398616e+05;
+
+      bool success =
+          RunPTE2Mat(He_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
+                     sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue);
+
+      THEN("The solver converges") { REQUIRE(success); }
+
+      AND_WHEN("We call PTE with a permuted state") {
+        bool success =
+            RunPTE2Mat(He_eos, foam_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
+                       sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue, true);
+        THEN("The solver converges") { REQUIRE(success); }
+      }
+
+      AND_WHEN("We call PTE but with wildly incorrect initial guesses, deep in the "
+               "Maxwell constructed region") {
+        bool success = RunPTE2Mat(He_eos, foam_eos, rhobar1, rhobar2, 1e-9, 1, sietot, 5,
+                                  alpha1_true, alpha2_true, Ttrue, Ptrue);
+        THEN("The solver converges") { REQUIRE(success); }
+      }
+    }
+
+    He_eos_h.Finalize();
+    He_eos.Finalize();
+    foam_eos_h.Finalize();
+    foam_eos.Finalize();
+  }
+
+  GIVEN("A cell containing nearly equal amounts of mass of copper and helium") {
+    const std::string eos_file = "../materials.sp5";
+    constexpr Real gm1 = 0.666666666666667;
+    constexpr Real Cv = 3.1e7;
+    EOS He_eos_h = IdealGas(gm1, Cv);
+    EOS He_eos = He_eos_h.GetOnDevice();
+
+    constexpr int Cu_matid = 3337;
+    EOS copper_eos_h = SpinerEOSDependsRhoT(eos_file, Cu_matid);
+    EOS copper_eos = copper_eos_h.GetOnDevice();
+
+    constexpr Real rhobar1 = 1.5e-4;
+    constexpr Real rhobar2 = 1.6e-4;
+    constexpr Real alpha_guess1 = 1.0e-5; // this is backwards from
+                                          // the true volume fractions
+    constexpr Real alpha_guess2 = 1 - alpha_guess1;
+    constexpr Real sietot = 4.5e9;
+    constexpr Real Tguess = 30;
+
+    WHEN("We call PTE") {
+      constexpr Real alpha1_true = 9.99982100645951e-01;
+      constexpr Real alpha2_true = 1.78993540487246e-05;
+      constexpr Real Ttrue = 2.99769986713113e+02;
+      constexpr Real Ptrue = 9.29303592744676e+05;
+
+      bool success =
+          RunPTE2Mat(He_eos, copper_eos, rhobar1, rhobar2, alpha_guess1, alpha_guess2,
+                     sietot, Tguess, alpha1_true, alpha2_true, Ttrue, Ptrue);
+
+      THEN("The solver converges") { REQUIRE(success); }
+    }
+
+    He_eos_h.Finalize();
+    He_eos.Finalize();
+    copper_eos_h.Finalize();
+    copper_eos.Finalize();
   }
 }
 #endif // SINGULARITY_USE_SPINER_WITH_HDF5
