@@ -19,29 +19,43 @@
 
 namespace singularity {
 
-// Index into an arbitrary array with an arbitrary map
-template <typename arrT, typename mapT>
+template <typename Arr, typename Map>
 struct GenericIndexer {
-  arrT arr_;
-  mapT map_;
+  Arr arr_;
+  Map map_;
 
-  template <typename arrT_, typename mapT_>
-  constexpr GenericIndexer(arrT_ &&arr_in, mapT_ &&map_in)
-      : arr_{std::forward<arrT_>(arr_in)}, map_{std::forward<mapT_>(map_in)} {}
+  template <typename ArrT_, typename MapT_>
+  constexpr GenericIndexer(ArrT_ &&arr_in, MapT_ &&map_in)
+      : arr_(std::forward<ArrT_>(arr_in)), map_(std::forward<MapT_>(map_in)) {}
 
-  template <typename idxT>
-  constexpr auto &operator[](const idxT i) {
+  // & : non-const lvalue
+  template <class I>
+  constexpr decltype(auto) operator[](I i) & {
     return arr_[map_[i]];
   }
 
-  template <typename idxT>
-  constexpr const auto &operator[](const idxT i) const {
+  // const& : const lvalue
+  template <class I>
+  constexpr decltype(auto) operator[](I i) const & {
     return arr_[map_[i]];
+  }
+
+  // && : rvalue (indexer is a temporary) — forward arr_’s value category
+  template <class I>
+  constexpr decltype(auto) operator[](I i) && {
+    return std::forward<Arr>(arr_)[map_[i]]; // move only if Arr is a value type
+  }
+
+  // const rvalue indexer
+  template <class I>
+  constexpr decltype(auto) operator[](I i) const && {
+    return std::forward<const Arr>(arr_)[map_[i]]; // preserves const
   }
 };
-// CTAD
-template <typename arrT_, typename mapT_>
-GenericIndexer(arrT_ &&arr_in, mapT_ &&map_in) -> GenericIndexer<arrT_, mapT_>;
+
+// CTAD: preserve references for lvalues, decay for rvalues
+template <class ArrT_, class MapT_>
+GenericIndexer(ArrT_ &&, MapT_ &&) -> GenericIndexer<ArrT_, MapT_>;
 
 } // namespace singularity
 
