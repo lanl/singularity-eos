@@ -47,27 +47,25 @@ namespace singularity {
 struct VolumeFracHarmonicAverageFunctor {
   template <typename Func, typename EOSmodelsT, typename RealIndexer,
             typename LambdaIndexer, std::size_t... Is>
-  constexpr Real operator()(Func &&f, EOSmodelsT models, RealIndexer density_arr,
-                            RealIndexer sie_arr, Real density, Real temperature,
-                            LambdaIndexer const &lambda,
-                            std::index_sequence<Is...>) const {
+  constexpr Real operator()(Func &&f, EOSmodelsT &models, RealIndexer &density_arr,
+                            RealIndexer &sie_arr, Real density, Real temperature,
+                            LambdaIndexer &lambda, std::index_sequence<Is...>) const {
     // Note that the function should appropriately invert any quantity that
-    return robust::ratio(1.0,
-                         ((/* volume fraction */
-                           lambda[IndexableTypes::MassFraction<Is>{}] * density /
-                           density_arr[Is]
-                           /* Inverse value to be volume-averaged */
-                           * robust::ratio(1.0, f(std::get<Is>(models), density_arr[Is],
-                                                  sie_arr[Is], temperature, lambda))) +
-                          ...));
+    return robust::ratio(
+        1.0, ((/* volume fraction */
+               lambda[IndexableTypes::MassFraction<Is>{}] * density / density_arr[Is] *
+               /* Inverse value to be volume-averaged */
+               robust::ratio(1.0, f(std::get<Is>(models), density_arr[Is], sie_arr[Is],
+                                    temperature, lambda))) +
+              ...));
   }
 };
 
 struct MassFracAverageFunctor {
   template <typename Func, typename EOSmodelsT, typename RealIndexer,
             typename LambdaIndexer, std::size_t... Is>
-  constexpr Real operator()(Func &&f, EOSmodelsT models, RealIndexer density_arr,
-                            RealIndexer sie_arr, [[maybe_unused]] Real density,
+  constexpr Real operator()(Func &&f, EOSmodelsT &models, RealIndexer &density_arr,
+                            RealIndexer &sie_arr, [[maybe_unused]] Real density,
                             Real temperature, LambdaIndexer const &lambda,
                             std::index_sequence<Is...>) const {
     return ((lambda[IndexableTypes::MassFraction<Is>{}]
@@ -104,6 +102,8 @@ solver would only matter when the PTE solver is called rather than when it's
 instantiated. This would allow injection of the PTE solver methods, allowing
 analytic PTE solvers where possible.
 */
+
+// TODO: How should the solver status be handled? Warning? Error? Option?
 
 template <typename BulkModAvgT = VolumeFracHarmonicAverageFunctor,
           typename GruneisenAvgT = VolumeFracHarmonicAverageFunctor,
@@ -168,8 +168,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     MassFracAverageFunctor avg_funct{};
     // Note that the f function signature should take the EOS as its first argument
     // followed by the lookup state and lambda
-    return avg_funct(f, models_, density_arr, sie_arr, temperature, /* density */ 1.0,
-                     density_arr, sie_arr, lambda, std::make_index_sequence<nmat_>{});
+    return avg_funct(f, models_, density_arr, sie_arr, /* density */ 1.0, temperature,
+                     lambda, std::make_index_sequence<nmat_>{});
   }
 
   // Implementation function to call BulkModulusFromDensityTemperature()
@@ -292,7 +292,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // model tuple
     auto models_on_device =
         tuple_transform(models_, [](const auto &eos) { return eos.GetOnDevice(); });
-    return MultiEOS<BulkModAvgT, EOSModelsT...>(mass_frac_cutoff_, models_on_device);
+    return MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT...>(mass_frac_cutoff_,
+                                                               models_on_device);
   }
 
   inline void Finalize() {
@@ -353,12 +354,12 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   }
 
   // Helper function to volume-average an array
-  template <typename arrT, typename vfracT>
-  PORTABLE_FORCEINLINE_FUNCTION Real VolumeAverageMatArray(arrT arr, vfracT vfracs,
-                                                           int num = nmat_) const {
+  template <typename arrT, typename WeightT>
+  PORTABLE_FORCEINLINE_FUNCTION Real WeightedAverageMatArray(arrT arr, WeightT weights,
+                                                             size_t num) const {
     Real avg = 0;
     for (size_t i = 0; i < num; i++) {
-      avg += vfracs[i] * arr[i];
+      avg += weights[i] * arr[i];
     }
     return avg;
   }
@@ -368,7 +369,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityEnergy(
       const Real density_tot, const Real sie_tot, Real &pressure, Real &temperature,
-      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas,
+      RealIndexer &density_mat, RealIndexer &sie_mat, LambdaIndexer &lambdas,
       bool small_mass_mat_consistency = false) const {
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
@@ -397,7 +398,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
     // Get cache from offsets into scratch
     // TODO: How do we pass meaningful Lambda information to the EOS in the PTE
-    // solver that _isn't_ cache?
+    // solver that _isn't_ cache? Should we create a new combined lambda?
     const int neq = npte + 1;
     singularity::mix_impl::CacheAccessor cache(solver_scratch.data() + neq * (neq + 4) +
                                                2 * npte);
@@ -410,17 +411,29 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     if (npte > 1) {
       // Create indexers for the various arrays. Note that we have to use
       // references since the PTE solver expects them all to be the same type
-      auto density_idxr = GenericIndexer(&density_mat[0], pte_mats);
-      auto vfrac_idxr = GenericIndexer(&vol_fracs[0], pte_mats);
-      auto sie_idxr = GenericIndexer(&sie_mat[0], pte_mats);
-      auto temp_idxr = GenericIndexer(&temp_mat[0], pte_mats);
-      auto pres_idxr = GenericIndexer(&pres_mat[0], pte_mats);
+      auto density_idxr = GenericIndexer(density_mat.data(), pte_mats.data());
+      auto vfrac_idxr = GenericIndexer(vol_fracs.data(), pte_mats.data());
+      auto sie_idxr = GenericIndexer(sie_mat.data(), pte_mats.data());
+      auto temp_idxr = GenericIndexer(temp_mat.data(), pte_mats.data());
+      auto pres_idxr = GenericIndexer(pres_mat.data(), pte_mats.data());
+
+      // The P-T based PTE solver needs slightly tighter tolerances than the
+      // others to achieve 1e-12 comparison to P-T lookups (see unit test)
+      constexpr Real tol = 1.0e-07;
+      auto mix_params = MixParams{};
+      mix_params.pte_rel_tolerance_e = tol;
+      mix_params.pte_rel_tolerance_v = tol;
+      mix_params.pte_rel_tolerance_e_sufficient = tol * 100;
+      mix_params.pte_rel_tolerance_v_sufficient = tol * 100;
+
+      // Solve for the PTE state
       PTESolverPT<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
           npte, eos_idxr, vfrac_tot, sie_tot, density_idxr, vfrac_idxr, sie_idxr,
-          temp_idxr, pres_idxr, cache, solver_scratch.data());
+          temp_idxr, pres_idxr, cache, solver_scratch.data(), 0.0 /* default Tnorm */,
+          mix_params);
       status = PTESolver(method);
-      temperature = VolumeAverageMatArray(temp_idxr, vfrac_idxr, npte);
-      pressure = VolumeAverageMatArray(pres_idxr, vfrac_idxr, npte);
+      temperature = WeightedAverageMatArray(temp_idxr, vfrac_idxr, npte);
+      pressure = WeightedAverageMatArray(pres_idxr, vfrac_idxr, npte);
     } else {
       // Single material
       temperature = eos_idxr[0].TemperatureFromDensityInternalEnergy(density_tot, sie_tot,
@@ -482,8 +495,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real vfrac_tot = 0;
     sie_tot = 0; // Initialize to some value for bad guesses or non-participating
                  // materials
-    SetUpPTE(mass_fracs, vol_fracs, density_mat, pte_mats, npte, vfrac_tot, density_tot,
-             sie_tot, eos_arr);
+    SetUpPTE(mass_fracs, vol_fracs, density_mat, sie_mat, pte_mats, npte, vfrac_tot,
+             density_tot, sie_tot, eos_arr);
 
     // Initialize solver scratch memory (including cache)
     constexpr int pte_solver_scratch_size =
@@ -510,16 +523,16 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     if (npte > 1) {
       // Create indexers for the various arrays. Note that we have to use
       // references since the PTE solver expects them all to be the same type
-      auto density_idxr = GenericIndexer(&density_mat[0], pte_mats);
-      auto vfrac_idxr = GenericIndexer(&vol_fracs[0], pte_mats);
-      auto sie_idxr = GenericIndexer(&sie_mat[0], pte_mats);
-      const auto temp_idxr = GenericIndexer(&temp_mat[0], pte_mats);
-      auto pres_idxr = GenericIndexer(&pres_mat[0], pte_mats);
+      auto density_idxr = GenericIndexer(density_mat.data(), pte_mats.data());
+      auto vfrac_idxr = GenericIndexer(vol_fracs.data(), pte_mats.data());
+      auto sie_idxr = GenericIndexer(sie_mat.data(), pte_mats.data());
+      const auto temp_idxr = GenericIndexer(temp_mat.data(), pte_mats.data());
+      auto pres_idxr = GenericIndexer(pres_mat.data(), pte_mats.data());
       PTESolverFixedT<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
           npte, eos_idxr, vfrac_tot, temperature, density_idxr, vfrac_idxr, sie_idxr,
           temp_idxr, pres_idxr, cache, solver_scratch.data());
       status = PTESolver(method);
-      pressure = VolumeAverageMatArray(pres_idxr, vfrac_idxr, npte);
+      pressure = WeightedAverageMatArray(pres_idxr, vfrac_idxr, npte);
     } else {
       // Single material
       sie_tot = eos_idxr[0].InternalEnergyFromDensityTemperature(density_tot, temperature,
@@ -587,8 +600,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real vfrac_tot = 0;
     sie_tot = 0; // Initialize to some value for bad guesses or non-participating
                  // materials
-    SetUpPTE(mass_fracs, vol_fracs, density_mat, pte_mats, npte, vfrac_tot, density_tot,
-             sie_tot, eos_arr);
+    SetUpPTE(mass_fracs, vol_fracs, density_mat, sie_mat, pte_mats, npte, vfrac_tot,
+             density_tot, sie_tot, eos_arr);
 
     // Initialize solver scratch memory (including cache)
     constexpr int pte_solver_scratch_size =
@@ -617,16 +630,16 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       // references since the PTE solver expects them all to be the same type.
       // Note that the pressure array can't be const since the PTE solver uses
       // it in the residual calculation
-      auto density_idxr = GenericIndexer(&density_mat[0], pte_mats);
-      auto vfrac_idxr = GenericIndexer(&vol_fracs[0], pte_mats);
-      auto sie_idxr = GenericIndexer(&sie_mat[0], pte_mats);
-      auto temp_idxr = GenericIndexer(&temp_mat[0], pte_mats);
-      auto pres_idxr = GenericIndexer(&pres_mat[0], pte_mats);
+      auto density_idxr = GenericIndexer(density_mat.data(), pte_mats.data());
+      auto vfrac_idxr = GenericIndexer(vol_fracs.data(), pte_mats.data());
+      auto sie_idxr = GenericIndexer(sie_mat.data(), pte_mats.data());
+      auto temp_idxr = GenericIndexer(temp_mat.data(), pte_mats.data());
+      auto pres_idxr = GenericIndexer(pres_mat.data(), pte_mats.data());
       PTESolverFixedP<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
           npte, eos_idxr, vfrac_tot, pressure, density_idxr, vfrac_idxr, sie_idxr,
           temp_idxr, pres_idxr, cache, solver_scratch.data());
       status = PTESolver(method);
-      temperature = VolumeAverageMatArray(temp_idxr, vfrac_idxr, npte);
+      temperature = WeightedAverageMatArray(temp_idxr, vfrac_idxr, npte);
     } else {
       // Single material, so use root find to find the temperature that achieves
       // the desired pressure at this density
@@ -745,7 +758,6 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real pressure, temperature;
     SolverStatus status = GetStatesFromDensityEnergy(rho, sie, pressure, temperature,
                                                      density_mat, sie_mat, lambda);
-
     return temperature;
   }
   template <typename LambdaIndexer,
@@ -757,7 +769,6 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real pressure, temperature;
     SolverStatus status = GetStatesFromDensityEnergy(rho, sie, pressure, temperature,
                                                      density_mat, sie_mat, lambda);
-
     return pressure;
   }
   template <typename LambdaIndexer,
@@ -835,7 +846,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
           }
         },
-        density_mat, sie_mat, temperature, lambda, std::make_index_sequence<nmat_>{});
+        models_, density_mat, sie_mat, rho, temperature, lambda,
+        std::make_index_sequence<nmat_>{});
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -858,7 +870,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
           }
         },
-        density_mat, sie_mat, temperature, lambda, std::make_index_sequence<nmat_>{});
+        models_, density_mat, sie_mat, rho, temperature, lambda,
+        std::make_index_sequence<nmat_>{});
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -950,7 +963,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
           }
         },
-        density_mat, sie_mat, temperature, lambda, std::make_index_sequence<nmat_>{});
+        models_, density_mat, sie_mat, rho, temperature, lambda,
+        std::make_index_sequence<nmat_>{});
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -972,7 +986,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
           }
         },
-        density_mat, sie_mat, temperature, lambda, std::make_index_sequence<nmat_>{});
+        models_, density_mat, sie_mat, rho, temperature, lambda,
+        std::make_index_sequence<nmat_>{});
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -988,30 +1003,30 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     if (input & thermalqs::pressure && input & thermalqs::temperature) {
       PORTABLE_REQUIRE(
           output & thermalqs::density && output & thermalqs::specific_internal_energy,
-          "Internal energy and density must be defined as outputs when pressure and "
-          "temperature are inputs");
+          "Specific internal energy and density must be defined as outputs when pressure "
+          "and temperature are inputs");
       GetStatesFromPressureTemperature(rho, energy, press, temp, density_mat, sie_mat,
                                        lambda);
     } else if (input & thermalqs::density && input & thermalqs::temperature) {
       PORTABLE_REQUIRE(
           output & thermalqs::pressure && output & thermalqs::specific_internal_energy,
-          "Internal energy and pressure must be defined as outputs when density and "
-          "temperature are inputs");
-      GetStatesFromDensityTemperature(energy, rho, press, temp, density_mat, sie_mat,
+          "Specific internal energy and pressure must be defined as outputs when density "
+          "and temperature are inputs");
+      GetStatesFromDensityTemperature(rho, energy, press, temp, density_mat, sie_mat,
                                       lambda);
     } else if (input & thermalqs::density &&
                input & thermalqs::specific_internal_energy) {
       PORTABLE_REQUIRE(
-          output & thermalqs::pressure && output & thermalqs::specific_internal_energy,
+          output & thermalqs::pressure && output & thermalqs::temperature,
           "Temperature and pressure must be defined as outputs when density and "
           "internal energy are inputs");
-      GetStatesFromDensityEnergy(energy, rho, press, temp, density_mat, sie_mat, lambda);
+      GetStatesFromDensityEnergy(rho, energy, press, temp, density_mat, sie_mat, lambda);
     } else if (input & thermalqs::density && input & thermalqs::pressure) {
       PORTABLE_REQUIRE(
-          output & thermalqs::pressure && output & thermalqs::specific_internal_energy,
-          "Temperature and pressure must be defined as outputs when density and "
-          "internal energy are inputs");
-      GetStatesFromDensityPressure(energy, rho, press, temp, density_mat, sie_mat,
+          output & thermalqs::temperature && output & thermalqs::specific_internal_energy,
+          "Temperature and specific internal energy must be defined as outputs when "
+          "density and internal energy are inputs");
+      GetStatesFromDensityPressure(rho, energy, press, temp, density_mat, sie_mat,
                                    lambda);
     }
 
@@ -1041,7 +1056,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
               return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
             }
           },
-          density_mat, sie_mat, temp, lambda, std::make_index_sequence<nmat_>{});
+          models_, density_mat, sie_mat, rho, temp, lambda,
+          std::make_index_sequence<nmat_>{});
     }
   }
   constexpr static inline int nlambda() noexcept {
@@ -1147,7 +1163,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
           }
         },
-        density_mat, sie_mat, temp, lambda, std::make_index_sequence<nmat_>{});
+        models_, density_mat, sie_mat, rho, temp, lambda,
+        std::make_index_sequence<nmat_>{});
     dpde = rho * avg_gruneisen;
 
     BulkModAvgT b_avg_funct{};
@@ -1161,7 +1178,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
           }
         },
-        density_mat, sie_mat, temp, lambda, std::make_index_sequence<nmat_>{});
+        models_, density_mat, sie_mat, rho, temp, lambda,
+        std::make_index_sequence<nmat_>{});
   }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
