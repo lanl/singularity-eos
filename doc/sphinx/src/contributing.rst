@@ -384,6 +384,18 @@ contributor to the existing EOS as examples.
 Notes for Contributors on navigating/developing code features
 -------------------------------------------------------------
 
+On generative AI
+`````````````````
+
+We require that any file that was modified with the assistance of
+generative AI should have some text indicating that such a tool was
+used. For example, you might add a comment like this one:
+
+..code-block:: c++
+
+  // This file was made in part with generative AI.
+
+
 Some notes on style and code architecture
 ``````````````````````````````````````````
 
