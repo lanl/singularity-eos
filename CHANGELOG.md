@@ -3,6 +3,7 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
+- [[PR556](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
 
 ### Fixed (Repair bugs, etc)
 

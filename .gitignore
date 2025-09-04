@@ -13,3 +13,4 @@ spack-configure-*
 CMakeUserPresets.json
 build/
 goldfiles.tar.gz
+.aider*
