@@ -26,6 +26,7 @@
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
 
+#include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
@@ -84,6 +85,9 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     using LambdaT = VariadicIndexer<MassFraction<0>, MassFraction<1>>;
     auto multi_eos = make_MultiEOS(davis_r_eos, davis_p_eos);
 
+    // Lookup result tolerances
+    constexpr Real lookup_tol = 1.0e-12;
+
     WHEN("A mass fraction cutoff less than 0 is specified") {
       [[maybe_unused]] constexpr Real mf_cutoff = -0.01;
       THEN("Constructing the MultiEOS object should throw an exception") {
@@ -117,63 +121,6 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
           INFO("Mass fraction test: mass_fracs[" << m << "] = " << mass_fracs[m]);
           CHECK_THAT(set_mass_fracs[m],
                      Catch::Matchers::WithinRel(mass_fracs[m], 1.0e-14));
-        }
-      }
-    }
-
-    THEN("The MultiEOS object can be placed in an EOS Variant") {
-      using EOS =
-          Variant<DavisReactants, ShiftedEOS<DavisProducts>,
-                  decltype(make_MultiEOS(DavisReactants{}, ShiftedEOS<DavisProducts>{}))>;
-      EOS multi_eos_in_variant = make_MultiEOS(davis_r_eos, davis_p_eos);
-
-      AND_WHEN("A pressure-temperature lookup is performed") {
-        // Populate lambda with mass fractions (only)
-        std::array<Real, num_eos> set_mass_fracs{};
-        set_mass_fracs.fill(1.0 / num_eos);
-        LambdaT lambda{set_mass_fracs};
-
-        // A high pressure and temperature
-        constexpr Real P = 8.0e10;
-        constexpr Real T = 8000;
-        Real rho;
-        Real sie;
-        multi_eos_in_variant.DensityEnergyFromPressureTemperature(P, T, lambda, rho, sie);
-        INFO("MultiEOS density: " << rho << "   sie: " << sie);
-        CHECK(rho > 0.);
-        CHECK(std::isnormal(rho));
-        CHECK(std::isnormal(sie));
-
-        THEN("The result is consistent with doing the same for the individual EOS") {
-
-          // Create an array of EOS
-          const auto eos_arr = multi_eos.CreateEOSArray();
-
-          // Create an array of mass fractions for adding up the individual values
-          std::array<Real, num_eos> mass_fracs{};
-          multi_eos.PopulateMassFracArray(mass_fracs, lambda);
-
-          // Sum the individual EOS contributions weighted by mass fractions
-          Real spvol_bulk = 0.;
-          Real sie_bulk = 0.;
-          for (size_t m = 0; m < num_eos; m++) {
-            Real rho_m;
-            Real sie_m;
-            eos_arr[m].DensityEnergyFromPressureTemperature(P, T, nullptr, rho_m, sie_m);
-            INFO("EOS[" << m << "]:\n" << eos_arr[m].EosType());
-            CHECK(rho_m > 0.);
-            CHECK(sie_m != 0.);
-            spvol_bulk += mass_fracs[m] / rho_m;
-            sie_bulk += mass_fracs[m] * sie_m;
-          }
-
-          // Quick check that we can invert the specific volume
-          REQUIRE(spvol_bulk > 0.);
-          Real rho_bulk = 1.0 / spvol_bulk;
-
-          // Make sure the weighted sums add up to the result from the MultiEOS
-          CHECK_THAT(rho_bulk, Catch::Matchers::WithinRel(rho, 1.0e-12));
-          CHECK_THAT(sie_bulk, Catch::Matchers::WithinRel(sie, 1.0e-12));
         }
       }
     }
@@ -238,6 +185,144 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         CHECK_THAT(multi_eospytype, ContainsSubstring(davis_r_eospytype));
         CHECK_THAT(multi_eospytype, ContainsSubstring(davis_p_eospytype));
         CHECK_THAT(multi_eospytype, ContainsSubstring("MultiEOS"));
+      }
+    }
+
+    THEN("The MultiEOS object can be placed in an EOS Variant") {
+      using EOS =
+          Variant<DavisReactants, ShiftedEOS<DavisProducts>,
+                  decltype(make_MultiEOS(DavisReactants{}, ShiftedEOS<DavisProducts>{}))>;
+      EOS multi_eos_in_variant = make_MultiEOS(davis_r_eos, davis_p_eos);
+
+      AND_WHEN("A pressure-temperature lookup is performed") {
+        // Populate lambda with mass fractions (only)
+        std::array<Real, num_eos> set_mass_fracs{};
+        set_mass_fracs.fill(1.0 / num_eos);
+        LambdaT lambda{set_mass_fracs};
+
+        // A high pressure and temperature
+        constexpr Real P = 8.0e10;
+        constexpr Real T = 8000;
+        Real rho;
+        Real sie;
+        multi_eos_in_variant.DensityEnergyFromPressureTemperature(P, T, lambda, rho, sie);
+        INFO("Original lookup P: " << P << "   T: " << T);
+        INFO("MultiEOS density: " << rho << "   sie: " << sie);
+        CHECK(rho > 0.);
+        CHECK(std::isnormal(rho));
+        CHECK(std::isnormal(sie));
+
+        THEN("The result is consistent with doing the same for the individual EOS") {
+
+          // Create an array of EOS
+          const auto eos_arr = multi_eos.CreateEOSArray();
+
+          // Create an array of mass fractions for adding up the individual values
+          std::array<Real, num_eos> mass_fracs{};
+          multi_eos.PopulateMassFracArray(mass_fracs, lambda);
+
+          // Sum the individual EOS contributions weighted by mass fractions
+          Real spvol_bulk = 0.;
+          Real sie_bulk = 0.;
+          for (size_t m = 0; m < num_eos; m++) {
+            Real rho_m;
+            Real sie_m;
+            eos_arr[m].DensityEnergyFromPressureTemperature(P, T, nullptr, rho_m, sie_m);
+            INFO("EOS[" << m << "]:\n" << eos_arr[m].EosType());
+            CHECK(rho_m > 0.);
+            CHECK(sie_m != 0.);
+            spvol_bulk += mass_fracs[m] / rho_m;
+            sie_bulk += mass_fracs[m] * sie_m;
+          }
+
+          // Quick check that we can invert the specific volume
+          REQUIRE(spvol_bulk > 0.);
+          Real rho_bulk = 1.0 / spvol_bulk;
+
+          // Make sure the weighted sums add up to the result from the MultiEOS
+          CHECK_THAT(rho_bulk, Catch::Matchers::WithinRel(rho, lookup_tol));
+          CHECK_THAT(sie_bulk, Catch::Matchers::WithinRel(sie, lookup_tol));
+        }
+
+        AND_THEN("Density-energy lookups using the MultiEOS object all yield results "
+                 "consistent with the original conditions") {
+          INFO("Lookup -- Density: " << rho << "  Energy: " << sie);
+          auto T_RE =
+              multi_eos_in_variant.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
+          CHECK_THAT(T_RE, Catch::Matchers::WithinRel(T, lookup_tol));
+          auto P_RE =
+              multi_eos_in_variant.PressureFromDensityInternalEnergy(rho, sie, lambda);
+          CHECK_THAT(P_RE, Catch::Matchers::WithinRel(P, lookup_tol));
+        }
+
+        AND_THEN("Density-temperature lookups using the MultiEOS object all yield "
+                 "results consistent with the original conditions") {
+          INFO("Lookup -- Density: " << rho << "  Temperature: " << T);
+          auto P_RT = multi_eos_in_variant.PressureFromDensityTemperature(rho, T, lambda);
+          CHECK_THAT(P_RT, Catch::Matchers::WithinRel(P, lookup_tol));
+          auto E_RT =
+              multi_eos_in_variant.InternalEnergyFromDensityTemperature(rho, T, lambda);
+          CHECK_THAT(E_RT, Catch::Matchers::WithinRel(sie, lookup_tol));
+        }
+
+        AND_WHEN("FillEos() is called") {
+          using namespace singularity;
+          Real rho_FillEos;
+          Real temp_FillEos;
+          Real sie_FillEos;
+          Real pres_FillEos;
+          Real cv_FillEos;
+          Real bmod_FillEos;
+
+          THEN("P-T lookups are consistent") {
+            const unsigned long input = thermalqs::pressure | thermalqs::temperature;
+            const unsigned long output = ~input;
+            temp_FillEos = T;
+            pres_FillEos = P;
+            multi_eos_in_variant.FillEos(rho_FillEos, temp_FillEos, sie_FillEos,
+                                         pres_FillEos, cv_FillEos, bmod_FillEos, output,
+                                         lambda);
+            CHECK_THAT(rho_FillEos, Catch::Matchers::WithinRel(rho, lookup_tol));
+            CHECK_THAT(sie_FillEos, Catch::Matchers::WithinRel(sie, lookup_tol));
+          }
+
+          THEN("rho-T lookups are consistent") {
+            const unsigned long input = thermalqs::density | thermalqs::temperature;
+            const unsigned long output = ~input;
+            rho_FillEos = rho;
+            temp_FillEos = T;
+            multi_eos_in_variant.FillEos(rho_FillEos, temp_FillEos, sie_FillEos,
+                                         pres_FillEos, cv_FillEos, bmod_FillEos, output,
+                                         lambda);
+            CHECK_THAT(pres_FillEos, Catch::Matchers::WithinRel(P, lookup_tol));
+            CHECK_THAT(sie_FillEos, Catch::Matchers::WithinRel(sie, lookup_tol));
+          }
+
+          THEN("rho-sie lookups are consistent") {
+            const unsigned long input =
+                thermalqs::density | thermalqs::specific_internal_energy;
+            const unsigned long output = ~input;
+            rho_FillEos = rho;
+            sie_FillEos = sie;
+            multi_eos_in_variant.FillEos(rho_FillEos, temp_FillEos, sie_FillEos,
+                                         pres_FillEos, cv_FillEos, bmod_FillEos, output,
+                                         lambda);
+            CHECK_THAT(pres_FillEos, Catch::Matchers::WithinRel(P, lookup_tol));
+            CHECK_THAT(temp_FillEos, Catch::Matchers::WithinRel(T, lookup_tol));
+          }
+
+          THEN("rho-P lookups are consistent") {
+            const unsigned long input = thermalqs::density | thermalqs::pressure;
+            const unsigned long output = ~input;
+            rho_FillEos = rho;
+            pres_FillEos = P;
+            multi_eos_in_variant.FillEos(rho_FillEos, temp_FillEos, sie_FillEos,
+                                         pres_FillEos, cv_FillEos, bmod_FillEos, output,
+                                         lambda);
+            CHECK_THAT(temp_FillEos, Catch::Matchers::WithinRel(T, lookup_tol));
+            CHECK_THAT(sie_FillEos, Catch::Matchers::WithinRel(sie, lookup_tol));
+          }
+        }
       }
     }
   }
