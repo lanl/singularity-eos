@@ -70,7 +70,7 @@ struct MassFracAverageFunctor {
             typename LambdaIndexer, std::size_t... Is>
   constexpr Real operator()(Func &&f, EOSmodelsT &models, RealIndexer &density_arr,
                             RealIndexer &sie_arr, [[maybe_unused]] Real density,
-                            Real temperature, LambdaIndexer const &lambda,
+                            Real temperature, LambdaIndexer &lambda,
                             std::index_sequence<Is...>) const {
     return ((lambda[IndexableTypes::MassFraction<Is>{}]
              /* Value to be volume-avreaged */
@@ -255,20 +255,6 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return "MultiEOS" + all_models;
   }
 
-  MultiEOS() = default;
-
-  template <typename... EOSModelsT_>
-  MultiEOS(Real mass_frac_cutoff_in, EOSModelsT_ &&...eos_models)
-      : mass_frac_cutoff_{std::forward<Real>(mass_frac_cutoff_in)},
-        models_(std::forward<EOSModelsT_>(eos_models)...) {
-    CheckParams();
-  }
-
-  template <typename... EOSModelsT_>
-  MultiEOS(EOSModelsT_ &&...eos_models)
-      : MultiEOS(
-            /*mass_frac_cutoff=*/1e-8, std::forward<EOSModelsT_>(eos_models)...) {}
-
   // Constructor overload that makes copying the models easier (e.g.
   // GetOnDevice()). Make explicit to avoid accidentally storing a tuple of a
   // tuple
@@ -276,6 +262,24 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       : models_(std::move(model_tuple)), mass_frac_cutoff_{mass_frac_cutoff_in} {
     CheckParams();
   }
+
+  MultiEOS() = default;
+
+  template <typename... EOSModelsT_,
+            typename = std::enable_if_t<
+                !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...)>>
+  MultiEOS(Real mass_frac_cutoff_in, EOSModelsT_ &&...eos_models)
+      : mass_frac_cutoff_{std::forward<Real>(mass_frac_cutoff_in)},
+        models_(std::forward<EOSModelsT_>(eos_models)...) {
+    CheckParams();
+  }
+
+  template <typename... EOSModelsT_,
+            typename = std::enable_if_t<
+                !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...)>>
+  MultiEOS(EOSModelsT_ &&...eos_models)
+      : MultiEOS(
+            /*mass_frac_cutoff=*/1e-8, std::forward<EOSModelsT_>(eos_models)...) {}
 
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
     // Again we're using a fold expression now with std::apply to call
@@ -798,7 +802,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                                                      density_mat, sie_mat, lambda);
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer lambda) {
+           LambdaIndexer &lambda) {
           if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.EntropyFromDensityTemperature(rho, temperature, lambda);
           } else {
@@ -911,7 +915,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                                                           density_mat, sie_mat, lambda);
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer lambda) {
+           LambdaIndexer &lambda) {
           if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.EntropyFromDensityTemperature(rho, temperature, lambda);
           } else {
@@ -932,7 +936,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                                                           density_mat, sie_mat, lambda);
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer lambda) {
+           LambdaIndexer &lambda) {
           if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
           } else {
@@ -954,7 +958,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     BulkModAvgT avg_funct{};
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer lambda) {
+           LambdaIndexer &lambda) {
           if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
           } else {
@@ -976,7 +980,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     GruneisenAvgT avg_funct{};
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer lambda) {
+           LambdaIndexer &lambda) {
           if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
           } else {
@@ -1032,7 +1036,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     if (output & thermalqs::specific_heat) {
       cv = massFracAverageQuantityAtManyStates(
           [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-             LambdaIndexer lambda) {
+             LambdaIndexer &lambda) {
             if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
               return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
             } else {
@@ -1046,11 +1050,11 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       BulkModAvgT avg_funct{};
       bmod = avg_funct(
           [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-             LambdaIndexer lambda) {
+             LambdaIndexer &lambda) {
             if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
-              return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
+              return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
             } else {
-              return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
+              return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
             }
           },
           models_, density_mat, sie_mat, rho, temp, lambda,
@@ -1138,7 +1142,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // Mass-fraction average the heat capacity
     cv = massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer lambda) {
+           LambdaIndexer &lambda) {
           if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
           } else {
@@ -1151,7 +1155,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     GruneisenAvgT g_avg_funct{};
     auto avg_gruneisen = g_avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer lambda) {
+           LambdaIndexer &lambda) {
           if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
           } else {
@@ -1165,7 +1169,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     BulkModAvgT b_avg_funct{};
     bmod = b_avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-           LambdaIndexer lambda) {
+           LambdaIndexer &lambda) {
           if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
             return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
           } else {
