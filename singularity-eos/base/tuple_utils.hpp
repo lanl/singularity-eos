@@ -41,6 +41,14 @@ constexpr auto tuple_transform(TupleT &&tup, FunctionT &&function) {
                                          std::make_index_sequence<N>{});
 }
 
+// SFINAE helper to dicriminate between packs and tuples
+template <class>
+struct is_std_tuple : std::false_type {};
+template <class... Ts>
+struct is_std_tuple<std::tuple<Ts...>> : std::true_type {};
+template <class T>
+inline constexpr bool is_std_tuple_v = is_std_tuple<std::decay_t<T>>::value;
+
 } // namespace tuple_utils
 } // namespace singularity
 
