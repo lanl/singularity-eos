@@ -596,7 +596,7 @@ target_compile_options(
 )
 if (SINGULARITY_STRICT_WARNINGS)
   target_compile_options(singularity-eos_Interface INTERFACE
-    -Wall -Werror -Wno-unknown-pragmas)
+   -Wall -Werror -Wno-unknown-pragmas)
 endif()
 
 if(TARGET singularity-eos_Library)
