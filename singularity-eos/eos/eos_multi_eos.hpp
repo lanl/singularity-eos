@@ -765,8 +765,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
-    SolverStatus status = GetStatesFromDensityEnergy(rho, sie, pressure, temperature,
-                                                     density_mat, sie_mat, lambda);
+    GetStatesFromDensityEnergy(rho, sie, pressure, temperature, density_mat, sie_mat,
+                               lambda);
     return temperature;
   }
   template <typename LambdaIndexer,
@@ -776,8 +776,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
-    SolverStatus status = GetStatesFromDensityEnergy(rho, sie, pressure, temperature,
-                                                     density_mat, sie_mat, lambda);
+    GetStatesFromDensityEnergy(rho, sie, pressure, temperature, density_mat, sie_mat,
+                               lambda);
     return pressure;
   }
   template <typename LambdaIndexer,
@@ -798,8 +798,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
-    SolverStatus status = GetStatesFromDensityEnergy(rho, sie, pressure, temperature,
-                                                     density_mat, sie_mat, lambda);
+    GetStatesFromDensityEnergy(rho, sie, pressure, temperature, density_mat, sie_mat,
+                               lambda);
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer &lambda) {
@@ -818,8 +818,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
-    SolverStatus status = GetStatesFromDensityEnergy(rho, sie, pressure, temperature,
-                                                     density_mat, sie_mat, lambda);
+    GetStatesFromDensityEnergy(rho, sie, pressure, temperature, density_mat, sie_mat,
+                               lambda);
 
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
@@ -839,8 +839,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
-    SolverStatus status = GetStatesFromDensityEnergy(rho, sie, pressure, temperature,
-                                                     density_mat, sie_mat, lambda);
+    GetStatesFromDensityEnergy(rho, sie, pressure, temperature, density_mat, sie_mat,
+                               lambda);
 
     BulkModAvgT avg_funct{};
     return avg_funct(
@@ -862,8 +862,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, temperature;
-    SolverStatus status = GetStatesFromDensityEnergy(rho, sie, pressure, temperature,
-                                                     density_mat, sie_mat, lambda);
+    GetStatesFromDensityEnergy(rho, sie, pressure, temperature, density_mat, sie_mat,
+                               lambda);
 
     GruneisenAvgT avg_funct{};
     return avg_funct(
@@ -885,8 +885,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
-    SolverStatus status = GetStatesFromDensityTemperature(rho, sie, pressure, temperature,
-                                                          density_mat, sie_mat, lambda);
+    GetStatesFromDensityTemperature(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                    lambda);
 
     return sie;
   }
@@ -898,8 +898,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
-    SolverStatus status = GetStatesFromDensityTemperature(rho, sie, pressure, temperature,
-                                                          density_mat, sie_mat, lambda);
+    GetStatesFromDensityTemperature(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                    lambda);
 
     return pressure;
   }
@@ -911,8 +911,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
-    SolverStatus status = GetStatesFromDensityTemperature(rho, sie, pressure, temperature,
-                                                          density_mat, sie_mat, lambda);
+    GetStatesFromDensityTemperature(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                    lambda);
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer &lambda) {
@@ -932,8 +932,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
-    SolverStatus status = GetStatesFromDensityTemperature(rho, sie, pressure, temperature,
-                                                          density_mat, sie_mat, lambda);
+    GetStatesFromDensityTemperature(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                    lambda);
     return massFracAverageQuantityAtManyStates(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
            LambdaIndexer &lambda) {
@@ -953,8 +953,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
-    SolverStatus status = GetStatesFromDensityTemperature(rho, sie, pressure, temperature,
-                                                          density_mat, sie_mat, lambda);
+    GetStatesFromDensityTemperature(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                    lambda);
     BulkModAvgT avg_funct{};
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,
@@ -975,8 +975,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
-    SolverStatus status = GetStatesFromDensityTemperature(rho, sie, pressure, temperature,
-                                                          density_mat, sie_mat, lambda);
+    GetStatesFromDensityTemperature(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                    lambda);
     GruneisenAvgT avg_funct{};
     return avg_funct(
         [](auto const &eos, Real const rho, Real const sie, Real const temperature,

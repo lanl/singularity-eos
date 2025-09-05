@@ -393,19 +393,20 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
           }
         };
 
-        auto entropy_func = [](auto const &model, Real const rho, Real const sie,
-                               Real const temp, auto const lambda) {
-          if (model.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
-            return model.EntropyFromDensityTemperature(rho, temp);
-          } else {
-            return model.EntropyFromDensityInternalEnergy(rho, sie);
-          }
-        };
+        // auto entropy_func = [](auto const &model, Real const rho, Real const sie,
+        //                        Real const temp, auto const lambda) {
+        //   if (model.PreferredInput() == (thermalqs::density | thermalqs::temperature))
+        //   {
+        //     return model.EntropyFromDensityTemperature(rho, temp);
+        //   } else {
+        //     return model.EntropyFromDensityInternalEnergy(rho, sie);
+        //   }
+        // };
 
-        auto min_sie_func = [](auto const &model, Real const rho, Real const sie,
-                               Real const temp, auto const lambda) {
-          return model.MinInternalEnergyFromDensity(rho);
-        };
+        // auto min_sie_func = [](auto const &model, Real const rho, Real const sie,
+        //                        Real const temp, auto const lambda) {
+        //   return model.MinInternalEnergyFromDensity(rho);
+        // };
 
         auto b_avg_f = BAvgF{};
         Real const bmod_avg = b_avg_f(bmod_func, models, density_mat, sie_mat, rho, T,
@@ -602,3 +603,5 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     }
   }
 }
+
+// TODO: Write a test case using EOS with dynamic memory
