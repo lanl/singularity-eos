@@ -410,15 +410,6 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         //   return model.MinInternalEnergyFromDensity(rho);
         // };
 
-        auto zbar_func = [](auto const &model, Real const rho, Real const sie,
-                            Real const temp, auto const lambda) {
-          if (model.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
-            return model.SpecificHeatFromDensityTemperature(rho, temp);
-          } else {
-            return model.SpecificHeatFromDensityInternalEnergy(rho, sie);
-          }
-        };
-
         auto b_avg_f = BAvgF{};
         Real const bmod_avg = b_avg_f(bmod_func, models, density_mat, sie_mat, rho, T,
                                       lambda, std::make_index_sequence<num_eos>{});
