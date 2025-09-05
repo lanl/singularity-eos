@@ -14,6 +14,7 @@
 #include <array>
 #include <cmath>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 #ifndef CATCH_CONFIG_FAST_COMPILE
@@ -29,6 +30,7 @@
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
+#include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_multi_eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
@@ -408,6 +410,15 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         //   return model.MinInternalEnergyFromDensity(rho);
         // };
 
+        auto zbar_func = [](auto const &model, Real const rho, Real const sie,
+                            Real const temp, auto const lambda) {
+          if (model.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
+            return model.SpecificHeatFromDensityTemperature(rho, temp);
+          } else {
+            return model.SpecificHeatFromDensityInternalEnergy(rho, sie);
+          }
+        };
+
         auto b_avg_f = BAvgF{};
         Real const bmod_avg = b_avg_f(bmod_func, models, density_mat, sie_mat, rho, T,
                                       lambda, std::make_index_sequence<num_eos>{});
@@ -588,7 +599,7 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
       using namespace singularity;
       constexpr auto pref_in = multi_eos.PreferredInput();
       // The preferred input is _always_ P-T. See comments in code member function
-      REQUIRE(pref_in == (thermalqs::pressure | thermalqs::temperature));
+      STATIC_REQUIRE(pref_in == (thermalqs::pressure | thermalqs::temperature));
     }
 
     WHEN("The scratch_size() member function is called") {
@@ -601,7 +612,78 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
       multi_eos.PrintParams();
       THEN("Nothing goes wrong"){};
     }
+
+    WHEN("The MinimumDensity() member function is called") {
+      const auto min_rho = multi_eos.MinimumDensity();
+      // Davis EOS minimum density is zero
+      REQUIRE(min_rho == 0);
+    }
+
+    WHEN("The MinimumDensity() member function is called") {
+      const Real eos_val = multi_eos.MinimumDensity();
+      auto eos_arr = multi_eos.CreateEOSArray();
+      Real calc = -1e300;
+      for (size_t m = 0; m < num_eos; m++) {
+        calc = std::max(calc, eos_arr[m].MinimumDensity());
+      }
+      REQUIRE_THAT(eos_val, Catch::Matchers::WithinRel(calc, lookup_tol));
+    }
+
+    WHEN("The MinimumTemperature() member function is called") {
+      const auto eos_val = multi_eos.MinimumTemperature();
+      auto eos_arr = multi_eos.CreateEOSArray();
+      Real calc = -1e300;
+      for (size_t m = 0; m < num_eos; m++) {
+        calc = std::max(calc, eos_arr[m].MinimumTemperature());
+      }
+      REQUIRE_THAT(eos_val, Catch::Matchers::WithinRel(calc, lookup_tol));
+    }
+
+    WHEN("The MaximumDensity() member function is called") {
+      const auto eos_val = multi_eos.MaximumDensity();
+      auto eos_arr = multi_eos.CreateEOSArray();
+      Real calc = 1e300;
+      for (size_t m = 0; m < num_eos; m++) {
+        calc = std::min(calc, eos_arr[m].MaximumDensity());
+      }
+      REQUIRE_THAT(eos_val, Catch::Matchers::WithinRel(calc, lookup_tol));
+    }
+
+    WHEN("The MinimumPressure() member function is called") {
+      const auto eos_val = multi_eos.MinimumPressure();
+      auto eos_arr = multi_eos.CreateEOSArray();
+      Real calc = -1e300;
+      for (size_t m = 0; m < num_eos; m++) {
+        calc = std::max(calc, eos_arr[m].MinimumPressure());
+      }
+      REQUIRE_THAT(eos_val, Catch::Matchers::WithinRel(calc, lookup_tol));
+    }
+
+    WHEN("The MaximumPressureAtTemperature() member function is called") {
+      constexpr Real T = 2000;
+      const auto eos_val = multi_eos.MaximumPressureAtTemperature(T);
+      auto eos_arr = multi_eos.CreateEOSArray();
+      Real calc = 1e300;
+      for (size_t m = 0; m < num_eos; m++) {
+        calc = std::min(calc, eos_arr[m].MaximumPressureAtTemperature(T));
+      }
+      REQUIRE_THAT(eos_val, Catch::Matchers::WithinRel(calc, lookup_tol));
+    }
+
+    WHEN("The IsModified() member function is called") {
+      const auto modified = multi_eos.IsModified();
+      // By definition, EOS is not modified
+      STATIC_REQUIRE(!modified);
+    }
+    WHEN("The UnmodifyOnce() member function is called") {
+      using namespace ::singularity::variadic_utils;
+      // By definition, EOS is not modified, and thus we should get the same
+      // type back
+      STATIC_REQUIRE(std::is_same<remove_cvref_t<decltype(multi_eos.UnmodifyOnce())>,
+                                  remove_cvref_t<decltype(multi_eos)>>::value);
+    }
   }
 }
 
-// TODO: Write a test case using EOS with dynamic memory
+// TODO: Write a new test case using EOS with dynamic memory and probably also
+// probably include 3T properties
