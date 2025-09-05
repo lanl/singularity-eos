@@ -115,15 +115,15 @@ module singularity_eos
 
   interface
     integer(kind=c_int) function &
-      init_sg_simple_MACAW(matindex, eos, A, B, Cvinf, v0, T0, Gc, sg_mods_enabled, &
+      init_sg_SimpleMACAW(matindex, eos, A, B, Cvinf, v0, T0, Gc, sg_mods_enabled, &
                   sg_mods_values) &
-      bind(C, name='init_sg_simple_macaw')
+      bind(C, name='init_sg_SimpleMACAW')
       import
       integer(c_int), value, intent(in)      :: matindex
       type(c_ptr), value, intent(in)         :: eos
       real(kind=c_double), value, intent(in) :: A, B, Cvinf, v0, T0, Gc
       type(c_ptr), value, intent(in)         :: sg_mods_enabled, sg_mods_values
-    end function init_sg_simple_MACAW
+    end function init_sg_SimpleMACAW
   end interface
 
   interface
@@ -534,9 +534,9 @@ contains
     if(present(sg_mods_enabled)) sg_mods_enabled_use = sg_mods_enabled
     if(present(sg_mods_values)) sg_mods_values_use = sg_mods_values
 
-    err = init_sg_simple_macaw(matindex-1, eos%ptr, A, B, Cvinf, v0, T0, Gc, &
+    err = init_sg_SimpleMACAW(matindex-1, eos%ptr, A, B, Cvinf, v0, T0, Gc, &
                       c_loc(sg_mods_enabled_use), c_loc(sg_mods_values_use))
-  end function init_sg_JWL_f
+  end function init_sg_SimpleMACAW_f
 
 
   integer function init_sg_DavisProducts_f(matindex, eos, a, b, k, n, vc, pc, &
