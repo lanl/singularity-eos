@@ -1197,9 +1197,11 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MaximumPressureAtTemperature(const Real temp) const {
-    return min_over_models([](auto const &eos, Real const temp) {
-      return eos.MaximumPressureAtTemperature(temp);
-    });
+    return min_over_models(
+        [](auto const &eos, Real const temp) {
+          return eos.MaximumPressureAtTemperature(temp);
+        },
+        temp);
   }
 
   // 3T member functions
@@ -1208,22 +1210,36 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
       const Real density, const Real temperature,
       LambdaIndexer const lambda = static_cast<Real *>(nullptr)) const {
-    return massFracAverageQuantityAtOneState(
-        [&](auto const &eos, Real R, Real T, LambdaIndexer lambda) {
+    std::array<Real, nmat_> density_mat{};
+    std::array<Real, nmat_> sie_mat{};
+    Real pressure, sie;
+    GetStatesFromDensityTemperature(density, sie, pressure, temperature, density_mat,
+                                    sie_mat, lambda);
+
+    return massFracAverageQuantityAtManyStates(
+        [](auto const &eos, Real const R, Real const sie, Real const T,
+           LambdaIndexer &lambda) {
           return eos.MeanAtomicMassFromDensityTemperature(R, T, lambda);
         },
-        density, temperature, lambda, std::make_index_sequence<nmat_>());
+        density_mat, sie_mat, temperature, lambda);
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
       const Real density, const Real temperature,
       LambdaIndexer const lambda = static_cast<Real *>(nullptr)) const {
-    return massFracAverageQuantityAtOneState(
-        [&](auto const &eos, Real R, Real T, LambdaIndexer lambda) {
+    std::array<Real, nmat_> density_mat{};
+    std::array<Real, nmat_> sie_mat{};
+    Real pressure, sie;
+    GetStatesFromDensityTemperature(density, sie, pressure, temperature, density_mat,
+                                    sie_mat, lambda);
+
+    return massFracAverageQuantityAtManyStates(
+        [](auto const &eos, Real const R, Real const sie, Real const T,
+           LambdaIndexer &lambda) {
           return eos.MeanAtomicNumberFromDensityTemperature(R, T, lambda);
         },
-        density, temperature, lambda, std::make_index_sequence<nmat_>());
+        density_mat, sie_mat, temperature, lambda);
   }
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicMass() const {
