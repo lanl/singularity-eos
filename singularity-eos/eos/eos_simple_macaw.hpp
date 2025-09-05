@@ -47,12 +47,10 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real x = std::pow( rho * _v0, _Gc);
-    const Real sie_term = (sie - SieColdCurve(1.0 / rho)) / _Cvinf;
-    // It's a quadratic equation to solve for temperature from sie and rho
-    const Real b = -sie_term;
-    const Real c = -x * sie_term;
-    return 0.5 * (-b + std::sqrt(b * b - 4.0 * c));
+    /* Equation (18) */
+    const Real Delta_e = sie - SieColdCurve(1.0 / rho);
+    const Real discriminant = Delta_e * (Delta_e + 4.0 * _Cvinf * _T0 * std::pow(rho * _v0, _Gc));
+    return robust::ratio((Delta_e + std::sqrt(discriminant)), 2.0 * _Cvinf);
   }
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_A > 0, "Parameter, 'A', must be positive");
@@ -91,7 +89,6 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
     return SieColdCurve(v) + robust::ratio(v * (P - PressureColdCurve(v)), _Gc);
   }
 
-
   // Entropy member functions
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real
@@ -125,8 +122,8 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureColdCurve(
       const Real v, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real x = robust::ratio(v, _v0);
-    return _A * _B * (std::pow(x, -(_B + 1.0)) - 1.0);
+    const Real ratio = robust::ratio(v, _v0);
+    return _A * _B * (std::pow(ratio, -(_B + 1.0)) - 1.0);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureThermalPortion(
@@ -175,6 +172,19 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
     const Real term2 = _Gc * (_Gc + 1.0) * rho * (sie - SieColdCurve(1.0 / rho));
     return term1 + term2;
   }
+  // Isothermal bulk modulus
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real IsothermalBulkModulusFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    /* As mentioned in the paper, from the constraints on the parameters,
+     * the isothermal bulk modulus is guaranteed to be positive. */
+    const Real term1 = _A * _B * (_B + 1.0) * std::pow(rho * _v0, _B + 1.0);
+    const Real numerator = rho * _T0 * (1.0 - _Gc) * std::pow(rho * _v0, 2.0 * _Gc) + temperature;
+    const Real denominator = _T0 * std::pow(rho * _v0, _Gc) + temperature;
+    return term1 + _Cvinf * _Gc * temperature * temperature * numerator / (denominator * denominator);
+  }
+
   // Gruneisen parameter
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
@@ -199,13 +209,13 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     // use STP: 1 atmosphere, room temperature
+    // TODO: Fix this subroutine...
     rho = 1.0 / _v0;
     temp = _T0;
-    // TODO: Need to use the Newton solver for the density and energy here...
     sie = 0.0;
     press = PressureFromDensityTemperature(rho, temp);
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
-    bmod = BulkdModulusFromDensityInternalEnergy(rho, sie);
+    bmod = BulkModulusFromDensityInternalEnergy(rho, sie);
     dpde = _Gc * rho;
   }
   // Generic functions provided by the base class. These contain e.g. the vector
@@ -224,24 +234,29 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
+    /* Since the isothermal bulk modulus is always positive (assuming parameter constraints),
+     * this guarantees the function to solve is monotonic hence we always have a unique solution. */
+
     // Setup lambda function for rho
-    auto f = [](const Real x){
-      const Real term1 = _A * _B * std::pow(_v0 * x, _B+1.0) - press - _A * _B;
-      const Real term2 = (_T0 * std::pow(_v0 * x, _Gc) + temp) / x;
-      const Real term3 = _Cvinf * _Gc * math_utils::pow<2>(temp);
+    auto f = [=](const Real x /* density */){
+      const Real term1 = _A * _B * (std::pow(_v0 * x, _B + 1.0) - 1.0) - press;
+      const Real term2 = _T0 * std::pow(_v0 * x, _Gc) + temp;
+      const Real term3 = _Cvinf * _Gc * temp * temp * x;
       return term1 * term2 + term3;
-    }
+    };
 
-    RootCounts root_info;
+    const RootFinding1D::RootCounts root_info;
 
-    regula_falsi(f, 0.0 /*target*/, 1.0 /*guess*/, 
-                 1.0e-10 /*left bracket*/, 1.0e+6 /*right bracket*/,
-                 1.0e-6 /*x? tol*/, 1.0e-6 /*y? tol*/,
-                 rho, root_info, true);
+    // Finding the density on pressure cold curve is a guaranteed upper bound
+    const Real rho_high = std::pow(press / (_A * _B) + 1.0, 1.0 / (_B + 1.0)) / _v0;
+    const Real rho_low = 0.0; // zero density is valid for `f` defined above.
 
-    // Solving for rho requires a Newton method...
-    sie = 0.0;
-    rho = 0.0;
+    regula_falsi(f, 0.0 /*target*/, 1.0 / _v0 /*guess*/, 
+                 rho_low /*left bracket*/, rho_high /*right bracket*/,
+                 1.0e-9 /*x? tol*/, 1.0e-9 /*y? tol*/,
+                 rho, &root_info, true);
+
+    sie = InternalEnergyFromDensityTemperature(rho, temp);
   }
   inline void Finalize() {}
   static std::string EosType() { return std::string("SimpleMACAW"); }
