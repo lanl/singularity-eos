@@ -21,6 +21,8 @@
 
 .. _PowerMG: https://www.osti.gov/biblio/1762624
 
+.. _SimpleMACAW: https://www.osti.gov/biblio/2479474
+
 
 EOS Models
 ===========
@@ -1318,6 +1320,58 @@ where
 
 This constructor also optionally accepts `MeanAtomicProperties` for
 the atomic mass and number as a final optional parameter.
+
+
+.. _MACAW EOS: https://pubs.aip.org/aip/jap/article/134/12/125102/2912256
+
+Simple MACAW
+````````````
+The `Simple MACAW EOS <_SimpleMACAW>`_ is a simplified version of the `MACAW EOS <MACAW EOS>`_
+and is thermodynamically consistent.  It is constructed from a the Helmholtz
+free energy using a Murnaghan cold curve and a simplified thermal component
+from the MACAW EOS.
+
+Fundamentally, the equation of state can be written in Mie-Gruneisen form (with constant Gruneisen parameter) as:
+
+.. math::
+
+    P(v, e) = P_{\text{cold}}(v) + \Gamma_c \rho (e - e_{\text{cold}}(v))
+
+where the cold curves are given by:
+
+.. math::
+
+    e_{\text{cold}}(v) = A v_0 \Big[ \Big( \frac{v}{v_0} \Big)^{-B} + \Big( \frac{v}{v_0} \Big) B - (B+1) \Big]
+
+and 
+
+.. math::
+
+    p_{\text{cold}}(v) := -e'_{\text{cold}}(v) = AB \Big( \Big( \frac{v}{v_0} \Big)^{-(B+1)} - 1 \Big)
+
+The specific heat capacity at constant volume for this model is given by,
+
+.. math::
+
+    C_v(v, \tau) = C^\infty_v \frac{\tau^2 + 2\tau}{(\tau + 1)^2} \quad \text{where } \tau = \frac{T}{\theta(v)} \quad \text{ and } \quad \theta(v) := T_0 \Big( \frac{v}{v_c} \Big)^{-\Gamma_c}
+
+Note it obeys the expected physical behavior; that, :math:`\lim_{T\to 0^+} C_v(v,\tau(v,T)) = 0` and
+:math:`\lim_{T\to\infty} C_v(v,\tau(v,T) = C^\infty_v < \infty` (Dulong-Petit law).
+
+The constructor for the Simple MACAW EOS is
+
+.. code-block:: cpp
+
+  SimpleMACAW(const Real A, const Real B, const Real Cvinf, const Real v0,
+              const Real T0, const Real Gc)
+
+where ``A`` is :math:`A`, ``B`` is :math:`B`, ``Cvinf`` is :math:`C^\infty_v`,
+``v0`` is :math:`v_0`, ``T0`` is :math:`T_0`, ``Gc`` is :math:`\Gamma_c`.
+
+In order to maintain thermodynamic consistency, a sufficient set of constraints
+is given by :math:`A > 0`, :math:`B > 0`, :math:`C^\infty_v > 0`, :math:`v_0 >
+0`, :math:`T_0 > 0`, and :math:`\Gamma_c > 0`. If one wants to maintain
+thermodynamic consistency, we also require :math:`\Gamma_c \in (0,1)`. 
 
 
 JWL EOS
