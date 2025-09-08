@@ -189,6 +189,10 @@ Initializes a Davis Reactants EOS model at the specified material index.
 Noble-Abel
 ^^^^^^^^^^
 
+.. note::
+
+   This model is only available when ``SINGULARITY_USE_V_AND_V_EOS`` is ``ON``.
+
 .. code-block:: fortran
 
    integer function init_sg_NobleAbel_f(matindex, eos, gm1, Cv, &
@@ -215,6 +219,10 @@ Initializes a Noble-Abel EOS model at the specified material index.
 
 Stiff Gas
 ^^^^^^^^^
+
+.. note::
+
+   This model is only available when ``SINGULARITY_USE_V_AND_V_EOS`` is ``ON``.
 
 .. code-block:: fortran
 
@@ -243,6 +251,10 @@ Initializes a Stiff Gas EOS model at the specified material index.
 SAP Polynomial
 ^^^^^^^^^^^^^^
 
+.. note::
+
+   This model is only available when ``SINGULARITY_USE_V_AND_V_EOS`` is ``ON``.
+
 .. code-block:: fortran
 
    integer function init_sg_SAP_Polynomial_f(matindex, eos, rho0, a0, a1, a2c, &
@@ -257,7 +269,9 @@ SAP Polynomial
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_SAP_Polynomial_f
 
-Initializes a SAP (Separate Analytic Polynomials) Polynomial EOS model at the specified material index.
+Initializes a SAP Polynomial EOS model at the specified material
+index. SAP here refers to a specific implementation of a polynomial
+equation of state.
 
 - ``matindex``: Material index (1-based in Fortran)
 - ``eos``: EOS array
@@ -310,11 +324,11 @@ Spiner
 
 .. code-block:: fortran
 
-   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, sg_mods_enabled, sg_mods_values) result(err)
+   integer function init_sg_SpinerDependsRhoT_f(matindex, eos, filename, id, split, sg_mods_enabled, sg_mods_values) result(err)
      integer(c_int), value, intent(in) :: matindex
      type(sg_eos_ary_t), intent(in)    :: eos
      character(kind=c_char), dimension(*), intent(in) :: filename
-     integer(c_int), value, intent(in) :: id
+     integer(c_int), value, intent(in) :: id, split
      integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_SpinerDependsRhoT_f
@@ -325,16 +339,17 @@ Initializes a tabulated EOS model that depends on density (ρ) and temperature (
 - ``eos``: EOS array
 - ``filename``: Path to the HDF5 file containing the tabulated data
 - ``id``: Material ID in the HDF5 file
+- ``split``: Whether or not to separately load electron and ion tables
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
 
 .. code-block:: fortran
 
-   integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, sg_mods_enabled, sg_mods_values) result(err)
+   integer function init_sg_SpinerDependsRhoSie_f(matindex, eos, filename, id, split, sg_mods_enabled, sg_mods_values) result(err)
      integer(c_int), value, intent(in) :: matindex
      type(sg_eos_ary_t), intent(in)    :: eos
      character(kind=c_char), dimension(*), intent(in) :: filename
-     integer(c_int), value, intent(in) :: id
+     integer(c_int), value, intent(in) :: id, split
      integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
    end function init_sg_SpinerDependsRhoSie_f
@@ -345,6 +360,7 @@ Initializes a tabulated EOS model that depends on density (ρ) and specific inte
 - ``eos``: EOS array
 - ``filename``: Path to the HDF5 file containing the tabulated data
 - ``id``: Material ID in the HDF5 file
+- ``split``: Whether or not to separately load electron and ion tables
 - ``sg_mods_enabled``: Optional array for enabling modifiers
 - ``sg_mods_values``: Optional array for modifier values
 
@@ -357,10 +373,10 @@ EOSPAC
 
 .. code-block:: fortran
 
-   integer function init_sg_eospac_f(matindex, eos, id, eospac_opts_values, sg_mods_enabled, sg_mods_values) result(err)
+   integer function init_sg_eospac_f(matindex, eos, id, split, eospac_opts_values, sg_mods_enabled, sg_mods_values) result(err)
      integer(c_int), value, intent(in) :: matindex
      type(sg_eos_ary_t), intent(in)    :: eos
-     integer(c_int), value, intent(in) :: id
+     integer(c_int), value, intent(in) :: id, split
      real(kind=8), dimension(:), target, intent(in) :: eospac_opts_values
      integer(kind=c_int), dimension(:), target, optional, intent(inout) :: sg_mods_enabled
      real(kind=8), dimension(:), target, optional, intent(inout)        :: sg_mods_values
@@ -371,6 +387,7 @@ Initializes an EOSPAC equation of state model at the specified material index.
 - ``matindex``: Material index (1-based in Fortran)
 - ``eos``: EOS array
 - ``id``: SESAME material ID
+- ``split``: Whether or not to separately load electron and ion tables
 - ``eospac_opts_values``: Array of EOSPAC-specific options:
 
   - ``eospac_opts_values(1)``: invert_at_setup (0/1)
