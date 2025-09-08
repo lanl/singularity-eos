@@ -33,6 +33,8 @@ namespace singularity {
 
 using namespace eos_base;
 
+/* The details of this equation of state can be found here:
+ * https://www.osti.gov/biblio/2479474 */
 class SimpleMACAW : public EosBase<SimpleMACAW> {
  public:
   SimpleMACAW() = default;
@@ -48,7 +50,7 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     /* Equation (18) */
-    const Real Delta_e = sie - SieColdCurve(1.0 / rho);
+    const Real Delta_e = sie - SieColdCurve(rho);
     const Real discriminant = Delta_e * (Delta_e + 4.0 * _Cvinf * _T0 * std::pow(rho * _v0, _Gc));
     return robust::ratio((Delta_e + std::sqrt(discriminant)), 2.0 * _Cvinf);
   }
@@ -58,35 +60,32 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
     PORTABLE_ALWAYS_REQUIRE(_v0 > 0, "Reference specific volume, 'v0', must be positive");
     PORTABLE_ALWAYS_REQUIRE(_T0 > 0, "Reference temperature, 'T0', must be positive");
     PORTABLE_ALWAYS_REQUIRE(_Cvinf > 0, "Specific heat capacity (at constant volume), `Cvinf`, must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_Gc > 0 && _Gc < 1, "Gruneisen coefficient, 'Gc', must be in the interval (0,1)");
+    PORTABLE_ALWAYS_REQUIRE(_Gc > 0 && _Gc < 1, "Gruneisen parameter, 'Gc', must be in the interval (0,1)");
     _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real v = 1.0 / rho;
-    return rho * (SieColdCurve(v) + SieThermalPortion(v, temperature));
+    return rho * (SieColdCurve(rho) + SieThermalPortion(rho, temperature));
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PressureColdCurve(1.0 / rho) + PressureThermalPortion(rho, temperature);
+    return PressureColdCurve(rho) + PressureThermalPortion(rho, temperature);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real v = 1.0 / rho;
-    return PressureColdCurve(v) + _Gc * rho * (sie - SieColdCurve(v));
+    return PressureColdCurve(rho) + _Gc * rho * (sie - SieColdCurve(rho));
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
       const Real rho, const Real P,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real v = robust::ratio(1.0, rho);
-    return SieColdCurve(v) + robust::ratio(v * (P - PressureColdCurve(v)), _Gc);
+    return SieColdCurve(rho) + robust::ratio(P - PressureColdCurve(rho), _Gc * rho);
   }
 
   // Entropy member functions
@@ -106,24 +105,27 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   }
 
   // Cold curve, thermal portion, and other helper functions
+
+  /* Note: The cold curves for the simple MACAW are presented as functions of `v` rather than `rho`.
+   * We keep them as functions of `rho` for computational efficiency. */
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SieColdCurve(
-      const Real v, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real x = robust::ratio(v, _v0);
-    return _A * _v0 * (std::pow(x, -_B) + _B * x - (_B + 1.0));
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real ratio = rho * _v0;
+    return _A * _v0 * (std::pow(ratio, _B) + robust::ratio(_B, ratio) - (_B + 1.));
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real SieThermalPortion(
-      const Real v, const Real T,
+      const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real x = robust::ratio(v, _v0);
-    return _Cvinf * T * (1.0 - _T0 / (_T0 + T * std::pow(x, _Gc)));
+    const Real ratio = rho * _v0;
+    return _Cvinf * T * (1.0 - robust::ratio(_T0, _T0 + T * std::pow(ratio, -_Gc)));
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureColdCurve(
-      const Real v, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    const Real ratio = robust::ratio(v, _v0);
-    return _A * _B * (std::pow(ratio, -(_B + 1.0)) - 1.0);
+      const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real ratio = rho * _v0;
+    return _A * _B * (std::pow(ratio, _B + 1.0) - 1.0);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real PressureThermalPortion(
@@ -169,7 +171,7 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real term1 = _A * _B * (_B + 1.0) * std::pow(rho * _v0, _B + 1.0);
-    const Real term2 = _Gc * (_Gc + 1.0) * rho * (sie - SieColdCurve(1.0 / rho));
+    const Real term2 = _Gc * (_Gc + 1.0) * rho * (sie - SieColdCurve(rho));
     return term1 + term2;
   }
   // Isothermal bulk modulus
@@ -182,7 +184,17 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
     const Real term1 = _A * _B * (_B + 1.0) * std::pow(rho * _v0, _B + 1.0);
     const Real numerator = rho * _T0 * (1.0 - _Gc) * std::pow(rho * _v0, 2.0 * _Gc) + temperature;
     const Real denominator = _T0 * std::pow(rho * _v0, _Gc) + temperature;
-    return term1 + _Cvinf * _Gc * temperature * temperature * numerator / (denominator * denominator);
+    return term1 + _Cvinf * _Gc * temperature * temperature * robust::ratio(numerator, denominator * denominator);
+  }
+  // Specific heat capacity at constant pressure
+   template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real ConstantPressureSpecificHeatFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real BT = IsothermalBulkModulusFromDensityTemperature(rho, temperature);
+    const Real Bs = BulkModulusFromDensityTemperature(rho, temperature);
+    const Real cv = SpecificHeatFromDensityTemperature(rho, temperature);
+    return robust::ratio(Bs * cv, BT); /* General thermodynamic identity */
   }
 
   // Gruneisen parameter
@@ -208,15 +220,15 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    // use STP: 1 atmosphere, room temperature
-    // TODO: Fix this subroutine...
+    // v_0 and T_0 are the only user selected reference state parameters
     rho = 1.0 / _v0;
     temp = _T0;
-    sie = 0.0;
     press = PressureFromDensityTemperature(rho, temp);
+    sie = InternalEnergyFromDensityTemperature(rho, temp);
+
     cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
     bmod = BulkModulusFromDensityInternalEnergy(rho, sie);
-    dpde = _Gc * rho;
+    dpde = rho * GruneisenParamFromDensityTemperature(rho, temp);
   }
   // Generic functions provided by the base class. These contain e.g. the vector
   // overloads that use the scalar versions declared here
