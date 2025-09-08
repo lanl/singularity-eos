@@ -58,8 +58,7 @@ SCENARIO("Zero temperature on cold curve", "[SimpleMACAWEOS][Temperature]") {
   }
 }
 
-// Only run exception checking when we aren't offloading to the GPUs
-SCENARIO("Inversion equivalence", "[SimpleMACAWEOS][Temperature]") {
+SCENARIO("Inversion equivalence", "[SimpleMACAWEOS][PT-RhoSie Equivalence]") {
   GIVEN("Initial density and specific internal energy") { 
     const Real rho_0 = 0.3;
     const Real sie_0 = 2.7;
@@ -72,6 +71,21 @@ SCENARIO("Inversion equivalence", "[SimpleMACAWEOS][Temperature]") {
     THEN("The inversion back to rho and sie from P and T should be identital.") {
       REQUIRE(isClose(rho, rho_0, REAL_TOL * rho_0));
       REQUIRE(isClose(sie, sie_0, REAL_TOL * sie_0));
+    }
+  }
+}
+
+SCENARIO("Thermodynamic consistency", "[SimpleMACAWEOS][Thermo Consistency]") {
+  GIVEN("Initial density and temperature") { 
+    const Real rho_0 = 3.;
+    const Real T_0 = 178.;
+    const Real Bs = eos.BulkModulusFromDensityTemperature(rho_0, T_0);
+    const Real BT = eos.IsothermalBulkModulusFromDensityTemperature(rho_0, T_0);
+    const Real cv = eos.SpecificHeatFromDensityTemperature(rho_0, T_0);
+    const Real cp = eos.ConstantPressureSpecificHeatFromDensityTemperature(rho_0, T_0);
+    THEN("Thermodynamic consistency is: Bs >= BT and cp >= cv.") {
+      REQUIRE(Bs >= BT);
+      REQUIRE(cp >= cv);
     }
   }
 }
