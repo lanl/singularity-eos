@@ -6,13 +6,13 @@
 - [[PR556]](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
 
 ### Fixed (Repair bugs, etc)
-- [[561]](https://github.com/lanl/singularity-eos/pull/561) Fix logic for kokkos-kernels in spackage so that it is only required for closure models on GPU
+- [[PR561]](https://github.com/lanl/singularity-eos/pull/561) Fix logic for kokkos-kernels in spackage so that it is only required for closure models on GPU
 
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
-- [[559]](https://github.com/lanl/singularity-eos/pull/559) Document the intent of the virtual keyword in solvers
-- [[558]](https://github.com/lanl/singularity-eos/pull/558) Make EOSPAC CMake options depend on SINGULARITY_USE_EOSPAC option
+- [[PR559]](https://github.com/lanl/singularity-eos/pull/559) Document the intent of the virtual keyword in solvers
+- [[PR558]](https://github.com/lanl/singularity-eos/pull/558) Make EOSPAC CMake options depend on SINGULARITY_USE_EOSPAC option
 
 ### Removed (removing behavior/API/varaibles/...)
 
@@ -62,7 +62,7 @@ Date: 4/7/2025
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)
-- [PR492](https://github.com/lanl/singularity-eos/pull/492) Fix import issue in spack's package.py.
+- [[PR492]](https://github.com/lanl/singularity-eos/pull/492) Fix import issue in spack's package.py.
 - [[PR485]](https://github.com/lanl/singularity-eos/pull/485) Fix segfault in Fortran interface related to EOSPAC initialization
 - [[PR478]](https://github.com/lanl/singularity-eos/pull/478) Fix bug in KPT test. Add more extensive clang build to github CI matrix.
 - [[PR473]](https://github.com/lanl/singularity-eos/pull/473) Resolve memory issue. Thanks for the catch, Richard!
