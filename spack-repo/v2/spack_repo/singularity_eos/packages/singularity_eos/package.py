@@ -60,7 +60,7 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     # build with kokkos, kokkos-kernels for offloading support
     variant("kokkos", default=False, description="Enable kokkos")
     variant(
-        "kokkos-kernels", default=False, description="Enable kokkos-kernals for linear algebra"
+        "kokkos-kernels", default=False, description="Enable kokkos-kernels for linear algebra"
     )
 
     # for compatibility with downstream projects
@@ -123,10 +123,11 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("catch2@3.0.1:", when="@1.9.0: +tests")
     depends_on("py-numpy", when="+python+tests")
 
-    # linear algebra when not using GPUs
-    depends_on("eigen@3.3.8:", when="~kokkos-kernels")
-    requires("+kokkos-kernels", when="+cuda")
-    requires("+kokkos-kernels", when="+rocm")
+    # linear algebra when using closure models. Eigen when not on GPUs
+    depends_on("eigen@3.3.8:", when="~kokkos-kernels+closure")
+    requires("+kokkos-kernels", when="+cuda+closure")
+    requires("+kokkos-kernels", when="+rocm+closure")
+    requires("+kokkos-kernels", when="+kokkos+closure")
 
     depends_on("eospac", when="+eospac")
 
