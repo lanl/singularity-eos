@@ -61,9 +61,9 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_A >= 0, "Parameter, 'A', must be non-negative");
     PORTABLE_ALWAYS_REQUIRE(_B >= 0, "Parameter, 'B', must be non-negative");
+    PORTABLE_ALWAYS_REQUIRE(_Cvinf > 0, "Specific heat capacity (at constant volume), `Cvinf`, must be positive");
     PORTABLE_ALWAYS_REQUIRE(_v0 > 0, "Reference specific volume, 'v0', must be positive");
     PORTABLE_ALWAYS_REQUIRE(_T0 >= 0, "Reference temperature, 'T0', must be non-negative");
-    PORTABLE_ALWAYS_REQUIRE(_Cvinf > 0, "Specific heat capacity (at constant volume), `Cvinf`, must be positive");
     PORTABLE_ALWAYS_REQUIRE(_Gc > 0 && _Gc < 1, "Gruneisen parameter, 'Gc', must be in the interval (0,1)");
     _AZbar.CheckParams();
   }
@@ -249,9 +249,9 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
 
   static constexpr unsigned long PreferredInput() { return _preferred_input; }
   PORTABLE_INLINE_FUNCTION void PrintParams() const {
-    printf("Simple MACAW Parameters:\nA = %g\nB    = %g\nCvinf  = %g\nGc     = "
+    printf("Simple MACAW Parameters:\nA = %g\nB    = %g\nCvinf  = %g\nv0  = %g\nT0  = %g\nGc     = "
            "%g\n",
-           _A, _B, _Cvinf, _Gc);
+           _A, _B, _Cvinf, _v0, _T0, _Gc);
     _AZbar.PrintParams();
   }
   template <typename Indexer_t>
@@ -287,9 +287,7 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   static std::string EosPyType() { return EosType(); }
 
  private:
-  Real _A, _B, _Cvinf, _Gc;
-  // reference values
-  Real _v0, _T0;
+  Real _A, _B, _Cvinf, _v0, _T0, _Gc;
   MeanAtomicProperties _AZbar;
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
