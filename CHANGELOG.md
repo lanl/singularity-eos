@@ -6,6 +6,7 @@
 - [[PR556](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
 
 ### Fixed (Repair bugs, etc)
+- [[561]](https://github.com/lanl/singularity-eos/pull/561) Fix logic for kokkos-kernels in spackage so that it is only required for closure models on GPU
 
 ### Changed (changing behavior/API/variables/...)
 
