@@ -123,10 +123,13 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     depends_on("catch2@3.0.1:", when="@1.9.0: +tests")
     depends_on("py-numpy", when="+python+tests")
 
-    # linear algebra when using closure models. Eigen when not on GPUs
+    # Require kokkos for device/offloading support
+    requires("+kokkos", when="+cuda")
+    requires("+kokkos", when="+rocm")
+    requires("+kokkos", when="+openmp")
+
+    # linear algebra when using closure models. Eigen without kokkos
     depends_on("eigen@3.3.8:", when="~kokkos-kernels+closure")
-    requires("+kokkos-kernels", when="+cuda+closure")
-    requires("+kokkos-kernels", when="+rocm+closure")
     requires("+kokkos-kernels", when="+kokkos+closure")
 
     depends_on("eospac", when="+eospac")
