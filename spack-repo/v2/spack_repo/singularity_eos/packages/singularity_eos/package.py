@@ -126,7 +126,6 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     # Require kokkos for device/offloading support
     requires("+kokkos", when="+cuda")
     requires("+kokkos", when="+rocm")
-    requires("+kokkos", when="+openmp")
 
     # linear algebra when using closure models. Eigen without kokkos
     depends_on("eigen@3.3.8:", when="~kokkos-kernels+closure")
