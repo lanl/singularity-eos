@@ -98,20 +98,36 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     auto poly = [=](Real dens) {
       return _Cv * temperature * _gm1 * dens * ZedFromDensity(dens);
     };
-    using RootFinding1D::findRoot;
-    using RootFinding1D::Status;
     static constexpr Real xtol = 1.0e-12;
     static constexpr Real ytol = 1.0e-12;
-    static constexpr Real lo_bound = robust::SMALL();
-    const Real hi_bound = robust::ratio(1.0, _bb);
-    auto status = findRoot(poly, press, guess, lo_bound, hi_bound, xtol, ytol, real_root);
-    if (status != Status::SUCCESS) {
+    static constexpr Real rho_low = 0.;
+    const Real rho_high = robust::ratio(1.0, _bb);
+
+    // Setup lambda function for finding rho.
+    // The equation has been rewritten to avoid division by zero (polynomial equation).
+    auto f = [=](const Real x /* density */){
+      const Real eta = _bb * x;
+      const Real term1 = x * (1. + eta + eta * eta - eta * eta * eta);
+      const Real term2 = press / (_Cv * _gm1 * temperature) * math_utils::pow<3>(1. - eta);
+      return term1 - term2;
+    };
+
+    const RootFinding1D::RootCounts root_info;
+
+    Real rho = _rho0;
+    auto status = regula_falsi(f, 0.0 /*target*/, _rho0 /*guess*/, 
+                               rho_low /*left bracket*/, rho_high /*right bracket*/,
+                               xtol, ytol,
+                               rho, &root_info, true);
+
+    //auto status = findRoot(poly, press, guess, lo_bound, hi_bound, xtol, ytol, real_root);
+    if (status != RootFinding1D::Status::SUCCESS) {
       // Root finder failed even though the solution was bracketed... this is an error
       EOS_ERROR("*** (Warning) DensityFromPressureTemperature :: Convergence not met in "
                 "Carnahan-Starling EoS (root finder util) ***\n");
-      real_root = -1.0;
+      rho = -1.0;
     }
-    return std::max(robust::SMALL(), real_root);
+    return rho;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
