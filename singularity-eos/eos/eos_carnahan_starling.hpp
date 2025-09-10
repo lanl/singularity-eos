@@ -94,10 +94,6 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   PORTABLE_INLINE_FUNCTION Real DensityFromPressureTemperature(
       const Real press, const Real temperature, const Real guess = robust::SMALL(),
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    Real real_root;
-    auto poly = [=](Real dens) {
-      return _Cv * temperature * _gm1 * dens * ZedFromDensity(dens);
-    };
     static constexpr Real xtol = 1.0e-12;
     static constexpr Real ytol = 1.0e-12;
     static constexpr Real rho_low = 0.;
@@ -113,21 +109,24 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     };
 
     const RootFinding1D::RootCounts root_info;
+    Real rho = _rho0; // `rho` will be the root of the equation $f=0$.
 
-    Real rho = _rho0;
+    /* The regula falsi method should always return a unique real root in the interval (0, b^{-1})
+     * since f(0) < 0 and f(b^{-1}) > 0.
+     * It can be shown that the derivative of f (as a function of \eta) is always positive since
+     * \eta \in (0,1) hence the root is unique. */
     auto status = regula_falsi(f, 0.0 /*target*/, _rho0 /*guess*/, 
                                rho_low /*left bracket*/, rho_high /*right bracket*/,
                                xtol, ytol,
                                rho, &root_info, true);
 
-    //auto status = findRoot(poly, press, guess, lo_bound, hi_bound, xtol, ytol, real_root);
     if (status != RootFinding1D::Status::SUCCESS) {
       // Root finder failed even though the solution was bracketed... this is an error
       EOS_ERROR("*** (Warning) DensityFromPressureTemperature :: Convergence not met in "
-                "Carnahan-Starling EoS (root finder util) ***\n");
-      rho = -1.0;
+                "Carnahan-Starling EoS (root finder `regula_falsi`) ***\n");
+      rho = -1.0; // guarantees zero density is returned on convergence failure.
     }
-    return rho;
+    return std::max(rho_low, rho);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(

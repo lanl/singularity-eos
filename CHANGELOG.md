@@ -7,6 +7,7 @@
 
 ### Fixed (Repair bugs, etc)
 - [[PR561]](https://github.com/lanl/singularity-eos/pull/561) Fix logic for kokkos-kernels in spackage so that it is only required for closure models on GPU
+- [[PR563]](https://github.com/lanl/singularity-eos/pull/563) Fixed DensityFromPressureTemperature for the Carnahan-Starling EOS.
 
 ### Changed (changing behavior/API/variables/...)
 
