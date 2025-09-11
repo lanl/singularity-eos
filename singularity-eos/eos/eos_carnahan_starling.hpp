@@ -94,8 +94,8 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   PORTABLE_INLINE_FUNCTION Real DensityFromPressureTemperature(
       const Real press, const Real temperature, const Real guess = robust::SMALL(),
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    static constexpr Real xtol = 1.0e-14;
-    static constexpr Real ytol = 1.0e-14;
+    static constexpr Real xtol = 1.0e-12;
+    static constexpr Real ytol = 1.0e-12;
     static constexpr Real rho_low = 0.;
     const Real rho_high = robust::ratio(1.0, _bb);
 

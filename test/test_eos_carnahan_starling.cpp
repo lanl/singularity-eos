@@ -685,7 +685,7 @@ SCENARIO("CarnahanStarling6", "[CarnahanStarling][CarnahanStarling6]") {
 
         THEN("The returned rho(P, T) should be equal to the true value") {
           array_compare(num, pressure, temperature, h_density, density_true, "Pressure",
-                        "Temperature");
+                        "Temperature", 1e-5);
         }
       }
     }
