@@ -101,24 +101,24 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
 
     // Setup lambda function for finding rho.
     // The equation has been rewritten to avoid division by zero (polynomial equation).
-    auto f = [=](const Real x /* density */){
+    auto f = [=](const Real x /* density */) {
       const Real eta = _bb * x;
       const Real term1 = x * (1. + eta + eta * eta - eta * eta * eta);
-      const Real term2 = press / (_Cv * _gm1 * temperature) * math_utils::pow<3>(1. - eta);
+      const Real term2 =
+          press / (_Cv * _gm1 * temperature) * math_utils::pow<3>(1. - eta);
       return term1 - term2;
     };
 
     const RootFinding1D::RootCounts root_info;
     Real rho = _rho0; // `rho` will be the root of the equation $f=0$.
 
-    /* The regula falsi method should always return a unique real root in the interval (0, b^{-1})
-     * since f(0) < 0 and f(b^{-1}) > 0.
-     * It can be shown that the derivative of f (as a function of \eta) is always positive since
-     * \eta \in (0,1) hence the root is unique. */
-    auto status = regula_falsi(f, 0.0 /*target*/, _rho0 /*guess*/, 
-                               rho_low /*left bracket*/, rho_high /*right bracket*/,
-                               xtol, ytol,
-                               rho, &root_info, true);
+    /* The regula falsi method should always return a unique real root in the interval (0,
+     * b^{-1}) since f(0) < 0 and f(b^{-1}) > 0. It can be shown that the derivative of f
+     * (as a function of \eta) is always positive since \eta \in (0,1) hence the root is
+     * unique. */
+    auto status =
+        regula_falsi(f, 0.0 /*target*/, _rho0 /*guess*/, rho_low /*left bracket*/,
+                     rho_high /*right bracket*/, xtol, ytol, rho, &root_info, true);
 
     if (status != RootFinding1D::Status::SUCCESS) {
       // Root finder failed even though the solution was bracketed... this is an error
