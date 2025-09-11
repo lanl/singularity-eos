@@ -94,12 +94,18 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   PORTABLE_INLINE_FUNCTION Real DensityFromPressureTemperature(
       const Real press, const Real temperature, const Real guess = robust::SMALL(),
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    static constexpr Real xtol = 1.0e-14;
-    static constexpr Real ytol = 1.0e-14;
     static constexpr Real rho_low = 0.;
+    const Real xtol = 1.0e-12 * _rho0;
+    const Real ytol = 1.0e-12 * _rho0;
+
+    // At absolute zero, P = 0, so assumed vacuum state (no cold curve exists).
+    if (temperature <= std::numeric_limits<Real>::min()) {
+      return rho_low;
+    }
+
     // Use ideal gas value when _bb is zero
     if (_bb <= std::numeric_limits<Real>::min()) {
-      return press / (_Cv * _gm1 * temperature);
+      return robust::ratio(press, _Cv * _gm1 * temperature);
     }
     const Real rho_high = 1.0 / _bb;
 
@@ -109,7 +115,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
       const Real eta = _bb * x;
       const Real term1 = x * (1. + eta + eta * eta - eta * eta * eta);
       const Real term2 =
-          press / (_Cv * _gm1 * temperature) * math_utils::pow<3>(1. - eta);
+          robust::ratio(press * math_utils::pow<3>(1. - eta), _Cv * _gm1 * temperature);
       return term1 - term2;
     };
 
