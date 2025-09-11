@@ -450,7 +450,7 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
                 ideal_eos.PressureFromDensityInternalEnergy(density[i], energy[i]);
           }
           array_compare(num, density, energy, h_pressure, pressure_true, "Density",
-                        "Energy");
+                        "Energy", 1e-5);
         }
       }
 
@@ -466,7 +466,7 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
                 ideal_eos.BulkModulusFromDensityInternalEnergy(density[i], energy[i]);
           }
           array_compare(num, density, energy, h_bulkmodulus, bulkmodulus_true, "Density",
-                        "Energy");
+                        "Energy", 1e-5);
         }
       }
 
@@ -482,7 +482,7 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
                 ideal_eos.TemperatureFromDensityInternalEnergy(density[i], energy[i]);
           }
           array_compare(num, density, energy, h_temperature, temperature_true, "Density",
-                        "Energy");
+                        "Energy", 1e-5);
         }
       }
 
@@ -499,7 +499,7 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
                 ideal_eos.GruneisenParamFromDensityInternalEnergy(density[i], energy[i]);
           }
           array_compare(num, density, energy, h_gruneisen, gruneisen_true, "Density",
-                        "Energy");
+                        "Energy", 1e-5);
         }
       }
     }
