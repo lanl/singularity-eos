@@ -23,11 +23,13 @@
 #endif
 
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::CarnahanStarling;
 using singularity::IdealGas;
+namespace robust = singularity::robust;
 using EOS = singularity::Variant<IdealGas, CarnahanStarling>;
 
 SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
@@ -370,7 +372,7 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
   GIVEN("Parameters for a CarnahanStarling EOS") {
     constexpr Real gm1 = 0.4;
     constexpr Real Cv = 7180000.0;
-    constexpr Real bb = 0;
+    constexpr Real bb = robust::EPS();
     constexpr Real qq = 0;
     //  Create the EOS
     EOS host_eos = CarnahanStarling(gm1, Cv, bb, qq);
