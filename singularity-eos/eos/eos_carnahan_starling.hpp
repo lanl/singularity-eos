@@ -73,7 +73,7 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
     PORTABLE_ALWAYS_REQUIRE(_Cv > 0, "Heat capacity must be strictly positive");
     PORTABLE_ALWAYS_REQUIRE(_gm1 > 0, "Gruneisen parameter must be positive");
-    PORTABLE_ALWAYS_REQUIRE(_bb > 0, "Covolume must be strictly positive");
+    PORTABLE_ALWAYS_REQUIRE(_bb >= 0, "Covolume must be strictly non-negative");
     _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
@@ -97,7 +97,11 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
     static constexpr Real xtol = 1.0e-12;
     static constexpr Real ytol = 1.0e-12;
     static constexpr Real rho_low = 0.;
-    const Real rho_high = robust::ratio(1.0, _bb);
+    // Use ideal gas value when _bb is zero
+    if (_bb <= std::numeric_limits<Real>::min()) {
+      return press / (_Cv * _gm1 * temperature);
+    }
+    const Real rho_high = 1.0 / _bb;
 
     // Setup lambda function for finding rho.
     // The equation has been rewritten to avoid division by zero (polynomial equation).
