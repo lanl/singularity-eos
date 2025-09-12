@@ -687,9 +687,7 @@ PORTABLE_INLINE_FUNCTION void SpinerEOSDependsRhoSieTransformable<TransformerT>:
     }
   } else {
     lRho = to_log(rho, lRhoOffset_);
-    if (!variadic_utils::is_nullptr(lambda)) {
-      IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
-    }
+    IndexerUtils::safeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
   }
   if (output & thermalqs::temperature) {
 
@@ -747,9 +745,7 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::interpRhoT_(const Real rho,
                                                                Indexer_t &&lambda) const {
   const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
   const Real lT = spiner_common::to_log(T, lTOffset_);
-  if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
-  }
+  IndexerUtils::safeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
   return db.interpToReal(lRho, lT);
 }
 
@@ -761,9 +757,7 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::interpRhoSie_(
   const Real lRho = spiner_common::to_log(rho, lRhoOffset_);
   const Real sie_transformed = transformer_.transform(sie, rho);
   const Real lE = spiner_common::to_log(sie_transformed, lEOffset_);
-  if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
-  }
+  IndexerUtils::safeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
   return db.interpToReal(lRho, lE);
 }
 
@@ -786,12 +780,10 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::lRhoFromPlT_(
     }
   } else {
     Real lRhoGuess = reproducible_ ? lRhoMin_ : 0.5 * (lRhoMin_ + lRhoMax_);
-    if (!variadic_utils::is_nullptr(lambda)) {
-      Real lRho_cache =
-          IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho);
-      if ((lRhoMin_ <= lRho_cache) && (lRho_cache <= lRhoMax_)) {
-        lRhoGuess = lRho_cache;
-      }
+    Real lRho_cache;
+    IndexerUtils::safeGet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho_cache);
+    if ((lRhoMin_ <= lRho_cache) && (lRho_cache <= lRhoMax_)) {
+      lRhoGuess = lRho_cache;
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
     status = SP_ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
@@ -809,12 +801,8 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::lRhoFromPlT_(
       lRho = reproducible_ ? lRhoMin_ : lRhoGuess;
     }
   }
-  if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
-    if constexpr (variadic_utils::is_indexable_v<Indexer_t, IndexableTypes::RootStatus>) {
-      lambda[IndexableTypes::RootStatus()] = static_cast<Real>(status);
-    }
-  }
+  IndexerUtils::safeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
+  IndexerUtils::safeSet<IndexableTypes::RootStatus>(lambda, static_cast<Real>(status));
   return lRho;
 }
 
