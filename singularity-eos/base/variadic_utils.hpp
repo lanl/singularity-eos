@@ -111,7 +111,7 @@ struct is_indexable<T, Index,
 template <typename T, typename Index>
 constexpr bool is_indexable_v = is_indexable<T, Index>::value;
 
-//
+// Check if a type can accept a size_t index
 template<class T, class=void>
 struct has_whole_num_index : std::false_type {};
 template<class T>
