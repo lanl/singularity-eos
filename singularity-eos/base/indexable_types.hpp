@@ -39,7 +39,7 @@ constexpr bool is_type_indexer_v = is_type_indexer<Indexer_t>::value;
 // type-based index is present in the Indexer OR if the Indexer doesn't support
 // type-based indexing.
 template <typename T, typename Indexer_t>
-inline bool safeGet(Indexer_t const& lambda, std::size_t const idx, Real& out) noexcept {
+inline bool safeGet(Indexer_t const& lambda, std::size_t const idx, Real& out) {
   // If null then nothing happens
   if (variadic_utils::is_nullptr(lambda)) {
     return false;
@@ -66,11 +66,34 @@ inline bool safeGet(Indexer_t const& lambda, std::size_t const idx, Real& out) n
   return false;
 }
 
+// Overload when no index is provided
+template <typename T, typename Indexer_t>
+inline bool safeGet(Indexer_t const& lambda, Real& out) {
+  // If null then nothing happens
+  if (variadic_utils::is_nullptr(lambda)) {
+    return false;
+  }
+
+  // Return value if type index is available
+  if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
+    out = lambda[T{}];
+    return true;
+  }
+
+  // Do nothing if lambda has type indexing BUT doesn't have this type index
+  if constexpr (is_type_indexer_v<Indexer_t>) {
+    return false;
+  }
+
+  // Something else...
+  return false;
+}
+
 // Break out "Set" functionality from "Get". The original "Get()" did both, but
 // the "safe" version needs to separate that functionality for setting the
 // values in a lambda
 template <typename T, typename Indexer_t>
-inline bool safeSet(Indexer_t& lambda, std::size_t const idx, Real const in) noexcept {
+inline bool safeSet(Indexer_t& lambda, std::size_t const idx, Real const in) {
   // If null then nothing happens
   if (variadic_utils::is_nullptr(lambda)) {
     return false;
@@ -91,6 +114,29 @@ inline bool safeSet(Indexer_t& lambda, std::size_t const idx, Real const in) noe
   if constexpr (variadic_utils::has_whole_num_index<Indexer_t>::value) {
     lambda[idx] = in;
     return true;
+  }
+
+  // Something else...
+  return false;
+}
+
+// Overload without numeric index
+template <typename T, typename Indexer_t>
+inline bool safeSet(Indexer_t& lambda, Real const in) {
+  // If null then nothing happens
+  if (variadic_utils::is_nullptr(lambda)) {
+    return false;
+  }
+
+  // Return value if type index is available
+  if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
+    lambda[T{}] = in;
+    return true;
+  }
+
+  // Do nothing if lambda has type indexing BUT doesn't have this type index
+  if constexpr (is_type_indexer_v<Indexer_t>) {
+    return false;
   }
 
   // Something else...
