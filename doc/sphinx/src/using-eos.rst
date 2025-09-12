@@ -699,6 +699,8 @@ of the ``[]`` operator that takes your type. For example:
 
   class MyLambda_t {
   public:
+    // Enable recognition that this is type-indexable
+    constexpr static bool is_type_indexable = true;
     MyLambda_t() = default;
     PORTABLE_FORCEINLINE_FUNCTION
     Real &operator[](const std::size_t idx) const {
@@ -724,17 +726,53 @@ which might be used as
 where ``MeanIonizationState`` is shorthand for index 2, since you
 defined that overload. Note that the ``operator[]`` must be marked
 ``const``. To more easily enable mixing and matching integer-based
-indexing with type-based indexing, the function
+indexing with type-based indexing, the functions
 
 .. code-block:: cpp
 
-  template<typename Name_t, typename Indexer_t>
+  template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  Real &Get(Indexer_t &&lambda, std::size_t idx = 0);
+  inline bool safeGet(Indexer_t const &lambda, std::size_t const idx, Real &out);
 
-will return a reference to the value at named index ``Name_t()`` if
-that overload is defined in ``Indexer_t`` and otherwise return a
-reference at index ``idx``.
+.. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  inline bool safeGet(Indexer_t const &lambda, Real &out);
+
+will update the value of ``out`` with the value at either the appropriate
+type-based index, ``T``, or the numerical index, ``idx``, if the ``Indexer_t``
+doesn't accept type-based indexing. If the ``Indexer_t`` **does** accept
+type-based indexing but **doesn't** have the requested index, then the
+``out`` value is not updated. The same is true for when ``Indexer_t`` is the
+``nullptr``. The overload that doesn't take a numerical index will *only*
+return the value at a type-based index.
+
+Similarly, the functions
+
+.. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  inline bool safeSet(Indexer_t &lambda, std::size_t const idx, Real const in);
+
+.. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  inline bool safeSet(Indexer_t &lambda, Real const in)
+
+can modify the values in the ``Indexer_t`` and behave the same way. In this way,
+if a type-based index isn't present in the container, then another index won't
+be overwritten.
+
+.. note::
+
+  Previous versions defined a ``Get()`` function that was "unsafe" in the
+  sense that it would fall back on the numerical index even if a type-based
+  indexer was used. This could result in retrieving and overwriting incorrect
+  values in the indexer. We recommend not using this function and instead using
+  the "safe" versions.
 
 As a convenience tool, the struct
 
