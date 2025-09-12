@@ -26,20 +26,20 @@ namespace singularity {
 namespace IndexerUtils {
 
 // Identifies an indexer as a type-based indexer
-template<class, class=void>
+template <class, class = void>
 struct is_type_indexer : std::false_type {};
-template<class Indexer_t>
+template <class Indexer_t>
 struct is_type_indexer<Indexer_t,
-  std::void_t<decltype(std::decay_t<Indexer_t>::is_type_indexable)>>
-  : std::bool_constant<std::decay_t<Indexer_t>::is_type_indexable> {};
-template<class Indexer_t>
+                       std::void_t<decltype(std::decay_t<Indexer_t>::is_type_indexable)>>
+    : std::bool_constant<std::decay_t<Indexer_t>::is_type_indexable> {};
+template <class Indexer_t>
 constexpr bool is_type_indexer_v = is_type_indexer<Indexer_t>::value;
 
 // The "safe" version of Get(). This function will ONLY return a value IF that
 // type-based index is present in the Indexer OR if the Indexer doesn't support
 // type-based indexing.
 template <typename T, typename Indexer_t>
-inline bool safeGet(Indexer_t const& lambda, std::size_t const idx, Real& out) {
+inline bool safeGet(Indexer_t const &lambda, std::size_t const idx, Real &out) {
   // If null then nothing happens
   if (variadic_utils::is_nullptr(lambda)) {
     return false;
@@ -68,7 +68,7 @@ inline bool safeGet(Indexer_t const& lambda, std::size_t const idx, Real& out) {
 
 // Overload when no index is provided
 template <typename T, typename Indexer_t>
-inline bool safeGet(Indexer_t const& lambda, Real& out) {
+inline bool safeGet(Indexer_t const &lambda, Real &out) {
   // If null then nothing happens
   if (variadic_utils::is_nullptr(lambda)) {
     return false;
@@ -93,7 +93,7 @@ inline bool safeGet(Indexer_t const& lambda, Real& out) {
 // the "safe" version needs to separate that functionality for setting the
 // values in a lambda
 template <typename T, typename Indexer_t>
-inline bool safeSet(Indexer_t& lambda, std::size_t const idx, Real const in) {
+inline bool safeSet(Indexer_t &lambda, std::size_t const idx, Real const in) {
   // If null then nothing happens
   if (variadic_utils::is_nullptr(lambda)) {
     return false;
@@ -122,7 +122,7 @@ inline bool safeSet(Indexer_t& lambda, std::size_t const idx, Real const in) {
 
 // Overload without numeric index
 template <typename T, typename Indexer_t>
-inline bool safeSet(Indexer_t& lambda, Real const in) {
+inline bool safeSet(Indexer_t &lambda, Real const in) {
   // If null then nothing happens
   if (variadic_utils::is_nullptr(lambda)) {
     return false;
