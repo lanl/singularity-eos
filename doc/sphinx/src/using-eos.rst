@@ -732,13 +732,25 @@ indexing with type-based indexing, the functions
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  inline bool safeGet(Indexer_t const &lambda, std::size_t const idx, Real &out);
+  bool SafeGet(Indexer_t const &lambda, std::size_t const idx, Real &out);
 
 .. code-block:: cpp
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  inline bool safeGet(Indexer_t const &lambda, Real &out);
+  bool SafeGet(Indexer_t const &lambda, Real &out);
+
+.. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real SafeMustGet(Indexer_t const &lambda, std::size_t const idx)
+
+.. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real SafeMustGet(Indexer_t const &lambda)
 
 will update the value of ``out`` with the value at either the appropriate
 type-based index, ``T``, or the numerical index, ``idx``, if the ``Indexer_t``
@@ -746,7 +758,11 @@ doesn't accept type-based indexing. If the ``Indexer_t`` **does** accept
 type-based indexing but **doesn't** have the requested index, then the
 ``out`` value is not updated. The same is true for when ``Indexer_t`` is the
 ``nullptr``. The overload that doesn't take a numerical index will *only*
-return the value at a type-based index.
+return the value at a type-based index. The ``SafeMustGet()`` version
+is intended to generate errors if a value can't be retrieved. In the case of
+type-based indexing, the error will be at compile time if the type isn't located
+in the indexer. A runtime abort will occur if either the null pointer is passed
+or if integer indexing isn't allowed for some reason.
 
 Similarly, the functions
 
@@ -754,17 +770,31 @@ Similarly, the functions
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  inline bool safeSet(Indexer_t &lambda, std::size_t const idx, Real const in);
+  inline bool SafeSet(Indexer_t &lambda, std::size_t const idx, Real const in);
 
 .. code-block:: cpp
 
   template <typename T, typename Indexer_t>
   PORTABLE_FORCEINLINE_FUNCTION
-  inline bool safeSet(Indexer_t &lambda, Real const in)
+  inline bool SafeSet(Indexer_t &lambda, Real const in)
+
+.. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeMustSet(Indexer_t &lambda, std::size_t const idx, Real const in);
+
+.. code-block:: cpp
+
+  template <typename T, typename Indexer_t>
+  PORTABLE_FORCEINLINE_FUNCTION
+  inline bool SafeMustSet(Indexer_t &lambda, Real const in)
 
 can modify the values in the ``Indexer_t`` and behave the same way. In this way,
 if a type-based index isn't present in the container, then another index won't
-be overwritten.
+be overwritten. Again, the ``SafeMustSet()`` version will compile-time fail
+or runtime abort if the lambda value can't be modified for the same reasons as
+``SafeMustGet()``.
 
 .. note::
 
