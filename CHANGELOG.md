@@ -7,6 +7,7 @@
 
 ### Fixed (Repair bugs, etc)
 - [[PR561]](https://github.com/lanl/singularity-eos/pull/561) Fix logic for kokkos-kernels in spackage so that it is only required for closure models on GPU
+- [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Fix logic for numerical vs type indices by adding safeGet() and safeSet() helpers
 
 ### Changed (changing behavior/API/variables/...)
 

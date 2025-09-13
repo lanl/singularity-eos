@@ -20,12 +20,210 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
 namespace IndexerUtils {
-// Convenience function for accessing an indexer by either type or
-// natural number index depending on what is available
+
+// Identifies an indexer as a type-based indexer
+template <class, class = void>
+struct is_type_indexer : std::false_type {};
+template <class Indexer_t>
+struct is_type_indexer<Indexer_t,
+                       std::void_t<decltype(std::decay_t<Indexer_t>::is_type_indexable)>>
+    : std::bool_constant<std::decay_t<Indexer_t>::is_type_indexable> {};
+template <class Indexer_t>
+constexpr bool is_type_indexer_v = is_type_indexer<Indexer_t>::value;
+
+namespace impl {
+
+// Simple way to switch between pure type indexing or also allowing intergers
+enum class AllowedIndexing { Numeric, TypeOnly };
+
+// The "safe" version of Get(). This function will ONLY return a value IF that
+// type-based index is present in the Indexer OR if the Indexer doesn't support
+// type-based indexing.
+template <AllowedIndexing AI, typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION bool SafeGet(Indexer_t const &lambda, std::size_t const idx,
+                                           Real &out) {
+  // If null then nothing happens
+  if (variadic_utils::is_nullptr(lambda)) {
+    return false;
+  }
+
+  // Return value if type index is available
+  if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
+    out = lambda[T{}];
+    return true;
+  }
+
+  // Do nothing if lambda has type indexing BUT doesn't have this type index
+  if constexpr (is_type_indexer_v<Indexer_t>) {
+    return false;
+  }
+
+  // Fall back to numeric indexing if allowed
+  if constexpr (AI == AllowedIndexing::Numeric) {
+    if constexpr (variadic_utils::has_int_index_v<Indexer_t>) {
+      out = lambda[idx];
+      return true;
+    }
+  }
+
+  // Something else...
+  return false;
+}
+
+// Same as above but causes an error condition (static or dynamic) if the value
+// can't be obtained
+template <AllowedIndexing AI, typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda,
+                                               std::size_t const idx) {
+  // Error on null pointer
+  PORTABLE_ALWAYS_REQUIRE(!variadic_utils::is_nullptr(lambda),
+                          "Indexer can't be nullptr");
+
+  // Return type-based index. Static assert that type MUST exist in indexer
+  if constexpr (is_type_indexer_v<Indexer_t>) {
+    static_assert(variadic_utils::is_indexable_v<Indexer_t, T>);
+    return lambda[T{}];
+  }
+
+  // Fall back to numerical indexing if allowed
+  if constexpr (AI == AllowedIndexing::Numeric) {
+    if constexpr (variadic_utils::has_int_index<Indexer_t>::value) {
+      return lambda[idx];
+    }
+  }
+
+  // Something else...
+  PORTABLE_ALWAYS_THROW_OR_ABORT("Cannot obtain value from unknown indexer");
+}
+
+// Break out "Set" functionality from "Get". The original "Get()" did both, but
+// the "safe" version needs to separate that functionality for setting the
+// values in a lambda
+template <AllowedIndexing AI, typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, std::size_t const idx,
+                                           Real const in) {
+  // If null then nothing happens
+  if (variadic_utils::is_nullptr(lambda)) {
+    return false;
+  }
+
+  // Return value if type index is available
+  if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
+    lambda[T{}] = in;
+    return true;
+  }
+
+  // Do nothing if lambda has type indexing BUT doesn't have this type index
+  if constexpr (is_type_indexer_v<Indexer_t>) {
+    return false;
+  }
+
+  // Fall back to numeric indexing if allowed
+  if constexpr (AI == AllowedIndexing::Numeric) {
+    if constexpr (variadic_utils::has_int_index_v<Indexer_t>) {
+      lambda[idx] = in;
+      return true;
+    }
+  }
+
+  // Something else...
+  return false;
+}
+
+// Same as above but causes an error condition (static or dynamic) if the value
+// can't be obtained
+template <AllowedIndexing AI, typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, std::size_t const idx,
+                                               Real const in) {
+  // Error on null pointer
+  PORTABLE_ALWAYS_REQUIRE(!variadic_utils::is_nullptr(lambda),
+                          "Indexer can't be nullptr");
+
+  // Return type-based index. Static assert that type MUST exist in indexer
+  if constexpr (is_type_indexer_v<Indexer_t>) {
+    static_assert(variadic_utils::is_indexable_v<Indexer_t, T>);
+    lambda[T{}] = in;
+    return;
+  }
+
+  // Fall back to numerical indexing if allowed
+  if constexpr (AI == AllowedIndexing::Numeric) {
+    if constexpr (variadic_utils::has_int_index<Indexer_t>::value) {
+      lambda[idx] = in;
+      return;
+    }
+  }
+
+  // Something else...
+  PORTABLE_ALWAYS_THROW_OR_ABORT("Cannot obtain value from unknown indexer");
+}
+
+} // namespace impl
+
+// Overload when numerical index is provided
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION bool SafeGet(Indexer_t const &lambda, std::size_t const idx,
+                                           Real &out) {
+  return impl::SafeGet<impl::AllowedIndexing::Numeric, T>(lambda, idx, out);
+}
+
+// Overload when numerical index isn't provided
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION bool SafeGet(Indexer_t const &lambda, Real &out) {
+  std::size_t idx = 0;
+  return impl::SafeGet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx, out);
+}
+
+// Overload when numerical index is provided
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, std::size_t const idx,
+                                           Real const in) {
+  return impl::SafeSet<impl::AllowedIndexing::Numeric, T>(lambda, idx, in);
+}
+
+// Overload when numerical index isn't provided
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, Real const in) {
+  std::size_t idx = 0;
+  return impl::SafeSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx, in);
+}
+
+// Overload when numerical index is provided
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda,
+                                               std::size_t const idx) {
+  return impl::SafeMustGet<impl::AllowedIndexing::Numeric, T>(lambda, idx);
+}
+
+// Overload when numerical index isn't provided
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda) {
+  std::size_t idx = 0;
+  return impl::SafeMustGet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx);
+}
+
+// Overload when numerical index is provided
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, std::size_t const idx,
+                                               Real const in) {
+  return impl::SafeMustSet<impl::AllowedIndexing::Numeric, T>(lambda, idx, in);
+}
+
+// Overload when numerical index isn't provided
+template <typename T, typename Indexer_t>
+PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, Real const in) {
+  std::size_t idx = 0;
+  return impl::SafeMustSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx, in);
+}
+
+// NOTE: this Get is "unsafe" because it can allow you to overwrite a type-based
+// index since it automatically falls back to numeric indexing if the type
+// index isn't present.
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION auto &Get(Indexer_t &&lambda, std::size_t idx = 0) {
   if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
@@ -40,25 +238,44 @@ PORTABLE_FORCEINLINE_FUNCTION auto &Get(Indexer_t &&lambda, std::size_t idx = 0)
 template <typename Data_t, typename... Ts>
 class VariadicIndexerBase {
  public:
+  // Any class that wants to be recognized as indexable (so that we don't
+  // accidentally fall back to integer indexing when we don't want to) needs to
+  // include this.
+  constexpr static bool is_type_indexable = true;
+
+  // JHP: another option for the `is_type_indexable` flag is to take the ADL
+  // route. Essentially this would involve defining a friend function that
+  // could be defined in an appropriate namesapce so that theoretically a host
+  // code could use a TPL container with type-based indexing and allow that
+  // container to be flagged in our code as acceptable. This seems like a bit
+  // of a heavy hammer for what we need here though. We can easily change this
+  // if a TPL provides a type that is being used for this purpose.
+
   VariadicIndexerBase() = default;
+
   PORTABLE_FORCEINLINE_FUNCTION
   VariadicIndexerBase(const Data_t &data) : data_(data) {}
+
   template <typename T,
             typename = std::enable_if_t<variadic_utils::contains<T, Ts...>::value>>
   PORTABLE_FORCEINLINE_FUNCTION Real &operator[](const T &t) {
     constexpr std::size_t idx = variadic_utils::GetIndexInTL<T, Ts...>();
     return data_[idx];
   }
+
   PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](const std::size_t idx) { return data_[idx]; }
+
   template <typename T,
             typename = std::enable_if_t<variadic_utils::contains<T, Ts...>::value>>
   PORTABLE_FORCEINLINE_FUNCTION const Real &operator[](const T &t) const {
     constexpr std::size_t idx = variadic_utils::GetIndexInTL<T, Ts...>();
     return data_[idx];
   }
+
   PORTABLE_FORCEINLINE_FUNCTION
   const Real &operator[](const std::size_t idx) const { return data_[idx]; }
+
   static inline constexpr std::size_t size() { return sizeof...(Ts); }
 
  private:
@@ -70,6 +287,7 @@ using VariadicIndexer = VariadicIndexerBase<std::array<Real, sizeof...(Ts)>, Ts.
 // uses a Real*
 template <typename... Ts>
 using VariadicPointerIndexer = VariadicIndexerBase<Real *, Ts...>;
+
 } // namespace IndexerUtils
 
 namespace IndexableTypes {
