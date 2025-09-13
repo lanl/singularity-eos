@@ -95,8 +95,10 @@ class CarnahanStarling : public EosBase<CarnahanStarling> {
       const Real press, const Real temperature, const Real guess = robust::SMALL(),
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     static constexpr Real rho_low = 0.;
-    const Real xtol = 1.0e-12 * _rho0;
-    const Real ytol = 1.0e-12 * _rho0;
+    // Need to identify an appropriate density scaling for the tolerances.
+    // Note: cannot use `_rho0` since `_rho0` is computed from this function itself.
+    const Real xtol = 1.0e-9;
+    const Real ytol = 1.0e-9;
 
     // At absolute zero, P = 0, so assumed vacuum state (no cold curve exists).
     if (temperature <= std::numeric_limits<Real>::min()) {

@@ -664,8 +664,8 @@ SCENARIO("CarnahanStarling6", "[CarnahanStarling][CarnahanStarling6]") {
 
       // Gold standard values for a subset of lookups
       constexpr std::array<Real, num> density_true{
-            1.18330120712910694e-03, 7.82907368903815008e-03, 8.54539433278823750e-03,
-            8.81976196011218308e-03};
+            1.18330186346892515e-03, 7.82907368898192423e-03, 8.54539433271512064e-03,
+            8.81976196003179773e-03};
           
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
