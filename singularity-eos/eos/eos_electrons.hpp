@@ -209,8 +209,8 @@ class IdealElectrons : public EosBase<IdealElectrons> {
  private:
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real _Cv(Indexer_t &&lambda) const {
-    Real Z = IndexerUtils::SafeMustGet<IndexableTypes::MeanIonizationState>(
-      lambda, Lambda::Zi);
+    Real Z = IndexerUtils::SafeMustGet<IndexableTypes::MeanIonizationState>(lambda,
+                                                                            Lambda::Zi);
     return _Cvbase * std::max(Z, static_cast<Real>(0.0));
   }
 
