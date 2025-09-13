@@ -195,7 +195,8 @@ PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, Real const in) {
 
 // Overload when numerical index is provided
 template <typename T, typename Indexer_t>
-PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda, std::size_t const idx) {
+PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda,
+                                               std::size_t const idx) {
   return impl::SafeMustGet<impl::AllowedIndexing::Numeric, T>(lambda, idx);
 }
 
@@ -209,7 +210,7 @@ PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda) {
 // Overload when numerical index is provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, std::size_t const idx,
-                                           Real const in) {
+                                               Real const in) {
   return impl::SafeMustSet<impl::AllowedIndexing::Numeric, T>(lambda, idx, in);
 }
 
