@@ -20,6 +20,7 @@
 #include <utility>
 
 #include <ports-of-call/portability.hpp>
+#include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 
 namespace singularity {
@@ -40,7 +41,7 @@ constexpr bool is_type_indexer_v = is_type_indexer<Indexer_t>::value;
 // type-based indexing.
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION
-bool safeGet(Indexer_t const &lambda, std::size_t const idx, Real &out) {
+bool SafeGet(Indexer_t const &lambda, Real &out) {
   // If null then nothing happens
   if (variadic_utils::is_nullptr(lambda)) {
     return false;
@@ -55,47 +56,35 @@ bool safeGet(Indexer_t const &lambda, std::size_t const idx, Real &out) {
   // Do nothing if lambda has type indexing BUT doesn't have this type index
   if constexpr (is_type_indexer_v<Indexer_t>) {
     return false;
-  }
-
-  // Fall back to numerical indexing if no type indexing
-  if constexpr (variadic_utils::has_whole_num_index<Indexer_t>::value) {
-    out = lambda[idx];
-    return true;
   }
 
   // Something else...
   return false;
 }
 
-// Overload when no index is provided
+// Overload when numerical index is provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION
-bool safeGet(Indexer_t const &lambda, Real &out) {
-  // If null then nothing happens
-  if (variadic_utils::is_nullptr(lambda)) {
-    return false;
+bool SafeGet(Indexer_t const &lambda, std::size_t const idx, Real &out) {
+  const auto modified = SafeGet<T>(lambda, out);
+
+  // Fall back to numerical indexing if no type indexing
+  if constexpr (variadic_utils::has_whole_num_index_v<Indexer_t> ||
+                variadic_utils::has_int_index_v<Indexer_t>) {
+    if (!modified) {
+      out = lambda[idx];
+      return true;
+    }
   }
 
-  // Return value if type index is available
-  if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
-    out = lambda[T{}];
-    return true;
-  }
-
-  // Do nothing if lambda has type indexing BUT doesn't have this type index
-  if constexpr (is_type_indexer_v<Indexer_t>) {
-    return false;
-  }
-
-  // Something else...
-  return false;
+  return modified;
 }
 
 // Same as above but causes an error condition (static or dynamic) if the value
 // can't be obtained
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION
-Real safeMustGet(Indexer_t const &lambda, std::size_t const idx) {
+Real SafeMustGet(Indexer_t const &lambda, std::size_t const idx) {
   // Error on null pointer
   PORTABLE_ALWAYS_REQUIRE(!variadic_utils::is_nullptr(lambda),
                           "Indexer can't be nullptr");
@@ -120,7 +109,7 @@ Real safeMustGet(Indexer_t const &lambda, std::size_t const idx) {
 // values in a lambda
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION
-bool safeSet(Indexer_t &lambda, std::size_t const idx, Real const in) {
+bool SafeSet(Indexer_t &lambda, Real const in) {
   // If null then nothing happens
   if (variadic_utils::is_nullptr(lambda)) {
     return false;
@@ -135,47 +124,35 @@ bool safeSet(Indexer_t &lambda, std::size_t const idx, Real const in) {
   // Do nothing if lambda has type indexing BUT doesn't have this type index
   if constexpr (is_type_indexer_v<Indexer_t>) {
     return false;
-  }
-
-  // Fall back to numerical indexing if no type indexing
-  if constexpr (variadic_utils::has_whole_num_index<Indexer_t>::value) {
-    lambda[idx] = in;
-    return true;
   }
 
   // Something else...
   return false;
 }
 
-// Overload without numeric index
+// Overload when numerical index is provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION
-bool safeSet(Indexer_t &lambda, Real const in) {
-  // If null then nothing happens
-  if (variadic_utils::is_nullptr(lambda)) {
-    return false;
+bool SafeSet(Indexer_t &lambda, std::size_t const idx, Real const in) {
+  const auto modified = SafeSet<T>(lambda, in);
+
+  // Fall back to numerical indexing if no type indexing
+  if constexpr (variadic_utils::has_whole_num_index_v<Indexer_t> ||
+                variadic_utils::has_int_index_v<Indexer_t>) {
+    if (!modified) {
+      lambda[idx] = in;
+      return true;
+    }
   }
 
-  // Return value if type index is available
-  if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
-    lambda[T{}] = in;
-    return true;
-  }
-
-  // Do nothing if lambda has type indexing BUT doesn't have this type index
-  if constexpr (is_type_indexer_v<Indexer_t>) {
-    return false;
-  }
-
-  // Something else...
-  return false;
+  return modified;
 }
 
 // Same as above but causes an error condition (static or dynamic) if the value
 // can't be obtained
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION
-void safeMustSet(Indexer_t &lambda, std::size_t const idx, Real const in) {
+void SafeMustSet(Indexer_t &lambda, std::size_t const idx, Real const in) {
   // Error on null pointer
   PORTABLE_ALWAYS_REQUIRE(!variadic_utils::is_nullptr(lambda),
                           "Indexer can't be nullptr");
