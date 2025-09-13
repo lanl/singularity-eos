@@ -275,14 +275,9 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   template <typename Indexer_t = Real *>
   PORTABLE_FORCEINLINE_FUNCTION Real GetIonizationState_(Indexer_t &&lambda) const {
     using namespace variadic_utils;
-    if (is_nullptr(lambda)) {
-      PORTABLE_THROW_OR_ABORT("ZSplitEOS: lambda must contain mean ionization state!\n");
-    }
-    if constexpr (is_indexable_v<Indexer_t, IndexableTypes::MeanIonizationState>) {
-      return std::max(0.0, lambda[IndexableTypes::MeanIonizationState()]);
-    } else {
-      return std::max(0.0, lambda[T::nlambda()]);
-    }
+    return std::max(0.0, IndexerUtils::SafeMustGet<IndexableTypes::MeanIonizationState>(
+      lambda, T::nlambda()
+    ));
   }
   // TODO(JMM): Runtime?
   template <typename Indexer_t = Real *>

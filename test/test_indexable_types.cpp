@@ -81,18 +81,18 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
         REQUIRE(lRho == static_cast<Real>(2));
       }
     }
-    WHEN("We use the safeGet functionality") {
+    WHEN("We use the SafeGet functionality") {
       constexpr Real unmodified = -1.0;
       Real destination = unmodified;
       WHEN("We request a type that exists") {
-        const bool modified = safeGet<MeanIonizationState>(lambda, 2, destination);
+        const bool modified = SafeGet<MeanIonizationState>(lambda, 2, destination);
         THEN("The destination value will be modified") {
           CHECK(modified);
           REQUIRE(destination == lambda[MeanIonizationState{}]);
         }
       }
       WHEN("We request a type that doesn't exist") {
-        const bool modified = safeGet<TableStatus>(lambda, 2, destination);
+        const bool modified = SafeGet<TableStatus>(lambda, 2, destination);
         THEN("The destination value will remain UNmodified") {
           CHECK(!modified);
           REQUIRE(destination == unmodified);
@@ -101,24 +101,24 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
       WHEN("A normal array-like lambda is used") {
         std::array<Real, Lambda_t::size()> lambda_arr{1, 2, 3};
         constexpr size_t my_index = 2;
-        const bool modified = safeGet<LogDensity>(lambda_arr, my_index, destination);
+        const bool modified = SafeGet<LogDensity>(lambda_arr, my_index, destination);
         THEN("The destination value will reflect the index from the array") {
           CHECK(modified);
           REQUIRE(destination == lambda_arr[my_index]);
         }
       }
     }
-    WHEN("We use the safeSet functionality") {
+    WHEN("We use the SafeSet functionality") {
       constexpr Real new_value = -1.0;
       WHEN("We want to set a value for a type index that exists") {
-        const bool modified = safeSet<MeanIonizationState>(lambda, 2, new_value);
+        const bool modified = SafeSet<MeanIonizationState>(lambda, 2, new_value);
         THEN("The lambda index was modified") {
           CHECK(modified);
           REQUIRE(lambda[MeanIonizationState{}] == new_value);
         }
       }
       WHEN("We want to set a value for a type index that doesn't exist") {
-        const bool modified = safeSet<TableStatus>(lambda, 2, new_value);
+        const bool modified = SafeSet<TableStatus>(lambda, 2, new_value);
         Lambda_t old_lambda;
         for (std::size_t i = 0; i < Lambda_t::size(); ++i) {
           old_lambda[i] = lambda[i];
@@ -134,7 +134,7 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
       WHEN("A normal array-like lambda is used") {
         std::array<Real, Lambda_t::size()> lambda_arr{4, 5, 6};
         constexpr size_t my_index = 1;
-        const bool modified = safeSet<LogDensity>(lambda_arr, my_index, new_value);
+        const bool modified = SafeSet<LogDensity>(lambda_arr, my_index, new_value);
         THEN("The lambda value at the appropriate index has been modified") {
           CHECK(modified);
           REQUIRE(lambda_arr[my_index] == new_value);
@@ -160,12 +160,12 @@ SCENARIO("IndexableTypes and ManualLambda", "[IndexableTypes]") {
         REQUIRE(lRho == static_cast<Real>(2));
       }
     }
-    WHEN("We use the safeGet functionality") {
+    WHEN("We use the SafeGet functionality") {
       constexpr Real unmodified = -1.0;
       Real destination = unmodified;
       WHEN("We request a type that doesn't exist in the manual indexer") {
         constexpr size_t my_index = 1;
-        const bool modified = safeGet<TableStatus>(lambda, my_index, destination);
+        const bool modified = SafeGet<TableStatus>(lambda, my_index, destination);
         THEN("The destination WILL be modified since the manual indexer doesn't have the "
              " `is_type_indexable` data member") {
           CHECK(modified);
@@ -181,7 +181,7 @@ SCENARIO("IndexableTypes and ManualLambda", "[IndexableTypes]") {
         WHEN("We request a type that doesn't exist in the manual indexer") {
           destination = unmodified;
           constexpr size_t my_index = 1;
-          const bool modified = safeGet<TableStatus>(lambda_new, my_index, destination);
+          const bool modified = SafeGet<TableStatus>(lambda_new, my_index, destination);
           THEN("The destination will NOT be modified") {
             CHECK(!modified);
             REQUIRE(destination == unmodified);
@@ -189,11 +189,11 @@ SCENARIO("IndexableTypes and ManualLambda", "[IndexableTypes]") {
         }
       }
     }
-    WHEN("We use the safeSet functionality") {
+    WHEN("We use the SafeSet functionality") {
       constexpr Real new_value = -1.0;
       WHEN("We want to set a value for a type index that doesn't exist") {
         constexpr size_t my_index = 1;
-        const bool modified = safeSet<TableStatus>(lambda, my_index, new_value);
+        const bool modified = SafeSet<TableStatus>(lambda, my_index, new_value);
         THEN("The lambda value WILL be modified since the manual indexer doesn't have "
              "the `is_type_indexable` data member") {
           CHECK(modified);
@@ -208,7 +208,7 @@ SCENARIO("IndexableTypes and ManualLambda", "[IndexableTypes]") {
         }
         WHEN("We request a type that doesn't exist in the manual indexer") {
           constexpr size_t my_index = 1;
-          const bool modified = safeSet<TableStatus>(lambda_new, my_index, new_value);
+          const bool modified = SafeSet<TableStatus>(lambda_new, my_index, new_value);
           THEN("The lambda will NOT be modified") {
             CHECK(!modified);
             for (std::size_t i = 0; i < lambda.length; ++i) {

@@ -372,8 +372,8 @@ class StellarCollapse : public EosBase<StellarCollapse> {
     checkLambda_(lambda);
     lRho = lRho_(rho);
     lT = lT_(temp);
-    Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
-    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
+    Ye = IndexerUtils::SafeMustGet<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
+    IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
   }
   template <typename Indexer_t>
   PORTABLE_INLINE_FUNCTION __attribute__((always_inline)) void
@@ -381,7 +381,7 @@ class StellarCollapse : public EosBase<StellarCollapse> {
                      Real &lT, Real &Ye) const noexcept {
     lRho = lRho_(rho);
     lT = lTFromlRhoSie_(lRho, sie, lambda);
-    Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
+    Ye = IndexerUtils::SafeMustGet<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
     return;
   }
 
@@ -577,7 +577,8 @@ template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real
 StellarCollapse::MinInternalEnergyFromDensity(const Real rho, Indexer_t &&lambda) const {
   Real lRho = lRho_(rho);
-  Real Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
+  Real Ye;
+  Ye = IndexerUtils::SafeMustGet<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
   return eCold_.interpToReal(Ye, lRho);
 }
 
@@ -667,7 +668,7 @@ PORTABLE_INLINE_FUNCTION void StellarCollapse::DensityEnergyFromPressureTemperat
   Real lrguess = lRho_(rho);
   Real lT = lT_(temp);
   Real lP = P2lP_(press);
-  Real Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
+  Real Ye = IndexerUtils::SafeMustGet<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
 
   if ((lrguess < lRhoMin_) || (lrguess > lRhoMax_)) {
     lrguess = lRho_(rhoNormal_);
@@ -680,7 +681,7 @@ PORTABLE_INLINE_FUNCTION void StellarCollapse::DensityEnergyFromPressureTemperat
   Real lE = lE_.interpToReal(Ye, lT, lrguess);
   rho = rho_(lrguess);
   sie = le2e_(lE);
-  IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
 }
 
 template <typename Indexer_t>
@@ -762,8 +763,8 @@ StellarCollapse::ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &
   dpde = dPdENormal_;
   dvdt = dVdTNormal_;
   Real lT = lT_(temp);
-  IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye) = YeNormal_;
-  IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
+  IndexerUtils::SafeMustSet<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye, YeNormal_);
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
 }
 
 inline void StellarCollapse::LoadFromSP5File_(const std::string &filename) {
@@ -1177,8 +1178,9 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::lTFromlRhoSie_(
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
   using RootFinding1D::regula_falsi;
   Real lT;
-  Real Ye = IndexerUtils::Get<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
-  Real lTGuess = IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT);
+  Real Ye = IndexerUtils::SafeMustGet<IndexableTypes::ElectronFraction>(lambda, Lambda::Ye);
+  Real lTGuess;
+  IndexerUtils::SafeGet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lTGuess);
 
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
@@ -1224,7 +1226,7 @@ PORTABLE_INLINE_FUNCTION Real StellarCollapse::lTFromlRhoSie_(
     status_ = status;
   }
 #endif // PORTABILITY_STRATEGY_NONE
-  IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
   return lT;
 }
 } // namespace singularity
