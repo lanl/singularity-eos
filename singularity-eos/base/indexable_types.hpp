@@ -148,12 +148,14 @@ PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, std::size_t co
   if constexpr (is_type_indexer_v<Indexer_t>) {
     static_assert(variadic_utils::is_indexable_v<Indexer_t, T>);
     lambda[T{}] = in;
+    return;
   }
 
   // Fall back to numerical indexing if allowed
   if constexpr (AI == AllowedIndexing::Numeric) {
     if constexpr (variadic_utils::has_int_index<Indexer_t>::value) {
       lambda[idx] = in;
+      return;
     }
   }
 
