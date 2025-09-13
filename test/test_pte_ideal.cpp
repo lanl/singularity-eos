@@ -51,8 +51,12 @@ using singularity::IndexableTypes::MeanIonizationState;
 struct LambdaIndexerSingle {
   PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](const int i) { return z; }
+  PORTABLE_INLINE_FUNCTION
+  const Real &operator[](const int i) const { return z; }
   PORTABLE_FORCEINLINE_FUNCTION
   Real &operator[](const MeanIonizationState &s) { return z; }
+  PORTABLE_INLINE_FUNCTION
+  const Real &operator[](const MeanIonizationState &s) const { return z; }
   Real z = 0.9;
 };
 
