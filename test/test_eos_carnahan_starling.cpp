@@ -23,11 +23,13 @@
 #endif
 
 #include <singularity-eos/base/constants.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::CarnahanStarling;
 using singularity::IdealGas;
+namespace robust = singularity::robust;
 using EOS = singularity::Variant<IdealGas, CarnahanStarling>;
 
 SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
@@ -39,6 +41,8 @@ SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
     // Create the EOS
     EOS host_eos = CarnahanStarling(gm1, Cv, bb, qq);
     EOS eos = host_eos.GetOnDevice();
+    Real rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0;
+    host_eos.ValuesAtReferenceState(rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0);
     GIVEN("Densities and energies") {
       constexpr int num = 4;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -121,7 +125,7 @@ SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned P(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_pressure, pressure_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * P_0);
         }
       }
 
@@ -133,7 +137,7 @@ SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_bulkmodulus, bulkmodulus_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * bmod_0);
         }
       }
 
@@ -145,7 +149,7 @@ SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_temperature, temperature_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * T_0);
         }
       }
 
@@ -158,7 +162,7 @@ SCENARIO("CarnahanStarling1", "[CarnahanStarling][CarnahanStarling1]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned Gamma(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_gruneisen, gruneisen_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * dpde_0 / rho_0);
         }
       }
 
@@ -189,6 +193,8 @@ SCENARIO("CarnahanStarling2", "[CarnahanStarling][CarnahanStarling2]") {
     // Create the EOS
     EOS host_eos = CarnahanStarling(gm1, Cv, bb, qq, qp, T0, P0);
     EOS eos = host_eos.GetOnDevice();
+    Real rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0;
+    host_eos.ValuesAtReferenceState(rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0);
     GIVEN("Densities and energies") {
       constexpr int num = 4;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -271,7 +277,7 @@ SCENARIO("CarnahanStarling2", "[CarnahanStarling][CarnahanStarling2]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned P(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_pressure, pressure_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * P_0);
         }
       }
 
@@ -283,7 +289,7 @@ SCENARIO("CarnahanStarling2", "[CarnahanStarling][CarnahanStarling2]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_bulkmodulus, bulkmodulus_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * bmod_0);
         }
       }
 
@@ -295,7 +301,7 @@ SCENARIO("CarnahanStarling2", "[CarnahanStarling][CarnahanStarling2]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned B_S(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_temperature, temperature_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * T_0);
         }
       }
 
@@ -308,7 +314,7 @@ SCENARIO("CarnahanStarling2", "[CarnahanStarling][CarnahanStarling2]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned Gamma(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_gruneisen, gruneisen_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * dpde_0 / rho_0);
         }
       }
     }
@@ -325,6 +331,10 @@ SCENARIO("(C-S EoS) Isentropic Bulk Modulus Analytic vs. FD",
     //  Create the EOS
     EOS host_eos = CarnahanStarling(gm1, Cv, bb, qq);
     EOS eos = host_eos.GetOnDevice();
+    Real rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0;
+    host_eos.ValuesAtReferenceState(rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0);
+    const Real c_0 = std::sqrt(bmod_0 / rho_0);
+
     GIVEN("Density and energy") {
       constexpr Real density = 1.1833012071291069e-03;
       constexpr Real energy = 2.1407169999999998e+09;
@@ -337,7 +347,7 @@ SCENARIO("(C-S EoS) Isentropic Bulk Modulus Analytic vs. FD",
           INFO("Density: " << density << "  Energy: " << energy
                            << "  Sound speed: " << sound_speed
                            << " cm/s  True sound speed: " << true_sound_speed << " cm/s");
-          REQUIRE(isClose(sound_speed, true_sound_speed, 1e-12));
+          REQUIRE(isClose(sound_speed, true_sound_speed, 1e-12 * c_0));
         }
       }
       WHEN("A finite difference approximation is used for the bulk modulus") {
@@ -359,7 +369,7 @@ SCENARIO("(C-S EoS) Isentropic Bulk Modulus Analytic vs. FD",
           INFO("Density: " << density << "  Energy: " << energy
                            << "  Sound speed: " << sound_speed
                            << " cm/s  Approximate sound speed: " << ss_approx << " cm/s");
-          REQUIRE(isClose(sound_speed, ss_approx, 1e-5));
+          REQUIRE(isClose(sound_speed, ss_approx, 1e-5 * c_0));
         }
       }
     }
@@ -370,12 +380,14 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
   GIVEN("Parameters for a CarnahanStarling EOS") {
     constexpr Real gm1 = 0.4;
     constexpr Real Cv = 7180000.0;
-    constexpr Real bb = 0;
+    constexpr Real bb = robust::EPS();
     constexpr Real qq = 0;
     //  Create the EOS
     EOS host_eos = CarnahanStarling(gm1, Cv, bb, qq);
     EOS eos = host_eos.GetOnDevice();
     EOS ideal_eos = singularity::IdealGas(gm1, Cv);
+    Real rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0;
+    host_eos.ValuesAtReferenceState(rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0);
     GIVEN("Densities and energies") {
       constexpr int num = 1;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -448,7 +460,7 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
                 ideal_eos.PressureFromDensityInternalEnergy(density[i], energy[i]);
           }
           array_compare(num, density, energy, h_pressure, pressure_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * P_0);
         }
       }
 
@@ -464,7 +476,7 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
                 ideal_eos.BulkModulusFromDensityInternalEnergy(density[i], energy[i]);
           }
           array_compare(num, density, energy, h_bulkmodulus, bulkmodulus_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * bmod_0);
         }
       }
 
@@ -480,7 +492,7 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
                 ideal_eos.TemperatureFromDensityInternalEnergy(density[i], energy[i]);
           }
           array_compare(num, density, energy, h_temperature, temperature_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * T_0);
         }
       }
 
@@ -497,7 +509,7 @@ SCENARIO("Recover Ideal Gas from C-S", "[CarnahanStarling][CarnahanStarling4]") 
                 ideal_eos.GruneisenParamFromDensityInternalEnergy(density[i], energy[i]);
           }
           array_compare(num, density, energy, h_gruneisen, gruneisen_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * dpde_0 / rho_0);
         }
       }
     }
@@ -516,6 +528,8 @@ SCENARIO("Test C-S Entropy Calls", "[CarnahanStarling][CarnahanStarling5]") {
     //  Create the EOS
     EOS host_eos = CarnahanStarling(gm1, Cv, bb, qq, qp, T0, P0);
     EOS eos = host_eos.GetOnDevice();
+    Real rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0;
+    host_eos.ValuesAtReferenceState(rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0);
     GIVEN("Densities and energies") {
       constexpr int num = 1;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -549,7 +563,7 @@ SCENARIO("Test C-S Entropy Calls", "[CarnahanStarling][CarnahanStarling5]") {
       // Gold standard values for a subset of lookups
       // constexpr std::array<Real, num> temperature_true{4.0000000000000000e+03};
       constexpr std::array<Real, num> entropy_true{-2.2983150752058342e+10};
-
+      constexpr Real entropy_ref = 2.2983150752058342e+10;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
       Kokkos::View<Real[num]> v_temperature("Temperature");
@@ -582,7 +596,7 @@ SCENARIO("Test C-S Entropy Calls", "[CarnahanStarling][CarnahanStarling5]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned S(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_entropy, entropy_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * entropy_ref);
         }
       }
       WHEN("A S(rho, T(rho,e)) lookup is performed") {
@@ -594,7 +608,7 @@ SCENARIO("Test C-S Entropy Calls", "[CarnahanStarling][CarnahanStarling5]") {
 #endif // PORTABILITY_STRATEGY_KOKKOS
         THEN("The returned S(rho, e) should be equal to the true value") {
           array_compare(num, density, energy, h_entropy, entropy_true, "Density",
-                        "Energy");
+                        "Energy", 1e-12 * entropy_ref);
         }
       }
     }
@@ -610,6 +624,8 @@ SCENARIO("CarnahanStarling6", "[CarnahanStarling][CarnahanStarling6]") {
     // Create the EOS
     EOS host_eos = CarnahanStarling(gm1, Cv, bb, qq);
     EOS eos = host_eos.GetOnDevice();
+    Real rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0;
+    host_eos.ValuesAtReferenceState(rho_0, T_0, e_0, P_0, cv_0, bmod_0, dpde_0, dvdt_0);
     GIVEN("Pressure and temperature") {
       constexpr int num = 4;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
@@ -648,8 +664,8 @@ SCENARIO("CarnahanStarling6", "[CarnahanStarling][CarnahanStarling6]") {
 
       // Gold standard values for a subset of lookups
       constexpr std::array<Real, num> density_true{
-          1.1833012071291069e-03, 7.8290736890381501e-03, 8.5453943327882340e-03,
-          8.8197619601121831e-03};
+          1.18330186346892515e-03, 7.82907368898192423e-03, 8.54539433271512064e-03,
+          8.81976196003179773e-03};
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       // Create device views for outputs and mirror those views on the host
@@ -685,7 +701,7 @@ SCENARIO("CarnahanStarling6", "[CarnahanStarling][CarnahanStarling6]") {
 
         THEN("The returned rho(P, T) should be equal to the true value") {
           array_compare(num, pressure, temperature, h_density, density_true, "Pressure",
-                        "Temperature");
+                        "Temperature", 1e-7 * rho_0);
         }
       }
     }
