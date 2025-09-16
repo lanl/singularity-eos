@@ -1367,11 +1367,11 @@ The constructor for the Simple MACAW EOS is
 where ``A`` is :math:`A`, ``B`` is :math:`B`, ``Cvinf`` is :math:`C^\infty_v`,
 ``v0`` is :math:`v_0`, ``T0`` is :math:`T_0`, ``Gc`` is :math:`\Gamma_c`.
 
-In order to maintain thermodynamic consistency, a sufficient set of constraints
+In order to maintain thermodynamic stability, a sufficient set of constraints
 is given by :math:`A > 0`, :math:`B > 0`, :math:`C^\infty_v > 0`, :math:`v_0 >
-0`, :math:`T_0 > 0`, and :math:`\Gamma_c > 0`. If one wants to maintain
-thermodynamic consistency, we also require :math:`\Gamma_c \in (0,1)`. 
-
+0`, :math:`T_0 > 0`, and :math:`\Gamma_c \in (0,1]`. One can still select
+:math:`\Gamma_c > 1`, just note that the isothermal bulk modulus can be
+negative (the isentropic bulk modulus will still be positive though).
 
 JWL EOS
 ``````````
