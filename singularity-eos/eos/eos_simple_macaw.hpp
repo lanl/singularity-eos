@@ -64,7 +64,8 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
     PORTABLE_ALWAYS_REQUIRE(_Cvinf > 0, "Specific heat capacity (at constant volume), `Cvinf`, must be positive");
     PORTABLE_ALWAYS_REQUIRE(_v0 > 0, "Reference specific volume, 'v0', must be positive");
     PORTABLE_ALWAYS_REQUIRE(_T0 >= 0, "Reference temperature, 'T0', must be non-negative");
-    PORTABLE_ALWAYS_REQUIRE(_Gc > 0 && _Gc < 1, "Gruneisen parameter, 'Gc', must be in the interval (0,1)");
+    PORTABLE_ALWAYS_REQUIRE(_Gc > 0, "Gruneisen parameter, 'Gc', must be positive");
+    if (_Gc > 1) {PORTABLE_WARN("Warning: Gruneisen coefficient greater than 1. Thermodynamic stability may be violated.");}
     _AZbar.CheckParams();
   }
   template <typename Indexer_t = Real *>
@@ -224,9 +225,31 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
-  FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
-          const unsigned long output,
-          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const;
+  FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
+                  const unsigned long output, Indexer_t &&lambda) const {
+  if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
+    if (output & thermalqs::pressure || output & thermalqs::temperature) {
+      UNDEFINED_ERROR;
+    }
+    DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
+  }
+  if (output & thermalqs::pressure && output & thermalqs::specific_internal_energy) {
+    if (output & thermalqs::density || output & thermalqs::temperature) {
+      UNDEFINED_ERROR;
+    }
+    sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
+  }
+  if (output & thermalqs::temperature && output & thermalqs::specific_internal_energy) {
+    sie = InternalEnergyFromDensityPressure(rho, press);
+  }
+  if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
+  if (output & thermalqs::temperature)
+    temp = TemperatureFromDensityInternalEnergy(rho, sie);
+  if (output & thermalqs::bulk_modulus)
+    bmod = BulkModulusFromDensityInternalEnergy(rho, sie);
+  if (output & thermalqs::specific_heat)
+    cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
+  }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
@@ -292,34 +315,6 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
 };
-
-template <typename Indexer_t>
-PORTABLE_INLINE_FUNCTION void
-SimpleMACAW::FillEos(Real &rho, Real &temp, Real &sie, Real &press, Real &cv, Real &bmod,
-                  const unsigned long output, Indexer_t &&lambda) const {
-  if (output & thermalqs::density && output & thermalqs::specific_internal_energy) {
-    if (output & thermalqs::pressure || output & thermalqs::temperature) {
-      UNDEFINED_ERROR;
-    }
-    DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
-  }
-  if (output & thermalqs::pressure && output & thermalqs::specific_internal_energy) {
-    if (output & thermalqs::density || output & thermalqs::temperature) {
-      UNDEFINED_ERROR;
-    }
-    sie = InternalEnergyFromDensityTemperature(rho, temp, lambda);
-  }
-  if (output & thermalqs::temperature && output & thermalqs::specific_internal_energy) {
-    sie = InternalEnergyFromDensityPressure(rho, press);
-  }
-  if (output & thermalqs::pressure) press = PressureFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::temperature)
-    temp = TemperatureFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::bulk_modulus)
-    bmod = BulkModulusFromDensityInternalEnergy(rho, sie);
-  if (output & thermalqs::specific_heat)
-    cv = SpecificHeatFromDensityInternalEnergy(rho, sie);
-}
 
 } // namespace singularity
 
