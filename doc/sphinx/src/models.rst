@@ -23,6 +23,7 @@
 
 .. _SimpleMACAW: https://www.osti.gov/biblio/2479474
 
+.. _MACAW EOS: https://pubs.aip.org/aip/jap/article/134/12/125102/2912256
 
 EOS Models
 ===========
@@ -1321,8 +1322,6 @@ where
 This constructor also optionally accepts `MeanAtomicProperties` for
 the atomic mass and number as a final optional parameter.
 
-
-.. _MACAW EOS: https://pubs.aip.org/aip/jap/article/134/12/125102/2912256
 
 Simple MACAW
 ````````````
