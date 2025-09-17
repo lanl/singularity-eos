@@ -769,6 +769,8 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::lRhoFromPlT_(
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
+  const Real rhopmin = rho_at_pmin_.interpToReal(lT);
+
   Real lRho;
   Real dPdRhoMax = dPdRhoMax_.interpToReal(lT);
   Real PMax = PlRhoMax_.interpToReal(lT);
@@ -779,14 +781,14 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::lRhoFromPlT_(
       pcounts->increment(0);
     }
   } else {
-    Real lRhoGuess = reproducible_ ? lRhoMin_ : 0.5 * (lRhoMin_ + lRhoMax_);
+    Real lRhoGuess = reproducible_ ? lRhoMax_ : 0.5 * (rhopmin + lRhoMax_);
     Real lRho_cache;
     IndexerUtils::SafeGet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho_cache);
-    if ((lRhoMin_ <= lRho_cache) && (lRho_cache <= lRhoMax_)) {
+    if ((rhopmin <= lRho_cache) && (lRho_cache <= lRhoMax_)) {
       lRhoGuess = lRho_cache;
     }
     const callable_interp::l_interp PFunc(dependsRhoT_.P, lT);
-    status = SP_ROOT_FINDER(PFunc, P, lRhoGuess, lRhoMin_, lRhoMax_, robust::EPS(),
+    status = SP_ROOT_FINDER(PFunc, P, lRhoGuess, rhopmin, lRhoMax_, robust::EPS(),
                             robust::EPS(), lRho, pcounts);
     if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
@@ -798,7 +800,7 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::lRhoFromPlT_(
                    << "lRhoGuess = " << lRhoGuess << std::endl;
       EOS_ERROR(errorMessage.str().c_str());
 #endif // SPINER_EOS_VERBOSE
-      lRho = reproducible_ ? lRhoMin_ : lRhoGuess;
+      lRho = reproducible_ ? lRhoMax_ : lRhoGuess;
     }
   }
   IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
