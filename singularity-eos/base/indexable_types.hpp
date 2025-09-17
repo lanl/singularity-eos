@@ -184,12 +184,6 @@ PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda,
 // Overload when numerical index isn't provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda) {
-  if constexpr (!is_type_indexer_v<Indexer_t>) {
-    // Ill-formed since no index provided
-    PORTABLE_ALWAYS_THROW_OR_ABORT(
-        "SafeMustGet: Type-based indexing is required, but lambda does does not contain "
-        "is_type_indexable boolean data member");
-  }
   std::size_t idx = 0;
   return impl::SafeMustGetSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx);
 }
@@ -204,12 +198,6 @@ PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, std::size_t co
 // Overload when numerical index isn't provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, Real const in) {
-  if constexpr (!is_type_indexer_v<Indexer_t>) {
-    // Ill-formed since no index provided
-    PORTABLE_ALWAYS_THROW_OR_ABORT(
-        "SafeMustSet: Type-based indexing is required, but lambda does does not contain "
-        "is_type_indexable boolean data member");
-  }
   std::size_t idx = 0;
   impl::SafeMustGetSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx) = in;
 }

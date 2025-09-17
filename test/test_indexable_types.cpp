@@ -179,9 +179,6 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
           CHECK_THAT(lambda[i], Catch::Matchers::WithinRel(val, 1.0e-14));
         }
       }
-      THEN("If an integer index isn't provided, an exception is thrown") {
-        REQUIRE_MAYBE_THROWS(SafeMustGet<LogTemperature>(lambda));
-      }
     }
     WHEN("We use the SafeMustSet functionality") {
       THEN("The type-based index is ignored and only the integer index is used") {
@@ -191,9 +188,6 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
           SafeMustSet<LogDensity>(lambda, i, val);
           CHECK_THAT(lambda[i], Catch::Matchers::WithinRel(val, 1.0e-14));
         }
-      }
-      THEN("If an integer index isn't provided, an exception is thrown") {
-        REQUIRE_MAYBE_THROWS(SafeMustSet<LogTemperature>(lambda, 1.0));
       }
     }
   }
