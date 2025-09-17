@@ -21,6 +21,9 @@
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
 #endif
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
+
+#include <test/eos_unit_test_helpers.hpp>
 
 using namespace singularity::IndexerUtils;
 using namespace singularity::IndexableTypes;
@@ -71,14 +74,41 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
         REQUIRE(lRho == static_cast<Real>(2));
       }
     }
-    WHEN("We use the Get functionality") {
-      // Request a type that exists, but an incorrect index
-      Real Zbar = Get<MeanIonizationState>(lambda, 2);
-      // Request a type that doesn't exist but an index that does
-      Real lRho = Get<LogTemperature>(lambda, 2);
+    WHEN("We use the SafeMustGet functionality") {
+      // Request a type that exists, but no integer index
+      const Real Zbar = SafeMustGet<MeanIonizationState>(lambda);
+      // Request a type that exists, but the wrong integer index
+      Real Zbar_1 = SafeMustGet<MeanIonizationState>(lambda, 2);
       THEN("We get the correct values") {
         REQUIRE(Zbar == static_cast<Real>(0));
-        REQUIRE(lRho == static_cast<Real>(2));
+        REQUIRE_THAT(Zbar, Catch::Matchers::WithinRel(Zbar_1, 1.0e-14));
+      }
+      // This is probably a dumb check since Zbar_1 wasn't a Real* or a Real&
+      AND_THEN("We don't modify the lambda values by changing the local values") {
+        Zbar_1 = 5.3;
+        REQUIRE_THAT(
+            Zbar,
+            Catch::Matchers::WithinRel(
+                SafeMustGet<MeanIonizationState>(lambda),
+                1.0e-14));
+      }
+    }
+    WHEN("We use the SafeMustSet functionality") {
+      // Request a type that exists, but no index
+      Real Zbar = 5.567;
+      SafeMustSet<MeanIonizationState>(lambda, Zbar);
+      // Request a type that exists, but the wrong integer index
+      Real lRho = 1.102;
+      SafeMustSet<LogDensity>(lambda, 0, lRho);
+      THEN("We get the correct values") {
+        REQUIRE_THAT(
+          Zbar,
+          Catch::Matchers::WithinRel(SafeMustGet<MeanIonizationState>(lambda),
+                                     1.0e-14));
+        REQUIRE_THAT(
+          lRho,
+          Catch::Matchers::WithinRel(SafeMustGet<LogDensity>(lambda),
+                                     1.0e-14));
       }
     }
     WHEN("We use the SafeGet functionality") {
@@ -139,6 +169,38 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
           CHECK(modified);
           REQUIRE(lambda_arr[my_index] == new_value);
         }
+      }
+    }
+  }
+  GIVEN("A normal array that does not support IndexableTypes") {
+    constexpr size_t num_lambda = 4;
+    std::array<Real, num_lambda> lambda{};
+    for (size_t i = 0; i < num_lambda; i++) {
+      lambda[i] = static_cast<Real>(i);
+    }
+    WHEN("We use the SafeMustGet functionality") {
+      THEN("The type-based index is ignored and only the integer index is used") {
+        for (size_t i = 0; i < num_lambda; i++) {
+          INFO("i: " << i);
+          const Real val = SafeMustGet<LogTemperature>(lambda, i);
+          CHECK_THAT(lambda[i], Catch::Matchers::WithinRel(val, 1.0e-14));
+        }
+      }
+      THEN("If an integer index isn't provided, an exception is thrown") {
+        REQUIRE_MAYBE_THROWS(SafeMustGet<void>(lambda));
+      }
+    }
+    WHEN("We use the SafeMustSet functionality") {
+      THEN("The type-based index is ignored and only the integer index is used") {
+        for (size_t i = 0; i < num_lambda; i++) {
+          INFO("i: " << i);
+          const Real val = i * i;
+          SafeMustSet<LogDensity>(lambda, i, val);
+          CHECK_THAT(lambda[i], Catch::Matchers::WithinRel(val, 1.0e-14));
+        }
+      }
+      THEN("If an integer index isn't provided, an exception is thrown") {
+        REQUIRE_MAYBE_THROWS(SafeMustSet<void>(lambda, 1.0));
       }
     }
   }
