@@ -180,7 +180,7 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
         }
       }
       THEN("If an integer index isn't provided, an exception is thrown") {
-        REQUIRE_MAYBE_THROWS(SafeMustGet<void>(lambda));
+        REQUIRE_MAYBE_THROWS(SafeMustGet<LogTemperature>(lambda));
       }
     }
     WHEN("We use the SafeMustSet functionality") {
@@ -193,7 +193,7 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
         }
       }
       THEN("If an integer index isn't provided, an exception is thrown") {
-        REQUIRE_MAYBE_THROWS(SafeMustSet<void>(lambda, 1.0));
+        REQUIRE_MAYBE_THROWS(SafeMustSet<LogTemperature>(lambda, 1.0));
       }
     }
   }
