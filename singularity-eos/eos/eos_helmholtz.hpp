@@ -838,7 +838,7 @@ Helmholtz::FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, R
     temp = math_utils::pow10(lT);
   } else {
     lT = std::log10(temp);
-    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
+    IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
   }
   Real p[NDERIV], e[NDERIV], s[NDERIV], etaele[NDERIV], nep[NDERIV];
   GetFromDensityLogTemperature_(rho, temp, abar, zbar, ye, ytot, ywot, De, lDe, p, e, s,
