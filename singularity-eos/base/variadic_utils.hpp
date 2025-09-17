@@ -24,6 +24,16 @@ namespace variadic_utils {
 // Some generic variatic utilities
 // ======================================================================
 
+// Template parameter dependent boolean suitable for causing static_assert
+// errors within `if constexpr` branches. Essentially the issue is that if the
+// static_assert _always_ evaluates to false, then it will _always_ cause a
+// compile time error even if that branch of the code will never be reached.
+// Making the evaluation (superficially) dependent on the template deduction
+// causes it to be evaluated after the `if constexpr` branching has already been
+// determined. See https://en.cppreference.com/w/cpp/language/if.html#Constexpr_if
+template <class>
+inline constexpr bool dependent_false_v = false;
+
 // Useful for generating nullptr of a specific pointer type
 template <typename T>
 inline constexpr T *np() {
@@ -110,6 +120,15 @@ struct is_indexable<T, Index,
     : std::true_type {};
 template <typename T, typename Index>
 constexpr bool is_indexable_v = is_indexable<T, Index>::value;
+
+// Check if a type can accept an int index
+template <class T, class = void>
+struct has_int_index : std::false_type {};
+template <class T>
+struct has_int_index<T, std::void_t<decltype(std::declval<T>()[std::declval<int>()])>>
+    : std::true_type {};
+template <typename T>
+constexpr bool has_int_index_v = has_int_index<T>::value;
 
 // this flattens a typelist of typelists to a single typelist
 

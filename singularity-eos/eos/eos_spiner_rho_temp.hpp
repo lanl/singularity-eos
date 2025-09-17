@@ -880,10 +880,8 @@ SpinerEOSDependsRhoT::FillEos(Real &rho, Real &temp, Real &energy, Real &press, 
   if (output & thermalqs::bulk_modulus) {
     bmod = bModFromRholRhoTlT_(rho, lRho, temp, lT, whereAmI);
   }
-  if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
-    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
-  }
+  IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
 }
 
 template <typename Indexer_t>
@@ -914,10 +912,8 @@ SpinerEOSDependsRhoT::getLogsRhoT_(const Real rho, const Real temperature, Real 
                                    Real &lT, Indexer_t &&lambda) const {
   lRho = lRho_(rho);
   lT = lT_(temperature);
-  if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
-    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
-  }
+  IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
 }
 
 template <typename Indexer_t>
@@ -931,11 +927,10 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lRhoFromPlT_(
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
 
-  if (!variadic_utils::is_nullptr(lambda)) {
-    Real lRho_cache = IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho);
-    if ((lRhoMin_ <= lRho_cache) && (lRho_cache <= lRhoMax_)) {
-      lRhoGuess = lRho_cache;
-    }
+  Real lRho_cache;
+  IndexerUtils::SafeGet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho_cache);
+  if ((lRhoMin_ <= lRho_cache) && (lRho_cache <= lRhoMax_)) {
+    lRhoGuess = lRho_cache;
   }
 
   if (lT <= lTMin_) { // cold curve
@@ -972,17 +967,11 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lRhoFromPlT_(
 #endif // SPINER_EOS_VERBOSE
     lRho = reproducible_ ? lRhoMax_ : lRhoGuess;
   }
-  if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
-    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
-    if constexpr (variadic_utils::is_indexable_v<Indexer_t, IndexableTypes::RootStatus>) {
-      lambda[IndexableTypes::RootStatus()] = static_cast<Real>(status);
-    }
-    if constexpr (variadic_utils::is_indexable_v<Indexer_t,
-                                                 IndexableTypes::TableStatus>) {
-      lambda[IndexableTypes::TableStatus()] = static_cast<Real>(whereAmI);
-    }
-  }
+  IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
+  // No numerical index: only set if type-based indexing is used
+  IndexerUtils::SafeSet<IndexableTypes::RootStatus>(lambda, static_cast<Real>(status));
+  IndexerUtils::SafeSet<IndexableTypes::TableStatus>(lambda, static_cast<Real>(whereAmI));
   return lRho;
 }
 
@@ -1013,12 +1002,10 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoSie_(
     }
   } else {
     Real lTGuess = reproducible_ ? lTMin_ : 0.5 * (lTMin_ + lTMax_);
-    if (!variadic_utils::is_nullptr(lambda)) {
-      Real lT_cache =
-          IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT);
-      if ((lTMin_ <= lT_cache) && (lT_cache <= lTMax_)) {
-        lTGuess = lT_cache;
-      }
+    Real lT_cache;
+    IndexerUtils::SafeGet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT_cache);
+    if ((lTMin_ <= lT_cache) && (lT_cache <= lTMax_)) {
+      lTGuess = lT_cache;
     }
     const callable_interp::r_interp sieFunc(sie_, lRho);
     status = SP_ROOT_FINDER(sieFunc, sie, lTGuess, lTMin_, lTMax_, ROOT_THRESH,
@@ -1040,17 +1027,11 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoSie_(
       lT = reproducible_ ? lTMin_ : lTGuess;
     }
   }
-  if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
-    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
-    if constexpr (variadic_utils::is_indexable_v<Indexer_t, IndexableTypes::RootStatus>) {
-      lambda[IndexableTypes::RootStatus()] = static_cast<Real>(status);
-    }
-    if constexpr (variadic_utils::is_indexable_v<Indexer_t,
-                                                 IndexableTypes::TableStatus>) {
-      lambda[IndexableTypes::TableStatus()] = static_cast<Real>(whereAmI);
-    }
-  }
+  IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
+  // No numerical index: only set if type-based indexing is used
+  IndexerUtils::SafeSet<IndexableTypes::RootStatus>(lambda, static_cast<Real>(status));
+  IndexerUtils::SafeSet<IndexableTypes::TableStatus>(lambda, static_cast<Real>(whereAmI));
   return lT;
 }
 
@@ -1080,11 +1061,10 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoP_(
   } else {
     whereAmI = TableStatus::OnTable;
     lTGuess = 0.5 * (lTMin_ + lTMax_);
-    if (!variadic_utils::is_nullptr(lambda)) {
-      Real lT_cache = IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, lT);
-      if ((lTMin_ <= lT_cache) && (lT_cache <= lTMax_)) {
-        lTGuess = lT_cache;
-      }
+    Real lT_cache;
+    IndexerUtils::SafeGet<IndexableTypes::LogTemperature>(lambda, lT, lT_cache);
+    if ((lTMin_ <= lT_cache) && (lT_cache <= lTMax_)) {
+      lTGuess = lT_cache;
     }
     const callable_interp::r_interp PFunc(P_, lRho);
     status = SP_ROOT_FINDER(PFunc, press, lTGuess, lTMin_, lTMax_, ROOT_THRESH,
@@ -1102,17 +1082,11 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lTFromlRhoP_(
       lT = reproducible_ ? lTMin_ : lTGuess;
     }
   }
-  if (!variadic_utils::is_nullptr(lambda)) {
-    IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, Lambda::lRho) = lRho;
-    IndexerUtils::Get<IndexableTypes::LogTemperature>(lambda, Lambda::lT) = lT;
-    if constexpr (variadic_utils::is_indexable_v<Indexer_t, IndexableTypes::RootStatus>) {
-      lambda[IndexableTypes::RootStatus()] = static_cast<Real>(status);
-    }
-    if constexpr (variadic_utils::is_indexable_v<Indexer_t,
-                                                 IndexableTypes::TableStatus>) {
-      lambda[IndexableTypes::TableStatus()] = static_cast<Real>(whereAmI);
-    }
-  }
+  IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho);
+  IndexerUtils::SafeSet<IndexableTypes::LogTemperature>(lambda, Lambda::lT, lT);
+  // No numerical index: only set if type-based indexing is used
+  IndexerUtils::SafeSet<IndexableTypes::RootStatus>(lambda, static_cast<Real>(status));
+  IndexerUtils::SafeSet<IndexableTypes::TableStatus>(lambda, static_cast<Real>(whereAmI));
   return lT;
 }
 
