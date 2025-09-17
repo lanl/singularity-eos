@@ -4,6 +4,7 @@
 
 ### Added (new features/APIs/variables/...)
 - [[PR556]](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
+- [[PR560]](https://github.com/lanl/singularity-eos/pull/560) Add Simple MACAW EOS
 - [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Removed Get() function from IndexableTypes since it could have unexpected consequences when a type wasn't present
 
 ### Fixed (Repair bugs, etc)
