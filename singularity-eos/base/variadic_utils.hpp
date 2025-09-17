@@ -92,6 +92,11 @@ constexpr bool contains_v() {
 template <typename... Ts>
 struct type_list {};
 
+// contains over a type_list
+template <typename T, typename List> struct contains_list;
+template <typename T, typename... Us>
+struct contains_list<T, type_list<Us...>> : contains<T, Us...> {};
+
 // variadic list of modifiers
 template <template <typename> class... Ts>
 struct adapt_list {};
@@ -110,6 +115,17 @@ template <typename T, typename Head, typename... Ts>
 constexpr std::size_t GetIndexInTL() {
   return GetIndexInTL<T, Head, Ts...>(0);
 }
+
+// front type (aka head)
+template <class List> struct front;
+template <class Head, class... Tail>
+struct front<type_list<Head, Tail...>> { using type = Head; };
+template <class List>
+using front_t = typename front<List>::type;
+
+// Get number of unique types in a variadic list
+template<class T, class... Ts>
+constexpr bool occurrences_v = (0 + ... + std::is_same_v<T, Ts>);
 
 // is_indexable similar to is_invokable
 template <typename, typename, typename = void>
@@ -257,6 +273,63 @@ template <typename... Ts>
 constexpr auto pack_size(type_list<Ts...>) {
   return sizeof...(Ts);
 }
+
+// Adapter/tag used by the filter
+template <class T> struct Tag {};
+
+// push_back into a type_list
+template <typename List, typename T> struct push_back_list;
+template <typename... Us, typename T>
+struct push_back_list<type_list<Us...>, T> { using type = type_list<Us..., T>; };
+
+// cons (prepend) into a type_list
+template <typename Head, typename List> struct cons_list;
+template <typename Head, typename... Tail>
+struct cons_list<Head, type_list<Tail...>> { using type = type_list<Head, Tail...>; };
+
+// Mark duplicates in order: first occurrence -> Tag<T>, later occurrences -> Tag<Tag<T>>
+template <template<class> class A, typename Seen, typename... Ts>
+struct mark_dupes_impl;
+
+template <template<class> class A, typename Seen>
+struct mark_dupes_impl<A, Seen> { using type = type_list<>; };
+
+template <template<class> class A, typename Seen, typename T, typename... Ts>
+struct mark_dupes_impl<A, Seen, T, Ts...> {
+  static constexpr bool seen = contains_list<T, Seen>::value; // exact match (no decay)
+  using head     = std::conditional_t<seen, A<A<T>>, A<T>>;
+  using nextSeen = std::conditional_t<seen, Seen, typename push_back_list<Seen, T>::type>;
+  using tail     = typename mark_dupes_impl<A, nextSeen, Ts...>::type;
+  using type     = typename cons_list<head, tail>::type;
+};
+
+template <template<class> class A, typename... Ts>
+using mark_dupes_t = typename mark_dupes_impl<A, type_list<>, Ts...>::type;
+
+// Strip Tag<T> -> T
+template <typename X> struct untag;
+template <typename T> struct untag<Tag<T>> { using type = T; };
+
+// Strip Tag from a type_list<Tag<...>...>
+template <typename List> struct strip_adapter;
+template <typename... Xs>
+struct strip_adapter<type_list<Xs...>> { using type = type_list<typename untag<Xs>::type...>; };
+
+// Public alias: exact “unique, order-preserving” list
+template <typename... Ts>
+using unique_types_list =
+  typename strip_adapter<
+    decltype(
+      filter_nested_variadic(
+        adapt_list<Tag>{},                 // filter predicate uses Tag<>
+        mark_dupes_t<Tag, Ts...>{}         // produces Tag<T> / Tag<Tag<T>>
+      )
+    )
+  >::type;
+
+// Uuniqueness helper that removes cv/ref
+template <typename... Ts>
+using unique_decayed_types_list = unique_types_list< remove_cvref_t<Ts>... >;
 
 } // namespace variadic_utils
 } // namespace singularity
