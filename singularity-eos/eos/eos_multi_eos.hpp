@@ -1023,14 +1023,14 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::array<Real, nmat_> sie_mat{};
 
     if ((input & thermalqs::pressure) && (input & thermalqs::temperature)) {
-      PORTABLE_REQUIRE(
+      PORTABLE_ALWAYS_REQUIRE(
           (output & thermalqs::density) && (output & thermalqs::specific_internal_energy),
           "Specific internal energy and density must be defined as outputs when pressure "
           "and temperature are inputs");
       GetStatesFromPressureTemperature(rho, energy, press, temp, density_mat, sie_mat,
                                        lambda);
     } else if ((input & thermalqs::density) && (input & thermalqs::temperature)) {
-      PORTABLE_REQUIRE(
+      PORTABLE_ALWAYS_REQUIRE(
           (output & thermalqs::pressure) &&
               (output & thermalqs::specific_internal_energy),
           "Specific internal energy and pressure must be defined as outputs when density "
@@ -1039,13 +1039,13 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                                       lambda);
     } else if ((input & thermalqs::density) &&
                (input & thermalqs::specific_internal_energy)) {
-      PORTABLE_REQUIRE(
+      PORTABLE_ALWAYS_REQUIRE(
           (output & thermalqs::pressure) && (output & thermalqs::temperature),
           "Temperature and pressure must be defined as outputs when density and "
           "internal energy are inputs");
       GetStatesFromDensityEnergy(rho, energy, press, temp, density_mat, sie_mat, lambda);
     } else if ((input & thermalqs::density) && (input & thermalqs::pressure)) {
-      PORTABLE_REQUIRE(
+      PORTABLE_ALWAYS_REQUIRE(
           (output & thermalqs::temperature) &&
               (output & thermalqs::specific_internal_energy),
           "Temperature and specific internal energy must be defined as outputs when "
@@ -1082,6 +1082,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
           std::make_index_sequence<nmat_>{});
     }
   }
+
   constexpr static inline int nlambda() noexcept {
     // Sum the lambda requirements from each EOS with the number of mass
     // fractions required.
@@ -1215,7 +1216,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                                                    mat_sie);
           Real mat_rho_pert;
           eos.DensityEnergyFromPressureTemperature(pressure, temperature + dT, lambda,
-                                                   mat_rho, mat_sie);
+                                                   mat_rho_pert, mat_sie);
           Real dV = robust::ratio(1.0, mat_rho_pert) - robust::ratio(1.0, mat_rho);
           return dV / dT;
         },
