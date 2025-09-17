@@ -75,32 +75,6 @@ PORTABLE_FORCEINLINE_FUNCTION bool SafeGet(Indexer_t const &lambda, std::size_t 
   return false;
 }
 
-// Same as above but causes an error condition (static or dynamic) if the value
-// can't be obtained
-template <AllowedIndexing AI, typename T, typename Indexer_t>
-PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda,
-                                               std::size_t const idx) {
-  // Error on null pointer
-  PORTABLE_ALWAYS_REQUIRE(!variadic_utils::is_nullptr(lambda),
-                          "Indexer can't be nullptr");
-
-  // Return type-based index. Static assert that type MUST exist in indexer
-  if constexpr (is_type_indexer_v<Indexer_t>) {
-    static_assert(variadic_utils::is_indexable_v<Indexer_t, T>);
-    return lambda[T{}];
-  }
-
-  // Fall back to numerical indexing if allowed
-  if constexpr (AI == AllowedIndexing::Numeric) {
-    if constexpr (variadic_utils::has_int_index<Indexer_t>::value) {
-      return lambda[idx];
-    }
-  }
-
-  // Something else...
-  PORTABLE_ALWAYS_THROW_OR_ABORT("Cannot obtain value from unknown indexer");
-}
-
 // Break out "Set" functionality from "Get". The original "Get()" did both, but
 // the "safe" version needs to separate that functionality for setting the
 // values in a lambda
@@ -136,10 +110,15 @@ PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, std::size_t const 
 }
 
 // Same as above but causes an error condition (static or dynamic) if the value
-// can't be obtained
+// can't be obtained. Note that the `decltype(auto)` is intended to preserve the
+// value category of the square bracket operator of the `Indexer_t` type. This
+// allows references to be returned since there is also no possibility of the
+// call doing nothing (i.e. like SafeGet and SafeSet), and thus it can be used
+// for either setting or getting values. This should also allow for `const`
+// correctness downstream in the wrappers where `lambda` is `const`
 template <AllowedIndexing AI, typename T, typename Indexer_t>
-PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, std::size_t const idx,
-                                               Real const in) {
+PORTABLE_FORCEINLINE_FUNCTION decltype(auto) SafeMustGetSet(Indexer_t &&lambda,
+                                                            std::size_t const idx) {
   // Error on null pointer
   PORTABLE_ALWAYS_REQUIRE(!variadic_utils::is_nullptr(lambda),
                           "Indexer can't be nullptr");
@@ -147,15 +126,17 @@ PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, std::size_t co
   // Return type-based index. Static assert that type MUST exist in indexer
   if constexpr (is_type_indexer_v<Indexer_t>) {
     static_assert(variadic_utils::is_indexable_v<Indexer_t, T>);
-    lambda[T{}] = in;
-    return;
+    // Use std::forward to maintain value category for lambda, and use
+    // parentheses to do the same for the output of the lambda[] operation
+    return (std::forward<Indexer_t>(lambda)[T{}]);
   }
 
   // Fall back to numerical indexing if allowed
   if constexpr (AI == AllowedIndexing::Numeric) {
-    if constexpr (variadic_utils::has_int_index<Indexer_t>::value) {
-      lambda[idx] = in;
-      return;
+    if constexpr (variadic_utils::has_int_index_v<Indexer_t>) {
+      // Use std::forward to maintain value category for lambda, and use
+      // parentheses to do the same for the output of the lambda[] operation
+      return (std::forward<Indexer_t>(lambda)[idx]);
     }
   }
 
@@ -197,40 +178,28 @@ PORTABLE_FORCEINLINE_FUNCTION bool SafeSet(Indexer_t &lambda, Real const in) {
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda,
                                                std::size_t const idx) {
-  return impl::SafeMustGet<impl::AllowedIndexing::Numeric, T>(lambda, idx);
+  return impl::SafeMustGetSet<impl::AllowedIndexing::Numeric, T>(lambda, idx);
 }
 
 // Overload when numerical index isn't provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda) {
   std::size_t idx = 0;
-  return impl::SafeMustGet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx);
+  return impl::SafeMustGetSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx);
 }
 
 // Overload when numerical index is provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, std::size_t const idx,
                                                Real const in) {
-  return impl::SafeMustSet<impl::AllowedIndexing::Numeric, T>(lambda, idx, in);
+  impl::SafeMustGetSet<impl::AllowedIndexing::Numeric, T>(lambda, idx) = in;
 }
 
 // Overload when numerical index isn't provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, Real const in) {
   std::size_t idx = 0;
-  return impl::SafeMustSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx, in);
-}
-
-// NOTE: this Get is "unsafe" because it can allow you to overwrite a type-based
-// index since it automatically falls back to numeric indexing if the type
-// index isn't present.
-template <typename T, typename Indexer_t>
-PORTABLE_FORCEINLINE_FUNCTION auto &Get(Indexer_t &&lambda, std::size_t idx = 0) {
-  if constexpr (variadic_utils::is_indexable_v<Indexer_t, T>) {
-    return lambda[T()];
-  } else {
-    return lambda[idx];
-  }
+  impl::SafeMustGetSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx) = in;
 }
 
 // This is a convenience struct to easily build a small indexer with
