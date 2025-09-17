@@ -4,10 +4,12 @@
 
 ### Added (new features/APIs/variables/...)
 - [[PR556]](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
+- [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Removed Get() function from IndexableTypes since it could have unexpected consequences when a type wasn't present
 
 ### Fixed (Repair bugs, etc)
 - [[PR561]](https://github.com/lanl/singularity-eos/pull/561) Fix logic for kokkos-kernels in spackage so that it is only required for closure models on GPU
-- [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Fix logic for numerical vs type indices by adding safeGet() and safeSet() helpers
+- [[PR563]](https://github.com/lanl/singularity-eos/pull/563) Fixed DensityFromPressureTemperature for the Carnahan-Starling EOS.
+- [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Fix logic for numerical vs type indices by adding safeGet(), safeSet(), safeMustGet(), and safeMustSet() helpers
 
 ### Changed (changing behavior/API/variables/...)
 
