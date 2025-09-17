@@ -123,30 +123,25 @@ PORTABLE_FORCEINLINE_FUNCTION decltype(auto) SafeMustGetSet(Indexer_t &&lambda,
   PORTABLE_ALWAYS_REQUIRE(!variadic_utils::is_nullptr(lambda),
                           "Indexer can't be nullptr");
 
-  // Return type-based index. Static assert that type MUST exist in indexer
   if constexpr (is_type_indexer_v<Indexer_t>) {
+    // Return type-based index. Static assert that type MUST exist in indexer
     static_assert(variadic_utils::is_indexable_v<Indexer_t, T>);
     // Use std::forward to maintain value category for lambda, and use
     // parentheses to do the same for the output of the lambda[] operation
     return (std::forward<Indexer_t>(lambda)[T{}]);
+  } else if constexpr (AI == AllowedIndexing::Numeric) {
+    // Fall back to numerical indexing if allowed
+    static_assert(variadic_utils::has_int_index_v<Indexer_t>);
+    // Use std::forward to maintain value category for lambda, and use
+    // parentheses to do the same for the output of the lambda[] operation
+    return (std::forward<Indexer_t>(lambda)[idx]);
+  } else {
+    // Something else that can't be compiled...
+    static_assert(variadic_utils::dependent_false_v<Indexer_t>,
+                  "Indexer must either be designated as type-based through a "
+                  "`is_type_indexable` boolean data member or SafeGet/SafeSet function "
+                  "must be called with a numerical index");
   }
-
-  // Fall back to numerical indexing if allowed
-  if constexpr (AI == AllowedIndexing::Numeric) {
-    if constexpr (variadic_utils::has_int_index_v<Indexer_t>) {
-      // Use std::forward to maintain value category for lambda, and use
-      // parentheses to do the same for the output of the lambda[] operation
-      return (std::forward<Indexer_t>(lambda)[idx]);
-    }
-  }
-
-  // Something else...
-  PORTABLE_ALWAYS_THROW_OR_ABORT("Cannot obtain value from unknown indexer");
-
-  // This code is unreachable, but we need a concrete return type so that
-  // everything downstream is happy
-  Real ret = 0;
-  return ret;
 }
 
 } // namespace impl
@@ -189,6 +184,12 @@ PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda,
 // Overload when numerical index isn't provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION Real SafeMustGet(Indexer_t const &lambda) {
+  if constexpr (!is_type_indexer_v<Indexer_t>) {
+    // Ill-formed since no index provided
+    PORTABLE_ALWAYS_THROW_OR_ABORT(
+        "SafeMustGet: Type-based indexing is required, but lambda does does not contain "
+        "is_type_indexable boolean data member");
+  }
   std::size_t idx = 0;
   return impl::SafeMustGetSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx);
 }
@@ -203,6 +204,12 @@ PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, std::size_t co
 // Overload when numerical index isn't provided
 template <typename T, typename Indexer_t>
 PORTABLE_FORCEINLINE_FUNCTION void SafeMustSet(Indexer_t &lambda, Real const in) {
+  if constexpr (!is_type_indexer_v<Indexer_t>) {
+    // Ill-formed since no index provided
+    PORTABLE_ALWAYS_THROW_OR_ABORT(
+        "SafeMustSet: Type-based indexing is required, but lambda does does not contain "
+        "is_type_indexable boolean data member");
+  }
   std::size_t idx = 0;
   impl::SafeMustGetSet<impl::AllowedIndexing::TypeOnly, T>(lambda, idx) = in;
 }
