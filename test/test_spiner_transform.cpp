@@ -102,9 +102,7 @@ struct TestDataContainer {
     const Real lRho = spiner_common::to_log(rho, lRhoOffset);
     const Real lE = spiner_common::to_log(sie, lEOffset);
     // If we wanted to mock the lambda write-back (optional)
-    if (!variadic_utils::is_nullptr(lambda)) {
-      IndexerUtils::Get<IndexableTypes::LogDensity>(lambda, 0) = lRho;
-    }
+    IndexerUtils::SafeSet<IndexableTypes::LogDensity>(lambda, 0, lRho);
     return db.interpToReal(lRho, lE);
   }
 

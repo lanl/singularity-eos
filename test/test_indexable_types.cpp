@@ -212,16 +212,6 @@ SCENARIO("IndexableTypes and ManualLambda", "[IndexableTypes]") {
     for (std::size_t i = 0; i < lambda.length; ++i) {
       lambda[i] = static_cast<Real>(i);
     }
-    WHEN("We use the Get functionality") {
-      // Request a type that exists, but an incorrect index
-      Real Zbar = Get<MeanIonizationState>(lambda, 2);
-      // Request a type that doesn't exist but an index that does
-      Real lRho = Get<LogTemperature>(lambda, 2);
-      THEN("We get the correct values") {
-        REQUIRE(Zbar == static_cast<Real>(0));
-        REQUIRE(lRho == static_cast<Real>(2));
-      }
-    }
     WHEN("We use the SafeGet functionality") {
       constexpr Real unmodified = -1.0;
       Real destination = unmodified;
