@@ -3,13 +3,19 @@
 ## Current develop
 
 ### Added (new features/APIs/variables/...)
-- [[PR556](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
+- [[PR556]](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
+- [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Removed Get() function from IndexableTypes since it could have unexpected consequences when a type wasn't present
 
 ### Fixed (Repair bugs, etc)
+- [[PR561]](https://github.com/lanl/singularity-eos/pull/561) Fix logic for kokkos-kernels in spackage so that it is only required for closure models on GPU
+- [[PR563]](https://github.com/lanl/singularity-eos/pull/563) Fixed DensityFromPressureTemperature for the Carnahan-Starling EOS.
+- [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Fix logic for numerical vs type indices by adding safeGet(), safeSet(), safeMustGet(), and safeMustSet() helpers
 
 ### Changed (changing behavior/API/variables/...)
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR559]](https://github.com/lanl/singularity-eos/pull/559) Document the intent of the virtual keyword in solvers
+- [[PR558]](https://github.com/lanl/singularity-eos/pull/558) Make EOSPAC CMake options depend on SINGULARITY_USE_EOSPAC option
 
 ### Removed (removing behavior/API/varaibles/...)
 
@@ -22,6 +28,7 @@ Date: 8/27/2025
 - [[PR517]](https://github.com/lanl/singularity-eos/pull/517) Added Coldcurve to SpinerEOSDependsRhoSie, added functionaliuty to MinInternalEnergyFromDensity in SpinerEOSDependsRhoSie, added test to test_eos_tabulated.cpp
 
 ### Fixed (Repair bugs, etc)
+- [[PR512]](https://github.com/lanl/singularity-eos/pull/512) Cleanup fortran docs
 - [[PR537]](https://github.com/lanl/singularity-eos/pull/537) Fix pathological initial guesses in PTE solvers
 - [[PR523]](https://github.com/lanl/singularity-eos/pull/523) Fix reading order in SpinerEOSDependsRhoSie
 - [[PR506]](https://github.com/lanl/singularity-eos/pull/506) Added some robustness checks to the PTE solvers
@@ -58,7 +65,7 @@ Date: 4/7/2025
 - [[PR444]](https://github.com/lanl/singularity-eos/pull/444) Add Z split modifier and electron ideal gas EOS
 
 ### Fixed (Repair bugs, etc)
-- [PR492](https://github.com/lanl/singularity-eos/pull/492) Fix import issue in spack's package.py.
+- [[PR492]](https://github.com/lanl/singularity-eos/pull/492) Fix import issue in spack's package.py.
 - [[PR485]](https://github.com/lanl/singularity-eos/pull/485) Fix segfault in Fortran interface related to EOSPAC initialization
 - [[PR478]](https://github.com/lanl/singularity-eos/pull/478) Fix bug in KPT test. Add more extensive clang build to github CI matrix.
 - [[PR473]](https://github.com/lanl/singularity-eos/pull/473) Resolve memory issue. Thanks for the catch, Richard!
