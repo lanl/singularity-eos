@@ -142,6 +142,11 @@ PORTABLE_FORCEINLINE_FUNCTION decltype(auto) SafeMustGetSet(Indexer_t &&lambda,
 
   // Something else...
   PORTABLE_ALWAYS_THROW_OR_ABORT("Cannot obtain value from unknown indexer");
+
+  // This code is unreachable, but we need a concrete return type so that
+  // everything downstream is happy
+  Real ret = 0;
+  return ret;
 }
 
 } // namespace impl
