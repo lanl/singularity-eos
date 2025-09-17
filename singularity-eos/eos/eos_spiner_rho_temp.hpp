@@ -916,7 +916,7 @@ template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lRhoFromPlT_(
     const Real P, const Real lT, TableStatus &whereAmI, Indexer_t &&lambda) const {
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
-  Real rhopmin = rho_at_pmin_.interpToReal(lT);
+  Real rhopmin = lRho_(rho_at_pmin_.interpToReal(lT));
 
   Real lRho;
   Real lRhoGuess = reproducible_ ? lRhoMax_ : 0.5 * (rhopmin + lRhoMax_);

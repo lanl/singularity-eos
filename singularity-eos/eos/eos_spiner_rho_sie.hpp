@@ -769,7 +769,7 @@ SpinerEOSDependsRhoSieTransformable<TransformerT>::lRhoFromPlT_(
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
-  const Real rhopmin = rho_at_pmin_.interpToReal(lT);
+  const Real rhopmin = spiner_common::to_log(rho_at_pmin_.interpToReal(lT), lRhoOffset_);
 
   Real lRho;
   Real dPdRhoMax = dPdRhoMax_.interpToReal(lT);
