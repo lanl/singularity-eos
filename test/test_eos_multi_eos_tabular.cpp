@@ -11,6 +11,9 @@
 // prepare derivative works, distribute copies to the public, perform
 // publicly and display publicly, and to permit others to do so.
 
+#ifdef SINGULARITY_TEST_SESAME
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+
 #include <array>
 #include <cmath>
 #include <tuple>
@@ -33,6 +36,7 @@
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_multi_eos.hpp>
+#include <singularity-eos/eos/eos_spiner_rho_temp.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
 using singularity::make_MultiEOS;
@@ -170,3 +174,6 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
     }
   }
 }
+
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5
+#endif // SINGULARITY_TEST_SESAME
