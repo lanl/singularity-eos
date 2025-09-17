@@ -34,6 +34,7 @@
 #include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
+#include <singularity-eos/eos/variant_utils.hpp>
 
 namespace singularity {
 
@@ -116,9 +117,29 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
  private:
   Real mass_frac_cutoff_;
   std::tuple<EOSModelsT...> models_;
-  using eosT_ = Variant<EOSModelsT...>;
 
-  static constexpr std::size_t nmat_ = sizeof...(EOSModelsT); // for convenience
+  // for convenience, keep track of number of EOS
+  static constexpr std::size_t nmat_ = sizeof...(EOSModelsT);
+
+  // Because we sometimes want a std::array of EOS models, we need a common
+  // type for the array. We'll use the `Variant` class, but we also need to
+  // account for the situation where there are duplicates in the type list. In
+  // that case, we need the type list given to the `Variant` class to be
+  // entirely composed of unique types. The following logic constructs that
+  // unique type list. If the list is only one long, then we can just store the
+  // single type and ignore all the `Variant` machinery entirely, storing just
+  // that type
+  using uniq_list = variadic_utils::unique_decayed_types_list<EOSModelsT...>;
+
+  // first type in list
+  using single_t = typename variadic_utils::front_t<uniq_list>;
+
+  // variant with all types
+  using variant_t = typename decltype(tl_to_Variant(uniq_list{}))::vt;
+
+  // Common element type: single if only one unique, otherwise Variant<...>
+  static constexpr std::size_t uniq_n = variadic_utils::pack_size(uniq_list{});
+  using eosT_ = std::conditional_t<(uniq_n == 1), single_t, variant_t>;
 
   // NOTE: These functions are private since they're details of the
   // implementation
@@ -1134,7 +1155,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     temp = 298;
     press = 1e5;
 
-    // Get the mixture properties
+    // Get the mixture properties. We aren't using individual reference states
+    // since they could differ
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     GetStatesFromPressureTemperature(rho, sie, press, temp, density_mat, sie_mat, lambda);
@@ -1178,6 +1200,26 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
         },
         models_, density_mat, sie_mat, rho, temp, lambda,
         std::make_index_sequence<nmat_>{});
+
+    // We could use thermo identities, but it is easier to just use a finite
+    // difference. Also, the identities are messy enough that error propagation
+    // could be severe
+    dvdt = massFracAverageQuantityAtOneState(
+        [](auto const &eos, Real const pressure, Real const temperature,
+           LambdaIndexer &lambda) {
+          constexpr Real factor = 1.0e-08;
+          const Real dT = temperature * factor + factor; // handle zero temp
+          Real mat_rho;
+          Real mat_sie;
+          eos.DensityEnergyFromPressureTemperature(pressure, temperature, lambda, mat_rho,
+                                                   mat_sie);
+          Real mat_rho_pert;
+          eos.DensityEnergyFromPressureTemperature(pressure, temperature + dT, lambda,
+                                                   mat_rho, mat_sie);
+          Real dV = robust::ratio(1.0, mat_rho_pert) - robust::ratio(1.0, mat_rho);
+          return dV / dT;
+        },
+        press, temp, lambda, std::make_index_sequence<nmat_>{});
   }
 
   PORTABLE_FORCEINLINE_FUNCTION Real MinimumDensity() const {
