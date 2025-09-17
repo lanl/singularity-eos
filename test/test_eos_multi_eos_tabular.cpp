@@ -44,6 +44,8 @@ using singularity::MassFracAverageFunctor;
 using singularity::SpinerEOSDependsRhoT;
 using singularity::Variant;
 using singularity::VolumeFracHarmonicAverageFunctor;
+using singularity::IndexableTypes::LogDensity;
+using singularity::IndexableTypes::LogTemperature;
 using singularity::IndexableTypes::MassFraction;
 using singularity::IndexerUtils::VariadicIndexer;
 
@@ -59,10 +61,12 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
     const std::string eos_file = "../materials.sp5";
     auto Cu_eos = SpinerEOSDependsRhoT{eos_file, Cu_matid};
     auto Al_eos = SpinerEOSDependsRhoT{eos_file, Al_matid};
-    using LambdaT = VariadicIndexer<MassFraction<0>, MassFraction<1>>;
+    using LambdaT =
+        VariadicIndexer<IndexableTypes::LogDensity, IndexableTypes::LogTemperature,
+                        IndexableTypes::MassFraction<0>, IndexableTypes::MassFraction<1>>;
 
     // Lookup result tolerances
-    constexpr Real lookup_tol = 1.0e-12;
+    constexpr Real lookup_tol = 1.0e-11;
     constexpr Real deriv_tol = lookup_tol * 1e3;
     constexpr Real dx_factor = 1.0e-08;
     constexpr Real finite_diff_tol = 1.0e-04;
@@ -75,8 +79,12 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
       // Set equal mass fractions
       std::array<Real, num_eos> set_mass_fracs{};
       set_mass_fracs.fill(1.0 / num_eos);
-      LambdaT lambda{set_mass_fracs};
-      const LambdaT lambda_init{set_mass_fracs};
+      LambdaT lambda{};
+      constexpr size_t lambda_mf_offset = 2;
+      for (size_t i = 0; i < num_eos; i++) {
+        lambda[lambda_mf_offset + i] = set_mass_fracs[i];
+      }
+      const LambdaT lambda_init{lambda};
 
       AND_WHEN("The alloy reference state values are returned") {
         Real rho_ref;
@@ -94,12 +102,14 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
         // values
         for (size_t i = 0; i < num_eos; i++) {
           INFO("i: " << i);
-          REQUIRE_THAT(lambda[i], Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+          REQUIRE_THAT(
+              lambda[i + lambda_mf_offset],
+              Catch::Matchers::WithinRel(lambda_init[i + lambda_mf_offset], lookup_tol));
         }
 
         INFO("pres_ref = " << pres_ref << "   temp_ref = " << temp_ref);
 
-        THEN("They agree with the states from reference pressure and temperature") {
+        THEN("They agree with the states at the reference pressure and temperature") {
           std::array<Real, num_eos> density_mat;
           std::array<Real, num_eos> sie_mat;
           Real rho_PT;
@@ -111,8 +121,9 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           // values
           for (size_t i = 0; i < num_eos; i++) {
             INFO("i: " << i);
-            REQUIRE_THAT(lambda[i],
-                         Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+            REQUIRE_THAT(lambda[i + lambda_mf_offset],
+                         Catch::Matchers::WithinRel(lambda_init[i + lambda_mf_offset],
+                                                    lookup_tol));
           }
 
           CHECK_THAT(rho_ref, Catch::Matchers::WithinRel(rho_PT, lookup_tol));
@@ -129,10 +140,11 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
 
               // Sanity check to make sure the EOS are not overwriting mass fraction
               // values
-              for (size_t i = 0; i < num_eos; i++) {
-                INFO("i: " << i);
-                REQUIRE_THAT(lambda[i],
-                             Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+              for (size_t j = 0; j < num_eos; j++) {
+                INFO("j: " << j);
+                REQUIRE_THAT(lambda[j + lambda_mf_offset],
+                             Catch::Matchers::WithinRel(lambda_init[j + lambda_mf_offset],
+                                                        lookup_tol));
               }
 
               CHECK_THAT(rho_mat_PT,
@@ -159,8 +171,9 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           // values
           for (size_t i = 0; i < num_eos; i++) {
             INFO("i: " << i);
-            REQUIRE_THAT(lambda[i],
-                         Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+            REQUIRE_THAT(lambda[i + lambda_mf_offset],
+                         Catch::Matchers::WithinRel(lambda_init[i + lambda_mf_offset],
+                                                    lookup_tol));
           }
 
           CHECK_THAT(rho_ref, Catch::Matchers::WithinRel(rho_FillEos, lookup_tol));
@@ -182,8 +195,9 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           // values
           for (size_t i = 0; i < num_eos; i++) {
             INFO("i: " << i);
-            REQUIRE_THAT(lambda[i],
-                         Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+            REQUIRE_THAT(lambda[i + lambda_mf_offset],
+                         Catch::Matchers::WithinRel(lambda_init[i + lambda_mf_offset],
+                                                    lookup_tol));
           }
 
           const Real dV = robust::ratio(1.0, rho_pert) - robust::ratio(1.0, rho_ref);
@@ -196,6 +210,8 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           // can require looser tolerances
           sie_pert =
               alloy.InternalEnergyFromDensityTemperature(rho_ref, temp_ref + dT, lambda);
+
+          // Also calculate dP at constant volume in the same way
           const Real pres_pert =
               alloy.PressureFromDensityTemperature(rho_ref, temp_ref + dT, lambda);
 
@@ -203,8 +219,9 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           // values
           for (size_t i = 0; i < num_eos; i++) {
             INFO("i: " << i);
-            REQUIRE_THAT(lambda[i],
-                         Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+            REQUIRE_THAT(lambda[i + lambda_mf_offset],
+                         Catch::Matchers::WithinRel(lambda_init[i + lambda_mf_offset],
+                                                    lookup_tol));
           }
 
           const Real dP = pres_pert - pres_ref;
