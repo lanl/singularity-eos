@@ -106,6 +106,15 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           Real sie_PT;
           alloy.GetStatesFromPressureTemperature(rho_PT, sie_PT, pres_ref, temp_ref,
                                                  density_mat, sie_mat, lambda);
+
+          // Sanity check to make sure the EOS are not overwriting mass fraction
+          // values
+          for (size_t i = 0; i < num_eos; i++) {
+            INFO("i: " << i);
+            REQUIRE_THAT(lambda[i],
+                         Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+          }
+
           CHECK_THAT(rho_ref, Catch::Matchers::WithinRel(rho_PT, lookup_tol));
           CHECK_THAT(sie_ref, Catch::Matchers::WithinRel(sie_PT, lookup_tol));
 
@@ -117,6 +126,15 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
               Real sie_mat_PT;
               eos_arr[i].DensityEnergyFromPressureTemperature(pres_ref, temp_ref, lambda,
                                                               rho_mat_PT, sie_mat_PT);
+
+              // Sanity check to make sure the EOS are not overwriting mass fraction
+              // values
+              for (size_t i = 0; i < num_eos; i++) {
+                INFO("i: " << i);
+                REQUIRE_THAT(lambda[i],
+                             Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+              }
+
               CHECK_THAT(rho_mat_PT,
                          Catch::Matchers::WithinRel(density_mat[i], lookup_tol));
               CHECK_THAT(sie_mat_PT, Catch::Matchers::WithinRel(sie_mat[i], lookup_tol));
@@ -124,8 +142,8 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           }
         }
 
-        AND_THEN("They agree with values from FillEos at the reference pressure and "
-                 "temperature") {
+        THEN("They agree with values from FillEos at the reference pressure and "
+             "temperature") {
           constexpr unsigned long input = thermalqs::pressure | thermalqs::temperature;
           constexpr unsigned long output = ~input;
           Real pres_FillEos = pres_ref;
@@ -137,13 +155,21 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           alloy.FillEos(rho_FillEos, temp_FillEos, sie_FillEos, pres_FillEos, cv_FillEos,
                         bmod_FillEos, output, lambda);
 
+          // Sanity check to make sure the EOS are not overwriting mass fraction
+          // values
+          for (size_t i = 0; i < num_eos; i++) {
+            INFO("i: " << i);
+            REQUIRE_THAT(lambda[i],
+                         Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+          }
+
           CHECK_THAT(rho_ref, Catch::Matchers::WithinRel(rho_FillEos, lookup_tol));
           CHECK_THAT(sie_ref, Catch::Matchers::WithinRel(sie_FillEos, lookup_tol));
           CHECK_THAT(cv_ref, Catch::Matchers::WithinRel(cv_FillEos, deriv_tol));
           CHECK_THAT(bmod_ref, Catch::Matchers::WithinRel(bmod_FillEos, deriv_tol));
         }
 
-        AND_THEN("dpde and dvdt agree with finite difference approximations") {
+        THEN("dpde and dvdt agree with finite difference approximations") {
           const Real dT = temp_ref * dx_factor + dx_factor;
           INFO("  dT = " << dT);
 
@@ -151,6 +177,15 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           Real sie_pert;
           alloy.DensityEnergyFromPressureTemperature(pres_ref, temp_ref + dT, lambda,
                                                      rho_pert, sie_pert);
+
+          // Sanity check to make sure the EOS are not overwriting mass fraction
+          // values
+          for (size_t i = 0; i < num_eos; i++) {
+            INFO("i: " << i);
+            REQUIRE_THAT(lambda[i],
+                         Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+          }
+
           const Real dV = robust::ratio(1.0, rho_pert) - robust::ratio(1.0, rho_ref);
           const Real dvdt_FD = dV / dT;
 
@@ -163,6 +198,15 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
               alloy.InternalEnergyFromDensityTemperature(rho_ref, temp_ref + dT, lambda);
           const Real pres_pert =
               alloy.PressureFromDensityTemperature(rho_ref, temp_ref + dT, lambda);
+
+          // Sanity check to make sure the EOS are not overwriting mass fraction
+          // values
+          for (size_t i = 0; i < num_eos; i++) {
+            INFO("i: " << i);
+            REQUIRE_THAT(lambda[i],
+                         Catch::Matchers::WithinRel(lambda_init[i], lookup_tol));
+          }
+
           const Real dP = pres_pert - pres_ref;
           const Real de = sie_pert - sie_ref;
           const Real dpde_FD = dP / de;
