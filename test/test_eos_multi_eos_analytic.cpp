@@ -49,6 +49,8 @@ using Catch::Matchers::ContainsSubstring;
 
 SCENARIO("Test the MultiEOS object with reactants and products EOS",
          "[MultiEOS][DavisReactants][DavisProducts]") {
+  using namespace singularity;
+
   GIVEN("A pair of EOS for reactants and products and a resulting MultiEOS "
         "object") {
     // Unit conversions
@@ -272,7 +274,6 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         }
 
         AND_WHEN("FillEos() is called") {
-          using namespace singularity;
           Real rho_FillEos;
           Real temp_FillEos;
           Real sie_FillEos;
@@ -281,8 +282,8 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
           Real bmod_FillEos;
 
           THEN("P-T lookups are consistent") {
-            const unsigned long input = thermalqs::pressure | thermalqs::temperature;
-            const unsigned long output = ~input;
+            constexpr unsigned long input = thermalqs::pressure | thermalqs::temperature;
+            constexpr unsigned long output = ~input;
             temp_FillEos = T;
             pres_FillEos = P;
             multi_eos_in_variant.FillEos(rho_FillEos, temp_FillEos, sie_FillEos,
@@ -343,7 +344,6 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
       // auto eos = make_MultiEOS<BAvgF, GAvgF>(models);
 
       AND_WHEN("A pressure-temperature lookup is performed") {
-        using namespace singularity;
 
         // Populate lambda with mass fractions (only)
         std::array<Real, num_eos> set_mass_fracs{};
@@ -587,7 +587,6 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     }
 
     WHEN("The PreferredInput() member function is called") {
-      using namespace singularity;
       constexpr auto pref_in = multi_eos.PreferredInput();
       // The preferred input is _always_ P-T. See comments in code member function
       STATIC_REQUIRE(pref_in == (thermalqs::pressure | thermalqs::temperature));
