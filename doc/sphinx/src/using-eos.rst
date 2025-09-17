@@ -758,11 +758,20 @@ doesn't accept type-based indexing. If the ``Indexer_t`` **does** accept
 type-based indexing but **doesn't** have the requested index, then the
 ``out`` value is not updated. The same is true for when ``Indexer_t`` is the
 ``nullptr``. The overload that doesn't take a numerical index will *only*
-return the value at a type-based index. The ``SafeMustGet()`` version
-is intended to generate errors if a value can't be retrieved. In the case of
-type-based indexing, the error will be at compile time if the type isn't located
-in the indexer. A runtime abort will occur if either the null pointer is passed
-or if integer indexing isn't allowed for some reason.
+return the value at a type-based index.
+
+The ``SafeMustGet()`` version is intended to generate errors if a value can't be
+retrieved with four types of errors that can occur:
+
+1. If a null pointer is passed as the indexer, a runtime abort or exception will
+   occur
+2. If a type-based indexer is passed (i.e. one with the ``constexpr static bool``
+   member ``is_type_indexable = true``), but the type doesn't exist then a **static**
+   assertion will fail
+3. If one of the overloads is used where a ``std::size_t`` index is provided, but
+   the indexer can't accept integer indexing, then a **static** assertion will fail
+4. If the indexer can't use type-based indexing but an ``std::size_t`` index
+   wasn't provided, then a **static** assertion will fail
 
 Similarly, the functions
 
@@ -791,7 +800,7 @@ Similarly, the functions
   inline bool SafeMustSet(Indexer_t &lambda, Real const in)
 
 can modify the values in the ``Indexer_t`` and behave the same way. In this way,
-if a type-based index isn't present in the container, then another index won't
+if a type-based index isn't present in the container, then a different index won't
 be overwritten. Again, the ``SafeMustSet()`` version will compile-time fail
 or runtime abort if the lambda value can't be modified for the same reasons as
 ``SafeMustGet()``.
