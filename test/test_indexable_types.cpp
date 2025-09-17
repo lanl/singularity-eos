@@ -86,11 +86,8 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
       // This is probably a dumb check since Zbar_1 wasn't a Real* or a Real&
       AND_THEN("We don't modify the lambda values by changing the local values") {
         Zbar_1 = 5.3;
-        REQUIRE_THAT(
-            Zbar,
-            Catch::Matchers::WithinRel(
-                SafeMustGet<MeanIonizationState>(lambda),
-                1.0e-14));
+        REQUIRE_THAT(Zbar, Catch::Matchers::WithinRel(
+                               SafeMustGet<MeanIonizationState>(lambda), 1.0e-14));
       }
     }
     WHEN("We use the SafeMustSet functionality") {
@@ -101,14 +98,10 @@ SCENARIO("IndexableTypes and VariadicIndexer", "[IndexableTypes][VariadicIndexer
       Real lRho = 1.102;
       SafeMustSet<LogDensity>(lambda, 0, lRho);
       THEN("We get the correct values") {
+        REQUIRE_THAT(Zbar, Catch::Matchers::WithinRel(
+                               SafeMustGet<MeanIonizationState>(lambda), 1.0e-14));
         REQUIRE_THAT(
-          Zbar,
-          Catch::Matchers::WithinRel(SafeMustGet<MeanIonizationState>(lambda),
-                                     1.0e-14));
-        REQUIRE_THAT(
-          lRho,
-          Catch::Matchers::WithinRel(SafeMustGet<LogDensity>(lambda),
-                                     1.0e-14));
+            lRho, Catch::Matchers::WithinRel(SafeMustGet<LogDensity>(lambda), 1.0e-14));
       }
     }
     WHEN("We use the SafeGet functionality") {
