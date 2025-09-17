@@ -35,18 +35,17 @@
 #include <singularity-eos/eos/eos_multi_eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::SpinerEOSDependsRhoT;
 using singularity::make_MultiEOS;
 using singularity::MassFracAverageFunctor;
-using singularity::VolumeFracHarmonicAverageFunctor;
+using singularity::SpinerEOSDependsRhoT;
 using singularity::Variant;
+using singularity::VolumeFracHarmonicAverageFunctor;
 using singularity::IndexableTypes::MassFraction;
 using singularity::IndexerUtils::VariadicIndexer;
 
 using Catch::Matchers::ContainsSubstring;
 
-SCENARIO("Test the MultiEOS object with a binary alloy",
-         "[MultiEOS][SpinerEOS]") {
+SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]") {
   using namespace singularity;
 
   GIVEN("A pair of metal EOS for the binary alloy") {
@@ -114,7 +113,8 @@ SCENARIO("Test the MultiEOS object with a binary alloy",
               Real sie_mat_PT;
               eos_arr[i].DensityEnergyFromPressureTemperature(pres_ref, temp_ref, lambda,
                                                               rho_mat_PT, sie_mat_PT);
-              CHECK_THAT(rho_mat_PT, Catch::Matchers::WithinRel(density_mat[i], lookup_tol));
+              CHECK_THAT(rho_mat_PT,
+                         Catch::Matchers::WithinRel(density_mat[i], lookup_tol));
               CHECK_THAT(sie_mat_PT, Catch::Matchers::WithinRel(sie_mat[i], lookup_tol));
             }
           }
@@ -155,10 +155,10 @@ SCENARIO("Test the MultiEOS object with a binary alloy",
 
           // Calculate a de at constant volume from dT since density-energy PTE solver
           // can require looser tolerances
-          sie_pert = alloy.InternalEnergyFromDensityTemperature(rho_ref, temp_ref + dT,
-                                                                lambda);
-          const Real pres_pert = alloy.PressureFromDensityTemperature(rho_ref, temp_ref + dT,
-                                                                   lambda);
+          sie_pert =
+              alloy.InternalEnergyFromDensityTemperature(rho_ref, temp_ref + dT, lambda);
+          const Real pres_pert =
+              alloy.PressureFromDensityTemperature(rho_ref, temp_ref + dT, lambda);
           const Real dP = pres_pert - pres_ref;
           const Real de = sie_pert - sie_ref;
           const Real dpde_FD = dP / de;

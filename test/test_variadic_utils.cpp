@@ -63,20 +63,20 @@ SCENARIO("IsModifiable works as intended", "[VariadicUtils][EOSBuilder]") {
 
 SCENARIO("Finding a unique set of types in a type list") {
   WHEN("A type list contains duplicate types") {
-    using U0 = variadic_utils::unique_types_list<int, float, int, const float, int&>;
+    using U0 = variadic_utils::unique_types_list<int, float, int, const float, int &>;
     THEN("The unique type list removes duplicates and preserves order") {
-      static_assert(std::is_same<U0,
-                    variadic_utils::type_list<int, float, const float, int&>>::value,
-                    "order-preserving unique");
+      static_assert(
+          std::is_same<U0,
+                       variadic_utils::type_list<int, float, const float, int &>>::value,
+          "order-preserving unique");
     }
   }
   WHEN("A type list contains types that are duplicates when `const` and reference "
        "qualifiers are removed") {
-    using U0 = variadic_utils::unique_decayed_types_list<int, int&, const int,
-                                                         const float>;
-    static_assert(std::is_same<U0,
-                    variadic_utils::type_list<int, float>>::value,
-                    "order-preserving unique");
+    using U0 =
+        variadic_utils::unique_decayed_types_list<int, int &, const int, const float>;
+    static_assert(std::is_same<U0, variadic_utils::type_list<int, float>>::value,
+                  "order-preserving unique");
 
     static_assert(std::is_same<variadic_utils::front_t<U0>, int>::value,
                   "first type in unique list");

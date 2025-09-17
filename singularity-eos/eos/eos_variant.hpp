@@ -47,7 +47,7 @@ template <typename... EOSs>
 class Variant {
  private:
   static_assert(((variadic_utils::occurrences_v<EOSs, EOSs...> == 1) && ...),
-                  "Variant cannot contain duplicate types");
+                "Variant cannot contain duplicate types");
   eos_variant<EOSs...> eos_;
 
  public:
