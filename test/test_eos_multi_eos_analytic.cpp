@@ -333,252 +333,132 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
       }
     }
 
-    WHEN("Volume-fraction harmonic averages are used for the bulk modulus and Gruneisen "
-         "averaging") {
-      using BAvgF = VolumeFracHarmonicAverageFunctor;
-      using GAvgF = VolumeFracHarmonicAverageFunctor;
-      auto models = std::make_tuple(davis_r_eos, davis_p_eos);
-      auto eos = make_MultiEOS<BAvgF, GAvgF>(davis_r_eos, davis_p_eos);
+    WHEN("A pressure-temperature lookup is performed") {
+      // Populate lambda with mass fractions (only)
+      std::array<Real, num_eos> set_mass_fracs{};
+      set_mass_fracs.fill(1.0 / num_eos);
+      LambdaT lambda{set_mass_fracs};
 
-      // Note that this constructor is not allowed
-      // auto eos = make_MultiEOS<BAvgF, GAvgF>(models);
+      // Get the P-T state at a high P and T
+      constexpr Real P = 1e10;
+      constexpr Real T = 5000;
+      Real rho;
+      Real sie;
+      multi_eos.DensityEnergyFromPressureTemperature(P, T, lambda, rho, sie);
 
-      AND_WHEN("A pressure-temperature lookup is performed") {
+      // Don't continue test if this function isn't already working
+      REQUIRE(rho > 0);
 
-        // Populate lambda with mass fractions (only)
-        std::array<Real, num_eos> set_mass_fracs{};
-        set_mass_fracs.fill(1.0 / num_eos);
-        LambdaT lambda{set_mass_fracs};
-
-        // A high pressure and temperature
-        constexpr Real P = 1e10;
-        constexpr Real T = 5000;
-
-        // Output values
-        Real rho;
-        Real sie;
+      AND_WHEN("The PTE state is perturbed in density-temperature space") {
         std::array<Real, num_eos> density_mat{};
         std::array<Real, num_eos> sie_mat{};
+        Real dedT_R, dedR_T, dPdT_R, dPdR_T;
+        multi_eos.PerturbPTEStateRT(rho, sie, T, P, density_mat, sie_mat, lambda,
+                                    dedT_R, dedR_T, dPdT_R, dPdR_T);
+        const Real B_T = rho * dPdR_T;
+        const Real B_S = B_T + temperature * dPdT_R * dPdT_R / rho / dedT_R;
+        const Real Cv = dedT_R;
+        const Real dpde = dPdT_R / dedT_R;
 
-        // Get the material values
-        eos.GetStatesFromPressureTemperature(rho, sie, P, T, density_mat, sie_mat,
-                                             lambda);
+        Real rho_FillEos;
+        Real temp_FillEos;
+        Real sie_FillEos;
+        Real pres_FillEos;
+        Real cv_FillEos;
+        Real bmod_FillEos;
 
-        // Don't continue test if this function isn't already working
-        REQUIRE(rho > 0);
+        AND_WHEN("Density-temperature lookups are used") {
+          const unsigned long input =
+              thermalqs::density | thermalqs::temperature;
+          const unsigned long output = ~input;
+          rho_FillEos = rho;
+          temp_FillEos = T;
+          multi_eos.FillEos(rho_FillEos, temp_FillEos, sie_FillEos, pres_FillEos,
+                      cv_FillEos, bmod_FillEos, output, lambda);
 
-        // The lookup functors for averaging
-        auto bmod_func = [](auto const &model, Real const rho, Real const sie,
-                            Real const temp, auto const lambda) {
-          if (model.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
-            return model.BulkModulusFromDensityTemperature(rho, temp);
-          } else {
-            return model.BulkModulusFromDensityInternalEnergy(rho, sie);
+          THEN("The bulk modulus is consistent with the thermodynamic formulas using "
+               "finite differeces") {
+            const Real bmod_calc = multi_eos.BulkModulusFromDensityTemperature(
+                rho, T, lambda);
+
+            CHECK_THAT(bmod_calc, Catch::Matchers::WithinRel(B_S, deriv_tol));
+
+            AND_THEN("The result from FillEos is also consistent"){
+              CHECK_THAT(bmod_FillEos, Catch::Matchers::WithinRel(B_S, deriv_tol));
+            }
           }
-        };
 
-        auto gruneisen_func = [](auto const &model, Real const rho, Real const sie,
-                                 Real const temp, auto const lambda) {
-          if (model.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
-            return model.GruneisenParamFromDensityTemperature(rho, temp);
-          } else {
-            return model.GruneisenParamFromDensityInternalEnergy(rho, sie);
+          THEN("The dpde value is consistent with the thermodynamic formulas using "
+               "finite differeces") {
+            const Real Gruneisen = multi_eos.GruneisenParamFromDensityTemperature(
+                rho, T, lambda);
+            const Real dpde_calc = rho * Gruneisen;
+
+            CHECK_THAT(dpde_calc, Catch::Matchers::WithinRel(dpde, deriv_tol));
+
           }
-        };
 
-        auto cv_func = [](auto const &model, Real const rho, Real const sie,
-                          Real const temp, auto const lambda) {
-          if (model.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
-            return model.SpecificHeatFromDensityTemperature(rho, temp);
-          } else {
-            return model.SpecificHeatFromDensityInternalEnergy(rho, sie);
-          }
-        };
+          THEN("The heat capacity is consistent with the thermodynamic formulas using "
+               "finite differeces") {
+            const Real Cv_calc = multi_eos.SpecifcHeatFromDensityTemperature(
+                rho, T, lambda);
 
-        // auto entropy_func = [](auto const &model, Real const rho, Real const sie,
-        //                        Real const temp, auto const lambda) {
-        //   if (model.PreferredInput() == (thermalqs::density | thermalqs::temperature))
-        //   {
-        //     return model.EntropyFromDensityTemperature(rho, temp);
-        //   } else {
-        //     return model.EntropyFromDensityInternalEnergy(rho, sie);
-        //   }
-        // };
+            CHECK_THAT(Cv_calc, Catch::Matchers::WithinRel(Cv, deriv_tol));
 
-        // auto min_sie_func = [](auto const &model, Real const rho, Real const sie,
-        //                        Real const temp, auto const lambda) {
-        //   return model.MinInternalEnergyFromDensity(rho);
-        // };
-
-        auto b_avg_f = BAvgF{};
-        Real const bmod_avg = b_avg_f(bmod_func, models, density_mat, sie_mat, rho, T,
-                                      lambda, std::make_index_sequence<num_eos>{});
-
-        auto g_avg_f = GAvgF{};
-        Real const gruneisen_avg =
-            g_avg_f(gruneisen_func, models, density_mat, sie_mat, rho, T, lambda,
-                    std::make_index_sequence<num_eos>{});
-
-        auto cv_avg_f = MassFracAverageFunctor{};
-        Real const cv_avg = cv_avg_f(cv_func, models, density_mat, sie_mat, rho, T,
-                                     lambda, std::make_index_sequence<num_eos>{});
-
-        // TODO: Enable these with Davis reactants/products to make sure the answer is
-        // correct. At the moment, these have been run, but produce an error since the
-        // member functions aren't enabled
-
-        // auto entropy_avg_f = MassFracAverageFunctor{};
-        // Real const entropy_avg = entropy_avg_f(entropy_func, models, density_mat,
-        // sie_mat,
-        //                                        rho, T, lambda,
-        //                                        std::make_index_sequence<num_eos>{});
-
-        // auto min_sie_avg_f = MassFracAverageFunctor{};
-        // Real const min_sie_avg = min_sie_avg_f(min_sie_func, models, density_mat,
-        // sie_mat,
-        //                                        rho, T, lambda,
-        //                                        std::make_index_sequence<num_eos>{});
-
-        THEN("The MultiEOS object will return a bulk modulus consistent with the "
-             "averaging functor and density-energy lookups") {
-
-          Real bmod_RE = eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
-          CHECK_THAT(bmod_RE, Catch::Matchers::WithinRel(bmod_avg, deriv_tol));
-
-          AND_WHEN("FillEos is used") {
-            Real rho_FillEos;
-            Real temp_FillEos;
-            Real sie_FillEos;
-            Real pres_FillEos;
-            Real cv_FillEos;
-            Real bmod_FillEos;
-
-            THEN("The density-energy result is still consistent") {
-              const unsigned long input =
-                  thermalqs::density | thermalqs::specific_internal_energy;
-              const unsigned long output = ~input;
-              rho_FillEos = rho;
-              sie_FillEos = sie;
-              eos.FillEos(rho_FillEos, temp_FillEos, sie_FillEos, pres_FillEos,
-                          cv_FillEos, bmod_FillEos, output, lambda);
-              CHECK_THAT(bmod_FillEos, Catch::Matchers::WithinRel(bmod_avg, deriv_tol));
+            AND_THEN("The result from FillEos is also consistent"){
+              CHECK_THAT(cv_FillEos, Catch::Matchers::WithinRel(Cv, deriv_tol));
             }
           }
         }
 
-        THEN("The MultiEOS object will return a bulk modulus consistent with the "
-             "averaging functor and density-temperature lookups") {
-          Real bmod_RT = eos.BulkModulusFromDensityTemperature(rho, T, lambda);
-          CHECK_THAT(bmod_RT, Catch::Matchers::WithinRel(bmod_avg, deriv_tol));
+        AND_WHEN("Density-energy lookups are used") {
+          const unsigned long input =
+              thermalqs::density | thermalqs::specific_internal_energy;
+          const unsigned long output = ~input;
+          rho_FillEos = rho;
+          sie_FillEos = sie;
+          multi_eos.FillEos(rho_FillEos, temp_FillEos, sie_FillEos, pres_FillEos,
+                            cv_FillEos, bmod_FillEos, output, lambda);
 
-          AND_WHEN("FillEos is used") {
-            Real rho_FillEos;
-            Real temp_FillEos;
-            Real sie_FillEos;
-            Real pres_FillEos;
-            Real cv_FillEos;
-            Real bmod_FillEos;
+          THEN("The bulk modulus is consistent with the thermodynamic formulas using "
+               "finite differeces") {
+            const Real bmod_calc = multi_eos.BulkModulusFromDensityInternalEnergy(
+                rho, T, lambda);
 
-            THEN("The density-temperature result is still consistent") {
-              const unsigned long input = thermalqs::density | thermalqs::temperature;
-              const unsigned long output = ~input;
-              rho_FillEos = rho;
-              temp_FillEos = T;
-              eos.FillEos(rho_FillEos, temp_FillEos, sie_FillEos, pres_FillEos,
-                          cv_FillEos, bmod_FillEos, output, lambda);
-              CHECK_THAT(bmod_FillEos, Catch::Matchers::WithinRel(bmod_avg, deriv_tol));
+            CHECK_THAT(bmod_calc, Catch::Matchers::WithinRel(B_S, deriv_tol));
+
+            AND_THEN("The result from FillEos is also consistent"){
+              CHECK_THAT(bmod_FillEos, Catch::Matchers::WithinRel(B_S, deriv_tol));
+            }
+          }
+
+          THEN("The dpde value is consistent with the thermodynamic formulas using "
+               "finite differeces") {
+            const Real Gruneisen = multi_eos.GruneisenParamFromDensityInternalEnergy(
+                rho, T, lambda);
+            const Real dpde_calc = rho * Gruneisen;
+
+            CHECK_THAT(dpde_calc, Catch::Matchers::WithinRel(dpde, deriv_tol));
+
+          }
+
+          THEN("The heat capacity is consistent with the thermodynamic formulas using "
+               "finite differeces") {
+            const Real Cv_calc = multi_eos.SpecifcHeatFromDensityInternalEnergy(
+                rho, T, lambda);
+
+            CHECK_THAT(Cv_calc, Catch::Matchers::WithinRel(Cv, deriv_tol));
+
+            AND_THEN("The result from FillEos is also consistent"){
+              CHECK_THAT(cv_FillEos, Catch::Matchers::WithinRel(Cv, deriv_tol));
             }
           }
         }
-
-        THEN("The MultiEOS object will return a Gruneisen parameter consistent with the "
-             "averaging functor and a density-energy lookup") {
-
-          Real gruneisen_RE =
-              eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
-          CHECK_THAT(gruneisen_RE, Catch::Matchers::WithinRel(gruneisen_avg, deriv_tol));
-        }
-
-        THEN("The MultiEOS object will return a Gruneisen parameter consistent with the "
-             "averaging functor and a density-temperature lookup") {
-          Real gruneisen_RT = eos.GruneisenParamFromDensityTemperature(rho, T, lambda);
-          CHECK_THAT(gruneisen_RT, Catch::Matchers::WithinRel(gruneisen_avg, deriv_tol));
-        }
-
-        THEN("The MultiEOS object will return a mass-fraction-averaged specific heat "
-             "capacity from density-energy lookups") {
-
-          Real cv_RE = eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
-          CHECK_THAT(cv_RE, Catch::Matchers::WithinRel(cv_avg, deriv_tol));
-
-          AND_WHEN("FillEos is used") {
-            Real rho_FillEos;
-            Real temp_FillEos;
-            Real sie_FillEos;
-            Real pres_FillEos;
-            Real cv_FillEos;
-            Real bmod_FillEos;
-
-            THEN("The density-energy result is still consistent") {
-              const unsigned long input =
-                  thermalqs::density | thermalqs::specific_internal_energy;
-              const unsigned long output = ~input;
-              rho_FillEos = rho;
-              sie_FillEos = sie;
-              eos.FillEos(rho_FillEos, temp_FillEos, sie_FillEos, pres_FillEos,
-                          cv_FillEos, bmod_FillEos, output, lambda);
-              CHECK_THAT(cv_FillEos, Catch::Matchers::WithinRel(cv_avg, deriv_tol));
-            }
-          }
-        }
-
-        THEN("The MultiEOS object will return a mass-fraction-averaged specific heat "
-             "capacity from density-temperature lookups") {
-          Real cv_RT = eos.SpecificHeatFromDensityTemperature(rho, T, lambda);
-          CHECK_THAT(cv_RT, Catch::Matchers::WithinRel(cv_avg, deriv_tol));
-
-          AND_WHEN("FillEos is used") {
-            Real rho_FillEos;
-            Real temp_FillEos;
-            Real sie_FillEos;
-            Real pres_FillEos;
-            Real cv_FillEos;
-            Real bmod_FillEos;
-
-            THEN("The density-temperature result is still consistent") {
-              const unsigned long input = thermalqs::density | thermalqs::temperature;
-              const unsigned long output = ~input;
-              rho_FillEos = rho;
-              temp_FillEos = T;
-              eos.FillEos(rho_FillEos, temp_FillEos, sie_FillEos, pres_FillEos,
-                          cv_FillEos, bmod_FillEos, output, lambda);
-              CHECK_THAT(cv_FillEos, Catch::Matchers::WithinRel(cv_avg, deriv_tol));
-            }
-          }
-        }
-
-        // THEN("The MultiEOS object will return a mass-fraction-averaged entropy from "
-        //      "density-energy lookups") {
-
-        //   Real entropy_RE = eos.EntropyFromDensityInternalEnergy(rho, sie, lambda);
-        //   CHECK_THAT(entropy_RE, Catch::Matchers::WithinRel(entropy_avg, lookup_tol));
-        // }
-
-        // THEN("The MultiEOS object will return a mass-fraction-averaged entropy from "
-        //      "density-temperature lookups") {
-        //   Real entropy_RT = eos.EntropyFromDensityTemperature(rho, T, lambda);
-        //   CHECK_THAT(entropy_RT, Catch::Matchers::WithinRel(entropy_avg, lookup_tol));
-        // }
-
-        // THEN("The MultiEOS object will return a mass-fraction-averaged minimum specific
-        // "
-        //      "internal energy from a density lookup") {
-
-        //   Real min_sie_RE = eos.MinInternalEnergyFromDensity(rho, lambda);
-        //   CHECK_THAT(min_sie_RE, Catch::Matchers::WithinRel(min_sie_avg, lookup_tol));
-        // }
       }
     }
+
+    // TODO: Check mass fraction averaging for minimum energy and entropy. Those
+    // aren't enabled for Davis right now
 
     WHEN("The nlambda() member function is called") {
       constexpr auto nlambda = multi_eos.nlambda();
@@ -674,6 +554,3 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     }
   }
 }
-
-// TODO: Write a new test case using EOS with dynamic memory and probably also
-// probably include 3T properties
