@@ -312,7 +312,6 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
 
   int numRho_, numT_;
   Real lRhoMin_, lRhoMax_, rhoMax_;
-  Real lRhoMinSearch_;
   Real lTMin_, lTMax_, TMax_;
   Real PMin_;
   Real rhoNormal_, TNormal_, sieNormal_, PNormal_;
@@ -494,9 +493,6 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   TMax_ = from_log(lTMax_, lTOffset_);
 
   Real rhoMin = from_log(lRhoMin_, lRhoOffset_);
-  Real rhoMinSearch = std::max(
-      rhoMin, std::max(std::abs(robust::EPS()) * 10, std::abs(robust::EPS() * rhoMin)));
-  lRhoMinSearch_ = to_log(rhoMinSearch, lRhoOffset_);
 
   // bulk modulus can be wrong in the tables. Use FLAG's approach to
   // fix the table.
@@ -920,40 +916,38 @@ template <typename Indexer_t>
 PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::lRhoFromPlT_(
     const Real P, const Real lT, TableStatus &whereAmI, Indexer_t &&lambda) const {
   RootFinding1D::Status status = RootFinding1D::Status::SUCCESS;
+  Real rhopmin = lRho_(rho_at_pmin_.interpToReal(lT));
 
   Real lRho;
-  Real lRhoGuess = reproducible_ ? lRhoMax_ : 0.5 * (lRhoMin_ + lRhoMax_);
+  Real lRhoGuess = reproducible_ ? lRhoMax_ : 0.5 * (rhopmin + lRhoMax_);
   // Real lRhoGuess = lRhoMin_ + 0.9*(lRhoMax_ - lRhoMin_);
   const RootFinding1D::RootCounts *pcounts =
       (memoryStatus_ == DataStatus::OnDevice) ? nullptr : &counts;
 
   Real lRho_cache;
   IndexerUtils::SafeGet<IndexableTypes::LogDensity>(lambda, Lambda::lRho, lRho_cache);
-  if ((lRhoMin_ <= lRho_cache) && (lRho_cache <= lRhoMax_)) {
+  if ((rhopmin <= lRho_cache) && (lRho_cache <= lRhoMax_)) {
     lRhoGuess = lRho_cache;
   }
 
   if (lT <= lTMin_) { // cold curve
     whereAmI = TableStatus::OffBottom;
     const callable_interp::interp PFunc(PCold_);
-    status =
-        SP_ROOT_FINDER(PFunc, P, lRhoGuess,
-                       // lRhoMin_, lRhoMax_,
-                       lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
+    status = SP_ROOT_FINDER(PFunc, P, lRhoGuess,
+                            // lRhoMin_, lRhoMax_,
+                            rhopmin, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   } else if (lT >= lTMax_) { // ideal gas
     whereAmI = TableStatus::OffTop;
     const callable_interp::prod_interp_1d PFunc(gm1Max_, dEdTMax_, lT);
-    status =
-        SP_ROOT_FINDER(PFunc, P, lRhoGuess,
-                       // lRhoMin_, lRhoMax_,
-                       lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
+    status = SP_ROOT_FINDER(PFunc, P, lRhoGuess,
+                            // lRhoMin_, lRhoMax_,
+                            rhopmin, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   } else { // on table
     whereAmI = TableStatus::OnTable;
     const callable_interp::l_interp PFunc(P_, lT);
-    status =
-        SP_ROOT_FINDER(PFunc, P, lRhoGuess,
-                       // lRhoMin_, lRhoMax_,
-                       lRhoMinSearch_, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
+    status = SP_ROOT_FINDER(PFunc, P, lRhoGuess,
+                            // lRhoMin_, lRhoMax_,
+                            rhopmin, lRhoMax_, ROOT_THRESH, ROOT_THRESH, lRho, pcounts);
   }
   if (status != RootFinding1D::Status::SUCCESS) {
 #if SPINER_EOS_VERBOSE
