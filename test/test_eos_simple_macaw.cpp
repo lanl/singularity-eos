@@ -59,6 +59,53 @@ SCENARIO("Testing the Simple MACAW EOS", "[SimpleMACAWEOS]") {
         } // Dynamic Section
       } // for
     } // When
+
+    WHEN("A density and temperature are provided") {
+      Real rho = 0.56;
+      Real T = 123.0;
+      for (int i = 0; i < 10; i++) {
+        rho += i; // cylce through a variety of densities
+        T += 15.0 * i;
+        DYNAMIC_SECTION("For a given density, " << rho << ", and temperature, " << T) {
+          // Setup thermodynamic derivatives
+          Real cp = eos.ConstantPressureSpecificHeatFromDensityTemperature(rho, T);
+          Real cv = eos.SpecificHeatFromDensityTemperature(rho, T);
+          Real Bs = eos.BulkModulusFromDensityTemperature(rho, T);
+          Real BT = eos.IsothermalBulkModulusFromDensityTemperature(rho, T);
+          Real beta = eos.CoefficientThermalExpansionFromDensityTemperature(rho, T);
+          Real G = eos.GruneisenParamFromDensityTemperature(rho, T);
+
+          // Test a battery of different thermodynamic identity tests
+          INFO("rho = " << rho << ", T = " << T);
+          INFO("cp = " << cp << ", cv = " << cv << ", Bs = " << Bs << ", BT = " << BT);
+          INFO("beta = " << beta << ", G = " << G);
+          THEN("The thermodynamic stability ensures: cp >= cv and Bs >= BT") {
+            REQUIRE(Bs >= BT);
+            REQUIRE(cp >= cv);
+          } // Then
+
+          Real term1 = cp * BT / (cv * Bs);
+          INFO("cp * BT / (cv * Bs) = " << term1);
+          THEN("The thermodynamic equality satisfies: cp * BT / (cv * Bs) = 1") {
+            REQUIRE(isClose(term1, 1.0, REAL_TOL));
+          } // Then
+
+          Real term2 = BT / Bs + beta * beta * T * BT / (rho * cp);
+          INFO("cv / cp + beta * beta * T * BT / (rho * cp) = " << term2);
+          THEN("The thermodynamic equality satisfies: cv / cp + beta^2 * T * BT / (rho * cp)") {
+            REQUIRE(isClose(term2, 1.0, REAL_TOL));
+          } // Then
+
+          Real gruneisen = beta * BT / (rho * cv);
+          INFO("beta * BT / (rho * cv) = " << gruneisen);
+          THEN("The thermodynamic equality for the Gruneisen parameter satisfies: Gamma = beta * BT / (rho * cv)") {
+            REQUIRE(isClose(G, gruneisen, REAL_TOL));
+          } // Then
+
+        } // Dynamic Section
+      } // for
+    } // When
+
     host_eos.Finalize();
     eos.Finalize();
   } // Given
