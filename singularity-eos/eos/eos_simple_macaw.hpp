@@ -174,7 +174,8 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
      * As mentioned in the paper, from the constraints on the parameters,
      * the isothermal bulk modulus is guaranteed to be positive. */
     const Real term1 = A_ * B_ * (B_ + 1.0) * std::pow(rho * v0_, B_ + 1.0);
-    const Real numerator = rho * T0_ * (1.0 - Gc_) * std::pow(rho * v0_, 2.0 * Gc_) + temperature;
+    // There is a mistake in the paper and the numerator term should have a -Gc_ instead of -2*Gc_
+    const Real numerator = rho * (T0_ * (1.0 - Gc_) * std::pow(rho * v0_, Gc_) + temperature);
     const Real denominator = T0_ * std::pow(rho * v0_, Gc_) + temperature;
     return term1 + Cvinf_ * Gc_ * temperature * temperature * robust::ratio(numerator, denominator * denominator);
   }
@@ -188,6 +189,16 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
     const Real cv = SpecificHeatFromDensityTemperature(rho, temperature);
     return robust::ratio(Bs * cv, BT); /* General thermodynamic identity */
   }
+  // Coefficient of thermal expansivity
+   template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real CoefficientThermalExpansionFromDensityTemperature(
+      const Real rho, const Real temperature,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real BT = IsothermalBulkModulusFromDensityTemperature(rho, temperature);
+    const Real cv = SpecificHeatFromDensityTemperature(rho, temperature);
+    return robust::ratio(Gc_ * rho * cv, BT); /* General thermodynamic identity */
+  }
+
 
   // Gruneisen parameter
   template <typename Indexer_t = Real *>
