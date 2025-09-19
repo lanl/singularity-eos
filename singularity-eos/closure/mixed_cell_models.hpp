@@ -1430,7 +1430,7 @@ class PTESolverFixedT
     Real error_p = 0;
     for (std::size_t m = 1; m < nmat; ++m) {
       mean_p += vfrac[m] * press[m];
-      error_p += residual[m + 1] * residual[m + 1];
+      error_p += residual[m] * residual[m];
     }
     error_p = std::sqrt(error_p);
     Real error_v = std::abs(residual[0]);
