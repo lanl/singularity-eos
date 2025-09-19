@@ -35,8 +35,8 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
                 const double Cv, int const *const enabled, double *const vals);
 
 int init_sg_SimpleMACAW(const int matindex, EOS *eos, const double A, const double B,
-                         const double Cvinf, const double v0, const double T0, const double Gc,
-                         int const *const enabled, double *const vals);
+                        const double Cvinf, const double v0, const double T0,
+                        const double Gc, int const *const enabled, double *const vals);
 
 int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const double s1,
                       const double s2, const double s3, const double G0, const double b,
@@ -149,7 +149,8 @@ int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
                 const double Cv);
 
 int init_sg_SimpleMACAW(const int matindex, EOS *eos, const double A, const double B,
-                         const double Cvinf, const double v0, const double T0, const double Gc);
+                        const double Cvinf, const double v0, const double T0,
+                        const double Gc);
 
 int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const double s1,
                       const double s2, const double s3, const double G0, const double b,

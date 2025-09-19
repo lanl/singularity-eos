@@ -49,7 +49,8 @@ using singularity::variadic_utils::transform_variadic_list;
 
 // all eos's
 static constexpr const auto full_eos_list =
-    tl<IdealGas, Gruneisen, Vinet, MGUsup, PowerMG, JWL, SimpleMACAW, DavisReactants, DavisProducts
+    tl<IdealGas, Gruneisen, Vinet, MGUsup, PowerMG, JWL, SimpleMACAW, DavisReactants,
+       DavisProducts
 #ifdef SINGULARITY_USE_V_AND_V_EOS
        ,
        SAP_Polynomial, NobleAbel, CarnahanStarling, StiffGas
