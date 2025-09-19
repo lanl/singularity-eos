@@ -24,11 +24,11 @@
 #include <singularity-eos/eos/eos_helmholtz.hpp>
 #include <singularity-eos/eos/eos_ideal.hpp>
 #include <singularity-eos/eos/eos_jwl.hpp>
-#include <singularity-eos/eos/eos_simple_macaw.hpp>
 #include <singularity-eos/eos/eos_mgusup.hpp>
 #include <singularity-eos/eos/eos_noble_abel.hpp>
 #include <singularity-eos/eos/eos_powermg.hpp>
 #include <singularity-eos/eos/eos_sap_polynomial.hpp>
+#include <singularity-eos/eos/eos_simple_macaw.hpp>
 #include <singularity-eos/eos/eos_spiner.hpp>
 #include <singularity-eos/eos/eos_stellar_collapse.hpp>
 #include <singularity-eos/eos/eos_stiff.hpp>

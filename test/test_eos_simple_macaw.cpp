@@ -50,15 +50,16 @@ SCENARIO("Testing the Simple MACAW EOS", "[SimpleMACAWEOS]") {
       Real rho = 0.5;
       for (int i = 0; i < 10; i++) {
         rho += rho + i; // cylce through a variety of densities
-        DYNAMIC_SECTION("For a given density " << rho << " and energy from the cold curve") {
+        DYNAMIC_SECTION("For a given density " << rho
+                                               << " and energy from the cold curve") {
           Real e = eos.SieColdCurve(rho);
           INFO("rho = " << rho << "  e = " << e);
           THEN("The temperature at this density and energy should be zero") {
             REQUIRE(eos.TemperatureFromDensityInternalEnergy(rho, e) == 0.0);
           } // Then
-        } // Dynamic Section
-      } // for
-    } // When
+        }   // Dynamic Section
+      }     // for
+    }       // When
 
     WHEN("A density and temperature are provided") {
       Real rho = 0.56;
@@ -92,19 +93,21 @@ SCENARIO("Testing the Simple MACAW EOS", "[SimpleMACAWEOS]") {
 
           Real term2 = BT / Bs + beta * beta * T * BT / (rho * cp);
           INFO("cv / cp + beta * beta * T * BT / (rho * cp) = " << term2);
-          THEN("The thermodynamic equality satisfies: cv / cp + beta^2 * T * BT / (rho * cp)") {
+          THEN("The thermodynamic equality satisfies: cv / cp + beta^2 * T * BT / (rho * "
+               "cp)") {
             REQUIRE(isClose(term2, 1.0, REAL_TOL));
           } // Then
 
           Real gruneisen = beta * BT / (rho * cv);
           INFO("beta * BT / (rho * cv) = " << gruneisen);
-          THEN("The thermodynamic equality for the Gruneisen parameter satisfies: Gamma = beta * BT / (rho * cv)") {
+          THEN("The thermodynamic equality for the Gruneisen parameter satisfies: Gamma "
+               "= beta * BT / (rho * cv)") {
             REQUIRE(isClose(G, gruneisen, REAL_TOL));
           } // Then
 
         } // Dynamic Section
-      } // for
-    } // When
+      }   // for
+    }     // When
 
     host_eos.Finalize();
     eos.Finalize();
@@ -126,25 +129,26 @@ SCENARIO("Testing the Variant API Simple MACAW EOS", "[SimpleMACAWEOS]") {
     EOS eos_in_variant = SimpleMACAW(A, B, Cvinf, v0, T0, Gc);
 
     WHEN("Densities are provided") {
-      // For large temperatures, the specific heat capacity should approach a constant value
-      // (The Dulong-Petit Law)
+      // For large temperatures, the specific heat capacity should approach a constant
+      // value (The Dulong-Petit Law)
       Real rho = 0.1;
       Real T = 1e7;
       Real Cv = eos_in_variant.SpecificHeatFromDensityTemperature(rho, T);
       for (int i = 0; i < 10; i++) {
         rho += rho + i; // cylce through a variety of densities
         DYNAMIC_SECTION("For a given density " << rho << " and temperature " << T) {
-          INFO(std::fixed << std::setprecision(15) << 
-               "Cv = " << Cv << ", Cvinf = " << Cvinf << ",  T = " << T << ", rho = " << rho);
+          INFO(std::fixed << std::setprecision(15) << "Cv = " << Cv << ", Cvinf = "
+                          << Cvinf << ",  T = " << T << ", rho = " << rho);
           THEN("The Dulong-Petit law should be satisfied") {
             REQUIRE(isClose(Cv, Cvinf, 1e-8 * Cvinf));
           } // Then
-        } // Dynamic section
-      } // for
+        }   // Dynamic section
+      }     // for
 
       // Check for zero specific heat at zero temperature
       Cv = eos_in_variant.SpecificHeatFromDensityTemperature(rho, 0.);
-      THEN("The specific heat capacity at constant volume should be zero at zero temperature") {
+      THEN("The specific heat capacity at constant volume should be zero at zero "
+           "temperature") {
         INFO(std::fixed << std::setprecision(15) << "Cv = " << Cv << ", rho = " << rho);
         REQUIRE(Cv == 0.0);
       }
@@ -160,9 +164,10 @@ SCENARIO("Testing the Variant API Simple MACAW EOS", "[SimpleMACAWEOS]") {
       const Real P = eos_in_variant.PressureFromDensityInternalEnergy(rho_0, sie_0);
       const Real T = eos_in_variant.TemperatureFromDensityInternalEnergy(rho_0, sie_0);
       Real rho, sie;
-      Real* lambda;
+      Real *lambda;
       eos_in_variant.DensityEnergyFromPressureTemperature(P, T, lambda, rho, sie);
-      INFO("rho_0 = " << rho_0 << ", rho = " << rho << ", sie_0 = " << sie_0 << ", sie = " << sie);
+      INFO("rho_0 = " << rho_0 << ", rho = " << rho << ", sie_0 = " << sie_0
+                      << ", sie = " << sie);
       INFO("P = " << P << "  T = " << T);
       THEN("The inversion back to rho and sie from P and T should be identital.") {
         REQUIRE(isClose(rho, rho_0, REAL_TOL * rho_0));
