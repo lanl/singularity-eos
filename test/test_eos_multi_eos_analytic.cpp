@@ -94,7 +94,18 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
 
     // Lookup result tolerances
     constexpr Real lookup_tol = 1.0e-12;
-    constexpr Real deriv_tol = lookup_tol * 1e3;
+
+    // Tolerance for derivatives is fairly loose since we are comparing P-T and
+    // rho-T derivatives
+    constexpr Real deriv_tol = 1.0e-04;
+
+    // There is a lot of noise in numerical finite differences that can be
+    // amplified when using thermodynamic identities. This tolerance is fairly
+    // loose, which motivates direct access to P-T derivatives in the future.
+    // Those can be mass-averaged and then thermo identities can be used with
+    // those to compute mixture quantities. Really this is the most accurate way
+    // to compute mixture derivatives for PTE
+    constexpr Real thermo_identity_tol = 0.9; // Essentially order of magntiude
 
     WHEN("A mass fraction cutoff less than 0 is specified") {
       [[maybe_unused]] constexpr Real mf_cutoff = -0.01;
@@ -339,26 +350,105 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
       set_mass_fracs.fill(1.0 / num_eos);
       LambdaT lambda{set_mass_fracs};
 
-      // Get the P-T state at a high P and T
+      // Get the P-T state at a high P and T. Use the material densities and
+      // energies so that we can ensure we're perturbing from the same PTE state
       constexpr Real P = 1e10;
       constexpr Real T = 5000;
-      Real rho;
-      Real sie;
-      multi_eos.DensityEnergyFromPressureTemperature(P, T, lambda, rho, sie);
+      Real rho_scr;
+      Real sie_scr;
+      std::array<Real, num_eos> density_mat{};
+      std::array<Real, num_eos> sie_mat{};
+      multi_eos.GetStatesFromPressureTemperature(rho_scr, sie_scr, P, T, density_mat,
+                                                 sie_mat, lambda);
+      // Make const to make sure we're not screwing anything up
+      const Real rho = rho_scr;
+      const Real sie = sie_scr;
 
       // Don't continue test if this function isn't already working
       REQUIRE(rho > 0);
 
+      INFO("rho: " << rho);
+      INFO("sie: " << sie);
+
       AND_WHEN("The PTE state is perturbed in density-temperature space") {
-        std::array<Real, num_eos> density_mat{};
-        std::array<Real, num_eos> sie_mat{};
-        Real dedT_R, dedR_T, dPdT_R, dPdR_T;
-        multi_eos.PerturbPTEStateRT(rho, sie, T, P, density_mat, sie_mat, lambda,
-                                    dedT_R, dedR_T, dPdT_R, dPdR_T);
+        Real dedT_R;
+        Real dedR_T;
+        Real dPdT_R;
+        Real dPdR_T;
+        multi_eos.PerturbPTEStateRT(rho, sie, P, T, density_mat, sie_mat, lambda, dedT_R,
+                                    dedR_T, dPdT_R, dPdR_T);
+        INFO("dedT_R =  " << dedT_R);
+        INFO("dedR_T =  " << dedR_T);
+        INFO("dPdT_R =  " << dPdT_R);
+        INFO("dPdR_T =  " << dPdR_T);
         const Real B_T = rho * dPdR_T;
-        const Real B_S = B_T + temperature * dPdT_R * dPdT_R / rho / dedT_R;
+        const Real B_S = B_T + robust::ratio(T * dPdT_R * dPdT_R, rho * dedT_R);
         const Real Cv = dedT_R;
-        const Real dpde = dPdT_R / dedT_R;
+        const Real dpde = robust::ratio(dPdT_R, dedT_R);
+
+        REQUIRE(B_S > B_T);
+
+        AND_WHEN("The PTE state is perturbed in pressure-temperature space") {
+          Real dedT_P;
+          Real dedP_T;
+          Real dRdT_P;
+          Real dRdP_T;
+          multi_eos.PerturbPTEStatePT(rho, sie, P, T, density_mat, sie_mat, lambda,
+                                      dedT_P, dedP_T, dRdT_P, dRdP_T);
+
+          INFO("dedT_P = " << dedT_P);
+          INFO("dedP_T = " << dedP_T);
+          INFO("dRdT_P = " << dRdT_P);
+          INFO("dRdP_T = " << dRdP_T);
+
+          const Real Cp = dedT_P;
+          const Real alpha = -dRdT_P / rho;
+          const Real K_T = dRdP_T / rho;
+
+          THEN("The thermodynamic inequalities should hold") {
+            INFO("K_T = " << K_T << "  1.0 / B_S = " << 1.0 / B_S);
+            INFO("Cp = " << Cp << "  Cv = " << Cv);
+            CHECK(K_T >= 1.0 / B_S);
+            CHECK(Cp >= Cv);
+          }
+
+          THEN("Inverses should appropriate be related") {
+            CHECK_THAT(dPdR_T, Catch::Matchers::WithinRel(1.0 / dRdP_T, deriv_tol));
+            CHECK_THAT(K_T, Catch::Matchers::WithinRel(1.0 / B_T, deriv_tol));
+          }
+
+          THEN("The cyclic relations should hold") {
+            CHECK_THAT(dRdP_T * dPdT_R / dRdT_P,
+                       Catch::Matchers::WithinRel(-1.0, deriv_tol));
+            CHECK_THAT(dPdR_T * dRdT_P / dPdT_R,
+                       Catch::Matchers::WithinRel(-1.0, deriv_tol));
+          }
+
+          INFO("Cp = dedT_P = " << Cp);
+          INFO("alpha = -dRdT_P / rho = " << alpha);
+          INFO("K_T = dRdP_T / rho = " << K_T);
+
+          THEN("The isentropic compressiblity should obey the thermodynamic identity") {
+            INFO("K_T - T * alpha * alpha / rho / Cp = " << K_T - T * alpha * alpha /
+                                                                      rho / Cp);
+            CHECK_THAT(1.0 / B_S,
+                       Catch::Matchers::WithinRel(K_T - T * alpha * alpha / rho / Cp,
+                                                  thermo_identity_tol));
+          }
+
+          THEN("The difference in heat capacities should be correct") {
+            INFO("Cp - Cv = " << Cp - Cv);
+            INFO("T * alpha * alpha / K_T / rho = " << T * alpha * alpha / K_T / rho);
+            CHECK_THAT(Cp - Cv, Catch::Matchers::WithinRel(T * alpha * alpha / K_T / rho,
+                                                           thermo_identity_tol));
+          }
+          THEN("The ratio of heat capacities and moduli should be equal") {
+            INFO("B_S / B_T = " << B_S / B_T);
+            INFO("Cp / Cv = " << Cp / Cv);
+            CHECK_THAT(B_S / B_T,
+                       Catch::Matchers::WithinRel(Cp / Cv, thermo_identity_tol));
+          }
+        }
 
         Real rho_FillEos;
         Real temp_FillEos;
@@ -368,44 +458,42 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
         Real bmod_FillEos;
 
         AND_WHEN("Density-temperature lookups are used") {
-          const unsigned long input =
-              thermalqs::density | thermalqs::temperature;
+          const unsigned long input = thermalqs::density | thermalqs::temperature;
           const unsigned long output = ~input;
           rho_FillEos = rho;
           temp_FillEos = T;
           multi_eos.FillEos(rho_FillEos, temp_FillEos, sie_FillEos, pres_FillEos,
-                      cv_FillEos, bmod_FillEos, output, lambda);
+                            cv_FillEos, bmod_FillEos, output, lambda);
 
           THEN("The bulk modulus is consistent with the thermodynamic formulas using "
                "finite differeces") {
-            const Real bmod_calc = multi_eos.BulkModulusFromDensityTemperature(
-                rho, T, lambda);
+            const Real bmod_calc =
+                multi_eos.BulkModulusFromDensityTemperature(rho, T, lambda);
 
             CHECK_THAT(bmod_calc, Catch::Matchers::WithinRel(B_S, deriv_tol));
 
-            AND_THEN("The result from FillEos is also consistent"){
+            AND_THEN("The result from FillEos is also consistent") {
               CHECK_THAT(bmod_FillEos, Catch::Matchers::WithinRel(B_S, deriv_tol));
             }
           }
 
           THEN("The dpde value is consistent with the thermodynamic formulas using "
                "finite differeces") {
-            const Real Gruneisen = multi_eos.GruneisenParamFromDensityTemperature(
-                rho, T, lambda);
+            const Real Gruneisen =
+                multi_eos.GruneisenParamFromDensityTemperature(rho, T, lambda);
             const Real dpde_calc = rho * Gruneisen;
 
             CHECK_THAT(dpde_calc, Catch::Matchers::WithinRel(dpde, deriv_tol));
-
           }
 
           THEN("The heat capacity is consistent with the thermodynamic formulas using "
                "finite differeces") {
-            const Real Cv_calc = multi_eos.SpecifcHeatFromDensityTemperature(
-                rho, T, lambda);
+            const Real Cv_calc =
+                multi_eos.SpecificHeatFromDensityTemperature(rho, T, lambda);
 
             CHECK_THAT(Cv_calc, Catch::Matchers::WithinRel(Cv, deriv_tol));
 
-            AND_THEN("The result from FillEos is also consistent"){
+            AND_THEN("The result from FillEos is also consistent") {
               CHECK_THAT(cv_FillEos, Catch::Matchers::WithinRel(Cv, deriv_tol));
             }
           }
@@ -422,34 +510,33 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
 
           THEN("The bulk modulus is consistent with the thermodynamic formulas using "
                "finite differeces") {
-            const Real bmod_calc = multi_eos.BulkModulusFromDensityInternalEnergy(
-                rho, T, lambda);
+            const Real bmod_calc =
+                multi_eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
 
             CHECK_THAT(bmod_calc, Catch::Matchers::WithinRel(B_S, deriv_tol));
 
-            AND_THEN("The result from FillEos is also consistent"){
+            AND_THEN("The result from FillEos is also consistent") {
               CHECK_THAT(bmod_FillEos, Catch::Matchers::WithinRel(B_S, deriv_tol));
             }
           }
 
           THEN("The dpde value is consistent with the thermodynamic formulas using "
                "finite differeces") {
-            const Real Gruneisen = multi_eos.GruneisenParamFromDensityInternalEnergy(
-                rho, T, lambda);
+            const Real Gruneisen =
+                multi_eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
             const Real dpde_calc = rho * Gruneisen;
 
             CHECK_THAT(dpde_calc, Catch::Matchers::WithinRel(dpde, deriv_tol));
-
           }
 
           THEN("The heat capacity is consistent with the thermodynamic formulas using "
                "finite differeces") {
-            const Real Cv_calc = multi_eos.SpecifcHeatFromDensityInternalEnergy(
-                rho, T, lambda);
+            const Real Cv_calc =
+                multi_eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
 
             CHECK_THAT(Cv_calc, Catch::Matchers::WithinRel(Cv, deriv_tol));
 
-            AND_THEN("The result from FillEos is also consistent"){
+            AND_THEN("The result from FillEos is also consistent") {
               CHECK_THAT(cv_FillEos, Catch::Matchers::WithinRel(Cv, deriv_tol));
             }
           }

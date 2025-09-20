@@ -209,30 +209,6 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                      lambda, std::make_index_sequence<nmat_>{});
   }
 
-  // Implementation function to call BulkModulusFromDensityTemperature()
-  // on each EOS with a common temperature and array of densities
-  template <typename RealIndexer, typename LambdaIndexer, size_t... Is,
-            SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
-  constexpr void getMaterialBulkModulusFromDensityTemperature(
-      const Real temperature, LambdaIndexer &lambdas, RealIndexer const &density_mat,
-      RealIndexer &bmod_mat, std::index_sequence<Is...>) const {
-    ((bmod_mat[Is] = std::get<Is>(models_).BulkModulusFromDensityTemperature(
-          density_mat[Is], temperature, lambdas)),
-     ...);
-  }
-
-  // Implementation function to call BulkModulusFromDensityInternalEnergy()
-  // on each EOS with arrays of densities and internal energies
-  template <typename RealIndexer, typename LambdaIndexer, size_t... Is,
-            SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
-  constexpr void getMaterialBulkModulusFromDensityInternalEnergy(
-      LambdaIndexer &lambdas, RealIndexer const &density_mat, RealIndexer const &sie_mat,
-      RealIndexer &bmod_mat, std::index_sequence<Is...>) const {
-    ((bmod_mat[Is] = std::get<Is>(models_).BulkModulusFromDensityInternalEnergy(
-          density_mat[Is], sie_mat[Is], lambdas)),
-     ...);
-  }
-
   // Generic "max" across models for arbitrary callable f(model, args...)
   template <typename Func, typename... Args>
   Real max_over_models(Func &&f, Args &&...args) const {
@@ -354,7 +330,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     for (size_t m = 0; m < nmat_; m++) {
 
       // Check whether a material is present or not
-    if (mass_fracs[m] <= mass_frac_cutoff_) {
+      if (mass_fracs[m] <= mass_frac_cutoff_) {
         // Make sure sane values are returned for material density/energy even
         // if material isn't participating. These can be overwritten with more
         // accurate values alter, but importantly we ensure the volume fraction
@@ -387,7 +363,19 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       }
     }
 
-    vfrac_tot = math_utils::sum_neumaier(vol_fracs, nmat_);
+    // We actually don't want the total volume fraction to just be the sum of
+    // the volume fractions. If we have good volume fraction guesses and the
+    // sum deviates from 1, then we're esentially changing the size of the
+    // control volume with the vfrac_tot parameter. Since we are assuming that
+    // the small mass fractions take up no volume, we instead want to have
+    // vfrac_tot always equal 1. If we were to assume that the
+    // non-participating materials instead have the same density as the
+    // average, we could subtract their mass fractions from the total to get a
+    // vfrac_tot that isn't equal to 1. For example, if we take an existing PTE
+    // solution and then perturb the total density slightly, summing the volume
+    // fraction guesses will just change the control volume to accomodate the
+    // new density.
+    vfrac_tot = 1.0;
 
     // JHP: I think we should always test this unless it is proven to be a performance
     // bottleneck
@@ -411,7 +399,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityEnergy(
       const Real density_tot, const Real sie_tot, Real &pressure, Real &temperature,
       RealIndexer &density_mat, RealIndexer &sie_mat, LambdaIndexer &lambdas,
-      bool small_mass_mat_consistency = false) const {
+      Real const tol = 1.0e-10, bool small_mass_mat_consistency = false) const {
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
     std::array<Real, nmat_> vol_fracs{};
@@ -458,14 +446,12 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       auto temp_idxr = GenericIndexer(temp_mat.data(), pte_mats.data());
       auto pres_idxr = GenericIndexer(pres_mat.data(), pte_mats.data());
 
-      // The P-T based PTE solver needs slightly tighter tolerances than the
-      // others to achieve 1e-12 comparison to P-T lookups (see unit test)
-      constexpr Real tol = 1.0e-07;
+      // Set the PTE tolerances
       auto mix_params = MixParams{};
       mix_params.pte_rel_tolerance_e = tol;
       mix_params.pte_rel_tolerance_v = tol;
-      mix_params.pte_rel_tolerance_e_sufficient = tol * 100;
-      mix_params.pte_rel_tolerance_v_sufficient = tol * 100;
+      mix_params.pte_rel_tolerance_e_sufficient = tol;
+      mix_params.pte_rel_tolerance_v_sufficient = tol;
 
       // Solve for the PTE state
       PTESolverPT<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
@@ -516,7 +502,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityTemperature(
       const Real density_tot, Real &sie_tot, Real &pressure, const Real temperature,
-      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas) const {
+      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas,
+      Real const tol = 1.0e-08) const {
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
     std::array<Real, nmat_> vol_fracs{};
@@ -569,9 +556,19 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       auto sie_idxr = GenericIndexer(sie_mat.data(), pte_mats.data());
       const auto temp_idxr = GenericIndexer(temp_mat.data(), pte_mats.data());
       auto pres_idxr = GenericIndexer(pres_mat.data(), pte_mats.data());
+
+      // Set the PTE tolerances
+      auto mix_params = MixParams{};
+      mix_params.pte_rel_tolerance_p = tol;
+      mix_params.pte_rel_tolerance_v = tol;
+      mix_params.pte_abs_tolerance_p = tol;
+      mix_params.pte_rel_tolerance_p_sufficient = tol;
+      mix_params.pte_rel_tolerance_v_sufficient = tol;
+      mix_params.pte_abs_tolerance_p_sufficient = tol;
+
       PTESolverFixedT<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
           npte, eos_idxr, vfrac_tot, temperature, density_idxr, vfrac_idxr, sie_idxr,
-          temp_idxr, pres_idxr, cache, solver_scratch.data());
+          temp_idxr, pres_idxr, cache, solver_scratch.data(), mix_params);
       status = PTESolver(method);
       pressure = WeightedAverageMatArray(pres_idxr, vfrac_idxr, npte);
     } else {
@@ -621,7 +618,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityPressure(
       const Real density_tot, Real &sie_tot, const Real pressure, Real &temperature,
-      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas) const {
+      RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas,
+      Real const tol = 1.0e-08) const {
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
     std::array<Real, nmat_> vol_fracs{};
@@ -676,9 +674,19 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       auto sie_idxr = GenericIndexer(sie_mat.data(), pte_mats.data());
       auto temp_idxr = GenericIndexer(temp_mat.data(), pte_mats.data());
       auto pres_idxr = GenericIndexer(pres_mat.data(), pte_mats.data());
+
+      // Set the PTE tolerances
+      auto mix_params = MixParams{};
+      mix_params.pte_rel_tolerance_p = tol;
+      mix_params.pte_rel_tolerance_v = tol;
+      mix_params.pte_abs_tolerance_p = tol;
+      mix_params.pte_rel_tolerance_p_sufficient = tol;
+      mix_params.pte_rel_tolerance_v_sufficient = tol;
+      mix_params.pte_abs_tolerance_p_sufficient = tol;
+
       PTESolverFixedP<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
           npte, eos_idxr, vfrac_tot, pressure, density_idxr, vfrac_idxr, sie_idxr,
-          temp_idxr, pres_idxr, cache, solver_scratch.data());
+          temp_idxr, pres_idxr, cache, solver_scratch.data(), mix_params);
       status = PTESolver(method);
       temperature = WeightedAverageMatArray(temp_idxr, vfrac_idxr, npte);
     } else {
@@ -766,54 +774,102 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     density_tot = robust::ratio(1.0, spvol_tot);
   }
 
-  template<typename RealIndexer, typename LambdaIndexer,
-           SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
-  PORTABLE_INLINE_FUNCTION Real
-  CalculateCvFromState(Real const rho, Real const sie, Real const temperature,
-                       [[maybe_unused]] Real const pressure, RealIndexer &density_mat,
-                       RealIndexer &sie_mat, LambdaIndexer &lambdas) const {
-    // NOTE: mass-averaging is wrong since (de_i/dT)_V is not the component
-    // heat capacity(i.e. V \neq V_i)
+  template <typename RealIndexer, typename LambdaIndexer,
+            SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
+  PORTABLE_INLINE_FUNCTION void
+  PerturbPTEStateRT(Real const rho, Real const sie, Real const pressure,
+                    Real const temperature, RealIndexer const &density_mat,
+                    RealIndexer const &sie_mat, LambdaIndexer &lambdas, Real &dedT_R,
+                    Real &dedR_T, Real &dPdT_R, Real &dPdR_T) const {
+    // Since we're often starting from a good guess, greatly reduce the
+    // tolerance to make sure we are actually converging. This value and the
+    // perturbation amounts have been tuned to achieve two PTE iterations for
+    // calculating the derivatives
+    constexpr Real tol = 1.0e-14;
 
-    // Perturb the PTE state slightly to get the mixture derivative. Note that
-    // the values for density_mat and sie_mat can be from an existing
-    // equilibrium state so that the PTE solve is easy. TODO: should this be a
-    // central difference at the expense of another PTE solve?
-    constexpr Real factor = 1.0e-08;
-    const auto dT = temperature * factor + factor; // handle small or zero T
+    // Perturb the PTE state in density and temperature to get the finite
+    // difference derivatives
+    constexpr Real pertR = 1.0e-07;
+    constexpr Real pertT = 1.0e-07;
+    const auto dT = temperature * pertT + pertT;
     const auto T_pert = temperature + dT;
-    Real sie_pert, P_pert;
-    GetStatesFromDensityTemperature(rho, sie_pert, P_pert, T_pert, density_mat,
-                                    sie_mat, lambdas);
-    const auto de = sie_pert - sie;
+    const auto dR = rho * pertR + pertR;
+    const auto R_pert = rho + dR;
 
-    return de / dT;  // No robust::ratio since dT is guaranteed non-zero
+    // Create local copies of the density/energy arrays so that they can be reset
+    std::array<Real, nmat_> dmat{};
+    std::array<Real, nmat_> emat{};
+    for (size_t i = 0; i < nmat_; i++) {
+      dmat[i] = density_mat[i];
+      emat[i] = sie_mat[i];
+    }
+
+    Real sie_dT, P_dT;
+    SolverStatus status = GetStatesFromDensityTemperature(rho, sie_dT, P_dT, T_pert, dmat,
+                                                          emat, lambdas, tol);
+    PORTABLE_REQUIRE(status.max_niter > 0, "PTE solution not perturbed...");
+
+    for (size_t i = 0; i < nmat_; i++) {
+      dmat[i] = density_mat[i];
+      emat[i] = sie_mat[i];
+    }
+
+    Real sie_dR, P_dR;
+    status = GetStatesFromDensityTemperature(R_pert, sie_dR, P_dR, temperature, dmat,
+                                             emat, lambdas, tol);
+    PORTABLE_REQUIRE(status.max_niter > 0, "PTE solution not perturbed...");
+
+    dedT_R = (sie_dT - sie) / dT;
+    dedR_T = (sie_dR - sie) / dR;
+    dPdT_R = (P_dT - pressure) / dT;
+    dPdR_T = (P_dR - pressure) / dR;
   }
 
-  // template<typename RealIndexer, typename LambdaIndexer,
-  //          SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
-  // PORTABLE_INLINE_FUNCTION Real
-  // CalculateBmodFromState(Real const rho, [[maybe_unused]] Real const sie,
-  //                        Real const temperature, [[maybe_unused]] Real const pressure,
-  //                        RealIndexer &density_mat, RealIndexer &sie_mat,
-  //                        LambdaIndexer &lambdas) const {
-  //   BulkModAvgT avg_funct{};
-  //   return avg_funct(
-  //       [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-  //          LambdaIndexer &lambda) {
-  //         if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
-  //           return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
-  //         } else {
-  //           return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
-  //         }
-  //       },
-  //       models_, density_mat, sie_mat, rho, temperature, lambdas,
-  //       std::make_index_sequence<nmat_>{});
-  // }
+  template <typename RealIndexer, typename LambdaIndexer,
+            SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
+  PORTABLE_INLINE_FUNCTION void
+  PerturbPTEStatePT(Real const rho, Real const sie, Real const pressure,
+                    Real const temperature, RealIndexer const &density_mat,
+                    RealIndexer const &sie_mat, LambdaIndexer &lambdas, Real &dedT_P,
+                    Real &dedP_T, Real &dRdT_P, Real &dRdP_T) const {
+    // Perturb the PTE state in density and temperature to get the finite
+    // difference derivatives
+    constexpr Real pertT = 1.0e-06;
+    constexpr Real pertP = 1.0e-06;
+    const auto dT = temperature * pertT + pertT; // handle small or zero T
+    const auto T_pert = temperature + dT;
+    const auto dP = pressure * pertP + pertP; // handle small or zero rho
+    const auto P_pert = pressure + dP;
 
-  static PORTABLE_INLINE_FUNCTION Real BmodFromDerivs(
-      Real const rho, Real const temperature, Real const dedT_R, Real const dedR_T,
-      Real const dPdT_R, Real const dPdR_T) {
+    // Create local copies of the density/energy arrays so that they can be reset
+    std::array<Real, nmat_> dmat{};
+    std::array<Real, nmat_> emat{};
+    for (size_t i = 0; i < nmat_; i++) {
+      dmat[i] = density_mat[i];
+      emat[i] = sie_mat[i];
+    }
+
+    Real sie_dT, rho_dT;
+    GetStatesFromPressureTemperature(rho_dT, sie_dT, pressure, T_pert, dmat, emat,
+                                     lambdas);
+
+    for (size_t i = 0; i < nmat_; i++) {
+      dmat[i] = density_mat[i];
+      emat[i] = sie_mat[i];
+    }
+
+    Real sie_dP, rho_dP;
+    GetStatesFromPressureTemperature(rho_dP, sie_dP, P_pert, temperature, dmat, emat,
+                                     lambdas);
+    dedT_P = (sie_dT - sie) / dT;
+    dedP_T = (sie_dP - sie) / dP;
+    dRdT_P = (rho_dT - rho) / dT;
+    dRdP_T = (rho_dP - rho) / dP;
+  }
+
+  static PORTABLE_INLINE_FUNCTION Real
+  BmodFromDerivs(Real const rho, Real const temperature, Real const dedT_R,
+                 Real const dedR_T, Real const dPdT_R, Real const dPdR_T) {
     // Bulk modulus formula derived from dP = (dP/dr)_T * dr  + (dP/dT)_r * dT
     // along with Maxwell relation and entropy definition of heat capacity
     const auto B_T = rho * dPdR_T;
@@ -821,78 +877,53 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     return B_S;
   }
 
-  template<typename RealIndexer, typename LambdaIndexer,
-           SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
-  PORTABLE_INLINE_FUNCTION void
-  PerturbPTEStateRT(Real const rho, Real const sie,
-                    Real const temperature, Real const pressure,
-                    RealIndexer &density_mat, RealIndexer &sie_mat,
-                    LambdaIndexer &lambdas, Real &dedT_R, Real &dedR_T, Real &dPdT_R,
-                    Real &dPdR_T) const {
-    // Perturb the PTE state in density and temperature to get the finite
-    // difference derivatives
-    constexpr Real factor = 1.0e-08;
+  template <typename RealIndexer, typename LambdaIndexer,
+            SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
+  PORTABLE_INLINE_FUNCTION Real CalculateCvFromState(Real const rho, Real const sie,
+                                                     [[maybe_unused]] Real const pressure,
+                                                     Real const temperature,
+                                                     RealIndexer &density_mat,
+                                                     RealIndexer &sie_mat,
+                                                     LambdaIndexer &lambdas) const {
+    // NOTE: mass-averaging is wrong since (de_i/dT)_V is not the component
+    // heat capacity(i.e. V \neq V_i)
+
+    // Perturb the PTE state slightly to get the mixture derivative. Note that
+    // the values for density_mat and sie_mat can be from an existing
+    // equilibrium state so that the PTE solve is easy. TODO: should this be a
+    // central difference at the expense of another PTE solve?
+    constexpr Real factor = 1.0e-07;
+    constexpr Real tol = 1.0e-14;
     const auto dT = temperature * factor + factor; // handle small or zero T
     const auto T_pert = temperature + dT;
-    const auto dR = rho * factor + factor; // handle small or zero rho
-    const auto R_pert = rho + dR;
-    Real sie_dT, P_dT;
-    GetStatesFromDensityTemperature(rho, sie_dT, P_dT, T_pert, density_mat, sie_mat,
-                                    lambdas);
-    Real sie_dR, P_dR;
-    GetStatesFromDensityTemperature(R_pert, sie_dR, P_dR, temperature, density_mat,
-                                    sie_mat, lambdas);
-    dedT_R = (sie_dT - sie) / dT;
-    dedR_T = (sie_dR - sie) / dR;
-    dPdT_R = (P_dT - pressure) / dT;
-    dPdR_T = (P_dR - pressure) / dR;
+    Real sie_pert, P_pert;
+    GetStatesFromDensityTemperature(rho, sie_pert, P_pert, T_pert, density_mat, sie_mat,
+                                    lambdas, tol);
+    const auto de = sie_pert - sie;
+
+    return de / dT; // No robust::ratio since dT is guaranteed non-zero
   }
 
-  template<typename RealIndexer, typename LambdaIndexer,
-           SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
-  PORTABLE_INLINE_FUNCTION Real
-  CalculateBmodFromState(Real const rho, Real const sie,
-                         Real const temperature, Real const pressure,
-                         RealIndexer &density_mat, RealIndexer &sie_mat,
-                         LambdaIndexer &lambdas) const {
+  template <typename RealIndexer, typename LambdaIndexer,
+            SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
+  PORTABLE_INLINE_FUNCTION Real CalculateBmodFromState(
+      Real const rho, Real const sie, Real const pressure, Real const temperature,
+      RealIndexer &density_mat, RealIndexer &sie_mat, LambdaIndexer &lambdas) const {
     // NOTE: any averaging is wrong since (dV_i/dP)_S is not the component
     // derivative (i.e. V \neq V_i)
     Real dedT_R, dedR_T, dPdT_R, dPdR_T;
-    PerturbPTEStateRT(rho, sie, temperature, pressure, density_mat, sie_mat, lambdas,
+    PerturbPTEStateRT(rho, sie, pressure, temperature, density_mat, sie_mat, lambdas,
                       dedT_R, dedR_T, dPdT_R, dPdR_T);
 
     return BmodFromDerivs(rho, temperature, dedT_R, dedR_T, dPdT_R, dPdR_T);
   }
 
-  // template<typename RealIndexer, typename LambdaIndexer,
-  //          SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
-  // PORTABLE_INLINE_FUNCTION Real
-  // CalculateGruneisenFromState(Real const rho, [[maybe_unused]] Real const sie,
-  //                             Real const temperature, [[maybe_unused]] Real const pressure,
-  //                             RealIndexer &density_mat, RealIndexer &sie_mat,
-  //                             LambdaIndexer &lambdas) const {
-  //   GruneisenAvgT avg_funct{};
-  //   return avg_funct(
-  //       [](auto const &eos, Real const rho, Real const sie, Real const temperature,
-  //          LambdaIndexer &lambda) {
-  //         if (eos.PreferredInput() == (thermalqs::density | thermalqs::temperature)) {
-  //           return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
-  //         } else {
-  //           return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
-  //         }
-  //       },
-  //       models_, density_mat, sie_mat, rho, temperature, lambdas,
-  //       std::make_index_sequence<nmat_>{});
-  // }
-
-  template<typename RealIndexer, typename LambdaIndexer,
-           SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
-  PORTABLE_INLINE_FUNCTION Real
-  CalculateGruneisenFromState(Real const rho, Real const sie,
-                              [[maybe_unused]] Real const temperature,
-                              Real const pressure,
-                              RealIndexer &density_mat, RealIndexer &sie_mat,
-                              LambdaIndexer &lambdas) const {
+  template <typename RealIndexer, typename LambdaIndexer,
+            SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
+  PORTABLE_INLINE_FUNCTION Real CalculateGruneisenFromState(
+      Real const rho, Real const sie, Real const pressure,
+      [[maybe_unused]] Real const temperature, RealIndexer &density_mat,
+      RealIndexer &sie_mat, LambdaIndexer &lambdas) const {
     // NOTE: any averaging is wrong since (dV_i/dP)_S is not the component
     // derivative (i.e. V \neq V_i)
 
@@ -900,14 +931,15 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // the values for density_mat and sie_mat can be from an existing
     // equilibrium state so that the PTE solve is easy. TODO: should this be a
     // central difference at the expense of another PTE solve?
-    constexpr Real factor = 1.0e-08;
+    constexpr Real factor = 1.0e-06;
+    constexpr Real tol = 1.0e-14;
     const auto de = sie * factor + factor; // handle small or zero sie
     const auto sie_pert = sie + de;
     Real T_pert, P_pert;
-    GetStatesFromDensityEnergy(rho, sie_pert, P_pert, T_pert, density_mat,
-                               sie_mat, lambdas);
+    GetStatesFromDensityEnergy(rho, sie_pert, P_pert, T_pert, density_mat, sie_mat,
+                               lambdas, tol);
     const auto dP = P_pert - pressure;
-    return dP / de;  // de guaranteed to be non-zero
+    return robust::ratio(dP, de * rho);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -999,7 +1031,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real pressure, temperature;
     GetStatesFromDensityEnergy(rho, sie, pressure, temperature, density_mat, sie_mat,
                                lambda);
-    return CalculateCvFromState(rho, sie, temperature, pressure, density_mat, sie_mat, lambda);
+    return CalculateCvFromState(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                lambda);
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -1010,7 +1043,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real pressure, temperature;
     GetStatesFromDensityEnergy(rho, sie, pressure, temperature, density_mat, sie_mat,
                                lambda);
-    return CalculateBmodFromState(rho, sie, temperature, pressure, density_mat, sie_mat, lambda);
+    return CalculateBmodFromState(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                  lambda);
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -1021,8 +1055,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real pressure, temperature;
     GetStatesFromDensityEnergy(rho, sie, pressure, temperature, density_mat, sie_mat,
                                lambda);
-    return CalculateGruneisenFromState(rho, sie, temperature, pressure, density_mat, sie_mat,
-                                       lambda);
+    return CalculateGruneisenFromState(rho, sie, pressure, temperature, density_mat,
+                                       sie_mat, lambda);
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -1082,7 +1116,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real pressure, sie;
     GetStatesFromDensityTemperature(rho, sie, pressure, temperature, density_mat, sie_mat,
                                     lambda);
-    return CalculateCvFromState(rho, sie, temperature, pressure, density_mat, sie_mat, lambda);
+    return CalculateCvFromState(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                lambda);
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -1094,7 +1129,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real pressure, sie;
     GetStatesFromDensityTemperature(rho, sie, pressure, temperature, density_mat, sie_mat,
                                     lambda);
-    return CalculateBmodFromState(rho, sie, temperature, pressure, density_mat, sie_mat, lambda);
+    return CalculateBmodFromState(rho, sie, pressure, temperature, density_mat, sie_mat,
+                                  lambda);
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -1105,8 +1141,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     Real pressure, sie;
     GetStatesFromDensityTemperature(rho, sie, pressure, temperature, density_mat, sie_mat,
                                     lambda);
-    return CalculateGruneisenFromState(rho, sie, temperature, pressure, density_mat, sie_mat,
-                                       lambda);
+    return CalculateGruneisenFromState(rho, sie, pressure, temperature, density_mat,
+                                       sie_mat, lambda);
   }
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
@@ -1155,14 +1191,14 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // otherwise just do the cheaper heat capacity calculation only
     if (output & thermalqs::bulk_modulus) {
       Real dedT_R, dedR_T, dPdT_R, dPdR_T;
-      PerturbPTEStateRT(rho, energy, temp, press, density_mat, sie_mat, lambda,
-                        dedT_R, dedR_T, dPdT_R, dPdR_T);
+      PerturbPTEStateRT(rho, energy, press, temp, density_mat, sie_mat, lambda, dedT_R,
+                        dedR_T, dPdT_R, dPdR_T);
       bmod = BmodFromDerivs(rho, temp, dedT_R, dedR_T, dPdT_R, dPdR_T);
       if (output & thermalqs::specific_heat) {
         cv = dedT_R;
       }
     } else if (output & thermalqs::specific_heat) {
-      cv = CalculateCvFromState(rho, energy, temp, press, density_mat, sie_mat, lambda);
+      cv = CalculateCvFromState(rho, energy, press, temp, density_mat, sie_mat, lambda);
     }
   }
 
@@ -1247,8 +1283,8 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
     // Get derivatives from thermo identities
     Real dedT_R, dedR_T, dPdT_R, dPdR_T;
-    PerturbPTEStateRT(rho, sie, temp, press, density_mat, sie_mat, lambda,
-                      dedT_R, dedR_T, dPdT_R, dPdR_T);
+    PerturbPTEStateRT(rho, sie, press, temp, density_mat, sie_mat, lambda, dedT_R, dedR_T,
+                      dPdT_R, dPdR_T);
     bmod = BmodFromDerivs(rho, temp, dedT_R, dedR_T, dPdT_R, dPdR_T);
     cv = dedT_R;
     // Chain rule for dpde
