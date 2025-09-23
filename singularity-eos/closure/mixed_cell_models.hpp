@@ -1643,7 +1643,7 @@ class PTESolverFixedP
     // set the temperature normalization
     Tnorm = Tguess;
     // Assume pressure and energy scales are similar
-    uscale = std::abs(P);
+    uscale = std::abs(Pequil);
     for (std::size_t m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
