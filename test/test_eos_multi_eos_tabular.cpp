@@ -207,7 +207,7 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
 
           // Tighter tolerance is required for PTE solvers to produce accurate
           // derivatives
-          constexpr Real tol = 1.0e-14;
+          constexpr bool doing_derivs = true;
 
           // Recalculate the pressure so we can get some nice accurate
           // derivatives
@@ -215,7 +215,7 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           Real pres_ref_RT;
           status = alloy.GetStatesFromDensityTemperature(rho_ref, sie_ref_RT, pres_ref_RT,
                                                          temp_ref, density_mat, sie_mat,
-                                                         lambda, tol);
+                                                         lambda, doing_derivs);
 
           // Convergence sanity check
           THEN("The density-temperature lookup at the reference state should converge") {
@@ -281,7 +281,7 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           Real sie_dT;
           Real pres_dT;
           status = alloy.GetStatesFromDensityTemperature(
-              rho_ref, sie_dT, pres_dT, T_pert, density_mat, sie_mat, lambda, tol);
+              rho_ref, sie_dT, pres_dT, T_pert, density_mat, sie_mat, lambda, doing_derivs);
           THEN("The density-temperature lookup at a perturbed temperature should "
                "converge") {
             INFO("SOLVER STATUS (perturbed in temperature):");
@@ -301,7 +301,7 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           Real sie_dR;
           Real pres_dR;
           status = alloy.GetStatesFromDensityTemperature(
-              R_pert, sie_dR, pres_dR, temp_ref, density_mat, sie_mat, lambda, tol);
+              R_pert, sie_dR, pres_dR, temp_ref, density_mat, sie_mat, lambda, doing_derivs);
           THEN("The density-temperature lookup at a perturbed density should converge") {
             INFO("SOLVER STATUS (perturbed in density):");
             INFO("    slow_convergence_detected: " << status.slow_convergence_detected);

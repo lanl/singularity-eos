@@ -399,7 +399,19 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityEnergy(
       const Real density_tot, const Real sie_tot, Real &pressure, Real &temperature,
       RealIndexer &density_mat, RealIndexer &sie_mat, LambdaIndexer &lambdas,
-      Real const tol = 1.0e-10, bool small_mass_mat_consistency = false) const {
+      bool const doing_derivs = false, bool small_mass_mat_consistency = false) const {
+
+    // If we're doing finite differences, we need higher tolerances, but we also
+    // need to be able to exit the iteration if we're essentially at the
+    // numerical precision for the update. When dx is less than machine epsilon,
+    // the line search will fail, and as long as the residual norm is below the
+    // sufficient tolerance, the PTE solver will converge at the looser tolerance
+    // albeit with the `slow_convergence_detected` flag on. If we're perturbing
+    // a converged PTE state, we only need a few iterations to do so.
+    const Real tol = doing_derivs ? 1.0e-14 : 1.0e-10;
+    const Real sufficient_tol = doing_derivs ? tol * 1.0e5 : tol * 1.0e2;
+    const size_t pte_mat_num_iter = doing_derivs ? 2 : 256;
+
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
     std::array<Real, nmat_> vol_fracs{};
@@ -450,8 +462,9 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       auto mix_params = MixParams{};
       mix_params.pte_rel_tolerance_e = tol;
       mix_params.pte_rel_tolerance_v = tol;
-      mix_params.pte_rel_tolerance_e_sufficient = tol;
-      mix_params.pte_rel_tolerance_v_sufficient = tol;
+      mix_params.pte_rel_tolerance_e_sufficient = sufficient_tol;
+      mix_params.pte_rel_tolerance_v_sufficient = sufficient_tol;
+      mix_params.pte_max_iter_per_mat = pte_mat_num_iter;
 
       // Solve for the PTE state
       PTESolverPT<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
@@ -503,7 +516,19 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityTemperature(
       const Real density_tot, Real &sie_tot, Real &pressure, const Real temperature,
       RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas,
-      Real const tol = 1.0e-08) const {
+      bool const doing_derivs = false) const {
+
+    // If we're doing finite differences, we need higher tolerances, but we also
+    // need to be able to exit the iteration if we're essentially at the
+    // numerical precision for the update. When dx is less than machine epsilon,
+    // the line search will fail, and as long as the residual norm is below the
+    // sufficient tolerance, the PTE solver will converge at the looser tolerance
+    // albeit with the `slow_convergence_detected` flag on. If we're perturbing
+    // a converged PTE state, we only need a few iterations to do so.
+    const Real tol = doing_derivs ? 1.0e-14 : 1.0e-08;
+    const Real sufficient_tol = doing_derivs ? tol * 1.0e5 : tol * 1.0e2;
+    const size_t pte_mat_num_iter = doing_derivs ? 2 : 256;
+
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
     std::array<Real, nmat_> vol_fracs{};
@@ -557,14 +582,20 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       const auto temp_idxr = GenericIndexer(temp_mat.data(), pte_mats.data());
       auto pres_idxr = GenericIndexer(pres_mat.data(), pte_mats.data());
 
-      // Set the PTE tolerances
+      // Set the PTE tolerances. The "sufficient" tolerances will be triggered
+      // when the update is very small, i.e. when the update is less than
+      // floating point precision. The solver should do a full line search and
+      // then exit at the smallest line search size, then triggering the
+      // "slow_convergence_detected" condition. Note also that since we're
+      //
       auto mix_params = MixParams{};
       mix_params.pte_rel_tolerance_p = tol;
       mix_params.pte_rel_tolerance_v = tol;
       mix_params.pte_abs_tolerance_p = tol;
-      mix_params.pte_rel_tolerance_p_sufficient = tol;
-      mix_params.pte_rel_tolerance_v_sufficient = tol;
-      mix_params.pte_abs_tolerance_p_sufficient = tol;
+      mix_params.pte_rel_tolerance_p_sufficient = sufficient_tol;
+      mix_params.pte_rel_tolerance_v_sufficient = sufficient_tol;
+      mix_params.pte_abs_tolerance_p_sufficient = sufficient_tol;
+      mix_params.pte_max_iter_per_mat = pte_mat_num_iter;
 
       PTESolverFixedT<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
           npte, eos_idxr, vfrac_tot, temperature, density_idxr, vfrac_idxr, sie_idxr,
@@ -619,7 +650,19 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityPressure(
       const Real density_tot, Real &sie_tot, const Real pressure, Real &temperature,
       RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas,
-      Real const tol = 1.0e-08) const {
+      bool const doing_derivs = false) const {
+
+    // If we're doing finite differences, we need higher tolerances, but we also
+    // need to be able to exit the iteration if we're essentially at the
+    // numerical precision for the update. When dx is less than machine epsilon,
+    // the line search will fail, and as long as the residual norm is below the
+    // sufficient tolerance, the PTE solver will converge at the looser tolerance
+    // albeit with the `slow_convergence_detected` flag on. If we're perturbing
+    // a converged PTE state, we only need a few iterations to do so.
+    const Real tol = doing_derivs ? 1.0e-14 : 1.0e-08;
+    const Real sufficient_tol = doing_derivs ? tol * 1.0e5 : tol * 1.0e2;
+    const size_t pte_mat_num_iter = doing_derivs ? 2 : 256;
+
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
     std::array<Real, nmat_> vol_fracs{};
@@ -680,9 +723,10 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       mix_params.pte_rel_tolerance_p = tol;
       mix_params.pte_rel_tolerance_v = tol;
       mix_params.pte_abs_tolerance_p = tol;
-      mix_params.pte_rel_tolerance_p_sufficient = tol;
-      mix_params.pte_rel_tolerance_v_sufficient = tol;
-      mix_params.pte_abs_tolerance_p_sufficient = tol;
+      mix_params.pte_rel_tolerance_p_sufficient = sufficient_tol;
+      mix_params.pte_rel_tolerance_v_sufficient = sufficient_tol;
+      mix_params.pte_abs_tolerance_p_sufficient = sufficient_tol;
+      mix_params.pte_max_iter_per_mat = pte_mat_num_iter;
 
       PTESolverFixedP<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
           npte, eos_idxr, vfrac_tot, pressure, density_idxr, vfrac_idxr, sie_idxr,
@@ -781,11 +825,9 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
                     Real const temperature, RealIndexer const &density_mat,
                     RealIndexer const &sie_mat, LambdaIndexer &lambdas, Real &dedT_R,
                     Real &dedR_T, Real &dPdT_R, Real &dPdR_T) const {
-    // Since we're often starting from a good guess, greatly reduce the
-    // tolerance to make sure we are actually converging. This value and the
-    // perturbation amounts have been tuned to achieve two PTE iterations for
-    // calculating the derivatives
-    constexpr Real tol = 1.0e-14;
+
+    // Tighter tolerance and less iterations when doing finite differences
+    constexpr bool doing_derivs = true;
 
     // Perturb the PTE state in density and temperature to get the finite
     // difference derivatives
@@ -806,7 +848,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
     Real sie_dT, P_dT;
     SolverStatus status = GetStatesFromDensityTemperature(rho, sie_dT, P_dT, T_pert, dmat,
-                                                          emat, lambdas, tol);
+                                                          emat, lambdas, doing_derivs);
     PORTABLE_REQUIRE(status.max_niter > 0, "PTE solution not perturbed...");
 
     for (size_t i = 0; i < nmat_; i++) {
@@ -816,7 +858,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
     Real sie_dR, P_dR;
     status = GetStatesFromDensityTemperature(R_pert, sie_dR, P_dR, temperature, dmat,
-                                             emat, lambdas, tol);
+                                             emat, lambdas, doing_derivs);
     PORTABLE_REQUIRE(status.max_niter > 0, "PTE solution not perturbed...");
 
     dedT_R = (sie_dT - sie) / dT;
