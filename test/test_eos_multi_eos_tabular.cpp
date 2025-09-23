@@ -40,20 +40,11 @@
 #include <singularity-eos/eos/eos_spiner_rho_temp.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::MassFracAverageFunctor;
-using singularity::SpinerEOSDependsRhoT;
-using singularity::EOSPAC;
-using singularity::Variant;
-using singularity::VolumeFracHarmonicAverageFunctor;
-using singularity::IndexableTypes::LogDensity;
-using singularity::IndexableTypes::LogTemperature;
-using singularity::IndexableTypes::MassFraction;
-using singularity::IndexerUtils::VariadicIndexer;
-
 using Catch::Matchers::ContainsSubstring;
 
 SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]") {
   using namespace singularity;
+  using singularity::IndexerUtils::VariadicIndexer;
 
   GIVEN("A pair of metal EOS for the binary alloy") {
     constexpr int num_eos = 2;
@@ -73,8 +64,6 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
     constexpr Real finite_diff_tol = 1.0e-02;
 
     WHEN("The two EOS are combined in a MultiEOS object") {
-      using BAvgF = VolumeFracHarmonicAverageFunctor;
-      using GAvgF = VolumeFracHarmonicAverageFunctor;
       auto alloy = MultiEOS(Cu_eos, Al_eos);
 
       // Set equal mass fractions
@@ -376,6 +365,7 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
 SCENARIO("Test the MultiEOS object dynamic memory features",
          "[MultiEOS][SpinerEOS][EOSPAC]") {
   using namespace singularity;
+  using singularity::IndexerUtils::VariadicIndexer;
 
   GIVEN("A pair of metal EOS for the binary alloy") {
     constexpr int num_eos = 2;

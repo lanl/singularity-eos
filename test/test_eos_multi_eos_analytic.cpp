@@ -35,20 +35,12 @@
 #include <singularity-eos/eos/eos_multi_eos.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::DavisProducts;
-using singularity::DavisReactants;
-using singularity::MassFracAverageFunctor;
-using singularity::ShiftedEOS;
-using singularity::Variant;
-using singularity::VolumeFracHarmonicAverageFunctor;
-using singularity::IndexableTypes::MassFraction;
-using singularity::IndexerUtils::VariadicIndexer;
-
-using Catch::Matchers::ContainsSubstring;
-
 SCENARIO("Test the MultiEOS object with reactants and products EOS",
          "[MultiEOS][DavisReactants][DavisProducts]") {
+  using Catch::Matchers::ContainsSubstring;
   using namespace singularity;
+  using namespace singularity::IndexableTypes;
+  using singularity::IndexerUtils::VariadicIndexer;
 
   GIVEN("A pair of EOS for reactants and products and a resulting MultiEOS "
         "object") {
