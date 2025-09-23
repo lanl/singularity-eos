@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -28,7 +28,6 @@
 #include <singularity-eos/eos/eos_noble_abel.hpp>
 #include <singularity-eos/eos/eos_powermg.hpp>
 #include <singularity-eos/eos/eos_sap_polynomial.hpp>
-#include <singularity-eos/eos/eos_simple_macaw.hpp>
 #include <singularity-eos/eos/eos_spiner.hpp>
 #include <singularity-eos/eos/eos_stellar_collapse.hpp>
 #include <singularity-eos/eos/eos_stiff.hpp>
