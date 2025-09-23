@@ -40,9 +40,9 @@
 #include <singularity-eos/eos/eos_spiner_rho_temp.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-using singularity::make_MultiEOS;
 using singularity::MassFracAverageFunctor;
 using singularity::SpinerEOSDependsRhoT;
+using singularity::EOSPAC;
 using singularity::Variant;
 using singularity::VolumeFracHarmonicAverageFunctor;
 using singularity::IndexableTypes::LogDensity;
@@ -75,7 +75,7 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
     WHEN("The two EOS are combined in a MultiEOS object") {
       using BAvgF = VolumeFracHarmonicAverageFunctor;
       using GAvgF = VolumeFracHarmonicAverageFunctor;
-      auto alloy = make_MultiEOS<BAvgF, GAvgF>(Cu_eos, Al_eos);
+      auto alloy = MultiEOS(Cu_eos, Al_eos);
 
       // Set equal mass fractions
       std::array<Real, num_eos> set_mass_fracs{};
@@ -369,8 +369,25 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
       AND_WHEN("We use the MeanAtomicMassFromDensityTemperature() function") {}
       AND_WHEN("We use the MeanAtomicNumberFromDensityTemperature() function") {}
       AND_WHEN("We use the IsModified() function") {}
-      AND_WHEN("We use the dynamic memory features") {}
     }
+  }
+}
+
+SCENARIO("Test the MultiEOS object dynamic memory features",
+         "[MultiEOS][SpinerEOS][EOSPAC]") {
+  using namespace singularity;
+
+  GIVEN("A pair of metal EOS for the binary alloy") {
+    constexpr int num_eos = 2;
+    constexpr int Al_matid = 3720;
+    constexpr int Cu_matid = 3337;
+    const std::string eos_file = "../materials.sp5";
+    auto Cu_eos = SpinerEOSDependsRhoT{eos_file, Cu_matid};
+    auto Al_eos = EOSPAC{Al_matid};
+
+    using LambdaT =
+        VariadicIndexer<IndexableTypes::LogDensity, IndexableTypes::LogTemperature,
+                        IndexableTypes::MassFraction<0>, IndexableTypes::MassFraction<1>>;
   }
 }
 

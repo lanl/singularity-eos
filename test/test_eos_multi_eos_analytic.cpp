@@ -37,7 +37,6 @@
 
 using singularity::DavisProducts;
 using singularity::DavisReactants;
-using singularity::make_MultiEOS;
 using singularity::MassFracAverageFunctor;
 using singularity::ShiftedEOS;
 using singularity::Variant;
@@ -90,7 +89,7 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     // Create the multiEOS object
     constexpr size_t num_eos = 2;
     using LambdaT = VariadicIndexer<MassFraction<0>, MassFraction<1>>;
-    auto multi_eos = make_MultiEOS(davis_r_eos, davis_p_eos);
+    auto multi_eos = MultiEOS(davis_r_eos, davis_p_eos);
 
     // Lookup result tolerances
     constexpr Real lookup_tol = 1.0e-12;
@@ -110,21 +109,21 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     WHEN("A mass fraction cutoff less than 0 is specified") {
       [[maybe_unused]] constexpr Real mf_cutoff = -0.01;
       THEN("Constructing the MultiEOS object should throw an exception") {
-        REQUIRE_MAYBE_THROWS(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos));
+        REQUIRE_MAYBE_THROWS(MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos));
       }
     }
 
     WHEN("A mass fraction cutoff equal to 1 is specified") {
       [[maybe_unused]] constexpr Real mf_cutoff = 1.0;
       THEN("Constructing the MultiEOS object should throw an exception") {
-        REQUIRE_MAYBE_THROWS(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos));
+        REQUIRE_MAYBE_THROWS(MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos));
       }
     }
 
     WHEN("A mass fraction cutoff greater than 1 is specified") {
       [[maybe_unused]] constexpr Real mf_cutoff = 2.0;
       THEN("Constructing the MultiEOS object should throw an exception") {
-        REQUIRE_MAYBE_THROWS(make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos));
+        REQUIRE_MAYBE_THROWS(MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos));
       }
     }
 
@@ -146,7 +145,7 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
 
     WHEN("A mass fraction cutoff is specified in the constructor") {
       constexpr Real mf_cutoff = 0.001;
-      auto multi_eos_largeMF = make_MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos);
+      auto multi_eos_largeMF = MultiEOS(mf_cutoff, davis_r_eos, davis_p_eos);
 
       THEN("The 'SetUpPTE' member function will correctly determine which materials are "
            "participating in PTE") {
@@ -210,8 +209,8 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     THEN("The MultiEOS object can be placed in an EOS Variant") {
       using EOS =
           Variant<DavisReactants, ShiftedEOS<DavisProducts>,
-                  decltype(make_MultiEOS(DavisReactants{}, ShiftedEOS<DavisProducts>{}))>;
-      EOS multi_eos_in_variant = make_MultiEOS(davis_r_eos, davis_p_eos);
+                  decltype(MultiEOS(DavisReactants{}, ShiftedEOS<DavisProducts>{}))>;
+      EOS multi_eos_in_variant = MultiEOS(davis_r_eos, davis_p_eos);
 
       AND_WHEN("A pressure-temperature lookup is performed") {
         // Populate lambda with mass fractions (only)

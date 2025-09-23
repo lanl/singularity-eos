@@ -122,10 +122,8 @@ analytic PTE solvers where possible.
 
 // TODO: How should the solver status be handled? Warning? Error? Option?
 
-template <typename BulkModAvgT = VolumeFracHarmonicAverageFunctor,
-          typename GruneisenAvgT = VolumeFracHarmonicAverageFunctor,
-          typename... EOSModelsT>
-class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT...>> {
+template <typename... EOSModelsT>
+class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
  private:
   Real mass_frac_cutoff_;
   std::tuple<EOSModelsT...> models_;
@@ -149,8 +147,13 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   // variant with all types
   using variant_t = typename decltype(tl_to_Variant(uniq_list{}))::vt;
 
-  // Common element type: single if only one unique, otherwise Variant<...>
+  // Count the unique types
   static constexpr std::size_t uniq_n = variadic_utils::pack_size(uniq_list{});
+
+  // We can't use an empty type list
+  static_assert(uniq_n > 0, "MultiEOS provided an empty type list");
+
+  // Common element type: single if only one unique, otherwise Variant<...>
   using eosT_ = std::conditional_t<(uniq_n == 1), single_t, variant_t>;
 
   // NOTE: These functions are private since they're details of the
@@ -309,8 +312,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // model tuple
     auto models_on_device =
         tuple_transform(models_, [](const auto &eos) { return eos.GetOnDevice(); });
-    return MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT...>(mass_frac_cutoff_,
-                                                               models_on_device);
+    return MultiEOS<EOSModelsT...>(mass_frac_cutoff_, models_on_device);
   }
 
   inline void Finalize() {
@@ -1455,6 +1457,14 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
   std::size_t SetDynamicMemory(char *src, SharedMemSettings stngs = DEFAULT_SHMEM_STNGS) {
 
+    // This implementation is slightly different than the normal
+    // `SetDynamicMemory` call for individual EOS. There is a copy from the
+    // source to shared memory in `DeSerialize()`, but ONLY if
+    // `AllDynamicMemoryIsShareable()` returns true (e.g. for SpinerEOS). For
+    // EOSPAC, the copy from dynamic memory to shared memory happens under the
+    // hood. Because we could hold a combination of spiner and EOSPAC models, we
+    // need to then handle the copy ourselves here.
+
     // Source and shared memory pointers
     char *p_src = src;
     char *p_shared = stngs.data;
@@ -1468,39 +1478,58 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     std::apply(
         [&p_src, &p_shared, &current_shared_stngs, &total](auto &...eos) {
           std::size_t shared_increment = 0;
-          std::size_t src_increment;
-          // One iteration per EOS, left-to-right.
+          std::size_t src_increment = 0;
+          std::size_t shared_write_size = 0;
+          std::size_t eos_size = 0;
+          char *data_loc;
+          // This is an awful fold expression... but it seems to be the easiest
+          // way to get this to work. Essentially we're "iterating" over the
+          // EOS in the tuple and performing several steps. This is perhaps the
+          // best argument for mauneyc's tuple extensions
           (((
-                // 1) Increment the per-EOS shared-memory pointer
-                current_shared_stngs.data =
-                    p_shared == nullptr ? (p_shared + shared_increment) : nullptr,
-
-                // 2) Set the dynamic memory and record how much was used
-                src_increment = eos.SetDynamicMemory(p_src, current_shared_stngs),
-
-                // 3) Bump the shared-memory offset by the model's declared size.
-                //    This _may_ be different from the  src_increment
+                // 1) Determine the shared-memory offset by the model's declared
+                //    size. This will be different from the src_increment for
+                //    EOSPAC
                 shared_increment = eos.SharedMemorySizeInBytes(),
 
-                // 4) We need to figure out how much to incremennt the src pointer
-                //    depending on the output of `AllDynamicMemoryIsShareable()`:
-                //    - Spiner either points to shared memory or the src memory, but
-                //      not both, so its shared memory size is the same as its
-                //      dynamic memory size. So if shared memory is used, the src
-                //      memory shouldn't be incremented. For spiner,
-                //      `AllDynamicMemoryIsShareable()` returns true.
-                //    - EOSPAC reads from the src memory and then either writes some
-                //      of this data to the shared memory pointer on the root node
-                //      or just points to the shared memory. Either way, both the
-                //      shared memory and src memory pointers need to be
-                //      incremented. For EOSPAC, `AllDynamicMemoryIsShareable()`
-                //      returns false.
-                p_src = p_shared == nullptr || eos.AllDynamicMemoryIsShareable()
-                            ? p_src
-                            : p_src + src_increment,
+                // 2) Determine the size of the EOS object for offsets
+                eos_size = sizeof(eos),
 
-                // 5) Our output should reflect how much we've read
-                total += src_increment),
+                // 3) Move the source pointer up to the dynamic memory (past the
+                //    model's class memory)
+                p_src += eos_size,
+
+                // 4) For anything other than EOSPAC, we need to copy dynamic
+                //    memory to shared memory BEFORE calling `SetDynamicMemory()`
+                eos.AllDynamicMemoryIsShareable() && current_shared_stngs.CopyNeeded() ?
+                    (void)memcpy(current_shared_stngs.data, p_src,
+                                 shared_increment) :
+                    (void)0,
+
+                // 5) Determine whether we set the dynamic memory pointers to
+                //    shared memory or to the source location. For EOSPAC, this
+                //    needs to always be the source location since it does its
+                //    own copy operation. For all other models, we need to
+                //    provide the shared memory pointer when available
+                data_loc =
+                    eos.AllDynamicMemoryIsShareable() && p_shared != nullptr
+                    ? current_shared_stngs.data : p_src,
+
+                // 5) Set the dynamic memory and record how much was used.
+                //    NOTE: EOSPAC copies from the source to shared memory here
+                //    and returns the eos_GetPackedTablesSize value
+                src_increment = eos.SetDynamicMemory(data_loc, current_shared_stngs),
+
+                // 6) Source pointer is always incrementd by dynamic memory size
+                p_src += src_increment,
+
+                // 7) Increment the per-EOS shared-memory pointer
+                current_shared_stngs.data =
+                    p_shared != nullptr ? (p_shared + shared_increment) : nullptr,
+
+                // 8) Our output should reflect how much we've read (dynamic + EOS)
+                total += src_increment + eos_size),
+
             void() // make the subexpression a valid comma-fold operand
             ),
            ...);
@@ -1511,41 +1540,21 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
   }
 
   constexpr bool AllDynamicMemoryIsShareable() const {
-    return std::apply(
-        [](auto const &...eos) {
-          // AND operation across all individual models. Returns true IFF all models
-          // have sharable dynamic memory. If this isn't true, then the user needs
-          // to keep track of SharedMemorySizeInBytes and DynamicMemorySizeInBytes
-          // separately
-          return (eos.AllDynamicMemoryIsShareable() && ...);
-        },
-        models_);
+    // The DeSerialize() function copies from source memory to shared memory
+    // if `AllDynamicMemoryIsShareable()` returns true. This class needs to
+    // perform the copy itself in order to mirror EOSPAC (which does its own
+    // internal copy), so `AllDynamicMemoryIsShareable()` will always return
+    // `false` here with the expectation that this class handles the copy.
+    return false;
   }
 };
-
-// Factory function helper to group EOS together and provide default averaging
-// behavior
-template <typename BulkModAvgT = VolumeFracHarmonicAverageFunctor,
-          typename GruneisenAvgT = VolumeFracHarmonicAverageFunctor,
-          typename... EOSModelsT>
-inline auto make_MultiEOS(EOSModelsT &&...eos_models) {
-  return MultiEOS<variadic_utils::remove_cvref_t<BulkModAvgT>,
-                  variadic_utils::remove_cvref_t<GruneisenAvgT>,
-                  variadic_utils::remove_cvref_t<EOSModelsT>...>(
-      std::forward<EOSModelsT>(eos_models)...);
-}
-
-// Factory function helper to group EOS together and provide default averaging
-// behavior but including the mass fraction cutoff as a constructor argument
-template <typename BulkModAvgT = VolumeFracHarmonicAverageFunctor,
-          typename GruneisenAvgT = VolumeFracHarmonicAverageFunctor,
-          typename... EOSModelsT>
-inline auto make_MultiEOS(Real mass_frac_cutoff_in, EOSModelsT &&...eos_models) {
-  return MultiEOS<variadic_utils::remove_cvref_t<BulkModAvgT>,
-                  variadic_utils::remove_cvref_t<GruneisenAvgT>,
-                  variadic_utils::remove_cvref_t<EOSModelsT>...>(
-      mass_frac_cutoff_in, std::forward<EOSModelsT>(eos_models)...);
-}
+// CTADS
+template <typename... EOSModelsT>
+MultiEOS(EOSModelsT &&...eos_models)
+    -> MultiEOS<variadic_utils::remove_cvref_t<EOSModelsT>...>;
+template <typename... EOSModelsT>
+MultiEOS(Real mass_frac_cutoff_in, EOSModelsT &&...eos_models)
+    -> MultiEOS<variadic_utils::remove_cvref_t<EOSModelsT>...>;
 
 } // namespace singularity
 
