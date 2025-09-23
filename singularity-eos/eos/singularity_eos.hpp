@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -33,10 +33,6 @@ int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const doubl
 int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
                 const double R1, const double R2, const double w, const double rho0,
                 const double Cv, int const *const enabled, double *const vals);
-
-int init_sg_SimpleMACAW(const int matindex, EOS *eos, const double A, const double B,
-                        const double Cvinf, const double v0, const double T0,
-                        const double Gc, int const *const enabled, double *const vals);
 
 int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const double s1,
                       const double s2, const double s3, const double G0, const double b,
@@ -147,10 +143,6 @@ int init_sg_IdealGas(const int matindex, EOS *eos, const double gm1, const doubl
 int init_sg_JWL(const int matindex, EOS *eos, const double A, const double B,
                 const double R1, const double R2, const double w, const double rho0,
                 const double Cv);
-
-int init_sg_SimpleMACAW(const int matindex, EOS *eos, const double A, const double B,
-                        const double Cvinf, const double v0, const double T0,
-                        const double Gc);
 
 int init_sg_Gruneisen(const int matindex, EOS *eos, const double C0, const double s1,
                       const double s2, const double s3, const double G0, const double b,
