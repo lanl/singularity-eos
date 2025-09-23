@@ -1433,6 +1433,7 @@ class PTESolverFixedT
       // note the scaling of pressure
       press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, lambda[m]);
     }
+    uscale = std::max(uscale, 1.0e-14);
     for (std::size_t m = 0; m < nmat; ++m) {
       press[m] = robust::ratio(press[m], uscale);
       u[m] = sie[m] * robust::ratio(rhobar[m], uscale);
@@ -1643,7 +1644,7 @@ class PTESolverFixedP
     // set the temperature normalization
     Tnorm = Tguess;
     // Assume pressure and energy scales are similar
-    uscale = std::abs(Pequil);
+    uscale = std::max(std::abs(Pequil), 1.0e-14);
     for (std::size_t m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
