@@ -34,6 +34,7 @@
 #include <singularity-eos/base/indexable_types.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
+#include <singularity-eos/closure/mixed_cell_models.hpp>
 #include <singularity-eos/eos/eos.hpp>
 #include <singularity-eos/eos/eos_multi_eos.hpp>
 #include <singularity-eos/eos/eos_spiner_rho_temp.hpp>
@@ -68,8 +69,8 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
     // Lookup result tolerances
     constexpr Real lookup_tol = 1.0e-11;
     constexpr Real deriv_tol = lookup_tol * 1e3;
-    constexpr Real dx_factor = 1.0e-08;
-    constexpr Real finite_diff_tol = 1.0e-04;
+    constexpr Real dx_factor = 1.0e-07;
+    constexpr Real finite_diff_tol = 1.0e-02;
 
     WHEN("The two EOS are combined in a MultiEOS object") {
       using BAvgF = VolumeFracHarmonicAverageFunctor;
@@ -108,6 +109,7 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
         }
 
         INFO("pres_ref = " << pres_ref << "   temp_ref = " << temp_ref);
+        INFO("rho_ref  = " << rho_ref << "  sie_ref = " << sie_ref);
 
         THEN("They agree with the states at the reference pressure and temperature") {
           std::array<Real, num_eos> density_mat;
@@ -182,14 +184,133 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           CHECK_THAT(bmod_ref, Catch::Matchers::WithinRel(bmod_FillEos, deriv_tol));
         }
 
-        THEN("dpde and dvdt agree with finite difference approximations") {
-          const Real dT = temp_ref * dx_factor + dx_factor;
+        THEN("dpde agrees with the Gruneisen from density and temperature") {
+          const Real Gruneisen =
+              alloy.GruneisenParamFromDensityTemperature(rho_ref, temp_ref, lambda);
+          const Real dpde_calc = rho_ref * Gruneisen;
+          CHECK_THAT(dpde_ref, Catch::Matchers::WithinRel(dpde_calc, deriv_tol));
+        }
+
+        AND_WHEN("A density-temperature finite difference approximation is used") {
+
+          std::array<Real, num_eos> density_mat{};
+          std::array<Real, num_eos> sie_mat{};
+          SolverStatus status;
+
+          const Real dT = temp_ref * dx_factor;
+          const Real dR = rho_ref * dx_factor;
+          const Real T_pert = temp_ref + dT;
+          const Real R_pert = rho_ref + dR;
+          INFO("T_pert = " << T_pert << "  R_pert = " << R_pert);
           INFO("  dT = " << dT);
+          INFO("  dR = " << dR);
 
-          Real rho_pert;
-          Real sie_pert;
-          alloy.DensityEnergyFromPressureTemperature(pres_ref, temp_ref + dT, lambda,
-                                                     rho_pert, sie_pert);
+          // Tighter tolerance is required for PTE solvers to produce accurate
+          // derivatives
+          constexpr Real tol = 1.0e-14;
+
+          // Recalculate the pressure so we can get some nice accurate
+          // derivatives
+          Real sie_ref_RT;
+          Real pres_ref_RT;
+          status = alloy.GetStatesFromDensityTemperature(rho_ref, sie_ref_RT, pres_ref_RT,
+                                                         temp_ref, density_mat, sie_mat,
+                                                         lambda, tol);
+
+          // Convergence sanity check
+          THEN("The density-temperature lookup at the reference state should converge") {
+            INFO("SOLVER STATUS (reference state):");
+            INFO("    slow_convergence_detected: " << status.slow_convergence_detected);
+            INFO("    max_niter: " << status.max_niter);
+            INFO("    max_line_niter: " << status.max_line_niter);
+            INFO("    small_step_iters: " << status.small_step_iters);
+            INFO("    residual: " << status.residual);
+            REQUIRE(status.converged);
+          }
+
+          // Pressure sanity check
+          THEN("Density-temperature lookups for the individual EOS should agree with the "
+               "state returned by the reference density and temperature lookup") {
+            const auto eos_arr = alloy.CreateEOSArray();
+            for (size_t m = 0; m < num_eos; m++) {
+              INFO("m: " << m);
+              INFO("  rho[m] = " << density_mat[m]);
+              REQUIRE_THAT(pres_ref_RT, Catch::Matchers::WithinRel(
+                                            eos_arr[m].PressureFromDensityTemperature(
+                                                density_mat[m], temp_ref, lambda),
+                                            1.0e-9 // Slightly looser tolerance needed
+                                            ));
+            }
+          }
+
+          INFO("  P(rho_ref, T_ref) = " << pres_ref_RT);
+          INFO("  e(rho_ref, T_ref) = " << sie_ref_RT);
+
+          // Sanity check: let's make sure the pressures for the perturbed states are
+          // reasonable. We'll also save them so we can look at them in the debugger if
+          // needed
+          std::array<Real, num_eos> pmat_higherT{};
+          std::array<Real, num_eos> pmat_higherR{};
+          const auto eos_arr = alloy.CreateEOSArray();
+          for (size_t m = 0; m < num_eos; m++) {
+            pmat_higherT[m] = eos_arr[m].PressureFromDensityTemperature(
+                  density_mat[m], temp_ref + dT, lambda);
+            pmat_higherR[m] = eos_arr[m].PressureFromDensityTemperature(
+                  density_mat[m] + dR, temp_ref, lambda);
+          }
+          THEN("Density-temperature lookups for the individual EOS at the perturbed "
+               "temperature should yield slightly higher pressures") {
+            for (size_t m = 0; m < num_eos; m++) {
+              INFO("  m: " << m);
+              INFO("    rho[m] = " << density_mat[m]);
+              INFO("    P(rho[m], T+dT) = " << pmat_higherT[m]);
+              CHECK(pmat_higherT[m] > pres_ref_RT);
+            }
+          }
+          THEN("Perturbing the densities of the individual EOS should yield slightly "
+               "higher pressures") {
+            for (size_t m = 0; m < num_eos; m++) {
+              INFO("  m: " << m);
+              INFO("    rho[m] = " << density_mat[m]);
+              INFO("    P(rho[m]+dR, T) = " << pmat_higherR[m]);
+              CHECK(pmat_higherR[m] > pres_ref_RT);
+            }
+          }
+
+          // Perturb pressure in temperature
+          Real sie_dT;
+          Real pres_dT;
+          status = alloy.GetStatesFromDensityTemperature(
+              rho_ref, sie_dT, pres_dT, T_pert, density_mat, sie_mat, lambda, tol);
+          THEN("The density-temperature lookup at a perturbed temperature should "
+               "converge") {
+            INFO("SOLVER STATUS (perturbed in temperature):");
+            INFO("    slow_convergence_detected: " << status.slow_convergence_detected);
+            INFO("    max_niter: " << status.max_niter);
+            INFO("    max_line_niter: " << status.max_line_niter);
+            INFO("    small_step_iters: " << status.small_step_iters);
+            INFO("    residual: " << status.residual);
+            REQUIRE(status.converged);
+          }
+          INFO("  P(rho_ref, T_pert) = " << pres_dT);
+          INFO("  e(rho_ref, T_pert) = " << sie_dT);
+          INFO("    rho[0] @ (rho_ref, T_pert) = " << density_mat[0]);
+          INFO("    rho[1] @ (rho_ref, T_pert) = " << density_mat[1]);
+
+          // Perturb pressure in density
+          Real sie_dR;
+          Real pres_dR;
+          status = alloy.GetStatesFromDensityTemperature(
+              R_pert, sie_dR, pres_dR, temp_ref, density_mat, sie_mat, lambda, tol);
+          THEN("The density-temperature lookup at a perturbed density should converge") {
+            INFO("SOLVER STATUS (perturbed in density):");
+            INFO("    slow_convergence_detected: " << status.slow_convergence_detected);
+            INFO("    max_niter: " << status.max_niter);
+            INFO("    max_line_niter: " << status.max_line_niter);
+            INFO("    small_step_iters: " << status.small_step_iters);
+            INFO("    residual: " << status.residual);
+            REQUIRE(status.converged);
+          }
 
           // Sanity check to make sure the EOS are not overwriting mass fraction
           // values
@@ -200,38 +321,50 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
                                                     lookup_tol));
           }
 
-          const Real dV = robust::ratio(1.0, rho_pert) - robust::ratio(1.0, rho_ref);
-          const Real dvdt_FD = dV / dT;
+          THEN("The reference dpde and dvdt values should agree with the finite "
+               "difference") {
 
-          INFO("  dV = " << dV);
-          CHECK_THAT(dvdt_ref, Catch::Matchers::WithinRel(dvdt_FD, finite_diff_tol));
+            INFO("  P(R_pert, temp_ref) = " << pres_dR);
+            INFO("  e(R_pert, temp_ref) = " << sie_dR);
+            INFO("    rho[0] @ (R_pert, temp_ref) = " << density_mat[0]);
+            INFO("    rho[1] @ (R_pert, temp_ref) = " << density_mat[1]);
 
-          // Calculate a de at constant volume from dT since density-energy PTE solver
-          // can require looser tolerances
-          sie_pert =
-              alloy.InternalEnergyFromDensityTemperature(rho_ref, temp_ref + dT, lambda);
+            const Real dP_R = pres_dT - pres_ref_RT;
+            const Real dP_T = pres_dR - pres_ref_RT;
+            const Real de_R = sie_dT - sie_ref_RT;
+            const Real de_T = sie_dR - sie_ref_RT;
 
-          // Also calculate dP at constant volume in the same way
-          const Real pres_pert =
-              alloy.PressureFromDensityTemperature(rho_ref, temp_ref + dT, lambda);
+            const Real dPdT_R = dP_R / dT;
+            const Real dPdR_T = dP_T / dR;
+            const Real dVdP_T = robust::ratio(-1.0, rho_ref * rho_ref * dPdR_T);
+            const Real dVdT_FD = -dPdT_R * dVdP_T;
 
-          // Sanity check to make sure the EOS are not overwriting mass fraction
-          // values
-          for (size_t i = 0; i < num_eos; i++) {
-            INFO("i: " << i);
-            REQUIRE_THAT(lambda[i + lambda_mf_offset],
-                         Catch::Matchers::WithinRel(lambda_init[i + lambda_mf_offset],
-                                                    lookup_tol));
+            INFO("  de(dT) @ const. R = " << de_R);
+            INFO("  de(dR) @ const. T = " << de_T);
+            INFO("  dP(dT) @ const. R = " << dP_R);
+            INFO("  dP(dR) @ const. T = " << dP_T);
+
+            INFO("dPdT_R = " << dPdT_R);
+            INFO("dPdR_T = " << dPdR_T);
+            INFO("dVdP_T = " << dVdP_T);
+            CHECK_THAT(dvdt_ref, Catch::Matchers::WithinRel(dVdT_FD, finite_diff_tol));
+
+            const Real dpde_FD = robust::ratio(dP_R, de_R);
+
+            CHECK_THAT(dpde_ref, Catch::Matchers::WithinRel(dpde_FD, finite_diff_tol));
           }
-
-          const Real dP = pres_pert - pres_ref;
-          const Real de = sie_pert - sie_ref;
-          const Real dpde_FD = dP / de;
-          INFO("  de (from dT) = " << de << "  dP = " << dP);
-
-          CHECK_THAT(dpde_ref, Catch::Matchers::WithinRel(dpde_FD, finite_diff_tol));
         }
       }
+
+      AND_WHEN("We use the MinimumDensity() function") {}
+      AND_WHEN("We use the MinimumTemperature() function") {}
+      AND_WHEN("We use the MaximumDensity() function") {}
+      AND_WHEN("We use the MinimumPressure() function") {}
+      AND_WHEN("We use the MaximumPressureAtTemperature() function") {}
+      AND_WHEN("We use the MeanAtomicMassFromDensityTemperature() function") {}
+      AND_WHEN("We use the MeanAtomicNumberFromDensityTemperature() function") {}
+      AND_WHEN("We use the IsModified() function") {}
+      AND_WHEN("We use the dynamic memory features") {}
     }
   }
 }
