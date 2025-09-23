@@ -867,9 +867,9 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     dRdP_T = (rho_dP - rho) / dP;
   }
 
-  static PORTABLE_INLINE_FUNCTION Real
-  BmodFromDerivs(Real const rho, Real const temperature, Real const dedT_R,
-                 Real const dedR_T, Real const dPdT_R, Real const dPdR_T) {
+  static constexpr Real BmodFromDerivs(Real const rho, Real const temperature,
+                                       Real const dedT_R, Real const dedR_T,
+                                       Real const dPdT_R, Real const dPdR_T) {
     // Bulk modulus formula derived from dP = (dP/dr)_T * dr  + (dP/dT)_r * dT
     // along with Maxwell relation and entropy definition of heat capacity
     const auto B_T = rho * dPdR_T;
@@ -931,7 +931,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // the values for density_mat and sie_mat can be from an existing
     // equilibrium state so that the PTE solve is easy. TODO: should this be a
     // central difference at the expense of another PTE solve?
-    constexpr Real factor = 1.0e-06;
+    constexpr Real factor = 1.0e-07;
     constexpr Real tol = 1.0e-14;
     const auto de = sie * factor + factor; // handle small or zero sie
     const auto sie_pert = sie + de;
@@ -1282,15 +1282,18 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     GetStatesFromPressureTemperature(rho, sie, press, temp, density_mat, sie_mat, lambda);
 
     // Get derivatives from thermo identities
-    Real dedT_R, dedR_T, dPdT_R, dPdR_T;
+    Real dedT_R;
+    Real dedR_T;
+    Real dPdT_R;
+    Real dPdR_T;
     PerturbPTEStateRT(rho, sie, press, temp, density_mat, sie_mat, lambda, dedT_R, dedR_T,
                       dPdT_R, dPdR_T);
     bmod = BmodFromDerivs(rho, temp, dedT_R, dedR_T, dPdT_R, dPdR_T);
     cv = dedT_R;
     // Chain rule for dpde
-    dpde = dPdT_R / dedT_R;
-    // Cyclic rule for dVdT_P
+    dpde = robust::ratio(dPdT_R, dedT_R);
     const Real dVdP_T = robust::ratio(-1.0, rho * rho * dPdR_T);
+    // Cyclic rule for dVdT_P
     dvdt = -dPdT_R * dVdP_T;
   }
 
