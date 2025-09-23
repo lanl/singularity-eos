@@ -258,9 +258,9 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           const auto eos_arr = alloy.CreateEOSArray();
           for (size_t m = 0; m < num_eos; m++) {
             pmat_higherT[m] = eos_arr[m].PressureFromDensityTemperature(
-                  density_mat[m], temp_ref + dT, lambda);
+                density_mat[m], temp_ref + dT, lambda);
             pmat_higherR[m] = eos_arr[m].PressureFromDensityTemperature(
-                  density_mat[m] + dR, temp_ref, lambda);
+                density_mat[m] + dR, temp_ref, lambda);
           }
           THEN("Density-temperature lookups for the individual EOS at the perturbed "
                "temperature should yield slightly higher pressures") {
@@ -284,8 +284,9 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           // Perturb pressure in temperature
           Real sie_dT;
           Real pres_dT;
-          status = alloy.GetStatesFromDensityTemperature(
-              rho_ref, sie_dT, pres_dT, T_pert, density_mat, sie_mat, lambda, doing_derivs);
+          status = alloy.GetStatesFromDensityTemperature(rho_ref, sie_dT, pres_dT, T_pert,
+                                                         density_mat, sie_mat, lambda,
+                                                         doing_derivs);
           THEN("The density-temperature lookup at a perturbed temperature should "
                "converge") {
             INFO("SOLVER STATUS (perturbed in temperature):");
@@ -304,8 +305,9 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           // Perturb pressure in density
           Real sie_dR;
           Real pres_dR;
-          status = alloy.GetStatesFromDensityTemperature(
-              R_pert, sie_dR, pres_dR, temp_ref, density_mat, sie_mat, lambda, doing_derivs);
+          status = alloy.GetStatesFromDensityTemperature(R_pert, sie_dR, pres_dR,
+                                                         temp_ref, density_mat, sie_mat,
+                                                         lambda, doing_derivs);
           THEN("The density-temperature lookup at a perturbed density should converge") {
             INFO("SOLVER STATUS (perturbed in density):");
             INFO("    slow_convergence_detected: " << status.slow_convergence_detected);
