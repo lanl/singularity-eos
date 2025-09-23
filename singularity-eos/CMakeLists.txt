@@ -55,7 +55,6 @@ register_headers(
     eos/eos_gruneisen.hpp
     eos/eos_vinet.hpp
     eos/eos_builder.hpp
-    eos/eos_simple_macaw.hpp
     eos/eos_jwl.hpp
     eos/eos_helmholtz.hpp
     eos/eos_sap_polynomial.hpp

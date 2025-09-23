@@ -1403,10 +1403,12 @@ class PTESolverFixedT
       // this change in volume fraction
       rho[m] = robust::ratio(rhobar[m], vfrac[m]);
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tequil, lambda[m]);
-      uscale += sie[m] * rho[m];
+      // Guess uscale from initial density guess. Make sure it's positive
+      uscale += std::abs(sie[m]) * rho[m];
       // note the scaling of pressure
       press[m] = eos[m].PressureFromDensityTemperature(rho[m], Tequil, lambda[m]);
     }
+    uscale = std::max(uscale, 1.0e-14);
     for (std::size_t m = 0; m < nmat; ++m) {
       press[m] = robust::ratio(press[m], uscale);
       u[m] = sie[m] * robust::ratio(rhobar[m], uscale);
@@ -1616,13 +1618,12 @@ class PTESolverFixedP
     const Real Tguess = this->GetTguess();
     // set the temperature normalization
     Tnorm = Tguess;
-    // calculate u normalization as internal energy guess
-    uscale = 0.0;
+    // Assume pressure and energy scales are similar
+    uscale = std::max(std::abs(Pequil), 1.0e-14);
     for (std::size_t m = 0; m < nmat; m++) {
       // scaled initial guess for temperature is just 1
       temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, lambda[m]);
-      uscale += sie[m] * rho[m];
     }
 
     // note the scaling of the material internal energy densities
