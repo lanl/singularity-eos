@@ -16,6 +16,7 @@
 
 #include <array>
 #include <cmath>
+#include <limits>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -24,7 +25,6 @@
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_floating_point.hpp>
-#include <catch2/matchers/catch_matchers_string.hpp>
 #endif
 
 #include <ports-of-call/portability.hpp>
@@ -39,8 +39,6 @@
 #include <singularity-eos/eos/eos_multi_eos.hpp>
 #include <singularity-eos/eos/eos_spiner_rho_temp.hpp>
 #include <test/eos_unit_test_helpers.hpp>
-
-using Catch::Matchers::ContainsSubstring;
 
 SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]") {
   using namespace singularity;
@@ -350,14 +348,157 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
         }
       }
 
-      AND_WHEN("We use the MinimumDensity() function") {}
-      AND_WHEN("We use the MinimumTemperature() function") {}
-      AND_WHEN("We use the MaximumDensity() function") {}
-      AND_WHEN("We use the MinimumPressure() function") {}
-      AND_WHEN("We use the MaximumPressureAtTemperature() function") {}
-      AND_WHEN("We use the MeanAtomicMassFromDensityTemperature() function") {}
-      AND_WHEN("We use the MeanAtomicNumberFromDensityTemperature() function") {}
-      AND_WHEN("We use the IsModified() function") {}
+      AND_WHEN("We use the MinimumDensity() function") {
+        auto min_rho = alloy.MinimumDensity();
+        THEN("The MultiEOS minimum is the maximum of the individual minimums") {
+          const auto eos_arr = alloy.CreateEOSArray();
+          Real min_value = std::numeric_limits<Real>::lowest();
+          for (auto eos : eos_arr) {
+            min_value = std::max(min_value, eos.MinimumDensity());
+          }
+          CHECK_THAT(min_value, Catch::Matchers::WithinRel(min_rho, 1.0e-14));
+        }
+      }
+      AND_WHEN("We use the MinimumTemperature() function") {
+        auto min_T = alloy.MinimumTemperature();
+        THEN("The MultiEOS minimum is the maximum of the individual minimums") {
+          const auto eos_arr = alloy.CreateEOSArray();
+          Real min_value = std::numeric_limits<Real>::lowest();
+          for (auto eos : eos_arr) {
+            min_value = std::max(min_value, eos.MinimumTemperature());
+          }
+          CHECK_THAT(min_value, Catch::Matchers::WithinRel(min_T, 1.0e-14));
+        }
+      }
+      AND_WHEN("We use the MaximumDensity() function") {
+        auto max_rho = alloy.MaximumDensity();
+        THEN("The MultiEOS maximum is the minimum of the individual maxmums") {
+          const auto eos_arr = alloy.CreateEOSArray();
+          Real max_value = std::numeric_limits<Real>::max();
+          for (auto eos : eos_arr) {
+            max_value = std::min(max_value, eos.MaximumDensity());
+          }
+          CHECK_THAT(max_value, Catch::Matchers::WithinRel(max_rho, 1.0e-14));
+        }
+      }
+      AND_WHEN("We use the MinimumPressure() function") {
+        auto min_P = alloy.MinimumPressure();
+        THEN("The MultiEOS minimum is the maximum of the individual minimums") {
+          const auto eos_arr = alloy.CreateEOSArray();
+          Real min_value = std::numeric_limits<Real>::lowest();
+          for (auto eos : eos_arr) {
+            min_value = std::max(min_value, eos.MinimumPressure());
+          }
+          CHECK_THAT(min_value, Catch::Matchers::WithinRel(min_P, 1.0e-14));
+        }
+      }
+      AND_WHEN("We use the MaximumPressureAtTemperature() function") {
+        // Initialize some temperatures
+        auto Ts = std::array<Real, 10>{};
+        for (size_t i = 0; i < Ts.size(); i++) {
+          Ts[i] = (i + 1) * 100;
+        }
+
+        THEN("The MultiEOS maximum is the minimum of the individual maximums") {
+          const auto eos_arr = alloy.CreateEOSArray();
+          for (const auto T : Ts) {
+            const auto max_P = alloy.MaximumPressureAtTemperature(T);
+            Real max_value = std::numeric_limits<Real>::max();
+            for (const auto eos : eos_arr) {
+              max_value = std::min(max_value, eos.MaximumPressureAtTemperature(T));
+            }
+            INFO("T = " << T);
+            CHECK_THAT(max_value, Catch::Matchers::WithinRel(max_P, 1.0e-14));
+          }
+        }
+      }
+
+      MassFracAverageFunctor mass_avg_funct{};
+      AND_WHEN("We use the MeanAtomicMassFromDensityTemperature() function") {
+        std::array<Real, num_eos> mfracs{};
+        mfracs.fill(1.0 / num_eos);
+        LambdaT lambda_equal_mass_fracs{};
+        constexpr size_t lambda_mf_offset = 2;
+        for (size_t i = 0; i < num_eos; i++) {
+          lambda_equal_mass_fracs[lambda_mf_offset + i] = mfracs[i];
+        }
+        // For a standard spiner EOS, there is no density or temperature dependence
+        auto Ts = std::array<Real, 10>{};
+        auto Ds = std::array<Real, 10>{};
+        for (size_t i = 0; i < Ts.size(); i++) {
+          Ts[i] = (i * i + 1) * 100;
+        }
+        for (size_t i = 0; i < Ds.size(); i++) {
+          Ds[i] = (i * i * i * i + 1) * 0.01;
+        }
+
+        THEN("The returned value is the mass-fraction average of the individual values") {
+          const auto eos_arr = alloy.CreateEOSArray();
+          for (auto T : Ts) {
+            for (auto rho : Ds) {
+              Real mean_value = 0;
+              for (size_t i = 0; i < num_eos; i++) {
+                mean_value +=
+                    set_mass_fracs[i] * eos_arr[i].MeanAtomicMassFromDensityTemperature(
+                                            rho, T, lambda_equal_mass_fracs);
+              }
+              INFO("rho = " << rho << "  T = " << T);
+              Real abar_RT = alloy.MeanAtomicMassFromDensityTemperature(
+                  rho, T, lambda_equal_mass_fracs);
+              CHECK_THAT(mean_value, Catch::Matchers::WithinRel(abar_RT, lookup_tol));
+              // Note that this will only mass when the mass fractions are equal
+              Real abar = alloy.MeanAtomicMass();
+              CHECK_THAT(abar_RT, Catch::Matchers::WithinRel(abar, 1.0e-14));
+            }
+          }
+        }
+      }
+      AND_WHEN("We use the MeanAtomicNumberFromDensityTemperature() function") {
+        std::array<Real, num_eos> mfracs{};
+        mfracs.fill(1.0 / num_eos);
+        LambdaT lambda_equal_mass_fracs{};
+        constexpr size_t lambda_mf_offset = 2;
+        for (size_t i = 0; i < num_eos; i++) {
+          lambda_equal_mass_fracs[lambda_mf_offset + i] = mfracs[i];
+        }
+        // For a standard spiner EOS, there is no density or temperature dependence
+        auto Ts = std::array<Real, 10>{};
+        auto Ds = std::array<Real, 10>{};
+        for (size_t i = 0; i < Ts.size(); i++) {
+          Ts[i] = (i * i + 1) * 100;
+        }
+        for (size_t i = 0; i < Ds.size(); i++) {
+          Ds[i] = (i * i * i * i + 1) * 0.01;
+        }
+
+        THEN("The returned value is the mass-fraction average of the individual values") {
+          const auto eos_arr = alloy.CreateEOSArray();
+          for (auto T : Ts) {
+            for (auto rho : Ds) {
+              Real mean_value = 0;
+              for (size_t i = 0; i < num_eos; i++) {
+                mean_value +=
+                    set_mass_fracs[i] * eos_arr[i].MeanAtomicNumberFromDensityTemperature(
+                                            rho, T, lambda_equal_mass_fracs);
+              }
+              INFO("rho = " << rho << "  T = " << T);
+              Real zbar_RT = alloy.MeanAtomicNumberFromDensityTemperature(
+                  rho, T, lambda_equal_mass_fracs);
+              CHECK_THAT(mean_value, Catch::Matchers::WithinRel(zbar_RT, lookup_tol));
+              // Note that this will only mass when the mass fractions are equal
+              Real zbar = alloy.MeanAtomicNumber();
+              CHECK_THAT(zbar_RT, Catch::Matchers::WithinRel(zbar, 1.0e-14));
+            }
+          }
+        }
+      }
+      AND_WHEN("We use the IsModified() function") {
+        THEN("The EOS isn't modified") { REQUIRE(!alloy.IsModified()); }
+        THEN("UnmodifyOnce returns the same EOS") {
+          auto alloy_copy = alloy.UnmodifyOnce();
+          REQUIRE(alloy_copy.EosType() == alloy.EosType());
+        }
+      }
     }
   }
 }
@@ -378,6 +519,10 @@ SCENARIO("Test the MultiEOS object dynamic memory features",
     using LambdaT =
         VariadicIndexer<IndexableTypes::LogDensity, IndexableTypes::LogTemperature,
                         IndexableTypes::MassFraction<0>, IndexableTypes::MassFraction<1>>;
+
+    WHEN("The two EOS are combined in a MultiEOS object") {
+      auto alloy = MultiEOS(Cu_eos, Al_eos);
+    }
   }
 }
 

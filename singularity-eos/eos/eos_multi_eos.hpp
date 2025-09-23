@@ -1372,8 +1372,7 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
-      const Real density, const Real temperature,
-      LambdaIndexer const lambda = static_cast<Real *>(nullptr)) const {
+      const Real density, const Real temperature, LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
@@ -1390,8 +1389,7 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
   template <typename LambdaIndexer,
             SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat_)>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
-      const Real density, const Real temperature,
-      LambdaIndexer const lambda = static_cast<Real *>(nullptr)) const {
+      const Real density, const Real temperature, LambdaIndexer &lambda) const {
     std::array<Real, nmat_> density_mat{};
     std::array<Real, nmat_> sie_mat{};
     Real pressure, sie;
@@ -1409,13 +1407,23 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
   Real MeanAtomicMass() const {
     // Since we have no mass fraction information, assume equal weights in this
     // instance
-    return (0. + ... + EOSModelsT::MeanAtomicMass()) / nmat_;
+    const Real sum = std::apply(
+        [](auto const &...eos) -> Real {
+          return (eos.MeanAtomicMass() + ...); // sum over tuple elements
+        },
+        models_);
+    return sum / static_cast<Real>(nmat_);
   }
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicNumber() const {
     // Since we have no mass fraction information, assume equal weights in this
     // instance
-    return (0. + ... + EOSModelsT::MeanAtomicNumber()) / nmat_;
+    const Real sum = std::apply(
+        [](auto const &...eos) -> Real {
+          return (eos.MeanAtomicNumber() + ...); // sum over tuple elements
+        },
+        models_);
+    return sum / static_cast<Real>(nmat_);
   }
 
   // Modifier member functions
@@ -1501,19 +1509,18 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
 
                 // 4) For anything other than EOSPAC, we need to copy dynamic
                 //    memory to shared memory BEFORE calling `SetDynamicMemory()`
-                eos.AllDynamicMemoryIsShareable() && current_shared_stngs.CopyNeeded() ?
-                    (void)memcpy(current_shared_stngs.data, p_src,
-                                 shared_increment) :
-                    (void)0,
+                eos.AllDynamicMemoryIsShareable() && current_shared_stngs.CopyNeeded()
+                    ? (void)memcpy(current_shared_stngs.data, p_src, shared_increment)
+                    : (void)0,
 
                 // 5) Determine whether we set the dynamic memory pointers to
                 //    shared memory or to the source location. For EOSPAC, this
                 //    needs to always be the source location since it does its
                 //    own copy operation. For all other models, we need to
                 //    provide the shared memory pointer when available
-                data_loc =
-                    eos.AllDynamicMemoryIsShareable() && p_shared != nullptr
-                    ? current_shared_stngs.data : p_src,
+                data_loc = eos.AllDynamicMemoryIsShareable() && p_shared != nullptr
+                               ? current_shared_stngs.data
+                               : p_src,
 
                 // 5) Set the dynamic memory and record how much was used.
                 //    NOTE: EOSPAC copies from the source to shared memory here
