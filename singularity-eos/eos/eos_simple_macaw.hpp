@@ -55,7 +55,7 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     /* Equation (18) */
-    const Real Delta_e = sie - SieColdCurve(rho);
+    const Real Delta_e = std::max(sie - SieColdCurve(rho), 0.);
     const Real discriminant =
         Delta_e * (Delta_e + 4.0 * Cvinf_ * T0_ * std::pow(rho * v0_, Gc_));
     return robust::ratio((Delta_e + std::sqrt(discriminant)), 2.0 * Cvinf_);
@@ -95,13 +95,15 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     /* Equation (19) */
-    return PressureColdCurve(rho) + Gc_ * rho * (sie - SieColdCurve(rho));
+    const Real Delta_e = std::max(sie - SieColdCurve(rho), 0.);
+    return PressureColdCurve(rho) + Gc_ * rho * Delta_e;
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
       const Real rho, const Real P,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return SieColdCurve(rho) + robust::ratio(P - PressureColdCurve(rho), Gc_ * rho);
+    const Real delta_p = std::max(P - PressureColdCurve(rho), 0.);
+    return SieColdCurve(rho) + robust::ratio(delta_p, Gc_ * rho);
   }
 
   // Entropy member functions
@@ -168,9 +170,10 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const Real Delta_e = std::max(sie - SieColdCurve(rho), 0.);
     /* Equation (21) (multiplied by $\rho$ to get bulk mod) */
     const Real term1 = A_ * B_ * (B_ + 1.0) * std::pow(rho * v0_, B_ + 1.0);
-    const Real term2 = Gc_ * (Gc_ + 1.0) * rho * (sie - SieColdCurve(rho));
+    const Real term2 = Gc_ * (Gc_ + 1.0) * rho * Delta_e;
     return term1 + term2;
   }
   // Isothermal bulk modulus
