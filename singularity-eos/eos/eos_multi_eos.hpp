@@ -408,9 +408,10 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // sufficient tolerance, the PTE solver will converge at the looser tolerance
     // albeit with the `slow_convergence_detected` flag on. If we're perturbing
     // a converged PTE state, we only need a few iterations to do so.
-    const Real tol = doing_derivs ? 1.0e-14 : 1.0e-10;
-    const Real sufficient_tol = doing_derivs ? tol * 1.0e5 : tol * 1.0e2;
+    const Real tol = doing_derivs ? 1.0e-15 : 1.0e-10;
+    const Real sufficient_tol = doing_derivs ? tol * 1.0e6 : tol * 1.0;
     const size_t pte_mat_num_iter = doing_derivs ? 2 : 256;
+    const Real pte_slow_convergence_thresh = 1.0 - 1e-06;
 
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
@@ -465,6 +466,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       mix_params.pte_rel_tolerance_e_sufficient = sufficient_tol;
       mix_params.pte_rel_tolerance_v_sufficient = sufficient_tol;
       mix_params.pte_max_iter_per_mat = pte_mat_num_iter;
+      mix_params.pte_slow_convergence_thresh = pte_slow_convergence_thresh;
 
       // Solve for the PTE state
       PTESolverPT<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
@@ -525,9 +527,10 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // sufficient tolerance, the PTE solver will converge at the looser tolerance
     // albeit with the `slow_convergence_detected` flag on. If we're perturbing
     // a converged PTE state, we only need a few iterations to do so.
-    const Real tol = doing_derivs ? 1.0e-14 : 1.0e-08;
-    const Real sufficient_tol = doing_derivs ? tol * 1.0e5 : tol * 1.0e2;
-    const size_t pte_mat_num_iter = doing_derivs ? 2 : 256;
+    const Real tol = doing_derivs ? 1.0e-15 : 1.0e-08;
+    const Real sufficient_tol = doing_derivs ? tol * 1.0e6 : tol * 1.0;
+    const size_t pte_mat_num_iter = doing_derivs ? 4 : 256;
+    const Real pte_slow_convergence_thresh = 1.0 - 1e-06;
 
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
@@ -582,12 +585,6 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       const auto temp_idxr = GenericIndexer(temp_mat.data(), pte_mats.data());
       auto pres_idxr = GenericIndexer(pres_mat.data(), pte_mats.data());
 
-      // Set the PTE tolerances. The "sufficient" tolerances will be triggered
-      // when the update is very small, i.e. when the update is less than
-      // floating point precision. The solver should do a full line search and
-      // then exit at the smallest line search size, then triggering the
-      // "slow_convergence_detected" condition. Note also that since we're
-      //
       auto mix_params = MixParams{};
       mix_params.pte_rel_tolerance_p = tol;
       mix_params.pte_rel_tolerance_v = tol;
@@ -596,6 +593,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       mix_params.pte_rel_tolerance_v_sufficient = sufficient_tol;
       mix_params.pte_abs_tolerance_p_sufficient = sufficient_tol;
       mix_params.pte_max_iter_per_mat = pte_mat_num_iter;
+      mix_params.pte_slow_convergence_thresh = pte_slow_convergence_thresh;
 
       PTESolverFixedT<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
           npte, eos_idxr, vfrac_tot, temperature, density_idxr, vfrac_idxr, sie_idxr,
@@ -659,9 +657,10 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // sufficient tolerance, the PTE solver will converge at the looser tolerance
     // albeit with the `slow_convergence_detected` flag on. If we're perturbing
     // a converged PTE state, we only need a few iterations to do so.
-    const Real tol = doing_derivs ? 1.0e-14 : 1.0e-08;
-    const Real sufficient_tol = doing_derivs ? tol * 1.0e5 : tol * 1.0e2;
+    const Real tol = doing_derivs ? 1.0e-15 : 1.0e-08;
+    const Real sufficient_tol = doing_derivs ? tol * 1.0e6 : tol * 1.0;
     const size_t pte_mat_num_iter = doing_derivs ? 2 : 256;
+    const Real pte_slow_convergence_thresh = 1.0 - 1e-06;
 
     // Create temporary arrays
     std::array<Real, nmat_> mass_fracs{};
@@ -727,6 +726,7 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
       mix_params.pte_rel_tolerance_v_sufficient = sufficient_tol;
       mix_params.pte_abs_tolerance_p_sufficient = sufficient_tol;
       mix_params.pte_max_iter_per_mat = pte_mat_num_iter;
+      mix_params.pte_slow_convergence_thresh = pte_slow_convergence_thresh;
 
       PTESolverFixedP<decltype(eos_idxr), decltype(density_idxr), decltype(cache)> method(
           npte, eos_idxr, vfrac_tot, pressure, density_idxr, vfrac_idxr, sie_idxr,
@@ -935,12 +935,12 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
     // equilibrium state so that the PTE solve is easy. TODO: should this be a
     // central difference at the expense of another PTE solve?
     constexpr Real factor = 1.0e-07;
-    constexpr Real tol = 1.0e-14;
+    constexpr bool doing_derivs = true;
     const auto dT = temperature * factor + factor; // handle small or zero T
     const auto T_pert = temperature + dT;
     Real sie_pert, P_pert;
     GetStatesFromDensityTemperature(rho, sie_pert, P_pert, T_pert, density_mat, sie_mat,
-                                    lambdas, tol);
+                                    lambdas, doing_derivs);
     const auto de = sie_pert - sie;
 
     return de / dT; // No robust::ratio since dT is guaranteed non-zero
@@ -971,15 +971,18 @@ class MultiEOS : public EosBase<MultiEOS<BulkModAvgT, GruneisenAvgT, EOSModelsT.
 
     // Perturb the PTE state slightly to get the mixture derivative. Note that
     // the values for density_mat and sie_mat can be from an existing
-    // equilibrium state so that the PTE solve is easy. TODO: should this be a
-    // central difference at the expense of another PTE solve?
-    constexpr Real factor = 1.0e-07;
-    constexpr Real tol = 1.0e-14;
+    // equilibrium state so that the PTE solve is easy. Note also that making
+    // factor any smaller seems to result in divergent behavior for the tests
+    // (i.e. larger values all cluster around what appears to be a converged
+    // value, but smaller values are very different). JHP: I think this is a
+    // consequence of the P-T root find, but I'm not sure.
+    constexpr Real factor = 1.0e-05;
+    constexpr bool doing_derivs = true;
     const auto de = sie * factor + factor; // handle small or zero sie
     const auto sie_pert = sie + de;
     Real T_pert, P_pert;
     GetStatesFromDensityEnergy(rho, sie_pert, P_pert, T_pert, density_mat, sie_mat,
-                               lambdas, tol);
+                               lambdas, doing_derivs);
     const auto dP = P_pert - pressure;
     return robust::ratio(dP, de * rho);
   }

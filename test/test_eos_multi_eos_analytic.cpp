@@ -95,9 +95,9 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     // Lookup result tolerances
     constexpr Real lookup_tol = 1.0e-12;
 
-    // Tolerance for derivatives is fairly loose since we are comparing P-T and
-    // rho-T derivatives
-    constexpr Real deriv_tol = 1.0e-04;
+    // Tolerance for derivatives is fairly loose since we are comparing P-T,
+    // rho-T, and rho-sie derivatives
+    constexpr Real deriv_tol = 5.0e-04;
 
     // There is a lot of noise in numerical finite differences that can be
     // amplified when using thermodynamic identities. This tolerance is fairly

@@ -188,7 +188,11 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           const Real Gruneisen =
               alloy.GruneisenParamFromDensityTemperature(rho_ref, temp_ref, lambda);
           const Real dpde_calc = rho_ref * Gruneisen;
-          CHECK_THAT(dpde_ref, Catch::Matchers::WithinRel(dpde_calc, deriv_tol));
+
+          // We need a looser tolerance here because the Gruneisen parameter by itself
+          // comes from density-energy lookups, which require a P-T lookup and root-find.
+          const Real gru_tol = 1.0e-03;
+          CHECK_THAT(dpde_ref, Catch::Matchers::WithinRel(dpde_calc, gru_tol));
         }
 
         AND_WHEN("A density-temperature finite difference approximation is used") {
@@ -350,7 +354,6 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
             CHECK_THAT(dvdt_ref, Catch::Matchers::WithinRel(dVdT_FD, finite_diff_tol));
 
             const Real dpde_FD = robust::ratio(dP_R, de_R);
-
             CHECK_THAT(dpde_ref, Catch::Matchers::WithinRel(dpde_FD, finite_diff_tol));
           }
         }
