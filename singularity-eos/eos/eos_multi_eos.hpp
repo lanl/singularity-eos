@@ -283,11 +283,12 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
   //   2) Make sure the argument isn't a tuple so we don't try to store a tuple of a tuple
   //   3) Becuase (1) holds, we can do an element-wise comparison of the EOS models and
   //      make sure they can be copy/move constructed
-  template <typename... EOSModelsT_,
-            typename = std::enable_if_t<
-                (sizeof...(EOSModelsT) == sizeof...(EOSModelsT)) &&
-                !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...) &&
-                (std::conjunction_v<std::is_constructible<EOSModelsT, EOSModelsT_&&>...>)>>
+  template <
+      typename... EOSModelsT_,
+      typename = std::enable_if_t<
+          (sizeof...(EOSModelsT) == sizeof...(EOSModelsT)) &&
+          !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...) &&
+          (std::conjunction_v<std::is_constructible<EOSModelsT, EOSModelsT_ &&>...>)>>
   MultiEOS(Real mass_frac_cutoff_in, EOSModelsT_ &&...eos_models)
       : mass_frac_cutoff_{std::forward<Real>(mass_frac_cutoff_in)},
         models_(std::forward<EOSModelsT_>(eos_models)...) {
@@ -300,11 +301,12 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
   //   2) Make sure the argument isn't a tuple so we don't try to store a tuple of a tuple
   //   3) Becuase (1) holds, we can do an element-wise comparison of the EOS models and
   //      make sure they can be copy/move constructed
-  template <typename... EOSModelsT_,
-            typename = std::enable_if_t<
-                (sizeof...(EOSModelsT) == sizeof...(EOSModelsT)) &&
-                !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...) &&
-                (std::conjunction_v<std::is_constructible<EOSModelsT, EOSModelsT_&&>...>)>>
+  template <
+      typename... EOSModelsT_,
+      typename = std::enable_if_t<
+          (sizeof...(EOSModelsT) == sizeof...(EOSModelsT)) &&
+          !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...) &&
+          (std::conjunction_v<std::is_constructible<EOSModelsT, EOSModelsT_ &&>...>)>>
   MultiEOS(EOSModelsT_ &&...eos_models)
       : MultiEOS(
             /*mass_frac_cutoff=*/1e-8, std::forward<EOSModelsT_>(eos_models)...) {}
