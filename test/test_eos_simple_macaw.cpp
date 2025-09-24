@@ -21,6 +21,7 @@
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
 #endif
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/eos/eos.hpp>
@@ -48,18 +49,20 @@ SCENARIO("Testing the Simple MACAW EOS", "[SimpleMACAWEOS]") {
 
     WHEN("A set of densities is provided") {
       Real rho = 0.5;
-      for (int i = 0; i < 10; i++) {
-        rho += rho + i; // cylce through a variety of densities
-        DYNAMIC_SECTION("For a given density " << rho
-                                               << " and energy from the cold curve") {
-          Real e = eos.SieColdCurve(rho);
-          INFO("rho = " << rho << "  e = " << e);
-          THEN("The temperature at this density and energy should be zero") {
-            REQUIRE(eos.TemperatureFromDensityInternalEnergy(rho, e) == 0.0);
-          } // Then
-        }   // Dynamic Section
-      }     // for
-    }       // When
+      THEN("The temperatue at this density and an energy on the cold curve should be "
+           "zero") {
+        for (int i = 0; i < 10; i++) {
+          rho += rho + i; // cylce through a variety of densities
+          DYNAMIC_SECTION("i: " << i << "For a given density " << rho <<
+                          " and energy from the cold curve") {
+            const Real e = eos.SieColdCurve(rho);
+            INFO("rho = " << rho << "  e = " << e);
+            REQUIRE_THAT(eos.TemperatureFromDensityInternalEnergy(rho, e),
+                         Catch::Matchers::WithinRel(0.0, 1.0e-12));
+          }   // Dynamic Section
+        }     // for
+      }       // Then
+    }         // When
 
     WHEN("A density and temperature are provided") {
       Real rho = 0.56;
