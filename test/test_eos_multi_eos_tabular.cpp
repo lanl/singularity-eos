@@ -40,8 +40,6 @@
 #include <singularity-eos/eos/eos_spiner_rho_temp.hpp>
 #include <test/eos_unit_test_helpers.hpp>
 
-// TODO: Run some of these tests on-device (maybe just use CheckRhoSieFromPT)
-
 SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]") {
   using namespace singularity;
   using singularity::IndexerUtils::VariadicIndexer;
@@ -514,12 +512,12 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
               mfracs.fill(1.0 / num_eos);
               LambdaT lambda_device{};
               for (size_t i = 0; i < num_eos; i++) {
-                lambda[lambda_mf_offset + i] = set_mass_fracs[i];
+                lambda_device[lambda_mf_offset + i] = set_mass_fracs[i];
               }
 
               const Real rho = 6.0;
               const Real T = 500;
-              nwrong += !CheckRhoSieFromPT(alloy_device, rho, T, lambda);
+              nwrong += !CheckRhoSieFromPT(alloy_device, rho, T, lambda_device);
             },
             nwrong);
         REQUIRE(nwrong == 0);
@@ -564,8 +562,8 @@ SCENARIO("Test the MultiEOS object dynamic memory features",
           alloy.Finalize();
         }
 
+        const std::size_t bare_dynamic_size = alloy.DynamicMemorySizeInBytes();
         THEN("The dynamic size is less than the total serialized size") {
-          const std::size_t bare_dynamic_size = alloy.DynamicMemorySizeInBytes();
           REQUIRE(bare_size > bare_dynamic_size);
           const std::size_t variant_dynamic_size =
               alloy_in_variant.DynamicMemorySizeInBytes();

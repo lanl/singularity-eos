@@ -277,18 +277,34 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
 
   MultiEOS() = default;
 
+  // Note: there are a lot of SFINAE conditions here.
+  //   1) Make sure the number of arguments passed is the same as the number of models
+  //      for the class template
+  //   2) Make sure the argument isn't a tuple so we don't try to store a tuple of a tuple
+  //   3) Becuase (1) holds, we can do an element-wise comparison of the EOS models and
+  //      make sure they can be copy/move constructed
   template <typename... EOSModelsT_,
             typename = std::enable_if_t<
-                !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...)>>
+                (sizeof...(EOSModelsT) == sizeof...(EOSModelsT)) &&
+                !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...) &&
+                (std::conjunction_v<std::is_constructible<EOSModelsT, EOSModelsT_&&>...>)>>
   MultiEOS(Real mass_frac_cutoff_in, EOSModelsT_ &&...eos_models)
       : mass_frac_cutoff_{std::forward<Real>(mass_frac_cutoff_in)},
         models_(std::forward<EOSModelsT_>(eos_models)...) {
     CheckParams();
   }
 
+  // Note: there are a lot of SFINAE conditions here.
+  //   1) Make sure the number of arguments passed is the same as the number of models
+  //      for the class template
+  //   2) Make sure the argument isn't a tuple so we don't try to store a tuple of a tuple
+  //   3) Becuase (1) holds, we can do an element-wise comparison of the EOS models and
+  //      make sure they can be copy/move constructed
   template <typename... EOSModelsT_,
             typename = std::enable_if_t<
-                !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...)>>
+                (sizeof...(EOSModelsT) == sizeof...(EOSModelsT)) &&
+                !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...) &&
+                (std::conjunction_v<std::is_constructible<EOSModelsT, EOSModelsT_&&>...>)>>
   MultiEOS(EOSModelsT_ &&...eos_models)
       : MultiEOS(
             /*mass_frac_cutoff=*/1e-8, std::forward<EOSModelsT_>(eos_models)...) {}
@@ -310,14 +326,16 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
     // Because GetOnDevice() returns a copy of the EOS, we can't really just
     // use std::apply, and instead we need to also populate a new copy of the
     // model tuple
+    using namespace singularity::tuple_utils;
+    // Note: GetOnDevice isn't `const` even though we could make it `const`
     auto models_on_device =
-        tuple_transform(models_, [](const auto &eos) { return eos.GetOnDevice(); });
+        tuple_transform(models_, [](auto &eos) { return eos.GetOnDevice(); });
     return MultiEOS<EOSModelsT...>(mass_frac_cutoff_, models_on_device);
   }
 
   inline void Finalize() {
     // All the fold expressions!
-    std::apply([](const auto &...eos_models) { (eos_models.Finalize(), ...); }, models_);
+    std::apply([](auto &...eos_models) { (eos_models.Finalize(), ...); }, models_);
   }
 
   // Compute volume fractions and possibily material densities from mass
@@ -1442,13 +1460,23 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
 
   // Dynamic and shared memory member functions (normally included via macro)
   std::size_t DynamicMemorySizeInBytes() const {
-    return (0 + ... + EOSModelsT::DynamicMemorySizeInBytes());
+    const Real sum = std::apply(
+        [](auto const &...eos) -> std::size_t {
+          return (eos.DynamicMemorySizeInBytes() + ...);
+        },
+        models_);
+    return sum;
   }
   std::size_t SharedMemorySizeInBytes() const {
-    return (0 + ... + EOSModelsT::SharedMemorySizeInBytes());
+    const Real sum = std::apply(
+        [](auto const &...eos) -> std::size_t {
+          return (eos.SharedMemorySizeInBytes() + ...);
+        },
+        models_);
+    return sum;
   }
 
-  std::size_t DumpDynamicMemory(char *dst) const {
+  std::size_t DumpDynamicMemory(char *dst) {
     // Call each model's DumpDynamicMemory(dst_i) in order and return total
     // bytes written
     std::size_t total = 0;
@@ -1487,7 +1515,6 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
         [&p_src, &p_shared, &current_shared_stngs, &total](auto &...eos) {
           std::size_t shared_increment = 0;
           std::size_t src_increment = 0;
-          std::size_t shared_write_size = 0;
           std::size_t eos_size = 0;
           char *data_loc;
           // This is an awful fold expression... but it seems to be the easiest
