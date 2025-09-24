@@ -24,8 +24,8 @@
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers_floating_point.hpp>
 #endif
+#include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
@@ -39,6 +39,8 @@
 #include <singularity-eos/eos/eos_multi_eos.hpp>
 #include <singularity-eos/eos/eos_spiner_rho_temp.hpp>
 #include <test/eos_unit_test_helpers.hpp>
+
+// TODO: Run some of these tests on-device (maybe just use CheckRhoSieFromPT)
 
 SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]") {
   using namespace singularity;
@@ -54,6 +56,7 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
     using LambdaT =
         VariadicIndexer<IndexableTypes::LogDensity, IndexableTypes::LogTemperature,
                         IndexableTypes::MassFraction<0>, IndexableTypes::MassFraction<1>>;
+    constexpr size_t lambda_mf_offset = 2;
 
     // Lookup result tolerances
     constexpr Real lookup_tol = 1.0e-11;
@@ -68,7 +71,6 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
       std::array<Real, num_eos> set_mass_fracs{};
       set_mass_fracs.fill(1.0 / num_eos);
       LambdaT lambda{};
-      constexpr size_t lambda_mf_offset = 2;
       for (size_t i = 0; i < num_eos; i++) {
         lambda[lambda_mf_offset + i] = set_mass_fracs[i];
       }
@@ -492,6 +494,7 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           }
         }
       }
+
       AND_WHEN("We use the IsModified() function") {
         THEN("The EOS isn't modified") { REQUIRE(!alloy.IsModified()); }
         THEN("UnmodifyOnce returns the same EOS") {
@@ -499,6 +502,30 @@ SCENARIO("Test the MultiEOS object with a binary alloy", "[MultiEOS][SpinerEOS]"
           REQUIRE(alloy_copy.EosType() == alloy.EosType());
         }
       }
+
+      AND_WHEN("We want to perform lookups on device") {
+        auto alloy_device = alloy.GetOnDevice();
+        int nwrong = 0;
+        portableReduce(
+            "Test MultiEOS on device", 0, 1,
+            PORTABLE_LAMBDA(int dummy_idx, int &nwrong) {
+              // Initialize mass fractions
+              std::array<Real, num_eos> mfracs{};
+              mfracs.fill(1.0 / num_eos);
+              LambdaT lambda_device{};
+              for (size_t i = 0; i < num_eos; i++) {
+                lambda[lambda_mf_offset + i] = set_mass_fracs[i];
+              }
+
+              const Real rho = 6.0;
+              const Real T = 500;
+              nwrong += !CheckRhoSieFromPT(alloy_device, rho, T, lambda);
+            },
+            nwrong);
+        REQUIRE(nwrong == 0);
+        alloy_device.Finalize();
+      }
+      alloy.Finalize();
     }
   }
 }
@@ -514,14 +541,84 @@ SCENARIO("Test the MultiEOS object dynamic memory features",
     constexpr int Cu_matid = 3337;
     const std::string eos_file = "../materials.sp5";
     auto Cu_eos = SpinerEOSDependsRhoT{eos_file, Cu_matid};
+    using CuEOS_t = decltype(Cu_eos);
     auto Al_eos = EOSPAC{Al_matid};
+    using AlEOS_t = decltype(Al_eos);
 
     using LambdaT =
         VariadicIndexer<IndexableTypes::LogDensity, IndexableTypes::LogTemperature,
                         IndexableTypes::MassFraction<0>, IndexableTypes::MassFraction<1>>;
 
-    WHEN("The two EOS are combined in a MultiEOS object") {
+    WHEN("The two EOS are combined in either a bare MultiEOS object or one in a "
+         "Variant") {
       auto alloy = MultiEOS(Cu_eos, Al_eos);
+      using EOS = Variant<decltype(alloy)>;
+      EOS alloy_in_variant = alloy;
+      AND_WHEN("We serialize") {
+        auto [bare_size, bare_data] = alloy.Serialize();
+        auto [variant_size, variant_data] = alloy_in_variant.Serialize();
+
+        THEN("The serialized sizes are correct") {
+          REQUIRE(bare_size == alloy.SerializedSizeInBytes());
+          REQUIRE(variant_size == alloy_in_variant.SerializedSizeInBytes());
+          alloy.Finalize();
+        }
+
+        THEN("The dynamic size is less than the total serialized size") {
+          const std::size_t bare_dynamic_size = alloy.DynamicMemorySizeInBytes();
+          REQUIRE(bare_size > bare_dynamic_size);
+          const std::size_t variant_dynamic_size =
+              alloy_in_variant.DynamicMemorySizeInBytes();
+          REQUIRE(bare_size > variant_dynamic_size);
+          REQUIRE(bare_dynamic_size == variant_dynamic_size);
+          alloy.Finalize();
+        }
+
+        THEN("We can deserialize into shared memory") {
+          using singularity::SharedMemSettings;
+
+          // Create location for shared memory
+          std::size_t shared_size = alloy.SharedMemorySizeInBytes();
+          REQUIRE(shared_size <= bare_dynamic_size);
+          char *shared = (char *)malloc(shared_size);
+
+          // Finalize step is for EOSPAC mostly
+          alloy.Finalize();
+          alloy_in_variant.Finalize();
+
+          // Create empty objects and deserialize into them
+          EOS alloy2 = MultiEOS<CuEOS_t, AlEOS_t>{};
+          EOS alloy3 = MultiEOS<CuEOS_t, AlEOS_t>{};
+          std::size_t read_size_2 = alloy2.DeSerialize(
+              bare_data, SharedMemSettings(shared, /* copy into shared */ true));
+          REQUIRE(read_size_2 == bare_size);
+          std::size_t read_size_3 = alloy3.DeSerialize(
+              bare_data, SharedMemSettings(shared, /* copy into shared */ true));
+          REQUIRE(read_size_3 == bare_size);
+
+          AND_THEN("EOS lookups work") {
+            constexpr Real rho_trial = 5;
+            constexpr Real sie_trial = 1e12;
+            std::array<Real, num_eos> mfracs{};
+            mfracs.fill(1.0 / num_eos);
+            LambdaT lambda{};
+            constexpr size_t lambda_mf_offset = 2;
+            for (size_t i = 0; i < num_eos; i++) {
+              lambda[lambda_mf_offset + i] = mfracs[i];
+            }
+
+            const Real P2 =
+                alloy2.PressureFromDensityTemperature(rho_trial, sie_trial, lambda);
+            const Real P3 =
+                alloy3.PressureFromDensityTemperature(rho_trial, sie_trial, lambda);
+
+            REQUIRE_THAT(P2, Catch::Matchers::WithinRel(P3, 1.0e-12));
+          }
+
+          alloy2.Finalize();
+          alloy3.Finalize();
+        }
+      }
     }
   }
 }
