@@ -25,6 +25,7 @@ add_executable(
   test_eos_mgusup.cpp
   test_eos_powermg.cpp
   $<$<BOOL:${SINGULARITY_BUILD_CLOSURE}>:test_pte_ideal.cpp>
+  $<$<BOOL:${SINGULARITY_BUILD_CLOSURE}>:test_eos_multi_eos_analytic.cpp>
   test_eos_zsplit.cpp
   )
 
@@ -36,7 +37,7 @@ add_executable(
   test_eos_modifiers_minimal.cpp
   test_eos_vector.cpp
   test_math_utils.cpp
-  test_modifier_floored_energy.cpp
+  test_eos_modifier_floored_energy.cpp
   test_variadic_utils.cpp
   test_bounds.cpp
   test_indexable_types.cpp
@@ -51,6 +52,7 @@ add_executable(
   test_eos_tabulated.cpp
   test_eos_stellar_collapse.cpp
   test_spiner_transform.cpp
+  $<$<BOOL:${SINGULARITY_BUILD_CLOSURE}>:test_eos_multi_eos_tabular.cpp>
   )
 
 if (SINGULARITY_BUILD_CLOSURE)
