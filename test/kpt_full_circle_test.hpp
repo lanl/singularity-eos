@@ -45,13 +45,13 @@ inline void gibbsprintresults(int n, RealIndexer &&rho, RealIndexer &&temp,
                               RealIndexer &&sie, RealIndexer &&gibbsrt,
                               RealIndexer &&gibbsre) {
   std::cout << "Trial number: " << n << std::endl;
-  std::cout << "Density: beta, gamma, hcp: \t\t" << rho[0] << ", " << rho[1] << ", "
+  std::cout << "Density: beta, gamma, hcp: \t\t\t\t" << rho[0] << ", " << rho[1] << ", "
             << rho[2] << std::endl;
-  std::cout << "Temperature: beta, gamma, hcp: \t" << temp[0] << ", " << temp[1] << ", "
+  std::cout << "Temperature: beta, gamma, hcp: \t\t\t\t" << temp[0] << ", " << temp[1] << ", "
             << temp[2] << std::endl;
-  std::cout << "Gibbs(Density,Temperature): beta, gamma, hcp: \t" << gibbsrt[0] << ", "
+  std::cout << "Gibbs(Density,Temperature): beta, gamma, hcp: \t\t" << gibbsrt[0] << ", "
             << gibbsrt[1] << ", " << gibbsrt[2] << std::endl;
-  std::cout << "Internal energy: beta, gamma, hcp: \t" << sie[0] << ", " << sie[1] << ", "
+  std::cout << "Internal energy: beta, gamma, hcp: \t\t\t" << sie[0] << ", " << sie[1] << ", "
             << sie[2] << std::endl;
   std::cout << "Gibbs(Density,Internal Energy): beta, gamma, hcp: \t" << gibbsre[0]
             << ", " << gibbsre[1] << ", " << gibbsre[2] << std::endl;
@@ -59,7 +59,7 @@ inline void gibbsprintresults(int n, RealIndexer &&rho, RealIndexer &&temp,
             << isClose(gibbsrt[0], gibbsre[0], 1e-3) << ", "
             << isClose(gibbsrt[1], gibbsre[1], 1e-3) << ", "
             << isClose(gibbsrt[2], gibbsre[2], 1e-3) << std::endl;
-  std::cout << "Within 0.1 % from Gibbs from LAP: beta, gamma, hcp: \t "
+  std::cout << "Within 0.1 % from Gibbs from LAP: beta, gamma, hcp: \t\t\t "
             << isClose(gibbsrt[0], out_gibbs0[n], 1e-3) << ", "
             << isClose(gibbsrt[1], out_gibbs1[n], 1e-3) << ", "
             << isClose(gibbsrt[2], out_gibbs2[n], 1e-3) << std::endl

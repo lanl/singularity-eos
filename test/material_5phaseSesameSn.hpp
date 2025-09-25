@@ -17,6 +17,30 @@
 
 using EOS = singularity::Variant<singularity::EOSPAC>;
 
+constexpr Real w[25] = {0.,  0.8510E+01, 20., 20., 20., 0.8510E+01, 0.,  20., 20.,
+                        20., 20.,        20., 0.,  20., 20.,        20., 20., 20.,
+                        0.,  20.,        20., 20., 20., 20.,        0.};
+
+constexpr Real b[25] = {0.,         0.3060E-04, 0.1000E-05, 0.1000E-05, 0.1000E-05,
+                        0.3060E-04, 0.,         0.1000E-05, 0.1000E-05, 0.1000E-05,
+                        0.1000E-05, 0.1000E-05, 0.,         0.1000E-05, 0.1000E-05,
+                        0.1000E-05, 0.1000E-05, 0.1000E-05, 0.,         0.1000E-05,
+                        0.1000E-05, 0.1000E-05, 0.1000E-05, 0.1000E-05, 0.};
+template <typename T>
+inline void set_mfupdate_params(const int n, const std::vector<int> &nphases, T *wparam, T *bparam) {
+
+  int numphases = 5;
+
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+      wparam[i*n + j] = w[nphases[i]*numphases+nphases[j]];
+      bparam[i*n + j] = b[nphases[i]*numphases+nphases[j]];
+    }
+  }
+
+  return;
+}
+
 template <typename T>
 inline void set_eos(const int n, const std::vector<int> &nphases, T *eos) {
 
@@ -33,8 +57,6 @@ inline void set_eos(const int n, const std::vector<int> &nphases, T *eos) {
 
   // bool invert_at_setup = true;
 
-  std::cout << "before EOSPAC(SnbetaID)" << std::endl;
-
   EOS Snbeta = singularity::EOSPAC(SnbetaID);
   EOS Sngamma = singularity::EOSPAC(SngammaID);
   EOS Sndelta = singularity::EOSPAC(SndeltaID);
@@ -43,15 +65,11 @@ inline void set_eos(const int n, const std::vector<int> &nphases, T *eos) {
 
   std::vector<EOS> alleos(numphases);
 
-  std::cout << "before Snbeta.GetOnDevice" << std::endl;
-
   alleos[0] = Snbeta.GetOnDevice();
   alleos[1] = Sngamma.GetOnDevice();
   alleos[2] = Sndelta.GetOnDevice();
   alleos[3] = Snhcp.GetOnDevice();
   alleos[4] = Snliquid.GetOnDevice();
-
-  std::cout << "after Snbeta.GetOnDevice" << std::endl;
 
   for (int i = 0; i < n; i++) {
     eos[i] = alleos[nphases[i]];

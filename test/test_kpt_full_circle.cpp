@@ -80,22 +80,37 @@ int main(int argc, char *argv[]) {
     // EOS
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<EOS *> eos_v("eos", NMAT);
+    Kokkos::View<Real *> CGw_v("mfupdate_CGmodelparamw", NMAT*NMAT);
+    Kokkos::View<Real *> CGb_v("mfupdate_CGmodelparamb", NMAT*NMAT);
     auto eos_hv = Kokkos::create_mirror_view(eos_v);
+    auto CGw_hv = Kokkos::create_mirror_view(CGw_v);
+    auto CGb_hv = Kokkos::create_mirror_view(CGb_v);
 #else
     std::vector<EOS> eos_vec(NMAT);
+    std::vector<Real> CGw_vec(NMAT*NMAT);
+    std::vector<Real> CGb_vec(NMAT*NMAT);
     PortableMDArray<EOS> eos_hv(eos_vec.data(), NMAT);
     PortableMDArray<EOS> eos_v(eos_vec.data(), NMAT);
+    auto CGw_hv = CGw_vec.data();
+    auto CGb_hv = CGb_vec.data();
+    auto CGw_v = CGw_vec.data();
+    auto CGb_v = CGb_vec.data();
 #endif
-
-    // set-eos according to test_pte_3phaseSesameSn
-    std::cout << "Load " << NMAT << " phases" << std::endl;
+    // set-eos and set_mfupdate_params according to material_5phaseSesameSn
+    std::cout << "Load EOS tables/data for " << NMAT << " phases" << std::endl;
 
     set_eos(NMAT, PHASES, eos_hv.data());
 
-    std::cout << NMAT << " phases loaded" << std::endl;
+    std::cout << "Load mass fraction update model parameters for " << NMAT*(NMAT-1)/2 << " phase transitions" << std::endl;
+
+    set_mfupdate_params(NMAT,PHASES,CGw_hv,CGb_hv);
+
+    std::cout << "Mass fraction update model parameters w and b are in the materials file together with the eos they are determined for. " << std::endl << std::endl;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(eos_v, eos_hv);
+    Kokkos::deep_copy(CGw_v, CGw_hv);
+    Kokkos::deep_copy(CGb_v, CGb_hv);
 #endif
 
     using EOSAccessor = LinearIndexer<decltype(eos_v)>;
@@ -110,6 +125,7 @@ int main(int argc, char *argv[]) {
     using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
     RView rho_v("rho", NPTS);
     RView vfrac_v("vfrac", NPTS);
+    RView mfrac_v("mfrac", NPTS);
     RView sie_v("sie", NPTS);
     RView temp_v("temp", NPTS);
     RView press_v("press", NPTS);
@@ -119,6 +135,7 @@ int main(int argc, char *argv[]) {
     Kokkos::View<int *, atomic_view> hist_d("histogram", HIST_SIZE);
     auto rho_vh = Kokkos::create_mirror_view(rho_v);
     auto vfrac_vh = Kokkos::create_mirror_view(vfrac_v);
+    auto mfrac_vh = Kokkos::create_mirror_view(mfrac_v);
     auto sie_vh = Kokkos::create_mirror_view(sie_v);
     auto temp_vh = Kokkos::create_mirror_view(temp_v);
     auto press_vh = Kokkos::create_mirror_view(press_v);
@@ -128,6 +145,7 @@ int main(int argc, char *argv[]) {
     auto hist_vh = Kokkos::create_mirror_view(hist_d);
     DataBox rho_d(rho_v.data(), NTRIAL, NMAT);
     DataBox vfrac_d(vfrac_v.data(), NTRIAL, NMAT);
+    DataBox mfrac_d(mfrac_v.data(), NTRIAL, NMAT);
     DataBox sie_d(sie_v.data(), NTRIAL, NMAT);
     DataBox temp_d(temp_v.data(), NTRIAL, NMAT);
     DataBox press_d(press_v.data(), NTRIAL, NMAT);
@@ -136,6 +154,7 @@ int main(int argc, char *argv[]) {
     DataBox scratch_d(scratch_v.data(), NTRIAL * nscratch_vars);
     DataBox rho_hm(rho_vh.data(), NTRIAL, NMAT);
     DataBox vfrac_hm(vfrac_vh.data(), NTRIAL, NMAT);
+    DataBox mfrac_hm(mfrac_vh.data(), NTRIAL, NMAT);
     DataBox sie_hm(sie_vh.data(), NTRIAL, NMAT);
     DataBox temp_hm(temp_vh.data(), NTRIAL, NMAT);
     DataBox press_hm(press_vh.data(), NTRIAL, NMAT);
@@ -145,6 +164,7 @@ int main(int argc, char *argv[]) {
 #else
     DataBox rho_d(NTRIAL, NMAT);
     DataBox vfrac_d(NTRIAL, NMAT);
+    DataBox mfrac_d(NTRIAL, NMAT);
     DataBox sie_d(NTRIAL, NMAT);
     DataBox temp_d(NTRIAL, NMAT);
     DataBox press_d(NTRIAL, NMAT);
@@ -153,6 +173,7 @@ int main(int argc, char *argv[]) {
     DataBox scratch_d(NTRIAL, nscratch_vars);
     DataBox rho_hm = rho_d.slice(2, 0, NTRIAL);
     DataBox vfrac_hm = vfrac_d.slice(2, 0, NTRIAL);
+    DataBox mfrac_hm = mfrac_d.slice(2, 0, NTRIAL);
     DataBox sie_hm = sie_d.slice(2, 0, NTRIAL);
     DataBox temp_hm = temp_d.slice(2, 0, NTRIAL);
     DataBox press_hm = press_d.slice(2, 0, NTRIAL);
@@ -166,14 +187,15 @@ int main(int argc, char *argv[]) {
     // setup state
     std::cout
         << "Setup Initial states (from Density, Mass fractions, and Internal energy)."
-        << std::endl;
+        << std::endl << std::endl;
 
     srand(time(NULL));
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
       Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
+      Indexer2D<decltype(mfrac_hm)> mf(n, mfrac_hm);
       Indexer2D<decltype(sie_hm)> e(n, sie_hm);
-      set_trial_state(n, r, vf, e);
+      set_trial_state(n, r, vf, mf, e);
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;
@@ -181,6 +203,7 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(rho_v, rho_vh);
     Kokkos::deep_copy(vfrac_v, vfrac_vh);
+    Kokkos::deep_copy(mfrac_v, mfrac_vh);
     Kokkos::deep_copy(sie_v, sie_vh);
     Kokkos::deep_copy(temp_v, temp_vh);
     Kokkos::deep_copy(press_v, press_vh);
@@ -188,7 +211,7 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(gibbsre_v, gibbsre_vh);
     Kokkos::deep_copy(hist_d, hist_vh);
 #endif
-    std::cout << "Initial states for " << NTRIAL << " trials set." << std::endl;
+    std::cout << "Initial states for " << NTRIAL << " trials set." << std::endl << std::endl;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<int, atomic_view> nsuccess_d("n successes");
@@ -200,7 +223,7 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif
-    std::cout << "The trials have initial states: " << std::endl;
+    std::cout << "The trials have initial, time=t0, states: " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
@@ -259,7 +282,7 @@ int main(int argc, char *argv[]) {
     Kokkos::deep_copy(nsuccess, nsuccess_d);
     Kokkos::deep_copy(hist_vh, hist_d);
 #endif
-    std::cout << "Converged: " << nsuccess << "   NOT converged: " << NTRIAL - nsuccess
+    std::cout << "The PTE solver converged: " << nsuccess << ", did NOT converge: " << NTRIAL - nsuccess
               << std::endl;
     std::cout << "Histogram:\n"
               << "iters\tcount\n"
@@ -269,7 +292,7 @@ int main(int argc, char *argv[]) {
     }
     std::cout << std::endl;
 
-    std::cout << "Results from the PTE solver are: " << std::endl;
+    std::cout << "Results from the PTE solver are: (time = t0) " << std::endl;
 
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
@@ -280,11 +303,17 @@ int main(int argc, char *argv[]) {
       printresults(n, rho, vfrac, sie, press, temp);
     }
 
+    std::cout << "t0 results from the PTE solver handed to host code." << std::endl;
+    std::cout << "We can also give the host code a suggestion for time step, dt, to t1 = dt + t0, see below." << std::endl;
+    std::cout << "Hostcode gives back new Internal energy and density for time t1." << std::endl << std::endl;
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif
-    std::cout << "Getting corresponding Gibbs Free energies." << std::endl;
-    // temporary start
+    std::cout << "We still have to update mass/volume fractions to time t1." << std::endl << std::endl;
+
+    std::cout << "Getting t0 Gibbs Free energies, needed for the update model." << std::endl;
+    
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> rho(n, rho_hm);
       Indexer2D<decltype(sie_hm)> sie(n, sie_hm);
@@ -300,6 +329,184 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::fence();
 #endif // PORTABILITY_STRATEGY_KOKKOS
+
+    std::cout << "Updating mass fractions/volume fractions at time = t0 to time = t1." << std::endl << std::endl;
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+    // Create device views for outputs and mirror those views on the host
+    Kokkos::View<int[NMAT]> v_order("Gibbsorder");
+    auto order = Kokkos::create_mirror_view(v_order);
+#else
+    // Create arrays for the outputs and then pointers to those arrays that
+    // will be passed to the functions in place of the Kokkos views
+    std::array<int, NMAT> order;
+    // Just alias the existing pointers
+    auto v_order = order.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+    // Can we send indexers to code that takes real arrays?
+    std::array<Real, NMAT> gibbs;
+    auto v_gibbs = gibbs.data();
+    std::array<Real, NMAT> mftemp;
+    auto v_mftemp = mftemp.data();
+
+    constexpr int mnum=NMAT*(NMAT-1)/2;
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+    Kokkos::View<Real[mnum]> v_logrates("LogRates");
+    auto h_logrates = Kokkos::create_mirror_view(v_logrates);
+    Kokkos::View<Real[mnum]> v_dgibbs("dgibbs");
+    auto dgibbs = Kokkos::create_mirror_view(v_dgibbs);
+    Kokkos::View<int[mnum]> v_fromto("fromto");
+    auto fromto = Kokkos::create_mirror_view(v_fromto);
+#else
+    std::array<Real, mnum> h_logrates;
+    auto v_logrates = h_logrates.data();
+    std::array<Real, mnum> dgibbs;
+    auto v_dgibbs = dgibbs.data();
+    std::array<int, mnum> fromto;
+    auto v_fromto = fromto.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+//  do a verbose full update for each trial.
+
+    Real logmts;
+
+    for (int n = 0; n < NTRIAL; n++) {
+      Indexer2D<decltype(gibbsre_hm)> gibbsre(n, gibbsre_hm);
+      Indexer2D<decltype(vfrac_d)> vfrac(n, vfrac_d);
+      Indexer2D<decltype(mfrac_d)> mfrac(n, mfrac_d);
+
+      std::cout << "---------------Trial " << n << "---------------" << std::endl << std::endl;
+
+      for (int l = 0; l < NMAT; l++) {
+        std::cout << "Phase: " << l
+                  << "  initial (t0) mass fractions: " << mfrac[l]
+                  << std::endl;
+      }
+      std::cout << std::endl;
+
+      std::cout << "Using SortGibbs(num,gibbs,order) to give the num phases in order of largest to "
+           "smallest Gibbs free energy" << std::endl << std::endl;
+      
+      // some of my routines only takes real arrays
+      // might need to fix this later.
+      for (int i = 0; i< NMAT; i++){
+        v_gibbs[i] = gibbsre[i];
+	v_mftemp[i] = mfrac[i];
+      }
+
+      SortGibbs(NMAT, v_gibbs, v_order);
+
+      std::cout << "Order obtained with SortGibbs, largest to smallest Gibbs: " << std::endl;
+      for (int l = 0; l < NMAT; l++) {
+        std::cout << "Phase " << v_order[l] << " Gibbs: " << gibbsre[v_order[l]]
+                  << std::endl;
+      }
+      std::cout << std::endl;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::fence();
+      Kokkos::deep_copy(order, v_order);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+//    array_compare(num, gibbs, phaseorder, order, order_true, "Gibbs", "phase");
+//
+// create deltagibbs and fromphasetophase
+      std::cout << "Rates are calculated from the difference in Gibbs free energy between phase i and k: " << std::endl;
+      int ik = 0;
+      for (int i = 0; i < NMAT - 1; i++) {
+        for (int k = NMAT - 1; k > i; k--) {
+          v_dgibbs[ik] = gibbsre[v_order[i]] - gibbsre[v_order[k]];
+	  std::cout << "DeltaG between phase " << v_order[i] << " and " << v_order[k] << " is: " << v_dgibbs[ik] << std::endl;
+          ik++;
+        }
+      }
+      std::cout << std::endl;
+
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::fence();
+      Kokkos::deep_copy(dgibbs, v_dgibbs);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      std::cout << "Using LogRij(w,b,num,gibbs,order,fromto) to get the logarithm of the rates from num phases i to j. " << std::endl << std::endl;
+
+      LogRatesCGModel(CGw_v, CGb_v, NMAT, v_gibbs, v_order, v_logrates, v_fromto);
+
+      std::cout << "LogRates obtained with LogRatesCGModel: " << std::endl;
+      for (int l = 0; l < mnum; l++) {
+          std::cout << "From phase i to phase k, ik ( x means 0x): " << v_fromto[l]
+                    << "   LogRik: " << v_logrates[l] << std::endl;
+      }
+      std::cout << std::endl;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::fence();
+      Kokkos::deep_copy(fromto, v_fromto);
+      Kokkos::deep_copy(h_logrates, v_logrates);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+     
+//    array_compare(mnum, dgibbs, fromto, h_logrates, logrates_true, "DeltaGibbs",
+//                          "FromTo");
+
+      std::cout << "Optional: Give host code a suggestion for time step. " << std::endl << std::endl;
+      std::cout << "A LogMaxTimeStep(num,order,logrates) lookup is performed" << std::endl;
+
+      logmts = LogMaxTimeStep(NMAT, v_mftemp, v_order, v_logrates);
+//      isClose(logmts, logmts_true);
+
+      std::cout << "Log(MaxTimeStep) from rates obtained with CGModel: " << logmts
+                << std::endl;
+      std::cout << "This timestep would give a mass transfer of Rdt*(mass fractions at t0), " << std::endl;
+      for (int l = 0; l < mnum; l++) {
+        std::cout << "with Rdt = " << std::exp(logmts + v_logrates[l]) 
+		  << ", from phase i to phase k, ik ( x means 0x): " << v_fromto[l] << std::endl;
+      }
+      std::cout << std::endl;
+      
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create Kokkos views on device for the input arrays
+      // Create host-side mirrors
+      Kokkos::View<Real[NMAT]> v_newmfs("newmassfractions");
+      auto newmassfractions = Kokkos::create_mirror_view(v_newmfs);
+      Kokkos::View<Real[mnum]> v_deltamfs("massfractiontransfers");
+      auto h_deltamfs = Kokkos::create_mirror_view(v_deltamfs);
+#else
+      // Otherwise just create arrays to contain values and create pointers to
+      // be passed to the functions in place of the Kokkos views
+      std::array<Real, NMAT> newmassfractions;
+      auto v_newmfs = newmassfractions.data();
+      std::array<Real, mnum> h_deltamfs;
+      auto v_deltamfs = h_deltamfs.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
+      std::cout << "A massfraction update with SmallStepMFUpdate is performed" << std::endl << std::endl; 
+
+      SmallStepMFUpdate(logmts, NMAT, v_mftemp, v_order, v_logrates,
+                         v_deltamfs, v_newmfs);
+      for (int l = 0; l < NMAT; l++) {
+        std::cout << "Phase: " << v_order[l]
+                  << "  initial mass fractions: " << v_mftemp[v_order[l]]
+                  << std::endl;
+        std::cout << "         "
+                  << "   final mass fractions: " << v_newmfs[v_order[l]]
+                  << std::endl;
+      }
+      std::cout << std::endl;
+      for (int l = 0; l < mnum; l++) {
+        std::cout << "From phase i to phase k, ik ( x means 0x): " << v_fromto[l]
+                  << "   Mass fraction transfer: " << v_deltamfs[l] << std::endl;
+      }
+      std::cout << std::endl;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::fence();
+      Kokkos::deep_copy(newmassfractions, v_newmfs);
+      Kokkos::deep_copy(h_deltamfs, v_deltamfs);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+//      array_compare(num, phaseorder, massfractions, newmassfractions,
+//                    newmassfractions_true, "Phase", "old massfractions");
+//      array_compare(mnum, dgibbs, fromto, h_deltamfs, deltamfs_true,
+//                    "DeltaGibbs", "FromTo");
+    }
+
   }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::finalize();

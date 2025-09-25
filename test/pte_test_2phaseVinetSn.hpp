@@ -131,7 +131,8 @@ inline void printresults(int n, RealIndexer &&rho, RealIndexer &&vfrac, RealInde
   std::cout << "Pressure: beta, gamma: \t\t" << press[0] << ", " << press[1] << ", ("
             << out_press[n] << ")" << std::endl;
   std::cout << "Temperature: beta, gamma: \t\t" << temp[0] << ", " << temp[1] << ", ("
-            << out_temp[n] << ")" << std::endl;
+            << out_temp[n] << ")" << std::endl
+	    << std::endl;
 }
 
 } // namespace pte_longtest_2phase

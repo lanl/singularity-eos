@@ -60,11 +60,7 @@ int main(int argc, char *argv[]) {
     PortableMDArray<EOS> eos_v(eos_vec.data(), NMAT);
 #endif
 
-    std::cout << "before set_eos" << std::endl;
-
     set_eos(NMAT, PHASES, eos_hv.data());
-
-    std::cout << "after set_eos" << std::endl;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(eos_v, eos_hv);
@@ -82,6 +78,7 @@ int main(int argc, char *argv[]) {
     using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
     RView rho_v("rho", NPTS);
     RView vfrac_v("vfrac", NPTS);
+    RView mfrac_v("mfrac", NPTS);
     RView sie_v("sie", NPTS);
     RView temp_v("temp", NPTS);
     RView press_v("press", NPTS);
@@ -89,6 +86,7 @@ int main(int argc, char *argv[]) {
     Kokkos::View<int *, atomic_view> hist_d("histogram", HIST_SIZE);
     auto rho_vh = Kokkos::create_mirror_view(rho_v);
     auto vfrac_vh = Kokkos::create_mirror_view(vfrac_v);
+    auto mfrac_vh = Kokkos::create_mirror_view(mfrac_v);
     auto sie_vh = Kokkos::create_mirror_view(sie_v);
     auto temp_vh = Kokkos::create_mirror_view(temp_v);
     auto press_vh = Kokkos::create_mirror_view(press_v);
@@ -96,12 +94,14 @@ int main(int argc, char *argv[]) {
     auto hist_vh = Kokkos::create_mirror_view(hist_d);
     DataBox rho_d(rho_v.data(), NTRIAL, NMAT);
     DataBox vfrac_d(vfrac_v.data(), NTRIAL, NMAT);
+    DataBox mfrac_d(mfrac_v.data(), NTRIAL, NMAT);
     DataBox sie_d(sie_v.data(), NTRIAL, NMAT);
     DataBox temp_d(temp_v.data(), NTRIAL, NMAT);
     DataBox press_d(press_v.data(), NTRIAL, NMAT);
     DataBox scratch_d(scratch_v.data(), NTRIAL * nscratch_vars);
     DataBox rho_hm(rho_vh.data(), NTRIAL, NMAT);
     DataBox vfrac_hm(vfrac_vh.data(), NTRIAL, NMAT);
+    DataBox mfrac_hm(mfrac_vh.data(), NTRIAL, NMAT);
     DataBox sie_hm(sie_vh.data(), NTRIAL, NMAT);
     DataBox temp_hm(temp_vh.data(), NTRIAL, NMAT);
     DataBox press_hm(press_vh.data(), NTRIAL, NMAT);
@@ -109,12 +109,14 @@ int main(int argc, char *argv[]) {
 #else
     DataBox rho_d(NTRIAL, NMAT);
     DataBox vfrac_d(NTRIAL, NMAT);
+    DataBox mfrac_d(NTRIAL, NMAT);
     DataBox sie_d(NTRIAL, NMAT);
     DataBox temp_d(NTRIAL, NMAT);
     DataBox press_d(NTRIAL, NMAT);
     DataBox scratch_d(NTRIAL, nscratch_vars);
     DataBox rho_hm = rho_d.slice(2, 0, NTRIAL);
     DataBox vfrac_hm = vfrac_d.slice(2, 0, NTRIAL);
+    DataBox mfrac_hm = mfrac_d.slice(2, 0, NTRIAL);
     DataBox sie_hm = sie_d.slice(2, 0, NTRIAL);
     DataBox temp_hm = temp_d.slice(2, 0, NTRIAL);
     DataBox press_hm = press_d.slice(2, 0, NTRIAL);
@@ -130,8 +132,9 @@ int main(int argc, char *argv[]) {
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(rho_hm)> r(n, rho_hm);
       Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
+      Indexer2D<decltype(mfrac_hm)> mf(n, mfrac_hm);
       Indexer2D<decltype(sie_hm)> e(n, sie_hm);
-      set_trial_state(n, r, vf, e);
+      set_trial_state(n, r, vf, mf, e);
     }
     for (int i = 0; i < HIST_SIZE; ++i) {
       hist_vh[i] = 0;
@@ -139,6 +142,7 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::deep_copy(rho_v, rho_vh);
     Kokkos::deep_copy(vfrac_v, vfrac_vh);
+    Kokkos::deep_copy(mfrac_v, mfrac_vh);
     Kokkos::deep_copy(sie_v, sie_vh);
     Kokkos::deep_copy(temp_v, temp_vh);
     Kokkos::deep_copy(press_v, press_vh);

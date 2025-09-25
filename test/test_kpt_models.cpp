@@ -104,6 +104,7 @@ SCENARIO("Testing the KPT framework") {
           std::cout << "Phase " << v_order[l] << " Gibbs: " << v_gibbs[v_order[l]]
                     << std::endl;
         }
+	std::cout << std::endl;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
         Kokkos::fence();
         Kokkos::deep_copy(order, v_order);
@@ -155,6 +156,7 @@ SCENARIO("Testing the KPT framework") {
             std::cout << "From phase i to phase k, ik ( x means 0x): " << v_fromto[l]
                       << "   LogRik: " << v_logrates[l] << std::endl;
           }
+	  std::cout << std::endl;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
           Kokkos::fence();
           Kokkos::deep_copy(fromto, v_fromto);
@@ -203,6 +205,7 @@ SCENARIO("Testing the KPT framework") {
                         << "  initial mass fractions: " << v_massfractions[l]
                         << std::endl;
             }
+	    std::cout << std::endl;
             std::cout << "Log(MaxTimeStep) from Rates obtained with CGModel: " << logmts
                       << std::endl;
             for (int l = 0; l < mnum; l++) {
@@ -210,6 +213,7 @@ SCENARIO("Testing the KPT framework") {
                         << "   Max mass fraction transfer: "
                         << std::exp(logmts + v_logrates[l]) << std::endl;
             }
+	    std::cout << std::endl;
 
             THEN("The returned Log(MaxTimeStep) should be equal to the true value") {
               CHECK(isClose(logmts, logmts_true));
@@ -261,6 +265,7 @@ SCENARIO("Testing the KPT framework") {
                 std::cout << "From phase i to phase k, ik ( x means 0x): " << v_fromto[l]
                           << "   Mass fraction transfer: " << v_deltamfs[l] << std::endl;
               }
+	      std::cout << std::endl;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
               Kokkos::fence();
               Kokkos::deep_copy(newmassfractions, v_newmfs);
