@@ -286,7 +286,7 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
   template <
       typename... EOSModelsT_,
       typename = std::enable_if_t<
-          (sizeof...(EOSModelsT) == sizeof...(EOSModelsT)) &&
+          (sizeof...(EOSModelsT_) == sizeof...(EOSModelsT)) &&
           !(singularity::tuple_utils::is_std_tuple_v<EOSModelsT_> && ...) &&
           (std::conjunction_v<std::is_constructible<EOSModelsT, EOSModelsT_ &&>...>)>>
   MultiEOS(Real mass_frac_cutoff_in, EOSModelsT_ &&...eos_models)
