@@ -582,13 +582,12 @@ SCENARIO("Test the MultiEOS object dynamic memory features",
 
           // Finalize step is for EOSPAC mostly
           alloy.Finalize();
-          alloy_in_variant.Finalize();
 
           // Create empty objects and deserialize into them
           EOS alloy2 = MultiEOS<CuEOS_t, AlEOS_t>{};
-          EOS alloy3 = MultiEOS<CuEOS_t, AlEOS_t>{};
+          auto alloy3 = MultiEOS<CuEOS_t, AlEOS_t>{};
           std::size_t read_size_2 = alloy2.DeSerialize(
-              bare_data, SharedMemSettings(shared, /* copy into shared */ true));
+              variant_data, SharedMemSettings(shared, /* copy into shared */ true));
           REQUIRE(read_size_2 == bare_size);
           std::size_t read_size_3 = alloy3.DeSerialize(
               bare_data, SharedMemSettings(shared, /* copy into shared */ true));
