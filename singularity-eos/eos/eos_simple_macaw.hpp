@@ -56,8 +56,15 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     /* Equation (18) */
     const Real Delta_e = std::max(sie - SieColdCurve(rho), 0.);
+
+    // Early return ensure we're on the cold curve
+    if (_IsNearOrBelowZero(Delta_e)) {
+      return 0.;
+    }
+
     const Real discriminant =
         Delta_e * (Delta_e + 4.0 * Cvinf_ * T0_ * std::pow(rho * v0_, Gc_));
+
     return robust::ratio((Delta_e + std::sqrt(discriminant)), 2.0 * Cvinf_);
   }
   PORTABLE_INLINE_FUNCTION void CheckParams() const {
@@ -96,6 +103,12 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     /* Equation (19) */
     const Real Delta_e = std::max(sie - SieColdCurve(rho), 0.);
+
+    // Early return ensure we're on the cold curve
+    if (_IsNearOrBelowZero(Delta_e)) {
+      return PressureColdCurve(rho);
+    }
+
     return PressureColdCurve(rho) + Gc_ * rho * Delta_e;
   }
   template <typename Indexer_t = Real *>
@@ -103,6 +116,12 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
       const Real rho, const Real P,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
     const Real delta_p = std::max(P - PressureColdCurve(rho), 0.);
+
+    // Early return ensure we're on the cold curve
+    if (_IsNearOrBelowZero(delta_p)) {
+      return SieColdCurve(rho);
+    }
+
     return SieColdCurve(rho) + robust::ratio(delta_p, Gc_ * rho);
   }
 
@@ -173,6 +192,12 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
     const Real Delta_e = std::max(sie - SieColdCurve(rho), 0.);
     /* Equation (21) (multiplied by $\rho$ to get bulk mod) */
     const Real term1 = A_ * B_ * (B_ + 1.0) * std::pow(rho * v0_, B_ + 1.0);
+
+    // Early return ensure we're on the cold curve
+    if (_IsNearOrBelowZero(Delta_e)) {
+      return term1;
+    }
+
     const Real term2 = Gc_ * (Gc_ + 1.0) * rho * Delta_e;
     return term1 + term2;
   }
@@ -318,6 +343,10 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   MeanAtomicProperties _AZbar;
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
+
+  PORTABLE_FORCEINLINE_FUNCTION bool _IsNearOrBelowZero(Real value) {
+    return value < std::numeric_limits<Real>min() * 5;
+  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real _TemperatureScale(
