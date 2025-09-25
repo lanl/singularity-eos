@@ -204,8 +204,8 @@ target_link_options(singularity-eos_Interface INTERFACE $<$<CXX_COMPILER_ID:Clan
 
 # Interface target to propagate sanitizer flags (internal testing since PUBLIC scope)
 if (SINGULARITY_BUILD_WITH_SANITIZER)
-  set(SANITIZE_COMPILE_OPTS "-fsanitize=address" "-fsanitize=undefined" "-fno-omit-frame-pointer")
-  set(SANITIZE_LINK_OPTS "-fsanitize=address" "-fsanitize=undefined")
+  set(SANITIZE_COMPILE_OPTS "-fsanitize=address;-fsanitize=undefined;-fno-omit-frame-pointer")
+  set(SANITIZE_LINK_OPTS "-fsanitize=address;-fsanitize=undefined;-static-libasan")
   target_compile_options(singularity-eos INTERFACE ${SANITIZE_COMPILE_OPTS})
   target_link_options(singularity-eos INTERFACE ${SANITIZE_LINK_OPTS})
 endif()
