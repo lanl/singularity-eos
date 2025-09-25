@@ -227,7 +227,7 @@ sum_neumaier(Data_t &&data, std::size_t n, std::size_t offset = 0, int iskip = -
   Real sum = 0;
   Real c = 0; // correction
   for (std::size_t i = 0; i < n; ++i) {
-    if (i == iskip) continue;
+    if (iskip >= 0 && i == static_cast<std::size_t>(iskip)) continue;
     Real x = op(data[i + offset]);
     Real t = sum + x;
     if (std::abs(sum) >= std::abs(x)) {
