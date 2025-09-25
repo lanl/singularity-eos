@@ -52,7 +52,7 @@ SCENARIO("Testing the Simple MACAW EOS", "[SimpleMACAWEOS]") {
       THEN("The temperatue at this density and an energy on the cold curve should be "
            "zero") {
         for (int i = 0; i < 10; i++) {
-          rho += rho + i; // cylce through a variety of densities
+          rho += rho + static_cast<Real>(i); // cylce through a variety of densities
           const Real e = eos.SieColdCurve(rho);
           INFO("i: " << i << "  rho = " << rho << "  e = " << e);
           REQUIRE_THAT(eos.TemperatureFromDensityInternalEnergy(rho, e),
