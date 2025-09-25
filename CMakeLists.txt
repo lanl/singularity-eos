@@ -39,6 +39,11 @@ set(DOWNLOAD_EXTRACT_TIMESTAMP ON)
 # ------------------------------------------------------------------------------#
 include(CMakeDependentOption)
 
+# Adds sanitizer flags for building
+option(SINGULARITY_BUILD_WITH_SANITIZER,
+       "Builds with address and undefined behavior sanitizers" OFF)
+mark_as_advanced(SINGULARITY_BUILD_WITH_SANITIZER)
+
 # dependcy options
 option(SINGULARITY_USE_SPINER "Use spiner EOS" OFF)
 cmake_dependent_option(
@@ -197,6 +202,14 @@ target_link_libraries(singularity-eos INTERFACE singularity-eos_Interface)
 # ld has problems with Clang's libomp.so, use ldd instead
 target_link_options(singularity-eos_Interface INTERFACE $<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>)
 
+# Interface target to propagate sanitizer flags (internal testing since PUBLIC scope)
+if (SINGULARITY_BUILD_WITH_SANITIZER)
+  set(SANITIZE_COMPILE_OPTS "-fsanitize=address" "-fsanitize=undefined" "-fno-omit-frame-pointer")
+  set(SANITIZE_LINK_OPTS "-fsanitize=address" "-fsanitize=undefined")
+  target_compile_options(singularity-eos INTERFACE ${SANITIZE_COMPILE_OPTS})
+  target_link_options(singularity-eos INTERFACE ${SANITIZE_LINK_OPTS})
+endif()
+
 # ------------------------------------------------------------------------------#
 # Compiler & language setup
 # ------------------------------------------------------------------------------#
@@ -226,7 +239,7 @@ if(SINGULARITY_BUILD_PYTHON)
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
-# require at least C++14, but allow newer versions to become a client requirement if
+# require at least C++17, but allow newer versions to become a client requirement if
 # explicitly set at build time (needed for building with newer Kokkos)
 if(CMAKE_CXX_STANDARD)
   target_compile_features(singularity-eos_Interface INTERFACE cxx_std_${CMAKE_CXX_STANDARD})

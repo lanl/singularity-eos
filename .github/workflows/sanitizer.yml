@@ -27,9 +27,9 @@ jobs:
             mkdir -p bin
             cd bin
             cmake -DCMAKE_CXX_COMPILER=clang++ \
-                  -DCMAKE_CXX_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer" \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DSINGULARITY_STRICT_WARNINGS=ON \
+                  -DSINGULARITY_SANITIZE_BUILD=ON \
                   -DSINGULARITY_USE_FORTRAN=OFF \
                   -DSINGULARITY_BUILD_FORTRAN_BACKEND=ON \
                   -DSINGULARITY_BUILD_TESTS=ON \
