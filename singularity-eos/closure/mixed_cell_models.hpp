@@ -222,7 +222,7 @@ struct IdentityOperator {
 };
 template <typename Data_t, typename Operator_t = IdentityOperator>
 PORTABLE_FORCEINLINE_FUNCTION Real
-sum_neumaier(Data_t &&data, std::size_t n, std::size_t offset = 0, std::size_t iskip = -1,
+sum_neumaier(Data_t &&data, std::size_t n, std::size_t offset = 0, int iskip = -1,
              const Operator_t &op = IdentityOperator()) {
   Real sum = 0;
   Real c = 0; // correction
