@@ -55,8 +55,8 @@ SCENARIO("Testing the Simple MACAW EOS", "[SimpleMACAWEOS]") {
           rho += rho + static_cast<Real>(i); // cylce through a variety of densities
           const Real e = eos.SieColdCurve(rho);
           INFO("i: " << i << "  rho = " << rho << "  e = " << e);
-          REQUIRE_THAT(eos.TemperatureFromDensityInternalEnergy(rho, e),
-                       Catch::Matchers::WithinRel(0.0, 1.0e-12));
+          CHECK_THAT(eos.TemperatureFromDensityInternalEnergy(rho, e),
+                     Catch::Matchers::WithinRel(0.0, 1.0e-12));
         } // for
       }   // Then
     }     // When
