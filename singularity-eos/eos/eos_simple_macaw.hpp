@@ -344,7 +344,7 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
   static constexpr const unsigned long _preferred_input =
       thermalqs::density | thermalqs::specific_internal_energy;
 
-  PORTABLE_FORCEINLINE_FUNCTION bool _IsNearOrBelowZero(Real value) {
+  PORTABLE_FORCEINLINE_FUNCTION bool _IsNearOrBelowZero(const Real value) const {
     return value < std::numeric_limits<Real> min() * 5;
   }
 
