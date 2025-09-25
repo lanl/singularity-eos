@@ -57,9 +57,9 @@ SCENARIO("Testing the Simple MACAW EOS", "[SimpleMACAWEOS]") {
           INFO("i: " << i << "  rho = " << rho << "  e = " << e);
           REQUIRE_THAT(eos.TemperatureFromDensityInternalEnergy(rho, e),
                        Catch::Matchers::WithinRel(0.0, 1.0e-12));
-        }   // for
-      }     // Then
-    }       // When
+        } // for
+      }   // Then
+    }     // When
 
     WHEN("A density and temperature are provided") {
       Real rho = 0.56;
