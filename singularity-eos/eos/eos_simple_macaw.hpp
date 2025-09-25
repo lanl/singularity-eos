@@ -345,7 +345,7 @@ class SimpleMACAW : public EosBase<SimpleMACAW> {
       thermalqs::density | thermalqs::specific_internal_energy;
 
   PORTABLE_FORCEINLINE_FUNCTION bool _IsNearOrBelowZero(const Real value) const {
-    return (value <= std::numeric_limits<Real>::min() * 5);
+    return (value <= std::numeric_limits<Real>::epsilon() * 2);
   }
 
   template <typename Indexer_t = Real *>
