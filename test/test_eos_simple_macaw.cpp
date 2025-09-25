@@ -53,13 +53,10 @@ SCENARIO("Testing the Simple MACAW EOS", "[SimpleMACAWEOS]") {
            "zero") {
         for (int i = 0; i < 10; i++) {
           rho += rho + i; // cylce through a variety of densities
-          DYNAMIC_SECTION("i: " << i << "For a given density " << rho
-                                << " and energy from the cold curve") {
-            const Real e = eos.SieColdCurve(rho);
-            INFO("rho = " << rho << "  e = " << e);
-            REQUIRE_THAT(eos.TemperatureFromDensityInternalEnergy(rho, e),
-                         Catch::Matchers::WithinRel(0.0, 1.0e-12));
-          } // Dynamic Section
+          const Real e = eos.SieColdCurve(rho);
+          INFO("i: " << i << "  rho = " << rho << "  e = " << e);
+          REQUIRE_THAT(eos.TemperatureFromDensityInternalEnergy(rho, e),
+                       Catch::Matchers::WithinRel(0.0, 1.0e-12));
         }   // for
       }     // Then
     }       // When
