@@ -18,6 +18,7 @@
 ### Infrastructure (changes irrelevant to downstream codes)
 - [[PR559]](https://github.com/lanl/singularity-eos/pull/559) Document the intent of the virtual keyword in solvers
 - [[PR558]](https://github.com/lanl/singularity-eos/pull/558) Make EOSPAC CMake options depend on SINGULARITY_USE_EOSPAC option
+- [[PR573]](https://github.com/lanl/singularity-eos/pull/573) Add CMake option for address sanitizing
 
 ### Removed (removing behavior/API/varaibles/...)
 

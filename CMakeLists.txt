@@ -40,9 +40,9 @@ set(DOWNLOAD_EXTRACT_TIMESTAMP ON)
 include(CMakeDependentOption)
 
 # Adds sanitizer flags for building
-option(SINGULARITY_BUILD_WITH_SANITIZER,
+option(SINGULARITY_SANITIZE_BUILD
        "Builds with address and undefined behavior sanitizers" OFF)
-mark_as_advanced(SINGULARITY_BUILD_WITH_SANITIZER)
+mark_as_advanced(SINGULARITY_SANITIZE_BUILD)
 
 # dependcy options
 option(SINGULARITY_USE_SPINER "Use spiner EOS" OFF)
@@ -201,14 +201,6 @@ target_link_libraries(singularity-eos INTERFACE singularity-eos_Interface)
 
 # ld has problems with Clang's libomp.so, use ldd instead
 target_link_options(singularity-eos_Interface INTERFACE $<$<CXX_COMPILER_ID:Clang>:-fuse-ld=lld>)
-
-# Interface target to propagate sanitizer flags (internal testing since PUBLIC scope)
-if (SINGULARITY_BUILD_WITH_SANITIZER)
-  set(SANITIZE_COMPILE_OPTS "-fsanitize=address;-fsanitize=undefined;-fno-omit-frame-pointer")
-  set(SANITIZE_LINK_OPTS "-fsanitize=address;-fsanitize=undefined;-static-libasan")
-  target_compile_options(singularity-eos INTERFACE ${SANITIZE_COMPILE_OPTS})
-  target_link_options(singularity-eos INTERFACE ${SANITIZE_LINK_OPTS})
-endif()
 
 # ------------------------------------------------------------------------------#
 # Compiler & language setup
@@ -610,6 +602,14 @@ target_compile_options(
 if (SINGULARITY_STRICT_WARNINGS)
   target_compile_options(singularity-eos_Interface INTERFACE
     -Wall -Werror -Wno-unknown-pragmas)
+endif()
+
+# Interface target to propagate sanitizer flags (internal testing since PUBLIC scope)
+if (SINGULARITY_SANITIZE_BUILD)
+  set(SANITIZE_COMPILE_OPTS "-fsanitize=address;-fsanitize=undefined;-fno-omit-frame-pointer")
+  set(SANITIZE_LINK_OPTS "-fsanitize=address;-fsanitize=undefined")
+  target_compile_options(singularity-eos_Interface INTERFACE ${SANITIZE_COMPILE_OPTS})
+  target_link_options(singularity-eos_Interface INTERFACE ${SANITIZE_LINK_OPTS})
 endif()
 
 if(TARGET singularity-eos_Library)
