@@ -53,10 +53,8 @@ PORTABLE_FORCEINLINE_FUNCTION Real from_log(const Real lx, const Real offset) {
   return FastMath::pow10(lx) - offset;
 }
 
-PORTABLE_INLINE_FUNCTION Real SetRhoPMin(DataBox &P, DataBox &rho_at_pmin,
-                                         const bool pmin_vapor_dome,
-                                         const Real VAPOR_DPDR_THRESH,
-                                         const Real lRhoOffset) {
+inline Real SetRhoPMin(DataBox &P, DataBox &rho_at_pmin, const bool pmin_vapor_dome,
+                       const Real VAPOR_DPDR_THRESH, const Real lRhoOffset) {
   Real PMin = std::numeric_limits<Real>::max();
   const auto lTs = P.range(0);
   const auto lRs = P.range(1);
