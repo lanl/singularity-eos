@@ -35,14 +35,17 @@
 
 namespace singularity {
 
+template<typename ConstRealIndexer, typename RealIndexer, typename IntegralIndexer>
 PORTABLE_INLINE_FUNCTION void SmallStepMFUpdate(const Real logdt, const int num_phases,
-                                                const Real *massfractions,
-                                                const int *gibbsorder, const Real *logRjk,
-                                                Real *dmfs, Real *newmfs) {
+                                                ConstRealIndexer &&massfractions,
+                                                const IntegralIndexer &&gibbsorder,
+                                                ConstRealIndexer &&logRjk,
+                                                RealIndexer &&dmfs, RealIndexer &&newmfs) {
 
   // In logRjk: First is highest level to levels below, largest gibbs energy diff first.
-  // Then follows 2nd highest to levels below. logRjk[jk], with jk = (j+1)(num_phases-1) -
-  // (j-1)j/2 - k, contains rate for phase j+1 to k+1 where j=0 is highest gibbs free
+  // Then follows 2nd highest to levels below. logRjk[jk], with
+  // jk = (j+1)(num_phases-1) - (j-1)j/2 - k,
+  // contains rate for phase j+1 to k+1 where j=0 is highest gibbs free
   // energy state, and j=num_phases-1 is lowest gibbs free energy state. jk=0 is rate from
   // highest (j=0) to lowest (k=num_phases-1) gibbs energy states. dmfs[jk] is mass
   // transport from phase j+1 to k+1, in the same way. Fill lowest level first and stop

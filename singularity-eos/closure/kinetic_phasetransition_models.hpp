@@ -36,10 +36,12 @@
 
 namespace singularity {
 
-PORTABLE_INLINE_FUNCTION void LogRatesCGModel(const Real *w, const Real *b,
-                                              const int num_phases, const Real *gibbs,
-                                              const int *gibbsorder, Real *logRjk,
-                                              int *fromto) {
+template <typename ConstRealIndexer, typename RealIndexer, typename ConstIntegralIndexer,
+          typename IntegralIndexer>
+PORTABLE_INLINE_FUNCTION void
+LogRatesCGModel(ConstRealIndexer &&w, ConstRealIndexer &&b, const int num_phases,
+                ConstRealIndexer &&gibbs, ConstIntegralIndexer &&gibbsorder,
+                RealIndexer &&logRjk, IntegralIndexer &&fromto) {
 
   // begin the calculation of logRik
   int jk = 0;
@@ -73,8 +75,10 @@ PORTABLE_INLINE_FUNCTION void LogRatesCGModel(const Real *w, const Real *b,
   return;
 }
 
-PORTABLE_INLINE_FUNCTION Real LogMaxTimeStep(const int num_phases, const Real *mfs,
-                                             const int *gibbsorder, const Real *logRjk) {
+template <typename ConstRealIndexer, typename ConstIntegralIndexer>
+PORTABLE_INLINE_FUNCTION Real LogMaxTimeStep(const int num_phases, ConstRealIndexer &&mfs,
+                                             ConstIntegralIndexer &&gibbsorder,
+                                             ConstRealIndexer &&logRjk) {
 
   Real logtimestep = 1.;
   int jk = 0;
