@@ -335,20 +335,14 @@ int main(int argc, char *argv[]) {
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     // Create device views for outputs and mirror those views on the host
     Kokkos::View<int[NMAT]> v_order("Gibbsorder");
-    auto order = Kokkos::create_mirror_view(v_order);
+    auto h_order = Kokkos::create_mirror_view(v_order);
 #else
     // Create arrays for the outputs and then pointers to those arrays that
     // will be passed to the functions in place of the Kokkos views
-    std::array<int, NMAT> order;
+    std::array<int, NMAT> h_order;
     // Just alias the existing pointers
-    auto v_order = order.data();
+    auto v_order = h_order.data();
 #endif // PORTABILITY_STRATEGY_KOKKOS
-
-    // Can we send indexers to code that takes real arrays?
-    std::array<Real, NMAT> gibbs;
-    auto v_gibbs = gibbs.data();
-    std::array<Real, NMAT> mftemp;
-    auto v_mftemp = mftemp.data();
 
     constexpr int mnum=NMAT*(NMAT-1)/2;
 
@@ -356,16 +350,31 @@ int main(int argc, char *argv[]) {
     Kokkos::View<Real[mnum]> v_logrates("LogRates");
     auto h_logrates = Kokkos::create_mirror_view(v_logrates);
     Kokkos::View<Real[mnum]> v_dgibbs("dgibbs");
-    auto dgibbs = Kokkos::create_mirror_view(v_dgibbs);
+    auto h_dgibbs = Kokkos::create_mirror_view(v_dgibbs);
     Kokkos::View<int[mnum]> v_fromto("fromto");
-    auto fromto = Kokkos::create_mirror_view(v_fromto);
+    auto h_fromto = Kokkos::create_mirror_view(v_fromto);
 #else
     std::array<Real, mnum> h_logrates;
     auto v_logrates = h_logrates.data();
-    std::array<Real, mnum> dgibbs;
-    auto v_dgibbs = dgibbs.data();
-    std::array<int, mnum> fromto;
-    auto v_fromto = fromto.data();
+    std::array<Real, mnum> h_dgibbs;
+    auto v_dgibbs = h_dgibbs.data();
+    std::array<int, mnum> h_fromto;
+    auto v_fromto = h_fromto.data();
+#endif // PORTABILITY_STRATEGY_KOKKOS
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      // Create Kokkos views on device for the input arrays
+      // Create host-side mirrors
+    Kokkos::View<Real[NMAT]> v_newmfs("newmassfractions");
+    auto newmassfractions = Kokkos::create_mirror_view(v_newmfs);
+    Kokkos::View<Real[mnum]> v_deltamfs("massfractiontransfers");
+    auto h_deltamfs = Kokkos::create_mirror_view(v_deltamfs);
+#else
+      // Otherwise just create arrays to contain values and create pointers to
+      // be passed to the functions in place of the Kokkos views
+    std::array<Real, NMAT> newmassfractions;
+    auto v_newmfs = newmassfractions.data();
+    std::array<Real, mnum> h_deltamfs;
+    auto v_deltamfs = h_deltamfs.data();
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
 //  do a verbose full update for each trial.
@@ -374,8 +383,8 @@ int main(int argc, char *argv[]) {
 
     for (int n = 0; n < NTRIAL; n++) {
       Indexer2D<decltype(gibbsre_hm)> gibbsre(n, gibbsre_hm);
-      Indexer2D<decltype(vfrac_d)> vfrac(n, vfrac_d);
-      Indexer2D<decltype(mfrac_d)> mfrac(n, mfrac_d);
+      Indexer2D<decltype(vfrac_hm)> vfrac(n, vfrac_hm);
+      Indexer2D<decltype(mfrac_hm)> mfrac(n, mfrac_hm);
 
       std::cout << "---------------Trial " << n << "---------------" << std::endl << std::endl;
 
@@ -389,14 +398,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Using SortGibbs(num,gibbs,order) to give the num phases in order of largest to "
            "smallest Gibbs free energy" << std::endl << std::endl;
       
-      // some of my routines only takes real arrays
-      // might need to fix this later.
-      for (int i = 0; i< NMAT; i++){
-        v_gibbs[i] = gibbsre[i];
-	v_mftemp[i] = mfrac[i];
-      }
-
-      SortGibbs(NMAT, v_gibbs, v_order);
+      SortGibbs(NMAT, gibbsre, v_order);
 
       std::cout << "Order obtained with SortGibbs, largest to smallest Gibbs: " << std::endl;
       for (int l = 0; l < NMAT; l++) {
@@ -406,7 +408,7 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::fence();
-      Kokkos::deep_copy(order, v_order);
+      Kokkos::deep_copy(h_order, v_order);
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
 //    array_compare(num, gibbs, phaseorder, order, order_true, "Gibbs", "phase");
@@ -425,12 +427,12 @@ int main(int argc, char *argv[]) {
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::fence();
-      Kokkos::deep_copy(dgibbs, v_dgibbs);
+      Kokkos::deep_copy(h_dgibbs, v_dgibbs);
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
       std::cout << "Using LogRij(w,b,num,gibbs,order,fromto) to get the logarithm of the rates from num phases i to j. " << std::endl << std::endl;
 
-      LogRatesCGModel(CGw_v, CGb_v, NMAT, v_gibbs, v_order, v_logrates, v_fromto);
+      LogRatesCGModel(CGw_v, CGb_v, NMAT, gibbsre, v_order, v_logrates, v_fromto);
 
       std::cout << "LogRates obtained with LogRatesCGModel: " << std::endl;
       for (int l = 0; l < mnum; l++) {
@@ -440,7 +442,7 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::fence();
-      Kokkos::deep_copy(fromto, v_fromto);
+      Kokkos::deep_copy(h_fromto, v_fromto);
       Kokkos::deep_copy(h_logrates, v_logrates);
 #endif // PORTABILITY_STRATEGY_KOKKOS
      
@@ -450,7 +452,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Optional: Give host code a suggestion for time step. " << std::endl << std::endl;
       std::cout << "A LogMaxTimeStep(num,order,logrates) lookup is performed" << std::endl;
 
-      logmts = LogMaxTimeStep(NMAT, v_mftemp, v_order, v_logrates);
+      logmts = LogMaxTimeStep(NMAT, mfrac, v_order, v_logrates);
 //      isClose(logmts, logmts_true);
 
       std::cout << "Log(MaxTimeStep) from rates obtained with CGModel: " << logmts
@@ -462,29 +464,13 @@ int main(int argc, char *argv[]) {
       }
       std::cout << std::endl;
       
-#ifdef PORTABILITY_STRATEGY_KOKKOS
-      // Create Kokkos views on device for the input arrays
-      // Create host-side mirrors
-      Kokkos::View<Real[NMAT]> v_newmfs("newmassfractions");
-      auto newmassfractions = Kokkos::create_mirror_view(v_newmfs);
-      Kokkos::View<Real[mnum]> v_deltamfs("massfractiontransfers");
-      auto h_deltamfs = Kokkos::create_mirror_view(v_deltamfs);
-#else
-      // Otherwise just create arrays to contain values and create pointers to
-      // be passed to the functions in place of the Kokkos views
-      std::array<Real, NMAT> newmassfractions;
-      auto v_newmfs = newmassfractions.data();
-      std::array<Real, mnum> h_deltamfs;
-      auto v_deltamfs = h_deltamfs.data();
-#endif // PORTABILITY_STRATEGY_KOKKOS
-
       std::cout << "A massfraction update with SmallStepMFUpdate is performed" << std::endl << std::endl; 
 
-      SmallStepMFUpdate(logmts, NMAT, v_mftemp, v_order, v_logrates,
+      SmallStepMFUpdate(logmts, NMAT, mfrac, v_order, v_logrates,
                          v_deltamfs, v_newmfs);
       for (int l = 0; l < NMAT; l++) {
         std::cout << "Phase: " << v_order[l]
-                  << "  initial mass fractions: " << v_mftemp[v_order[l]]
+                  << "  initial mass fractions: " << mfrac[v_order[l]]
                   << std::endl;
         std::cout << "         "
                   << "   final mass fractions: " << v_newmfs[v_order[l]]

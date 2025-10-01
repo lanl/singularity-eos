@@ -35,12 +35,12 @@
 
 namespace singularity {
 
-template<typename ConstRealIndexer, typename RealIndexer, typename IntegralIndexer>
+template<typename ConstRealIndexerN, typename ConstRealIndexerM, typename ConstIntIndexer, typename RealIndexerN, typename RealIndexerM>
 PORTABLE_INLINE_FUNCTION void SmallStepMFUpdate(const Real logdt, const int num_phases,
-                                                ConstRealIndexer &&massfractions,
-                                                const IntegralIndexer &&gibbsorder,
-                                                ConstRealIndexer &&logRjk,
-                                                RealIndexer &&dmfs, RealIndexer &&newmfs) {
+                                                ConstRealIndexerN &&massfractions,
+                                                ConstIntIndexer &&gibbsorder,
+                                                ConstRealIndexerM &&logRjk,
+                                                RealIndexerM &&dmfs, RealIndexerN &&newmfs) {
 
   // In logRjk: First is highest level to levels below, largest gibbs energy diff first.
   // Then follows 2nd highest to levels below. logRjk[jk], with

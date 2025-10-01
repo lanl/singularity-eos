@@ -37,9 +37,9 @@ namespace singularity {
 
 constexpr Real KPT_MIN_MASS_FRACTION = 1.0e-10;
 
-template<typename RealIndexer, typename IntegralIndexer>
-PORTABLE_INLINE_FUNCTION void SortGibbs(const int num_phases, const RealIndexer &&gibbs,
-                                        IntegralIndexer &&gibbsorder) {
+template<typename ConstRealIndexer, typename IntIndexer>
+PORTABLE_INLINE_FUNCTION void SortGibbs(const int num_phases, ConstRealIndexer &&gibbs,
+                                        IntIndexer &&gibbsorder) {
   int itmp = 0;
   // initiate gibbsorder
   for (int j = 0; j < num_phases; j++) {
