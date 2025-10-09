@@ -14,8 +14,10 @@
 - [[PR568]](https://github.com/lanl/singularity-eos/pull/568) Fix bug in FixedT and FixedP PTE solvers when materials have negative energies at the initial guess
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR575]](https://github.com/lanl/singularity-eos/pull/575) Pin variant submodule to the same commit as the spackage
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR576]](https://github.com/lanl/singularity-eos/pull/576) Clean up some header includes to use the C++ versions
 - [[PR559]](https://github.com/lanl/singularity-eos/pull/559) Document the intent of the virtual keyword in solvers
 - [[PR558]](https://github.com/lanl/singularity-eos/pull/558) Make EOSPAC CMake options depend on SINGULARITY_USE_EOSPAC option
 - [[PR573]](https://github.com/lanl/singularity-eos/pull/573) Add CMake option for address sanitizing

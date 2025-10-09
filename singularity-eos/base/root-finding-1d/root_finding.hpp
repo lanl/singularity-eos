@@ -24,10 +24,10 @@
 
 // #include <iostream> // debug
 // #include <iomanip>
-#include <assert.h>
-#include <math.h>
+#include <cmath>
+#include <cstdio>
 #include <ports-of-call/portability.hpp>
-#include <stdio.h>
+#include <ports-of-call/portable_errors.hpp>
 #include <tuple>
 
 #define SINGULARITY_ROOT_DEBUG (0)
@@ -84,7 +84,7 @@ class RootCounts {
       counts_[i] = 0;
   }
   PORTABLE_INLINE_FUNCTION void increment(std::size_t i) const {
-    assert(i < nbins_ && i >= 0);
+    PORTABLE_REQUIRE(i < nbins_ && i >= 0, "Index in bounds");
 #ifdef PORTABILITY_STRATEGY_NONE
     counts_[i] += 1;
 #endif // PORTABILITY_STRATEGY_NONE
@@ -96,11 +96,11 @@ class RootCounts {
     return tot;
   }
   PORTABLE_INLINE_FUNCTION const Real &operator[](const std::size_t i) const {
-    assert(i < nbins_ && i >= 0);
+    PORTABLE_REQUIRE(i < nbins_ && i >= 0, "Index in bounds");
     return counts_[i];
   }
   PORTABLE_INLINE_FUNCTION Real &operator[](const std::size_t i) {
-    assert(i < nbins_ && i >= 0);
+    PORTABLE_REQUIRE(i < nbins_ && i >= 0, "Index in bounds");
     return counts_[i];
   }
   PORTABLE_INLINE_FUNCTION void print_counts() const {
@@ -362,7 +362,7 @@ PORTABLE_INLINE_FUNCTION Status findRoot(const T &f, const Real ytarget, Real xg
   status = bisect(f, ytarget, xguess, xmin, xmax, xtol, ytol, xroot, counts);
 
   // Check for something horrible happening
-  if (isnan(xroot) || isinf(xroot)) {
+  if (std::isnan(xroot) || std::isinf(xroot)) {
 #if SINGULARITY_ROOT_DEBUG
     fprintf(stderr, "xroot is nan after bisection\n");
 #endif
@@ -396,7 +396,7 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
     x -= y / dy;
     if (x < xmin) x = xmin;
     if (x > xmax) x = xmax;
-    if (isnan(x) || isinf(x)) {
+    if (std::isnan(x) || std::isinf(x)) {
       // can't recover from this
 #if SINGULARITY_ROOT_DEBUG
       fprintf(stderr,
@@ -472,8 +472,8 @@ PORTABLE_INLINE_FUNCTION Status secant(const T &f, const Real ytarget, const Rea
   }
 #endif
 
-  const int secant_failed =
-      (fabs(x - x_last) > xtol || fabs(frac_error) > ytol || isnan(x) || isinf(x));
+  const int secant_failed = (std::abs(x - x_last) > xtol || std::abs(frac_error) > ytol ||
+                             std::isnan(x) || std::isinf(x));
   return secant_failed ? Status::FAIL : Status::SUCCESS;
 }
 
@@ -577,7 +577,7 @@ PORTABLE_INLINE_FUNCTION Status bisect(const T &f, const Real ytarget, const Rea
 
   xroot = 0.5 * (xl + xr);
 
-  if (isnan(xroot)) {
+  if (std::isnan(xroot)) {
 #if SINGULARITY_ROOT_DEBUG
     Real il = f(xl);
     Real ir = f(xr);

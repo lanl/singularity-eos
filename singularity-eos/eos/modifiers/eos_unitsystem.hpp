@@ -15,9 +15,9 @@
 #ifndef _SINGULARITY_EOS_EOS_EOS_UNITSYSTEM_HPP_
 #define _SINGULARITY_EOS_EOS_EOS_UNITSYSTEM_HPP_
 
-#include "stdio.h"
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
