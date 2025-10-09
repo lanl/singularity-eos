@@ -15,7 +15,7 @@
 #ifndef _SINGULARITY_EOS_EOS_FLOORED_ENERGY_
 #define _SINGULARITY_EOS_EOS_FLOORED_ENERGY_
 
-#include "stdio.h"
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 

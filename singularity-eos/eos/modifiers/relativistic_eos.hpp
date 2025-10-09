@@ -15,9 +15,9 @@
 #ifndef _SINGULARITY_EOS_EOS_RELATIVISTIC_EOS_
 #define _SINGULARITY_EOS_EOS_RELATIVISTIC_EOS_
 
-#include "stdio.h"
 #include <cassert>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
