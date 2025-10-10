@@ -203,12 +203,12 @@ struct VectorFunctions {
       if (lambdas_info.ndim != 2)
         throw std::runtime_error("lambdas dimension must be 2!");
       
-      rhosv = rhos.mutable_unchecked<1>();
-      temperaturesv = temperatures.mutable_unchecked<1>();
-      siesv = sies.mutable_unchecked<1>();
-      pressuresv = pressures.mutable_unchecked<1>();
-      cvsv = cvs.mutable_unchecked<1>();
-      bmodsv = bmods.mutable_unchecked<1>();
+      auto rhosv = rhos.mutable_unchecked<1>();
+      auto temperaturesv = temperatures.mutable_unchecked<1>();
+      auto siesv = sies.mutable_unchecked<1>();
+      auto pressuresv = pressures.mutable_unchecked<1>();
+      auto cvsv = cvs.mutable_unchecked<1>();
+      auto bmodsv = bmods.mutable_unchecked<1>();
 
       if(lambdas_info.shape[1] > 0) {
         self.FillEos(rhosv, temperaturesv,
@@ -227,12 +227,12 @@ struct VectorFunctions {
                        py::array_t<Real> temperatures, py::array_t<Real> sies, py::array_t<Real>
                        pressures, py::array_t<Real> cvs, py::array_t<Real> bmods, const int num,
                        const unsigned long output) {
-      rhosv = rhos.mutable_unchecked<1>();
-      temperaturesv = temperatures.mutable_unchecked<1>();
-      siesv = sies.mutable_unchecked<1>();
-      pressuresv = pressures.mutable_unchecked<1>();
-      cvsv = cvs.mutable_unchecked<1>();
-      bmodsv = bmods.mutable_unchecked<1>();
+      auto rhosv = rhos.mutable_unchecked<1>();
+      auto temperaturesv = temperatures.mutable_unchecked<1>();
+      auto siesv = sies.mutable_unchecked<1>();
+      auto pressuresv = pressures.mutable_unchecked<1>();
+      auto cvsv = cvs.mutable_unchecked<1>();
+      auto bmodsv = bmods.mutable_unchecked<1>();
       self.FillEos(rhosv, temperaturesv,
                     siesv, pressuresv, cvsv,
                    bmodsv, rhos.size(), output, NoLambdaHelper());
@@ -274,13 +274,13 @@ struct VectorFunctions<T,true> {
       if (lambdas_info.ndim != 2)
         throw std::runtime_error("lambdas dimension must be 2!");
 
-      rhosv = rhos.mutable_unchecked<1>();
-      temperaturesv = temperatures.mutable_unchecked<1>();
-      siesv = sies.mutable_unchecked<1>();
-      pressuresv = pressures.mutable_unchecked<1>();
-      cvsv = cvs.mutable_unchecked<1>();
-      bmodsv = bmods.mutable_unchecked<1>();
-      scrv = scratch.mutable_unchecked<1>();
+      auto rhosv = rhos.mutable_unchecked<1>();
+      auto temperaturesv = temperatures.mutable_unchecked<1>();
+      auto siesv = sies.mutable_unchecked<1>();
+      auto pressuresv = pressures.mutable_unchecked<1>();
+      auto cvsv = cvs.mutable_unchecked<1>();
+      auto bmodsv = bmods.mutable_unchecked<1>();
+      auto scrv = scratch.mutable_unchecked<1>();
 
       if(lambdas_info.shape[1] > 0) {
         self.FillEos(rhosv, temperaturesv,
@@ -300,13 +300,13 @@ struct VectorFunctions<T,true> {
                        pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
                        py::array_t<Real> scratch,
                        const int num, const unsigned long output) {
-      rhosv = rhos.mutable_unchecked<1>();
-      temperaturesv = temperatures.mutable_unchecked<1>();
-      siesv = sies.mutable_unchecked<1>();
-      pressuresv = pressures.mutable_unchecked<1>();
-      cvsv = cvs.mutable_unchecked<1>();
-      bmodsv = bmods.mutable_unchecked<1>();
-      scrv = scratch.mutable_unchecked<1>();
+      auto rhosv = rhos.mutable_unchecked<1>();
+      auto temperaturesv = temperatures.mutable_unchecked<1>();
+      auto siesv = sies.mutable_unchecked<1>();
+      auto pressuresv = pressures.mutable_unchecked<1>();
+      auto cvsv = cvs.mutable_unchecked<1>();
+      auto bmodsv = bmods.mutable_unchecked<1>();
+      auto scrv = scratch.mutable_unchecked<1>();
 
       self.FillEos(rhosv, temperaturesv,
                     siesv, pressuresv, cvsv,
