@@ -1503,6 +1503,9 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
     // hood. Because we could hold a combination of spiner and EOSPAC models, we
     // need to then handle the copy ourselves here.
 
+    // TODO (JHP): This function does not appear to work for EOSPAC, but it's not
+    // clear why exactly. The corresponding test has been commented out.
+
     // Source and shared memory pointers
     char *p_src = src;
     char *p_shared = stngs.data;
