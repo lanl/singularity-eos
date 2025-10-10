@@ -53,19 +53,19 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     constexpr Real MJ_per_kg = 1.0e10;
 
     // Davis Reactants EOS
-    constexpr Real rho0_DP = 1.890;   // g/cm^3
-    constexpr Real e0_DP = 0.;        // erg / g
-    constexpr Real P0_DP = 0.;        // microbar
-    constexpr Real T0_DP = 297;       // K
+    constexpr Real rho0 = 1.890;   // g/cm^3
+    constexpr Real e0 = 0.;        // erg / g
+    constexpr Real P0 = 0.;        // microbar
+    constexpr Real T0 = 297;       // K
     constexpr Real A = 1.8 * sqrtGPa; // sqrt(microbar)
     constexpr Real B = 4.6;
     constexpr Real C = 0.34;
     constexpr Real G0 = 0.56;
     constexpr Real Z = 0.0;
     constexpr Real alpha = 0.4265;
-    constexpr Real Cv_DP = 0.001074 * MJ_per_kg; // erg / g / K
+    constexpr Real Cv_r = 0.001074 * MJ_per_kg; // erg / g / K
     auto davis_r_eos =
-        DavisReactants(rho0_DP, e0_DP, P0_DP, T0_DP, A, B, C, G0, Z, alpha, Cv_DP);
+        DavisReactants(rho0, e0, P0, T0, A, B, C, G0, Z, alpha, Cv_r);
 
     // Davis Products EOS
     constexpr Real a = 0.798311;
@@ -74,9 +74,9 @@ SCENARIO("Test the MultiEOS object with reactants and products EOS",
     constexpr Real n = 2.66182;
     constexpr Real vc = 0.75419;              // cm^3 / g
     constexpr Real pc = 3.2 * GPa;            // microbar
-    constexpr Real Cv = 0.001072 * MJ_per_kg; // erg / g / K
+    constexpr Real Cv_p = 0.001072 * MJ_per_kg; // erg / g / K
     constexpr Real Q = 4.115 * MJ_per_kg;
-    auto davis_p_eos = DavisProducts(a, b, k, n, vc, pc, Cv).Modify<ShiftedEOS>(-Q);
+    auto davis_p_eos = DavisProducts(a, b, k, n, vc, pc, Cv_p).Modify<ShiftedEOS>(-Q);
 
     // Create the multiEOS object
     constexpr size_t num_eos = 2;
