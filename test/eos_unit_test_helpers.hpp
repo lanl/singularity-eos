@@ -59,11 +59,11 @@ inline std::string demangle(const char *name) { return name; }
 #include <singularity-eos/eos/eos.hpp>
 
 PORTABLE_INLINE_FUNCTION bool isClose(Real a, Real b, Real eps = 5e-2) {
-  return fabs(b - a) / (fabs(a + b) + 1e-20) <= eps;
+  return std::abs(b - a) / (std::abs(a + b) + 1e-20) <= eps;
 }
 
 PORTABLE_INLINE_FUNCTION Real myAtan(Real x, Real shift, Real scale, Real offset) {
-  return scale * atan(x - shift) + offset;
+  return scale * std::atan(x - shift) + offset;
 }
 
 // Function for comparing arrays and outputting the important information
