@@ -547,7 +547,7 @@ int main(int argc, char *argv[]) {
             Real diff = tempSpiner_h(j, i) - t_true;
             tempDiff_h(j, i) = diff;
             const Real mean_t = 0.5 * diff + t_true;
-            if (isnan(diff)) {
+            if (std::isnan(diff)) {
               std::cout << "NAN! " << j << ", " << i << ", " << tempSpiner_h(j, i) << ", "
                         << tempEOSPAC(j, i) << ", " << mean_t << ", " << diff
                         << std::endl;
