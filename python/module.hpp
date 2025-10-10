@@ -70,7 +70,7 @@ public:
     : data_(t.mutable_data(0))
     , stride_(t.mutable_data(1) - t.mutable_data(0))
   {}
-  Real &operator[](const int i) const {
+  Real &operator[](const std::size_t i) const {
     return data_[i*stride_];
   }
 private:
