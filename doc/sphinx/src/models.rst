@@ -21,6 +21,10 @@
 
 .. _PowerMG: https://www.osti.gov/biblio/1762624
 
+.. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
+
+.. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
+
 
 EOS Models
 ===========
@@ -2189,12 +2193,13 @@ EOSPAC EOS
 ````````````
 
 .. warning::
+
     Entropy is not yet available for this EOS
 
 This is a striaghtforward wrapper of the `EOSPAC`_ library for the
 `Sesame`_ database. The constructor for the ``EOSPAC`` model has several overloads
 
-.. code-block::
+.. code-block:: cpp
 
   EOSPAC(int matid, TableSplit split, bool invert_at_setup = false,
          Real insert_data = 0.0,
@@ -2237,8 +2242,240 @@ curve plus Cowan-nuclear model for ions and the final option
 Note for performance reasons this EOS uses a slightly different vector API.
 See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
 
-.. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
+MultiEOS
+`````````
 
-.. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
+.. warning::
+
+    The Serialization/Deserialization capability for this EOS appears bugged
+    at the moment, especially with EOSPAC. Use with caution.
+
+This class allows multiple EOS models to be combined *at compile time* with a
+PTE closure model into a single material. This is useful for simulating e.g.
+reacting systems where reactants and products describe the same material. It
+can also be used for multi-phase EOS, but again the number of phases and
+crucially the *type* of EOS model must be known at compile time. The advantage
+of combining these models at compile-time is that logically the EOS will
+behave identically to any other EOS model in ``singularity-eos``. It's possible
+that there are performance benefits, especially when all EOS are the same model.
+
+The primary way of constructing the ``MultiEOS`` model involves simply
+providing an arbitrary series of model objects
+
+.. code-block:: cpp
+
+    MultiEOS(EOSModelsT_ &&...eos_models)
+
+Note that the type of the ``MultiEOS`` model is deduced from the inputs to the
+constructor. In the follwoing example, it would be
+``MultiEOS<IdealGas, IdealGas>``:
+
+.. code-block:: cpp
+
+    auto model1 = IdealGas(Gamma_1, Cv_1);
+    auto model2 = IdealGas(Gamma_2, Cv_2);
+    auto multi = MultiEOS(model1, model2);
+
+The ``MultiEOS`` model can also optionally accept a mass fraction cutoff where
+materials below the cutoff value are ignored for the PTE caluclation
+
+.. code-block:: cpp
+
+    MultiEOS(Real mass_frac_cutoff_in, EOSModelsT_ &&...eos_models);
+
+For all of the standard ``singularity-eos`` member functions provided through
+the ``Variant`` class (see
+:ref:`The Equation of State API <eos methods reference section>`), bulk
+properties are returned for the material and no component densities or energies
+are available.
+
+Mass fractions of the individual components are provided via the ``lambda``
+variable via type-based indexing.
+
+.. note::
+
+    Mass fraction information **must** be provided via the ``lambda`` parameter
+    or a compile-time error will be generated.
+
+For example, the ``IndexerUtils`` in ``singularity-eos`` provide a way to
+generate a type-based lambda indexer. For example, a two component spiner EOS
+mixture could use a lambda of the type
+
+..  code-block:: cpp
+
+    using LambdaT =
+        VariadicIndexer<IndexableTypes::LogDensity, IndexableTypes::LogTemperature,
+                        IndexableTypes::MassFraction<0>, IndexableTypes::MassFraction<1>>;
+
+A helper macro is provided that uses SFINAE to generate a compile time error
+when the appropriate number of mass fractions are not provided via type-based
+indexing in the ``LambdaIndexer`` type:
+
+... code-block:: cpp
+
+    SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat)
+
+where ``nmat`` is the number of materials in the ``MultiEOS`` class (known at
+compile time).
+
+All derivative quantities (i.e. the Gruneisen parameter, bulk modulus, and heat
+capacity) are found via finite differences. The reason for this is that really
+there is no accurate way to average the individual material derivatives. For
+example, we can attempt to derive an averaging rule for the heat capacity. The
+heat capacity is given by
+
+.. math::
+
+    C_V = \left( \frac{\partial e}{\partial T} \right)_V,
+
+i.e. the derivative of the specific internal energy with respect to temperature
+at constant *total* volume. The total internal energy is given by
+
+.. math::
+
+    e_\mathrm{tot} = \sum\limits_{m=0} \mu_m e_m,
+
+where the subscript :math:`m` is the material index in the PTE system (in this
+case the material models in the ``MultiEOS`` class) and :math:`\mu_m` is the
+mass fraction of that material. Taking the derivative of this equation with
+respect to temperature at constant volume gives
+
+.. math::
+
+    \left( \frac{\partial e_\mathrm{tot}}{\partial T} \right)_{V_\mathrm{tot}}
+    = \sum\limits_{m=0} \mu_m
+        \left( \frac{\partial e_m}{\partial T} \right)_{V_\mathrm{tot}}
+
+But note that the right-hand-side derivatives are at constant *total* volume,
+not constant *material* volume. As the temperature increases, a single
+material may expand and do work on adjacent materials, causing their energies to
+increase more than would be expected for the given temperature increase while
+the materials remain in pressure equilibrium.
+
+The best way to express this behavior analytically would be to mass-average the
+derivatives with respect to pressure and temperature, i.e.
+
+.. math::
+
+    \left( \frac{\partial e_\mathrm{tot}}{\partial T} \right)_P
+    = \sum\limits_{m=0} \mu_m
+         \left( \frac{\partial e_m}{\partial T} \right)_P,
+
+
+and then use thermodynamic identities to combine them to describe the bulk
+behavior of the mixture. However, not all models in ``singularity-eos`` provide
+pressure and temperature derivatives at present, so these quantities are not
+readily accessible.
+
+Instead, the ``MultiEOS`` class relies on perturbing the mixture in density and
+temperature or density and energy space and then combining these finite
+difference results via thermodynamic identities. The downside of this approach
+is that any finite difference errors can be significantly magnified in the
+thermodynamic identities.
+
+When access to the bare class is available, additional public member functions
+are provided that populate indexers (i.e. anything with a square bracket
+operator) for the material densities and specific internal energies. These are
+
+.. code-block:: cpp
+
+    template <typename RealIndexer, typename LambdaIndexer>
+    PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityEnergy(
+        const Real density_tot, const Real sie_tot, Real &pressure, Real &temperature,
+        RealIndexer &density_mat, RealIndexer &sie_mat, LambdaIndexer &lambdas,
+        bool const doing_derivs = false, bool small_mass_mat_consistency = false);
+
+.. code-block:: cpp
+
+    template <typename RealIndexer, typename LambdaIndexer>
+    PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityTemperature(
+        const Real density_tot, Real &sie_tot, Real &pressure, const Real temperature,
+        RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas,
+        bool const doing_derivs = false);
+
+.. code-block:: cpp
+
+    template <typename RealIndexer, typename LambdaIndexer>
+    PORTABLE_INLINE_FUNCTION SolverStatus GetStatesFromDensityPressure(
+        const Real density_tot, Real &sie_tot, const Real pressure, Real &temperature,
+        RealIndexer &&density_mat, RealIndexer &&sie_mat, LambdaIndexer &lambdas,
+        bool const doing_derivs = false);
+
+.. code-block:: cpp
+
+    template <typename RealIndexer, typename LambdaIndexer>
+    PORTABLE_INLINE_FUNCTION void
+    GetStatesFromPressureTemperature(Real &density_tot, Real &sie_tot, const Real pressure,
+                                     const Real temperature, RealIndexer &density_mat,
+                                     RealIndexer &sie_mat, LambdaIndexer &lambdas);
+
+Note that the ``doing_derivs`` option essentially tightens the tolerance on the
+PTE solver in order to ensure that a perturbation to the PTE state via a finite
+difference leads to a new PTE solution. The ``small_mass_mat_consistency``
+option for the density-energy lookup populates materials below the mass
+fraction cutoff with P-T lookups from the PTE state for the other materials.
+
+Similarly, there are also public member functions for calculating the mixture
+derivatives given a PTE state. For the heat capacity function,
+
+.. code-block:: cpp
+
+    template <typename RealIndexer, typename LambdaIndexer>
+    PORTABLE_INLINE_FUNCTION Real CalculateCvFromState(Real const rho, Real const sie,
+                                                       [[maybe_unused]] Real const pressure,
+                                                       Real const temperature,
+                                                       RealIndexer &density_mat,
+                                                       RealIndexer &sie_mat,
+                                                       LambdaIndexer &lambdas);
+
+the state is perturbed in temperature space at constant density. For the bulk
+modulus function,
+
+.. code-block:: cpp
+
+    template <typename RealIndexer, typename LambdaIndexer>
+    PORTABLE_INLINE_FUNCTION Real CalculateBmodFromState(
+        Real const rho, Real const sie, Real const pressure, Real const temperature,
+        RealIndexer &density_mat, RealIndexer &sie_mat, LambdaIndexer &lambdas);
+
+the state is perturbed in both temperature and density (with all materials in
+PTE) where the bulk modulus is found from the formula,
+
+.. math::
+
+    B_S = B_T + \frac{T}{\rho} \left( \frac{\partial P}{\partial T} \right)_\rho^2
+          \left( \frac{\partial T}{\partial e} \right)_\rho.
+
+The Gruneisen parameter function is
+
+.. code-block:: cpp
+
+    template <typename RealIndexer, typename LambdaIndexer>
+    PORTABLE_INLINE_FUNCTION Real CalculateGruneisenFromState(
+        Real const rho, Real const sie, Real const pressure,
+        [[maybe_unused]] Real const temperature, RealIndexer &density_mat,
+        RealIndexer &sie_mat, LambdaIndexer &lambdas);
+
+and perturbs the PTE energy at constant density.
+
+Note that in the ``FillEOS()`` and ``ValuesAtReferenceState()`` functions, the
+values are all caluclated from density-temperature perturbations and the
+appropriate thermodynamic identities. This can lead to slight inconsistencies,
+but fewer PTE perturbations are needed as a result.
+
+There is also a public member function to directly perturb the PTE state in
+density and temperature, which is what the bulk modulus, ``FillEOS()``, and
+``ValuesAtReferenceState()`` functions use:
+
+.. code-block:: cpp
+
+    template <typename RealIndexer, typename LambdaIndexer>
+    PORTABLE_INLINE_FUNCTION void
+    PerturbPTEStateRT(Real const rho, Real const sie, Real const pressure,
+                      Real const temperature, RealIndexer const &density_mat,
+                      RealIndexer const &sie_mat, LambdaIndexer &lambdas, Real &dedT_R,
+                      Real &dedR_T, Real &dPdT_R, Real &dPdR_T)
+
+
 
 
