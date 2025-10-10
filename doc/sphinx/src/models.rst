@@ -2311,7 +2311,7 @@ A helper macro is provided that uses SFINAE to generate a compile time error
 when the appropriate number of mass fractions are not provided via type-based
 indexing in the ``LambdaIndexer`` type:
 
-... code-block:: cpp
+.. code-block:: cpp
 
     SINGULARITY_INDEXER_HAS_MASS_FRAC(LambdaIndexer, nmat)
 
