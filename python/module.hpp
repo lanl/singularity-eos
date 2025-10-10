@@ -225,7 +225,7 @@ struct VectorFunctions {
     )
     .def("FillEos", [](const T & self, py::array_t<Real> rhos,
                        py::array_t<Real> temperatures, py::array_t<Real> sies, py::array_t<Real>
-                       pressures, py::array_t<Real> cvs, py::array_t<Real> bmods, const int num,
+                       pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
                        const unsigned long output) {
       auto rhosv = rhos.mutable_unchecked<1>();
       auto temperaturesv = temperatures.mutable_unchecked<1>();
@@ -269,7 +269,7 @@ struct VectorFunctions<T,true> {
                        py::array_t<Real> temperatures, py::array_t<Real> sies,
                        py::array_t<Real> pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
                        py::array_t<Real> scratch,
-                       const int num, const unsigned long output, py::array_t<Real> lambdas) {
+                       const unsigned long output, py::array_t<Real> lambdas) {
       py::buffer_info lambdas_info = lambdas.request();
       if (lambdas_info.ndim != 2)
         throw std::runtime_error("lambdas dimension must be 2!");
@@ -299,7 +299,7 @@ struct VectorFunctions<T,true> {
                        py::array_t<Real> temperatures, py::array_t<Real> sies, py::array_t<Real>
                        pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
                        py::array_t<Real> scratch,
-                       const int num, const unsigned long output) {
+                       const unsigned long output) {
       auto rhosv = rhos.mutable_unchecked<1>();
       auto temperaturesv = temperatures.mutable_unchecked<1>();
       auto siesv = sies.mutable_unchecked<1>();
