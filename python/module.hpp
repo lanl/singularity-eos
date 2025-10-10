@@ -55,6 +55,29 @@ public:
   }
 };
 
+// TODO(JMM): PyBind11 does not provide
+// a function with signature
+// Real &operator[](const int i) const
+// which we need to satisfy const correctness
+// with lambdas the way Kokkos does them.
+// So we crudely wrap it and provide our own.
+class PyArrayHelper {
+public:
+  // Must pass by value here. Trying to pass by const ref would break
+  // const correctness
+  template<typename T>
+  PyArrayHelper(T t)
+    : data_(t.mutable_data(0))
+    , stride_(t.mutable_data(1) - t.mutable_data(0))
+  {}
+  Real &operator[](const int i) const {
+    return data_[i*stride_];
+  }
+private:
+  Real *data_;
+  const std::size_t stride_;
+};
+
 // so far didn't find a good way of working with template member function pointers
 // to generalize this without the preprocessor.
 #define EOS_VEC_FUNC_TMPL(func, a, b, out)                                        \
@@ -67,7 +90,7 @@ void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,             
                                                                                   \
   auto av = a.unchecked<1>();                                                     \
   auto bv = b.unchecked<1>();                                                     \
-  auto outv = out.mutable_unchecked<1>();                                         \
+  auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   if(lambdas_info.shape[1] > 0) {                                                 \
     self.func(av, bv, outv, a.size(), LambdaHelper(lambdas));                     \
   } else {                                                                        \
@@ -84,8 +107,8 @@ void func##WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,
                                                                                   \
   auto av = a.unchecked<1>();                                                     \
   auto bv = b.unchecked<1>();                                                     \
-  auto outv = out.mutable_unchecked<1>();                                         \
-  auto scrv = scratch.mutable_unchecked<1>();                                     \
+  auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
+  auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());                      \
   if(lambdas_info.shape[1] > 0) {                                                 \
     self.func(av, bv, outv, scrv, a.size(), LambdaHelper(lambdas));               \
   } else {                                                                        \
@@ -98,7 +121,7 @@ void func##NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,   
           py::array_t<Real> out){                                                 \
   auto av = a.unchecked<1>();                                                     \
   auto bv = b.unchecked<1>();                                                     \
-  auto outv = out.mutable_unchecked<1>();                                         \
+  auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   self.func(av, bv, outv, a.size(), NoLambdaHelper());                            \
 }                                                                                 \
                                                                                   \
@@ -107,8 +130,8 @@ void func##NoLambdaWithScratch(const T & self, py::array_t<Real> a, py::array_t<
           py::array_t<Real> out, py::array_t<Real> scratch){                      \
   auto av = a.unchecked<1>();                                                     \
   auto bv = b.unchecked<1>();                                                     \
-  auto outv = out.mutable_unchecked<1>();                                         \
-  auto scrv = scratch.mutable_unchecked<1>();                                     \
+  auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
+  auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());                      \
   self.func(av, bv, outv, scrv, a.size(), NoLambdaHelper());                      \
 }
 
@@ -203,12 +226,12 @@ struct VectorFunctions {
       if (lambdas_info.ndim != 2)
         throw std::runtime_error("lambdas dimension must be 2!");
       
-      auto rhosv = rhos.mutable_unchecked<1>();
-      auto temperaturesv = temperatures.mutable_unchecked<1>();
-      auto siesv = sies.mutable_unchecked<1>();
-      auto pressuresv = pressures.mutable_unchecked<1>();
-      auto cvsv = cvs.mutable_unchecked<1>();
-      auto bmodsv = bmods.mutable_unchecked<1>();
+      auto rhosv = PyArrayHelper(rhos.mutable_unchecked<1>());
+      auto temperaturesv = PyArrayHelper(temperatures.mutable_unchecked<1>());
+      auto siesv = PyArrayHelper(sies.mutable_unchecked<1>());
+      auto pressuresv = PyArrayHelper(pressures.mutable_unchecked<1>());
+      auto cvsv = PyArrayHelper(cvs.mutable_unchecked<1>());
+      auto bmodsv = PyArrayHelper(bmods.mutable_unchecked<1>());
 
       if(lambdas_info.shape[1] > 0) {
         self.FillEos(rhosv, temperaturesv,
@@ -227,12 +250,12 @@ struct VectorFunctions {
                        py::array_t<Real> temperatures, py::array_t<Real> sies, py::array_t<Real>
                        pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
                        const unsigned long output) {
-      auto rhosv = rhos.mutable_unchecked<1>();
-      auto temperaturesv = temperatures.mutable_unchecked<1>();
-      auto siesv = sies.mutable_unchecked<1>();
-      auto pressuresv = pressures.mutable_unchecked<1>();
-      auto cvsv = cvs.mutable_unchecked<1>();
-      auto bmodsv = bmods.mutable_unchecked<1>();
+      auto rhosv = PyArrayHelper(rhos.mutable_unchecked<1>());
+      auto temperaturesv = PyArrayHelper(temperatures.mutable_unchecked<1>());
+      auto siesv = PyArrayHelper(sies.mutable_unchecked<1>());
+      auto pressuresv = PyArrayHelper(pressures.mutable_unchecked<1>());
+      auto cvsv = PyArrayHelper(cvs.mutable_unchecked<1>());
+      auto bmodsv = PyArrayHelper(bmods.mutable_unchecked<1>());
       self.FillEos(rhosv, temperaturesv,
                     siesv, pressuresv, cvsv,
                    bmodsv, rhos.size(), output, NoLambdaHelper());
@@ -274,13 +297,13 @@ struct VectorFunctions<T,true> {
       if (lambdas_info.ndim != 2)
         throw std::runtime_error("lambdas dimension must be 2!");
 
-      auto rhosv = rhos.mutable_unchecked<1>();
-      auto temperaturesv = temperatures.mutable_unchecked<1>();
-      auto siesv = sies.mutable_unchecked<1>();
-      auto pressuresv = pressures.mutable_unchecked<1>();
-      auto cvsv = cvs.mutable_unchecked<1>();
-      auto bmodsv = bmods.mutable_unchecked<1>();
-      auto scrv = scratch.mutable_unchecked<1>();
+      auto rhosv = PyArrayHelper(rhos.mutable_unchecked<1>());
+      auto temperaturesv = PyArrayHelper(temperatures.mutable_unchecked<1>());
+      auto siesv = PyArrayHelper(sies.mutable_unchecked<1>());
+      auto pressuresv = PyArrayHelper(pressures.mutable_unchecked<1>());
+      auto cvsv = PyArrayHelper(cvs.mutable_unchecked<1>());
+      auto bmodsv = PyArrayHelper(bmods.mutable_unchecked<1>());
+      auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());
 
       if(lambdas_info.shape[1] > 0) {
         self.FillEos(rhosv, temperaturesv,
@@ -300,13 +323,13 @@ struct VectorFunctions<T,true> {
                        pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
                        py::array_t<Real> scratch,
                        const unsigned long output) {
-      auto rhosv = rhos.mutable_unchecked<1>();
-      auto temperaturesv = temperatures.mutable_unchecked<1>();
-      auto siesv = sies.mutable_unchecked<1>();
-      auto pressuresv = pressures.mutable_unchecked<1>();
-      auto cvsv = cvs.mutable_unchecked<1>();
-      auto bmodsv = bmods.mutable_unchecked<1>();
-      auto scrv = scratch.mutable_unchecked<1>();
+      auto rhosv = PyArrayHelper(rhos.mutable_unchecked<1>());
+      auto temperaturesv = PyArrayHelper(temperatures.mutable_unchecked<1>());
+      auto siesv = PyArrayHelper(sies.mutable_unchecked<1>());
+      auto pressuresv = PyArrayHelper(pressures.mutable_unchecked<1>());
+      auto cvsv = PyArrayHelper(cvs.mutable_unchecked<1>());
+      auto bmodsv = PyArrayHelper(bmods.mutable_unchecked<1>());
+      auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());
 
       self.FillEos(rhosv, temperaturesv,
                     siesv, pressuresv, cvsv,
