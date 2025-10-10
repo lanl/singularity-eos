@@ -5,7 +5,7 @@
 ### Added (new features/APIs/variables/...)
 - [[PR556]](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
 - [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Removed Get() function from IndexableTypes since it could have unexpected consequences when a type wasn't present
-- [[PR526]](https://github.com/lanl/singularity-eos/pull/526) Added the MultiEOS class to wrap multiple EOS models that are linked via PTE (e.g. a multiphase material or reacting material)
+- [[PR526]](https://github.com/lanl/singularity-eos/pull/526) Added the MultiEOS class to wrap multiple EOS models that are linked via PTE (e.g. a multiphase material or reacting material).
 
 ### Fixed (Repair bugs, etc)
 - [[PR567]](https://github.com/lanl/singularity-eos/pull/567) Fixed an OOB array access bug in the Fixed T PTE solver
