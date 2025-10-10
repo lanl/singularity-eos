@@ -234,27 +234,27 @@ class VectorEOS_IdealGas_Given_Rho_Sie(unittest.TestCase):
 
     def test_temp(self):
         """[Vector EOS][IdealGas][Energies and densities] A T(rho, e) lookup is performed"""
-        self.eos.TemperatureFromDensityInternalEnergy(self.density, self.energy, self.temperature, self.num)
+        self.eos.TemperatureFromDensityInternalEnergy(self.density, self.energy, self.temperature)
         assert_allclose(self.temperature, self.temperature_true, rtol=1e-12)
 
     def test_pressure(self):
         """[Vector EOS][IdealGas][Energies and densities] A P(rho, e) lookup is performed"""
-        self.eos.PressureFromDensityInternalEnergy(self.density, self.energy, self.pressure, self.num)
+        self.eos.PressureFromDensityInternalEnergy(self.density, self.energy, self.pressure)
         assert_allclose(self.pressure, self.pressure_true, rtol=1e-12)
 
     def test_cv(self):
         """[Vector EOS][IdealGas][Energies and densities] A C_v(rho, e) lookup is performed"""
-        self.eos.SpecificHeatFromDensityInternalEnergy(self.density, self.energy, self.heatcapacity, self.num)
+        self.eos.SpecificHeatFromDensityInternalEnergy(self.density, self.energy, self.heatcapacity)
         assert_allclose(self.heatcapacity, self.heatcapacity_true, rtol=1e-12)
 
     def test_bmod(self):
         """[Vector EOS][IdealGas][Energies and densities] A B_S(rho, e) lookup is performed"""
-        self.eos.BulkModulusFromDensityInternalEnergy(self.density, self.energy, self.bulkmodulus, self.num)
+        self.eos.BulkModulusFromDensityInternalEnergy(self.density, self.energy, self.bulkmodulus)
         assert_allclose(self.bulkmodulus, self.bulkmodulus_true, rtol=1e-12)
 
     def test_gamma(self):
         """[Vector EOS][IdealGas][Energies and densities] A Gamma(rho, e) lookup is performed"""
-        self.eos.GruneisenParamFromDensityInternalEnergy(self.density, self.energy, self.gruneisen, self.num)
+        self.eos.GruneisenParamFromDensityInternalEnergy(self.density, self.energy, self.gruneisen)
         assert_allclose(self.gruneisen, self.gruneisen_true, rtol=1e-12)
 
 
@@ -292,27 +292,27 @@ class VectorEOS_IdealGas_Given_Rho_Temp(unittest.TestCase):
 
     def test_energy(self):
         """[Vector EOS][IdealGas][Densities and temperatures] A e(rho, T) lookup is performed"""
-        self.eos.InternalEnergyFromDensityTemperature(self.density, self.temperature, self.energy, self.num)
+        self.eos.InternalEnergyFromDensityTemperature(self.density, self.temperature, self.energy)
         assert_allclose(self.energy, self.energy_true, rtol=1e-12)
 
     def test_pressure(self):
         """[Vector EOS][IdealGas][Densities and temperatures] A P(rho, T) lookup is performed"""
-        self.eos.PressureFromDensityTemperature(self.density, self.temperature, self.pressure, self.num)
+        self.eos.PressureFromDensityTemperature(self.density, self.temperature, self.pressure)
         assert_allclose(self.pressure, self.pressure_true, rtol=1e-12)
 
     def test_cv(self):
         """[Vector EOS][IdealGas][Densities and temperatures] A C_v(rho, T) lookup is performed"""
-        self.eos.SpecificHeatFromDensityTemperature(self.density, self.temperature, self.heatcapacity, self.num)
+        self.eos.SpecificHeatFromDensityTemperature(self.density, self.temperature, self.heatcapacity)
         assert_allclose(self.heatcapacity, self.heatcapacity_true, rtol=1e-12)
 
     def test_bmod(self):
         """[Vector EOS][IdealGas][Densities and temperatures] A B_S(rho, T) lookup is performed"""
-        self.eos.BulkModulusFromDensityTemperature(self.density, self.temperature, self.bulkmodulus, self.num)
+        self.eos.BulkModulusFromDensityTemperature(self.density, self.temperature, self.bulkmodulus)
         assert_allclose(self.bulkmodulus, self.bulkmodulus_true, rtol=1e-12)
 
     def test_gamma(self):
         """[Vector EOS][IdealGas][Densities and temperatures] A Gamma(rho, T) lookup is performed"""
-        self.eos.GruneisenParamFromDensityTemperature(self.density, self.temperature, self.gruneisen, self.num)
+        self.eos.GruneisenParamFromDensityTemperature(self.density, self.temperature, self.gruneisen)
         assert_allclose(self.gruneisen, self.gruneisen_true, rtol=1e-12)
 
 
@@ -477,8 +477,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         energy_spiner = np.zeros(self.num)
         num_scratch = int(self.eospac.scratch_size("InternalEnergyFromDensityTemperature", self.num) / np.double(1).nbytes)
         scratch = np.zeros(num_scratch)
-        self.eospac.InternalEnergyFromDensityTemperature(self.density, self.temperature, energy_eospac, scratch, self.num)
-        self.steelEOS_host.InternalEnergyFromDensityTemperature(self.density, self.temperature, energy_spiner, self.num)
+        self.eospac.InternalEnergyFromDensityTemperature(self.density, self.temperature, energy_eospac, scratch)
+        self.steelEOS_host.InternalEnergyFromDensityTemperature(self.density, self.temperature, energy_spiner)
 
         for a, b in zip(energy_eospac, energy_eospac):
             self.assertIsClose(a, b)
@@ -489,8 +489,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         pressure_spiner = np.zeros(self.num)
         num_scratch = int(self.eospac.scratch_size("PressureFromDensityTemperature", self.num) / np.double(1).nbytes)
         scratch = np.zeros(num_scratch)
-        self.eospac.PressureFromDensityTemperature(self.density, self.temperature, pressure_eospac, scratch, self.num)
-        self.steelEOS_host.PressureFromDensityTemperature(self.density, self.temperature, pressure_spiner, self.num)
+        self.eospac.PressureFromDensityTemperature(self.density, self.temperature, pressure_eospac, scratch)
+        self.steelEOS_host.PressureFromDensityTemperature(self.density, self.temperature, pressure_spiner)
 
         for a, b in zip(pressure_eospac, pressure_eospac):
             self.assertIsClose(a, b)
@@ -501,8 +501,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         heatcapacity_spiner = np.zeros(self.num)
         num_scratch = int(self.eospac.scratch_size("SpecificHeatFromDensityTemperature", self.num) / np.double(1).nbytes)
         scratch = np.zeros(num_scratch)
-        self.eospac.SpecificHeatFromDensityTemperature(self.density, self.temperature, heatcapacity_eospac, scratch, self.num)
-        self.steelEOS_host.SpecificHeatFromDensityTemperature(self.density, self.temperature, heatcapacity_spiner, self.num)
+        self.eospac.SpecificHeatFromDensityTemperature(self.density, self.temperature, heatcapacity_eospac, scratch)
+        self.steelEOS_host.SpecificHeatFromDensityTemperature(self.density, self.temperature, heatcapacity_spiner)
 
         for a, b in zip(heatcapacity_eospac, heatcapacity_eospac):
             self.assertIsClose(a, b)
@@ -513,8 +513,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         bulkmodulus_spiner = np.zeros(self.num)
         num_scratch = int(self.eospac.scratch_size("BulkModulusFromDensityTemperature", self.num) / np.double(1).nbytes)
         scratch = np.zeros(num_scratch)
-        self.eospac.BulkModulusFromDensityTemperature(self.density, self.temperature, bulkmodulus_eospac, scratch, self.num)
-        self.steelEOS_host.BulkModulusFromDensityTemperature(self.density, self.temperature, bulkmodulus_spiner, self.num)
+        self.eospac.BulkModulusFromDensityTemperature(self.density, self.temperature, bulkmodulus_eospac, scratch)
+        self.steelEOS_host.BulkModulusFromDensityTemperature(self.density, self.temperature, bulkmodulus_spiner)
 
         for a, b in zip(bulkmodulus_eospac, bulkmodulus_eospac):
             self.assertIsClose(a, b)
@@ -525,8 +525,8 @@ class VectorEOS_EOSPAC_Steel(unittest.TestCase, EOSTestBase):
         gruneisen_spiner = np.zeros(self.num)
         num_scratch = int(self.eospac.scratch_size("GruneisenParamFromDensityTemperature", self.num) / np.double(1).nbytes)
         scratch = np.zeros(num_scratch)
-        self.eospac.GruneisenParamFromDensityTemperature(self.density, self.temperature, gruneisen_eospac, scratch, self.num)
-        self.steelEOS_host.GruneisenParamFromDensityTemperature(self.density, self.temperature, gruneisen_spiner, self.num)
+        self.eospac.GruneisenParamFromDensityTemperature(self.density, self.temperature, gruneisen_eospac, scratch)
+        self.steelEOS_host.GruneisenParamFromDensityTemperature(self.density, self.temperature, gruneisen_spiner)
 
         for a, b in zip(gruneisen_eospac, gruneisen_eospac):
             self.assertIsClose(a, b)
@@ -593,22 +593,22 @@ class VectorEOS_Gruneisen_Given_Rho_Sie(unittest.TestCase):
 
     def test_pressure(self):
         """[VectorEOS][GruneisenEOS][Densities and Energies] A P(rho, e) lookup is performed"""
-        self.eos.PressureFromDensityInternalEnergy(self.density, self.energy, self.pressure, self.num)
+        self.eos.PressureFromDensityInternalEnergy(self.density, self.energy, self.pressure)
         assert_allclose(self.pressure, self.pressure_true, rtol=1e-12)
 
     def test_bmod(self):
         """[VectorEOS][GruneisenEOS][Densities and Energies] A B_S(rho, e) lookup is performed"""
-        self.eos.BulkModulusFromDensityInternalEnergy(self.density, self.energy, self.bulkmodulus, self.num)
+        self.eos.BulkModulusFromDensityInternalEnergy(self.density, self.energy, self.bulkmodulus)
         assert_allclose(self.bulkmodulus, self.bulkmodulus_true, rtol=1e-12)
 
     def test_temp(self):
         """[Vector EOS][GruneisenEOS][Densities and Energies] A T(rho, e) lookup is performed"""
-        self.eos.TemperatureFromDensityInternalEnergy(self.density, self.energy, self.temperature, self.num)
+        self.eos.TemperatureFromDensityInternalEnergy(self.density, self.energy, self.temperature)
         assert_allclose(self.temperature, self.temperature_true, rtol=1e-12)
 
     def test_gamma(self):
         """[Vector EOS][GruneisenEOS][Densities and Energies] A Gamma(rho, e) lookup is performed"""
-        self.eos.GruneisenParamFromDensityInternalEnergy(self.density, self.energy, self.gruneisen, self.num)
+        self.eos.GruneisenParamFromDensityInternalEnergy(self.density, self.energy, self.gruneisen)
         assert_allclose(self.gruneisen, self.gruneisen_true, rtol=1e-12)
 
 

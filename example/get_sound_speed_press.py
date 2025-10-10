@@ -51,8 +51,8 @@ def PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos, # inputs
     lmbda = np.zeros((Ncells,nlambda), dtype=np.double)
     sie = uu / (rho + SMALL)
     bmod = np.zeros(Ncells, dtype=np.double)
-    eos.PressureFromDensityInternalEnergy(rho, sie, P, Ncells, lmbda)
-    eos.BulkModulusFromDensityInternalEnergy(rho, sie, bmod, Ncells, lmbda)
+    eos.PressureFromDensityInternalEnergy(rho, sie, P, lmbda)
+    eos.BulkModulusFromDensityInternalEnergy(rho, sie, bmod, lmbda)
     cs[:] = np.sqrt(bmod / (rho + SMALL))
 
     print("Results from Option 2 (two vector function calls):")
@@ -78,7 +78,7 @@ def PressureSoundSpeedFromDensityEnergyDensity(rho, uu, eos, # inputs
     bmod = np.zeros(Ncells, dtype=np.double)
     temp = np.zeros(Ncells, dtype=np.double)
     cv = np.zeros(Ncells, dtype=np.double)
-    eos.FillEos(rho, temp, sie, P, cv, bmod, Ncells, (thermalqs.temperature | thermalqs.pressure | thermalqs.bulk_modulus), lmbda)
+    eos.FillEos(rho, temp, sie, P, cv, bmod, (thermalqs.temperature | thermalqs.pressure | thermalqs.bulk_modulus), lmbda)
     cs[:] = np.sqrt(bmod / (rho + SMALL))
 
     print("Results from Option 4 (vector FillEos call):")
