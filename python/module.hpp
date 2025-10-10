@@ -60,42 +60,56 @@ public:
 #define EOS_VEC_FUNC_TMPL(func, a, b, out)                                        \
 template<typename T>                                                              \
 void func(const T & self, py::array_t<Real> a, py::array_t<Real> b,               \
-          py::array_t<Real> out, const int num, py::array_t<Real> lambdas){       \
+          py::array_t<Real> out, py::array_t<Real> lambdas){                      \
   py::buffer_info lambdas_info = lambdas.request();                               \
   if (lambdas_info.ndim != 2)                                                     \
       throw std::runtime_error("lambdas dimension must be 2!");                   \
                                                                                   \
+  auto av = a.unchecked<1>();                                                     \
+  auto bv = b.unchecked<1>();                                                     \
+  auto outv = out.mutable_unchecked<1>();                                         \
   if(lambdas_info.shape[1] > 0) {                                                 \
-    self.func(a.data(), b.data(), out.mutable_data(), num, LambdaHelper(lambdas)); \
+    self.func(av, bv, outv, a.size(), LambdaHelper(lambdas));                     \
   } else {                                                                        \
-    self.func(a.data(), b.data(), out.mutable_data(), num, NoLambdaHelper());      \
+    self.func(av, bv, outv, a.size(), NoLambdaHelper());                          \
   }                                                                               \
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
 void func##WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,  \
-          py::array_t<Real> out, py::array_t<Real> scratch, const int num, py::array_t<Real> lambdas){       \
+          py::array_t<Real> out, py::array_t<Real> scratch, py::array_t<Real> lambdas){       \
   py::buffer_info lambdas_info = lambdas.request();                               \
   if (lambdas_info.ndim != 2)                                                     \
       throw std::runtime_error("lambdas dimension must be 2!");                   \
                                                                                   \
+  auto av = a.unchecked<1>();                                                     \
+  auto bv = b.unchecked<1>();                                                     \
+  auto outv = out.mutable_unchecked<1>();                                         \
+  auto scrv = scratch.mutable_unchecked<1>();                                     \
   if(lambdas_info.shape[1] > 0) {                                                 \
-    self.func(a.data(), b.data(), out.mutable_data(), scratch.mutable_data(), num, LambdaHelper(lambdas)); \
+    self.func(av, bv, outv, scrv, a.size(), LambdaHelper(lambdas));               \
   } else {                                                                        \
-    self.func(a.data(), b.data(), out.mutable_data(), scratch.mutable_data(), num, NoLambdaHelper());      \
+    self.func(av, bv, outv, scrv, a.size(), NoLambdaHelper());                    \
   }                                                                               \
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
 void func##NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,     \
-          py::array_t<Real> out, const int num){                                  \
-  self.func(a.data(), b.data(), out.mutable_data(), num, NoLambdaHelper());       \
+          py::array_t<Real> out){                                                 \
+  auto av = a.unchecked<1>();                                                     \
+  auto bv = b.unchecked<1>();                                                     \
+  auto outv = out.mutable_unchecked<1>();                                         \
+  self.func(av, bv, outv, a.size(), NoLambdaHelper());                            \
 }                                                                                 \
                                                                                   \
 template<typename T>                                                              \
 void func##NoLambdaWithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,    \
-          py::array_t<Real> out, py::array_t<Real> scratch, const int num){                 \
-  self.func(a.data(), b.data(), out.mutable_data(), scratch.mutable_data(), num, NoLambdaHelper()); \
+          py::array_t<Real> out, py::array_t<Real> scratch){                      \
+  auto av = a.unchecked<1>();                                                     \
+  auto bv = b.unchecked<1>();                                                     \
+  auto outv = out.mutable_unchecked<1>();                                         \
+  auto scrv = scratch.mutable_unchecked<1>();                                     \
+  self.func(av, bv, outv, scrv, a.size(), NoLambdaHelper());                      \
 }
 
 EOS_VEC_FUNC_TMPL(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
@@ -158,85 +172,98 @@ struct VectorFunctions {
   static void add(py::class_<T> & cls) {
     // Generic functions provided by the base class. These contain e.g. the vector
     // overloads that use the scalar versions declared here
-    cls.def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("num"), py::arg("lmbdas"))
-    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("num"), py::arg("lmbdas"))
-    .def("PressureFromDensityTemperature", &PressureFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("num"), py::arg("lmbdas"))
-    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("num"), py::arg("lmbdas"))
-    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("num"), py::arg("lmbdas"))
-    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("num"), py::arg("lmbdas"))
-    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("num"), py::arg("lmbdas"))
-    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("num"), py::arg("lmbdas"))
-    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("num"), py::arg("lmbdas"))
-    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("num"), py::arg("lmbdas"))
+    cls.def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("lmbdas"))
+    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("lmbdas"))
+    .def("PressureFromDensityTemperature", &PressureFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("lmbdas"))
+    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("lmbdas"))
+    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("lmbdas"))
+    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("lmbdas"))
+    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("lmbdas"))
+    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("lmbdas"))
+    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("lmbdas"))
+    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("lmbdas"))
 
-    .def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("num"))
-    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("num"))
-    .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("num"))
-    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("num"))
-    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("num"))
-    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("num"))
-    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("num"))
-    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("num"))
-    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("num"))
-    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("num"))
+    .def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"))
+    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"))
+    .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"))
+    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"))
+    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"))
+    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"))
+    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"))
+    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"))
+    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"))
+    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"))
 
 
     .def("FillEos", [](const T & self, py::array_t<Real> rhos,
                        py::array_t<Real> temperatures, py::array_t<Real> sies,
                        py::array_t<Real> pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
-                       const int num, const unsigned long output, py::array_t<Real> lambdas) {
+                       const unsigned long output, py::array_t<Real> lambdas) {
       py::buffer_info lambdas_info = lambdas.request();
       if (lambdas_info.ndim != 2)
         throw std::runtime_error("lambdas dimension must be 2!");
+      
+      rhosv = rhos.mutable_unchecked<1>();
+      temperaturesv = temperatures.mutable_unchecked<1>();
+      siesv = sies.mutable_unchecked<1>();
+      pressuresv = pressures.mutable_unchecked<1>();
+      cvsv = cvs.mutable_unchecked<1>();
+      bmodsv = bmods.mutable_unchecked<1>();
 
       if(lambdas_info.shape[1] > 0) {
-        self.FillEos(rhos.mutable_data(), temperatures.mutable_data(),
-                     sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(),
-                     bmods.mutable_data(), num, output, LambdaHelper(lambdas));
+        self.FillEos(rhosv, temperaturesv,
+                     siesv, pressuresv, cvsv,
+                     bmodsv, rhos.size(), output, LambdaHelper(lambdas));
       } else {
-        self.FillEos(rhos.mutable_data(), temperatures.mutable_data(),
-                     sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(),
-                     bmods.mutable_data(), num, output, NoLambdaHelper());
+        self.FillEos(rhosv, temperaturesv,
+                     siesv, pressuresv, cvsv,
+                     bmodsv, rhos.size(), output, NoLambdaHelper());
       }
     }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"),
-       py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("num"),
+       py::arg("pressures"), py::arg("cvs"), py::arg("bmods"),
        py::arg("output"), py::arg("lmbdas")
     )
     .def("FillEos", [](const T & self, py::array_t<Real> rhos,
                        py::array_t<Real> temperatures, py::array_t<Real> sies, py::array_t<Real>
                        pressures, py::array_t<Real> cvs, py::array_t<Real> bmods, const int num,
                        const unsigned long output) {
-      self.FillEos(rhos.mutable_data(), temperatures.mutable_data(),
-                   sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(),
-                   bmods.mutable_data(), num, output, NoLambdaHelper());
-    }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("num"), py::arg("output"));
+      rhosv = rhos.mutable_unchecked<1>();
+      temperaturesv = temperatures.mutable_unchecked<1>();
+      siesv = sies.mutable_unchecked<1>();
+      pressuresv = pressures.mutable_unchecked<1>();
+      cvsv = cvs.mutable_unchecked<1>();
+      bmodsv = bmods.mutable_unchecked<1>();
+      self.FillEos(rhosv, temperaturesv,
+                    siesv, pressuresv, cvsv,
+                   bmodsv, rhos.size(), output, NoLambdaHelper());
+    }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("output"));
   }
 };
 
 template<typename T>
 struct VectorFunctions<T,true> {
   static void add(py::class_<T> & cls) {
-    cls.def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
-    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
-    .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
-    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
-    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
-    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
-    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
-    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
-    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
-    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("scratch"), py::arg("num"), py::arg("lmbdas"))
+    cls.def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("scratch"), py::arg("lmbdas"))
 
-    .def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("scratch"), py::arg("num"))
-    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("scratch"), py::arg("num"))
-    .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("scratch"), py::arg("num"))
-    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("scratch"), py::arg("num"))
-    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("scratch"), py::arg("num"))
-    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("scratch"), py::arg("num"))
-    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("scratch"), py::arg("num"))
-    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("scratch"), py::arg("num"))
-    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("scratch"), py::arg("num"))
-    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("scratch"), py::arg("num"))
+    .def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("scratch"))
+    .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("scratch"))
+    .def("PressureFromDensityTemperature", &PressureFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("pressures"), py::arg("scratch"))
+    .def("PressureFromDensityInternalEnergy", &PressureFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("pressures"), py::arg("scratch"))
+    .def("SpecificHeatFromDensityTemperature", &SpecificHeatFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("cvs"), py::arg("scratch"))
+    .def("SpecificHeatFromDensityInternalEnergy", &SpecificHeatFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("cvs"), py::arg("scratch"))
+    .def("BulkModulusFromDensityTemperature", &BulkModulusFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("bmods"), py::arg("scratch"))
+    .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("scratch"))
+    .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("scratch"))
+    .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("scratch"))
 
     .def("FillEos", [](const T & self, py::array_t<Real> rhos,
                        py::array_t<Real> temperatures, py::array_t<Real> sies,
@@ -247,17 +274,25 @@ struct VectorFunctions<T,true> {
       if (lambdas_info.ndim != 2)
         throw std::runtime_error("lambdas dimension must be 2!");
 
+      rhosv = rhos.mutable_unchecked<1>();
+      temperaturesv = temperatures.mutable_unchecked<1>();
+      siesv = sies.mutable_unchecked<1>();
+      pressuresv = pressures.mutable_unchecked<1>();
+      cvsv = cvs.mutable_unchecked<1>();
+      bmodsv = bmods.mutable_unchecked<1>();
+      scrv = scratch.mutable_unchecked<1>();
+
       if(lambdas_info.shape[1] > 0) {
-        self.FillEos(rhos.mutable_data(), temperatures.mutable_data(),
-                     sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(),
-                     bmods.mutable_data(), scratch.mutable_data(), num, output, LambdaHelper(lambdas));
+        self.FillEos(rhosv, temperaturesv,
+                     siesv, pressuresv, cvsv,
+                     bmodsv, scrv, rhos.size(), output, LambdaHelper(lambdas));
       } else {
-        self.FillEos(rhos.mutable_data(), temperatures.mutable_data(),
-                     sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(),
-                     bmods.mutable_data(), scratch.mutable_data(), num, output, NoLambdaHelper());
+        self.FillEos(rhosv, temperaturesv,
+                     siesv, pressuresv, cvsv,
+                     bmodsv, scrv, rhos.size(), output, NoLambdaHelper());
       }
     }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"),
-       py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("scratch"), py::arg("num"),
+       py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("scratch"),
        py::arg("output"), py::arg("lmbdas")
     )
     .def("FillEos", [](const T & self, py::array_t<Real> rhos,
@@ -265,10 +300,18 @@ struct VectorFunctions<T,true> {
                        pressures, py::array_t<Real> cvs, py::array_t<Real> bmods,
                        py::array_t<Real> scratch,
                        const int num, const unsigned long output) {
-      self.FillEos(rhos.mutable_data(), temperatures.mutable_data(),
-                   sies.mutable_data(), pressures.mutable_data(), cvs.mutable_data(),
-                   bmods.mutable_data(), scratch.mutable_data(), num, output, NoLambdaHelper());
-    }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("scratch"), py::arg("num"), py::arg("output"));
+      rhosv = rhos.mutable_unchecked<1>();
+      temperaturesv = temperatures.mutable_unchecked<1>();
+      siesv = sies.mutable_unchecked<1>();
+      pressuresv = pressures.mutable_unchecked<1>();
+      cvsv = cvs.mutable_unchecked<1>();
+      bmodsv = bmods.mutable_unchecked<1>();
+      scrv = scratch.mutable_unchecked<1>();
+
+      self.FillEos(rhosv, temperaturesv,
+                    siesv, pressuresv, cvsv,
+                    bmodsv, scrv, rhos.size(), output, NoLambdaHelper());
+    }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("scratch"), py::arg("output"));
   }
 };
 
