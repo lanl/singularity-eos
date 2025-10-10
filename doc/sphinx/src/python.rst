@@ -31,7 +31,9 @@ Example
    P = eos.PressureFromDensityInternalEnergy(rho, sie)
    eos.Finalize()
 
-A more elaborate example can be found in ``examples/get_sound_speed_press.py``.
+which should work for both scalar and vector (via numpy array)
+calls. A more elaborate example can be found in
+``examples/get_sound_speed_press.py``.
 
 .. currentmodule:: singularity_eos
 

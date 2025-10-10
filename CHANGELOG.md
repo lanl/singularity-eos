@@ -14,6 +14,7 @@
 - [[PR568]](https://github.com/lanl/singularity-eos/pull/568) Fix bug in FixedT and FixedP PTE solvers when materials have negative energies at the initial guess
 
 ### Changed (changing behavior/API/variables/...)
+- [[PR579]](https://github.com/lanl/singularity-eos/pull/579) Python bindings now support numpy arrays with arbitrary stride. Numpy array length no longer required input.
 - [[PR575]](https://github.com/lanl/singularity-eos/pull/575) Pin variant submodule to the same commit as the spackage
 
 ### Infrastructure (changes irrelevant to downstream codes)
