@@ -12,16 +12,20 @@
 // publicly and display publicly, and to permit others to do so.
 //------------------------------------------------------------------------------
 // clang-format off
+#include <cmath>
+#include <limits>
+#include <map>
+#include <ostream>
+#include <string>
+#include <sstream>
+
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
+
+#include <ports-of-call/portable_errors.hpp>
+
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos.hpp>
-#include <map>
-#include <string>
-#include <ostream>
-#include <sstream>
-#include <limits>
-#include <cmath>
 
 namespace py = pybind11;
 using namespace singularity;
@@ -73,6 +77,15 @@ public:
   Real &operator[](const std::size_t i) const {
     return data_[i*stride_];
   }
+  std::size_t Stride() const {
+    return stride_;
+  }
+  bool IsContiguous() const {
+    return stride_ == 1;
+  }
+  Real *data() const {
+    return data_;
+  }
 private:
   Real *data_;
   const std::size_t stride_;
@@ -105,14 +118,20 @@ void func##WithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,
   if (lambdas_info.ndim != 2)                                                     \
       throw std::runtime_error("lambdas dimension must be 2!");                   \
                                                                                   \
-  auto av = a.unchecked<1>();                                                     \
-  auto bv = b.unchecked<1>();                                                     \
+  auto av = PyArrayHelper(a.mutable_unchecked<1>());                              \
+  auto bv = PyArrayHelper(b.mutable_unchecked<1>());                              \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());                      \
+  PORTABLE_REQUIRE(av.IsContiguous(), "arrays w/ scratch must be contiguous");    \
+  PORTABLE_REQUIRE(bv.IsContiguous(), "arrays w/ scratch must be contiguous");    \
+  PORTABLE_REQUIRE(outv.IsContiguous(), "arrays w/ scratch must be contiguous");  \
+  PORTABLE_REQUIRE(scrv.IsContiguous(), "arrays w/ scratch must be contiguous");  \
   if(lambdas_info.shape[1] > 0) {                                                 \
-    self.func(av, bv, outv, scrv, a.size(), LambdaHelper(lambdas));               \
+    self.func(av.data(), bv.data(), outv.data(), scrv.data(), a.size(),           \
+              LambdaHelper(lambdas));                                             \
   } else {                                                                        \
-    self.func(av, bv, outv, scrv, a.size(), NoLambdaHelper());                    \
+    self.func(av.data(), bv.data(), outv.data(), scrv.data(), a.size(),           \
+              NoLambdaHelper());                                                  \
   }                                                                               \
 }                                                                                 \
                                                                                   \
@@ -128,11 +147,16 @@ void func##NoLambda(const T & self, py::array_t<Real> a, py::array_t<Real> b,   
 template<typename T>                                                              \
 void func##NoLambdaWithScratch(const T & self, py::array_t<Real> a, py::array_t<Real> b,    \
           py::array_t<Real> out, py::array_t<Real> scratch){                      \
-  auto av = a.unchecked<1>();                                                     \
-  auto bv = b.unchecked<1>();                                                     \
+  auto av = PyArrayHelper(a.mutable_unchecked<1>());                              \
+  auto bv = PyArrayHelper(b.mutable_unchecked<1>());                              \
   auto outv = PyArrayHelper(out.mutable_unchecked<1>());                          \
   auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());                      \
-  self.func(av, bv, outv, scrv, a.size(), NoLambdaHelper());                      \
+  PORTABLE_REQUIRE(av.IsContiguous(), "arrays w/ scratch must be contiguous");    \
+  PORTABLE_REQUIRE(bv.IsContiguous(), "arrays w/ scratch must be contiguous");    \
+  PORTABLE_REQUIRE(outv.IsContiguous(), "arrays w/ scratch must be contiguous");  \
+  PORTABLE_REQUIRE(scrv.IsContiguous(), "arrays w/ scratch must be contiguous");  \
+  self.func(av.data(), bv.data(), outv.data(), scrv.data(), a.size(),             \
+            NoLambdaHelper());                                                    \
 }
 
 EOS_VEC_FUNC_TMPL(TemperatureFromDensityInternalEnergy, rhos, sies, temperatures)
