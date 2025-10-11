@@ -1317,8 +1317,9 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
 
   PORTABLE_FUNCTION void PrintParams() const {
     // print the parameters for each EOS via fold expression
-    printf("-- MultiEOS EOS parameters:\n") std::apply(
-        [](const auto &...eos_models) { (eos_models.PrintParams(), ...); }, models_);
+    printf("-- MultiEOS EOS parameters:\n");
+    std::apply([](const auto &...eos_models) { (eos_models.PrintParams(), ...); },
+               models_);
   }
 
   template <typename LambdaIndexer,
