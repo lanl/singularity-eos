@@ -1317,8 +1317,8 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
 
   PORTABLE_FUNCTION void PrintParams() const {
     // print the parameters for each EOS via fold expression
-    std::apply([](const auto &...eos_models) { (eos_models.PrintParams(), ...); },
-               models_);
+    printf("-- MultiEOS EOS parameters:\n") std::apply(
+        [](const auto &...eos_models) { (eos_models.PrintParams(), ...); }, models_);
   }
 
   template <typename LambdaIndexer,
@@ -1504,7 +1504,16 @@ class MultiEOS : public EosBase<MultiEOS<EOSModelsT...>> {
     // need to then handle the copy ourselves here.
 
     // TODO (JHP): This function does not appear to work for EOSPAC, but it's not
-    // clear why exactly. The corresponding test has been commented out.
+    // clear why exactly. The corresponding test has been commented out. For now
+    // error on EOS that don't share all dynamic memory
+    auto all_sharable = std::apply(
+        [](auto const &...eos) {
+          return (eos.AllDynamicMemoryIsShareable() && ...); // short-circuits
+        },
+        models_);
+    PORTABLE_REQUIRE(all_sharable,
+                     "There is currently a bug in SetDynamicMemory for the "
+                     "MultiEOS class when any EOS does not share all dynamic memory");
 
     // Source and shared memory pointers
     char *p_src = src;
