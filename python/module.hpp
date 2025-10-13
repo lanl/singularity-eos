@@ -330,13 +330,15 @@ struct VectorFunctions<T,true> {
       auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());
 
       if(lambdas_info.shape[1] > 0) {
-        self.FillEos(rhosv, temperaturesv,
-                     siesv, pressuresv, cvsv,
-                     bmodsv, scrv, rhos.size(), output, LambdaHelper(lambdas));
+        self.FillEos(rhosv.data(), temperaturesv.data(),
+                     siesv.data(), pressuresv.data(), cvsv.data(),
+                     bmodsv.data(), scrv.data(), rhos.size(), output,
+                     LambdaHelper(lambdas));
       } else {
-        self.FillEos(rhosv, temperaturesv,
-                     siesv, pressuresv, cvsv,
-                     bmodsv, scrv, rhos.size(), output, NoLambdaHelper());
+        self.FillEos(rhosv.data(), temperaturesv.data(),
+                     siesv.data(), pressuresv.data(), cvsv.data(),
+                     bmodsv.data(), scrv.data(), rhos.size(), output,
+                     NoLambdaHelper());
       }
     }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"),
        py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("scratch"),
@@ -355,9 +357,10 @@ struct VectorFunctions<T,true> {
       auto bmodsv = PyArrayHelper(bmods.mutable_unchecked<1>());
       auto scrv = PyArrayHelper(scratch.mutable_unchecked<1>());
 
-      self.FillEos(rhosv, temperaturesv,
-                    siesv, pressuresv, cvsv,
-                    bmodsv, scrv, rhos.size(), output, NoLambdaHelper());
+      self.FillEos(rhosv.data(), temperaturesv.data(),
+                   siesv.data(), pressuresv.data(), cvsv.data(),
+                   bmodsv.data(), scrv.data(), rhos.size(),
+                   output, NoLambdaHelper());
     }, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("pressures"), py::arg("cvs"), py::arg("bmods"), py::arg("scratch"), py::arg("output"));
   }
 };
