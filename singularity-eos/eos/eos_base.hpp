@@ -772,7 +772,7 @@ class EosBase {
                       LambdaIndexer &&lambdas) const {
     static auto const name = SG_MEMBER_FUNC_NAME();
     static auto const cname = name.c_str();
-    CRTP copy = *(static_cast<CRTP const *>(this));
+    const CRTP &copy = *(static_cast<CRTP const *>(this));
     portableFor(
         cname, 0, num, PORTABLE_LAMBDA(const int i) {
           copy.FillEos(rhos[i], temps[i], energies[i], presses[i], cvs[i], bmods[i],
