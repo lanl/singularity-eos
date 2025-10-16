@@ -188,9 +188,6 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
     conflicts("amdgpu_target=none", when="+rocm", msg="ROCm architecture is required")
 
     # these are mirrored in the cmake configuration
-    conflicts("+cuda", when="~kokkos")
-    conflicts("+rocm", when="~kokkos")
-    conflicts("+kokkos-kernels", when="~kokkos")
     conflicts("+hdf5", when="~spiner")
 
     conflicts("+fortran", when="~closure")
