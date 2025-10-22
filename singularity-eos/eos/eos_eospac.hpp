@@ -1301,6 +1301,8 @@ inline EOSPAC::EOSPAC(const int matid, TableSplit split, bool invert_at_setup,
                                   &error_code);
 #else
     eos_GetPackedTablesSize(NTABLES, tablehandle, &packed_size_, &error_code);
+    // Note that this is how much would be allocated in shared memory. Since
+    // EOSPAC can't use it, don't allocate anything.
     shared_size_ = 0;
 #endif // SINGULARITY_EOSPAC_ENABLE_SHARED_MEMORY
     eosCheckError(error_code, "Get shared memory info", Verbosity::Debug);

@@ -1016,8 +1016,6 @@ might look something like this:
     eos = EOSBuilder::Modify<ScaledEOS>(eos, scale);
   }
 
-.. _eos methods reference section:
-
 CheckParams
 ------------
 
@@ -1029,6 +1027,8 @@ constructed self-consistently and ready for use by calling
 which raise an error and/or print an equation of state specific error
 message if something has gone wrong. Most EOS constructors and ways of
 building an EOS call ``CheckParams`` by default.
+
+.. _eos methods reference section:
 
 Equation of State Methods Reference
 ------------------------------------
