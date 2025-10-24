@@ -57,7 +57,7 @@ struct is_non_negative {
 template <typename valT, typename condT, typename nameT>
 PORTABLE_FORCEINLINE_FUNCTION bool violates_condition(valT &&value, condT &&condition,
                                                       nameT &&var_name) {
-  constexpr bool good = condition(std::forward<valT>(value));
+  const bool good = condition(std::forward<valT>(value));
   if (!good) {
     printf("### ERROR: Bad singularity-eos value\n  Var:   %s\n  Value: %.15e\n",
            var_name, value);
