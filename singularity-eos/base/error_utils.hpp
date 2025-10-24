@@ -29,7 +29,7 @@ constexpr double _NORMAL_FACTOR = 1.0e10;
 
 struct is_normal_or_zero {
   template <typename valT>
-  bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
+  constexpr bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
     static_assert(std::is_floating_point<valT>::value);
     return (value == valT{0}) ||
            (std::isnormal(_NORMAL_FACTOR * value) && std::isnormal(value));
@@ -38,7 +38,7 @@ struct is_normal_or_zero {
 
 struct is_strictly_positive {
   template <typename valT>
-  bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
+  constexpr bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
     static_assert(std::is_arithmetic<valT>::value);
     return value > valT{0};
   }
@@ -46,7 +46,7 @@ struct is_strictly_positive {
 
 struct is_non_negative {
   template <typename valT>
-  bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
+  constexpr bool PORTABLE_FORCEINLINE_FUNCTION operator()(valT value) const {
     static_assert(std::is_arithmetic<valT>::value);
     return value >= valT{0};
   }
@@ -57,7 +57,7 @@ struct is_non_negative {
 template <typename valT, typename condT, typename nameT>
 PORTABLE_FORCEINLINE_FUNCTION bool violates_condition(valT &&value, condT &&condition,
                                                       nameT &&var_name) {
-  const bool good = condition(std::forward<valT>(value));
+  constexpr bool good = condition(std::forward<valT>(value));
   if (!good) {
     printf("### ERROR: Bad singularity-eos value\n  Var:   %s\n  Value: %.15e\n",
            var_name, value);
