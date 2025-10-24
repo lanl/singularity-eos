@@ -17,6 +17,7 @@
 
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
+#include <singularity-eos/base/error_utils.hpp>
 #include <singularity-eos/base/fast-math/logs.hpp>
 #include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
@@ -556,9 +557,20 @@ class PTESolverBase {
       temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, lambda[m]);
       // note the scaling of pressure
-      press[m] = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tguess,
-                                                              sie[m], lambda[m], false),
-                               uscale);
+      if (eos[m].PreferredInput() & thermalqs::pressure) {
+        // Use pressure array for guesses without doing a lookup
+        if (error_utils::bad_value(press[m], "press[m]")) {
+          // Guess an arbitrary pressure to start things off
+          press[m] = robust::ratio(1.0e8, uscale);
+        } else {
+          // Use input pressure for this material as the guess
+          press[m] = robust::ratio(press[m], uscale);
+        }
+      } else {
+        press[m] = robust::ratio(this->GetPressureFromPreferred(eos[m], rho[m], Tguess,
+                                                                sie[m], lambda[m], false),
+                                 uscale);
+      }
     }
 
     // note the scaling of the material internal energy densities

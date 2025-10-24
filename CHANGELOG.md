@@ -12,6 +12,7 @@
 - [[PR563]](https://github.com/lanl/singularity-eos/pull/563) Fixed DensityFromPressureTemperature for the Carnahan-Starling EOS.
 - [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Fix logic for numerical vs type indices by adding safeGet(), safeSet(), safeMustGet(), and safeMustSet() helpers
 - [[PR568]](https://github.com/lanl/singularity-eos/pull/568) Fix bug in FixedT and FixedP PTE solvers when materials have negative energies at the initial guess
+- [[PR583]](https://github.com/lanl/singularity-eos/pull/582) Allow PTE solvers to operate on tables with pressure as a preferred input
 
 ### Changed (changing behavior/API/variables/...)
 - [[PR579]](https://github.com/lanl/singularity-eos/pull/579) Python bindings now support numpy arrays with arbitrary stride. Numpy array length no longer required input.
