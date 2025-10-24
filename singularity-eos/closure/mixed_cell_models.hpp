@@ -556,7 +556,7 @@ class PTESolverBase {
       temp[m] = 1.0;
       sie[m] = eos[m].InternalEnergyFromDensityTemperature(rho[m], Tguess, lambda[m]);
       // note the scaling of pressure
-      if (eos.PreferredInput() == (thermalqs::pressure | thermalqs::temperature)) {
+      if (eos.PreferredInput() & thermalqs::pressure) {
         // Use pressure array for guesses without doing a lookup
         if (error_utils::bad_value(press[m])) {
           press[m] = 1.0e8;  // Guess an arbitrary pressure to start things off
