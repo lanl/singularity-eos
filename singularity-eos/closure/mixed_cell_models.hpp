@@ -559,7 +559,7 @@ class PTESolverBase {
       // note the scaling of pressure
       if (eos[m].PreferredInput() & thermalqs::pressure) {
         // Use pressure array for guesses without doing a lookup
-        if (error_utils::bad_value(press[m])) {
+        if (error_utils::bad_value(press[m], "press[m]")) {
           // Guess an arbitrary pressure to start things off
           press[m] = robust::ratio(1.0e8, uscale);
         } else {
