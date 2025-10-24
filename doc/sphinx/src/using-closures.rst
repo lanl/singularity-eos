@@ -148,7 +148,11 @@ convenient way to specify an initial guess for the closure state.
   prediction of the new PTE state (i.e. from advected values in an Eulerian
   frame) is usually available. This is usually the preferred input for the
   volume fractions and densities provided that they are consistent with the
-  current mass fractions in the control volume.
+  current mass fractions in the control volume. Note also that if an equation of
+  state has preferred inputs of pressure and temperature, the input pressure
+  for that material will be used as the initial pressure guess in the PTE solve.
+  Otherwise if the provided pressure for this EOS is subnormal or beyond
+  ``std::numeric_limits<Real>::max()``, 1.0e8 will be used instead.
 
   When a previous state is not available, an assuption must be made for how volume
   is partitioned between the materials. The simplest (but perhaps not the most
