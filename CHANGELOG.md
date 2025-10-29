@@ -5,6 +5,7 @@
 ### Added (new features/APIs/variables/...)
 - [[PR556]](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
 - [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Removed Get() function from IndexableTypes since it could have unexpected consequences when a type wasn't present
+- [[PR583]](https://github.com/lanl/singularity-eos/pull/583) Added GenericIndexer class to provide more complex array indirection
 
 ### Fixed (Repair bugs, etc)
 - [[PR567]](https://github.com/lanl/singularity-eos/pull/567) Fixed an OOB array access bug in the Fixed T PTE solver

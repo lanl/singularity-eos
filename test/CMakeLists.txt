@@ -40,6 +40,7 @@ add_executable(
   test_variadic_utils.cpp
   test_bounds.cpp
   test_indexable_types.cpp
+  test_generic_indxer.cpp
   )
 
 add_executable(
