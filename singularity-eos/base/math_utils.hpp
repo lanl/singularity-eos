@@ -15,6 +15,8 @@
 #ifndef SINGULARITY_EOS_BASE_MATH_UTILS_HPP_
 #define SINGULARITY_EOS_BASE_MATH_UTILS_HPP_
 
+#include <cmath>
+
 #include <ports-of-call/portability.hpp>
 
 namespace singularity {
@@ -56,6 +58,33 @@ PORTABLE_FORCEINLINE_FUNCTION constexpr auto ipow10() {
 PORTABLE_FORCEINLINE_FUNCTION auto pow10(const Real x) {
   constexpr Real ln10 = 2.30258509299405e+00;
   return std::exp(ln10 * x);
+}
+
+/*
+ * Kahan summation, with the Neumaier correction
+ * https://onlinelibrary.wiley.com/doi/10.1002/zamm.19740540106
+ */
+struct IdentityOperator {
+  PORTABLE_FORCEINLINE_FUNCTION Real operator()(const Real x) const { return x; }
+};
+template <typename Data_t, typename Operator_t = IdentityOperator>
+PORTABLE_FORCEINLINE_FUNCTION Real
+sum_neumaier(Data_t &&data, std::size_t n, std::size_t offset = 0, int iskip = -1,
+             const Operator_t &op = IdentityOperator()) {
+  Real sum = 0;
+  Real c = 0; // correction
+  for (std::size_t i = 0; i < n; ++i) {
+    if (iskip >= 0 && i == static_cast<std::size_t>(iskip)) continue;
+    Real x = op(data[i + offset]);
+    Real t = sum + x;
+    if (std::abs(sum) >= std::abs(x)) {
+      c += (sum - t) + x;
+    } else {
+      c += (x - t) + sum;
+    }
+    sum = t;
+  }
+  return sum + c;
 }
 
 } // namespace math_utils

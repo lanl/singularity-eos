@@ -23,6 +23,21 @@
 #include <ports-of-call/portable_errors.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 
+// SFINAE helper macro that checks if a given indexer object has the requested
+// indexable type.
+// TODO: The error is a simple template substitution failure error, but there
+// are ways short of C++20 concepts to add more readability to the error. We may
+// want to add this at some point
+#define SINGULARITY_INDEXER_HAS_INDEXABLE_TYPE(Indexer, IndexableType)                   \
+  typename = std::enable_if_t<                                                           \
+      singularity::variadic_utils::is_indexable_v<Indexer, IndexableType>>
+
+// Just a small wrapper for the above macro specifically for mass fractions
+// NOTE: it's assumed that matnum is a count, not an index (hence the minus 1)
+#define SINGULARITY_INDEXER_HAS_MASS_FRAC(Indexer, matnum)                               \
+  SINGULARITY_INDEXER_HAS_INDEXABLE_TYPE(                                                \
+      Indexer, singularity::IndexableTypes::MassFraction<matnum - 1>)
+
 namespace singularity {
 namespace IndexerUtils {
 
@@ -222,28 +237,27 @@ class VariadicIndexerBase {
 
   VariadicIndexerBase() = default;
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  VariadicIndexerBase(const Data_t &data) : data_(data) {}
+  constexpr VariadicIndexerBase(const Data_t &data) : data_(data) {}
 
   template <typename T,
             typename = std::enable_if_t<variadic_utils::contains<T, Ts...>::value>>
-  PORTABLE_FORCEINLINE_FUNCTION Real &operator[](const T &t) {
+  constexpr Real &operator[](const T &t) noexcept {
     constexpr std::size_t idx = variadic_utils::GetIndexInTL<T, Ts...>();
     return data_[idx];
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  Real &operator[](const std::size_t idx) { return data_[idx]; }
+  constexpr Real &operator[](const std::size_t idx) { return data_[idx]; }
 
   template <typename T,
             typename = std::enable_if_t<variadic_utils::contains<T, Ts...>::value>>
-  PORTABLE_FORCEINLINE_FUNCTION const Real &operator[](const T &t) const {
+  constexpr const Real &operator[](const T &t) const noexcept {
     constexpr std::size_t idx = variadic_utils::GetIndexInTL<T, Ts...>();
     return data_[idx];
   }
 
-  PORTABLE_FORCEINLINE_FUNCTION
-  const Real &operator[](const std::size_t idx) const { return data_[idx]; }
+  constexpr const Real &operator[](const std::size_t idx) const noexcept {
+    return data_[idx];
+  }
 
   static inline constexpr std::size_t size() { return sizeof...(Ts); }
 
@@ -268,6 +282,8 @@ struct MeanAtomicNumber {};
 struct ElectronFraction {};
 struct RootStatus {};
 struct TableStatus {};
+template <int mat_idx>
+struct MassFraction {};
 } // namespace IndexableTypes
 } // namespace singularity
 #endif // SINGULARITY_EOS_BASE_INDEXABLE_TYPES_

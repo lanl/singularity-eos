@@ -25,6 +25,7 @@ register_headers(
 
     # Normal files
     base/fast-math/logs.hpp
+    base/generic_indexer.hpp
     base/indexable_types.hpp
     base/robust_utils.hpp
     base/root-finding-1d/root_finding.hpp
@@ -38,6 +39,7 @@ register_headers(
     base/sp5/singularity_eos_sp5.hpp
     eos/default_variant.hpp
     base/hermite.hpp
+    base/tuple_utils.hpp
     eos/eos_variant.hpp
     eos/eos_stellar_collapse.hpp
     eos/eos_ideal.hpp
@@ -72,6 +74,7 @@ register_headers(
     eos/variant_utils.hpp
     eos/eos_carnahan_starling.hpp
     eos/eos_electrons.hpp
+    eos/eos_multi_eos.hpp
 )
 
 if (SINGULARITY_BUILD_CLOSURE)
