@@ -45,15 +45,14 @@ SCENARIO("Generic Indexer", "[GenericIndexer]") {
         struct constant_offset {
           std::size_t offset;
           constexpr constant_offset(std::size_t offset_) : offset{offset_} {}
-          constexpr std::size_t operator[](std::size_t i) {
-            return i * offset;
-          }
+          constexpr std::size_t operator[](std::size_t i) { return i * offset; }
         };
-        auto mat_indexer = singularity::GenericIndexer(flat_data.data(), constant_offset{m});
+        auto mat_indexer =
+            singularity::GenericIndexer(flat_data.data(), constant_offset{m});
         THEN("The data returned should be same as if we accessed the array of "
              "arrays") {
           for (std::size_t i = 0; i < n; i++) {
-            auto* mat_array = &mat_indexer[i];
+            auto *mat_array = &mat_indexer[i];
             for (std::size_t j = 0; j < m; j++) {
               INFO("i: " << i << " j: " << j);
               CHECK_THAT(data[i][j], Catch::Matchers::WithinRel(mat_array[j], 1.0e-12));
@@ -64,4 +63,3 @@ SCENARIO("Generic Indexer", "[GenericIndexer]") {
     }
   }
 }
-
