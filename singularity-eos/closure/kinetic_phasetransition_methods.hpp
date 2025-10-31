@@ -99,6 +99,73 @@ PORTABLE_INLINE_FUNCTION void SmallStepMFUpdate(const Real logdt, const int num_
   return;
 }
 
+template<typename ConstRealIndexerN, typename ConstRealIndexerM, typename ConstIntIndexer, typename RealIndexerN, typename RealIndexerM>
+PORTABLE_INLINE_FUNCTION void SmallStepMFUpdateR(const Real logdt, const int num_phases,
+                                                ConstRealIndexerN &&massfractions,
+                                                ConstIntIndexer &&gibbsorder,
+                                                ConstRealIndexerM &&logRjk,
+                                                RealIndexerM &&dmfs, RealIndexerN &&newmfs) {
+
+  // In logRjk: First is highest level to levels below, largest gibbs energy diff first.
+  // Then follows 2nd highest to levels below. logRjk[jk], with
+  // jk = (j+1)(num_phases-1) - (j-1)j/2 - k,
+  // contains rate for phase j+1 to k+1 where j=0 is highest gibbs free
+  // energy state, and j=num_phases-1 is lowest gibbs free energy state. jk=0 is rate from
+  // highest (j=0) to lowest (k=num_phases-1) gibbs energy states. dmfs[jk] is mass
+  // transport from phase j+1 to k+1, in the same way. 
+
+  // associate phase transition index to the from phase and to phase (in gibbsorder)
+  const int mnum = num_phases*(num_phases-1)/2;
+
+  std::vector<int> rateorder(mnum);
+  std::vector<int> from(mnum);
+  std::vector<int> to(mnum);
+
+  for (int jk = 0; jk < mnum; jk++) {
+    int m = num_phases;
+    for (int i=1; i < num_phases; i++) {
+      if (jk < m-i) {
+        from[jk] = i-1;
+	to[jk] = m-1-jk;
+	m = -100;
+      } else {
+	m = m + num_phases - i;
+      }
+    }
+  }
+
+  // use SortGibbs to sort logrates in order from highest to lowest.
+  SortGibbs(mnum,logRjk,rateorder);
+      
+  for (int jk=0; jk < mnum; jk++) {
+    // highest rate first
+    Real new_massfrac = massfractions[gibbsorder[from[rateorder[jk]]]];
+    if (new_massfrac < KPT_MIN_MASS_FRACTION) {
+      // Phase depleated, nothing more to transfer
+      Real dx = 0.;
+      dmfs[rateorder[jk]] = dx;
+    } else {
+      // we do this multiplication in log space to avoid overflow
+      Real dx = std::exp(logdt + logRjk[rateorder[jk]] + std::log(new_massfrac));
+      Real new_trial_massfrac = new_massfrac - dx;
+      if (new_trial_massfrac < KPT_MIN_MASS_FRACTION) {
+        // Phase will be depleated, only take away what is left
+        dmfs[rateorder[jk]] = new_massfrac;
+      } else {
+        dmfs[rateorder[jk]] = dx;
+      }
+      new_massfrac = new_trial_massfrac;
+    }
+    if (new_massfrac < KPT_MIN_MASS_FRACTION) {
+      newmfs[gibbsorder[from[rateorder[jk]]]] = 0.;
+    } else {
+      newmfs[gibbsorder[from[rateorder[jk]]]] = new_massfrac;
+    }
+    newmfs[gibbsorder[to[rateorder[jk]]]] = newmfs[gibbsorder[to[rateorder[jk]]]] + dmfs[rateorder[jk]];
+  }
+  return;
+}
+
 } // namespace singularity
 
 #endif // SINGULARITY_BUILD_CLOSURE

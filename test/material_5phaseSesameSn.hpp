@@ -17,15 +17,20 @@
 
 using EOS = singularity::Variant<singularity::EOSPAC>;
 
-constexpr Real w[25] = {0.,  0.8510E+01, 20., 20., 20., 0.8510E+01, 0.,  20., 20.,
-                        20., 20.,        20., 0.,  20., 20.,        20., 20., 20.,
-                        0.,  20.,        20., 20., 20., 20.,        0.};
+//Parameter set from Will Schill LLNL circa 2020 or so. Units: w (1/s), b (erg/g)
+//Warning: It is not created from these Sesame tables, so might not be realistic.
+ 
+constexpr Real w[25] = {0.,     181.27E+06, 20.0E+06, 20.0E+06, 20.0E+06, 
+	                8.08E+10,       0., 20.0E+06, 20.0E+06, 20.0E+06, 
+			20.0E+06, 20.0E+06,       0., 20.0E+06, 20.0E+06,
+			20.0E+06, 20.0E+06, 20.0E+06,       0., 20.0E+06,  
+		  	20.0E+06, 20.0E+06, 20.0E+06, 20.0E+06,       0.};
 
-constexpr Real b[25] = {0.,         0.3060E-04, 0.1000E-05, 0.1000E-05, 0.1000E-05,
-                        0.3060E-04, 0.,         0.1000E-05, 0.1000E-05, 0.1000E-05,
-                        0.1000E-05, 0.1000E-05, 0.,         0.1000E-05, 0.1000E-05,
-                        0.1000E-05, 0.1000E-05, 0.1000E-05, 0.,         0.1000E-05,
-                        0.1000E-05, 0.1000E-05, 0.1000E-05, 0.1000E-05, 0.};
+constexpr Real b[25] = {0.,           1.36E+08, 0.1000E+07, 0.1000E+07, 0.1000E+07,
+                        6.77E+07,   0.,         0.1000E+07, 0.1000E+07, 0.1000E+07,
+                        0.1000E+07, 0.1000E+07, 0.,         0.1000E+07, 0.1000E+07,
+                        0.1000E+07, 0.1000E+07, 0.1000E+07, 0.,         0.1000E+07,
+                        0.1000E+07, 0.1000E+07, 0.1000E+07, 0.1000E+07, 0.};
 template <typename T>
 inline void set_mfupdate_params(const int n, const std::vector<int> &nphases, T *wparam, T *bparam) {
 

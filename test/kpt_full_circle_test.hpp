@@ -40,6 +40,11 @@ constexpr Real out_gibbs1[NTRIAL] = {1.25716504e10, 1.25869850e10, 1.26012338e10
 constexpr Real out_gibbs2[NTRIAL] = {1.26707691e10, 1.26861007e10, 1.27003466e10,
                                      1.27121330e10, 1.27205413e10};
 
+constexpr Real flag_out_lambda[NMAT][NTRIAL] = {
+    {0.662248325, 0.658809255, 0.654711824, 0.649369037, 0.642934632},
+    {0.337655940, 0.340932759, 0.344632601, 0.349290366, 0.355265702},
+    {0.000095735, 0.000257987, 0.000655575, 0.001340597, 0.001799667}};
+
 template <typename RealIndexer>
 inline void gibbsprintresults(int n, RealIndexer &&rho, RealIndexer &&temp,
                               RealIndexer &&sie, RealIndexer &&gibbsrt,

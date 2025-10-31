@@ -67,6 +67,7 @@ using singularity::PTESolverRhoTRequiredScratch;
 using singularity::LogMaxTimeStep;
 using singularity::LogRatesCGModel;
 using singularity::SmallStepMFUpdate;
+using singularity::SmallStepMFUpdateR;
 using singularity::SortGibbs;
 
 int main(int argc, char *argv[]) {
@@ -332,19 +333,23 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Updating mass fractions/volume fractions at time = t0 to time = t1." << std::endl << std::endl;
 
+    constexpr int mnum=NMAT*(NMAT-1)/2;
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     // Create device views for outputs and mirror those views on the host
     Kokkos::View<int[NMAT]> v_order("Gibbsorder");
     auto h_order = Kokkos::create_mirror_view(v_order);
+    Kokkos::View<int[mnum]> v_rateorder("Rateorder");
+    auto h_rateorder = Kokkos::create_mirror_view(v_rateorder);
 #else
     // Create arrays for the outputs and then pointers to those arrays that
     // will be passed to the functions in place of the Kokkos views
     std::array<int, NMAT> h_order;
+    std::array<int, mnum> h_rateorder;
     // Just alias the existing pointers
     auto v_order = h_order.data();
+    auto v_rateorder = h_rateorder.data();
 #endif // PORTABILITY_STRATEGY_KOKKOS
 
-    constexpr int mnum=NMAT*(NMAT-1)/2;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
     Kokkos::View<Real[mnum]> v_logrates("LogRates");
@@ -463,8 +468,11 @@ int main(int argc, char *argv[]) {
 		  << ", from phase i to phase k, ik ( x means 0x): " << v_fromto[l] << std::endl;
       }
       std::cout << std::endl;
+
+// a time step of 10^(-11) s
+      logmts = -25.3284;
       
-      std::cout << "A massfraction update with SmallStepMFUpdate is performed" << std::endl << std::endl; 
+      std::cout << "Using a 10^(-11)s timestep to update massfractions with SmallStepMFUpdate" << std::endl << std::endl; 
 
       SmallStepMFUpdate(logmts, NMAT, mfrac, v_order, v_logrates,
                          v_deltamfs, v_newmfs);
@@ -473,7 +481,7 @@ int main(int argc, char *argv[]) {
                   << "  initial mass fractions: " << mfrac[v_order[l]]
                   << std::endl;
         std::cout << "         "
-                  << "   final mass fractions: " << v_newmfs[v_order[l]]
+                  << "   final mass fractions: " << v_newmfs[v_order[l]] << "          (" << flag_out_lambda[v_order[l]][n] << ")"
                   << std::endl;
       }
       std::cout << std::endl;
@@ -482,6 +490,26 @@ int main(int argc, char *argv[]) {
                   << "   Mass fraction transfer: " << v_deltamfs[l] << std::endl;
       }
       std::cout << std::endl;
+
+      std::cout << "Using a 10^(-11)s timestep to update massfractions with SmallStepMFUpdateR" << std::endl << std::endl; 
+
+      SmallStepMFUpdateR(logmts, NMAT, mfrac, v_order, v_logrates,
+                         v_deltamfs, v_newmfs);
+      for (int l = 0; l < NMAT; l++) {
+        std::cout << "Phase: " << v_order[l]
+                  << "  initial mass fractions: " << mfrac[v_order[l]]
+                  << std::endl;
+        std::cout << "         "
+                  << "   final mass fractions: " << v_newmfs[v_order[l]] << "          (" << flag_out_lambda[v_order[l]][n] << ")"
+                  << std::endl;
+      }
+      std::cout << std::endl;
+      for (int l = 0; l < mnum; l++) {
+        std::cout << "From phase i to phase k, ik ( x means 0x): " << v_fromto[l]
+                  << "   Mass fraction transfer: " << v_deltamfs[l] << std::endl;
+      }
+      std::cout << std::endl;
+
 #ifdef PORTABILITY_STRATEGY_KOKKOS
       Kokkos::fence();
       Kokkos::deep_copy(newmassfractions, v_newmfs);
@@ -491,6 +519,23 @@ int main(int argc, char *argv[]) {
 //                    newmassfractions_true, "Phase", "old massfractions");
 //      array_compare(mnum, dgibbs, fromto, h_deltamfs, deltamfs_true,
 //                    "DeltaGibbs", "FromTo");
+//
+      std::cout << "Using SortGibbs(num,rates,order) to give the num phase transitions in order of largest to "
+           "smallest rates" << std::endl << std::endl;
+
+      SortGibbs(mnum, v_logrates, v_rateorder);
+
+      std::cout << "Order obtained with SortGibbs, largest to smallest rates: " << std::endl;
+      for (int l = 0; l < mnum; l++) {
+        std::cout << "Transition " << v_rateorder[l] << "    from/to phases: " << v_fromto[v_rateorder[l]] << " Rate: " << v_logrates[v_rateorder[l]]
+                  << std::endl;
+      }
+      std::cout << std::endl;
+#ifdef PORTABILITY_STRATEGY_KOKKOS
+      Kokkos::fence();
+      Kokkos::deep_copy(h_rateorder, v_rateorder);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+
     }
 
   }
