@@ -91,10 +91,6 @@ class SingularityEos(CMakePackage, CudaPackage, ROCmPackage):
 
     plugins = {}
 
-    depends_on("c", type="build")
-    depends_on("cxx", type="build")
-    depends_on("fortran", type="build", when="+fortran")
-
     singularity_eos_plugin("dust", "self", "example/plugin")
 
     variant(
