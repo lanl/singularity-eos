@@ -37,6 +37,7 @@ namespace variadic_utils = singularity::variadic_utils;
 
 using EOSBuilder::Modify;
 using singularity::BilinearRampEOS;
+using singularity::Gruneisen;
 using singularity::IdealGas;
 using singularity::RelativisticEOS;
 using singularity::ScaledEOS;
@@ -64,8 +65,8 @@ SCENARIO("Relativistic EOS", "[EOSBuilder][RelativisticEOS][IdealGas]") {
   }
 }
 
-SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
-  using EOS = Variant<IdealGas, UnitSystem<IdealGas>>;
+SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas][Gruneisen]") {
+  using EOS = Variant<IdealGas, UnitSystem<IdealGas>, Gruneisen, UnitSystem<Gruneisen>>;
   GIVEN("Parameters for an ideal gas") {
     constexpr Real Cv = 2.0;
     constexpr Real gm1 = 0.5;
@@ -101,6 +102,69 @@ SCENARIO("EOS Unit System", "[EOSBuilder][UnitSystem][IdealGas]") {
           Real P = eos.PressureFromDensityInternalEnergy(rho, sie);
           REQUIRE(std::abs(P - Ptrue) / Ptrue < 1e-3);
         }
+      }
+    }
+  }
+  GIVEN("A Gruneisen EOS") {
+    constexpr Real EPS = 10 * std::numeric_limits<Real>::epsilon();
+
+    constexpr Real C0 = 0.394e6;
+    constexpr Real s1 = 1.489;
+    constexpr Real s2 = 0.0;
+    constexpr Real s3 = 0.0;
+    constexpr Real G0 = 2.02;
+    constexpr Real b = 0.47;
+    constexpr Real rho0 = 8.93;
+    constexpr Real T0 = 297.0;
+    constexpr Real P0 = 1.0e6;
+    constexpr Real Cv = 8.56796e7;
+    EOS eos = Gruneisen(C0, s1, s2, s3, G0, b, rho0, T0, P0, Cv);
+    AND_GIVEN("A Gruneisen EOS with thermal units") {
+      constexpr Real rho_unit = 1;
+      constexpr Real sie_unit = 2;
+      constexpr Real temp_unit = 3;
+      EOS eos_units = eos.Modify<UnitSystem>(rho_unit, sie_unit, temp_unit);
+      WHEN("We call FillEos") {
+        Real rho_cgs = 33;
+        Real sie_cgs = 1e13;
+        Real P_units, T_units, cv_units, bmod_units;
+        Real P_cgs, T_cgs, cv_cgs, bmod_cgs;
+        const unsigned long output = (thermalqs::pressure | thermalqs::temperature |
+                                      thermalqs::bulk_modulus | thermalqs::specific_heat);
+        Real rho_units = rho_cgs / rho_unit;
+        Real sie_units = sie_cgs / sie_unit;
+        eos_units.FillEos(rho_units, T_units, sie_units, P_units, cv_units, bmod_units,
+                          output);
+
+        eos.FillEos(rho_cgs, T_cgs, sie_cgs, P_cgs, cv_cgs, bmod_cgs, output);
+
+        THEN("All quantities agree after unit conversion") {
+          REQUIRE(isClose(rho_units * rho_unit, rho_cgs, EPS));
+          REQUIRE(isClose(sie_units * sie_unit, sie_cgs, EPS));
+          REQUIRE(isClose(T_units * temp_unit, T_cgs, EPS));
+          REQUIRE(isClose(P_units * rho_unit * sie_unit, P_cgs, EPS));
+          REQUIRE(isClose(cv_units * sie_unit / temp_unit, cv_cgs, EPS));
+          REQUIRE(isClose(bmod_units * rho_unit * sie_unit, bmod_cgs, EPS));
+        }
+      }
+      WHEN("We call DensityEnergyFromPressureTemperature") {
+        Real P_cgs = 1e6;
+        Real T_cgs = 298.15;
+        Real P_units = P_cgs / (rho_unit * sie_unit);
+        Real T_units = T_cgs / temp_unit;
+        Real rho_cgs = 1;
+        Real rho_units = 1;
+        Real sie_cgs = 1;
+        Real sie_units = 1;
+
+        eos.DensityEnergyFromPressureTemperature(
+            P_cgs, T_cgs, static_cast<Real *>(nullptr), rho_cgs, sie_cgs);
+        eos_units.DensityEnergyFromPressureTemperature(
+            P_units, T_units, static_cast<Real *>(nullptr), rho_units, sie_units);
+        printf("Rho: %.14e * %.14e  == %.14e, diff: %.14e\n", rho_units, rho_unit,
+               rho_cgs, rho_units * rho_unit - rho_cgs);
+        REQUIRE(isClose(rho_units * rho_unit, rho_cgs, EPS));
+        REQUIRE(isClose(sie_units * sie_unit, sie_cgs, EPS));
       }
     }
   }
