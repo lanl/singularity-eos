@@ -72,6 +72,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
         inv_dpdr_unit_(rho_unit / press_unit_), inv_dtdr_unit_(rho_unit / temp_unit),
         inv_dtde_unit_(sie_unit / temp_unit) // obviously this is also Cv
         ,
+        cv_unit_(sie_unit / temp_unit), bmod_unit_(press_unit_),
         inv_cv_unit_(temp_unit / sie_unit), inv_bmod_unit_(1 / press_unit_) {
     CheckParams();
   }
@@ -193,6 +194,8 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   PORTABLE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
+    rho *= rho_unit_; // in case these are used for initial guesses
+    sie *= sie_unit_;
     t_.DensityEnergyFromPressureTemperature(press * press_unit_, temp * temp_unit_,
                                             lambda, rho, sie);
     rho *= inv_rho_unit_;
@@ -203,24 +206,20 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
                                  Indexer_t &&lambda = nullptr) const {
-    // TODO(JMM): Is this general enough? Do I need more switches/scales?
-    Real srho = rho_unit_ * rho;
-    switch (t_.PreferredInput()) {
-    case thermalqs::density | thermalqs::temperature: {
-      Real sT = temp_unit_ * temp;
-      t_.FillEos(srho, sT, energy, press, cv, bmod, output, lambda);
-      energy *= inv_sie_unit_;
-      break;
-    }
-    case thermalqs::density | thermalqs::specific_internal_energy: {
-      Real ssie = sie_unit_ * energy;
-      t_.FillEos(srho, temp, ssie, press, cv, bmod, output, lambda);
-      break;
-    }
-    default: {
-      EOS_ERROR("Didn't find a valid input for ScaledEOS::FillEOS\n");
-    }
-    }
+    // rescale all quantities for input. We actually do need to
+    // rescale them all, in case some output-only quantities are
+    // re-used for initial guesses
+    rho *= rho_unit_;
+    temp *= temp_unit_;
+    energy *= sie_unit_;
+    press *= press_unit_;
+    cv *= cv_unit_;
+    bmod *= bmod_unit_;
+    t_.FillEos(rho, temp, energy, press, cv, bmod, output, lambda);
+    // Undo the scaling and go back into prescribed unit system
+    rho *= inv_rho_unit_;
+    temp *= inv_temp_unit_;
+    energy *= inv_sie_unit_;
     press *= inv_press_unit_;
     cv *= inv_cv_unit_;
     bmod *= inv_bmod_unit_;
@@ -462,6 +461,7 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   Real rho_unit_, sie_unit_, temp_unit_, press_unit_, entropy_unit_;
   Real inv_rho_unit_, inv_sie_unit_, inv_temp_unit_, inv_press_unit_, inv_entropy_unit_;
   Real inv_dpde_unit_, inv_dvdt_unit_, inv_dpdr_unit_, inv_dtdr_unit_, inv_dtde_unit_;
+  Real cv_unit_, bmod_unit_;
   Real inv_cv_unit_, inv_bmod_unit_;
 };
 
