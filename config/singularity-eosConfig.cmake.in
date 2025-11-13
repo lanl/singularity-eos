@@ -109,7 +109,7 @@ endforeach()
 # singularity-eos convenience target
 # ------------------------------------------------------------------------------#
 if(NOT TARGET singularity-eos AND NOT singularity-eos_BINARY_DIR)
-  add_library(singularity-eos INTERFACE)
+  add_library(singularity-eos INTERFACE IMPORTED)
   add_library(singularity-eos::singularity-eos ALIAS singularity-eos)
 
   if("Interface" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_comps)
