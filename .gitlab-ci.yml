@@ -5,9 +5,6 @@ variables:
   PROJECT_NAME: singularity-eos
   ENABLE_CDASH: true
   GIT_SUBMODULE_STRATEGY: normal
-  # use this variable if there is a xcap/deployment MR you want to use instead
-  # PROJECT_SPACK_ENV_VERSION: "mr/62/2024-10-15"
-  PROJECT_SPACK_ENV_VERSION: "2025-01-18"
 
 include:
  - .gitlab/common.yml
@@ -47,10 +44,11 @@ prereq_offline_deps:
   variables:
     GIT_SUBMODULE_STRATEGY: none
   script:
-   - .gitlab/download_prereq.sh
+   - source .gitlab/download_prereqs.sh
   artifacts:
     paths:
       - goldfiles.tar.gz
+      - extern
 
 openmpi_gcc:
   extends: [.ascgit_job, .darwin_job, .darwin_regular_job, .build_and_test]
