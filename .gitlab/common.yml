@@ -1,6 +1,7 @@
 default:
   interruptible: true
   before_script:
+   - source .gitlab/mr.sh
    - unset CI_MERGE_REQUEST_DESCRIPTION
    - unset CI_MERGE_REQUEST_TITLE
 
