@@ -37,6 +37,7 @@
 using singularity::SpinerEOSDependsRhoSie;
 using singularity::SpinerEOSDependsRhoT;
 #endif
+using singularity::UnitSystem;
 
 #ifdef SINGULARITY_USE_EOSPAC
 using singularity::EOSPAC;
@@ -55,6 +56,7 @@ constexpr int steelID = 4272;
 constexpr int airID = 5030;
 constexpr int DTID = 5267;
 constexpr int gID = 2700;
+constexpr int titaniumID = 2961;
 constexpr Real ev2k = 1.160451812e4;
 #endif // SINGULARITY_TEST_SESAME
 #endif // SPINER_USE_HDF
@@ -236,6 +238,42 @@ SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
 }
 
 SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
+
+  GIVEN("A titanium EOS in density energy space") {
+    using EOS = Variant<SpinerEOSDependsRhoSie, UnitSystem<SpinerEOSDependsRhoSie>>;
+    constexpr Real time_unit = 1e6; // These are the numbers you MULTIPLY BY to get cgs
+    constexpr Real mass_unit = 1;
+    constexpr Real length_unit = 1;
+    constexpr Real temp_unit = 1;
+    constexpr Real press_unit = (mass_unit * length_unit) / (time_unit * time_unit);
+    auto tag = singularity::eos_units_init::LengthTimeUnitsInit();
+
+    EOS eos = SpinerEOSDependsRhoSie(eosName, titaniumID);
+    THEN("We can modify it with a unit system with milliseconds") {
+      EOS eos_mod =
+          eos.Modify<UnitSystem>(tag, time_unit, mass_unit, length_unit, temp_unit);
+      Real rho_normal_cgs = 4.447;
+      Real T = 298;
+      AND_THEN("Pressure from density and temperature produces the right value for both "
+               "EOSs") {
+        Real P_cgs = eos.PressureFromDensityTemperature(rho_normal_cgs, T);
+        Real P_cgmu = eos_mod.PressureFromDensityTemperature(rho_normal_cgs, T);
+        REQUIRE(isClose(P_cgs, P_cgmu * press_unit, 1e-10));
+      }
+      AND_THEN("We can request density energy from pressure temperature") {
+        Real P_cgs = 1e6;
+        Real P_cgmu = P_cgs / press_unit;
+        Real rho_cgs = 4.447;
+        Real rho_cgmu = rho_cgs;
+        Real sie_cgs, sie_cgmu;
+        eos.DensityEnergyFromPressureTemperature(P_cgs, T, static_cast<Real *>(nullptr),
+                                                 rho_cgs, sie_cgs);
+        eos_mod.DensityEnergyFromPressureTemperature(
+            P_cgmu, T, static_cast<Real *>(nullptr), rho_cgmu, sie_cgmu);
+        REQUIRE(isClose(rho_cgs, rho_cgmu, 1e-10));
+      }
+    }
+  }
 
   GIVEN("SpinerEOSes for steel can be initialised with matid") {
     SpinerEOSDependsRhoSie steelEOS_host(eosName, steelID);
