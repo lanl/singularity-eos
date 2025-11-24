@@ -38,6 +38,7 @@ using singularity::SpinerEOSDependsRhoSie;
 using singularity::SpinerEOSDependsRhoT;
 #endif
 using singularity::UnitSystem;
+using singularity::Variant;
 
 #ifdef SINGULARITY_USE_EOSPAC
 using singularity::EOSPAC;
@@ -64,7 +65,7 @@ constexpr Real ev2k = 1.160451812e4;
 #ifdef SPINER_USE_HDF
 #ifdef SINGULARITY_TEST_SESAME
 #ifdef SINGULARITY_USE_EOSPAC
-using EOS = singularity::Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
+using EOS = Variant<SpinerEOSDependsRhoSie, SpinerEOSDependsRhoT, EOSPAC>;
 
 SCENARIO("SpinerEOS depends on Rho and T", "[SpinerEOS][DependsRhoT][EOSPAC]") {
 
