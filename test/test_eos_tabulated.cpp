@@ -250,7 +250,7 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
     auto tag = singularity::eos_units_init::LengthTimeUnitsInit();
 
     EOS eos = SpinerEOSDependsRhoSie(eosName, titaniumID);
-    THEN("We can modify it with a unit system with milliseconds") {
+    THEN("We can modify it with a unit system with microseconds") {
       EOS eos_mod =
           eos.Modify<UnitSystem>(tag, time_unit, mass_unit, length_unit, temp_unit);
       Real rho_normal_cgs = 4.447;
