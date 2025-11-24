@@ -242,11 +242,11 @@ SCENARIO("SpinerEOS depends on rho and sie", "[SpinerEOS][DependsRhoSie]") {
 
   GIVEN("A titanium EOS in density energy space") {
     using EOS = Variant<SpinerEOSDependsRhoSie, UnitSystem<SpinerEOSDependsRhoSie>>;
-    constexpr Real time_unit = 1e6; // These are the numbers you MULTIPLY BY to get cgs
+    constexpr Real time_unit = 1e-6; // These are the numbers you MULTIPLY BY to get cgs
     constexpr Real mass_unit = 1;
     constexpr Real length_unit = 1;
     constexpr Real temp_unit = 1;
-    constexpr Real press_unit = (mass_unit * length_unit) / (time_unit * time_unit);
+    constexpr Real press_unit = (time_unit * time_unit) / (mass_unit * length_unit);
     auto tag = singularity::eos_units_init::LengthTimeUnitsInit();
 
     EOS eos = SpinerEOSDependsRhoSie(eosName, titaniumID);
