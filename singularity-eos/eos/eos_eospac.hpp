@@ -494,6 +494,8 @@ class EOSPAC : public EosBase<EOSPAC> {
 
   // TODO(JMM): Add performant Gibbs Free Energy
   using EosBase<EOSPAC>::FillEos;
+  // TODO(JMM): Add a performant internal energy call
+  using EosBase<EOSPAC>::InternalEnergyFromDensityPressure;
 
   SG_ADD_DEFAULT_MEAN_ATOMIC_FUNCTIONS(AZbar_)
 

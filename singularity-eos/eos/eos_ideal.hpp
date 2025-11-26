@@ -186,6 +186,14 @@ class IdealGas : public EosBase<IdealGas> {
     sie = MYMAX(0.0, _Cv * temp);
     rho = MYMAX(0.0, press / (_gm1 * sie));
   }
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
+      const Real rho, const Real P, Real &sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    // P = gm1 rho sie
+    sie = P / (_gm1 * rho);
+  }
+
   inline void Finalize() {}
   static std::string EosType() { return std::string("IdealGas"); }
   static std::string EosPyType() { return EosType(); }
