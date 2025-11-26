@@ -82,6 +82,7 @@ char *StrCat(char *destination, const char *source) {
   using EosBase<__VA_ARGS__>::BulkModulusFromDensityInternalEnergy;                      \
   using EosBase<__VA_ARGS__>::GruneisenParamFromDensityTemperature;                      \
   using EosBase<__VA_ARGS__>::GruneisenParamFromDensityInternalEnergy;                   \
+  using EosBase<__VA_ARGS__>::InternalEnergyFromDensityPressure;                         \
   using EosBase<__VA_ARGS__>::FillEos;                                                   \
   using EosBase<__VA_ARGS__>::EntropyFromDensityTemperature;                             \
   using EosBase<__VA_ARGS__>::EntropyFromDensityInternalEnergy;                          \
@@ -926,6 +927,62 @@ class EosBase {
     CRTP copy = *(static_cast<CRTP const *>(this));
     copy.DensityEnergyFromPressureTemperature(press, temp, static_cast<Real *>(nullptr),
                                               rho, sie);
+  }
+
+  // JMM: Another set of calls that are often overloaded for special cases
+  // TODO(JMM): Do we also want TemperatureFromDensityPressure? That's
+  // the more likely fundamental call, but the less likely "useful"
+  // call...
+  // We pass in sie by value to allow for initial guesses
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
+      const Real rho, const Real P, Real &sie,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    using RootFinding1D::regula_falsi;
+    using RootFinding1D::Status;
+    const CRTP &eos = *(static_cast<CRTP const *>(this));
+    auto f = [&](const Real sie) {
+      return eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
+    };
+    const Real sie_min =
+        eos.InternalEnergyFromDensityTemperature(rho, eos.MinimumTemperature());
+    // temp not bounded. just pick something huge.
+    const Real sie_max = eos.InternalEnergyFromDensityTemperature(rho, 1e20);
+    Real sie_guess =
+        (((sie_min < sie) && (sie < sie_max)) ? 0.5 * (sie_min + sie_max) : sie_guess);
+    auto status = regula_falsi(f, P, sie_guess, sie_min, sie_max, robust::EPS(),
+                               robust::EPS(), sie);
+    if (status == Status::FAIL) {
+      PORTABLE_WARN("InternalEnergyFromDensityPressure: failed to find root\n");
+    }
+  }
+  // Classes like EOSPAC probably wish to overload/shadow this version
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void InternalEnergyFromDensityPressure(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&Ps, RealIndexer &&sies,
+                                                const int num,
+                                                LambdaIndexer &&lambdas) const {
+    static auto const name = SG_MEMBER_FUNC_NAME();
+    static auto const cname = name.c_str();
+    CRTP copy = *(static_cast<CRTP const *>(this));
+    portableFor(
+        cname, 0, num, PORTABLE_LAMBDA(const int i) {
+          copy.InternalEnergyFromDensityPressure(rhos[i], Ps[i], sies[i], lambdas[i]);
+        });
+  }
+  template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
+  inline void InternalEnergyFromDensityPressure(ConstRealIndexer &&rhos,
+                                                ConstRealIndexer &&Ps, RealIndexer &&sies,
+                                                Real * /*scratch */, const int num,
+                                                LambdaIndexer &&lambdas) const {
+    return InternalEnergyFromDensityPressure(rhos, Ps, sies, num, lambdas);
+  }
+  template <typename LambdaIndexer>
+  inline void InternalEnergyFromDensityPressure(const Real *rhos, const Real *Ps,
+                                                Real *sies, Real * /*scratch */,
+                                                const int num, LambdaIndexer &&lambdas,
+                                                Transform && = Transform()) const {
+    return InternalEnergyFromDensityPressure(rhos, Ps, sies, num, lambdas);
   }
 
   // Serialization
