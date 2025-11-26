@@ -170,6 +170,17 @@ class ZSplit : public EosBase<ZSplit<ztype, T>> {
   }
 
   template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void
+  InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+                                    Indexer_t &&lambda = nullptr) const {
+    const Real scale = GetScale_(lambda);
+    const Real iscale = GetInvScale_(lambda);
+    sie *= iscale;
+    t_.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
+    sie *= scale;
+  }
+
+  template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION void
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,

@@ -956,6 +956,20 @@ class EosBase {
       PORTABLE_WARN("InternalEnergyFromDensityPressure: failed to find root\n");
     }
   }
+  // This version foregoes the initial guess. You get what you get.
+  template <typename Indexer_t = Real *>
+  PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityPressure(
+      const Real rho, const Real P,
+      Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
+    const CRTP &eos = *(static_cast<CRTP const *>(this));
+    const Real sie_min =
+        eos.InternalEnergyFromDensityTemperature(rho, eos.MinimumTemperature());
+    // temp not bounded. just pick something huge.
+    const Real sie_max = eos.InternalEnergyFromDensityTemperature(rho, 1e20);
+    Real sie = 0.5 * (sie_min + sie_max);
+    eos.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
+    return sie;
+  }
   // Classes like EOSPAC probably wish to overload/shadow this version
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void InternalEnergyFromDensityPressure(ConstRealIndexer &&rhos,

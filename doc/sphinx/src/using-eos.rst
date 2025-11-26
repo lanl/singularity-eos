@@ -1184,14 +1184,21 @@ returns the unitless Gruneisen parameter given density in
 .. code-block:: cpp
 
    template <typename Indexer_t = Real*>
-   void InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+   Real InternalEnergyFromDensityPressure(const Real rho, const Real P, 
                                           Indexer_t &&lambda = nullptr) const;
 
 returns the specific internal energy in :math:`erg/g` given a density
 in :math:`g/cm^3` and a pressure in Barye. This call is often a root
-find, and thus an initial guess for specific internal energy may be
-passed in by reference. It will be set to the new value by the
-function.
+find, and thus an alternative signature allows an initial guess to be
+passed in by reference:
+
+.. code-block:: cpp
+
+   template <typename Indexer_t = Real*>
+   void InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+                                          Indexer_t &&lambda = nullptr) const;
+
+In this case, the guess will be set to the new value by the function.
 
 .. code-block:: cpp
 
