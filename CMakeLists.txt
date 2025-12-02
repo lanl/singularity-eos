@@ -145,11 +145,6 @@ option(SINGULARITY_FORCE_SUBMODULE_MODE "Submodule mode" OFF)
 # to it in a later PR. something like
 # cmake_dependent_option(SINGULARITY_SUBMODULE_MODE_INSTALL ...)
 
-# TODO This should depend on using offloading (`SINGULARITY_USE_CUDA` &t) Also,
-# patching in the source tree is messy, this should be done in the build dir
-option(SINGULARITY_PATCH_MPARK_VARIANT
-       "Apply GPU patch to mpark-variant submodule" ON)
-
 # Plugins
 set(SINGULARITY_PLUGINS "" CACHE STRING "List of paths to plugin directories")
 set(SINGULARITY_VARIANT "singularity-eos/eos/default_variant.hpp" CACHE STRING
@@ -179,7 +174,6 @@ endif()
 # singularity-eos Library
 # ------------------------------------------------------------------------------#
 
-include(singularity-eos/mpark_variant)
 include(singularity-eos/Eigen3)
 include(singularity-eos/eospac)
 include(singularity-eos/hdf5)
@@ -397,7 +391,6 @@ endif()
 if(SINGULARITY_SUBMODULE_MODE)
   # add all submodules
   message(STATUS "singularity-eos configuring in submodule mode.")
-  singularity_import_mpark_variant()
   singularity_import_ports_of_call()
   if(SINGULARITY_USE_SPINER)
     singularity_import_spiner()
@@ -414,7 +407,6 @@ if(SINGULARITY_SUBMODULE_MODE)
   endif()
 else()
   # use system packages
-  singularity_find_mpark_variant()
   singularity_find_ports_of_call()
   if(SINGULARITY_USE_SPINER)
     singularity_find_spiner()
@@ -432,7 +424,6 @@ else()
 
 endif()
 
-singularity_enable_mpark_variant(singularity-eos_Interface)
 singularity_enable_ports_of_call(singularity-eos_Interface)
 
 if(SINGULARITY_USE_SPINER)

@@ -4,9 +4,6 @@
 [submodule "utils/spiner"]
 	path = utils/spiner
   url = https://github.com/lanl/spiner
-[submodule "utils/variant"]
-	path = utils/variant
-	url = https://github.com/mpark/variant.git
 [submodule "utils/kokkos"]
 	path = utils/kokkos
 	url = https://github.com/kokkos/kokkos.git
