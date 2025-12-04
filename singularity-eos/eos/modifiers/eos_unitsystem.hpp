@@ -193,6 +193,14 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
                                                              temp * temp_unit_, lambda);
     return gm1;
   }
+  template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void
+  InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+                                    Indexer_t &&lambda = nullptr) const {
+    sie *= sie_unit_;
+    t_.InternalEnergyFromDensityPressure(rho_unit_ * rho, press_unit_ * P, sie, lambda);
+    sie *= inv_sie_unit_;
+  }
 
   template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void
