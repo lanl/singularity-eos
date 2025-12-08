@@ -2237,7 +2237,7 @@ curve plus Cowan-nuclear model for ions and the final option
 Note for performance reasons this EOS uses a slightly different vector API.
 See :ref:`EOSPAC Vector Functions <eospac_vector>` for more details.
 
-.. _Sesame: https://www.lanl.gov/org/ddste/aldsc/theoretical/physics-chemistry-materials/sesame-database.php
+.. _Sesame: https://www.lanl.gov/engage/organizations/aldsct/theoretical/pcm/sesame
 
 .. _EOSPAC: https://laws.lanl.gov/projects/data/eos/eospacReleases.php
 
