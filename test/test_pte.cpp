@@ -47,8 +47,8 @@ using atomic_view = Kokkos::MemoryTraits<Kokkos::Atomic>;
 #endif
 
 template <template <typename... Types> class Method_t>
-auto TestPTE(const std::string name, const std::size_t nscratch_vars,
-             std::size_t &nsuccess) {
+void TestPTE(const std::string name, const std::size_t nscratch_vars,
+             std::size_t &nsuccess, std::vector<Real> &host_vals) {
   constexpr Real EPS = 1e-5;
   Real time;
   nsuccess = 0;
@@ -236,15 +236,20 @@ auto TestPTE(const std::string name, const std::size_t nscratch_vars,
   std::cout << "\n\tTotal = " << tot << "\n" << std::endl;
 
 #ifdef PORTABILITY_STRATEGY_KOKKOS
-  return rho_v;
-#else
+  Kokkos::deep_copy(rho_vh, rho_v);
+#endif // PORTABILITY_STRATEGY_KOKKOS
+  host_vals.resize(NPTS);
+  for (int i = 0; i < NPTS; ++i) {
+    host_vals[i] = rho_hm(i);
+  }
+#ifndef PORTABILITY_STRATEGY_KOKKOS
+  free(rho_d);
   free(vfrac_d);
   free(sie_d);
   free(temp_d);
   free(press_d);
   free(scratch_d);
-  return rho_d;
-#endif // PORTABILITY_STRATEGY_KOKKOS
+#endif // NOT PORTABILITY_STRATEGY_KOKKOS
 }
 
 int main(int argc, char *argv[]) {
@@ -257,34 +262,34 @@ int main(int argc, char *argv[]) {
 
     // scratch required for PTE solver
     std::size_t ns_rt;
+    std::vector<Real> rho_rt;
     auto nscratch_vars_rt = PTESolverRhoTRequiredScratch(NMAT);
-    auto rho_rt = TestPTE<PTESolverRhoT>("PTESolverRhoT", nscratch_vars_rt, ns_rt);
+    TestPTE<PTESolverRhoT>("PTESolverRhoT", nscratch_vars_rt, ns_rt, rho_rt);
     nsuccess += ns_rt;
 
     // // scratch required for PTE solver
     std::size_t ns_pt;
+    std::vector<Real> rho_pt;
     auto nscratch_vars_pt = PTESolverPTRequiredScratch(NMAT);
-    auto rho_pt = TestPTE<PTESolverPT>("PTESolverPT", nscratch_vars_pt, ns_pt);
+    TestPTE<PTESolverPT>("PTESolverPT", nscratch_vars_pt, ns_pt, rho_pt);
     nsuccess += ns_pt;
 
     int nmatch = 0;
-    portableReduce(
-        "Check rho match", 0, NMAT,
-        PORTABLE_LAMBDA(const int i, int &nm) {
-          bool they_match = isClose(rho_rt(i), rho_pt(i));
-          if (!they_match) {
-            printf("Densities don't match for %d: %.14e %.14e %.14e\n", i, rho_rt(i),
-                   rho_pt(i), rho_rt(i) - rho_pt(i));
-          }
-          nm += they_match;
-        },
-        nmatch);
-    printf("Nmatch = %d / %d\n", nmatch, NMAT);
-
-#ifndef PORTABILITY_STRATEGY_KOKKOS
-    free(rho_rt);
-    free(rho_pt);
-#endif // PORTABILITY_STRATEGY_KOKKOS
+    int i = 0; // flat index
+    std::vector<bool> matmatch(NMAT, true);
+    for (int t = 0; t < NTRIAL; ++t) {
+      for (int m = 0; m < NMAT; ++m) {
+        bool they_match = isClose(rho_rt[i], rho_pt[i]);
+        if (!they_match && matmatch[m]) { // only print once per material
+          printf("Densities don't match for %d %d: %.14e %.14e %.14e\n", t, m, rho_rt[i],
+                 rho_pt[i], rho_rt[i] - rho_pt[i]);
+        }
+        matmatch[m] = matmatch[m] && they_match;
+        nmatch += they_match;
+        i++;
+      }
+    }
+    printf("Nmatch = %d / %d\n", nmatch, i);
   }
 #ifdef PORTABILITY_STRATEGY_KOKKOS
   Kokkos::finalize();
