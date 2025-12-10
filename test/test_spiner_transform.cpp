@@ -30,11 +30,10 @@
 #include <singularity-eos/eos/eos_spiner_common.hpp>
 #include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
 
-#include <test/eos_unit_test_helpers.hpp>
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
-
+#include <test/eos_unit_test_helpers.hpp>
 
 using namespace singularity;
 using namespace transformations;

@@ -121,11 +121,19 @@ if(SINGULARITY_BUILD_CLOSURE)
   catch_discover_tests(closure_unit_tests PROPERTIES TIMEOUT 120)
 
   if(SINGULARITY_USE_SPINER)
-    add_executable(test_pte test_pte.cpp)
-    target_link_libraries(test_pte PRIVATE Catch2::Catch2
-                                         singularity-eos::singularity-eos)
-    target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    add_test(pte test_pte)
+    if(SINGULARITY_USE_KOKKOS AND Kokkos_ENABLE_HIP
+      AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS "19.0.0")
+      message(WARNING
+        "Test PTE appears to encounter a compiler bug for LLVM builds targeting AMD GPUs "
+        "for compiler versions ${CMAKE_CXX_COMPILER_VERSION} < 19, and the test is disabled. "
+        "Note this corresponds to rocm versions less than 6.4.")
+    else()
+      add_executable(test_pte test_pte.cpp)
+      target_link_libraries(test_pte PRIVATE Catch2::Catch2
+                                           singularity-eos::singularity-eos)
+      target_include_directories(test_pte PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+      add_test(pte test_pte)
+    endif()
 
     add_executable(test_pte_2phase test_pte_2phaseVinetSn.cpp)
     target_link_libraries(test_pte_2phase PRIVATE Catch2::Catch2
