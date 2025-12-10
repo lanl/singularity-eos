@@ -63,6 +63,7 @@ include(CMakeFindDependencyMacro)
 # header-only dependencies
 if("Interface" IN_LIST ${CMAKE_FIND_PACKAGE_NAME}_comps)
   find_dependency(ports-of-call)
+  find_dependency(mpark_variant)
 endif()
 
 if(@SINGULARITY_USE_SPINER@)

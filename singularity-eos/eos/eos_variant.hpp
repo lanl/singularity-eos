@@ -21,9 +21,9 @@
 #include <string>
 #include <vector>
 
+#include <mpark/variant.hpp>
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_errors.hpp>
-#include <ports-of-call/variant.hpp>
 #include <singularity-eos/base/constants.hpp>
 #include <singularity-eos/base/variadic_utils.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
@@ -33,7 +33,7 @@ using Real = double;
 namespace singularity {
 
 template <typename... Ts>
-using eos_variant = PortsOfCall::variant<Ts...>;
+using eos_variant = mpark::variant<Ts...>;
 
 // Provide default functionality when lambda isn't passed to vector functions
 struct NullIndexer {
@@ -72,41 +72,41 @@ class Variant {
                 !std::is_same<Variant, typename std::decay<EOSChoice>::type>::value,
                 bool>::type = true>
   PORTABLE_INLINE_FUNCTION EOSChoice get() const {
-    return PortsOfCall::get<EOSChoice>(eos_);
+    return mpark::get<EOSChoice>(eos_);
   }
 
   Variant GetOnDevice() {
-    return PortsOfCall::visit([](auto &eos) { return eos_variant<EOSs...>(eos.GetOnDevice()); },
+    return mpark::visit([](auto &eos) { return eos_variant<EOSs...>(eos.GetOnDevice()); },
                         eos_);
   }
 
   // Place member functions here
   PORTABLE_INLINE_FUNCTION
   void CheckParams() const {
-    return PortsOfCall::visit([](auto &eos) { return eos.CheckParams(); }, eos_);
+    return mpark::visit([](auto &eos) { return eos.CheckParams(); }, eos_);
   }
 
   template <typename Functor_t>
   PORTABLE_INLINE_FUNCTION void EvaluateDevice(const Functor_t f) const {
-    return PortsOfCall::visit([&f](const auto &eos) { return eos.EvaluateDevice(f); }, eos_);
+    return mpark::visit([&f](const auto &eos) { return eos.EvaluateDevice(f); }, eos_);
   }
 
   template <typename Functor_t>
   void EvaluateHost(Functor_t &f) const {
-    return PortsOfCall::visit([&f](const auto &eos) { return eos.EvaluateHost(f); }, eos_);
+    return mpark::visit([&f](const auto &eos) { return eos.EvaluateHost(f); }, eos_);
   }
 
   // EOS modifier object-oriented API
   template <template <class> typename Mod>
   constexpr bool ModifiedInVariant() const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [](const auto &eos) { return eos.template ModifiedInList<Mod, EOSs...>(); },
         eos_);
   }
   template <template <class> typename Mod, typename... Args>
   constexpr auto Modify(Args &&...args) const {
     PORTABLE_ALWAYS_REQUIRE(ModifiedInVariant<Mod>(), "Modifier must be in variant");
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&](const auto &eos) {
           auto modified = eos.template ConditionallyModify<Mod>(
               AvailableEOSTypes(), std::forward<Args>(args)...);
@@ -119,7 +119,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real TemperatureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.TemperatureFromDensityInternalEnergy(rho, sie, lambda);
         },
@@ -130,7 +130,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real InternalEnergyFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.InternalEnergyFromDensityTemperature(rho, temperature, lambda);
         },
@@ -141,7 +141,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.PressureFromDensityTemperature(rho, temperature, lambda);
         },
@@ -152,7 +152,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real PressureFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.PressureFromDensityInternalEnergy(rho, sie, lambda);
         },
@@ -161,7 +161,7 @@ class Variant {
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MinInternalEnergyFromDensity(
       const Real rho, Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &lambda](const auto &eos) {
           return eos.MinInternalEnergyFromDensity(rho, lambda);
         },
@@ -171,7 +171,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real
   EntropyFromDensityTemperature(const Real rho, const Real temperature,
                                 Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.EntropyFromDensityTemperature(rho, temperature, lambda);
         },
@@ -182,7 +182,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real EntropyFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.EntropyFromDensityInternalEnergy(rho, sie, lambda);
         },
@@ -193,7 +193,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real GibbsFreeEnergyFromDensityTemperature(
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &T, &lambda](const auto &eos) {
           return eos.GibbsFreeEnergyFromDensityTemperature(rho, T, lambda);
         },
@@ -204,7 +204,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real GibbsFreeEnergyFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.GibbsFreeEnergyFromDensityInternalEnergy(rho, sie, lambda);
         },
@@ -215,7 +215,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.SpecificHeatFromDensityTemperature(rho, temperature, lambda);
         },
@@ -226,7 +226,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real SpecificHeatFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.SpecificHeatFromDensityInternalEnergy(rho, sie, lambda);
         },
@@ -237,7 +237,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.BulkModulusFromDensityTemperature(rho, temperature, lambda);
         },
@@ -248,7 +248,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real BulkModulusFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.BulkModulusFromDensityInternalEnergy(rho, sie, lambda);
         },
@@ -259,7 +259,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityTemperature(
       const Real rho, const Real temperature,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &temperature, &lambda](const auto &eos) {
           return eos.GruneisenParamFromDensityTemperature(rho, temperature, lambda);
         },
@@ -270,7 +270,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real GruneisenParamFromDensityInternalEnergy(
       const Real rho, const Real sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &sie, &lambda](const auto &eos) {
           return eos.GruneisenParamFromDensityInternalEnergy(rho, sie, lambda);
         },
@@ -282,7 +282,7 @@ class Variant {
   FillEos(Real &rho, Real &temp, Real &energy, Real &press, Real &cv, Real &bmod,
           const unsigned long output,
           Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &temp, &energy, &press, &cv, &bmod, &output, &lambda](const auto &eos) {
           return eos.FillEos(rho, temp, energy, press, cv, bmod, output, lambda);
         },
@@ -293,7 +293,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION void
   ReferenceDensityTemperature(Real &rho, Real &T,
                               Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &T, &lambda](const auto &eos) {
           return eos.ReferenceDensityTemperature(rho, T, lambda);
         },
@@ -305,7 +305,7 @@ class Variant {
   ValuesAtReferenceState(Real &rho, Real &temp, Real &sie, Real &press, Real &cv,
                          Real &bmod, Real &dpde, Real &dvdt,
                          Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &temp, &sie, &press, &cv, &bmod, &dpde, &dvdt, &lambda](const auto &eos) {
           return eos.ValuesAtReferenceState(rho, temp, sie, press, cv, bmod, dpde, dvdt,
                                             lambda);
@@ -317,7 +317,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION void
   DensityEnergyFromPressureTemperature(const Real press, const Real temp,
                                        Indexer_t &&lambda, Real &rho, Real &sie) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&press, &temp, &lambda, &rho, &sie](const auto &eos) {
           return eos.DensityEnergyFromPressureTemperature(press, temp, lambda, rho, sie);
         },
@@ -327,7 +327,7 @@ class Variant {
                                                                      const Real temp,
                                                                      Real &rho,
                                                                      Real &sie) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&press, &temp, &rho, &sie](const auto &eos) {
           return eos.DensityEnergyFromPressureTemperature(press, temp, rho, sie);
         },
@@ -336,32 +336,32 @@ class Variant {
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const {
-    return PortsOfCall::visit([&temp](const auto &eos) { return eos.RhoPmin(temp); }, eos_);
+    return mpark::visit([&temp](const auto &eos) { return eos.RhoPmin(temp); }, eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumDensity() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.MinimumDensity(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.MinimumDensity(); }, eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumTemperature() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.MinimumTemperature(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.MinimumTemperature(); }, eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real MaximumDensity() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.MaximumDensity(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.MaximumDensity(); }, eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.MinimumPressure(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.MinimumPressure(); }, eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real MaximumPressureAtTemperature(const Real temp) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&temp](const auto &eos) { return eos.MaximumPressureAtTemperature(temp); },
         eos_);
   }
@@ -369,17 +369,17 @@ class Variant {
   // Atomic mass/atomic number functions
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicMass() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.MeanAtomicMass(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.MeanAtomicMass(); }, eos_);
   }
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicNumber() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.MeanAtomicNumber(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.MeanAtomicNumber(); }, eos_);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &T, &lambda](const auto &eos) {
           return eos.MeanAtomicMassFromDensityTemperature(rho, T, lambda);
         },
@@ -389,7 +389,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION Real MeanAtomicNumberFromDensityTemperature(
       const Real rho, const Real T,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rho, &T, &lambda](const auto &eos) {
           return eos.MeanAtomicNumberFromDensityTemperature(rho, T, lambda);
         },
@@ -419,7 +419,7 @@ class Variant {
   TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&temperatures, const int num,
                                        LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &temperatures, &num, &lambdas](const auto &eos) {
           return eos.TemperatureFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -444,7 +444,7 @@ class Variant {
   TemperatureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&temperatures, Real *scratch,
                                        const int num, LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &temperatures, &scratch, &num, &lambdas](const auto &eos) {
           return eos.TemperatureFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -471,7 +471,7 @@ class Variant {
                                                    ConstRealIndexer &&temperatures,
                                                    RealIndexer &&sies, const int num,
                                                    LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &sies, &num, &lambdas](const auto &eos) {
           return eos.InternalEnergyFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -498,7 +498,7 @@ class Variant {
                                                    RealIndexer &&sies, Real *scratch,
                                                    const int num,
                                                    LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &sies, &scratch, &num, &lambdas](const auto &eos) {
           return eos.InternalEnergyFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -524,7 +524,7 @@ class Variant {
                                              ConstRealIndexer &&temperatures,
                                              RealIndexer &&pressures, const int num,
                                              LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &pressures, &num, &lambdas](const auto &eos) {
           return eos.PressureFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -552,7 +552,7 @@ class Variant {
   PressureFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
                                  RealIndexer &&pressures, Real *scratch, const int num,
                                  LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &pressures, &scratch, &num, &lambdas](const auto &eos) {
           return eos.PressureFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -578,7 +578,7 @@ class Variant {
                                                 ConstRealIndexer &&sies,
                                                 RealIndexer &&pressures, const int num,
                                                 LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &pressures, &num, &lambdas](const auto &eos) {
           return eos.PressureFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -604,7 +604,7 @@ class Variant {
   PressureFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                     RealIndexer &&pressures, Real *scratch, const int num,
                                     LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &pressures, &scratch, &num, &lambdas](const auto &eos) {
           return eos.PressureFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -625,7 +625,7 @@ class Variant {
   template <typename RealIndexer, typename ConstRealIndexer, typename LambdaIndexer>
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            const int num, LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &num, &lambdas](const auto &eos) {
           return eos.MinInternalEnergyFromDensity(std::forward<ConstRealIndexer>(rhos),
                                                   std::forward<RealIndexer>(sies), num,
@@ -647,7 +647,7 @@ class Variant {
   inline void MinInternalEnergyFromDensity(ConstRealIndexer &&rhos, RealIndexer &&sies,
                                            Real *scratch, const int num,
                                            LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &scratch, &num, &lambdas](const auto &eos) {
           return eos.MinInternalEnergyFromDensity(
               std::forward<ConstRealIndexer>(rhos), std::forward<RealIndexer>(sies),
@@ -672,7 +672,7 @@ class Variant {
                                             ConstRealIndexer &&temperatures,
                                             RealIndexer &&entropies, const int num,
                                             LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &entropies, &num, &lambdas](const auto &eos) {
           return eos.EntropyFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -700,7 +700,7 @@ class Variant {
   EntropyFromDensityTemperature(ConstRealIndexer &&rhos, ConstRealIndexer &&temperatures,
                                 RealIndexer &&entropies, Real *scratch, const int num,
                                 LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &entropies, &scratch, &num, &lambdas](const auto &eos) {
           return eos.EntropyFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -726,7 +726,7 @@ class Variant {
                                                ConstRealIndexer &&sies,
                                                RealIndexer &&entropies, const int num,
                                                LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &entropies, &num, &lambdas](const auto &eos) {
           return eos.EntropyFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -752,7 +752,7 @@ class Variant {
   EntropyFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                    RealIndexer &&entropies, Real *scratch, const int num,
                                    LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &entropies, &scratch, &num, &lambdas](const auto &eos) {
           return eos.EntropyFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -779,7 +779,7 @@ class Variant {
                                                     ConstRealIndexer &&temperatures,
                                                     RealIndexer &&Gs, const int num,
                                                     LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &Gs, &num, &lambdas](const auto &eos) {
           return eos.GibbsFreeEnergyFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -807,7 +807,7 @@ class Variant {
                                                     RealIndexer &&Gs, Real *scratch,
                                                     const int num,
                                                     LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &Gs, &scratch, &num, &lambdas](const auto &eos) {
           return eos.GibbsFreeEnergyFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -833,7 +833,7 @@ class Variant {
                                                        ConstRealIndexer &&sies,
                                                        RealIndexer &&Gs, const int num,
                                                        LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &Gs, &num, &lambdas](const auto &eos) {
           return eos.GibbsFreeEnergyFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -859,7 +859,7 @@ class Variant {
                                                        RealIndexer &&Gs, Real *scratch,
                                                        const int num,
                                                        LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &Gs, &scratch, &num, &lambdas](const auto &eos) {
           return eos.GibbsFreeEnergyFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -885,7 +885,7 @@ class Variant {
                                                  ConstRealIndexer &&temperatures,
                                                  RealIndexer &&cvs, const int num,
                                                  LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &cvs, &num, &lambdas](const auto &eos) {
           return eos.SpecificHeatFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -913,7 +913,7 @@ class Variant {
                                                  RealIndexer &&cvs, Real *scratch,
                                                  const int num,
                                                  LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &cvs, &scratch, &num, &lambdas](const auto &eos) {
           return eos.SpecificHeatFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -939,7 +939,7 @@ class Variant {
                                                     ConstRealIndexer &&sies,
                                                     RealIndexer &&cvs, const int num,
                                                     LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &cvs, &num, &lambdas](const auto &eos) {
           return eos.SpecificHeatFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -963,7 +963,7 @@ class Variant {
   SpecificHeatFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                         RealIndexer &&cvs, Real *scratch, const int num,
                                         LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &cvs, &scratch, &num, &lambdas](const auto &eos) {
           return eos.SpecificHeatFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -990,7 +990,7 @@ class Variant {
                                                 ConstRealIndexer &&temperatures,
                                                 RealIndexer &&bmods, const int num,
                                                 LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &bmods, &num, &lambdas](const auto &eos) {
           return eos.BulkModulusFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -1018,7 +1018,7 @@ class Variant {
                                                 RealIndexer &&bmods, Real *scratch,
                                                 const int num,
                                                 LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &bmods, &scratch, &num, &lambdas](const auto &eos) {
           return eos.BulkModulusFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -1044,7 +1044,7 @@ class Variant {
                                                    ConstRealIndexer &&sies,
                                                    RealIndexer &&bmods, const int num,
                                                    LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &bmods, &num, &lambdas](const auto &eos) {
           return eos.BulkModulusFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -1070,7 +1070,7 @@ class Variant {
   BulkModulusFromDensityInternalEnergy(ConstRealIndexer &&rhos, ConstRealIndexer &&sies,
                                        RealIndexer &&bmods, Real *scratch, const int num,
                                        LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &bmods, &scratch, &num, &lambdas](const auto &eos) {
           return eos.BulkModulusFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -1097,7 +1097,7 @@ class Variant {
                                                    ConstRealIndexer &&temperatures,
                                                    RealIndexer &&gm1s, const int num,
                                                    LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &gm1s, &num, &lambdas](const auto &eos) {
           return eos.GruneisenParamFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -1125,7 +1125,7 @@ class Variant {
                                                    RealIndexer &&gm1s, Real *scratch,
                                                    const int num,
                                                    LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temperatures, &gm1s, &scratch, &num, &lambdas](const auto &eos) {
           return eos.GruneisenParamFromDensityTemperature(
               std::forward<ConstRealIndexer>(rhos),
@@ -1152,7 +1152,7 @@ class Variant {
                                                       ConstRealIndexer &&sies,
                                                       RealIndexer &&gm1s, const int num,
                                                       LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &gm1s, &lambdas, &num](const auto &eos) {
           return eos.GruneisenParamFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -1178,7 +1178,7 @@ class Variant {
                                                       RealIndexer &&gm1s, Real *scratch,
                                                       const int num,
                                                       LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &sies, &gm1s, &scratch, &lambdas, &num](const auto &eos) {
           return eos.GruneisenParamFromDensityInternalEnergy(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(sies),
@@ -1204,7 +1204,7 @@ class Variant {
                       RealIndexer &&presses, RealIndexer &&cvs, RealIndexer &&bmods,
                       const int num, const unsigned long output,
                       LambdaIndexer &&lambdas) const {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&rhos, &temps, &energies, &presses, &cvs, &bmods, &num, &output,
          &lambdas](const auto &eos) {
           return eos.FillEos(
@@ -1235,23 +1235,23 @@ class Variant {
   // class/individual EOS's so that the variant state is properly
   // carried. Otherwise de-serialization would need to specify a type.
   std::size_t DynamicMemorySizeInBytes() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.DynamicMemorySizeInBytes(); },
+    return mpark::visit([](const auto &eos) { return eos.DynamicMemorySizeInBytes(); },
                         eos_);
   }
   std::size_t DumpDynamicMemory(char *dst) {
-    return PortsOfCall::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); }, eos_);
+    return mpark::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); }, eos_);
   }
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [src, stngs](auto &eos) { return eos.SetDynamicMemory(src, stngs); }, eos_);
   }
   std::size_t SharedMemorySizeInBytes() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.SharedMemorySizeInBytes(); },
+    return mpark::visit([](const auto &eos) { return eos.SharedMemorySizeInBytes(); },
                         eos_);
   }
   constexpr bool AllDynamicMemoryIsShareable() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.AllDynamicMemoryIsShareable(); },
+    return mpark::visit([](const auto &eos) { return eos.AllDynamicMemoryIsShareable(); },
                         eos_);
   }
   std::size_t SerializedSizeInBytes() const {
@@ -1291,11 +1291,11 @@ class Variant {
 
   // Tooling for modifiers
   inline constexpr bool IsModified() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.IsModified(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.IsModified(); }, eos_);
   }
 
   inline constexpr Variant UnmodifyOnce() {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [](auto &eos) -> eos_variant<EOSs...> {
           return eos_variant<EOSs...>(eos.UnmodifyOnce());
         },
@@ -1303,7 +1303,7 @@ class Variant {
   }
 
   inline constexpr Variant GetUnmodifiedObject() {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [](auto &eos) -> eos_variant<EOSs...> {
           return eos_variant<EOSs...>(eos.GetUnmodifiedObject());
         },
@@ -1312,54 +1312,54 @@ class Variant {
 
   PORTABLE_INLINE_FUNCTION
   unsigned long PreferredInput() const noexcept {
-    return PortsOfCall::visit([](const auto &eos) { return eos.PreferredInput(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.PreferredInput(); }, eos_);
   }
 
   PORTABLE_INLINE_FUNCTION
   unsigned long scratch_size(const std::string method, const unsigned int nelements) {
-    return PortsOfCall::visit(
+    return mpark::visit(
         [&](const auto &eos) { return eos.scratch_size(method, nelements); }, eos_);
   }
 
   PORTABLE_INLINE_FUNCTION
   unsigned long max_scratch_size(const unsigned int nelements) {
-    return PortsOfCall::visit([&](const auto &eos) { return eos.max_scratch_size(nelements); },
+    return mpark::visit([&](const auto &eos) { return eos.max_scratch_size(nelements); },
                         eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
   int nlambda() noexcept {
-    return PortsOfCall::visit([](const auto &eos) { return eos.nlambda(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.nlambda(); }, eos_);
   }
 
   template <typename T>
   PORTABLE_INLINE_FUNCTION bool NeedsLambda() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.template NeedsLambda<T>(); },
+    return mpark::visit([](const auto &eos) { return eos.template NeedsLambda<T>(); },
                         eos_);
   }
 
   template <typename T>
   PORTABLE_INLINE_FUNCTION bool NeedsLambda(const T &t) const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.template NeedsLambda<T>(); },
+    return mpark::visit([](const auto &eos) { return eos.template NeedsLambda<T>(); },
                         eos_);
   }
 
   template <typename T>
   PORTABLE_INLINE_FUNCTION bool IsType() const noexcept {
-    return PortsOfCall::holds_alternative<T>(eos_);
+    return mpark::holds_alternative<T>(eos_);
   }
 
   PORTABLE_INLINE_FUNCTION
   void PrintParams() const noexcept {
-    return PortsOfCall::visit([](const auto &eos) { return eos.PrintParams(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.PrintParams(); }, eos_);
   }
 
   inline std::string EosType() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.EosType(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.EosType(); }, eos_);
   }
 
   inline std::string EosPyType() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.EosPyType(); }, eos_);
+    return mpark::visit([](const auto &eos) { return eos.EosPyType(); }, eos_);
   }
 
   template <typename Container_t = std::set<std::string>>
@@ -1371,7 +1371,7 @@ class Variant {
   }
 
   inline void Finalize() noexcept {
-    return PortsOfCall::visit([](auto &eos) { return eos.Finalize(); }, eos_);
+    return mpark::visit([](auto &eos) { return eos.Finalize(); }, eos_);
   }
 };
 } // namespace singularity

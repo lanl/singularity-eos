@@ -54,6 +54,7 @@ Dependencies
   Package Name                          Distribution                    Comment
 ====================================== =============================== ===========================================
  `ports-of-call`_                       submodule / external             Required
+ `mpark_variant`_                       submodule / external             Required
  `spiner`_                              submodule [*]_ / external [*]_   Optional; enhanced backend for EOS tables
  `hdf5`_                                external only                    Optional; used for table I/O
  `eospac`_                              external only                    Optional; used for sesame tables.
@@ -70,6 +71,8 @@ Dependencies
 .. _spiner: https://github.com/lanl/spiner
 
 .. _ports-of-call: https://github.com/lanl/spiner
+
+.. _mpark_variant: https://github.com/mpark/variant
 
 .. _hdf5: https://www.hdfgroup.org/solutions/hdf5/
 
