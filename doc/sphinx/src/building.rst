@@ -667,22 +667,13 @@ https://spack.readthedocs.io
 Installing ``singularity-eos`` using Spack
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-. warning::
-  The spack build is currently experimental.
-  Please report problems you havee as github issues.
-
 The spackage is available in the main `Spack`_
-repositories, and we provide a spackage for ``singularity-eos`` witin the
-the singularity-eos source repository. The distributed spackage may be
-more up-to-date than the one in the main `Spack`_ repository. If you
-have spack installed, simply call
+repositories. If you have spack installed, simply call
 
 .. _Spack: https://spack.io/
 
 .. code-block:: bash
 
-   git clone --recursive git@github.com:lanl/singularity-eos.git
-   spack repo add singularity-eos/spack-repo
    spack install singularity-eos
 
 to install ``singularity-eos`` into your spack instance. The spackage
