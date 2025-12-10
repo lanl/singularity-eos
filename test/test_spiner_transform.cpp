@@ -17,25 +17,23 @@
 #include <cstdlib>
 #include <iostream> // debug
 
-#include <ports-of-call/portability.hpp>
-#include <singularity-eos/base/indexable_types.hpp>
-#include <singularity-eos/eos/eos_spiner_common.hpp>
-#include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
-
 #ifndef CATCH_CONFIG_FAST_COMPILE
 #define CATCH_CONFIG_FAST_COMPILE
 #include <catch2/catch_test_macros.hpp>
 #endif
 
-#include <test/eos_unit_test_helpers.hpp>
+#ifdef SINGULARITY_USE_SPINER_WITH_HDF5
+#ifdef SINGULARITY_USE_SPINER
 
-#ifdef SPINER_USE_HDF5
+#include <ports-of-call/portability.hpp>
+#include <singularity-eos/base/indexable_types.hpp>
+#include <singularity-eos/eos/eos_spiner_common.hpp>
+#include <singularity-eos/eos/eos_spiner_sie_transforms.hpp>
+
 #include <singularity-eos/base/spiner_table_utils.hpp>
 #include <spiner/databox.hpp>
 #include <spiner/interpolation.hpp>
-#endif
-
-#ifdef SINGULARITY_USE_SPINER
+#include <test/eos_unit_test_helpers.hpp>
 
 using namespace singularity;
 using namespace transformations;
@@ -278,3 +276,4 @@ SCENARIO("AllTransform behaves correctly", "[TransformTest]") {
 }
 
 #endif // SINGULARITY_USE_SPINER
+#endif // SINGULARITY_USE_SPINER_WITH_HDF5

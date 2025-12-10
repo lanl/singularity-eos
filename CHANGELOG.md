@@ -20,6 +20,7 @@
 - [[PR575]](https://github.com/lanl/singularity-eos/pull/575) Pin variant submodule to the same commit as the spackage
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR594]](https://github.com/lanl/singularity-eos/pull/594) clean up tests in preparation for ports-of-call variant transition
 - [[PR588]](https://github.com/lanl/singularity-eos/pull/588) Add DensityEnergyFromPressureTemperature in unit system test
 - [[PR576]](https://github.com/lanl/singularity-eos/pull/576) Clean up some header includes to use the C++ versions
 - [[PR559]](https://github.com/lanl/singularity-eos/pull/559) Document the intent of the virtual keyword in solvers
