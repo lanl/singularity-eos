@@ -78,9 +78,13 @@ class UnitSystem : public EosBase<UnitSystem<T>> {
   }
   UnitSystem(T &&t, eos_units_init::LengthTimeUnitsInit, const Real time_unit,
              const Real mass_unit, const Real length_unit, const Real temp_unit)
+      // JMM: By convention we always assume you multiply by a unit to
+      // convert to cgs.  This requires computing (derived_cgs /
+      // derived_system) which is the inverse of the quantity, computed
+      // as the conversion factors of the base units.
       : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag,
-                   mass_unit / (length_unit * length_unit * length_unit),
-                   length_unit * length_unit / (time_unit * time_unit), temp_unit) {}
+                   (length_unit * length_unit * length_unit) / mass_unit,
+                   (time_unit * time_unit) / (length_unit * length_unit), temp_unit) {}
   UnitSystem(T &&t, const Real rho_unit, const Real sie_unit, const Real temp_unit)
       : UnitSystem(std::forward<T>(t), eos_units_init::thermal_units_init_tag, rho_unit,
                    sie_unit, temp_unit) {}

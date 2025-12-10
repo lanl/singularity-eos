@@ -4,7 +4,7 @@ export PROJECT_NAME=singularity-eos
 export PROJECT_DEFAULT_BRANCH=main
 export PROJECT_TYPE=oss
 export PROJECT_GROUP=oss
-export PROJECT_SPACK_ENV_CURRENT_DEFAULT="2025-01-18"
+export PROJECT_SPACK_ENV_CURRENT_DEFAULT="20250118"
 export PROJECT_SPACK_ENV_VERSION_DEFAULT="${PROJECT_SPACK_ENV_VERSION_DEFAULT:-${PROJECT_SPACK_ENV_CURRENT_DEFAULT}}"
 ###############################################################################
 
