@@ -161,8 +161,7 @@ class ShiftedEOS : public EosBase<ShiftedEOS<T>> {
         singularity::mfuncname::member_func_name(typeid(ShiftedEOS<T>).name(), __func__);
     static auto const cname = name.c_str();
     const auto shift_val = shift_;
-    portableFor(
-        cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
+    portableFor(cname, 0, num, PORTABLE_LAMBDA(const int i) { sies[i] += shift_val; });
   }
 
   template <typename LambdaIndexer>
