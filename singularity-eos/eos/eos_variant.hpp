@@ -76,8 +76,8 @@ class Variant {
   }
 
   Variant GetOnDevice() {
-    return PortsOfCall::visit([](auto &eos) { return eos_variant<EOSs...>(eos.GetOnDevice()); },
-                        eos_);
+    return PortsOfCall::visit(
+        [](auto &eos) { return eos_variant<EOSs...>(eos.GetOnDevice()); }, eos_);
   }
 
   // Place member functions here
@@ -88,12 +88,14 @@ class Variant {
 
   template <typename Functor_t>
   PORTABLE_INLINE_FUNCTION void EvaluateDevice(const Functor_t f) const {
-    return PortsOfCall::visit([&f](const auto &eos) { return eos.EvaluateDevice(f); }, eos_);
+    return PortsOfCall::visit([&f](const auto &eos) { return eos.EvaluateDevice(f); },
+                              eos_);
   }
 
   template <typename Functor_t>
   void EvaluateHost(Functor_t &f) const {
-    return PortsOfCall::visit([&f](const auto &eos) { return eos.EvaluateHost(f); }, eos_);
+    return PortsOfCall::visit([&f](const auto &eos) { return eos.EvaluateHost(f); },
+                              eos_);
   }
 
   // EOS modifier object-oriented API
@@ -336,7 +338,8 @@ class Variant {
 
   PORTABLE_INLINE_FUNCTION
   Real RhoPmin(const Real temp) const {
-    return PortsOfCall::visit([&temp](const auto &eos) { return eos.RhoPmin(temp); }, eos_);
+    return PortsOfCall::visit([&temp](const auto &eos) { return eos.RhoPmin(temp); },
+                              eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -346,7 +349,8 @@ class Variant {
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumTemperature() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.MinimumTemperature(); }, eos_);
+    return PortsOfCall::visit([](const auto &eos) { return eos.MinimumTemperature(); },
+                              eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -356,7 +360,8 @@ class Variant {
 
   PORTABLE_FORCEINLINE_FUNCTION
   Real MinimumPressure() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.MinimumPressure(); }, eos_);
+    return PortsOfCall::visit([](const auto &eos) { return eos.MinimumPressure(); },
+                              eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -373,7 +378,8 @@ class Variant {
   }
   PORTABLE_INLINE_FUNCTION
   Real MeanAtomicNumber() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.MeanAtomicNumber(); }, eos_);
+    return PortsOfCall::visit([](const auto &eos) { return eos.MeanAtomicNumber(); },
+                              eos_);
   }
   template <typename Indexer_t = Real *>
   PORTABLE_INLINE_FUNCTION Real MeanAtomicMassFromDensityTemperature(
@@ -1235,11 +1241,12 @@ class Variant {
   // class/individual EOS's so that the variant state is properly
   // carried. Otherwise de-serialization would need to specify a type.
   std::size_t DynamicMemorySizeInBytes() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.DynamicMemorySizeInBytes(); },
-                        eos_);
+    return PortsOfCall::visit(
+        [](const auto &eos) { return eos.DynamicMemorySizeInBytes(); }, eos_);
   }
   std::size_t DumpDynamicMemory(char *dst) {
-    return PortsOfCall::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); }, eos_);
+    return PortsOfCall::visit([dst](auto &eos) { return eos.DumpDynamicMemory(dst); },
+                              eos_);
   }
   std::size_t SetDynamicMemory(char *src,
                                const SharedMemSettings &stngs = DEFAULT_SHMEM_STNGS) {
@@ -1247,12 +1254,12 @@ class Variant {
         [src, stngs](auto &eos) { return eos.SetDynamicMemory(src, stngs); }, eos_);
   }
   std::size_t SharedMemorySizeInBytes() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.SharedMemorySizeInBytes(); },
-                        eos_);
+    return PortsOfCall::visit(
+        [](const auto &eos) { return eos.SharedMemorySizeInBytes(); }, eos_);
   }
   constexpr bool AllDynamicMemoryIsShareable() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.AllDynamicMemoryIsShareable(); },
-                        eos_);
+    return PortsOfCall::visit(
+        [](const auto &eos) { return eos.AllDynamicMemoryIsShareable(); }, eos_);
   }
   std::size_t SerializedSizeInBytes() const {
     return sizeof(*this) + DynamicMemorySizeInBytes();
@@ -1323,8 +1330,8 @@ class Variant {
 
   PORTABLE_INLINE_FUNCTION
   unsigned long max_scratch_size(const unsigned int nelements) {
-    return PortsOfCall::visit([&](const auto &eos) { return eos.max_scratch_size(nelements); },
-                        eos_);
+    return PortsOfCall::visit(
+        [&](const auto &eos) { return eos.max_scratch_size(nelements); }, eos_);
   }
 
   PORTABLE_FORCEINLINE_FUNCTION
@@ -1334,14 +1341,14 @@ class Variant {
 
   template <typename T>
   PORTABLE_INLINE_FUNCTION bool NeedsLambda() const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.template NeedsLambda<T>(); },
-                        eos_);
+    return PortsOfCall::visit(
+        [](const auto &eos) { return eos.template NeedsLambda<T>(); }, eos_);
   }
 
   template <typename T>
   PORTABLE_INLINE_FUNCTION bool NeedsLambda(const T &t) const {
-    return PortsOfCall::visit([](const auto &eos) { return eos.template NeedsLambda<T>(); },
-                        eos_);
+    return PortsOfCall::visit(
+        [](const auto &eos) { return eos.template NeedsLambda<T>(); }, eos_);
   }
 
   template <typename T>
