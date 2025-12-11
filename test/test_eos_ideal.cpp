@@ -89,6 +89,55 @@ SCENARIO("Ideal gas entropy", "[IdealGas][Entropy][GibbsFreeEnergy]") {
   }
 }
 
+SCENARIO("Ideal gas energy from pressure and temperature",
+         "[IdealGas][VectorEOS][SieFromRhoP]") {
+  GIVEN("An ideal gas object") {
+    constexpr Real Cv = 5.0;
+    constexpr Real gm1 = 0.4;
+    EOS eos_host = IdealGas(gm1, Cv);
+    EOS eos = eos_host.GetOnDevice();
+
+    WHEN("We compute pressure from energy for several energies") {
+      constexpr int N = 20;
+      constexpr Real sie_min = 0;
+      constexpr Real dsie = 0.5;
+      Real *rhos = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+      Real *sies = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+      Real *Ps = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+      portableFor(
+          "Set rho, sie, and P", 0, N, PORTABLE_LAMBDA(const int i) {
+            rhos[i] = 1;
+            sies[i] = sie_min + dsie * i;
+            Ps[i] = eos.PressureFromDensityInternalEnergy(rhos[i], sies[i]);
+          });
+
+      THEN("We can compute the internal energy from the pressure") {
+        Real *sies_new = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+        eos_host.InternalEnergyFromDensityPressure(rhos, Ps, sies_new, N);
+
+        AND_THEN("They agree with the previous pressures") {
+          std::size_t nwrong = 0;
+          portableReduce(
+              "Compute sie diff", 0, N,
+              PORTABLE_LAMBDA(const int i, std::size_t &nw) {
+                nw += !isClose(sies[i], sies_new[i], 1e-12);
+              },
+              nwrong);
+          REQUIRE(nwrong == 0);
+        }
+
+        PORTABLE_FREE(sies_new);
+      }
+
+      PORTABLE_FREE(Ps);
+      PORTABLE_FREE(sies);
+      PORTABLE_FREE(rhos);
+    }
+
+    eos.Finalize();
+  }
+}
+
 SCENARIO("Ideal gas mean atomic properties",
          "[IdealGas][MeanAtomicMass][MeanAtomicNumber]") {
   constexpr Real Cv = 5.0;

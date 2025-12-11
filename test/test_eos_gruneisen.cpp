@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-// © 2021-2024. Triad National Security, LLC. All rights reserved.  This
+// © 2021-2025. Triad National Security, LLC. All rights reserved.  This
 // program was produced under U.S. Government contract 89233218CNA000001
 // for Los Alamos National Laboratory (LANL), which is operated by Triad
 // National Security, LLC for the U.S.  Department of Energy/National
@@ -205,6 +205,67 @@ SCENARIO("Gruneisen EOS", "[VectorEOS][GruneisenEOS]") {
         }
       }
     }
+  }
+}
+
+SCENARIO("Gruneisen energy from pressure and temperature",
+         "[Gruneisen][VectorEOS][SieFromRhoP]") {
+  GIVEN("An ideal gas object") {
+    // Unit conversions
+    constexpr Real cm = 1.;
+    constexpr Real us = 1e-06;
+    constexpr Real Mbcc_per_g = 1e12;
+    // Gruneisen parameters for copper
+    constexpr Real C0 = 0.394 * cm / us;
+    constexpr Real S1 = 1.489;
+    constexpr Real S2 = 0.;
+    constexpr Real S3 = 0.;
+    constexpr Real Gamma0 = 2.02;
+    constexpr Real b = 0.47;
+    constexpr Real rho0 = 8.93;
+    constexpr Real T0 = 298.;
+    constexpr Real P0 = 0.;
+    constexpr Real Cv = 0.383e-05 * Mbcc_per_g;
+    // Create the EOS
+    EOS eos_host = Gruneisen(C0, S1, S2, S3, Gamma0, b, rho0, T0, P0, Cv);
+    EOS eos = eos_host.GetOnDevice();
+
+    WHEN("We compute pressure from energy for several energies") {
+      constexpr int N = 20;
+      Real *rhos = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+      Real *sies = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+      Real *Ps = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+      portableFor(
+          "Set rho, sie, and P", 0, N, PORTABLE_LAMBDA(const int i) {
+            rhos[i] = 0.5 * (eos.MinimumDensity() + eos.MaximumDensity());
+            sies[i] = Cv * (298 + i);
+            Ps[i] = eos.PressureFromDensityInternalEnergy(rhos[i], sies[i]);
+          });
+
+      THEN("We can compute the internal energy from the pressure") {
+        Real *sies_new = (Real *)PORTABLE_MALLOC(sizeof(Real) * N);
+        eos_host.InternalEnergyFromDensityPressure(rhos, Ps, sies_new, N);
+
+        AND_THEN("They agree with the previous pressures") {
+          std::size_t nwrong = 0;
+          portableReduce(
+              "Compute sie diff", 0, N,
+              PORTABLE_LAMBDA(const int i, std::size_t &nw) {
+                nw += !isClose(sies[i], sies_new[i], 1e-12);
+              },
+              nwrong);
+          REQUIRE(nwrong == 0);
+        }
+
+        PORTABLE_FREE(sies_new);
+      }
+
+      PORTABLE_FREE(Ps);
+      PORTABLE_FREE(sies);
+      PORTABLE_FREE(rhos);
+    }
+
+    eos.Finalize();
   }
 }
 

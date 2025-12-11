@@ -136,6 +136,12 @@ class ScaledEOS : public EosBase<ScaledEOS<T>> {
     return t_.GruneisenParamFromDensityTemperature(scale_ * rho, temperature, lambda);
   }
   template <typename Indexer_t = Real *>
+  PORTABLE_FUNCTION void
+  InternalEnergyFromDensityPressure(const Real rho, const Real P, Real &sie,
+                                    Indexer_t &&lambda = nullptr) const {
+    t_.InternalEnergyFromDensityPressure(scale_ * rho, P, sie, lambda);
+  }
+  template <typename Indexer_t = Real *>
   PORTABLE_FUNCTION void FillEos(Real &rho, Real &temp, Real &energy, Real &press,
                                  Real &cv, Real &bmod, const unsigned long output,
                                  Indexer_t &&lambda = nullptr) const {
