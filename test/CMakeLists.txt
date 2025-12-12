@@ -17,6 +17,7 @@ add_executable(
   eos_unit_test_helpers.hpp
   test_eos_ideal.cpp
   test_eos_gruneisen.cpp
+  test_eos_davis.cpp
   test_eos_sap_polynomial.cpp
   test_eos_noble_abel.cpp
   test_eos_stiff.cpp
