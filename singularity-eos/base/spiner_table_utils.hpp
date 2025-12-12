@@ -293,7 +293,7 @@ class Bounds {
 // spiner-based EOS's.
 template <typename EOS>
 class SpinerTricks { // class instead of struct for -Wmismatched-tags
-public:
+ public:
   static auto GetOnDevice(EOS *peos_h) {
     // trivially copy all but dynamic memory
     EOS eos_d = *peos_h;
