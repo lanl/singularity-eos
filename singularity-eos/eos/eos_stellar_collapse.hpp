@@ -1107,9 +1107,7 @@ inline Real StellarCollapse::findMedian_(Real buffer[], int size) const {
 inline void StellarCollapse::computeBulkModulus_() {
   lBMod_.copyMetadata(lP_);
   for (int iY = 0; iY < numYe_; ++iY) {
-    Real Ye = lBMod_.range(2).x(iY);
     for (int iT = 0; iT < numT_; ++iT) {
-      Real lT = lBMod_.range(1).x(iT);
       for (int irho = 0; irho < numRho_; ++irho) {
         Real lRho = lBMod_.range(0).x(irho);
         Real rho = std::pow(10., lRho); // rho_(lRho);

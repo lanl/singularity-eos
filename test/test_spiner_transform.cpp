@@ -150,7 +150,6 @@ SCENARIO("NullTransform behave correctly", "[TransformTest]") {
 
   GIVEN("A density with a known linear cold-curve in log-space") {
     Real rho = 10.0;
-    Real lRho = to_log(rho, data.lRhoOffset);
     Real e_actual = 42.0;
 
     THEN("NullTransform is identity throughout when run on device") {

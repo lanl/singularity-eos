@@ -15,6 +15,7 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <stdlib.h>
 #include <time.h>
 #include <utility>
@@ -50,7 +51,6 @@ template <template <typename... Types> class Method_t>
 void TestPTE(const std::string name, const std::size_t nscratch_vars,
              std::size_t &nsuccess, std::vector<Real> &host_vals) {
   constexpr Real EPS = 1e-5;
-  Real time;
   nsuccess = 0;
 
   // EOS
@@ -122,12 +122,16 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
 #endif
 
   // setup state
+
+  // we want a repeatable random seed every time this function is
+  // called
+  std::mt19937 gen(123456789);
   for (int n = 0; n < NTRIAL; n++) {
     Indexer2D<decltype(rho_hm)> r(n, rho_hm);
     Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
     Indexer2D<decltype(sie_hm)> e(n, sie_hm);
     Indexer2D<decltype(temp_hm)> t(n, temp_hm);
-    set_state(r, vf, e, t, eos_h);
+    set_state(r, vf, e, t, eos_h, gen);
   }
   for (int i = 0; i < HIST_SIZE; ++i) {
     hist_vh[i] = 0;
@@ -218,8 +222,6 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
 #endif
 
   Real milliseconds = sum_time.count() / 1e3;
-  time = milliseconds;
-
   std::cout << "Finished " << NTRIAL << " solves in " << milliseconds << " milliseconds"
             << std::endl;
   std::cout << "Solves/ms = " << NTRIAL / milliseconds << std::endl;

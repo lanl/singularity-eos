@@ -20,6 +20,7 @@
 - [[PR575]](https://github.com/lanl/singularity-eos/pull/575) Pin variant submodule to the same commit as the spackage
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR595]](https://github.com/lanl/singularity-eos/pull/595) A number of robustness fixes/cleanups. Add a warnings build to the CI.
 - [[PR594]](https://github.com/lanl/singularity-eos/pull/594) clean up tests in preparation for ports-of-call variant transition
 - [[PR588]](https://github.com/lanl/singularity-eos/pull/588) Add DensityEnergyFromPressureTemperature in unit system test
 - [[PR576]](https://github.com/lanl/singularity-eos/pull/576) Clean up some header includes to use the C++ versions
