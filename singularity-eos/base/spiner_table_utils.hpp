@@ -292,7 +292,8 @@ class Bounds {
 // static methods of `SpinerTricks` are called from class methods of
 // spiner-based EOS's.
 template <typename EOS>
-struct SpinerTricks {
+class SpinerTricks { // class instead of struct for -Wmismatched-tags
+public:
   static auto GetOnDevice(EOS *peos_h) {
     // trivially copy all but dynamic memory
     EOS eos_d = *peos_h;
