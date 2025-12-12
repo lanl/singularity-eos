@@ -102,7 +102,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
                              reproducibility_mode, pmin_vapor_dome) {}
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT()
-    : split_(TableSplit::Total), memoryStatus_(DataStatus::Deallocated) {}
+      : split_(TableSplit::Total), memoryStatus_(DataStatus::Deallocated) {}
 
   inline SpinerEOSDependsRhoT GetOnDevice();
 
