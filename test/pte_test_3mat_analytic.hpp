@@ -48,7 +48,6 @@ inline void set_eos(T *eos) {
 template <typename RealIndexer, typename EOSIndexer>
 inline void set_state(RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
                       RealIndexer &&temp, EOSIndexer &&eos) {
-
   rho[0] = 8.93;
   rho[1] = 1.89;
   rho[2] = 2.5;
@@ -57,7 +56,7 @@ inline void set_state(RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
   for (int i = 0; i < NMAT; i++) {
     temp[i] = 600.0;
     sie[i] = eos[i].InternalEnergyFromDensityTemperature(rho[i], temp[i]);
-    vfrac[i] = rand() / (1.0 * RAND_MAX);
+    vfrac[i] = std::min(std::max(rand() / (1.0 * RAND_MAX), 1e-15), 1.0);
     vsum += vfrac[i];
   }
 
