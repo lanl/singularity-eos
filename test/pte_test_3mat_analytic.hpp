@@ -17,15 +17,18 @@
 
 #include <stdlib.h>
 
+#include <random>
+
 #include <ports-of-call/portability.hpp>
 #include <ports-of-call/portable_arrays.hpp>
+#include <singularity-eos/base/robust_utils.hpp>
 #include <singularity-eos/eos/eos_models.hpp>
 #include <singularity-eos/eos/eos_variant.hpp>
 
 constexpr int NMAT = 3;
 constexpr int NTRIAL = 100;
 constexpr int NPTS = NTRIAL * NMAT;
-constexpr std::size_t HIST_SIZE = 10;
+constexpr std::size_t HIST_SIZE = 13;
 
 using singularity::DavisProducts;
 using singularity::DavisReactants;
@@ -47,21 +50,31 @@ inline void set_eos(T *eos) {
 
 template <typename RealIndexer, typename EOSIndexer>
 inline void set_state(RealIndexer &&rho, RealIndexer &&vfrac, RealIndexer &&sie,
-                      RealIndexer &&temp, EOSIndexer &&eos) {
+                      RealIndexer &&temp, EOSIndexer &&eos, std::mt19937 &gen) {
+  constexpr Real alpha_min = singularity::robust::EPS();
+
   rho[0] = 8.93;
   rho[1] = 1.89;
   rho[2] = 2.5;
+
+  // sample volume fractions from the Dirichlet(1,1,1) distribution,
+  // which more evenly samples edge case volume fractions
+  std::exponential_distribution<Real> dist(1.0);
 
   Real vsum = 0.;
   for (int i = 0; i < NMAT; i++) {
     temp[i] = 600.0;
     sie[i] = eos[i].InternalEnergyFromDensityTemperature(rho[i], temp[i]);
-    vfrac[i] = std::min(std::max(rand() / (1.0 * RAND_MAX), 1e-15), 1.0);
+    // may be >> 1
+    vfrac[i] = dist(gen) + alpha_min;
     vsum += vfrac[i];
   }
 
-  for (int i = 0; i < NMAT; i++)
+  for (int i = 0; i < NMAT; i++) {
+    // (0, 1), sums to 1
     vfrac[i] *= 1.0 / vsum;
+    vfrac[i] = std::max(alpha_min, std::min(vfrac[i], 1.0));
+  }
 
   return;
 }

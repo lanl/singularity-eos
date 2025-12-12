@@ -15,6 +15,7 @@
 #include <chrono>
 #include <iostream>
 #include <memory>
+#include <random>
 #include <stdlib.h>
 #include <time.h>
 #include <utility>
@@ -124,13 +125,13 @@ void TestPTE(const std::string name, const std::size_t nscratch_vars,
 
   // we want a repeatable random seed every time this function is
   // called
-  srand(123456789); 
+  std::mt19937 gen(123456789);
   for (int n = 0; n < NTRIAL; n++) {
     Indexer2D<decltype(rho_hm)> r(n, rho_hm);
     Indexer2D<decltype(vfrac_hm)> vf(n, vfrac_hm);
     Indexer2D<decltype(sie_hm)> e(n, sie_hm);
     Indexer2D<decltype(temp_hm)> t(n, temp_hm);
-    set_state(r, vf, e, t, eos_h);
+    set_state(r, vf, e, t, eos_h, gen);
   }
   for (int i = 0; i < HIST_SIZE; ++i) {
     hist_vh[i] = 0;
