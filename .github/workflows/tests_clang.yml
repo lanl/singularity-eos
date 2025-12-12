@@ -46,6 +46,7 @@ jobs:
                   -DSINGULARITY_USE_V_AND_V_EOS=OFF \
                   -DSINGULARITY_USE_KOKKOS=OFF \
                   -DSINGULARITY_PLUGINS=$(pwd)/../example/plugin \
+                  -DCMAKE_CXX_FLAGS="-Wall -Werr" \
                   -DCMAKE_LINKER=ld.gold \
                   -DCMAKE_BUILD_TYPE=Release \
                   ..
