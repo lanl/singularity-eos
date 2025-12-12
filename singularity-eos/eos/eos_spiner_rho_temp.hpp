@@ -102,7 +102,7 @@ class SpinerEOSDependsRhoT : public EosBase<SpinerEOSDependsRhoT> {
                              reproducibility_mode, pmin_vapor_dome) {}
   PORTABLE_INLINE_FUNCTION
   SpinerEOSDependsRhoT()
-      : memoryStatus_(DataStatus::Deallocated), split_(TableSplit::Total) {}
+    : split_(TableSplit::Total), memoryStatus_(DataStatus::Deallocated) {}
 
   inline SpinerEOSDependsRhoT GetOnDevice();
 
@@ -492,8 +492,6 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   lTMax_ = P_.range(0).max();
   TMax_ = from_log(lTMax_, lTOffset_);
 
-  Real rhoMin = from_log(lRhoMin_, lRhoOffset_);
-
   // bulk modulus can be wrong in the tables. Use FLAG's approach to
   // fix the table.
   fixBulkModulus_();
@@ -522,7 +520,6 @@ inline herr_t SpinerEOSDependsRhoT::loadDataboxes_(const std::string &matid_str,
   for (int j = 0; j < numRho_; j++) {
     Real lRho = bModCold_.range(0).x(j);
     Real lT = lTColdCrit_(j);
-    Real rho = rho_(lRho);
     bModCold_(j) = bMod_.interpToReal(lRho, lT);
     dPdECold_(j) = dPdE_.interpToReal(lRho, lT);
     dTdRhoCold_(j) = dTdRho_.interpToReal(lRho, lT);
@@ -792,7 +789,7 @@ PORTABLE_INLINE_FUNCTION Real SpinerEOSDependsRhoT::BulkModulusFromDensityIntern
     const Real gm1 = gm1Max_.interpToReal(lRho);
     bMod = (gm1 + 1) * gm1 * rho * sie;
   } else { // on table
-    bMod = bMod_.interpToReal(rho, sie);
+    bMod = bMod_.interpToReal(lRho, lT);
   }
   return bMod;
 }
