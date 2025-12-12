@@ -495,6 +495,8 @@ class PTESolverBase {
       bad_vfrac_guess = false;
       for (std::size_t m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
+        // rho max only active inside the requires, which are only active
+        // when asserts are
 #ifndef NDEBUG
         const Real rho_max = eos[m].MaximumDensity();
         PORTABLE_REQUIRE(rho_min < rho_max, "Valid density range must exist!");
