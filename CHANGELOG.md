@@ -20,6 +20,7 @@
 - [[PR575]](https://github.com/lanl/singularity-eos/pull/575) Pin variant submodule to the same commit as the spackage
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR590]](https://github.com/lanl/singularity-eos/pull/590) Remove local spack-repo and use PortsOfCall::variant instead of mpark::variant
 - [[PR595]](https://github.com/lanl/singularity-eos/pull/595) A number of robustness fixes/cleanups. Add a warnings build to the CI.
 - [[PR594]](https://github.com/lanl/singularity-eos/pull/594) clean up tests in preparation for ports-of-call variant transition
 - [[PR588]](https://github.com/lanl/singularity-eos/pull/588) Add DensityEnergyFromPressureTemperature in unit system test
