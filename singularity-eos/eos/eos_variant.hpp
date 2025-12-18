@@ -340,7 +340,7 @@ class Variant {
   PORTABLE_INLINE_FUNCTION void InternalEnergyFromDensityPressure(
       const Real rho, const Real P, Real &sie,
       Indexer_t &&lambda = static_cast<Real *>(nullptr)) const {
-    return mpark::visit(
+    return PortsOfCall::visit(
         [&rho, &P, &sie, &lambda](const auto &eos) {
           return eos.InternalEnergyFromDensityPressure(rho, P, sie, lambda);
         },
@@ -1220,7 +1220,7 @@ class Variant {
                                                 ConstRealIndexer &&Ps, RealIndexer &&sies,
                                                 const int num,
                                                 LambdaIndexer &&lambdas) const {
-    return mpark::visit(
+    return PortsOfCall::visit(
         [&](const auto &eos) {
           return eos.InternalEnergyFromDensityPressure(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(Ps),
@@ -1244,7 +1244,7 @@ class Variant {
                                                 ConstRealIndexer &&Ps, RealIndexer &&sies,
                                                 Real *scratch, const int num,
                                                 LambdaIndexer &&lambdas) const {
-    return mpark::visit(
+    return PortsOfCall::visit(
         [&rhos, &Ps, &sies, &scratch, &num, &lambdas](const auto &eos) {
           return eos.InternalEnergyFromDensityPressure(
               std::forward<ConstRealIndexer>(rhos), std::forward<ConstRealIndexer>(Ps),
