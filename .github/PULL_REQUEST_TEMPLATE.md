@@ -23,4 +23,6 @@ detail.  Why is this change required?  What problem does it solve?-->
 If preparing for a new release, in addition please check the following:
 - [ ] Update the version in cmake.
 - [ ] Move the changes in the CHANGELOG.md file under a new header for the new release, and reset the categories.
-- [ ] Ensure that any `when='@main'` dependencies are updated to the release version in the package.py
+- [ ] Maintainers: ensure spackages are up to date:
+  - [ ] LANL-internal team, update XCAP spackages
+  - [ ] Current maintainer of upstream spackages, submit MR to spack

@@ -25,6 +25,14 @@
 #include <singularity-eos/base/root-finding-1d/root_finding.hpp>
 #include <singularity-eos/eos/eos_base.hpp>
 
+/* Implements the equation of state from
+   Wescott, Stewart, and Davis, 2005
+   https://doi.org/10.1063/1.2035310
+
+   The expansion branch of the EOS is described by Aslam, 2018
+   https://doi.org/10.1063/1.5020172
+ */
+
 namespace singularity {
 
 using namespace eos_base;
@@ -183,6 +191,8 @@ class DavisReactants : public EosBase<DavisReactants> {
   void inline Finalize() {}
   static std::string EosType() { return std::string("DavisReactants"); }
   static std::string EosPyType() { return EosType(); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return robust::EPS(); }
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
@@ -330,6 +340,8 @@ class DavisProducts : public EosBase<DavisProducts> {
   inline void Finalize() {}
   static std::string EosType() { return std::string("DavisProducts"); }
   static std::string EosPyType() { return EosType(); }
+  PORTABLE_FORCEINLINE_FUNCTION
+  Real MinimumDensity() const { return robust::EPS(); }
 
  private:
   static constexpr Real onethird = 1.0 / 3.0;
@@ -389,6 +401,7 @@ PORTABLE_FORCEINLINE_FUNCTION Real DavisReactants::DimlessEdiff(const Real rho,
 
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   using namespace math_utils;
+  if (rho <= 0) return 0;
   const Real y = 1.0 - robust::ratio(_rho0, std::max(rho, 0.));
   const Real phat = 0.25 * _A2oB * _rho0;
   const Real b4y = 4.0 * _B * y;
@@ -403,6 +416,7 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Ps(const Real rho) const {
   }
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const {
+  if (rho <= 0) return 0;
   const Real y = 1 - robust::ratio(_rho0, std::max(rho, 0.));
   const Real phat = 0.25 * _A2oB * _rho0;
   const Real b4y = 4 * _B * y;
@@ -419,6 +433,7 @@ PORTABLE_INLINE_FUNCTION Real DavisReactants::Es(const Real rho) const {
          phat * _spvol0 * e_s;
 }
 PORTABLE_INLINE_FUNCTION Real DavisReactants::Ts(const Real rho) const {
+  if (rho <= 0) return _T0;
   const Real rho0overrho = robust::ratio(_rho0, std::max(rho, 0.));
   const Real y = 1 - rho0overrho;
   return _T0 * std::exp(-_Z * y) * std::pow(rho0overrho, -_G0 - _Z);

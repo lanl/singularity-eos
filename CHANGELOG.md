@@ -4,6 +4,19 @@
 
 ### Added (new features/APIs/variables/...)
 - [[PR589]](https://github.com/lanl/singularity-eos/pull/589) InternalEnergyFromDensityPressure
+
+### Fixed (Repair bugs, etc)
+
+### Changed (changing behavior/API/variables/...)
+
+### Infrastructure (changes irrelevant to downstream codes)
+
+### Removed (removing behavior/API/varaibles/...)
+
+## Release 1.11.0
+Date: 12/25/2025
+
+### Added (new features/APIs/variables/...)
 - [[PR556]](https://github.com/lanl/singularity-eos/pull/556) Add introspection into types available in the variant
 - [[PR564]](https://github.com/lanl/singularity-eos/pull/564) Removed Get() function from IndexableTypes since it could have unexpected consequences when a type wasn't present
 - [[PR583]](https://github.com/lanl/singularity-eos/pull/583) Added GenericIndexer class to provide more complex array indirection
@@ -21,6 +34,9 @@
 - [[PR575]](https://github.com/lanl/singularity-eos/pull/575) Pin variant submodule to the same commit as the spackage
 
 ### Infrastructure (changes irrelevant to downstream codes)
+- [[PR590]](https://github.com/lanl/singularity-eos/pull/590) Remove local spack-repo and use PortsOfCall::variant instead of mpark::variant
+- [[PR595]](https://github.com/lanl/singularity-eos/pull/595) A number of robustness fixes/cleanups. Add a warnings build to the CI.
+- [[PR594]](https://github.com/lanl/singularity-eos/pull/594) clean up tests in preparation for ports-of-call variant transition
 - [[PR588]](https://github.com/lanl/singularity-eos/pull/588) Add DensityEnergyFromPressureTemperature in unit system test
 - [[PR576]](https://github.com/lanl/singularity-eos/pull/576) Clean up some header includes to use the C++ versions
 - [[PR559]](https://github.com/lanl/singularity-eos/pull/559) Document the intent of the virtual keyword in solvers

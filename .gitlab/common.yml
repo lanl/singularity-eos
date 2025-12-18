@@ -1,6 +1,7 @@
 default:
   interruptible: true
   before_script:
+   - source .gitlab/mr.sh
    - unset CI_MERGE_REQUEST_DESCRIPTION
    - unset CI_MERGE_REQUEST_TITLE
 
@@ -204,33 +205,3 @@ default:
     GIT_SUBMODULE_STRATEGY: none
   script:
     - source .gitlab/check_format.sh ${CLUSTER}
-
-.post_results_to_cdash:
-  stage: build_n_test
-  id_tokens:
-    SITE_ID_TOKEN:
-      aud: https://asc-git.lanl.gov
-  variables:
-    GIT_SUBMODULE_STRATEGY: none
-  script:
-    - module load cmake
-    - cmake --version
-    - ls *.tar.gz
-    - export SOURCE_DIR=$PWD
-    - export BUILD_DIR=build
-    - |
-      for t in $(ls *.tar.gz); do
-        export SYSTEM_NAME=$(echo $t | cut -d - -f 1)
-        export CTEST_MODE=$(echo $t | cut -d - -f 2)
-        FULL_NAME=${t%%.*}
-        export SPACK_ENV_NAME=${FULL_NAME/${SYSTEM_NAME}-${CTEST_MODE}-/}
-        mkdir -p ${BUILD_DIR}
-        cd ${BUILD_DIR}
-        echo "#############################################################################"
-        echo "Submitting result for ${CTEST_MODE} with ${SPACK_ENV_NAME} on ${SYSTEM_NAME}"
-        echo "#############################################################################"
-        tar xvzf ../$t
-        cd ${CI_PROJECT_DIR}
-        ctest -V -S .gitlab/build_and_test.cmake,Submit
-        rm -rf ${BUILD_DIR}
-      done

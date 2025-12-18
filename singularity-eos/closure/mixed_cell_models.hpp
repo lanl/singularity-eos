@@ -495,7 +495,7 @@ class PTESolverBase {
       bad_vfrac_guess = false;
       for (std::size_t m = 0; m < nmat; ++m) {
         const Real rho_min = eos[m].RhoPmin(Tguess);
-        const Real rho_max = eos[m].MaximumDensity();
+        [[maybe_unused]] const Real rho_max = eos[m].MaximumDensity();
         PORTABLE_REQUIRE(rho_min < rho_max, "Valid density range must exist!");
         PORTABLE_REQUIRE(rho[m] < rho_max, "Density must be less than rho_max");
         if (rho[m] < rho_min) {
