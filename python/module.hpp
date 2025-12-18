@@ -369,9 +369,6 @@ struct VectorFunctions<T,true> {
   }
 };
 
-// TODO(JMM): I do not understand why my definitions below fail, but
-// template substituion fails. Perhaps there are too many overloads of
-// this method to disambiguate.
 template<typename T, bool use_scratch = false>
 py::class_<T> eos_class(py::module_ & m, std::string name) {
   py::class_<T> cls(m, name.c_str());
