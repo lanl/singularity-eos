@@ -169,6 +169,7 @@ EOS_VEC_FUNC_TMPL(BulkModulusFromDensityTemperature, rhos, temperatures, bmods)
 EOS_VEC_FUNC_TMPL(BulkModulusFromDensityInternalEnergy, rhos, sies, bmods)
 EOS_VEC_FUNC_TMPL(GruneisenParamFromDensityTemperature, rhos, temperatures, gm1s)
 EOS_VEC_FUNC_TMPL(GruneisenParamFromDensityInternalEnergy, rhos, sies, gm1s)
+EOS_VEC_FUNC_TMPL(InternalEnergyFromDensityPressure, rhos, Ps, sies)
 
 struct EOSState {
   Real density;
@@ -229,6 +230,7 @@ struct VectorFunctions {
     .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("lmbdas"))
     .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperature<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("lmbdas"))
     .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergy<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("lmbdas"))
+    .def("InternalEnergyFromDensityPressure", &InternalEnergyFromDensityPressure<T>, py::arg("rhos"), py::arg("Ps"), py::arg("sies"), py::arg("lmbdas"))
 
     .def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"))
     .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"))
@@ -240,7 +242,7 @@ struct VectorFunctions {
     .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"))
     .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureNoLambda<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"))
     .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyNoLambda<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"))
-
+    .def("InternalEnergyFromDensityPressure", &InternalEnergyFromDensityPressureNoLambda<T>, py::arg("rhos"), py::arg("Ps"), py::arg("sies"))
 
     .def("FillEos", [](const T & self, py::array_t<Real> rhos,
                        py::array_t<Real> temperatures, py::array_t<Real> sies,
@@ -300,6 +302,7 @@ struct VectorFunctions<T,true> {
     .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("scratch"), py::arg("lmbdas"))
     .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("scratch"), py::arg("lmbdas"))
     .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("scratch"), py::arg("lmbdas"))
+    .def("InternalEnergyFromDensityPressure", &InternalEnergyFromDensityPressureWithScratch<T>, py::arg("rhos"), py::arg("Ps"), py::arg("sies"), py::arg("scratch"), py::arg("lmbdas"))
 
     .def("TemperatureFromDensityInternalEnergy", &TemperatureFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("temperatures"), py::arg("scratch"))
     .def("InternalEnergyFromDensityTemperature", &InternalEnergyFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("sies"), py::arg("scratch"))
@@ -311,6 +314,7 @@ struct VectorFunctions<T,true> {
     .def("BulkModulusFromDensityInternalEnergy", &BulkModulusFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("bmods"), py::arg("scratch"))
     .def("GruneisenParamFromDensityTemperature", &GruneisenParamFromDensityTemperatureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("temperatures"), py::arg("gm1s"), py::arg("scratch"))
     .def("GruneisenParamFromDensityInternalEnergy", &GruneisenParamFromDensityInternalEnergyNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("sies"), py::arg("gm1s"), py::arg("scratch"))
+    .def("InternalEnergyFromDensityPressure", &InternalEnergyFromDensityPressureNoLambdaWithScratch<T>, py::arg("rhos"), py::arg("Ps"), py::arg("sies"), py::arg("scratch"))
 
     .def("FillEos", [](const T & self, py::array_t<Real> rhos,
                        py::array_t<Real> temperatures, py::array_t<Real> sies,
@@ -452,6 +456,14 @@ py::class_<T> eos_class(py::module_ & m, std::string name) {
       self.DensityEnergyFromPressureTemperature(press, temp, np<Real>(), rho, sie);
       return std::pair<Real, Real>(rho, sie);
     }, py::arg("press"), py::arg("temp"))
+    .def("InternalEnergyFromDensityPressure", [](const T & self, const Real rho, const Real P, Real sie) {
+      self.InternalEnergyFromDensityPressure(rho, P, sie, np<Real>());
+      return sie;
+    }, py::arg("rho"), py::arg("P"), py::arg("sie"))
+    .def("InternalEnergyFromDensityPressure", [](const T & self, const Real rho, const Real P, Real sie, py::array_t<Real> lambda) {
+      self.InternalEnergyFromDensityPressure(rho, P, sie, lambda.mutable_data());
+      return sie;
+    }, py::arg("rho"), py::arg("P"), py::arg("sie"), py::arg("lmbda"))
     .def("Finalize", &T::Finalize)
     .def_property_readonly_static("EosType", [](py::object) { return T::EosType(); })
     .def_static("scratch_size", &T::scratch_size, py::arg("method_name"), py::arg("nelements"))
