@@ -53,7 +53,7 @@ herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRh
   std::string sMatid = std::to_string(matid);
 
   herr_t status = 0;
-  hid_t matGroup, lTGroup, leGroup, coldGroup;
+  hid_t matGroup, lTGroup, leGroup, coldGroup, mfGroup;
 
   matGroup = H5Gcreate(loc, sMatid.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   status += H5Lcreate_soft(sMatid.c_str(), loc, name.c_str(), H5P_DEFAULT, H5P_DEFAULT);
@@ -114,6 +114,25 @@ herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRh
     // currently unused
     // status += mask.saveHDF(coldGroup, SP5::Fields::mask);
     // status += transitionMask.saveHDF(coldGroup, SP5::Fields::transitionMask);
+  }
+
+  {
+    DataBox mf, mask;
+    Bounds nphBounds;
+    bool mf_exists = false;
+    std::string phase_names = eosMassFraction(matid, lRhoBounds, lTBounds, nphBounds, mf,
+                                              mask, mf_exists, eospacWarn);
+    if (mf_exists) {
+      mfGroup = H5Gcreate(matGroup, SP5::Depends::massFrac, H5P_DEFAULT, H5P_DEFAULT,
+                          H5P_DEFAULT);
+
+      status += mf.saveHDF(mfGroup, SP5::Fields::massFrac);
+      const int numphases = mf.dim(1);
+      status += H5LTset_attribute_int(mfGroup, ".", "numphases", &numphases, 1);
+      status +=
+          H5LTset_attribute_string(mfGroup, ".", "phase names", phase_names.c_str());
+      status += H5Gclose(mfGroup);
+    }
   }
 
   if (addSubtables) {
