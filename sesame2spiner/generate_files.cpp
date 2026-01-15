@@ -119,10 +119,10 @@ herr_t saveMaterial(hid_t loc, const SesameMetadata &metadata, const Bounds &lRh
   {
     DataBox mf, mask;
     Bounds nphBounds;
-    bool mf_exists = false;
-    std::string phase_names = eosMassFraction(matid, lRhoBounds, lTBounds, nphBounds, mf,
-                                              mask, mf_exists, eospacWarn);
-    if (mf_exists) {
+    std::string phase_names;
+
+    if (eosMassFraction(matid, lRhoBounds, lTBounds, nphBounds, mf, mask, phase_names,
+                        eospacWarn)) {
       mfGroup = H5Gcreate(matGroup, SP5::Depends::massFrac, H5P_DEFAULT, H5P_DEFAULT,
                           H5P_DEFAULT);
 

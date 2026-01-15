@@ -328,11 +328,12 @@ void eosColdCurveMask(int matid, const Bounds &lRhoBounds, const int numSie,
   eosSafeDestroy(NT, tableHandle, eospacWarn);
 }
 
-std::string eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &lTBounds,
-                            Bounds &nphBounds, DataBox &Ms, DataBox &mask, bool &exists,
-                            Verbosity eospacWarn) {
+bool eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &lTBounds,
+                     Bounds &nphBounds, DataBox &Ms, DataBox &mask,
+                     std::string &phase_names, Verbosity eospacWarn) {
   using namespace EospacWrapper;
-  exists = true;
+
+  EOS_INTEGER errorCode = EOS_OK;
   constexpr int NT = 2;
   int ntables = NT;
   EOS_INTEGER tableHandle[NT];
@@ -340,29 +341,19 @@ std::string eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &l
   std::vector<EOS_INTEGER> matid_v(NT, matid);
   std::vector<std::string> table_names = {"EOS_M_DT", "Eos_Material_Phases"};
 
+  const int exists = eosCheckTableExistence(EOS_M_DT, matid, eospacWarn);
+  if (exists > 0) {
+    eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_M_DT", "Eos_Material_Phases"},
+                eospacWarn);
+  } else {
+    phase_names = std::string("");
+    return false;
+  }
   // indep vars
   // Reuses the EOS log temp and log rho bounds
   std::vector<EOS_REAL> rhos, Ts, phs;
   makeInterpPoints(rhos, lRhoBounds);
   makeInterpPoints(Ts, lTBounds);
-
-  // Load the tables we need
-  // We need to check for the existence of this table
-  // so we do not call the normal eosSafeLoad right away.
-  EOS_INTEGER errorCode = EOS_OK;
-  EOS_INTEGER one = 1;
-  eos_CreateTables(&ntables, tableType, matid_v.data(), tableHandle, &errorCode);
-  eosCheckError(errorCode, "eos_CreateTables", eospacWarn);
-  eos_LoadTables(&one, &tableHandle[0], &errorCode);
-  if (errorCode != EOS_OK) {
-    // Assuming this means no mass fractions
-    exists = false;
-    eosSafeDestroy(NT, tableHandle, eospacWarn);
-    return "";
-  } else {
-    eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_M_DT", "Eos_Material_Phases"},
-                eospacWarn);
-  }
 
   // Get the number of phases
   EOS_REAL nphases_r = 1.0;
@@ -379,6 +370,8 @@ std::string eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &l
 
   eos_GetTableMetaData(&tableHandle[1], infoTypes, infoString, &errorCode);
   eosCheckError(errorCode, "eos_GetTableMetaData", eospacWarn);
+
+  phase_names = std::string(infoString);
 
   DataBox dMdt, dMdr;
   Ms.resize(rhos.size(), Ts.size(), nph);
@@ -414,7 +407,7 @@ std::string eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &l
     }
   }
   eosSafeDestroy(NT, tableHandle, eospacWarn);
-  return std::string(infoString);
+  return true;
 }
 
 void makeInterpPoints(std::vector<EOS_REAL> &v, const Bounds &b) {
