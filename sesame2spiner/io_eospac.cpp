@@ -328,6 +328,80 @@ void eosColdCurveMask(int matid, const Bounds &lRhoBounds, const int numSie,
   eosSafeDestroy(NT, tableHandle, eospacWarn);
 }
 
+bool eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &lTBounds,
+                     Bounds &nphBounds, DataBox &Ms, DataBox &mask,
+                     std::string &phase_names, Verbosity eospacWarn) {
+  using namespace EospacWrapper;
+
+  EOS_INTEGER errorCode = EOS_OK;
+  constexpr int NT = 2;
+  int ntables = NT;
+  EOS_INTEGER tableHandle[NT];
+  EOS_INTEGER tableType[NT] = {EOS_M_DT, EOS_Comment};
+  std::vector<EOS_INTEGER> matid_v(NT, matid);
+  std::vector<std::string> table_names = {"EOS_M_DT", "Eos_Material_Phases"};
+
+  const int exists = eosCheckTableExistence(EOS_M_DT, matid, eospacWarn);
+  if (exists > 0) {
+    eosSafeLoad(NT, matid, tableType, tableHandle, {"EOS_M_DT", "Eos_Material_Phases"},
+                eospacWarn);
+  } else {
+    phase_names = std::string("");
+    return false;
+  }
+  // indep vars
+  // Reuses the EOS log temp and log rho bounds
+  std::vector<EOS_REAL> rhos, Ts, phs;
+  makeInterpPoints(rhos, lRhoBounds);
+  makeInterpPoints(Ts, lTBounds);
+
+  EOS_REAL infoVals[1];
+  EOS_INTEGER infoItems[1] = {EOS_NUM_PHASES};
+  eosSafeTableInfo(&tableHandle[0], 1, infoItems, infoVals, eospacWarn);
+  const int nph = static_cast<int>(infoVals[0]);
+
+  EOS_CHAR infoString[EOS_META_DATA_STRLEN];
+  infoString[0] = '\0';
+  eosSafeTableMetaData(&tableHandle[1], EOS_Material_Phases, infoString, eospacWarn);
+  phase_names = std::string(infoString);
+
+  DataBox dMdt, dMdr;
+  Ms.resize(rhos.size(), Ts.size(), nph);
+  Ms.setRange(1, lTBounds.grid);
+  Ms.setRange(2, lRhoBounds.grid);
+
+  dMdr.copyMetadata(Ms);
+  dMdt.copyMetadata(Ms);
+  mask.copyMetadata(Ms);
+
+  // Interpolatable vars
+  EOS_INTEGER nXYPairs = rhos.size() * Ts.size();
+  std::vector<EOS_REAL> M_pack(nXYPairs * nph), DMDR_T(nXYPairs), DMDT_R(nXYPairs),
+      rho_flat(nXYPairs), T_flat(nXYPairs);
+
+  // prepare flat data structures
+  for (std::size_t j = 0, iflat = 0; j < rhos.size(); ++j) {
+    for (std::size_t i = 0; i < Ts.size(); ++i, iflat++) {
+      rho_flat[iflat] = densityToSesame(rhos[j]);
+      T_flat[iflat] = temperatureToSesame(Ts[i]);
+    }
+  }
+
+  const bool no_errors = eosSafeInterpolate(&tableHandle[0], nXYPairs, rho_flat.data(),
+                                            T_flat.data(), M_pack.data(), DMDR_T.data(),
+                                            DMDT_R.data(), "EOS_M_DT", eospacWarn);
+
+  for (size_t j = 0, iflat = 0; j < rhos.size(); j++) {
+    for (size_t i = 0; i < Ts.size(); i++, iflat++) {
+      for (size_t k = 0; k < nph; k++) {
+        Ms(j, i, k) = M_pack[k * nXYPairs + iflat];
+      }
+    }
+  }
+  eosSafeDestroy(NT, tableHandle, eospacWarn);
+  return true;
+}
+
 void makeInterpPoints(std::vector<EOS_REAL> &v, const Bounds &b) {
   v.resize(b.grid.nPoints());
   for (size_t i = 0; i < v.size(); i++) {
