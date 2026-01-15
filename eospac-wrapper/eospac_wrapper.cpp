@@ -335,6 +335,14 @@ void eosSafeTableCmnts(EOS_INTEGER *table, EOS_CHAR *comments, Verbosity eospacW
   eosCheckError(errorCode, "eos_GetTableCmnts", eospacWarn);
 }
 
+void eosSafeTableMetaData(EOS_INTEGER *table, EOS_INTEGER infoItem, EOS_CHAR *infoString,
+                          Verbosity eospacWarn) {
+  EOS_INTEGER errorCode = EOS_OK;
+  EOS_INTEGER infoTypes[1] = {infoItem};
+  eos_GetTableMetaData(table, infoTypes, infoString, &errorCode);
+  eosCheckError(errorCode, "eos_GetTableMetaData", eospacWarn);
+}
+
 void eosCheckError(EOS_INTEGER errorCode, const std::string &name, Verbosity eospacWarn) {
   EOS_CHAR errorMessage[EOS_MaxErrMsgLen];
   if (errorCode != EOS_OK && eospacWarn != Verbosity::Quiet) {
@@ -344,6 +352,7 @@ void eosCheckError(EOS_INTEGER errorCode, const std::string &name, Verbosity eos
 }
 
 int eosCheckTableExistence(EOS_INTEGER tableType_, int matid_, Verbosity eospacWarn) {
+  // Note this opens and closes the table
   int exists = 1;
   int NT = 1;
   EOS_INTEGER matid[1] = {matid_};

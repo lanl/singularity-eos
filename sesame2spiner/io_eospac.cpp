@@ -355,22 +355,14 @@ bool eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &lTBounds
   makeInterpPoints(rhos, lRhoBounds);
   makeInterpPoints(Ts, lTBounds);
 
-  // Get the number of phases
-  EOS_REAL nphases_r = 1.0;
-  EOS_INTEGER NITEMS[1] = {1};
-  EOS_INTEGER request = EOS_NUM_PHASES;
-  eos_GetTableInfo(&tableHandle[0], NITEMS, &request, &nphases_r, &errorCode);
-  eosCheckError(errorCode, "eos_GetTableInfo", eospacWarn);
-  const int nph = static_cast<int>(nphases_r);
+  EOS_REAL infoVals[1];
+  EOS_INTEGER infoItems[1] = {EOS_NUM_PHASES};
+  eosSafeTableInfo(&tableHandle[0], 1, infoItems, infoVals, eospacWarn);
+  const int nph = static_cast<int>(infoVals[0]);
 
-  // And the phase names
   EOS_CHAR infoString[EOS_META_DATA_STRLEN];
   infoString[0] = '\0';
-  EOS_INTEGER infoTypes[1] = {EOS_Material_Phases};
-
-  eos_GetTableMetaData(&tableHandle[1], infoTypes, infoString, &errorCode);
-  eosCheckError(errorCode, "eos_GetTableMetaData", eospacWarn);
-
+  eosSafeTableMetaData(&tableHandle[1], EOS_Material_Phases, infoString, eospacWarn);
   phase_names = std::string(infoString);
 
   DataBox dMdt, dMdr;
