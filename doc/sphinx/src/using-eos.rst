@@ -151,8 +151,8 @@ For example you might call ``DeSerialize`` as
   utilized to request data be written to a shared memory pointer,
   however, you can free the ``src`` pointer, so long as you don't free
   the shared memory pointer. This means you must manage these pointers
-  externally and not them go out of scope, especially if you use smart
-  pointers.
+  externally and not let them go out of scope, especially if you use
+  smart pointers.
 
 Putting everything together, a full sequence with MPI might look like this:
 
