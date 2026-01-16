@@ -206,7 +206,7 @@ SCENARIO("Serialization of modified EOSs preserves their properties",
 
       THEN("We can de-serialize the EOS") {
         singularity::VectorSerializer<EOS> deserializer;
-        deserializer.DeSerialize(data);
+        deserializer.DeSerialize(data.get());
         REQUIRE(deserializer.Size() == serializer.Size());
 
         AND_THEN("The de-serialized EOS still evaluates properly") {
@@ -216,8 +216,6 @@ SCENARIO("Serialization of modified EOSs preserves their properties",
                       temp_test, EPS));
         }
       }
-
-      free(data);
     }
 
     eos.Finalize();

@@ -375,27 +375,27 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
         char *air_shared_data = (char *)malloc(air_shared_size);
 
         SpinerEOSDependsRhoT eos_rhoT;
-        std::size_t read_size_rhoT =
-            eos_rhoT.DeSerialize(rhoT_data, SharedMemSettings(rhoT_shared_data, true));
+        std::size_t read_size_rhoT = eos_rhoT.DeSerialize(
+            rhoT_data.get(), SharedMemSettings(rhoT_shared_data, true));
         REQUIRE(read_size_rhoT == rhoT_size);
         REQUIRE(RhoTTricks::DataBoxesPointToDifferentMemory(rhoT_orig, eos_rhoT));
 
         SpinerEOSDependsRhoSie eos_rhoSie;
         std::size_t read_size_rhoSie = eos_rhoSie.DeSerialize(
-            rhoSie_data, SharedMemSettings(rhoSie_shared_data, true));
+            rhoSie_data.get(), SharedMemSettings(rhoSie_shared_data, true));
         REQUIRE(read_size_rhoSie == rhoSie_size);
         REQUIRE(RhoSieTricks::DataBoxesPointToDifferentMemory(rhoSie_orig, eos_rhoSie));
 
         eospac_orig.Finalize();
         EOS eos_eospac = EOSPAC();
         std::size_t read_size_eospac = eos_eospac.DeSerialize(
-            eospac_data, SharedMemSettings(eospac_shared_data, true));
+            eospac_data.get(), SharedMemSettings(eospac_shared_data, true));
         REQUIRE(read_size_eospac == eospac_size);
 
         eospac_air.Finalize();
         EOS eos_air_2 = EOSPAC();
-        std::size_t read_size_air =
-            eos_air_2.DeSerialize(air_data, SharedMemSettings(air_shared_data, true));
+        std::size_t read_size_air = eos_air_2.DeSerialize(
+            air_data.get(), SharedMemSettings(air_shared_data, true));
         REQUIRE(read_size_air == air_size);
 
         AND_THEN("EOS lookups work") {
@@ -430,9 +430,6 @@ SCENARIO("SpinerEOS and EOSPAC Serialization",
         free(rhoSie_shared_data);
         free(eospac_shared_data);
       }
-      free(rhoT_data);
-      free(rhoSie_data);
-      free(eospac_data);
     }
 
     rhoT_orig.Finalize();
