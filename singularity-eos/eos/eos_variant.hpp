@@ -17,6 +17,7 @@
 #ifndef EOS_VARIANT_HPP
 #define EOS_VARIANT_HPP
 
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -1336,8 +1337,8 @@ class Variant {
   }
   auto Serialize() {
     std::size_t size = SerializedSizeInBytes();
-    char *dst = (char *)malloc(size);
-    std::size_t new_size = Serialize(dst);
+    std::shared_ptr<char[]> dst(new char[size]);
+    std::size_t new_size = Serialize(dst.get());
     PORTABLE_ALWAYS_REQUIRE(size == new_size, "Serialization failed!");
     return std::make_pair(size, dst);
   }

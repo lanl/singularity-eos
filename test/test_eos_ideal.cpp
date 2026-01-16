@@ -300,10 +300,10 @@ SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
 
       THEN("We can de-serialize new objects from them") {
         IdealGas new_bare;
-        new_bare.DeSerialize(data_bare);
+        new_bare.DeSerialize(data_bare.get());
 
         EOS new_variant;
-        new_variant.DeSerialize(data_var);
+        new_variant.DeSerialize(data_var.get());
 
         AND_THEN("The bare eos has the right Cv and Gruneisen params") {
           REQUIRE(new_bare.SpecificHeatFromDensityTemperature(1.0, 1.0) == Cv);
@@ -318,11 +318,10 @@ SCENARIO("Ideal gas serialization", "[IdealGas][Serialization]") {
           REQUIRE(new_variant.SpecificHeatFromDensityTemperature(1.0, 1.0) == Cv);
           REQUIRE(new_variant.GruneisenParamFromDensityTemperature(1.0, 1.0) == gm1);
         }
-      }
 
-      // cleanup
-      free(data_bare);
-      free(data_var);
+        new_bare.Finalize();
+        new_variant.Finalize();
+      }
     }
 
     // cleanup

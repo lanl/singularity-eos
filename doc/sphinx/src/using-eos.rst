@@ -81,10 +81,19 @@ The function
 fills the ``dst`` pointer with the memory required for serialization
 and returns the number of bytes written to ``dst``. The function
 
-.. cpp:function:: std::pair<std::size_t, char*> EOS::Serialize();
+.. cpp:function:: std::pair<std::size_t, std::shared_ptr<char[]>> EOS::Serialize();
 
-allocates a ``char*`` pointer to contain serialized data and fills
+allocates a ``std::shared_ptr<char[]>`` to contain serialized data and fills
 it.
+
+.. note::
+
+  Note that ``Serialize()`` uses a smart pointer while most other
+  ``singularity-eos`` machinery works with unmanaged pointers. This
+  means the pointer returned by ``Serialize()`` does not need to be
+  freed. However it is the responsiblity of the host code to manage
+  the memory for other pointers that the serialization machinery may
+  utilize or interact with.
 
 .. warning::
 
@@ -141,7 +150,9 @@ For example you might call ``DeSerialize`` as
   would call ``eos.Finalize()``. If the ``SharedMemSettings`` are
   utilized to request data be written to a shared memory pointer,
   however, you can free the ``src`` pointer, so long as you don't free
-  the shared memory pointer.
+  the shared memory pointer. This means you must manage these pointers
+  externally and not them go out of scope, especially if you use smart
+  pointers.
 
 Putting everything together, a full sequence with MPI might look like this:
 

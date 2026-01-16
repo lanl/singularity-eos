@@ -308,7 +308,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
         REQUIRE(size > 0);
         THEN("We can de-serialize it into a new object") {
           StellarCollapse sc2;
-          std::size_t read_size = sc2.DeSerialize(data);
+          std::size_t read_size = sc2.DeSerialize(data.get());
           REQUIRE(read_size == size);
           REQUIRE(size > sizeof(StellarCollapse));
           sc2.CheckParams();
@@ -320,7 +320,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
           }
           AND_THEN("We can de-serialize into two objects") {
             StellarCollapse sc3;
-            std::size_t read_size_2 = sc3.DeSerialize(data);
+            std::size_t read_size_2 = sc3.DeSerialize(data.get());
             REQUIRE(read_size_2 == size);
             sc3.CheckParams();
             AND_THEN("The two de-serialized objects use the same memory") {
@@ -335,7 +335,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
             char *shared_data = (char *)malloc(shared_size);
             SharedMemSettings settings(shared_data, true);
             StellarCollapse sc3;
-            std::size_t read_size = sc3.DeSerialize(data, settings);
+            std::size_t read_size = sc3.DeSerialize(data.get(), settings);
             REQUIRE(read_size == size);
             REQUIRE(read_size > sizeof(StellarCollapse));
             sc3.CheckParams();
@@ -353,7 +353,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
             AND_THEN("We can de-serialize from shared memory around one more object") {
               SharedMemSettings settings2(shared_data, false);
               StellarCollapse sc4;
-              std::size_t read_size_2 = sc4.DeSerialize(data, settings);
+              std::size_t read_size_2 = sc4.DeSerialize(data.get(), settings);
               REQUIRE(read_size_2 == size);
               REQUIRE(read_size_2 > sizeof(StellarCollapse));
               sc4.CheckParams();
@@ -367,7 +367,6 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
             free(shared_data);
           }
         }
-        free(data);
       }
 
       WHEN("We serialize a variant that owns a StellarCollapse EOS") {
@@ -378,7 +377,7 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
         REQUIRE(size > 0);
         THEN("We can de-serialize it into a new object") {
           EOS e2;
-          std::size_t read_size = e2.DeSerialize(data);
+          std::size_t read_size = e2.DeSerialize(data.get());
           REQUIRE(read_size == size);
           e2.CheckParams();
           AND_THEN("The two stellar collapse EOS's agree") {
@@ -394,12 +393,12 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
             EOS e3, e4;
 
             std::size_t read_size_e3 =
-                e3.DeSerialize(data, SharedMemSettings(shared_data, true));
+                e3.DeSerialize(data.get(), SharedMemSettings(shared_data, true));
             REQUIRE(read_size_e3 == size);
             e3.CheckParams();
 
             std::size_t read_size_e4 =
-                e4.DeSerialize(data, SharedMemSettings(shared_data, false));
+                e4.DeSerialize(data.get(), SharedMemSettings(shared_data, false));
             REQUIRE(read_size_e4 == size);
             e4.CheckParams();
 
@@ -417,7 +416,6 @@ SCENARIO("Stellar Collapse EOS", "[StellarCollapse]") {
             free(shared_data);
           }
         }
-        free(data);
       }
       sc.Finalize();
     }
