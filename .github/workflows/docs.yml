@@ -31,7 +31,8 @@ jobs:
             sudo apt-get install -y --force-yes -qq build-essential python3-dev
             pip install sphinx
             pip install sphinx-rtd-theme
-            pip install sphinx-multiversion
+            #pip install sphinx-multiversion
+            pip install "sphinx-multiversion @ git+https://github.com/sphinx-contrib/multiversion.git"
         - name: build code
           run: |
             mkdir -p build
