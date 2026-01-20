@@ -35,6 +35,10 @@ jobs:
             python -m pip install sphinx-multiversion-contrib
             #pip install sphinx-multiversion
             #pip install "sphinx-multiversion @ git+https://github.com/sphinx-contrib/multiversion.git"
+            
+            python -m pip show sphinx sphinx-multiversion
+            sphinx-build --version
+            sphinx-multiversion --version || true
         - name: build code
           run: |
             mkdir -p build
