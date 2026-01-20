@@ -30,11 +30,14 @@ jobs:
             sudo apt-get update -y -qq
             sudo apt-get install -y --force-yes -qq build-essential python3-dev
             python -m pip install --upgrade pip
-            python -m pip install sphinx
-            python -m pip install sphinx-rtd-theme
-            python -m pip install sphinx-multiversion-contrib
-            #pip install sphinx-multiversion
-            #pip install "sphinx-multiversion @ git+https://github.com/sphinx-contrib/multiversion.git"
+
+            # Pin sphinx to an older version until sphinx-multiversion is fixed
+            # see
+            # https://github.com/sphinx-contrib/multiversion/pull/202
+            python -m pip install "sphinx<8.2" sphinx-rtd-theme
+
+            # This should pull in the fixed version of multiversion when its available
+            python -m pip install "sphinx-multiversion @ git+https://github.com/sphinx-contrib/multiversion.git"
             
             python -m pip show sphinx sphinx-multiversion
             sphinx-build --version
