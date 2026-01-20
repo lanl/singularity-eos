@@ -47,7 +47,7 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
 
     Helmholtz host_eos_2;
     auto [size, data] = host_eos.Serialize();
-    auto read_size = host_eos_2.DeSerialize(data);
+    auto read_size = host_eos_2.DeSerialize(data.get());
     THEN("We can serialize!") {
       host_eos_2.CheckParams();
       REQUIRE(size == read_size);
@@ -158,6 +158,8 @@ SCENARIO("Helmholtz equation of state - Table interpolation (tgiven)", "[Helmhol
     REQUIRE(nwrong == 0);
     eos.Finalize();
     host_eos.Finalize();
+    eos_2.Finalize();
+    host_eos_2.Finalize();
   }
 }
 
