@@ -122,13 +122,14 @@ void eosSafeTableInfo(EOS_INTEGER *table, EOS_INTEGER numInfoItems,
                       EOS_INTEGER infoItems[], EOS_REAL infoVals[], Verbosity eospacWarn);
 
 void eosSafeTableCmnts(EOS_INTEGER *table, EOS_CHAR *comments, Verbosity eospacWarn);
-
+void eosSafeTableMetaData(EOS_INTEGER *table, EOS_INTEGER infoItem, EOS_CHAR *infoString,
+                          Verbosity eospacWarn);
 void eosCheckError(EOS_INTEGER errorCode, const std::string &name, Verbosity eospacWarn);
 std::string eosErrorString(EOS_INTEGER errorCode);
 void eosSafeDestroy(int ntables, EOS_INTEGER tableHandles[], Verbosity eospacWarn);
 std::string getName(std::string comment);
 bool eosErrorCodesEqual(EOS_INTEGER lhs, EOS_INTEGER rhs);
-
+int eosCheckTableExistence(EOS_INTEGER tableType_, int matid_, Verbosity eospacWarn);
 } // namespace EospacWrapper
 
 #endif // _EOSPAC_WRAPPER_EOSPAC_WRAPPER_HPP_

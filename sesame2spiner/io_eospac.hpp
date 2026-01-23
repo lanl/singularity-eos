@@ -76,6 +76,9 @@ void eosColdCurves(int matid, const Bounds &lRhoBounds, DataBox &Ps, DataBox &si
 void eosColdCurveMask(int matid, const Bounds &lRhoBounds, const int numSie,
                       const DataBox &sieColdCurve, DataBox &mask,
                       Verbosity eospacWarn = Verbosity::Quiet);
+bool eosMassFraction(int matid, const Bounds &lRhoBounds, const Bounds &lTBounds,
+                     Bounds &nphBounds, DataBox &mf, DataBox &mask,
+                     std::string &phase_names, Verbosity eospacWarn = Verbosity::Quiet);
 
 void makeInterpPoints(std::vector<EOS_REAL> &v, const Bounds &b);
 

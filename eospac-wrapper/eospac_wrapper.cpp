@@ -335,12 +335,45 @@ void eosSafeTableCmnts(EOS_INTEGER *table, EOS_CHAR *comments, Verbosity eospacW
   eosCheckError(errorCode, "eos_GetTableCmnts", eospacWarn);
 }
 
+void eosSafeTableMetaData(EOS_INTEGER *table, EOS_INTEGER infoItem, EOS_CHAR *infoString,
+                          Verbosity eospacWarn) {
+  EOS_INTEGER errorCode = EOS_OK;
+  EOS_INTEGER infoTypes[1] = {infoItem};
+  eos_GetTableMetaData(table, infoTypes, infoString, &errorCode);
+  eosCheckError(errorCode, "eos_GetTableMetaData", eospacWarn);
+}
+
 void eosCheckError(EOS_INTEGER errorCode, const std::string &name, Verbosity eospacWarn) {
   EOS_CHAR errorMessage[EOS_MaxErrMsgLen];
   if (errorCode != EOS_OK && eospacWarn != Verbosity::Quiet) {
     eos_GetErrorMessage(&errorCode, errorMessage);
     std::cerr << name << " ERROR " << errorCode << ":\n\t" << errorMessage << std::endl;
   }
+}
+
+int eosCheckTableExistence(EOS_INTEGER tableType_, int matid_, Verbosity eospacWarn) {
+  // Note this opens and closes the table
+  int exists = 1;
+  int NT = 1;
+  EOS_INTEGER matid[1] = {matid_};
+  EOS_INTEGER tableType[1] = {tableType_};
+  EOS_INTEGER tableHandle[1];
+  EOS_INTEGER errorCode = EOS_OK;
+
+  eos_CreateTables(&NT, tableType, matid, tableHandle, &errorCode);
+  eosCheckError(errorCode, "eos_CreateTables", eospacWarn);
+  eos_LoadTables(&NT, &tableHandle[0], &errorCode);
+  if (errorCode != EOS_OK) {
+    if (eosErrorCodesEqual(EOS_NO_DATA_TABLE, errorCode)) {
+      exists = 0;
+    } else {
+      // something else happended
+      eosCheckError(errorCode, "eos_LoadTables", eospacWarn);
+      exists = -1;
+    }
+  }
+  eosSafeDestroy(NT, tableHandle, eospacWarn);
+  return exists;
 }
 
 std::string eosErrorString(EOS_INTEGER errorCode) {
