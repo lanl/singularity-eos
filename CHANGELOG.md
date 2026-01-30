@@ -10,7 +10,8 @@
 ### Changed (changing behavior/API/variables/...)
 - [[PR601]](https://github.com/lanl/singularity-eos/pull/601) Make Serialize() return a smart pointer
 
-### Infrastructure (changes irrelevant to downstream codes)
+### Infrastructure (changes irrelevant to downstream codes
+)- [[PR604]](https://github.com/lanl/singularity-eos/pull/604) Update kokkos kernels linalg call after kokkos kernels became more strict
 
 ### Removed (removing behavior/API/varaibles/...)
 
